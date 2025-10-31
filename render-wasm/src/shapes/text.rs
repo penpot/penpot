@@ -542,8 +542,6 @@ pub struct Paragraph {
     text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
-    typography_ref_file: Uuid,
-    typography_ref_id: Uuid,
     children: Vec<TextSpan>,
 }
 
@@ -556,8 +554,6 @@ impl Default for Paragraph {
             text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
-            typography_ref_file: Uuid::nil(),
-            typography_ref_id: Uuid::nil(),
             children: vec![],
         }
     }
@@ -572,8 +568,6 @@ impl Paragraph {
         text_transform: Option<TextTransform>,
         line_height: f32,
         letter_spacing: f32,
-        typography_ref_file: Uuid,
-        typography_ref_id: Uuid,
         children: Vec<TextSpan>,
     ) -> Self {
         Self {
@@ -583,8 +577,6 @@ impl Paragraph {
             text_transform,
             line_height,
             letter_spacing,
-            typography_ref_file,
-            typography_ref_id,
             children,
         }
     }
@@ -695,13 +687,8 @@ impl TextSpan {
             paint = merge_fills(&self.fills, *content_bounds);
         }
 
-        // FIXME
-        if self.line_height <= 0.0 {
-            style.set_height(paragraph_line_height);
-        } else {
-            style.set_height(self.line_height);
-        }
-
+        let max_line_height = f32::max(paragraph_line_height, self.line_height);
+        style.set_height(max_line_height);
         style.set_height_override(true);
         style.set_foreground_paint(&paint);
         style.set_decoration_type(match self.text_decoration {

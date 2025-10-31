@@ -15,7 +15,7 @@
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]))
 
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 44)
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
 (def ^:const SPAN-ATTR-U8-SIZE 64)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
@@ -56,10 +56,7 @@
         text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
         text-transform  (sr/translate-text-transform (get paragraph :text-transform))
         line-height     (get paragraph :line-height)
-        letter-spacing  (get paragraph :letter-spacing)
-
-        typography-ref-file (get paragraph :typography-ref-file)
-        typography-ref-id   (get paragraph :typography-ref-id)]
+        letter-spacing  (get paragraph :letter-spacing)]
 
     (-> offset
         (mem/write-u8 dview text-align)
@@ -70,8 +67,6 @@
         (mem/write-f32 dview line-height)
         (mem/write-f32 dview letter-spacing)
 
-        (mem/write-uuid dview (d/nilv typography-ref-file uuid/zero))
-        (mem/write-uuid dview (d/nilv typography-ref-id uuid/zero))
         (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
 
 (defn- write-spans
@@ -80,19 +75,18 @@
         paragraph-font-weight (-> paragraph :font-weight f/serialize-font-weight)
         paragraph-line-height (get paragraph :line-height)]
     (reduce (fn [offset span]
-              (let [font-style  (sr/translate-font-style (get span :font-style))
+              (let [font-style  (sr/translate-font-style (get span :font-style "normal"))
                     font-size   (get span :font-size paragraph-font-size)
                     line-height  (get span :line-height paragraph-line-height)
-                    letter-spacing (get span :letter-spacing)
+                    letter-spacing (get span :letter-spacing 0.0)
                     font-weight (get span :font-weight paragraph-font-weight)
                     font-weight (f/serialize-font-weight font-weight)
+                    font-id     (f/normalize-font-id (get span :font-id "sourcesanspro"))
+                    font-family (hash (get span :font-family "sourcesanspro"))
 
-                    font-id     (f/normalize-font-id (get span :font-id))
-                    font-family (hash (get span :font-family))
-
-                    text-buffer (encode-text (get span :text))
+                    text-buffer (encode-text (get span :text ""))
                     text-length (mem/size text-buffer)
-                    fills       (take MAX-TEXT-FILLS (get span :fills))
+                    fills       (take MAX-TEXT-FILLS (get span :fills []))
 
                     font-variant-id
                     (get span :font-variant-id)

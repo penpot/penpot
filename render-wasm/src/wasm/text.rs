@@ -101,8 +101,6 @@ pub struct RawParagraphData {
     text_transform: RawTextTransform,
     line_height: f32,
     letter_spacing: f32,
-    typography_ref_file: [u32; 4],
-    typography_ref_id: [u32; 4],
 }
 
 impl From<[u8; RAW_PARAGRAPH_DATA_SIZE]> for RawParagraphData {
@@ -226,9 +224,6 @@ impl TryFrom<&Vec<u8>> for RawParagraph {
 
 impl From<RawParagraph> for shapes::Paragraph {
     fn from(value: RawParagraph) -> Self {
-        let typography_ref_file = uuid_from_u32(value.attrs.typography_ref_file);
-        let typography_ref_id = uuid_from_u32(value.attrs.typography_ref_id);
-
         let mut spans = vec![];
 
         let mut offset = 0;
@@ -252,8 +247,6 @@ impl From<RawParagraph> for shapes::Paragraph {
             value.attrs.text_transform.into(),
             value.attrs.line_height,
             value.attrs.letter_spacing,
-            typography_ref_file,
-            typography_ref_id,
             spans,
         )
     }
