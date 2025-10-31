@@ -78,20 +78,19 @@
                   (not-empty))
 
              changes
-             (binding [cts/*wasm-sync-override* true]
-               (-> (pcb/empty-changes it page-id)
-                   (pcb/set-save-undo? save-undo?)
-                   (pcb/set-stack-undo? stack-undo?)
-                   (cls/generate-update-shapes ids
-                                               update-fn
-                                               objects
-                                               {:attrs attrs
-                                                :changed-sub-attr changed-sub-attr
-                                                :ignore-tree ignore-tree
-                                                :ignore-touched ignore-touched
-                                                :with-objects? with-objects?})
-                   (cond-> undo-group
-                     (pcb/set-undo-group undo-group))))
+             (-> (pcb/empty-changes it page-id)
+                 (pcb/set-save-undo? save-undo?)
+                 (pcb/set-stack-undo? stack-undo?)
+                 (cls/generate-update-shapes ids
+                                             update-fn
+                                             objects
+                                             {:attrs attrs
+                                              :changed-sub-attr changed-sub-attr
+                                              :ignore-tree ignore-tree
+                                              :ignore-touched ignore-touched
+                                              :with-objects? with-objects?})
+                 (cond-> undo-group
+                   (pcb/set-undo-group undo-group)))
 
              changes
              (add-undo-group changes state)]

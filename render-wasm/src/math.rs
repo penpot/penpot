@@ -32,6 +32,7 @@ pub fn are_close_points(a: impl Into<(f32, f32)>, b: impl Into<(f32, f32)>) -> b
     is_close_to(a_x, b_x) && is_close_to(a_y, b_y)
 }
 
+#[allow(dead_code)]
 pub fn is_close_matrix(m: &Matrix, other: &Matrix) -> bool {
     is_close_to(m.scale_x(), other.scale_x())
         && is_close_to(m.scale_y(), other.scale_y())

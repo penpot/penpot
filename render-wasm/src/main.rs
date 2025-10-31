@@ -20,10 +20,11 @@ use mem::SerializableResult;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
+use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
-pub(crate) static mut STATE: Option<Box<State>> = None;
+pub(crate) static mut STATE: Option<Box<State<'static>>> = None;
 
 #[macro_export]
 macro_rules! with_state_mut {
@@ -253,8 +254,8 @@ pub extern "C" fn set_shape_masked_group(masked: bool) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
-    with_state_mut!(state, {
-        state.set_selrect_for_current_shape(left, top, right, bottom);
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_selrect(left, top, right, bottom);
     });
 }
 
@@ -289,15 +290,21 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
 
 fn set_children_set(entries: IndexSet<Uuid>) {
     let mut deleted = IndexSet::new();
+    let mut parent_id = None;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        parent_id = Some(shape.id);
         (_, deleted) = shape.compute_children_differences(&entries);
         shape.children = entries.clone();
     });
 
     with_state_mut!(state, {
+        let Some(parent_id) = parent_id else {
+            return;
+        };
+
         for id in deleted {
-            state.delete_shape(id);
+            state.delete_shape_children(parent_id, id);
         }
     });
 }
@@ -494,11 +501,7 @@ pub extern "C" fn get_selection_rect() -> *mut u8 {
     with_state_mut!(state, {
         let bbs: Vec<_> = entries
             .iter()
-            .flat_map(|id| {
-                let default = Matrix::default();
-                let modifier = state.modifiers.get(id).unwrap_or(&default);
-                state.shapes.get(id).map(|b| b.bounds().transform(modifier))
-            })
+            .flat_map(|id| state.shapes.get(id).map(|b| b.bounds()))
             .collect();
 
         let result_bound = if bbs.len() == 1 {
@@ -537,6 +540,8 @@ pub extern "C" fn set_structure_modifiers() {
         .collect();
 
     with_state_mut!(state, {
+        let mut structure = HashMap::new();
+        let mut scale_content = HashMap::new();
         for entry in entries {
             match entry.entry_type {
                 StructureEntryType::ScaleContent => {
@@ -544,18 +549,23 @@ pub extern "C" fn set_structure_modifiers() {
                         continue;
                     };
                     for id in shape.all_children(&state.shapes, true, true) {
-                        state.scale_content.insert(id, entry.value);
+                        scale_content.insert(id, entry.value);
                     }
                 }
                 _ => {
-                    state.structure.entry(entry.parent).or_insert_with(Vec::new);
-                    state
-                        .structure
+                    structure.entry(entry.parent).or_insert_with(Vec::new);
+                    structure
                         .get_mut(&entry.parent)
                         .expect("Parent not found for entry")
                         .push(entry);
                 }
             }
+        }
+        if !scale_content.is_empty() {
+            state.shapes.set_scale_content(scale_content);
+        }
+        if !structure.is_empty() {
+            state.shapes.set_structure(structure);
         }
     });
 
@@ -565,9 +575,7 @@ pub extern "C" fn set_structure_modifiers() {
 #[no_mangle]
 pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
-        state.structure.clear();
-        state.scale_content.clear();
-        state.modifiers.clear();
+        state.shapes.clean_all();
     });
 }
 
@@ -595,11 +603,16 @@ pub extern "C" fn set_modifiers() {
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
+    let mut modifiers = HashMap::new();
+    let mut ids = Vec::<Uuid>::new();
+    for entry in entries {
+        modifiers.insert(entry.id, entry.transform);
+        ids.push(entry.id);
+    }
+
     with_state_mut!(state, {
-        for entry in entries {
-            state.modifiers.insert(entry.id, entry.transform);
-        }
-        state.rebuild_modifier_tiles();
+        state.set_modifiers(modifiers);
+        state.rebuild_modifier_tiles(ids);
     });
 }
 

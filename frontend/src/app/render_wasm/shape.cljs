@@ -120,8 +120,11 @@
     (-write writer (str "#penpot/shape " (:id delegate)))))
 
 ;; --- SHAPE IMPL
-
-(defn- set-wasm-single-attr!
+;; When an attribute is sent to WASM it could still be pending some side operations
+;; for example: font loading when changing a text, this is an async operation that will
+;; resolve eventually.
+;; The `set-wasm-attr!` can return a list of callbacks to be executed in a second pass.
+(defn- set-wasm-attr!
   [shape k]
   (let [v  (get shape k)
         id (get shape :id)]
@@ -132,7 +135,10 @@
                       (when (or (= v :path) (= v :bool))
                         (api/set-shape-path-content (:content shape))))
       :bool-type    (api/set-shape-bool-type v)
-      :selrect      (api/set-shape-selrect v)
+      :selrect      (do
+                      (api/set-shape-selrect v)
+                      (when (= (:type shape) :svg-raw)
+                        (api/set-shape-svg-raw-content (api/get-static-markup shape))))
       :show-content (if (= (:type shape) :frame)
                       (api/set-shape-clip-content (not v))
                       (api/set-shape-clip-content false))
@@ -226,58 +232,40 @@
           (ctl/flex-layout? shape)
           (api/set-flex-layout shape)))
 
+      ;; Property not in WASM
       nil)))
 
-(defn set-wasm-multi-attrs!
+(defn process-shape!
   [shape properties]
   (let [shape-id (dm/get-prop shape :id)]
-    (when (shape-in-current-page? shape-id)
-      (api/use-shape shape-id)
-      (let [result
-            (->> properties
-                 (mapcat #(set-wasm-single-attr! shape %)))
-            pending (-> (d/index-by :key :callback result) vals)]
-        (if (and pending (seq pending))
-          (->> (rx/from pending)
-               (rx/mapcat (fn [callback] (callback)))
-               (rx/reduce conj [])
-               (rx/subs!
-                (fn [_]
-                  (api/update-shape-tiles)
-                  (api/clear-drawing-cache)
-                  (api/request-render "set-wasm-attrs-pending"))))
-          (do
-            (api/update-shape-tiles)
-            (api/request-render "set-wasm-attrs")))))))
-
-(defn set-wasm-attrs!
-  [shape k v]
-  (let [shape-id (dm/get-prop shape :id)
-        old-value (get shape k)]
-    (when (and (shape-in-current-page? shape-id)
-               (not (identical? old-value v)))
-      (let [shape (assoc shape k v)]
+    (if (shape-in-current-page? shape-id)
+      (do
         (api/use-shape shape-id)
-        (let [result (set-wasm-single-attr! shape k)
-              pending (-> (d/index-by :key :callback result) vals)]
-          (if (and pending (seq pending))
-            (->> (rx/from pending)
-                 (rx/mapcat (fn [callback] (callback)))
-                 (rx/reduce conj [])
-                 (rx/subs!
-                  (fn [_]
-                    (api/update-shape-tiles)
-                    (api/clear-drawing-cache)
-                    (api/request-render "set-wasm-attrs-pending"))))
-            (do
-              (api/update-shape-tiles)
-              (api/request-render "set-wasm-attrs"))))))))
+        (->> properties
+             (mapcat #(set-wasm-attr! shape %))
+             (d/index-by :key :callback)
+             (vals)
+             (rx/from)
+             (rx/mapcat (fn [callback] (callback)))
+             (rx/reduce conj [])))
+      (rx/empty))))
+
+(defn process-shape-changes!
+  [objects shape-changes]
+  (->> (rx/from shape-changes)
+       (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
+       (rx/subs!
+        (fn [_]
+          (api/update-shape-tiles)
+          (api/request-render "set-wasm-attrs")))))
+
+;; `conj` empty set initialization
+(def conj* (fnil conj #{}))
 
 (defn- impl-assoc
   [self k v]
-  (when ^boolean shape/*wasm-sync*
-    (binding [shape/*wasm-sync* false]
-      (set-wasm-attrs! self k v)))
+  (when shape/*shape-changes*
+    (vswap! shape/*shape-changes* update (:id self) conj* k))
 
   (case k
     :id
@@ -299,10 +287,9 @@
 
 (defn- impl-dissoc
   [self k]
-  (when ^boolean shape/*wasm-sync*
-    (binding [shape/*wasm-sync* false]
-      (when (shape-in-current-page? (.-id ^ShapeProxy self))
-        (set-wasm-attrs! self k nil))))
+  (when shape/*shape-changes*
+    (vswap! shape/*shape-changes* update (:id self) conj* k))
+
   (case k
     :id
     (ShapeProxy. nil

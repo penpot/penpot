@@ -3,7 +3,7 @@ use skia_safe::{self as skia};
 use crate::uuid::Uuid;
 use std::borrow::Cow;
 use std::cell::OnceCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::iter::once;
 
 mod blend;
@@ -47,10 +47,11 @@ pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
 
+use crate::math::bools as math_bools;
 use crate::math::{self, Bounds, Matrix, Point};
 use indexmap::IndexSet;
 
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
@@ -180,6 +181,62 @@ pub struct Shape {
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
     pub extrect: OnceCell<math::Rect>,
+    pub bounds: OnceCell<math::Bounds>,
+    pub svg_transform: Option<Matrix>,
+    pub ignore_constraints: bool,
+}
+
+// Returns all ancestor shapes of this shape, traversing up the parent hierarchy
+//
+// This function walks up the parent chain starting from this shape's parent,
+// collecting all ancestor IDs. It stops when it reaches a nil UUID or when
+// an ancestor is hidden (unless include_hidden is true).
+//
+// # Arguments
+// * `shapes` - The shapes pool containing all shapes
+// * `include_hidden` - Whether to include hidden ancestors in the result
+//
+// # Returns
+// A set of ancestor UUIDs in traversal order (closest ancestor first)
+pub fn all_with_ancestors(
+    shapes: &[Uuid],
+    shapes_pool: ShapesPoolRef,
+    include_hidden: bool,
+) -> IndexSet<Uuid> {
+    let mut pending = Vec::from_iter(shapes.iter());
+    let mut result = IndexSet::new();
+
+    while !pending.is_empty() {
+        let Some(current_id) = pending.pop() else {
+            break;
+        };
+
+        result.insert(*current_id);
+
+        let Some(parent_id) = shapes_pool.get(current_id).and_then(|s| s.parent_id) else {
+            continue;
+        };
+
+        if parent_id == Uuid::nil() {
+            continue;
+        }
+
+        if result.contains(&parent_id) {
+            continue;
+        }
+
+        // Check if the ancestor is hidden
+        let Some(parent) = shapes_pool.get(&parent_id) else {
+            continue;
+        };
+
+        if !include_hidden && parent.hidden() {
+            continue;
+        }
+
+        pending.push(&parent.id);
+    }
+    result
 }
 
 impl Shape {
@@ -207,34 +264,34 @@ impl Shape {
             shadows: Vec::with_capacity(1),
             layout_item: None,
             extrect: OnceCell::new(),
+            bounds: OnceCell::new(),
+            svg_transform: None,
+            ignore_constraints: false,
         }
     }
 
-    pub fn scale_content(&self, value: f32) -> Self {
-        let mut result = self.clone();
-        result.shape_type.scale_content(value);
-        result
-            .strokes
-            .iter_mut()
-            .for_each(|s| s.scale_content(value));
-        result
-            .shadows
-            .iter_mut()
-            .for_each(|s| s.scale_content(value));
+    pub fn scale_content(&mut self, value: f32) {
+        self.ignore_constraints = true;
+        self.shape_type.scale_content(value);
+        self.strokes.iter_mut().for_each(|s| s.scale_content(value));
 
-        if let Some(blur) = result.blur.as_mut() {
+        self.shadows.iter_mut().for_each(|s| s.scale_content(value));
+
+        if let Some(blur) = self.blur.as_mut() {
             blur.scale_content(value);
         }
 
-        result
-            .layout_item
+        self.layout_item
             .iter_mut()
             .for_each(|i| i.scale_content(value));
-        result
     }
 
     pub fn invalidate_extrect(&mut self) {
         self.extrect = OnceCell::new();
+    }
+
+    pub fn invalidate_bounds(&mut self) {
+        self.bounds = OnceCell::new();
     }
 
     pub fn set_parent(&mut self, id: Uuid) {
@@ -248,6 +305,10 @@ impl Shape {
     #[allow(dead_code)]
     pub fn is_frame(&self) -> bool {
         matches!(self.shape_type, Type::Frame(_))
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self.shape_type, Type::Bool(_))
     }
 
     pub fn is_group_like(&self) -> bool {
@@ -266,6 +327,7 @@ impl Shape {
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.invalidate_extrect();
+        self.invalidate_bounds();
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
             text.update_layout(self.selrect);
@@ -326,6 +388,10 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn svg_transform(&self) -> Option<Matrix> {
+        self.svg_transform
     }
 
     // FIXME: These arguments could be grouped or simplified
@@ -617,13 +683,8 @@ impl Shape {
         self.selrect.width()
     }
 
-    pub fn visually_insignificant(
-        &self,
-        scale: f32,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> bool {
-        let extrect = self.extrect(shapes_pool, modifiers);
+    pub fn visually_insignificant(&self, scale: f32, shapes_pool: ShapesPoolRef) -> bool {
+        let extrect = self.extrect(shapes_pool);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
@@ -632,8 +693,7 @@ impl Shape {
             || self.selrect.height() * scale > ANTIALIAS_THRESHOLD
     }
 
-    // TODO: Maybe store this inside the shape
-    pub fn bounds(&self) -> Bounds {
+    pub fn calculate_bounds(&self) -> Bounds {
         let mut bounds = Bounds::new(
             Point::new(self.selrect.x(), self.selrect.y()),
             Point::new(self.selrect.x() + self.selrect.width(), self.selrect.y()),
@@ -659,18 +719,18 @@ impl Shape {
         bounds
     }
 
+    pub fn bounds(&self) -> Bounds {
+        *self.bounds.get_or_init(|| self.calculate_bounds())
+    }
+
     pub fn selrect(&self) -> math::Rect {
         self.selrect
     }
 
-    pub fn extrect(
-        &self,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> math::Rect {
+    pub fn extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
         *self
             .extrect
-            .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
+            .get_or_init(|| self.calculate_extrect(shapes_pool))
     }
 
     pub fn get_text_content(&self) -> &TextContent {
@@ -783,8 +843,7 @@ impl Shape {
     fn apply_children_bounds(
         &self,
         mut rect: math::Rect,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
+        shapes_pool: ShapesPoolRef,
     ) -> math::Rect {
         let include_children = match self.shape_type {
             Type::Group(_) => true,
@@ -795,15 +854,7 @@ impl Shape {
         if include_children {
             for child_id in self.children_ids(false) {
                 if let Some(child_shape) = shapes_pool.get(&child_id) {
-                    // Create a copy of the child shape to apply any transformations
-                    let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
-                    if let Some(modifier) = modifiers.get(&child_id) {
-                        transformed_element.to_mut().apply_transform(modifier);
-                    }
-
-                    // Get the child's extended rectangle and join it with the container's rectangle
-                    let child_extrect = transformed_element.extrect(shapes_pool, modifiers);
-                    rect.join(child_extrect);
+                    rect.join(child_shape.extrect(shapes_pool));
                 }
             }
         }
@@ -811,12 +862,8 @@ impl Shape {
         rect
     }
 
-    pub fn calculate_extrect(
-        &self,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> math::Rect {
-        let shape = self.transformed(modifiers.get(&self.id));
+    pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
+        let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
         let mut rect = match &shape.shape_type {
@@ -830,7 +877,7 @@ impl Shape {
             }
             Type::Text(text_content) => {
                 // FIXME: we need to recalculate the text bounds here because the shape's selrect
-                let text_bounds = text_content.calculate_bounds(&shape);
+                let text_bounds = text_content.calculate_bounds(shape);
                 text_bounds.to_rect()
             }
             _ => shape.bounds().to_rect(),
@@ -839,7 +886,7 @@ impl Shape {
         rect = self.apply_stroke_bounds(rect, max_stroke);
         rect = self.apply_shadow_bounds(rect);
         rect = self.apply_blur_bounds(rect);
-        rect = self.apply_children_bounds(rect, shapes_pool, modifiers);
+        rect = self.apply_children_bounds(rect, shapes_pool);
 
         rect
     }
@@ -860,6 +907,7 @@ impl Shape {
         self.children.first()
     }
 
+    // TODO: Review this to use children_ids_iter instead
     pub fn children_ids(&self, include_hidden: bool) -> IndexSet<Uuid> {
         if include_hidden {
             return self.children.clone().into_iter().rev().collect();
@@ -883,9 +931,27 @@ impl Shape {
         }
     }
 
+    pub fn children_ids_iter(&self, include_hidden: bool) -> Box<dyn Iterator<Item = &Uuid> + '_> {
+        if include_hidden {
+            return Box::new(self.children.iter().rev());
+        }
+
+        if let Type::Bool(_) = self.shape_type {
+            Box::new([].iter())
+        } else if let Type::Group(group) = self.shape_type {
+            if group.masked {
+                Box::new(self.children.iter().rev().take(self.children.len() - 1))
+            } else {
+                Box::new(self.children.iter().rev())
+            }
+        } else {
+            Box::new(self.children.iter().rev())
+        }
+    }
+
     pub fn all_children(
         &self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         include_hidden: bool,
         include_self: bool,
     ) -> IndexSet<Uuid> {
@@ -906,47 +972,6 @@ impl Shape {
         }
     }
 
-    /// Returns all ancestor shapes of this shape, traversing up the parent hierarchy
-    ///
-    /// This function walks up the parent chain starting from this shape's parent,
-    /// collecting all ancestor IDs. It stops when it reaches a nil UUID or when
-    /// an ancestor is hidden (unless include_hidden is true).
-    ///
-    /// # Arguments
-    /// * `shapes` - The shapes pool containing all shapes
-    /// * `include_hidden` - Whether to include hidden ancestors in the result
-    ///
-    /// # Returns
-    /// A set of ancestor UUIDs in traversal order (closest ancestor first)
-    pub fn all_ancestors(&self, shapes: &ShapesPool, include_hidden: bool) -> IndexSet<Uuid> {
-        let mut ancestors = IndexSet::new();
-        let mut current_id = self.id;
-
-        // Traverse upwards using parent_id
-        while let Some(parent_id) = shapes.get(&current_id).and_then(|s| s.parent_id) {
-            // If the parent_id is the zero UUID, there are no more ancestors
-            if parent_id == Uuid::nil() {
-                break;
-            }
-
-            // Check if the ancestor is hidden
-            if let Some(parent) = shapes.get(&parent_id) {
-                if !include_hidden && parent.hidden() {
-                    break;
-                }
-                ancestors.insert(parent_id);
-                current_id = parent_id;
-            } else {
-                // FIXME: This should panic! I've removed it temporarily until
-                // we fix the problems with shapes without parents.
-                // panic!("Parent can't be found");
-                break;
-            }
-        }
-
-        ancestors
-    }
-
     pub fn get_matrix(&self) -> Matrix {
         let mut matrix = Matrix::new_identity();
         matrix.post_translate(self.left_top());
@@ -954,7 +979,7 @@ impl Shape {
         matrix
     }
 
-    pub fn get_concatenated_matrix(&self, shapes: &ShapesPool) -> Matrix {
+    pub fn get_concatenated_matrix(&self, shapes: ShapesPoolRef) -> Matrix {
         let mut matrix = Matrix::new_identity();
         let mut current_id = self.id;
         while let Some(parent_id) = shapes.get(&current_id).and_then(|s| s.parent_id) {
@@ -1124,21 +1149,61 @@ impl Shape {
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
-        self.invalidate_extrect();
         self.transform_selrect(transform);
+
+        // TODO: See if we can change this invalidation to a transformation
+        self.invalidate_extrect();
+        self.invalidate_bounds();
+
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {
                 path.transform(transform);
             }
         } else if let Type::Text(text) = &mut self.shape_type {
             text.transform(transform);
+        } else if let Type::SVGRaw(_) = &mut self.shape_type {
+            self.svg_transform = Some(*transform);
         }
     }
 
-    pub fn transformed(&self, transform: Option<&Matrix>) -> Self {
+    pub fn apply_structure(&mut self, structure: &Vec<StructureEntry>) {
+        let mut result: Vec<Uuid> = Vec::from_iter(self.children.iter().copied());
+        let mut to_remove = HashSet::<&Uuid>::new();
+
+        for st in structure {
+            match st.entry_type {
+                StructureEntryType::AddChild => {
+                    result.insert(st.index as usize, st.id);
+                }
+                StructureEntryType::RemoveChild => {
+                    to_remove.insert(&st.id);
+                }
+                _ => {}
+            }
+        }
+
+        self.children = result
+            .iter()
+            .filter(|id| !to_remove.contains(id))
+            .copied()
+            .collect();
+    }
+
+    pub fn transformed(
+        &self,
+        shapes_pool: ShapesPoolRef,
+        transform: Option<&Matrix>,
+        structure: Option<&Vec<StructureEntry>>,
+    ) -> Self {
         let mut shape: Cow<Shape> = Cow::Borrowed(self);
         if let Some(transform) = transform {
             shape.to_mut().apply_transform(transform);
+        }
+        if let Some(structure) = structure {
+            shape.to_mut().apply_structure(structure);
+        }
+        if self.is_bool() {
+            math_bools::update_bool_to_path(shape.to_mut(), shapes_pool)
         }
         shape.into_owned()
     }
@@ -1193,43 +1258,6 @@ impl Shape {
         self.visible_strokes()
             .filter(|s| s.kind == StrokeKind::Inner)
             .count()
-    }
-
-    /*
-      Returns the list of children taking into account the structure modifiers
-    */
-    pub fn modified_children_ids(
-        &self,
-        structure: Option<&Vec<StructureEntry>>,
-        include_hidden: bool,
-    ) -> IndexSet<Uuid> {
-        if let Some(structure) = structure {
-            let mut result: Vec<Uuid> =
-                Vec::from_iter(self.children_ids(include_hidden).iter().copied());
-            let mut to_remove = HashSet::<&Uuid>::new();
-
-            for st in structure {
-                match st.entry_type {
-                    StructureEntryType::AddChild => {
-                        result.insert(result.len() - st.index as usize, st.id);
-                    }
-                    StructureEntryType::RemoveChild => {
-                        to_remove.insert(&st.id);
-                    }
-                    _ => {}
-                }
-            }
-
-            let ret: IndexSet<Uuid> = result
-                .iter()
-                .filter(|id| !to_remove.contains(id))
-                .copied()
-                .collect();
-
-            ret
-        } else {
-            self.children_ids(include_hidden)
-        }
     }
 
     pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {

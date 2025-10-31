@@ -213,7 +213,7 @@ pub extern "C" fn set_shape_path_content() {
 pub extern "C" fn current_to_path() -> *mut u8 {
     let mut result = Vec::<RawSegmentData>::default();
     with_current_shape!(state, |shape: &Shape| {
-        let path = shape.to_path(&state.shapes, &state.modifiers, &state.structure);
+        let path = shape.to_path(&state.shapes);
         result = path
             .segments()
             .iter()

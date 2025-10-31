@@ -3,12 +3,11 @@ use std::collections::HashMap;
 
 mod shapes_pool;
 mod text_editor;
-pub use shapes_pool::*;
+pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
 use crate::render::RenderState;
 use crate::shapes::Shape;
-use crate::shapes::StructureEntry;
 use crate::tiles;
 use crate::uuid::Uuid;
 
@@ -19,26 +18,20 @@ use crate::shapes::modifiers::grid_layout::grid_cell_data;
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State {
+pub(crate) struct State<'a> {
     pub render_state: RenderState,
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
-    pub shapes: ShapesPool,
-    pub modifiers: HashMap<Uuid, skia::Matrix>,
-    pub scale_content: HashMap<Uuid, f32>,
-    pub structure: HashMap<Uuid, Vec<StructureEntry>>,
+    pub shapes: ShapesPool<'a>,
 }
 
-impl State {
+impl<'a> State<'a> {
     pub fn new(width: i32, height: i32) -> Self {
         State {
             render_state: RenderState::new(width, height),
             text_editor_state: TextEditorState::new(),
             current_id: None,
             shapes: ShapesPool::new(),
-            modifiers: HashMap::new(),
-            scale_content: HashMap::new(),
-            structure: HashMap::new(),
         }
     }
 
@@ -65,29 +58,18 @@ impl State {
     }
 
     pub fn render_from_cache(&mut self) {
-        self.render_state
-            .render_from_cache(&self.shapes, &self.modifiers, &self.structure);
+        self.render_state.render_from_cache(&self.shapes);
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state.start_render_loop(
-            &self.shapes,
-            &self.modifiers,
-            &self.structure,
-            &self.scale_content,
-            timestamp,
-        )?;
+        self.render_state
+            .start_render_loop(&self.shapes, timestamp)?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state.process_animation_frame(
-            &self.shapes,
-            &self.modifiers,
-            &self.structure,
-            &self.scale_content,
-            timestamp,
-        )?;
+        self.render_state
+            .process_animation_frame(&self.shapes, timestamp)?;
         Ok(())
     }
 
@@ -110,12 +92,16 @@ impl State {
         self.current_id = Some(id);
     }
 
-    pub fn delete_shape(&mut self, id: Uuid) {
+    pub fn delete_shape_children(&mut self, parent_id: Uuid, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
-        if let Some(shape) = self.shapes.get(&id) {
+        let Some(shape) = self.shapes.get(&id) else {
+            return;
+        };
+
+        // Only remove the children when is being deleted from the owner
+        if shape.parent_id.is_none() || shape.parent_id == Some(parent_id) {
             let tiles::TileRect(rsx, rsy, rex, rey) =
-                self.render_state
-                    .get_tiles_for_shape(shape, &self.shapes, &self.modifiers);
+                self.render_state.get_tiles_for_shape(shape, &self.shapes);
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = tiles::Tile(x, y);
@@ -148,6 +134,8 @@ impl State {
                 panic!("Invalid current shape")
             };
             shape.set_parent(id);
+
+            // TODO this clone doesn't seem necessary
             shape.clone()
         };
 
@@ -157,28 +145,9 @@ impl State {
         }
     }
 
-    /// Sets the selection rectangle for the current shape and processes its ancestors
-    ///
-    /// When a shape's selection rectangle changes, all its ancestors need to have their
-    /// extended rectangles recalculated because the shape's bounds may have changed.
-    /// This ensures proper rendering of frames and groups containing the modified shape.
-    // FIXME: PERFORMANCE
-    pub fn set_selrect_for_current_shape(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
-        let shape = {
-            let Some(shape) = self.current_shape_mut() else {
-                panic!("Invalid current shape")
-            };
-            shape.set_selrect(left, top, right, bottom);
-            shape.clone()
-        };
-        self.render_state
-            .process_shape_ancestors(&shape, &mut self.shapes, &self.modifiers);
-    }
-
     pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
         if let Some(shape) = self.shapes.get(&shape_id) {
-            self.render_state
-                .update_tile_for(shape, &self.shapes, &self.modifiers);
+            self.render_state.update_tile_for(shape, &self.shapes);
         }
     }
 
@@ -186,25 +155,32 @@ impl State {
         let Some(shape) = self.current_shape() else {
             panic!("Invalid current shape")
         };
+        // TODO: Remove this clone
         if !shape.id.is_nil() {
             self.render_state
-                .update_tile_for(&shape.clone(), &self.shapes, &self.modifiers);
+                .update_tile_for(&shape.clone(), &self.shapes);
         }
     }
 
     pub fn rebuild_tiles_shallow(&mut self) {
-        self.render_state
-            .rebuild_tiles_shallow(&self.shapes, &self.modifiers, &self.structure);
+        self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
     pub fn rebuild_tiles(&mut self) {
-        self.render_state
-            .rebuild_tiles(&self.shapes, &self.modifiers, &self.structure);
+        self.render_state.rebuild_tiles(&self.shapes);
     }
 
-    pub fn rebuild_modifier_tiles(&mut self) {
-        self.render_state
-            .rebuild_modifier_tiles(&mut self.shapes, &self.modifiers);
+    pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
+        // SAFETY: We're extending the lifetime of the mutable borrow to 'a.
+        // This is safe because:
+        // 1. shapes has lifetime 'a in the struct
+        // 2. The reference won't outlive the struct
+        // 3. No other references to shapes exist during this call
+        unsafe {
+            let shapes_ptr = &mut self.shapes as *mut ShapesPool<'a>;
+            self.render_state
+                .rebuild_modifier_tiles(&mut *shapes_ptr, ids);
+        }
     }
 
     pub fn font_collection(&self) -> &FontCollection {
@@ -216,7 +192,7 @@ impl State {
         let bounds = shape.bounds();
         let position = Point::new(pos_x, pos_y);
 
-        let cells = grid_cell_data(shape, &self.shapes, &self.modifiers, &self.structure, true);
+        let cells = grid_cell_data(shape, &self.shapes, true);
 
         for cell in cells {
             let points = &[
@@ -234,5 +210,9 @@ impl State {
         }
 
         None
+    }
+
+    pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
+        self.shapes.set_modifiers(modifiers);
     }
 }

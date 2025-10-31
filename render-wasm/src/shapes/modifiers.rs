@@ -10,24 +10,21 @@ use crate::math::{self as math, bools, identitish, Bounds, Matrix, Point};
 use common::GetBounds;
 
 use crate::shapes::{
-    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, StructureEntry,
-    TransformEntry, Type,
+    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry, Type,
 };
-use crate::state::{ShapesPool, State};
+use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     parent_bounds_before: &Bounds,
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+    let children_ids = shape.children_ids(true);
 
     if children_ids.is_empty() || identitish(&transform) {
         return VecDeque::new();
@@ -39,8 +36,6 @@ fn propagate_children(
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
-
-        let ignore_constraints = scale_content.contains_key(child_id);
 
         let child_bounds = bounds.find(child);
 
@@ -79,7 +74,7 @@ fn propagate_children(
             constraint_h,
             constraint_v,
             transform,
-            ignore_constraints,
+            child.ignore_constraints,
         );
 
         result.push_back(Modifier::transform(*child_id, transform));
@@ -88,18 +83,15 @@ fn propagate_children(
     result
 }
 
-// FIXME: PERFORMANCE
 fn calculate_group_bounds(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
-    for child_id in children_ids.iter() {
+    for child_id in shape.children_ids_iter(true) {
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
@@ -107,33 +99,29 @@ fn calculate_group_bounds(
         let child_bounds = bounds.find(child);
         result.append(&mut child_bounds.points());
     }
-
     shape_bounds.with_points(result)
 }
 
 fn calculate_bool_bounds(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
     modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(shape);
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+    let children_ids = shape.children_ids(true);
 
     let Type::Bool(bool_data) = &shape.shape_type else {
         return Some(shape_bounds);
     };
 
-    let path = bools::bool_from_shapes(
-        bool_data.bool_type,
-        &children_ids,
-        shapes,
-        modifiers,
-        structure,
-    );
+    let mut subtree = shapes.subtree(&shape.id);
+    subtree.set_modifiers(modifiers.clone());
 
-    Some(path.bounds())
+    let path = bools::bool_from_shapes(bool_data.bool_type, &children_ids, &subtree);
+    let result = path.bounds();
+
+    Some(result)
 }
 
 fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
@@ -238,8 +226,6 @@ fn propagate_transform(
             &shape_bounds_after,
             transform,
             bounds,
-            &state.structure,
-            &state.scale_content,
         );
         entries.append(&mut children);
     }
@@ -277,55 +263,56 @@ fn propagate_reflow(
     let shapes = &state.shapes;
     let mut reflow_parent = false;
 
+    if reflown.contains(id) {
+        return;
+    }
+
     match &shape.shape_type {
         Type::Frame(Frame {
             layout: Some(_), ..
         }) => {
-            if !reflown.contains(id) {
-                let mut skip_reflow = false;
-                if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
-                    if let Some(parent_id) = shape.parent_id {
-                        if !reflown.contains(&parent_id) {
-                            // If this is a fill layout but the parent has not been reflown yet
-                            // we wait for the next iteration for reflow
-                            skip_reflow = true;
-                            reflow_parent = true;
-                        }
+            let mut skip_reflow = false;
+            if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
+                if let Some(parent_id) = shape.parent_id {
+                    if !reflown.contains(&parent_id) {
+                        // If this is a fill layout but the parent has not been reflown yet
+                        // we wait for the next iteration for reflow
+                        skip_reflow = true;
+                        reflow_parent = true;
                     }
                 }
+            }
 
-                if shape.is_layout_vertical_auto() || shape.is_layout_horizontal_auto() {
-                    reflow_parent = true;
-                }
+            if shape.is_layout_vertical_auto() || shape.is_layout_horizontal_auto() {
+                reflow_parent = true;
+            }
 
-                if !skip_reflow {
-                    layout_reflows.push(*id);
-                }
+            if !skip_reflow {
+                layout_reflows.push(*id);
             }
         }
         Type::Group(Group { masked: true }) => {
-            let children_ids = shape.modified_children_ids(state.structure.get(&shape.id), true);
+            let children_ids = shape.children_ids(true);
             if let Some(child) = shapes.get(&children_ids[0]) {
                 let child_bounds = bounds.find(child);
                 bounds.insert(shape.id, child_bounds);
                 reflow_parent = true;
             }
+            reflown.insert(*id);
         }
         Type::Group(_) => {
-            if let Some(shape_bounds) =
-                calculate_group_bounds(shape, shapes, bounds, &state.structure)
-            {
+            if let Some(shape_bounds) = calculate_group_bounds(shape, shapes, bounds) {
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
+            reflown.insert(*id);
         }
         Type::Bool(_) => {
-            if let Some(shape_bounds) =
-                calculate_bool_bounds(shape, shapes, bounds, modifiers, &state.structure)
-            {
+            if let Some(shape_bounds) = calculate_bool_bounds(shape, shapes, bounds, modifiers) {
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
+            reflown.insert(*id);
         }
         _ => {
             // Other shapes don't have to be reflown
@@ -352,35 +339,17 @@ fn reflow_shape(
 
     let shapes = &state.shapes;
 
-    let shape = if let Some(scale_content) = state.scale_content.get(id) {
-        &shape.scale_content(*scale_content)
-    } else {
-        shape
-    };
-
     let Type::Frame(frame_data) = &shape.shape_type else {
         return;
     };
 
     if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
-        let mut children = flex_layout::reflow_flex_layout(
-            shape,
-            layout_data,
-            flex_data,
-            shapes,
-            bounds,
-            &state.structure,
-        );
+        let mut children =
+            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds);
         entries.append(&mut children);
     } else if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
-        let mut children = grid_layout::reflow_grid_layout(
-            shape,
-            layout_data,
-            grid_data,
-            shapes,
-            bounds,
-            &state.structure,
-        );
+        let mut children =
+            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds);
         entries.append(&mut children);
     }
     reflown.insert(*id);
@@ -395,12 +364,6 @@ pub fn propagate_modifiers(
         .iter()
         .map(|entry| Modifier::Transform(entry.clone()))
         .collect();
-
-    for id in state.structure.keys() {
-        if id != &Uuid::nil() {
-            entries.push_back(Modifier::Reflow(*id));
-        }
-    }
 
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
     let mut bounds = HashMap::<Uuid, Bounds>::new();
@@ -456,6 +419,7 @@ mod tests {
 
     use crate::math::{Matrix, Point};
     use crate::shapes::*;
+    use crate::state::ShapesPool;
 
     #[test]
     fn test_propagate_shape() {
@@ -494,8 +458,6 @@ mod tests {
             &bounds_after,
             transform,
             &HashMap::new(),
-            &HashMap::new(),
-            &HashMap::new(),
         );
 
         assert_eq!(result.len(), 1);
@@ -526,8 +488,7 @@ mod tests {
 
         let parent = shapes.get(&parent_id).unwrap();
 
-        let bounds =
-            calculate_group_bounds(parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();
+        let bounds = calculate_group_bounds(parent, &shapes, &HashMap::new()).unwrap();
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);
