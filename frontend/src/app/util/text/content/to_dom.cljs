@@ -47,8 +47,11 @@
      element)))
 
 (defn get-styles-from-attrs
-  [node attrs]
-  (let [styles (reduce (fn [acc key] (assoc acc key (get node key))) {} attrs)
+  [node attrs defaults]
+  (let [styles (reduce
+                (fn [acc key]
+                  (let [default-value (get defaults key)]
+                    (assoc acc key (get node key default-value)))) {} attrs)
         fills
         (cond
            ;; DEPRECATED: still here for backward compatibility with
@@ -68,7 +71,10 @@
 
 (defn get-paragraph-styles
   [paragraph]
-  (let [styles (get-styles-from-attrs paragraph (d/concat-set txt/paragraph-attrs txt/text-node-attrs))
+  (let [styles (get-styles-from-attrs
+                paragraph
+                (d/concat-set txt/paragraph-attrs txt/text-node-attrs)
+                txt/default-text-attrs)
         ;; If the text is not empty we must the paragraph font size to 0,
         ;; it affects to the height calculation the browser does
         font-size (if (some #(not= "" (:text %)) (:children paragraph))
@@ -84,12 +90,12 @@
 
 (defn get-root-styles
   [root]
-  (get-styles-from-attrs root txt/root-attrs))
+  (get-styles-from-attrs root txt/root-attrs txt/default-text-attrs))
 
 (defn get-inline-styles
   [inline paragraph]
   (let [node (if (= "" (:text inline)) paragraph inline)
-        styles (get-styles-from-attrs node txt/text-node-attrs)]
+        styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)]
     (dissoc styles :line-height)))
 
 (defn get-inline-children
@@ -98,11 +104,15 @@
      (dom/create-element "br")
      (dom/create-text (:text inline)))])
 
+(defn create-random-key
+  []
+  (.toString (.floor js/Math (* (.random js/Math) (.-MAX_SAFE_INTEGER js/Number))) 36))
+
 (defn create-inline
   [inline paragraph]
   (create-element
    "span"
-   {:id (:key inline)
+   {:id (or (:key inline) (create-random-key))
     :data {:itype "inline"}
     :style (get-inline-styles inline paragraph)}
    (get-inline-children inline)))
@@ -111,7 +121,7 @@
   [paragraph]
   (create-element
    "div"
-   {:id (:key paragraph)
+   {:id (or (:key paragraph) (create-random-key))
     :data {:itype "paragraph"}
     :style (get-paragraph-styles paragraph)}
    (mapv #(create-inline % paragraph) (:children paragraph))))
@@ -121,7 +131,7 @@
   (let [root-styles (get-root-styles root)]
     (create-element
      "div"
-     {:id (:key root)
+     {:id (or (:key root) (create-random-key))
       :data {:itype "root"}
       :style root-styles}
      (mapv create-paragraph (get-in root [:children 0 :children])))))
