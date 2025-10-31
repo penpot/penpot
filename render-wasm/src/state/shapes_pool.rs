@@ -266,8 +266,6 @@ impl<'a> ShapesPoolImpl<'a> {
     }
 
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
-        // self.clean_shape_cache();
-
         // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
         // Initialize the cache cells because later we don't want to have the mutable pointer
 
@@ -394,25 +392,3 @@ impl<'a> ShapesPoolImpl<'a> {
         shape.is_bool()
     }
 }
-
-// fn is_modified_child(
-//     shape: &Shape,
-//     shapes: ShapesPoolRef,
-//     modifiers: &HashMap<Uuid, Matrix>,
-// ) -> bool {
-//     if modifiers.is_empty() {
-//         return false;
-//     }
-//
-//     let ids = shape.all_children(shapes, true, false);
-//     let default = &Matrix::default();
-//     let parent_modifier = modifiers.get(&shape.id).unwrap_or(default);
-//
-//     // Returns true if the transform of any child is different to the parent's
-//     ids.iter().any(|id| {
-//         !math::is_close_matrix(
-//             parent_modifier,
-//             modifiers.get(id).unwrap_or(&Matrix::default()),
-//         )
-//     })
-// }

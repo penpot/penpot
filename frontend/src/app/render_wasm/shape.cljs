@@ -259,10 +259,13 @@
           (api/update-shape-tiles)
           (api/request-render "set-wasm-attrs")))))
 
+;; `conj` empty set initialization
+(def conj* (fnil conj #{}))
+
 (defn- impl-assoc
   [self k v]
   (when shape/*shape-changes*
-    (vswap! shape/*shape-changes* update (:id self) (fnil conj #{}) k))
+    (vswap! shape/*shape-changes* update (:id self) conj* k))
 
   (case k
     :id
@@ -284,13 +287,8 @@
 
 (defn- impl-dissoc
   [self k]
-  #_(when ^boolean shape/*wasm-sync*
-      (binding [shape/*wasm-sync* false]
-        (when (shape-in-current-page? (.-id ^ShapeProxy self))
-          (set-wasm-attrs! self k nil))))
-
   (when shape/*shape-changes*
-    (vswap! shape/*shape-changes* update (:id self) (fnil conj #{}) k))
+    (vswap! shape/*shape-changes* update (:id self) conj* k))
 
   (case k
     :id

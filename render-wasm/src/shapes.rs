@@ -1151,7 +1151,7 @@ impl Shape {
     pub fn apply_transform(&mut self, transform: &Matrix) {
         self.transform_selrect(transform);
 
-        // We don't need to invalidate this? we can just transform it
+        // TODO: See if we can change this invalidation to a transformation
         self.invalidate_extrect();
         self.invalidate_bounds();
 
