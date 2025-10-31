@@ -36,6 +36,7 @@ const setupEmptyTokensFile = async (page, options = {}) => {
 
   return {
     workspacePage,
+    tokenThemeUpdateCreateModal: workspacePage.tokenThemeUpdateCreateModal,
     tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
     tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
     tokenSetItems: workspacePage.tokenSetItems,
@@ -818,6 +819,41 @@ test.describe("Tokens: Themes modal", () => {
     ).toHaveCount(1);
   });
 
+  test("Add new theme in empty file", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokenThemeUpdateCreateModal } =
+      await setupEmptyTokensFile(page);
+
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Create one." })
+      .first()
+      .click();
+
+    await expect(
+       tokenThemeUpdateCreateModal
+    ).toBeVisible();
+
+    const groupInput = tokenThemeUpdateCreateModal.getByLabel("Group");
+    const nameInput = tokenThemeUpdateCreateModal.getByLabel("Theme");
+    const saveButton = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "Save theme",
+    });
+ 
+    await groupInput.fill("New Group name");
+    await nameInput.fill("New Theme name");
+
+    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal, nameInput);
+    await expect(saveButton).not.toBeDisabled();
+
+    await saveButton.click();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("New Theme name"),
+    ).toBeVisible();
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("New Group name"),
+    ).toBeVisible();
+  });
+ 
   test("Add new theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
       await setupTokensFile(page);
