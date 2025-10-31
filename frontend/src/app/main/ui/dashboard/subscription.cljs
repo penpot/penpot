@@ -26,7 +26,7 @@
     "professional"))
 
 (mf/defc cta-power-up*
-  [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown]}]
+  [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown is-highlighted]}]
   (let [show-data* (mf/use-state false)
         show-data (deref show-data*)
         handle-click
@@ -40,7 +40,8 @@
            (dom/stop-propagation event)
            (st/emit! (rt/nav-raw :href bottom-button-href))))]
 
-    [:div {:class (stl/css :cta-power-up)
+    [:div {:class (stl/css-case :cta-power-up true
+                                :highlighted is-highlighted)
            :on-click handle-click}
      [:button {:class (stl/css-case :cta-top-section true
                                     :cta-without-dropdown (not has-dropdown))}
@@ -79,7 +80,8 @@
         :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description")
         :bottom-button (tr "subscription.dashboard.power-up.professional.bottom-button")
         :bottom-button-href subscription-href
-        :has-dropdown false}]
+        :has-dropdown false
+        :is-highlighted true}]
 
       "unlimited"
       (if subscription-is-trial
@@ -87,24 +89,28 @@
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.trial.top-title")
           :bottom-description (tr "subscription.dashboard.power-up.trial.bottom-description" subscription-href)
-          :has-dropdown true}]
+          :has-dropdown true
+          :is-highlighted false}]
 
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.unlimited-plan")
           :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-text" subscription-href)
-          :has-dropdown true}])
+          :has-dropdown true
+          :is-highlighted false}])
 
       "enterprise"
       (if subscription-is-trial
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.enterprise-trial.top-title")
-          :has-dropdown false}]
+          :has-dropdown false
+          :is-highlighted false}]
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
-          :has-dropdown false}]))))
+          :has-dropdown false
+          :is-highlighted false}]))))
 
 (mf/defc team*
   [{:keys [is-owner team]}]

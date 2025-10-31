@@ -19,6 +19,12 @@
   padding: var(--sp-m);
 }
 
+.cta-power-up.highlighted {
+  background: var(--color-background-quaternary);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  padding: var(--sp-l);
+}
+
 .cta-top-section {
   @include deprecated.buttonStyle;
   display: grid;
@@ -54,6 +60,11 @@
   margin-block-start: var(--sp-m);
   padding-block-start: var(--sp-m);
 }
+
+.highlighted .cta-bottom-section {
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+}
+
 .cta-bottom-section .content {
   @include t.use-typography("body-medium");
   @include deprecated.buttonStyle;
@@ -66,6 +77,10 @@
   margin-block-start: var(--sp-s);
 }
 
+.highlighted .cta-bottom-button {
+  margin-block-start: var(--sp-m);
+}
+
 .cta-text,
 .cta-title {
   text-align: left;
@@ -76,8 +91,17 @@
   margin-block-end: var(--sp-xs);
 }
 
+.highlighted .cta-title {
+  @include t.use-typography("body-medium");
+}
+
 .cta-text {
   @include t.use-typography("title-small");
+}
+
+.highlighted .cta-text {
+  @include t.use-typography("body-large");
+  color: var(--color-foreground-primary);
 }
 
 .cta-bottom-section .content a {

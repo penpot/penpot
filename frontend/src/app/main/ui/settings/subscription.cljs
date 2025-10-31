@@ -34,7 +34,7 @@
            cta-link-with-icon
            editors
            recommended
-           has-trial-cta]}]
+           show-button-cta]}]
 
   [:div {:class (stl/css-case :plan-card true
                               :plan-card-highlight recommended)}
@@ -57,13 +57,13 @@
       [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
    (when (and cta-link-with-icon cta-text-with-icon) [:button {:class (stl/css :cta-button :more-info)
                                                                :on-click cta-link-with-icon} cta-text-with-icon deprecated-icon/open-link])
-   (when (and cta-link cta-text (not has-trial-cta)) [:button {:class (stl/css-case :cta-button true
-                                                                                    :bottom-link (not (and cta-link-trial cta-text-trial)))
-                                                               :on-click cta-link} cta-text])
-   (when (and cta-link cta-text has-trial-cta) [:> button* {:variant "primary"
-                                                            :type "button"
-                                                            :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
-                                                            :on-click cta-link} cta-text])
+   (when (and cta-link cta-text (not show-button-cta)) [:button {:class (stl/css-case :cta-button true
+                                                                                      :bottom-link (not (and cta-link-trial cta-text-trial)))
+                                                                 :on-click cta-link} cta-text])
+   (when (and cta-link cta-text show-button-cta) [:> button* {:variant "primary"
+                                                              :type "button"
+                                                              :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
+                                                              :on-click cta-link} cta-text])
    (when (and cta-link-trial cta-text-trial) [:button {:class (stl/css :cta-button :bottom-link)
                                                        :on-click cta-link-trial} cta-text-trial])])
 (defn schema:seats-form [min-editors]
@@ -459,7 +459,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :recommended (= subscription-type "professional")
-                         :has-trial-cta (not (:type subscription))}])
+                         :show-button-cta (= subscription-type "professional")}])
 
        (when (not= subscription-type "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
@@ -474,5 +474,5 @@
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :has-trial-cta (not (:type subscription))}])]]]))
+                         :show-button-cta (= subscription-type "professional")}])]]]))
 
