@@ -74,9 +74,9 @@
     [:fills [:vector {:gen/max 2} schema:fill]]
     [:font-family {:optional true} ::sm/text]
     [:font-size {:optional true} ::sm/text]
-    [:font-style {:optional true} :string]
-    [:font-weight {:optional true} :string]
+    [:font-style {:optional true} ::sm/text]
+    [:font-weight {:optional true} ::sm/text]
     [:rtl {:optional true} :boolean]
     [:text {:optional true} :string]
-    [:text-decoration {:optional true} :string]
-    [:text-transform {:optional true} :string]]])
+    [:text-decoration {:optional true} ::sm/text]
+    [:text-transform {:optional true} ::sm/text]]])

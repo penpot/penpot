@@ -1630,6 +1630,63 @@
   ;; as value; this migration fixes it.
   (d/update-when data :components d/update-vals d/without-nils))
 
+(defmethod migrate-data "0015-fix-text-attrs-blank-strings"
+  [data _]
+  ;; After making text validation more restrictive (using ::sm/text
+  ;; instead of :string), we need to fix text attributes that contain
+  ;; empty or blank strings. These should be replaced with default
+  ;; values from default-text-attrs.
+  (letfn [(blank-or-empty? [v]
+            (or (nil? v)
+                (and (string? v)
+                     (or (str/empty? v)
+                         (str/blank? v)))))
+
+          (get-default-value [attr]
+            (let [defaults types.text/default-text-attrs]
+              (case attr
+                ;; direction in content maps to text-direction in defaults
+                :direction (:text-direction defaults)
+                ;; For other attrs, get directly from defaults
+                (get defaults attr))))
+
+          (fix-text-attrs [node]
+            ;; These are the attributes that were changed to ::sm/text in the schema
+            (let [text-attrs [:font-family :font-size :font-style :font-weight
+                              :direction :text-decoration :text-transform]]
+              (reduce
+               (fn [node attr]
+                 (if (and (contains? node attr)
+                          (blank-or-empty? (get node attr)))
+                   ;; Replace blank/empty value with default
+                   (if-let [default-val (get-default-value attr)]
+                     (assoc node attr default-val)
+                     ;; If no default, remove the attribute
+                     (dissoc node attr))
+                   node))
+               node
+               text-attrs)))
+
+          (fix-position-data [position-data]
+            (mapv fix-text-attrs position-data))
+
+          (fix-text-content [content]
+            (types.text/transform-nodes types.text/is-content-node? fix-text-attrs content))
+
+          (update-shape [object]
+            (if (cfh/text-shape? object)
+              (-> object
+                  (d/update-when :content fix-text-content)
+                  (d/update-when :position-data fix-position-data))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1701,4 +1758,5 @@
          "0013-fix-component-path"
          "0013-clear-invalid-strokes-and-fills"
          "0014-fix-tokens-lib-duplicate-ids"
-         "0014-clear-components-nil-objects"]))
+         "0014-clear-components-nil-objects"
+         "0015-fix-text-attrs-blank-strings"]))
