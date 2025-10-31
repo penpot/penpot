@@ -353,9 +353,8 @@
    ::sm/params schema:get-project-files
    ::sm/result schema:files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (projects/check-read-permissions! conn profile-id project-id)
-    (get-project-files conn project-id)))
+  (projects/check-read-permissions! pool profile-id project-id)
+  (get-project-files pool project-id))
 
 ;; --- COMMAND QUERY: has-file-libraries
 
