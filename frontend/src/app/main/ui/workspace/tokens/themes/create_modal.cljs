@@ -44,9 +44,11 @@
   (m/-simple-schema
    {:type :token/name-exists
     :pred (fn [name]
-            (let [theme (ctob/get-theme-by-name tokens-lib group name)]
-              (or (nil? theme)
-                  (= (ctob/get-id theme) theme-id))))
+            (if tokens-lib
+              (let [theme (ctob/get-theme-by-name tokens-lib group name)]
+                (or (nil? theme)
+                    (= (ctob/get-id theme) theme-id)))
+              true))  ;; if still no library exists, cannot be duplicate
     :type-properties {:error/fn #(tr "workspace.tokens.theme-name-already-exists")}}))
 
 (defn- validate-theme-name
