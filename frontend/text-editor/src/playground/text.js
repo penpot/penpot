@@ -168,8 +168,6 @@ export class TextParagraph {
   textDirection = 0;
   lineHeight = 1.2;
   letterSpacing = 0;
-  typographyRefFile = UUID.ZERO;
-  typographyRefId = UUID.ZERO;
 
   constructor(init) {
     this.textAlign = init?.textAlign ?? TextAlign.LEFT;
@@ -178,8 +176,6 @@ export class TextParagraph {
     this.textDirection = init?.textDirection ?? TextDirection.LTR;
     this.lineHeight = init?.lineHeight ?? 1.2;
     this.letterSpacing = init?.letterSpacing ?? 0.0;
-    this.typographyRefFile = init?.typographyRefFile ?? UUID.ZERO;
-    this.typographyRefId = init?.typographyRefId ?? UUID.ZERO;
     this.#leaves = init?.leaves ?? [];
     if (
       !Array.isArray(this.#leaves) ||
