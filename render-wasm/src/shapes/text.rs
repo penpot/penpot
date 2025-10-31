@@ -687,13 +687,8 @@ impl TextSpan {
             paint = merge_fills(&self.fills, *content_bounds);
         }
 
-        // FIXME
-        if self.line_height <= 0.0 {
-            style.set_height(paragraph_line_height);
-        } else {
-            style.set_height(self.line_height);
-        }
-
+        let max_line_height = f32::max(paragraph_line_height, self.line_height);
+        style.set_height(max_line_height);
         style.set_height_override(true);
         style.set_foreground_paint(&paint);
         style.set_decoration_type(match self.text_decoration {
