@@ -73,7 +73,7 @@ RUN set -eux; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v22.19.0 \
+ENV NODE_VERSION=v22.21.1 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -113,12 +113,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='b60eb9d54c97ba4159547834a98cc5d016281dd2b3e60e7475cba4911324bcb4'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.28.85-ca-jdk25.0.0-linux_aarch64.tar.gz'; \
+         ESUM='b60eb9d54c97ba4159547834a98cc5d016281dd2b3e60e7475cba4911324bcb'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
          ESUM='164d901e5a240b8c18516f5ab55bc11fc9689ab6e829045aea8467356dcdb340'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.28.85-ca-jdk25.0.0-linux_x64.tar.gz'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
