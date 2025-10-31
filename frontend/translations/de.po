@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"PO-Revision-Date: 2025-11-01 10:51+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2112,7 +2112,7 @@ msgstr "Figma"
 
 #: src/app/main/ui/dashboard/fonts.cljs:430
 msgid "labels.font-family"
-msgstr "Schriftfamilie"
+msgstr "Schriftart"
 
 #, unused
 msgid "labels.font-providers"
@@ -7410,3 +7410,27 @@ msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Gesperrte Version – nur der Autor kann sie ändern"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Diese Version wurde von Ihnen gesperrt."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Ungültiger Wert: % ist nicht zulässig."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:47
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "Der Import war erfolgreich. Einige Token wurden nicht übernommen."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1029
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Schriftart"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:973
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Schriftart auswählen"
