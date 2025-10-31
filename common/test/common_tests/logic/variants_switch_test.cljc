@@ -68,8 +68,6 @@
     ;; The rect has width 15 after the switch
     (t/is (= (:width rect02') 15))))
 
-
-
 (t/deftest test-basic-switch-override
   (let [;; ==== Setup
         file      (-> (thf/sample-file :file1)
@@ -103,7 +101,6 @@
     (t/is (= (:width copy01) 25))
     ;; The override is keept: The copy still has width 25 after the switch
     (t/is (= (:width copy01') 25))))
-
 
 (t/deftest test-switch-with-override
   (let [;; ==== Setup

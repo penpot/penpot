@@ -813,6 +813,12 @@ msgstr "Resend invitations"
 msgid "dashboard.invite-profile"
 msgstr "Invite people"
 
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 invitation selected"
+msgstr[1] "%s invitations selected"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "Leave team"
@@ -7633,6 +7639,10 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Font weight (300, Bold Italic...) or an {alias}"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Font size or {alias}"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
 msgid "workspace.tokens.gaps"
 msgstr "Gaps"
@@ -7928,6 +7938,10 @@ msgstr "none | underline | strike-through or {alias}"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"
 msgstr "Theme %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:48
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "A theme with this name already exists"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
 msgid "workspace.tokens.themes-description"

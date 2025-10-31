@@ -463,7 +463,7 @@
                 library-data    (dsh/lookup-file-data state file-id)
 
                 changes         (-> (pcb/empty-changes it)
-                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id)
+                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id {:alt-duplication? alt-duplication?})
                                     (cll/generate-duplicate-changes-update-indices objects ids))
 
                 tags            (or (:tags changes) #{})

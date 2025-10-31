@@ -107,7 +107,9 @@
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
   [conn id & {:as opts}]
-  (-> (db/get-by-id conn :profile id opts)
+  ;; NOTE: We need to set ::db/remove-deleted to false because demo profiles
+  ;; are created with a set deleted-at value
+  (-> (db/get-by-id conn :profile id (assoc opts ::db/remove-deleted false))
       (decode-row)))
 
 ;; --- MUTATION: Update Profile (own)
@@ -473,13 +475,17 @@
           p.fullname AS name,
           p.email AS email
      FROM team_profile_rel AS tpr1
+     JOIN team as t
+       ON tpr1.team_id = t.id
      JOIN team_profile_rel AS tpr2
        ON (tpr1.team_id = tpr2.team_id)
      JOIN profile AS p
        ON (tpr2.profile_id = p.id)
     WHERE tpr1.profile_id = ?
       AND tpr1.is_owner IS true
-      AND tpr2.can_edit IS true")
+      AND tpr2.can_edit IS true
+      AND NOT t.is_default
+      AND t.deleted_at IS NULL")
 
 (sv/defmethod ::get-subscription-usage
   {::doc/added "2.9"}

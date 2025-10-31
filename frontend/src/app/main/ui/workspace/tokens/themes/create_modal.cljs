@@ -31,8 +31,31 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [cuerdas.core :as str]
+   [malli.core :as m]
+   [malli.error :as me]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
+
+;; Schemas ---------------------------------------------------------------------
+
+(defn- theme-name-schema
+  "Generate a dynamic schema validation to check if a theme path derived from the name already exists at `tokens-tree`."
+  [{:keys [group theme-id tokens-lib]}]
+  (m/-simple-schema
+   {:type :token/name-exists
+    :pred (fn [name]
+            (let [theme (ctob/get-theme-by-name tokens-lib group name)]
+              (or (nil? theme)
+                  (= (ctob/get-id theme) theme-id))))
+    :type-properties {:error/fn #(tr "workspace.tokens.theme-name-already-exists")}}))
+
+(defn- validate-theme-name
+  [tokens-lib group theme-id name]
+  (let [schema     (theme-name-schema {:tokens-lib tokens-lib :theme-id theme-id :group group})
+        validation (m/explain schema (str/trim name))]
+    (me/humanize validation)))
+
+;; Form Component --------------------------------------------------------------
 
 (mf/defc empty-themes
   [{:keys [change-view]}]
@@ -166,25 +189,36 @@
 
 (mf/defc theme-inputs*
   [{:keys [theme on-change-field]}]
-  (let [theme-groups (mf/deref refs/workspace-token-theme-groups)
+  (let [tokens-lib     (mf/deref refs/tokens-lib)
+        theme-groups   (mf/deref refs/workspace-token-theme-groups)
         theme-name-ref (mf/use-ref (:name theme))
-        options (map (fn [group]
-                       {:label group
-                        :id group})
-                     theme-groups)
+        options        (map (fn [group]
+                              {:label group
+                               :id group})
+                            theme-groups)
+        current-group* (mf/use-state (:group theme))
+        current-group  (deref current-group*)
+        name-errors*   (mf/use-state nil)
+        name-errors    (deref name-errors*)
 
         on-update-group
         (mf/use-fn
          (mf/deps on-change-field)
-         #(on-change-field :group %))
+         (fn [value]
+           (reset! current-group* value)
+           (on-change-field :group value)))
 
         on-update-name
         (mf/use-fn
-         (mf/deps on-change-field)
+         (mf/deps on-change-field tokens-lib current-group)
          (fn [event]
-           (let [value (-> event dom/get-target dom/get-value)]
-             (on-change-field :name value)
-             (mf/set-ref-val! theme-name-ref value))))]
+           (let [value  (-> event dom/get-target dom/get-value)
+                 errors (validate-theme-name tokens-lib current-group (ctob/get-id theme) value)]
+             (reset! name-errors* errors)
+             (mf/set-ref-val! theme-name-ref value)
+             (if (empty? errors)
+               (on-change-field :name value)
+               (on-change-field :name "")))))]
 
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
@@ -202,6 +236,8 @@
                   :variant "comfortable"
                   :default-value (mf/ref-val theme-name-ref)
                   :auto-focus true
+                  :hint-type (when-not (empty? name-errors) "error")
+                  :hint-message (first name-errors)
                   :on-change on-update-name}]]]))
 
 (mf/defc theme-modal-buttons*

@@ -11,7 +11,8 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.set :as set]))
 
 (defn generate-add-new-variant
   [changes shape variant-id new-component-id new-shape-id prop-num]
@@ -137,6 +138,27 @@
       ref-shape
       (find-shape-ref-child-of ref-shape-container libraries ref-shape parent-id))))
 
+(defn- get-ref-chain
+  "Returns a vector with the shape ref chain including itself"
+  [container libraries shape]
+  (loop [chain [shape]
+         current shape]
+    (if-let [ref (ctf/find-ref-shape nil container libraries current :with-context? true)]
+      (recur (conj chain ref) ref)
+      chain)))
+
+(defn- add-touched-from-ref-chain
+  "Adds to the :touched attr of a shape the content of
+   the :touched of all its chain of ref shapes"
+  [container libraries shape]
+  (let [chain (get-ref-chain container libraries shape)
+        more-touched (->> chain
+                          (map :touched)
+                          (remove nil?)
+                          (apply set/union)
+                          (remove ctk/swap-slot?)
+                          set)]
+    (update shape :touched #(set/union (or % #{}) more-touched))))
 
 (defn generate-keep-touched
   "This is used as part of the switch process, when you switch from
@@ -157,6 +179,9 @@
         ;; they will be moved without change when
         ;; managing their swapped ancestor
         orig-touched       (->> original-shapes
+                                ;; Add to each shape also the touched of its ref chain
+                                (map #(add-touched-from-ref-chain container libraries %))
+                                (filter (comp seq :touched))
                                 (remove
                                  #(child-of-swapped? %
                                                      page-objects

@@ -29,7 +29,6 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
-   [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
@@ -51,41 +50,6 @@
    [malli.error :as me]
    [rumext.v2 :as mf]))
 
-;; Schemas ---------------------------------------------------------------------
-
-(def valid-token-name-regexp
-  "Only allow letters and digits for token names.
-  Also allow one `.` for a namespace separator.
-
-  Caution: This will allow a trailing dot like `token-name.`,
-  But we will trim that in the `finalize-name`,
-  to not throw too many errors while the user is editing."
-  #"(?!\$)([a-zA-Z0-9-$_]+\.?)*")
-
-(def valid-token-name-schema
-  (m/-simple-schema
-   {:type :token/invalid-token-name
-    :pred #(re-matches valid-token-name-regexp %)
-    :type-properties {:error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))}}))
-
-(defn token-name-schema
-  "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
-  [{:keys [tokens-tree]}]
-  (let [path-exists-schema
-        (m/-simple-schema
-         {:type :token/name-exists
-          :pred #(not (cft/token-name-path-exists? % tokens-tree))
-          :type-properties {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}})]
-    (m/schema
-     [:and
-      [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-      valid-token-name-schema
-      path-exists-schema])))
-
-(def token-description-schema
-  (m/schema
-   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]))
-
 ;; Helpers ---------------------------------------------------------------------
 
 (defn finalize-name [name]
@@ -103,7 +67,53 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
-;; Validation ------------------------------------------------------------------
+;; Schemas ---------------------------------------------------------------------
+
+(def ^:private well-formed-token-name-regexp
+  "Only allow letters and digits for token names.
+  Also allow one `.` for a namespace separator.
+
+  Caution: This will allow a trailing dot like `token-name.`,
+  But we will trim that in the `finalize-name`,
+  to not throw too many errors while the user is editing."
+  #"(?!\$)([a-zA-Z0-9-$_]+\.?)*")
+
+(def ^:private well-formed-token-name-schema
+  (m/-simple-schema
+   {:type :token/invalid-token-name
+    :pred #(re-matches well-formed-token-name-regexp %)
+    :type-properties {:error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))}}))
+
+(defn- token-name-schema
+  "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
+  [{:keys [tokens-tree]}]
+  (let [path-exists-schema
+        (m/-simple-schema
+         {:type :token/name-exists
+          :pred #(not (cft/token-name-path-exists? % tokens-tree))
+          :type-properties {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}})]
+    (m/schema
+     [:and
+      [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
+      well-formed-token-name-schema
+      path-exists-schema])))
+
+(defn- validate-token-name
+  [tokens-tree name]
+  (let [schema     (token-name-schema {:tokens-tree tokens-tree})
+        validation (m/explain schema (finalize-name name))]
+    (me/humanize validation)))
+
+(def ^:private token-description-schema
+  (m/schema
+   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]))
+
+(defn- validate-token-description
+  [description]
+  (let [validation (m/explain token-description-schema description)]
+    (me/humanize validation)))
+
+;; Value Validation -------------------------------------------------------------
 
 (defn check-empty-value [token-value]
   (when (empty? (str/trim token-value))
@@ -369,33 +379,26 @@
         warning-name-change? (deref warning-name-change*)
         token-name-ref (mf/use-var (:name token))
         name-ref (mf/use-ref nil)
-        name-errors (mf/use-state nil)
-
-        validate-name
-        (mf/use-fn
-         (mf/deps tokens-tree-in-selected-set)
-         (fn [value]
-           (let [schema (token-name-schema {:token token
-                                            :tokens-tree tokens-tree-in-selected-set})]
-             (m/explain schema (finalize-name value)))))
+        name-errors* (mf/use-state nil)
+        name-errors (deref name-errors*)
 
         on-blur-name
         (mf/use-fn
-         (mf/deps touched-name? warning-name-change?)
+         (mf/deps touched-name? warning-name-change? tokens-tree-in-selected-set)
          (fn [e]
            (let [value (dom/get-target-val e)
-                 errors (validate-name value)]
+                 errors (validate-token-name tokens-tree-in-selected-set value)]
              (when touched-name?
                (reset! warning-name-change* true))
-             (reset! name-errors errors))))
+             (reset! name-errors* errors))))
 
         on-update-name-debounced
         (mf/use-fn
-         (mf/deps touched-name? validate-name)
+         (mf/deps touched-name? tokens-tree-in-selected-set)
          (uf/debounce (fn [token-name]
-                        (let [errors (validate-name token-name)]
+                        (let [errors (validate-token-name tokens-tree-in-selected-set token-name)]
                           (when touched-name?
-                            (reset! name-errors errors))))
+                            (reset! name-errors* errors))))
                       300))
 
         on-update-name
@@ -409,7 +412,7 @@
              (on-update-name-debounced token-name))))
 
         valid-name-field? (and
-                           (not @name-errors)
+                           (not name-errors)
                            (valid-name? @token-name-ref))
 
         ;; Value
@@ -469,19 +472,20 @@
         description-errors* (mf/use-state nil)
         description-errors (deref description-errors*)
 
-        validate-descripion (mf/use-fn #(m/explain token-description-schema %))
-        on-update-description-debounced (mf/use-fn
-                                         (uf/debounce (fn [e]
-                                                        (let [value (dom/get-target-val e)
-                                                              errors (validate-descripion value)]
-                                                          (reset! description-errors* errors)))))
+        on-update-description-debounced
+        (mf/use-fn
+         (uf/debounce (fn [e]
+                        (let [value (dom/get-target-val e)
+                              errors (validate-token-description value)]
+                          (reset! description-errors* errors)))))
+
         on-update-description
         (mf/use-fn
          (mf/deps on-update-description-debounced)
          (fn [e]
            (reset! description-ref (dom/get-target-val e))
            (on-update-description-debounced e)))
-        valid-description-field? (not description-errors)
+        valid-description-field? (empty? description-errors)
 
         ;; Form
         disabled? (or (not valid-name-field?)
@@ -490,7 +494,7 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps is-create validate-name validate-descripion token active-theme-tokens validate-token)
+         (mf/deps is-create tokens-tree-in-selected-set token active-theme-tokens validate-token)
          (fn [e]
            (dom/prevent-default e)
            ;; We have to re-validate the current form values before submitting
@@ -499,13 +503,13 @@
            ;; and press enter before the next validations could return.
            (let [final-name (finalize-name @token-name-ref)
                  valid-name? (try
-                               (not (:errors (validate-name final-name)))
+                               (empty? (:errors (validate-token-name tokens-tree-in-selected-set final-name)))
                                (catch js/Error _ nil))
                  value (mf/ref-val value-ref)
                  final-description @description-ref
                  valid-description? (if final-description
                                       (try
-                                        (not (:errors (validate-descripion final-description)))
+                                        (empty? (:errors (validate-token-description final-description)))
                                         (catch js/Error _ nil))
                                       true)]
              (when (and valid-name? valid-description?)
@@ -599,20 +603,11 @@
                      :variant "comfortable"
                      :auto-focus true
                      :default-value @token-name-ref
-                     :hint-type (when (seq (:errors @name-errors)) "error")
+                     :hint-type (when-not (empty? name-errors) "error")
+                     :hint-message (first name-errors)
                      :ref name-ref
                      :on-blur on-blur-name
                      :on-change on-update-name}])
-
-       (for [error (->> (:errors @name-errors)
-                        (map #(-> (assoc @name-errors :errors [%])
-                                  (me/humanize)))
-                        (map first))]
-
-         [:> hint-message* {:key error
-                            :message error
-                            :type "error"
-                            :id "token-name-hint"}])
 
        (when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
@@ -650,6 +645,8 @@
                    :max-length max-input-length
                    :variant "comfortable"
                    :default-value @description-ref
+                   :hint-type (when-not (empty? description-errors) "error")
+                   :hint-message (first description-errors)
                    :on-blur on-update-description
                    :on-change on-update-description}]]
 
@@ -1352,7 +1349,7 @@
     :font-size
     {:label "Font Size"
      :icon i/text-font-size
-     :placeholder (tr "workspace.tokens.token-value-enter")}
+     :placeholder (tr "workspace.tokens.font-size-value-enter")}
     :font-weight
     {:label "Font Weight"
      :icon i/text-font-weight

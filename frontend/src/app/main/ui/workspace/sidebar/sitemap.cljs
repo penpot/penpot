@@ -113,7 +113,7 @@
          :data {:id id
                 :index index
                 :name (:name page)}
-         :draggable? (not read-only?))
+         :draggable? (and (not read-only?) (not editing?)))
 
         on-context-menu
         (mf/use-fn

@@ -876,6 +876,10 @@
                              index
                              0)
 
+              index        (if index
+                             index
+                             (dec (count (dm/get-in page-objects [parent-id :shapes]))))
+
               selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
                              (into (d/ordered-set) (reverse selected))
                              selected)

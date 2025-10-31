@@ -2801,7 +2801,7 @@
 (defn generate-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
   move to the desired position, and recalculate parents and frames as needed."
-  [changes all-objects page ids delta libraries library-data file-id & {:keys [variant-props]}]
+  [changes all-objects page ids delta libraries library-data file-id & {:keys [variant-props alt-duplication?]}]
   (let [shapes         (map (d/getf all-objects) ids)
         unames         (volatile! (cfh/get-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
@@ -2811,10 +2811,22 @@
         ;; we calculate a new one because the components will have created new shapes.
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
+
+        ;; If there is an alt-duplication of a variant, change its parent to root
+        ;; so the copy is made as a child of root
+        ;; This is because inside a variant-container can't be a copy
+        shapes  (map (fn [shape]
+                       (if (and alt-duplication? (ctk/is-variant? shape))
+                         (assoc shape :parent-id uuid/zero :frame-id nil)
+                         shape))
+                     shapes)
+
+
         changes (-> changes
                     (pcb/with-page page)
                     (pcb/with-objects all-objects)
                     (pcb/with-library-data library-data))
+
         changes
         (->> shapes
              (reduce #(generate-duplicate-shape-change %1

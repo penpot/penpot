@@ -85,6 +85,20 @@
 - Fix internal Error when selecting a set by name in the token theme editor [Taiga #12310](https://tree.taiga.io/project/penpot/issue/12310)
 - Fix drag & drop functionality is swapping instead or reordering [Taiga #12254](https://tree.taiga.io/project/penpot/issue/12254)
 - Fix variants not syncronizing tokens on switch [Taiga #12290](https://tree.taiga.io/project/penpot/issue/12290)
+- Fix incorrect behavior of Alt + Drag for variants [Taiga #12309](https://tree.taiga.io/project/penpot/issue/12309)
+- Fix text override is lost after switch [Taiga #12269](https://tree.taiga.io/project/penpot/issue/12269)
+- Fix exporting a board crashing the app [Taiga #12384](https://tree.taiga.io/project/penpot/issue/12384)
+- Fix nested variant in a component doesn't keep inherited overrides [Taiga #12299](https://tree.taiga.io/project/penpot/issue/12299)
+- Fix selected colors not showing colors from children shapes in multiple selection [Taiga #12384](https://tree.taiga.io/project/penpot/issue/12385)
+- Fix scrollbar issue in design tab [Taiga #12367](https://tree.taiga.io/project/penpot/issue/12367)
+- Fix library update notificacions showing when they should not [Taiga #12397](https://tree.taiga.io/project/penpot/issue/12397)
+- Fix remove flex button doesn’t work within variant [Taiga #12314](https://tree.taiga.io/project/penpot/issue/12314)
+- Fix an error translation [Taiga #12402](https://tree.taiga.io/project/penpot/issue/12402)
+- Fix problem with certain text input in some editable labels (pages, components, tokens...) being in conflict with the drag/drop functionality [Taiga #12316](https://tree.taiga.io/project/penpot/issue/12316)
+- Fix not controlled theme renaming [Taiga #12411](https://tree.taiga.io/project/penpot/issue/12411)
+- Fix paste without selection sends the new element in the back [Taiga #12382](https://tree.taiga.io/project/penpot/issue/12382)
+- Fix options button does not work for comments created in the lower part of the screen [Taiga #12422](https://tree.taiga.io/project/penpot/issue/12422)
+- Fix problem when checking usage with removed teams [Taiga #12442](https://tree.taiga.io/project/penpot/issue/12442)
 
 ## 2.10.1
 

@@ -423,6 +423,40 @@ ExtraBold Italic
 <p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
 
 
+<h3 id="typography-composite-tokens">Typography composite token</h3>
+<p><strong>Typography tokens</strong> are composite entities that group several text properties into a single token definition. They allow you to define and reuse complete text styles in a consistent way.</p>
+<p>Each property within a typography token can either reference an existing <a href="#design-tokens-typography">individual typography token</a> (for example, <em>font-size</em> or <em>font-family</em>) or use a hardcoded value. The behavior and syntax of individual typography tokens are described in the previous section of this guide.</p>
+<figure>
+  <img src="/img/design-tokens/36-tokens-composite-typography.webp" alt="Typography composite token" />
+</figure>
+
+<h4 id="reference-composite-token">Reference another Typography Composite Token</h4>
+<p>You can also reference another existing <strong>Typography Composite Token</strong> instead of defining each property manually. When doing so, Penpot resolves all individual properties from the referenced token.</p>
+<figure>
+  <img src="/img/design-tokens/34-tokens-composite-typography-alias.webp" alt="Typography composite token" />
+</figure>
+
+<h4 id="line-height-property">Line height property</h4>
+<p>The <strong>Typography Token</strong> includes a <em>line-height</em> property, which is not available as an individual token. This is because line-height depends on the font size to be calculated properly. Make sure the <em>font-size</em> property is defined before setting <em>line-height</em>.</p>
+<figure>
+  <img src="/img/design-tokens/35-tokens-composite-typography-lineheight.webp" alt="Typography composite token" />
+</figure>
+
+<p>Accepted values for the line-height input:</p>
+<ul>
+  <li><strong>Unitless number:</strong> interpreted as a multiplier of the font size. This is Penpot’s default behavior.</li>
+  <li><strong>Percentage (%):</strong> converted internally to a multiplier.</li>
+  <li><strong>Pixel (px) or rem value:</strong> if using rem, Penpot calculates the proportion relative to the font size and converts it to a multiplier.</li>
+  <li><strong>References:</strong> you can also reference <a href="#design-tokens-number">number</a> or <a href="#design-tokens-dimensions">dimension</a> tokens.</li>
+</ul>
+
+<h4 id="apply-typography-token">Apply a Typography token</h4>
+<p>A <strong>Typography composite token</strong> can be applied to a full text layer to set all typography properties at once. This lets you manage complete text styles using a single token instead of combining multiple individual ones.</p>
+<p>When applying a Typography composite token to a layer, any previously applied <em>Typography composite token</em> or <em>style</em> will be detached. The same happens in reverse. Only one of them can be active at a time.</p>
+
+
+
+
 <h2 id="design-tokens-sets">Token Sets</h2>
 <p>Token Sets allow you to split your tokens up into multiple files in order to create organized groups or collections of tokens. It enables efficient management and customization within design files. For example you can group all your color sets, sizing sets or platform-specific sets. The purpose of tokens sets is to organize them in a way that matches your needs.</p>
 <figure>

@@ -320,3 +320,50 @@ test("BUG 12287 Fix identical text fills not being added/removed", async ({
     workspace.page.getByRole("button", { name: "#B1B2B5" }),
   ).toHaveCount(3);
 });
+
+test("BUG 12384 - Export crashing when exporting a board", async ({ page }) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-12384.json");
+
+  let hasExportRequestBeenIntercepted = false;
+  await workspace.page.route("**/api/export", (route) => {
+    if (hasExportRequestBeenIntercepted) {
+      route.continue();
+      return;
+    }
+
+    hasExportRequestBeenIntercepted = true;
+    const payload = route.request().postData();
+    const parsedPayload = JSON.parse(payload);
+
+    expect(parsedPayload["~:exports"]).toHaveLength(1);
+    expect(parsedPayload["~:exports"][0]["~:file-id"]).toBe(
+      "~ufa6ce865-34dd-80ac-8006-fe0dab5539a7",
+    );
+    expect(parsedPayload["~:exports"][0]["~:page-id"]).toBe(
+      "~ufa6ce865-34dd-80ac-8006-fe0dab5539a8",
+    );
+
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      response: {},
+    });
+  });
+
+  await workspace.goToWorkspace({
+    fileId: "fa6ce865-34dd-80ac-8006-fe0dab5539a7",
+    pageId: "fa6ce865-34dd-80ac-8006-fe0dab5539a8",
+  });
+
+  await workspace.clickLeafLayer("Board");
+
+  let exportRequest = workspace.page.waitForRequest("**/api/export");
+
+  await workspace.rightSidebar
+    .getByRole("button", { name: "Export 1 element" })
+    .click();
+
+  await exportRequest;
+});
