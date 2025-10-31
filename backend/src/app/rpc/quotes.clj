@@ -102,8 +102,7 @@
                     ::wrk/label "quotes-notification"
                     ::wrk/params {:to (vec admins)
                                   :subject subject
-                                  :body [{:type "text/plain"
-                                          :content content}]}}))))
+                                  :body content}}))))
 
 (defn- generic-check!
   [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]
