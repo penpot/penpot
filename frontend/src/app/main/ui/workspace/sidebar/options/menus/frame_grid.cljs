@@ -316,16 +316,17 @@
          #(st/emit! (dw/add-frame-grid id)))]
 
     [:div {:class (stl/css :element-set)}
-     [:> title-bar* {:collapsable  has-frame-grids?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
-                     :title        (tr "workspace.options.guides.title")}
+     [:div {:class (stl/css :element-title)}
+      [:> title-bar* {:collapsable  has-frame-grids?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
+                      :title        (tr "workspace.options.guides.title")}
 
-      [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "workspace.options.guides.add-guide")
-                        :on-click handle-create-grid
-                        :icon i/add}]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.options.guides.add-guide")
+                         :on-click handle-create-grid
+                         :icon i/add}]]]
 
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}

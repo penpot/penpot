@@ -12,8 +12,19 @@
   gap: deprecated.$s-16;
 }
 
+.grid-cell-menu {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
 .grid-cell-menu-title {
+  grid-column: span 8;
   font-size: deprecated.$fs-11;
+}
+
+.grid-cell-menu-container {
+  grid-column: span 8;
 }
 
 .row {
