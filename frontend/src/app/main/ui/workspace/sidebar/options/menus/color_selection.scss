@@ -7,7 +7,13 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
+.element-title {
+  grid-column: span 8;
 }
 
 .title-spacing-selected-colors {
@@ -25,6 +31,7 @@
 }
 
 .element-content {
+  grid-column: span 8;
   @include deprecated.flexColumn;
   margin-bottom: deprecated.$s-8;
 }
