@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-01 10:51+0000\n"
+"PO-Revision-Date: 2025-11-03 20:51+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -7434,3 +7434,95 @@ msgstr "Schriftart"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:973
 msgid "workspace.tokens.token-font-family-select"
 msgstr "Schriftart auswählen"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Dieses Token existiert nicht oder wurde gelöscht."
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Einladungen löschen"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Einladungen erneut versenden"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Nach Rolle sortieren"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Nach Status sortieren"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "In die Zwischenablage kopieren"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Größe und Position"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Aktive Sets"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Aktive Themes"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Varianteneigenschaften"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "Über Penpot"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Farbe"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "labels.learning-center"
+msgstr "Lernzentrum"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:878
+msgid "labels.penpot-changelog"
+msgstr "Penpot Changelog"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:804
+msgid "labels.penpot-hub"
+msgstr "Penpot Hub"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "Schatten"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Rahmen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+msgid "labels.styles"
+msgstr "Stile"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Text"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "Typografie"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variante"
