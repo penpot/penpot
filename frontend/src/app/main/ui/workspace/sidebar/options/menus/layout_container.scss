@@ -11,6 +11,7 @@
 @use "ds/typography.scss" as t;
 @use "ds/spacing.scss" as *;
 @use "ds/mixins.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   display: grid;
@@ -92,7 +93,7 @@
 }
 
 .forth-row {
-  /* 
+  /*
     This element do not match the 8 column grid of sidebar
 
    |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|  -> 8 column grid, (--sp-xxxl) width each
@@ -438,7 +439,7 @@
 
 .gap-row,
 .padding-row {
-  /* 
+  /*
     This element do not match the 8 column grid of sidebar
 
    |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|  -> 8 column grid, (--sp-xxxl) width each
