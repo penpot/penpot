@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS INC
 
 // TODO: When button replace remove this @use
-@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
@@ -14,7 +13,13 @@
 @use "ds/mixins.scss" as *;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
+.element-title {
+  grid-column: span 8;
 }
 
 .title-spacing-layout {

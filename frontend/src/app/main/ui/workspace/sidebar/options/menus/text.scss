@@ -7,14 +7,17 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
 .element-title {
-  margin: 0;
+  grid-column: span 8;
 }
 
 .element-content {
+  grid-column: span 8;
   @include deprecated.flexColumn;
   margin-top: deprecated.$s-4;
 }
