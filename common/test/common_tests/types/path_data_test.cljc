@@ -116,6 +116,27 @@
     (t/is (= sample-content
              (vec pdata)))))
 
+
+;; Test the specific case where cuve-to commands comes without the
+;; optional attrs
+(t/deftest path-data-plain-to-binary-2
+  (let [plain-content
+        [{:command :move-to :params {:x 480.0 :y 839.0}}
+         {:command :line-to :params {:x 439.0 :y 802.0}}
+         {:command :curve-to :params {:x 264.0 :y 634.0}}
+         {:command :curve-to :params {:x 154.0 :y 508.0}}]
+
+        binary-content
+        (path/content plain-content)]
+
+    #?(:clj
+       (t/is (= "M480.0,839.0L439.0,802.0C264.0,634.0,264.0,634.0,264.0,634.0C154.0,508.0,154.0,508.0,154.0,508.0"
+                (str binary-content)))
+
+       :cljs
+       (t/is (= "M480,839L439,802C264,634,264,634,264,634C154,508,154,508,154,508"
+                (str binary-content))))))
+
 (t/deftest path-data-from-binary
   (let [barray #?(:clj (byte-array sample-bytes)
                   :cljs (js/Int8Array.from sample-bytes))

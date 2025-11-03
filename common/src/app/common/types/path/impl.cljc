@@ -498,10 +498,10 @@
     [:map
      [:x schema:safe-number]
      [:y schema:safe-number]
-     [:c1x schema:safe-number]
-     [:c1y schema:safe-number]
-     [:c2x schema:safe-number]
-     [:c2y schema:safe-number]]]])
+     [:c1x {:optional true} schema:safe-number]
+     [:c1y {:optional true} schema:safe-number]
+     [:c2x {:optional true} schema:safe-number]
+     [:c2y {:optional true} schema:safe-number]]]])
 
 (def ^:private schema:segment
   [:multi {:title "PathSegment"
