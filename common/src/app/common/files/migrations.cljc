@@ -1413,17 +1413,27 @@
 (defmethod migrate-data "0006-fix-old-texts-fills"
   [data _]
   (letfn [(fix-fills [node]
-            (let [fills (if (and (not (seq (:fills node)))
-                                 (or (some? (:fill-color node))
-                                     (some? (:fill-opacity node))
-                                     (some? (:fill-color-gradient node))))
-                          [(d/without-nils (select-keys node [:fill-color :fill-opacity :fill-color-gradient
-                                                              :fill-color-ref-id :fill-color-ref-file]))]
-                          (:fills node))]
-              (-> node
-                  (assoc :fills fills)
-                  (dissoc :fill-color :fill-opacity :fill-color-gradient
-                          :fill-color-ref-id :fill-color-ref-file))))
+            (let [;; In the old format refs were strings
+                  sanitize-uuid
+                  (fn [o]
+                    (if (uuid? o)
+                      o
+                      (uuid/parse* o)))
+
+                  fills
+                  (if (and (not (seq (:fills node)))
+                           (or (some? (:fill-color node))
+                               (some? (:fill-opacity node))
+                               (some? (:fill-color-gradient node))))
+                    [(-> (select-keys node types.fills/fill-attrs)
+                         (update :fill-color-ref-file sanitize-uuid)
+                         (update :fill-color-ref-id sanitize-uuid)
+                         (d/without-nils))]
+                    (:fills node))]
+
+              (reduce dissoc
+                      (assoc node :fills fills)
+                      types.fills/fill-attrs)))
 
           (update-object [object]
             (if (cfh/text-shape? object)
