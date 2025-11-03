@@ -11,6 +11,10 @@ use crate::skia;
 
 use std::cell::OnceCell;
 
+use crate::math;
+use crate::math::bools as math_bools;
+use crate::math::Matrix;
+
 const SHAPES_POOL_ALLOC_MULTIPLIER: f32 = 1.3;
 
 /// A pool allocator for `Shape` objects that attempts to minimize memory reallocations.
@@ -226,7 +230,7 @@ impl<'a> ShapesPoolImpl<'a> {
             // Extend the lifetime of id to 'a - safe because it's the same Uuid stored in shapes[idx].id
             let id_ref: &'a Uuid = &*(id as *const Uuid);
 
-            if self.to_update_bool(&*shape_ptr)
+            if (*shape_ptr).is_bool()
                 || (*modifiers_ptr).contains_key(&id_ref)
                 || (*structure_ptr).contains_key(&id_ref)
                 || (*scale_content_ptr).contains_key(&id_ref)
@@ -234,10 +238,14 @@ impl<'a> ShapesPoolImpl<'a> {
                 if let Some(cell) = (*cache_ptr).get(&id_ref) {
                     Some(cell.get_or_init(|| {
                         let mut shape = (*shape_ptr).transformed(
-                            self,
                             (*modifiers_ptr).get(&id_ref),
                             (*structure_ptr).get(&id_ref),
                         );
+
+                        if self.to_update_bool(&shape) {
+                            math_bools::update_bool_to_path(&mut shape, self);
+                        }
+
                         if let Some(scale) = (*scale_content_ptr).get(&id_ref) {
                             shape.scale_content(*scale);
                         }
@@ -354,15 +362,12 @@ impl<'a> ShapesPoolImpl<'a> {
             panic!("Subtree not found");
         };
 
-        // TODO: Maybe create all_children_iter
-        let all_children = shape.all_children(self, true, true);
-
         let mut shapes = vec![];
         let mut idx = 0;
         let mut shapes_uuid_to_idx = HashMap::default();
 
-        for id in all_children.iter() {
-            let Some(shape) = self.get(id) else {
+        for id in shape.all_children_iter(self, true, true) {
+            let Some(shape) = self.get(&id) else {
                 panic!("Not found");
             };
             shapes.push(shape.clone());
@@ -387,8 +392,16 @@ impl<'a> ShapesPoolImpl<'a> {
     }
 
     fn to_update_bool(&self, shape: &Shape) -> bool {
-        // TODO: Check if any of the children is in the modifiers with a
-        // different matrix than the current one.
-        shape.is_bool()
+        if !shape.is_bool() {
+            return false;
+        }
+
+        let default = &Matrix::default();
+        let parent_modifier = self.modifiers.get(&shape.id).unwrap_or(default);
+
+        // Returns true if the transform of any child is different to the parent's
+        shape.all_children_iter(self, true, false).any(|id| {
+            !math::is_close_matrix(parent_modifier, self.modifiers.get(&id).unwrap_or(default))
+        })
     }
 }

@@ -47,7 +47,6 @@ pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
 
-use crate::math::bools as math_bools;
 use crate::math::{self, Bounds, Matrix, Point};
 use indexmap::IndexSet;
 
@@ -852,8 +851,8 @@ impl Shape {
         };
 
         if include_children {
-            for child_id in self.children_ids(false) {
-                if let Some(child_shape) = shapes_pool.get(&child_id) {
+            for child_id in self.children_ids_iter(false) {
+                if let Some(child_shape) = shapes_pool.get(child_id) {
                     rect.join(child_shape.extrect(shapes_pool));
                 }
             }
@@ -907,7 +906,6 @@ impl Shape {
         self.children.first()
     }
 
-    // TODO: Review this to use children_ids_iter instead
     pub fn children_ids(&self, include_hidden: bool) -> IndexSet<Uuid> {
         if include_hidden {
             return self.children.clone().into_iter().rev().collect();
@@ -955,20 +953,38 @@ impl Shape {
         include_hidden: bool,
         include_self: bool,
     ) -> IndexSet<Uuid> {
-        let all_children = self
-            .children_ids(include_hidden)
-            .into_iter()
-            .flat_map(|id| {
-                shapes
-                    .get(&id)
-                    .map(|s| s.all_children(shapes, include_hidden, true))
-                    .unwrap_or_default()
-            });
+        let all_children = self.children_ids_iter(include_hidden).flat_map(|id| {
+            shapes
+                .get(id)
+                .map(|s| s.all_children(shapes, include_hidden, true))
+                .unwrap_or_default()
+        });
 
         if include_self {
             once(self.id).chain(all_children).collect()
         } else {
             all_children.collect()
+        }
+    }
+
+    pub fn all_children_iter<'a>(
+        &'a self,
+        shapes: ShapesPoolRef<'a>,
+        include_hidden: bool,
+        include_self: bool,
+    ) -> Box<dyn Iterator<Item = Uuid> + 'a> {
+        let all_children = self.children_ids_iter(include_hidden).flat_map(move |id| {
+            if let Some(shape) = shapes.get(id) {
+                shape.all_children_iter(shapes, include_hidden, true)
+            } else {
+                Box::new(std::iter::empty())
+            }
+        });
+
+        if include_self {
+            Box::new(once(self.id).chain(all_children))
+        } else {
+            Box::new(all_children)
         }
     }
 
@@ -1191,7 +1207,6 @@ impl Shape {
 
     pub fn transformed(
         &self,
-        shapes_pool: ShapesPoolRef,
         transform: Option<&Matrix>,
         structure: Option<&Vec<StructureEntry>>,
     ) -> Self {
@@ -1202,9 +1217,7 @@ impl Shape {
         if let Some(structure) = structure {
             shape.to_mut().apply_structure(structure);
         }
-        if self.is_bool() {
-            math_bools::update_bool_to_path(shape.to_mut(), shapes_pool)
-        }
+
         shape.into_owned()
     }
 

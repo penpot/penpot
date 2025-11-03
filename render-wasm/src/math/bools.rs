@@ -420,7 +420,6 @@ pub fn bool_from_shapes(
     current_path
 }
 
-#[allow(dead_code)]
 pub fn update_bool_to_path(shape: &mut Shape, shapes: ShapesPoolRef) {
     let children_ids = shape.children_ids(true);
 
@@ -431,8 +430,8 @@ pub fn update_bool_to_path(shape: &mut Shape, shapes: ShapesPoolRef) {
     bool_data.path = bool_from_shapes(bool_data.bool_type, &children_ids, shapes);
 }
 
-#[allow(dead_code)]
 // Debug utility for boolean shapes
+#[allow(dead_code)]
 pub fn debug_render_bool_paths(
     render_state: &mut RenderState,
     shape: &Shape,

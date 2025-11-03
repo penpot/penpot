@@ -24,15 +24,13 @@ fn propagate_children(
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> VecDeque<Modifier> {
-    let children_ids = shape.children_ids(true);
-
-    if children_ids.is_empty() || identitish(&transform) {
+    if identitish(&transform) {
         return VecDeque::new();
     }
 
     let mut result = VecDeque::new();
 
-    for child_id in children_ids.iter() {
+    for child_id in shape.children_ids_iter(true) {
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
