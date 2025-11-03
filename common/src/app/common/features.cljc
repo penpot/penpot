@@ -53,6 +53,7 @@
     "plugins/runtime"
     "tokens/numeric-input"
     "design-tokens/v1"
+    "text-editor/v2-html-paste"
     "text-editor/v2"
     "render-wasm/v1"
     "variants/v1"})
@@ -75,6 +76,7 @@
 (def frontend-only-features
   #{"styles/v2"
     "plugins/runtime"
+    "text-editor/v2-html-paste"
     "text-editor/v2"
     "tokens/numeric-input"
     "render-wasm/v1"})
@@ -124,6 +126,7 @@
     :feature-plugins "plugins/runtime"
     :feature-design-tokens "design-tokens/v1"
     :feature-text-editor-v2 "text-editor/v2"
+    :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"
