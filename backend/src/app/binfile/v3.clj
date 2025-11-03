@@ -228,6 +228,7 @@
     (db/tx-run! cfg (fn [cfg]
                       (cond-> (bfc/get-file cfg file-id
                                             {:realize? true
+                                             :include-deleted? true
                                              :lock-for-update? true})
                         detach?
                         (-> (ctf/detach-external-references file-id)
@@ -285,14 +286,12 @@
 
     (let [file (cond-> (select-keys file bfc/file-attrs)
                  (:options data)
-                 (assoc :options (:options data))
+                 (assoc :options (:options data)))
 
-                 :always
-                 (dissoc :data))
-
-          file (cond-> file
-                 :always
-                 (encode-file))
+          file (-> file
+                   (dissoc :data)
+                   (dissoc :deleted-at)
+                   (encode-file))
 
           path (str "files/" file-id ".json")]
       (write-entry! output path file))
