@@ -3,6 +3,7 @@ import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-text-editor-v2"]);
 });
 
 test("BUG 10867 - Crash when loading comments", async ({ page }) => {

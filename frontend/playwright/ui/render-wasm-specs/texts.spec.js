@@ -347,6 +347,26 @@ test("Renders a file with texts with with text spans of different sizes", async 
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with texts with tabs", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-tabs.json");
+
+  await workspace.goToWorkspace({
+    id: "55ed444c-1179-8175-8007-09da51f502e7",
+    pageId: "55ed444c-1179-8175-8007-09da51f502e8",
+  });
+
+  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.clickLeafLayer("shape-list");
+  await workspace.hideUI();
+  await workspace.page.keyboard.press("Enter");
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test.skip("Updates text alignment edition - part 1", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();

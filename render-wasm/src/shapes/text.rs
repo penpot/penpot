@@ -603,8 +603,10 @@ impl Paragraph {
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
 
+        style.set_height(self.line_height);
         style.set_text_align(self.text_align);
         style.set_text_direction(self.text_direction);
+        style.set_replace_tab_characters(true);
         style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
     }

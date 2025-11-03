@@ -55,7 +55,7 @@
         text-direction  (sr/translate-text-direction (get paragraph :text-direction))
         text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
         text-transform  (sr/translate-text-transform (get paragraph :text-transform))
-        line-height     (get paragraph :line-height)
+        line-height     (get paragraph :line-height 1.2)
         letter-spacing  (get paragraph :letter-spacing)]
 
     (-> offset
@@ -73,7 +73,7 @@
   [offset dview spans paragraph]
   (let [paragraph-font-size (get paragraph :font-size)
         paragraph-font-weight (-> paragraph :font-weight f/serialize-font-weight)
-        paragraph-line-height (get paragraph :line-height)]
+        paragraph-line-height (get paragraph :line-height 1.2)]
     (reduce (fn [offset span]
               (let [font-style  (sr/translate-font-style (get span :font-style "normal"))
                     font-size   (get span :font-size paragraph-font-size)
