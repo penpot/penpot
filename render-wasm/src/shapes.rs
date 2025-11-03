@@ -504,7 +504,7 @@ impl Shape {
         (added, removed)
     }
 
-    pub fn fills(&self) -> std::slice::Iter<Fill> {
+    pub fn fills(&self) -> std::slice::Iter<'_, Fill> {
         self.fills.iter()
     }
 

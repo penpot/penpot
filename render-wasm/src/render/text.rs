@@ -83,8 +83,8 @@ fn get_text_stroke_paints(
             let shader = text_paint.shader();
             let mut is_opaque = true;
 
-            if shader.is_some() {
-                is_opaque = shader.unwrap().is_opaque();
+            if let Some(shader) = shader {
+                is_opaque = shader.is_opaque();
             }
 
             if is_opaque && count_inner_strokes == 1 {

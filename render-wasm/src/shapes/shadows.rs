@@ -3,16 +3,11 @@ use skia_safe::{self as skia, image_filters, ImageFilter, Paint};
 use super::Color;
 use crate::render::filters::compose_filters;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum ShadowStyle {
+    #[default]
     Drop,
     Inner,
-}
-
-impl Default for ShadowStyle {
-    fn default() -> Self {
-        Self::Drop
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
