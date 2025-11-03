@@ -174,10 +174,9 @@ impl ToPath for Shape {
     fn to_path(&self, shapes: ShapesPoolRef) -> Path {
         match &self.shape_type {
             Type::Frame(ref frame) => {
-                let children = self.children_ids(true);
                 let mut result = Path::new(rect_segments(self, frame.corners));
-                for id in children {
-                    let Some(shape) = shapes.get(&id) else {
+                for id in self.children_ids_iter(true) {
+                    let Some(shape) = shapes.get(id) else {
                         continue;
                     };
                     result = join_paths(result, shape.to_path(shapes));
@@ -186,10 +185,9 @@ impl ToPath for Shape {
             }
 
             Type::Group(_) => {
-                let children = self.children_ids(true);
                 let mut result = Path::default();
-                for id in children {
-                    let Some(shape) = shapes.get(&id) else {
+                for id in self.children_ids_iter(true) {
+                    let Some(shape) = shapes.get(id) else {
                         continue;
                     };
                     result = join_paths(result, shape.to_path(shapes));

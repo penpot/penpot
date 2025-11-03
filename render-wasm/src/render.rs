@@ -1366,7 +1366,7 @@ impl RenderState {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
 
-                let mut children_ids = element.children_ids(false);
+                let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
@@ -1379,7 +1379,7 @@ impl RenderState {
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
-                        id: *child_id,
+                        id: **child_id,
                         visited_children: false,
                         clip_bounds: children_clip_bounds,
                         visited_mask: false,
@@ -1555,8 +1555,7 @@ impl RenderState {
                     self.update_tile_for(shape, tree);
                 } else {
                     // We only need to rebuild tiles from the first level.
-                    let children = shape.children_ids(false);
-                    for child_id in children.iter() {
+                    for child_id in shape.children_ids_iter(false) {
                         nodes.push(*child_id);
                     }
                 }
@@ -1576,8 +1575,7 @@ impl RenderState {
                     self.update_tile_for(shape, tree);
                 }
 
-                let children = shape.children_ids(false);
-                for child_id in children.iter() {
+                for child_id in shape.children_ids_iter(false) {
                     nodes.push(*child_id);
                 }
             }
