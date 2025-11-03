@@ -1,13 +1,15 @@
 import { expect } from "@playwright/test";
 import { WorkspacePage } from "./WorkspacePage";
 
+export const WASM_FLAGS = [
+  "enable-feature-render-wasm",
+  "enable-render-wasm-dpr",
+];
+
 export class WasmWorkspacePage extends WorkspacePage {
   static async init(page) {
     await super.init(page);
-    await WorkspacePage.mockConfigFlags(page, [
-      "enable-feature-render-wasm",
-      "enable-render-wasm-dpr",
-    ]);
+    await WorkspacePage.mockConfigFlags(page, WASM_FLAGS);
 
     await page.addInitScript(() => {
       document.addEventListener("wasm:set-objects-finished", () => {

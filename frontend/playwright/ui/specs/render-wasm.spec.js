@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
+import { WasmWorkspacePage, WASM_FLAGS } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
-  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-text-editor-v2"]);
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    ...WASM_FLAGS,
+    "enable-feature-text-editor-v2",
+  ]);
 });
 
 test("BUG 10867 - Crash when loading comments", async ({ page }) => {
