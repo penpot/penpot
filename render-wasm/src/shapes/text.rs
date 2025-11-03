@@ -403,13 +403,14 @@ impl TextContent {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+
         let (width, height) =
             paragraphs
                 .iter()
                 .flatten()
                 .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
                     (
-                        f32::max(paragraph.max_intrinsic_width(), auto_width),
+                        f32::max(paragraph.longest_line(), auto_width),
                         auto_height + paragraph.height(),
                     )
                 });
@@ -452,11 +453,11 @@ impl TextContent {
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
-    pub fn get_width(&self) -> f32 {
+    pub fn get_width(&self, width: f32) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
             self.size.width
         } else {
-            self.bounds.width()
+            width
         }
     }
 
