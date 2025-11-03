@@ -1991,13 +1991,19 @@ Will return a value that matches this schema:
 
 #?(:clj
    (defn- migrate-to-v1-4
-     "Migrate the TokensLib data structure internals to v1.2 version; it
+     "Migrate the TokensLib data structure internals to v1.4 version; it
   expects input from v1.3 version"
      [params]
      (let [migrate-set-node
            (fn recurse [node]
-             (if (token-set-legacy? node)
+             (cond
+               (token-set-legacy? node)
                (make-token-set node)
+
+               (token-set? node)
+               node
+
+               :else
                (d/update-vals node recurse)))]
 
        (update params :sets d/update-vals migrate-set-node))))
