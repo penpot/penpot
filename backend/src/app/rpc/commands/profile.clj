@@ -484,7 +484,6 @@
     WHERE tpr1.profile_id = ?
       AND tpr1.is_owner IS true
       AND tpr2.can_edit IS true
-      AND NOT t.is_default
       AND t.deleted_at IS NULL")
 
 (sv/defmethod ::get-subscription-usage
