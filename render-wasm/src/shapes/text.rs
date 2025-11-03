@@ -754,12 +754,18 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
+    fn remove_ignored_chars(text: &str) -> String {
+        text.chars()
+            .filter(|&c| c >= '\u{0020}' && c != '\u{2028}' && c != '\u{2029}')
+            .collect()
+    }
+
     pub fn apply_text_transform(&self) -> String {
+        let text = Self::remove_ignored_chars(&self.text);
         match self.text_transform {
-            Some(TextTransform::Uppercase) => self.text.to_uppercase(),
-            Some(TextTransform::Lowercase) => self.text.to_lowercase(),
-            Some(TextTransform::Capitalize) => self
-                .text
+            Some(TextTransform::Uppercase) => text.to_uppercase(),
+            Some(TextTransform::Lowercase) => text.to_lowercase(),
+            Some(TextTransform::Capitalize) => text
                 .split_whitespace()
                 .map(|word| {
                     let mut chars = word.chars();
@@ -770,7 +776,7 @@ impl TextSpan {
                 })
                 .collect::<Vec<_>>()
                 .join(" "),
-            None => self.text.clone(),
+            None => text,
         }
     }
 
