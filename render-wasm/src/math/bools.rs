@@ -300,7 +300,7 @@ impl Ord for BezierStart {
 
 type BM<'a> = BTreeMap<BezierStart, Vec<(BezierSource, Bezier)>>;
 
-fn init_bm(beziers: &[(BezierSource, Bezier)]) -> BM {
+fn init_bm(beziers: &[(BezierSource, Bezier)]) -> BM<'_> {
     let mut bm = BM::default();
     for entry @ (source, bezier) in beziers.iter() {
         let value = *entry;

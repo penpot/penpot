@@ -180,7 +180,7 @@ pub extern "C" fn set_shape_path_buffer() {
         let buffer = get_path_upload_buffer();
         let mut buffer = buffer.lock().unwrap();
         let chunk_size = size_of::<RawSegmentData>();
-        if buffer.len() % chunk_size != 0 {
+        if !buffer.len().is_multiple_of(chunk_size) {
             // FIXME
             println!("Warning: buffer length is not a multiple of chunk size!");
         }
