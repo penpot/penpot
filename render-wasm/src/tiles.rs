@@ -1,3 +1,4 @@
+use crate::render::Surfaces;
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use skia_safe as skia;
@@ -175,7 +176,7 @@ impl PendingTiles {
         }
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox) {
+    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
         self.list.clear();
 
         let columns = tile_viewbox.interest_rect.width();
@@ -225,6 +226,17 @@ impl PendingTiles {
             current += 1;
         }
         self.list.reverse();
+
+        // Create a new list where the cached tiles go first
+        let iter1 = self
+            .list
+            .iter()
+            .filter(|t| surfaces.has_cached_tile_surface(**t));
+        let iter2 = self
+            .list
+            .iter()
+            .filter(|t| !surfaces.has_cached_tile_surface(**t));
+        self.list = iter1.chain(iter2).copied().collect();
     }
 
     pub fn pop(&mut self) -> Option<Tile> {

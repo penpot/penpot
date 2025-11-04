@@ -84,10 +84,7 @@ pub extern "C" fn store_image() {
         {
             eprintln!("{}", msg);
         }
-    });
-
-    with_state_mut!(state, {
-        state.update_tile_for_shape(ids.shape_id);
+        state.touch_shape(ids.shape_id);
     });
 
     mem::free_bytes();

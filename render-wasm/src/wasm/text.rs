@@ -4,7 +4,7 @@ use super::{fills::RawFillData, fonts::RawFontStyle};
 use crate::math::{Matrix, Point};
 use crate::mem;
 use crate::shapes::{
-    self, GrowType, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
+    self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{with_current_shape_mut, with_state_mut, with_state_mut_current_shape, STATE};
@@ -329,13 +329,17 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
     ptr
 }
 
+fn update_text_layout(shape: &mut Shape) {
+    if let Type::Text(text_content) = &mut shape.shape_type {
+        text_content.update_layout(shape.selrect);
+        shape.invalidate_extrect();
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn update_shape_text_layout() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.invalidate_extrect();
-        if let Type::Text(text_content) = &mut shape.shape_type {
-            text_content.update_layout(shape.selrect);
-        }
+        update_text_layout(shape);
     });
 }
 
@@ -344,22 +348,7 @@ pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
     with_state_mut!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         if let Some(shape) = state.shapes.get_mut(&shape_id) {
-            shape.invalidate_extrect();
-            if let Type::Text(text_content) = &mut shape.shape_type {
-                text_content.update_layout(shape.selrect);
-            }
-        }
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn update_shape_text_layout_for_all() {
-    with_state_mut!(state, {
-        for shape in state.shapes.iter_mut() {
-            shape.invalidate_extrect();
-            if let Type::Text(text_content) = &mut shape.shape_type {
-                text_content.update_layout(shape.selrect);
-            }
+            update_text_layout(shape);
         }
     });
 }
