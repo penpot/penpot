@@ -440,10 +440,10 @@ pub extern "C" fn set_children() {
 }
 
 #[no_mangle]
-pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
+pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32, is_thumbnail: bool) -> bool {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        state.render_state().has_image(&id)
+        state.render_state().has_image(&id, is_thumbnail)
     })
 }
 

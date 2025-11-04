@@ -228,9 +228,10 @@
 
 
 (defn- fetch-image
-  [shape-id image-id]
-  (let [url   (cf/resolve-file-media {:id image-id})]
+  [shape-id image-id thumbnail?]
+  (let [url (cf/resolve-file-media {:id image-id} thumbnail?)]
     {:key url
+     :thumbnail? thumbnail?
      :callback #(->> (http/send! {:method :get
                                   :uri url
                                   :response-type :blob})
@@ -239,27 +240,31 @@
                      (rx/map (fn [image]
                                (let [size        (.-byteLength image)
                                      padded-size (if (zero? (mod size 4)) size (+ size (- 4 (mod size 4))))
-                                     total-bytes (+ 32 padded-size) ; UUID size + padded size
+                                      ;; 36 bytes header (32 for UUIDs + 4 for thumbnail flag) + padded image
+                                     total-bytes (+ 36 padded-size)
                                      offset      (mem/alloc->offset-32 total-bytes)
                                      heap32      (mem/get-heap-u32)
                                      data        (js/Uint8Array. image)
                                      padded      (js/Uint8Array. padded-size)]
 
-                                 ;; 1. Set shape id
+                                 ;; 1. Set shape id (offset + 0 to offset + 3)
                                  (mem.h32/write-uuid offset heap32 shape-id)
 
-                                 ;; 2. Set image id
+                                 ;; 2. Set image id (offset + 4 to offset + 7)
                                  (mem.h32/write-uuid (+ offset 4) heap32 image-id)
 
-                                 ;; 3. Adjust padding on image data
+                                 ;; 3. Set thumbnail flag as u32 (offset + 8)
+                                 (aset heap32 (+ offset 8) thumbnail?)
+
+                                 ;; 4. Adjust padding on image data
                                  (.set padded data)
                                  (when (< size padded-size)
                                    (dotimes [i (- padded-size size)]
                                      (aset padded (+ size i) 0)))
 
-                                 ;; 4. Set image data
+                                 ;; 5. Set image data (starting at offset + 9)
                                  (let [u32view (js/Uint32Array. (.-buffer padded))
-                                       image-u32-offset (+ offset 8)]
+                                       image-u32-offset (+ offset 9)]
                                    (.set heap32 u32view image-u32-offset))
 
                                  (h/call wasm/internal-module "_store_image")
@@ -270,7 +275,7 @@
   (filter :fill-image (:fills leaf)))
 
 (defn- process-fill-image
-  [shape-id fill]
+  [shape-id fill thumbnail?]
   (when-let [image (:fill-image fill)]
     (let [id (get image :id)
           buffer (uuid/get-u32 id)
@@ -278,22 +283,22 @@
                                 (aget buffer 0)
                                 (aget buffer 1)
                                 (aget buffer 2)
-                                (aget buffer 3))]
+                                (aget buffer 3)
+                                thumbnail?)]
       (when (zero? cached-image?)
-        (fetch-image shape-id id)))))
+        (fetch-image shape-id id thumbnail?)))))
 
 (defn set-shape-text-images
-  [shape-id content]
-
+  [shape-id content thumbnail?]
   (let [paragraph-set (first (get content :children))
         paragraphs (get paragraph-set :children)]
     (->> paragraphs
          (mapcat :children)
          (mapcat get-fill-images)
-         (map #(process-fill-image shape-id %)))))
+         (map #(process-fill-image shape-id % thumbnail?)))))
 
 (defn set-shape-fills
-  [shape-id fills]
+  [shape-id fills thumbnail?]
   (if (empty? fills)
     (h/call wasm/internal-module "_clear_shape_fills")
     (let [fills  (types.fills/coerce fills)
@@ -313,14 +318,15 @@
                                           (aget buffer 0)
                                           (aget buffer 1)
                                           (aget buffer 2)
-                                          (aget buffer 3))]
+                                          (aget buffer 3)
+                                          thumbnail?)]
                 (when (zero? cached-image?)
-                  (fetch-image shape-id id))))
+                  (fetch-image shape-id id thumbnail?))))
 
             (types.fills/get-image-ids fills)))))
 
 (defn set-shape-strokes
-  [shape-id strokes]
+  [shape-id strokes thumbnail?]
   (h/call wasm/internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
           (let [opacity   (or (:stroke-opacity stroke) 1.0)
@@ -349,11 +355,14 @@
               (some? image)
               (let [image-id      (get image :id)
                     buffer        (uuid/get-u32 image-id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
+                    cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                          (aget buffer 0) (aget buffer 1)
+                                          (aget buffer 2) (aget buffer 3)
+                                          thumbnail?)]
                 (types.fills.impl/write-image-fill offset dview opacity image)
                 (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
-                  (fetch-image shape-id image-id)))
+                  (fetch-image shape-id image-id thumbnail?)))
 
               (some? color)
               (do
@@ -725,9 +734,9 @@
           result)))))
 
 (defn set-shape-text
-  [shape-id content]
+  [shape-id content thumbnail?]
   (concat
-   (set-shape-text-images shape-id content)
+   (set-shape-text-images shape-id content thumbnail?)
    (set-shape-text-content shape-id content)))
 
 (defn set-shape-grow-type
@@ -839,45 +848,61 @@
 
     (set-shape-selrect selrect)
 
-    (let [pending (into [] (concat
-                            (set-shape-text id content)
-                            (set-shape-fills id fills)
-                            (set-shape-strokes id strokes)))]
+    (let [pending_thumbnails (into [] (concat
+                                       (set-shape-text id content true)
+                                       (set-shape-fills id fills true)
+                                       (set-shape-strokes id strokes true)))
+          pending_full (into [] (concat
+                                 (set-shape-text id content false)
+                                 (set-shape-fills id fills false)
+                                 (set-shape-strokes id strokes false)))]
       (perf/end-measure "set-object")
-      pending)))
+      {:thumbnails pending_thumbnails
+       :full pending_full})))
 
 (defn process-pending
-  [pending]
+  [thumbnails full]
   (let [event (js/CustomEvent. "wasm:set-objects-finished")
-        pending (-> (d/index-by :key :callback pending) vals)]
-    (->> (rx/from pending)
+        pending-thumbnails (-> (d/index-by :key :callback thumbnails) vals)
+        pending-full (-> (d/index-by :key :callback full) vals)]
+    (->> (rx/from pending-thumbnails)
+         (rx/merge-map (fn [callback] (callback)))
+         (rx/reduce conj [])
+         (rx/merge-map (fn [_]
+                         (clear-drawing-cache)
+                         (request-render "pending-thumbnails-finished")
+                         (h/call wasm/internal-module "_update_shape_text_layout_for_all")
+                         (.dispatchEvent ^js js/document event)
+                         ;; After thumbnails are done, process full images
+                         (rx/from pending-full)))
          (rx/merge-map (fn [callback] (callback)))
          (rx/reduce conj [])
          (rx/subs! (fn [_]
                      (clear-drawing-cache)
-                     (request-render "pending-finished")
-                     (h/call wasm/internal-module "_update_shape_text_layout_for_all")
-                     (.dispatchEvent ^js js/document event))))))
+                     (request-render "pending-full-finished"))))))
 
 (defn process-object
   [shape]
-  (let [pending (set-object [] shape)]
-    (process-pending pending)))
+  (let [{:keys [thumbnails full]} (set-object [] shape)]
+    (process-pending thumbnails full)))
 
 (defn set-objects
   [objects]
   (perf/begin-measure "set-objects")
   (let [shapes        (into [] (vals objects))
         total-shapes  (count shapes)
-        pending
-        (loop [index 0 pending []]
+        ;; Collect pending operations - set-object returns {:thumbnails [...] :full [...]}
+        {:keys [thumbnails full]}
+        (loop [index 0 thumbnails-acc [] full-acc []]
           (if (< index total-shapes)
             (let [shape    (nth shapes index)
-                  pending' (set-object objects shape)]
-              (recur (inc index) (into pending pending')))
-            pending))]
+                  {:keys [thumbnails full]} (set-object objects shape)]
+              (recur (inc index)
+                     (into thumbnails-acc thumbnails)
+                     (into full-acc full)))
+            {:thumbnails thumbnails-acc :full full-acc}))]
     (perf/end-measure "set-objects")
-    (process-pending pending)))
+    (process-pending thumbnails full)))
 
 (defn clear-focus-mode
   []

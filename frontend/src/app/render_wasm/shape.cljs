@@ -144,8 +144,8 @@
                       (api/set-shape-clip-content false))
       :rotation     (api/set-shape-rotation v)
       :transform    (api/set-shape-transform v)
-      :fills        (into [] (api/set-shape-fills id v))
-      :strokes      (into [] (api/set-shape-strokes id v))
+      :fills        (into [] (api/set-shape-fills id v false))
+      :strokes      (into [] (api/set-shape-strokes id v false))
       :blend-mode   (api/set-shape-blend-mode v)
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)
@@ -185,7 +185,7 @@
         (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
         (= (:type shape) :text)
-        (api/set-shape-text id v))
+        (api/set-shape-text id v false))
 
       :grow-type
       (api/set-shape-grow-type v)

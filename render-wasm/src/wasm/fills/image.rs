@@ -7,6 +7,7 @@ use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 
 const FLAG_KEEP_ASPECT_RATIO: u8 = 1 << 0;
 const IMAGE_IDS_SIZE: usize = 32;
+const IMAGE_HEADER_SIZE: usize = 36; // 32 bytes for IDs + 4 bytes for is_thumbnail flag
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
@@ -67,12 +68,19 @@ impl TryFrom<Vec<u8>> for ShapeImageIds {
 pub extern "C" fn store_image() {
     let bytes = mem::bytes();
     let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec()).unwrap();
-    let image_bytes = &bytes[IMAGE_IDS_SIZE..];
+
+    // Read is_thumbnail flag (4 bytes as u32)
+    let is_thumbnail_bytes = &bytes[IMAGE_IDS_SIZE..IMAGE_HEADER_SIZE];
+    let is_thumbnail_value = u32::from_le_bytes(is_thumbnail_bytes.try_into().unwrap());
+    let is_thumbnail = is_thumbnail_value != 0;
+
+    let image_bytes = &bytes[IMAGE_HEADER_SIZE..];
 
     with_state_mut!(state, {
-        if let Err(msg) = state
-            .render_state_mut()
-            .add_image(ids.image_id, image_bytes)
+        if let Err(msg) =
+            state
+                .render_state_mut()
+                .add_image(ids.image_id, is_thumbnail, image_bytes)
         {
             eprintln!("{}", msg);
         }
