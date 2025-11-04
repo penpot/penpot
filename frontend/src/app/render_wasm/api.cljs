@@ -102,12 +102,13 @@
 
 (defn use-shape
   [id]
-  (let [buffer (uuid/get-u32 id)]
-    (h/call wasm/internal-module "_use_shape"
-            (aget buffer 0)
-            (aget buffer 1)
-            (aget buffer 2)
-            (aget buffer 3))))
+  (when wasm/context-initialized?
+    (let [buffer (uuid/get-u32 id)]
+      (h/call wasm/internal-module "_use_shape"
+              (aget buffer 0)
+              (aget buffer 1)
+              (aget buffer 2)
+              (aget buffer 3)))))
 
 (defn set-parent-id
   [id]
@@ -1078,13 +1079,15 @@
 
         ;; Initialize Wasm Render Engine
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-        (h/call wasm/internal-module "_set_render_options" flags dpr)))
+        (h/call wasm/internal-module "_set_render_options" flags dpr))
+      (set! wasm/context-initialized? true))
     (set-canvas-size canvas)
     context-init?))
 
 (defn clear-canvas
   []
   ;; TODO: perform corresponding cleaning
+  (set! wasm/context-initialized? false)
   (h/call wasm/internal-module "_clean_up"))
 
 (defn show-grid

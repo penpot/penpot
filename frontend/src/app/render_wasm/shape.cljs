@@ -13,6 +13,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
+   [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
    [cuerdas.core :as str]))
@@ -126,114 +127,115 @@
 ;; The `set-wasm-attr!` can return a list of callbacks to be executed in a second pass.
 (defn- set-wasm-attr!
   [shape k]
-  (let [v  (get shape k)
-        id (get shape :id)]
-    (case k
-      :parent-id    (api/set-parent-id v)
-      :type         (do
-                      (api/set-shape-type v)
-                      (when (or (= v :path) (= v :bool))
-                        (api/set-shape-path-content (:content shape))))
-      :bool-type    (api/set-shape-bool-type v)
-      :selrect      (do
-                      (api/set-shape-selrect v)
-                      (when (= (:type shape) :svg-raw)
-                        (api/set-shape-svg-raw-content (api/get-static-markup shape))))
-      :show-content (if (= (:type shape) :frame)
-                      (api/set-shape-clip-content (not v))
-                      (api/set-shape-clip-content false))
-      :rotation     (api/set-shape-rotation v)
-      :transform    (api/set-shape-transform v)
-      :fills        (into [] (api/set-shape-fills id v false))
-      :strokes      (into [] (api/set-shape-strokes id v false))
-      :blend-mode   (api/set-shape-blend-mode v)
-      :opacity      (api/set-shape-opacity v)
-      :hidden       (api/set-shape-hidden v)
-      :shapes       (api/set-shape-children v)
-      :blur         (api/set-shape-blur v)
-      :shadow       (api/set-shape-shadows v)
-      :constraints-h (api/set-constraints-h v)
-      :constraints-v (api/set-constraints-v v)
+  (when wasm/context-initialized?
+    (let [v  (get shape k)
+          id (get shape :id)]
+      (case k
+        :parent-id    (api/set-parent-id v)
+        :type         (do
+                        (api/set-shape-type v)
+                        (when (or (= v :path) (= v :bool))
+                          (api/set-shape-path-content (:content shape))))
+        :bool-type    (api/set-shape-bool-type v)
+        :selrect      (do
+                        (api/set-shape-selrect v)
+                        (when (= (:type shape) :svg-raw)
+                          (api/set-shape-svg-raw-content (api/get-static-markup shape))))
+        :show-content (if (= (:type shape) :frame)
+                        (api/set-shape-clip-content (not v))
+                        (api/set-shape-clip-content false))
+        :rotation     (api/set-shape-rotation v)
+        :transform    (api/set-shape-transform v)
+        :fills        (into [] (api/set-shape-fills id v false))
+        :strokes      (into [] (api/set-shape-strokes id v false))
+        :blend-mode   (api/set-shape-blend-mode v)
+        :opacity      (api/set-shape-opacity v)
+        :hidden       (api/set-shape-hidden v)
+        :shapes       (api/set-shape-children v)
+        :blur         (api/set-shape-blur v)
+        :shadow       (api/set-shape-shadows v)
+        :constraints-h (api/set-constraints-h v)
+        :constraints-v (api/set-constraints-v v)
 
-      :r1
-      (api/set-shape-corners [v (dm/get-prop shape :r2) (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+        :r1
+        (api/set-shape-corners [v (dm/get-prop shape :r2) (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
 
-      :r2
-      (api/set-shape-corners [(dm/get-prop shape :r1) v (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+        :r2
+        (api/set-shape-corners [(dm/get-prop shape :r1) v (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
 
-      :r3
-      (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) v (dm/get-prop shape :r4)])
+        :r3
+        (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) v (dm/get-prop shape :r4)])
 
-      :r4
-      (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) (dm/get-prop shape :r3) v])
+        :r4
+        (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) (dm/get-prop shape :r3) v])
 
-      :svg-attrs
-      (when (= (:type shape) :path)
-        (api/set-shape-path-attrs v))
+        :svg-attrs
+        (when (= (:type shape) :path)
+          (api/set-shape-path-attrs v))
 
-      :masked-group
-      (when (and (= (:type shape) :group) (:masked-group shape))
-        (api/set-masked (:masked-group shape)))
+        :masked-group
+        (when (and (= (:type shape) :group) (:masked-group shape))
+          (api/set-masked (:masked-group shape)))
 
-      :content
-      (cond
-        (or (= (:type shape) :path)
-            (= (:type shape) :bool))
-        (api/set-shape-path-content v)
-
-        (= (:type shape) :svg-raw)
-        (api/set-shape-svg-raw-content (api/get-static-markup shape))
-
-        (= (:type shape) :text)
-        (api/set-shape-text id v false))
-
-      :grow-type
-      (api/set-shape-grow-type v)
-
-      (:layout-item-align-self
-       :layout-item-margin
-       :layout-item-margin-type
-       :layout-item-h-sizing
-       :layout-item-v-sizing
-       :layout-item-max-h
-       :layout-item-min-h
-       :layout-item-max-w
-       :layout-item-min-w
-       :layout-item-absolute
-       :layout-item-z-index)
-      (api/set-layout-child shape)
-
-      :layout-grid-rows
-      (api/set-grid-layout-rows v)
-
-      :layout-grid-columns
-      (api/set-grid-layout-columns v)
-
-      :layout-grid-cells
-      (api/set-grid-layout-cells v)
-
-      (:layout
-       :layout-flex-dir
-       :layout-gap-type
-       :layout-gap
-       :layout-align-items
-       :layout-align-content
-       :layout-justify-items
-       :layout-justify-content
-       :layout-wrap-type
-       :layout-padding-type
-       :layout-padding)
-      (do
-        (api/clear-layout)
+        :content
         (cond
-          (ctl/grid-layout? shape)
-          (api/set-grid-layout-data shape)
+          (or (= (:type shape) :path)
+              (= (:type shape) :bool))
+          (api/set-shape-path-content v)
 
-          (ctl/flex-layout? shape)
-          (api/set-flex-layout shape)))
+          (= (:type shape) :svg-raw)
+          (api/set-shape-svg-raw-content (api/get-static-markup shape))
+
+          (= (:type shape) :text)
+          (api/set-shape-text id v false))
+
+        :grow-type
+        (api/set-shape-grow-type v)
+
+        (:layout-item-align-self
+         :layout-item-margin
+         :layout-item-margin-type
+         :layout-item-h-sizing
+         :layout-item-v-sizing
+         :layout-item-max-h
+         :layout-item-min-h
+         :layout-item-max-w
+         :layout-item-min-w
+         :layout-item-absolute
+         :layout-item-z-index)
+        (api/set-layout-child shape)
+
+        :layout-grid-rows
+        (api/set-grid-layout-rows v)
+
+        :layout-grid-columns
+        (api/set-grid-layout-columns v)
+
+        :layout-grid-cells
+        (api/set-grid-layout-cells v)
+
+        (:layout
+         :layout-flex-dir
+         :layout-gap-type
+         :layout-gap
+         :layout-align-items
+         :layout-align-content
+         :layout-justify-items
+         :layout-justify-content
+         :layout-wrap-type
+         :layout-padding-type
+         :layout-padding)
+        (do
+          (api/clear-layout)
+          (cond
+            (ctl/grid-layout? shape)
+            (api/set-grid-layout-data shape)
+
+            (ctl/flex-layout? shape)
+            (api/set-flex-layout shape)))
 
       ;; Property not in WASM
-      nil)))
+        nil))))
 
 (defn process-shape!
   [shape properties]
@@ -256,8 +258,9 @@
        (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
        (rx/subs!
         (fn [_]
-          (api/update-shape-tiles)
-          (api/request-render "set-wasm-attrs")))))
+          (when wasm/context-initialized?
+            (api/update-shape-tiles)
+            (api/request-render "set-wasm-attrs"))))))
 
 ;; `conj` empty set initialization
 (def conj* (fnil conj #{}))
