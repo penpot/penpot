@@ -600,7 +600,6 @@ impl Paragraph {
         self.line_height
     }
 
-    // FIXME: move serialization to wasm module
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
 
@@ -712,7 +711,7 @@ impl TextSpan {
         style.set_font_families(&font_families);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
-        style.set_half_leading(true);
+        style.set_half_leading(false);
 
         style
     }
