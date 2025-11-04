@@ -318,12 +318,17 @@ impl RenderState {
         &mut self.fonts
     }
 
-    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data)
+    pub fn add_image(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        image_data: &[u8],
+    ) -> Result<(), String> {
+        self.images.add(id, is_thumbnail, image_data)
     }
 
-    pub fn has_image(&self, id: &Uuid) -> bool {
-        self.images.contains(id)
+    pub fn has_image(&self, id: &Uuid, is_thumbnail: bool) -> bool {
+        self.images.contains(id, is_thumbnail)
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {

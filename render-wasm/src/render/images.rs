@@ -58,7 +58,7 @@ enum StoredImage {
 }
 
 pub struct ImageStore {
-    images: HashMap<Uuid, StoredImage>,
+    images: HashMap<(Uuid, bool), StoredImage>,
     context: Box<DirectContext>,
 }
 
@@ -70,23 +70,36 @@ impl ImageStore {
         }
     }
 
-    pub fn add(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        if self.images.contains_key(&id) {
+    pub fn add(&mut self, id: Uuid, is_thumbnail: bool, image_data: &[u8]) -> Result<(), String> {
+        let key = (id, is_thumbnail);
+
+        if self.images.contains_key(&key) {
             return Err("Image already exists".to_string());
         }
 
         self.images
-            .insert(id, StoredImage::Raw(image_data.to_vec()));
+            .insert(key, StoredImage::Raw(image_data.to_vec()));
         Ok(())
     }
 
-    pub fn contains(&self, id: &Uuid) -> bool {
-        self.images.contains_key(id)
+    pub fn contains(&self, id: &Uuid, is_thumbnail: bool) -> bool {
+        self.images.contains_key(&(*id, is_thumbnail))
     }
 
     pub fn get(&mut self, id: &Uuid) -> Option<&Image> {
+        // Try to get full image first, fallback to thumbnail
+        let has_full = self.images.contains_key(&(*id, false));
+        if has_full {
+            self.get_internal(id, false)
+        } else {
+            self.get_internal(id, true)
+        }
+    }
+
+    fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {
+        let key = (*id, is_thumbnail);
         // Use entry API to mutate the HashMap in-place if needed
-        if let Some(entry) = self.images.get_mut(id) {
+        if let Some(entry) = self.images.get_mut(&key) {
             match entry {
                 StoredImage::Gpu(ref img) => Some(img),
                 StoredImage::Raw(raw_data) => {
