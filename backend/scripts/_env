@@ -2,6 +2,7 @@
 
 
 export PENPOT_MANAGEMENT_API_SHARED_KEY=super-secret-management-api-key
+export PENPOT_NITRATE_API_SHARED_KEY=super-secret-nitrate-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
 export PENPOT_HOST=devenv
 

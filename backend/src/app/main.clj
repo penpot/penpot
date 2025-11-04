@@ -21,6 +21,7 @@
    [app.http.client :as-alias http.client]
    [app.http.debug :as-alias http.debug]
    [app.http.management :as mgmt]
+   [app.http.nitrate :as nitrate]
    [app.http.session :as-alias session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
@@ -276,6 +277,10 @@
    {::db/pool            (ig/ref ::db/pool)
     ::setup/props        (ig/ref ::setup/props)}
 
+   ::nitrate/routes
+   {::db/pool            (ig/ref ::db/pool)
+    ::setup/props        (ig/ref ::setup/props)}
+
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
     ::db/pool            (ig/ref ::db/pool)
@@ -285,6 +290,7 @@
     ::mtx/routes         (ig/ref ::mtx/routes)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::mgmt/routes        (ig/ref ::mgmt/routes)
+    ::nitrate/routes     (ig/ref ::nitrate/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)

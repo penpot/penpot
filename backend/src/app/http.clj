@@ -19,6 +19,7 @@
    [app.http.errors :as errors]
    [app.http.management :as mgmt]
    [app.http.middleware :as mw]
+   [app.http.nitrate :as nitrate]
    [app.http.security :as sec]
    [app.http.session :as session]
    [app.http.websocket :as-alias ws]
@@ -156,6 +157,7 @@
    [::mtx/routes schema:routes]
    [::awsns/routes schema:routes]
    [::mgmt/routes schema:routes]
+   [::nitrate/routes schema:routes]
    ::session/manager
    ::setup/props
    ::db/pool])
@@ -186,6 +188,9 @@
 
      ["/management"
       (::mgmt/routes cfg)]
+
+     ["/nitrate"
+      (::nitrate/routes cfg)]
 
      (::ws/routes cfg)
 
