@@ -224,11 +224,11 @@
                "failed"    (handle-task-failure result)
                "completed" (handle-task-completion result)
                (throw (IllegalArgumentException.
-                       (str "invalid status received: " status))))))
+                       (str "invalid status received: '" status "'"))))))
 
           (run-task-loop [[task-id scheduled-at]]
             (loop [result (run-task! cfg task-id scheduled-at)]
-              (when-let [cause (process-result result)]
+              (when-let [cause (some-> result process-result)]
                 (if (or (db/connection-error? cause)
                         (db/serialization-error? cause))
                   (do
