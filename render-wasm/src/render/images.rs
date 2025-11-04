@@ -62,6 +62,41 @@ pub struct ImageStore {
     context: Box<DirectContext>,
 }
 
+// Decode and upload to GPU
+fn decode_image(context: &mut Box<DirectContext>, raw_data: &[u8]) -> Option<Image> {
+    let data = unsafe { skia::Data::new_bytes(raw_data) };
+    let codec = Codec::from_data(&data)?;
+    let image = Image::from_encoded(&data)?;
+
+    let mut dimensions = codec.dimensions();
+    if codec.origin().swaps_width_height() {
+        dimensions.width = codec.dimensions().height;
+        dimensions.height = codec.dimensions().width;
+    }
+
+    let image_info = skia::ImageInfo::new_n32_premul(dimensions, None);
+
+    let mut surface = surfaces::render_target(
+        context,
+        Budgeted::Yes,
+        &image_info,
+        None,
+        None,
+        None,
+        true,
+        false,
+    )?;
+
+    let dest_rect: MathRect =
+        MathRect::from_xywh(0.0, 0.0, dimensions.width as f32, dimensions.height as f32);
+
+    surface
+        .canvas()
+        .draw_image_rect(&image, None, dest_rect, &skia::Paint::default());
+
+    Some(surface.image_snapshot())
+}
+
 impl ImageStore {
     pub fn new(context: DirectContext) -> Self {
         Self {
@@ -77,8 +112,13 @@ impl ImageStore {
             return Err("Image already exists".to_string());
         }
 
-        self.images
-            .insert(key, StoredImage::Raw(image_data.to_vec()));
+        let raw_data = image_data.to_vec();
+
+        if let Some(gpu_image) = decode_image(&mut self.context, &raw_data) {
+            self.images.insert(key, StoredImage::Gpu(gpu_image));
+        } else {
+            self.images.insert(key, StoredImage::Raw(raw_data));
+        }
         Ok(())
     }
 
@@ -103,48 +143,9 @@ impl ImageStore {
             match entry {
                 StoredImage::Gpu(ref img) => Some(img),
                 StoredImage::Raw(raw_data) => {
-                    // Decode and upload to GPU
-                    let data = unsafe { skia::Data::new_bytes(raw_data) };
-                    let codec = Codec::from_data(data.clone())?;
-                    let image = Image::from_encoded(data.clone())?;
-
-                    let mut dimensions = codec.dimensions();
-                    if codec.origin().swaps_width_height() {
-                        dimensions.width = codec.dimensions().height;
-                        dimensions.height = codec.dimensions().width;
-                    }
-
-                    let image_info = skia::ImageInfo::new_n32_premul(dimensions, None);
-
-                    let mut surface = surfaces::render_target(
-                        &mut self.context,
-                        Budgeted::Yes,
-                        &image_info,
-                        None,
-                        None,
-                        None,
-                        true,
-                        false,
-                    )?;
-
-                    let dest_rect: MathRect = MathRect::from_xywh(
-                        0.0,
-                        0.0,
-                        dimensions.width as f32,
-                        dimensions.height as f32,
-                    );
-
-                    surface.canvas().draw_image_rect(
-                        &image,
-                        None,
-                        dest_rect,
-                        &skia::Paint::default(),
-                    );
-
-                    let gpu_image = surface.image_snapshot();
-
-                    // Replace raw data with GPU image
+                    let gpu_image = decode_image(&mut self.context, raw_data)?;
                     *entry = StoredImage::Gpu(gpu_image);
+
                     if let StoredImage::Gpu(ref img) = entry {
                         Some(img)
                     } else {

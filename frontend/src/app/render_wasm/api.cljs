@@ -10,6 +10,7 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.math :as mth]
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
@@ -81,13 +82,19 @@
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
-  (h/call wasm/internal-module "_render" timestamp)
-  (set! wasm/internal-frame-id nil)
-  ;; emit custom event
-  (let [event (js/CustomEvent. "wasm:render")]
-    (js/document.dispatchEvent ^js event)))
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_render" timestamp)
+    (set! wasm/internal-frame-id nil)
+    ;; emit custom event
+    (let [event (js/CustomEvent. "wasm:render")]
+      (js/document.dispatchEvent ^js event))))
 
-(def debounce-render (fns/debounce render 100))
+(def set-view-render
+  (fns/debounce
+   (fn [ts]
+     (h/call wasm/internal-module "_set_view_end")
+     (render ts))
+   200))
 
 (defonce pending-render (atom false))
 
@@ -290,13 +297,15 @@
         (fetch-image shape-id id thumbnail?)))))
 
 (defn set-shape-text-images
-  [shape-id content thumbnail?]
-  (let [paragraph-set (first (get content :children))
-        paragraphs (get paragraph-set :children)]
-    (->> paragraphs
-         (mapcat :children)
-         (mapcat get-fill-images)
-         (map #(process-fill-image shape-id % thumbnail?)))))
+  ([shape-id content]
+   (set-shape-text-images shape-id content false))
+  ([shape-id content thumbnail?]
+   (let [paragraph-set (first (get content :children))
+         paragraphs (get paragraph-set :children)]
+     (->> paragraphs
+          (mapcat :children)
+          (mapcat get-fill-images)
+          (map #(process-fill-image shape-id % thumbnail?))))))
 
 (defn set-shape-fills
   [shape-id fills thumbnail?]
@@ -734,12 +743,6 @@
 
           result)))))
 
-(defn set-shape-text
-  [shape-id content thumbnail?]
-  (concat
-   (set-shape-text-images shape-id content thumbnail?)
-   (set-shape-text-content shape-id content)))
-
 (defn set-shape-grow-type
   [grow-type]
   (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
@@ -761,14 +764,7 @@
 (defn set-view-box
   [zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (h/call wasm/internal-module "_render_from_cache")
-  (debounce-render))
-
-(defn clear-drawing-cache []
-  (h/call wasm/internal-module "_clear_drawing_cache"))
-
-(defn update-shape-tiles []
-  (h/call wasm/internal-module "_update_shape_tiles"))
+  (set-view-render))
 
 (defn set-object
   [objects shape]
@@ -850,42 +846,47 @@
     (set-shape-selrect selrect)
 
     (let [pending_thumbnails (into [] (concat
-                                       (set-shape-text id content true)
+                                       (set-shape-text-content id content)
+                                       (set-shape-text-images id content true)
                                        (set-shape-fills id fills true)
                                        (set-shape-strokes id strokes true)))
           pending_full (into [] (concat
-                                 (set-shape-text id content false)
+                                 (set-shape-text-images id content false)
                                  (set-shape-fills id fills false)
                                  (set-shape-strokes id strokes false)))]
       (perf/end-measure "set-object")
       {:thumbnails pending_thumbnails
        :full pending_full})))
 
+(defn update-text-layouts
+  [shapes]
+  (->> shapes
+       (filter cfh/text-shape?)
+       (map :id)
+       (run! f/update-text-layout)))
+
 (defn process-pending
-  [thumbnails full]
+  [shapes thumbnails full]
   (let [event (js/CustomEvent. "wasm:set-objects-finished")
         pending-thumbnails (-> (d/index-by :key :callback thumbnails) vals)
         pending-full (-> (d/index-by :key :callback full) vals)]
-    (->> (rx/from pending-thumbnails)
-         (rx/merge-map (fn [callback] (callback)))
-         (rx/reduce conj [])
-         (rx/merge-map (fn [_]
-                         (clear-drawing-cache)
-                         (request-render "pending-thumbnails-finished")
-                         (h/call wasm/internal-module "_update_shape_text_layout_for_all")
-                         (.dispatchEvent ^js js/document event)
-                         ;; After thumbnails are done, process full images
-                         (rx/from pending-full)))
-         (rx/merge-map (fn [callback] (callback)))
-         (rx/reduce conj [])
-         (rx/subs! (fn [_]
-                     (clear-drawing-cache)
-                     (request-render "pending-full-finished"))))))
+    (->> (rx/concat
+          (->> (rx/from pending-thumbnails)
+               (rx/merge-map (fn [callback] (callback)))
+               (rx/reduce conj [])
+               (rx/tap #(.dispatchEvent ^js js/document event)))
+          (->> (rx/from pending-full)
+               (rx/mapcat (fn [callback] (callback)))
+               (rx/reduce conj [])))
+         (rx/subs!
+          (fn [_]
+            (update-text-layouts shapes)
+            (request-render "pending-finished"))))))
 
 (defn process-object
   [shape]
   (let [{:keys [thumbnails full]} (set-object [] shape)]
-    (process-pending thumbnails full)))
+    (process-pending [shape] thumbnails full)))
 
 (defn set-objects
   [objects]
@@ -903,12 +904,11 @@
                      (into full-acc full)))
             {:thumbnails thumbnails-acc :full full-acc}))]
     (perf/end-measure "set-objects")
-    (process-pending thumbnails full)))
+    (process-pending shapes thumbnails full)))
 
 (defn clear-focus-mode
   []
   (h/call wasm/internal-module "_clear_focus_mode")
-  (clear-drawing-cache)
   (request-render "clear-focus-mode"))
 
 (defn set-focus-mode
@@ -924,7 +924,6 @@
               entries)
 
       (h/call wasm/internal-module "_set_focus_mode")
-      (clear-drawing-cache)
       (request-render "set-focus-mode"))))
 
 (defn set-structure-modifiers

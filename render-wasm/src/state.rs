@@ -105,7 +105,8 @@ impl<'a> State<'a> {
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = tiles::Tile(x, y);
-                    self.render_state.remove_cached_tile_shape(tile, id);
+                    self.render_state.remove_cached_tile(tile);
+                    self.render_state.tiles.remove_shape_at(tile, shape.id);
                 }
             }
         }
@@ -145,29 +146,16 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
-        if let Some(shape) = self.shapes.get(&shape_id) {
-            self.render_state.update_tile_for(shape, &self.shapes);
-        }
-    }
-
-    pub fn update_tile_for_current_shape(&mut self) {
-        let Some(shape) = self.current_shape() else {
-            panic!("Invalid current shape")
-        };
-        // TODO: Remove this clone
-        if !shape.id.is_nil() {
-            self.render_state
-                .update_tile_for(&shape.clone(), &self.shapes);
-        }
-    }
-
     pub fn rebuild_tiles_shallow(&mut self) {
         self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
     pub fn rebuild_tiles(&mut self) {
         self.render_state.rebuild_tiles(&self.shapes);
+    }
+
+    pub fn rebuild_touched_tiles(&mut self) {
+        self.render_state.rebuild_touched_tiles(&self.shapes);
     }
 
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
@@ -214,5 +202,15 @@ impl<'a> State<'a> {
 
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
         self.shapes.set_modifiers(modifiers);
+    }
+
+    pub fn touch_current(&mut self) {
+        if let Some(current_id) = self.current_id {
+            self.render_state.mark_touched(current_id);
+        }
+    }
+
+    pub fn touch_shape(&mut self, id: Uuid) {
+        self.render_state.mark_touched(id);
     }
 }

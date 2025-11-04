@@ -187,7 +187,8 @@
           (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
           (= (:type shape) :text)
-          (api/set-shape-text id v false))
+          (do (api/set-shape-text-content id v)
+              (api/set-shape-text-images id v)))
 
         :grow-type
         (api/set-shape-grow-type v)
@@ -256,11 +257,7 @@
   [objects shape-changes]
   (->> (rx/from shape-changes)
        (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
-       (rx/subs!
-        (fn [_]
-          (when wasm/context-initialized?
-            (api/update-shape-tiles)
-            (api/request-render "set-wasm-attrs"))))))
+       (rx/subs! #(api/request-render "set-wasm-attrs"))))
 
 ;; `conj` empty set initialization
 (def conj* (fnil conj #{}))
