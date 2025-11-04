@@ -4,11 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/typography.scss" as t;
-@use "../ds/colors.scss" as *;
-@use "../ds/spacing.scss" as *;
-@use "../ds/_borders.scss" as *;
-@use "../ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/colors.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
 @use "common/refactor/common-dashboard";
 @use "common/refactor/common-refactor.scss" as deprecated;
 
@@ -24,7 +26,7 @@
   margin: 0 var(--sp-l) 0 0;
   border-right: $b-1 solid var(--panel-border-color);
   background-color: var(--panel-background-color);
-  z-index: deprecated.$z-index-1;
+  z-index: var(--z-index-dropdown);
 }
 
 //SIDEBAR CONTENT COMPONENT
@@ -392,17 +394,81 @@
 
 .profile-dropdown {
   @extend .menu-dropdown;
-  left: var(--sp-l);
-  bottom: deprecated.$s-72;
-  min-width: $sz-252;
+  inset-inline-start: var(--sp-s);
+  inset-block-end: px2rem(72); // 72 is the height of the profile button
+  min-width: calc(100% - var(--sp-s));
   // TODO ADD animation fadeInUp
 }
 
 .profile-dropdown-item {
   @extend .menu-item-base;
-  @include t.use-typography("title-small");
-  height: $sz-40;
-  padding: var(--sp-s) var(--sp-l);
+  @include t.use-typography("body-medium");
+  block-size: $sz-40;
+  margin-block-end: var(--sp-xs);
+  padding: var(--sp-s);
+  padding-inline-start: var(--sp-l);
+
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+
+    .open-arrow {
+      --icon-stroke-color: var(--menu-foreground-color-hover);
+    }
+  }
+}
+
+.profile-dropdown-item .open-arrow {
+  @include deprecated.flexCenter;
+}
+
+.profile-dropdown-item .open-arrow svg {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.sub-menu {
+  @extend .menu-dropdown;
+  inset-inline-start: calc(deprecated.$s-292 + var(--sp-s));
+  min-width: deprecated.$s-192;
+}
+
+.sub-menu.help-learning {
+  inset-block-end: deprecated.$s-72;
+}
+
+.sub-menu.community {
+  inset-block-end: deprecated.$s-120;
+}
+
+.sub-menu.about {
+  inset-block-end: $sz-24;
+}
+
+.submenu-item {
+  @extend .menu-item-base;
+  @include t.use-typography("body-medium");
+  block-size: $sz-40;
+  margin-block-end: var(--sp-xs);
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-l);
+
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+  }
+}
+
+.about-penpot {
+  align-items: baseline;
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.menu-version {
+  @include t.use-typography("code-font");
+  @include deprecated.textEllipsis;
+  color: var(--color-foreground-secondary);
+  margin-inline-start: var(--sp-s);
+  text-transform: uppercase;
 }
 
 .profile-separator {

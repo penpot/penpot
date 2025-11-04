@@ -4,12 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .token-context-menu {
   position: absolute;
-  z-index: $z-index-4;
+  z-index: deprecated.$z-index-4;
 }
 
 .token-context-menu[data-direction="up"] {
@@ -22,12 +22,12 @@
 
 .context-list,
 .token-context-submenu {
-  @include menuShadow;
+  @include deprecated.menuShadow;
   display: grid;
-  width: $s-240;
-  padding: $s-4;
-  border-radius: $br-8;
-  border: $s-2 solid var(--color-background-quaternary);
+  width: deprecated.$s-240;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
   max-height: 100vh;
   overflow-y: auto;
@@ -43,13 +43,13 @@
 
 .token-context-submenu {
   position: absolute;
-  padding: $s-4;
-  margin-left: $s-6;
+  padding: deprecated.$s-4;
+  margin-left: deprecated.$s-6;
 }
 
 .separator {
-  margin: $s-6;
-  border-block-start: $s-1 solid var(--panel-border-color);
+  margin: deprecated.$s-6;
+  border-block-start: deprecated.$s-1 solid var(--panel-border-color);
 }
 
 .context-menu-item {
@@ -59,13 +59,13 @@
   @include use-typography("body-small");
   display: flex;
   align-items: center;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   color: var(--context-menu-item-fg-color);
   background-color: var(--context-menu-item-bg-color);
-  border: $s-1 solid var(--context-menu-item-border-color);
+  border: deprecated.$s-1 solid var(--context-menu-item-border-color);
   cursor: pointer;
   &:hover {
     --context-menu-item-bg-color: var(--color-background-quaternary);
@@ -110,10 +110,10 @@
 .context-menu-item-hint {
   position: absolute;
   background-color: var(--color-background-primary);
-  border-radius: $br-6;
-  padding: $s-4;
-  inset-inline-end: $s-4;
-  inset-block-start: $s-4;
+  border-radius: deprecated.$br-6;
+  padding: deprecated.$s-4;
+  inset-inline-end: deprecated.$s-4;
+  inset-block-start: deprecated.$s-4;
   color: var(--color-foreground-secondary);
 }
 
@@ -122,8 +122,8 @@
 }
 
 .item-with-icon-space {
-  padding-left: $s-20;
+  padding-left: deprecated.$s-20;
 }
 .icon-wrapper {
-  margin-right: $s-4;
+  margin-right: deprecated.$s-4;
 }

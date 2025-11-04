@@ -249,12 +249,16 @@
 (defn equal-attrs?
   "Given a text structure, and a map of attrs, check that all the internal attrs in
    paragraphs and sentences have the same attrs"
-  [item attrs]
-  (let [item-attrs (dissoc item :text :type :key :children)]
-    (and
-     (or (empty? item-attrs)
-         (= attrs (dissoc item :text :type :key :children)))
-     (every? #(equal-attrs? % attrs) (:children item)))))
+  ([item attrs]
+   ;; Ignore the root attrs of the content. We only want to check paragraphs and sentences
+   (equal-attrs? item attrs true))
+  ([item attrs ignore?]
+   (let [item-attrs (dissoc item :text :type :key :children)]
+     (and
+      (or ignore?
+          (empty? item-attrs)
+          (= attrs (dissoc item :text :type :key :children)))
+      (every? #(equal-attrs? % attrs false) (:children item))))))
 
 (defn get-first-paragraph-text-attrs
   "Given a content text structure, extract it's first paragraph

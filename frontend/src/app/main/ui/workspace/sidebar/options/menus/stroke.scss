@@ -4,35 +4,51 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
 
-.element-set {
-  margin: 0;
+.stroke-section {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
-.element-title {
-  margin: 0;
+.stroke-title {
+  grid-column: span 8;
 }
 
-.title-spacing-stroke {
-  padding-left: $s-2;
-  margin: 0;
+.stroke-title-bar {
+  padding-inline-start: var(--sp-xxs);
 }
 
-.element-content {
+.stroke-content {
+  grid-column: span 8;
+
   display: flex;
   flex-direction: column;
-  gap: $s-12;
-  margin: $s-4 0 $s-8 0;
-  &.empty-content {
+  gap: var(--sp-m);
+  margin: var(--sp-xs) 0 var(--sp-s) 0;
+
+  &.stroke-content-empty {
     margin: 0;
   }
 }
 
-.element-set-options-group {
-  @include flexRow;
+.stroke-multiple {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
-.group-label {
-  @extend .mixed-bar;
+.stroke-multiple-label {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }

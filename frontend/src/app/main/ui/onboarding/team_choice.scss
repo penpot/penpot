@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -12,35 +12,35 @@
 
 .modal-container {
   position: relative;
-  width: $s-908;
-  max-height: $s-800;
+  width: deprecated.$s-908;
+  max-height: deprecated.$s-800;
   height: 100%;
-  padding-inline: $s-100;
-  padding-block-start: $s-40;
-  padding-block-end: $s-40;
-  border-radius: $br-8;
+  padding-inline: deprecated.$s-100;
+  padding-block-start: deprecated.$s-40;
+  padding-block-end: deprecated.$s-40;
+  border-radius: deprecated.$br-8;
   background-color: var(--modal-background-color);
-  border: $s-2 solid var(--modal-border-color);
+  border: deprecated.$s-2 solid var(--modal-border-color);
   display: flex;
   flex-direction: column;
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 .modal-sections {
   display: grid;
-  grid-template-columns: 1fr $s-32 1fr;
-  gap: $s-24;
+  grid-template-columns: 1fr deprecated.$s-32 1fr;
+  gap: deprecated.$s-24;
   height: 100%;
   overflow: hidden;
 }
 
 .paginator {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   position: absolute;
-  top: $s-40;
-  right: $s-100;
-  padding: $s-4;
-  border-radius: $br-6;
+  top: deprecated.$s-40;
+  right: deprecated.$s-100;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-6;
   color: var(--color-foreground-secondary);
 }
 
@@ -48,54 +48,54 @@
 .modal-left {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: $s-32 auto auto 1fr;
-  gap: $s-16;
+  grid-template-rows: deprecated.$s-32 auto auto 1fr;
+  gap: deprecated.$s-16;
   overflow: auto;
 }
 
 .modal-title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
 .modal-subtitle {
-  @include medTitleTipography;
+  @include deprecated.medTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
 .invite-subtitle {
-  padding-top: $s-16;
+  padding-top: deprecated.$s-16;
 }
 
 .modal-text {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
 
 .modal-desc {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   margin: 0;
   color: var(--modal-title-foreground-color);
 }
 
 .team-features {
-  @include flexColumn;
-  gap: $s-16;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-16;
   margin: 0;
 }
 
 .feature {
-  @include flexRow;
-  gap: $s-16;
+  @include deprecated.flexRow;
+  gap: deprecated.$s-16;
 }
 
 .icon {
-  @include flexCenter;
-  height: $s-32;
-  width: $s-32;
-  border-radius: $br-circle;
-  border: $s-1 solid var(--color-accent-primary);
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  border-radius: deprecated.$br-circle;
+  border: deprecated.$s-1 solid var(--color-accent-primary);
   svg {
     @extend .button-icon;
     stroke: var(--color-accent-primary);
@@ -117,9 +117,9 @@
 
 // SEPARATOR
 .separator {
-  width: $s-8;
+  width: deprecated.$s-8;
   height: 100%;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   opacity: 42%;
   background-color: var(--modal-separator-backogrund-color);
 }
@@ -129,7 +129,7 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr auto;
-  gap: $s-24;
+  gap: deprecated.$s-24;
   overflow: hidden;
 }
 
@@ -140,21 +140,21 @@
 
 .first-block,
 .second-block {
-  @include flexColumn;
-  gap: $s-16;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-16;
 }
 
 .modal-form {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $s-16;
+  gap: deprecated.$s-16;
 }
 
 .team-name-input {
   @extend .input-element-label;
   label {
-    @include flexColumn;
-    @include bodySmallTypography;
+    @include deprecated.flexColumn;
+    @include deprecated.bodySmallTypography;
     align-items: flex-start;
     width: 100%;
     border: none;
@@ -162,8 +162,8 @@
     height: 100%;
 
     input {
-      @include bodySmallTypography;
-      margin-top: $s-8;
+      @include deprecated.bodySmallTypography;
+      margin-top: deprecated.$s-8;
     }
   }
 }
@@ -174,21 +174,21 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto auto 1fr;
-  gap: $s-16;
-  max-height: $s-512;
+  gap: deprecated.$s-16;
+  max-height: deprecated.$s-512;
 }
 
 .modal-form-invitations {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto auto;
-  margin-block-end: $s-72;
-  gap: $s-8;
+  margin-block-end: deprecated.$s-72;
+  gap: deprecated.$s-8;
 }
 
 .role-title {
-  @include uppercaseTitleTipography;
-  margin-block-end: $s-8;
+  @include deprecated.uppercaseTitleTipography;
+  margin-block-end: deprecated.$s-8;
   color: var(--modal-title-foreground-color);
 }
 
@@ -198,7 +198,7 @@
 }
 
 .modal-hint {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--modal-text-foreground-color);
   text-align: right;
 }

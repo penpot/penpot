@@ -16,7 +16,6 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.modifiers :as mdwm]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -44,7 +43,6 @@
                              (gpt/point old-sr))]
       (-> shape
           (gsh/transform-shape (ctm/move modifiers deltav))
-          (mdwm/update-grow-type shape)
           (dissoc :modifiers)))
     shape))
 

@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -75,7 +75,7 @@
         (mf/use-fn
          (mf/deps color file-id)
          (fn [attrs]
-           (let [name  (cfh/merge-path-item (:path color) (:name color))
+           (let [name  (cpn/merge-path-item (:path color) (:name color))
                  color (-> attrs
                            (assoc :id (:id color))
                            (assoc :name name))]
@@ -128,6 +128,7 @@
                         {:x (.-clientX ^js event)
                          :y (.-clientY ^js event)
                          :on-accept edit-color
+                         :origin :assets
                          :data color
                          :position :right})))
 
@@ -168,9 +169,9 @@
 
         on-color-drag-start
         (mf/use-fn
-         (mf/deps color file-id selected item-ref read-only?)
+         (mf/deps color file-id selected item-ref read-only? editing?)
          (fn [event]
-           (if read-only?
+           (if (or read-only? editing?)
              (dom/prevent-default event)
              (cmm/on-asset-drag-start event file-id color selected item-ref :colors identity))))
 
@@ -220,7 +221,7 @@
          :on-key-down input-key-down
          :auto-focus true
          :max-length max-input-length
-         :default-value (cfh/merge-path-item (:path color) (:name color))}]
+         :default-value (cpn/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)
                        default-name
@@ -235,7 +236,7 @@
            [:span  {:class (stl/css :default-name :default-name-with-color)} default-name]])])
 
      (when local?
-       [:& cmm/assets-context-menu
+       [:> cmm/assets-context-menu*
         {:on-close on-close-menu
          :state @menu-state
          :options [(when-not (or multi-colors? multi-assets?)
@@ -301,12 +302,12 @@
            :on-drag-leave on-drag-leave
            :on-drag-over dom/prevent-default
            :on-drop on-drop}
-     [:& grp/asset-group-title {:file-id file-id
-                                :section :colors
-                                :path prefix
-                                :group-open? group-open?
-                                :on-rename on-rename-group
-                                :on-ungroup on-ungroup}]
+     [:> grp/asset-group-title* {:file-id file-id
+                                 :section :colors
+                                 :path prefix
+                                 :is-group-open group-open?
+                                 :on-rename on-rename-group
+                                 :on-ungroup on-ungroup}]
      (when group-open?
        [:*
         (let [colors (get groups "" [])]
@@ -344,7 +345,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& colors-group {:file-id file-id
-                              :prefix (cfh/merge-path-item prefix path-item)
+                              :prefix (cpn/merge-path-item prefix path-item)
                               :key (dm/str "group-" path-item)
                               :groups content
                               :open-groups open-groups
@@ -362,9 +363,10 @@
                               :colors colors
                               :selected-full selected-full}]))])]))
 
-(mf/defc colors-section
-  [{:keys [file-id local? colors open? force-open? open-status-ref selected reverse-sort?
-           on-asset-click on-assets-delete on-clear-selection] :as props}]
+(mf/defc colors-section*
+  [{:keys [file-id colors open-status-ref selected
+           is-local is-open is-force-open is-reverse-sort
+           on-asset-click on-assets-delete on-clear-selection]}]
 
   (let [selected        (:colors selected)
         selected-full   (mf/with-memo [selected colors]
@@ -380,8 +382,8 @@
                             (seq (:graphics selected))
                             (seq (:typographies selected)))
 
-        groups          (mf/with-memo [colors reverse-sort?]
-                          (grp/group-assets colors reverse-sort?))
+        groups          (mf/with-memo [colors is-reverse-sort]
+                          (grp/group-assets colors is-reverse-sort))
 
         read-only?      (mf/use-ctx ctx/workspace-read-only?)
 
@@ -407,6 +409,7 @@
                                    {:x x-position
                                     :y y-position
                                     :on-accept add-color
+                                    :origin :assets
                                     :data {:color "#406280"
                                            :opacity 1}
                                     :position :right})))))
@@ -482,13 +485,13 @@
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
 
-    [:& cmm/asset-section {:file-id file-id
-                           :title (tr "workspace.assets.colors")
-                           :section :colors
-                           :assets-count (count colors)
-                           :open? open?}
-     (when local?
-       [:& cmm/asset-section-block {:role :title-button}
+    [:> cmm/asset-section* {:file-id file-id
+                            :title (tr "workspace.assets.colors")
+                            :section :colors
+                            :assets-count (count colors)
+                            :is-open is-open}
+     (when is-local
+       [:> cmm/asset-section-block* {:role :title-button}
         (when-not read-only?
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.assets.colors.add-color")
@@ -496,13 +499,13 @@
                             :icon i/add}])])
 
 
-     [:& cmm/asset-section-block {:role :content}
+     [:> cmm/asset-section-block* {:role :content}
       [:& colors-group {:file-id file-id
                         :prefix ""
                         :groups groups
                         :open-groups open-groups
-                        :force-open? force-open?
-                        :local? local?
+                        :force-open? is-force-open
+                        :local? is-local
                         :selected selected
                         :multi-colors? multi-colors?
                         :multi-assets? multi-assets?

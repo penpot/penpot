@@ -24,6 +24,7 @@
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.router :as rt]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
@@ -38,6 +39,7 @@
 (declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-file-change)
+(declare handle-file-deleted)
 (declare handle-file-restore)
 (declare handle-library-change)
 (declare handle-pointer-send)
@@ -129,6 +131,7 @@
     :disconnect             (handle-presence msg)
     :pointer-update         (handle-pointer-update msg)
     :file-change            (handle-file-change msg)
+    :file-deleted           (handle-file-deleted msg)
     :file-restore           (handle-file-restore msg)
     :library-change         (handle-library-change msg)
     :notification           (dc/handle-notification msg)
@@ -266,6 +269,18 @@
                           :redo-changes (vec changes)
                           :undo-changes []})))))
 
+(defn handle-file-deleted
+  [{:keys [file-id] :as msg}]
+  (ptk/reify ::handle-file-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [curr-file-id (:current-file-id state)
+            team-id      (:current-team-id state)]
+        ;; If the deleted file is the currently open one
+        (when (= file-id curr-file-id)
+          (rx/of
+           (rt/nav :dashboard-recent {:team-id team-id})))))))
+
 (def ^:private
   schema:handle-file-restore
   [:map {:title "handle-file-restore"}
@@ -316,4 +331,4 @@
     (watch [_ state _]
       (when (contains? (:files state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
-               (dwl/notify-sync-file file-id))))))
+               (dwl/notify-sync-file))))))

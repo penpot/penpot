@@ -19,7 +19,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
+   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -190,9 +190,9 @@
                          :icon i/remove}]]]
 
      (when (:display grid)
-       [:& advanced-options {:class (stl/css :grid-advanced-options)
-                             :visible? open?
-                             :on-close toggle-advanced-options}
+       [:> advanced-options* {:class (stl/css :grid-advanced-options)
+                              :is-visible open?
+                              :on-close toggle-advanced-options}
         ;; square
         (when (= :square type)
           [:div {:class (stl/css :square-row)}
@@ -201,6 +201,7 @@
                             :title (tr "workspace.options.grid.params.color")
                             :disable-gradient true
                             :disable-image true
+                            :origin :guides
                             :on-change handle-change-color
                             :on-detach handle-detach-color}]
             [:button {:class (stl/css-case :show-more-options true
@@ -242,6 +243,7 @@
                              :title (tr "workspace.options.grid.params.color")
                              :disable-gradient true
                              :disable-image true
+                             :origin :guides
                              :on-change handle-change-color
                              :on-detach handle-detach-color}]]]
 
@@ -314,16 +316,17 @@
          #(st/emit! (dw/add-frame-grid id)))]
 
     [:div {:class (stl/css :element-set)}
-     [:> title-bar* {:collapsable  has-frame-grids?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
-                     :title        (tr "workspace.options.guides.title")}
+     [:div {:class (stl/css :element-title)}
+      [:> title-bar* {:collapsable  has-frame-grids?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
+                      :title        (tr "workspace.options.guides.title")}
 
-      [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "workspace.options.guides.add-guide")
-                        :on-click handle-create-grid
-                        :icon i/add}]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.options.guides.add-guide")
+                         :on-click handle-create-grid
+                         :icon i/add}]]]
 
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}

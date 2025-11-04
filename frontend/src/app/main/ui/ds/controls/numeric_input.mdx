@@ -4,8 +4,79 @@
 
   Copyright (c) KALEIDOS INC */ }
 import { Canvas, Meta } from '@storybook/blocks';
-import * as InputStories from "./numeric_input.stories";
+import * as InputStories from "./numeric-input.stories";
 
 <Meta title="Controls/Numeric Input" />
 
 # Numeric Input
+
+The `numeric-input*` component allows users to enter numerical values, apply tokens, or perform simple mathematical expressions.  
+It combines a numeric input field with token integration, making it flexible for design systems where values can come from either fixed numbers or token references.
+
+## Variants
+
+### Default
+The standard numeric input that accepts direct numeric input.
+<Canvas of={InputStories.Default} />
+
+### With Tokens
+When tokens are available, the user can open a dropdown and apply a token instead of entering a fixed number.  
+The token will be displayed inside the input field and can be detached if needed.
+<Canvas of={InputStories.WithTokens} />
+
+## Technical notes
+
+### Tokens
+
+- Numeric input supports applying tokens via a dropdown that opens when typing `{` or clicking the token button.
+- Tokens are grouped and searchable.
+- Once a token is applied, the input field is replaced with a **token field**, showing the token name and its resolved value.
+
+### Validation & Math Expressions
+
+- The input accepts simple math expressions (e.g. `2+2`, `100/4`) and resolves them on blur.  
+- Values are automatically clamped to the provided `min` and `max` range.  
+- If the input is left empty and `nillable` is enabled, the value can be `nil`.  
+
+### Icons
+
+`numeric-input*` supports optional icons at the start of the field for additional context.  
+Icons come from the `app.main.ui.ds.foundations.assets.icon` namespace.
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+
+[:> numeric-input*
+ {:icon i/hash
+  :placeholder "Enter number"
+  :min 0
+  :max 100
+  :step 1}]
+```
+
+## Usage guidelines (design)
+### Where to Use
+
+Use numeric input in forms and properties panels where users need to adjust numerical values, such as sizes, spacings, or opacities.
+
+### When to Use
+
+When users must provide a numeric value within a defined range.
+
+When design tokens can be applied instead of raw numbers.
+
+When supporting advanced workflows where math expressions improve speed.
+
+### Interaction / Behavior
+
+Typing Numbers: The user can type numbers directly in the field.
+
+Using Tokens: Typing `{` opens a token dropdown; selecting one replaces the raw value with the token.
+
+Increment / Decrement: Users can adjust values with arrow keys ↑/↓ or mouse wheel.
+
+Validation: Invalid or out-of-range inputs fall back to the last valid value or the default.
+
+Detaching Tokens: Applied tokens can be removed via the detach button or with Backspace/Delete.

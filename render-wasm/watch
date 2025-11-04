@@ -9,11 +9,15 @@ pushd $_SCRIPT_DIR;
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
 export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
 
+_SHARED_FILE=$(find target/wasm32-unknown-emscripten -name render_wasm_shared.js | head -n 1);
+
+cat target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js "$_SHARED_FILE" > ../frontend/resources/public/js/$_BUILD_NAME.js
+cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/$_BUILD_NAME.wasm
 
 pushd $_SCRIPT_DIR;
 cargo watch \
       -x "build $_CARGO_PARAMS" \
-      -s "cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/" \
+      -s "cat target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js \"$_SHARED_FILE\" > ../frontend/resources/public/js/$_BUILD_NAME.js" \
       -s "cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/" \
       -s "sed -i 's/render_wasm.wasm/render_wasm.wasm?version=develop/g' ../frontend/resources/public/js/render_wasm.js" \
       -s "echo 'DONE\n'";

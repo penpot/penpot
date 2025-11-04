@@ -25,7 +25,7 @@ Horizontal constraints are serialized as `u8`:
 | ----- | --------- |
 | 0     | Left      |
 | 1     | Right     |
-| 2     | LeftRight |
+| 2     | Leftright |
 | 3     | Center    |
 | 4     | Scale     |
 | \_    | None      |
@@ -38,10 +38,21 @@ Vertical constraints are serialized as `u8`:
 | ----- | --------- |
 | 0     | Top       |
 | 1     | Bottom    |
-| 2     | TopBottom |
+| 2     | Topbottom |
 | 3     | Center    |
 | 4     | Scale     |
 | \_    | None      |
+
+## Vertical Alignment
+
+Vertical alignment is serialized as `u8`:
+
+| Value | Field  |
+| ----- | ------ |
+| 0     | Top    |
+| 1     | Center |
+| 2     | Bottom |
+| \_    | Top    |
 
 ## Paths
 
@@ -126,16 +137,17 @@ Gradient stops are serialized as a sequence of `16` chunks with the following la
 
 Stroke caps are serialized as `u8`:
 
-| Value | Field     |
-| ----- | --------- |
-| 1     | Line      |
-| 2     | Triangle  |
-| 3     | Rectangle |
-| 4     | Circle    |
-| 5     | Diamond   |
-| 6     | Round     |
-| 7     | Square    |
-| \_    | None      |
+| Value | Field         |
+| ----- | ------------- |
+| 0     | None          |
+| 1     | LineArrow     |
+| 2     | TriangleArrow |
+| 3     | SquareMarker  |
+| 4     | CircleMarker  |
+| 5     | DiamondMarker |
+| 6     | Round         |
+| 7     | Square        |
+| \_    | None          |
 
 ## Stroke Sytles
 
@@ -209,16 +221,6 @@ Shadow styles are serialized as `u8`:
 | 3     | Stretch |
 | \_    | error   |
 
-### Align self
-
-| Value | Field   |
-| ----- | ------- |
-| 0     | Start   |
-| 1     | End     |
-| 2     | Center  |
-| 3     | Stretch |
-| \_    | error   |
-
 ### Align Content
 
 | Value | Field         |
@@ -257,25 +259,27 @@ Shadow styles are serialized as `u8`:
 
 ### Align Self
 
-| Value | Field   |
-| ----- | ------- |
-| 0     | Auto    |
-| 1     | Start   |
-| 2     | End     |
-| 3     | Center  |
-| 4     | Stretch |
-| \_    | error   |
+| Value | Field         |
+| ----- | ------------- |
+| 0     | (none)        |
+| 1     | Auto          |
+| 2     | Start         |
+| 3     | End           |
+| 4     | Center        |
+| 5     | Stretch       |
+| \_    | (unsupported) |
 
 ### Justify Self
 
-| Value | Field   |
-| ----- | ------- |
-| 0     | Auto    |
-| 1     | Start   |
-| 2     | End     |
-| 3     | Center  |
-| 4     | Stretch |
-| \_    | error   |
+| Value | Field         |
+| ----- | ------------- |
+| 0     | (none)        |
+| 1     | Auto          |
+| 2     | Start         |
+| 3     | End           |
+| 4     | Center        |
+| 5     | Stretch       |
+| \_    | (unsupported) |
 
 ### Wrap type
 

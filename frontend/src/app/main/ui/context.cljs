@@ -24,6 +24,7 @@
 
 (def libraries            (mf/create-context nil))
 (def design-tokens        (mf/create-context nil))
+(def token-inputs         (mf/create-context nil))
 
 (def current-scroll       (mf/create-context nil))
 (def current-zoom         (mf/create-context nil))

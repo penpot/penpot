@@ -224,9 +224,11 @@
     (throw (IllegalArgumentException.
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
 
-  (let [detach?  (and (not embed-assets) (not include-libraries))]
+  (let [detach? (and (not embed-assets) (not include-libraries))]
     (db/tx-run! cfg (fn [cfg]
-                      (cond-> (bfc/get-file cfg file-id {::sql/for-update true})
+                      (cond-> (bfc/get-file cfg file-id
+                                            {:realize? true
+                                             :lock-for-update? true})
                         detach?
                         (-> (ctf/detach-external-references file-id)
                             (dissoc :libraries))
@@ -713,7 +715,7 @@
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::bfc/project-id] :as cfg} {file-id :id file-name :name}]
+  [{:keys [::db/conn ::bfc/project-id] :as cfg} {file-id :id file-name :name}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg file-id)
         media      (read-file-media cfg file-id)
@@ -726,26 +728,48 @@
            :version (:version file)
            ::l/sync? true)
 
-    (events/tap :progress {:section :file :name file-name})
+    (vswap! bfc/*state* update :index bfc/update-index media :id)
 
-    (when media
-      ;; Update index with media
-      (l/dbg :hint "update media index"
-             :file-id (str file-id')
-             :total (count media)
-             ::l/sync? true)
+    (events/tap :progress {:section :media :file-id file-id})
 
-      (vswap! bfc/*state* update :index bfc/update-index (map :id media))
-      (vswap! bfc/*state* update :media into media))
+    (doseq [item media]
+      (let [params (-> item
+                       (update :id bfc/lookup-index)
+                       (assoc :file-id file-id')
+                       (d/update-when :media-id bfc/lookup-index)
+                       (d/update-when :thumbnail-id bfc/lookup-index))]
 
-    (when thumbnails
-      (l/dbg :hint "update thumbnails index"
-             :file-id (str file-id')
-             :total (count thumbnails)
-             ::l/sync? true)
+        (l/dbg :hint "inserting media object"
+               :file-id (str file-id')
+               :id (str (:id params))
+               :media-id (str (:media-id params))
+               :thumbnail-id (str (:thumbnail-id params))
+               :old-id (str (:id item))
+               ::l/sync? true)
 
-      (vswap! bfc/*state* update :index bfc/update-index (map :media-id thumbnails))
-      (vswap! bfc/*state* update :thumbnails into thumbnails))
+        (db/insert! conn :file-media-object params
+                    ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
+
+    (events/tap :progress {:section :thumbnails :file-id file-id})
+
+    (doseq [item thumbnails]
+      (let [media-id  (bfc/lookup-index (:media-id item))
+            object-id (-> (assoc item :file-id file-id')
+                          (cth/fmt-object-id))
+            params    {:file-id file-id'
+                       :object-id object-id
+                       :tag (:tag item)
+                       :media-id media-id}]
+
+        (l/dbg :hint "inserting object thumbnail"
+               :file-id (str file-id')
+               :media-id (str media-id)
+               ::l/sync? true)
+
+        (db/insert! conn :file-tagged-object-thumbnail params
+                    ::db/on-conflict-do-nothing? true)))
+
+    (events/tap :progress {:section :file :file-id file-id})
 
     (let [data (-> (read-file-data cfg file-id)
                    (d/without-nils)
@@ -794,101 +818,55 @@
         entries (keep (match-storage-entry-fn) entries)]
 
     (doseq [{:keys [id entry]} entries]
-      (let [object (->> (read-entry input entry)
-                        (decode-storage-object)
-                        (validate-storage-object))]
+      (let [object  (->> (read-entry input entry)
+                         (decode-storage-object)
+                         (validate-storage-object))
 
-        (when (not= id (:id object))
+            ext     (cmedia/mtype->extension (:content-type object))
+            path    (str "objects/" id ext)
+            content (->> path
+                         (get-zip-entry input)
+                         (zip-entry-storage-content input))]
+
+        (when (not= (:size object) (sto/get-size content))
           (ex/raise :type :validation
                     :code :inconsistent-penpot-file
-                    :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"
-                    :expected-id (str id)
-                    :found-id (str (:id object))))
+                    :hint "found corrupted storage object: size does not match"
+                    :path path
+                    :expected-size (:size object)
+                    :found-size (sto/get-size content)))
 
-        (let [ext     (cmedia/mtype->extension (:content-type object))
-              path    (str "objects/" id ext)
-              content (->> path
-                           (get-zip-entry input)
-                           (zip-entry-storage-content input))]
-
-          (when (not= (:size object) (sto/get-size content))
+        (when-let [hash (get object :hash)]
+          (when (not= hash (sto/get-hash content))
             (ex/raise :type :validation
                       :code :inconsistent-penpot-file
-                      :hint "found corrupted storage object: size does not match"
+                      :hint "found corrupted storage object: hash does not match"
                       :path path
-                      :expected-size (:size object)
-                      :found-size (sto/get-size content)))
+                      :expected-hash (:hash object)
+                      :found-hash (sto/get-hash content))))
 
-          (when-let [hash (get object :hash)]
-            (when (not= hash (sto/get-hash content))
-              (ex/raise :type :validation
-                        :code :inconsistent-penpot-file
-                        :hint "found corrupted storage object: hash does not match"
-                        :path path
-                        :expected-hash (:hash object)
-                        :found-hash (sto/get-hash content))))
+        (let [params  (-> object
+                          (dissoc :id :size)
+                          (assoc ::sto/content content)
+                          (assoc ::sto/deduplicate? true)
+                          (assoc ::sto/touched-at timestamp))
+              sobject (sto/put-object! storage params)]
 
-          (let [params  (-> object
-                            (dissoc :id :size)
-                            (assoc ::sto/content content)
-                            (assoc ::sto/deduplicate? true)
-                            (assoc ::sto/touched-at timestamp))
-                sobject (sto/put-object! storage params)]
+          (l/dbg :hint "persisted storage object"
+                 :id (str (:id sobject))
+                 :prev-id (str id)
+                 :bucket (:bucket params)
+                 ::l/sync? true)
 
-            (l/dbg :hint "persisted storage object"
-                   :id (str (:id sobject))
-                   :prev-id (str id)
-                   :bucket (:bucket params)
-                   ::l/sync? true)
-
-            (vswap! bfc/*state* update :index assoc id (:id sobject))))))))
-
-(defn- import-file-media
-  [{:keys [::db/conn] :as cfg}]
-  (events/tap :progress {:section :media})
-
-  (doseq [item (:media @bfc/*state*)]
-    (let [params (-> item
-                     (update :id bfc/lookup-index)
-                     (update :file-id bfc/lookup-index)
-                     (d/update-when :media-id bfc/lookup-index)
-                     (d/update-when :thumbnail-id bfc/lookup-index))]
-
-      (l/dbg :hint "inserting file media object"
-             :old-id (str (:id item))
-             :id (str (:id params))
-             :file-id (str (:file-id params))
-             ::l/sync? true)
-
-      (db/insert! conn :file-media-object params
-                  ::db/on-conflict-do-nothing? (::bfc/overwrite cfg)))))
-
-(defn- import-file-thumbnails
-  [{:keys [::db/conn] :as cfg}]
-  (events/tap :progress {:section :thumbnails})
-  (doseq [item (:thumbnails @bfc/*state*)]
-    (let [file-id   (bfc/lookup-index (:file-id item))
-          media-id  (bfc/lookup-index (:media-id item))
-          object-id (-> (assoc item :file-id file-id)
-                        (cth/fmt-object-id))
-          params    {:file-id file-id
-                     :object-id object-id
-                     :tag (:tag item)
-                     :media-id media-id}]
-
-      (l/dbg :hint "inserting file object thumbnail"
-             :file-id (str file-id)
-             :media-id (str media-id)
-             ::l/sync? true)
-
-      (db/insert! conn :file-tagged-object-thumbnail params
-                  {::db/on-conflict-do-nothing? true}))))
+          (vswap! bfc/*state* update :index assoc id (:id sobject)))))))
 
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
   (bfc/disable-database-timeouts! cfg)
 
   (vswap! bfc/*state* update :index bfc/update-index (:files manifest) :id)
+
+  (import-storage-objects cfg)
 
   (let [files  (get manifest :files)
         result (reduce (fn [result {:keys [id] :as file}]
@@ -902,10 +880,6 @@
                        files)]
 
     (import-file-relations cfg)
-    (import-storage-objects cfg)
-    (import-file-media cfg)
-    (import-file-thumbnails cfg)
-
     (bfm/apply-pending-migrations! cfg)
 
     result))
@@ -930,9 +904,8 @@
     (binding [bfc/*options* cfg
               bfc/*reference-file* ref-file]
 
-      (import-file cfg file)
       (import-storage-objects cfg)
-      (import-file-media cfg)
+      (import-file cfg file)
 
       (bfc/invalidate-thumbnails cfg file-id)
       (bfm/apply-pending-migrations! cfg)

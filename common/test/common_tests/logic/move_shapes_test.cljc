@@ -144,20 +144,21 @@
         file (-> (thf/sample-file :file1)
                  (tht/add-tokens-lib)
                  (tht/update-tokens-lib #(-> %
-                                             (ctob/add-set (ctob/make-token-set :name "test-token-set"))
+                                             (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
+                                                                                :name "test-token-set"))
                                              (ctob/add-theme (ctob/make-token-theme :name "test-theme"
                                                                                     :sets #{"test-token-set"}))
                                              (ctob/set-active-themes #{"/test-theme"})
-                                             (ctob/add-token-in-set "test-token-set"
-                                                                    (ctob/make-token :id (thi/new-id! :token-sizing)
-                                                                                     :name "token-sizing"
-                                                                                     :type :sizing
-                                                                                     :value 10))
-                                             (ctob/add-token-in-set "test-token-set"
-                                                                    (ctob/make-token :id (thi/new-id! :token-spacing)
-                                                                                     :name "token-spacing"
-                                                                                     :type :spacing
-                                                                                     :value 30))))
+                                             (ctob/add-token (thi/id :test-token-set)
+                                                             (ctob/make-token :id (thi/new-id! :token-sizing)
+                                                                              :name "token-sizing"
+                                                                              :type :sizing
+                                                                              :value 10))
+                                             (ctob/add-token (thi/id :test-token-set)
+                                                             (ctob/make-token :id (thi/new-id! :token-spacing)
+                                                                              :name "token-spacing"
+                                                                              :type :spacing
+                                                                              :value 30))))
                  (tho/add-frame :frame-1
                                 :layout                 :flex     ;; TODO: those values come from main.data.workspace.shape_layout/default-layout-params
                                 :layout-flex-dir        :row      ;;       it should be good to use it directly, but first it should be moved to common.logic

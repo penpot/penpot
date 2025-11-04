@@ -185,15 +185,17 @@
                            interactions)))
                  (vals objects))
 
+         id-to-delete? (set ids-to-delete)
          changes
-         (reduce (fn [changes {:keys [id] :as flow}]
-                   (if (contains? ids-to-delete (:starting-frame flow))
-                     (-> changes
-                         (pcb/with-page page)
-                         (pcb/set-flow id nil))
-                     changes))
-                 changes
-                 (:flows page))
+         (->> (:flows page)
+              (reduce
+               (fn [changes [id flow]]
+                 (if (id-to-delete? (:starting-frame flow))
+                   (-> changes
+                       (pcb/with-page page)
+                       (pcb/set-flow id nil))
+                   changes))
+               changes))
 
 
          all-parents

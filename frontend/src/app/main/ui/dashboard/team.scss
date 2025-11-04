@@ -4,8 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
+@use "ds/_utils.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
 
 // Dashboard team settings
 .dashboard-team-settings {
@@ -13,68 +18,75 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  border-top: $s-1 solid var(--panel-border-color);
+  border-top: $b-1 solid var(--color-background-quaternary);
   overflow-y: auto;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
+  padding-inline-start: var(--sp-xl);
+  padding-block-start: var(--sp-xl);
 }
 
 .settings-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $s-24;
+  gap: var(--sp-xxl);
 }
 
 .block {
   display: grid;
   grid-auto-rows: min-content;
-  gap: $s-8;
-  max-width: $s-1000;
+  gap: var(--sp-s);
+  max-width: $sz-1000;
   width: 100%;
 }
 
 .info-block {
-  margin-block-start: $s-16;
+  margin-block-start: var(--sp-l);
 }
 
 .block-label {
-  @include headlineSmallTypography;
-  color: var(--title-foreground-color);
+  @include t.use-typography("headline-small");
+  color: var(--color-foreground-secondary);
 }
 
 .block-text {
-  color: var(--title-foreground-color-hover);
+  color: var(--color-foreground-primary);
 }
 
 .block-content {
   display: grid;
-  grid-template-columns: $s-32 1fr;
+  grid-template-columns: var(--sp-xxxl) 1fr;
   align-items: center;
-  gap: $s-12;
+  gap: var(--sp-m);
 }
 
 .owner-icon {
-  width: $s-32;
-  height: $s-32;
+  width: $sz-32;
+  height: $sz-32;
   border-radius: 50%;
 }
 
 .user-icon,
 .document-icon,
 .group-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   margin: 0 auto;
-  stroke: var(--icon-foreground);
+  stroke: var(--color-foreground-secondary);
 }
 
 .team-icon {
   --update-button-opacity: 0;
   position: relative;
-  height: $s-120;
-  width: $s-120;
-  padding: $s-16;
-  margin-block-end: $s-32;
+  height: $sz-120;
+  width: $sz-120;
+  padding: var(--sp-l);
+  margin-block-end: var(--sp-xxxl);
 
   &:hover {
     --update-button-opacity: 1;
@@ -86,29 +98,40 @@
   top: 0;
   left: 0;
   border-radius: 50%;
-  width: $s-120;
-  height: $s-120;
+  width: $sz-120;
+  height: $sz-120;
 }
 
 .update-overlay {
   opacity: var(--update-button-opacity);
-  @include buttonStyle;
-  @include flexCenter;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
-  z-index: $z-index-modal;
+  z-index: var(--z-index-set);
   border-radius: $br-circle;
   background-color: var(--color-accent-primary);
 }
 
 .image-icon {
-  @extend .button-icon;
-  min-width: $s-24;
-  min-height: $s-24;
-  stroke: var(--icon-foreground-hover);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
+  min-width: $sz-24;
+  min-height: $sz-24;
+  stroke: var(--color-foreground-primary);
 }
 
 // TEAM MEMBERS PAGE
@@ -117,9 +140,9 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding-inline-start: var(--sp-xl);
+  padding-block-start: var(--sp-xl);
+  border-top: $b-1 solid var(--color-background-quaternary);
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -133,62 +156,69 @@
   display: grid;
   grid-template-rows: auto 1fr;
   height: fit-content;
-  max-width: $s-1000;
+  max-width: $sz-1000;
   width: 100%;
 }
 
 .table-header {
-  @include headlineSmallTypography;
+  @include t.use-typography("headline-small");
   display: grid;
   align-items: center;
-  grid-template-columns: 43% 1fr $s-108 $s-12;
-  height: $s-40;
+  grid-template-columns: 43% 1fr px2rem(108) var(--sp-m);
+  height: $sz-40;
   width: 100%;
-  max-width: $s-1000;
-  padding: 0 $s-16;
+  max-width: $sz-1000;
+  padding: 0 var(--sp-l);
   user-select: none;
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .table-rows {
   display: grid;
-  grid-auto-rows: $s-64;
-  gap: $s-16;
+  grid-auto-rows: px2rem(64);
+  gap: var(--sp-l);
   width: 100%;
   height: 100%;
-  max-width: $s-1000;
-  margin-top: $s-16;
-  color: var(--title-foreground-color);
+  max-width: $sz-1000;
+  margin-top: var(--sp-l);
+  color: var(--color-foreground-secondary);
 }
 
 .table-row {
   display: grid;
   grid-template-columns: 43% 1fr auto;
   align-items: center;
-  height: $s-64;
+  height: px2rem(64);
   width: 100%;
-  padding: 0 $s-16;
+  padding: 0 var(--sp-l);
   border-radius: $br-8;
-  background-color: var(--dashboard-list-background-color);
-  color: var(--dashboard-list-foreground-color);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }
 
 .title-field-name {
   width: 43%;
-  min-width: $s-300;
+  min-width: px2rem(300);
 }
 
-.title-field-roles {
+.title-field-role {
   position: relative;
   cursor: default;
+}
+
+.title-field-role,
+.title-field-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
 }
 
 .field-name {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: $s-16;
+  gap: var(--sp-l);
   width: 43%;
-  min-width: $s-300;
+  min-width: px2rem(300);
 }
 
 .field-roles {
@@ -202,8 +232,8 @@
 
 // MEMBER INFO
 .member-image {
-  height: $s-32;
-  width: $s-32;
+  height: $sz-32;
+  width: $sz-32;
   border-radius: $br-circle;
 }
 
@@ -216,33 +246,33 @@
 .member-name,
 .member-email {
   @include textEllipsis;
-  @include bodyLargeTypography;
+  @include t.use-typography("body-large");
 }
 
 .member-email {
-  @include bodySmallTypography;
-  color: var(--dashboard-list-text-foreground-color);
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
 }
 
 .you {
-  color: var(--dashboard-list-text-foreground-color);
-  margin-left: $s-6;
+  color: var(--color-foreground-secondary);
+  margin-left: px2rem(6);
 }
 
 // ROL INFO
 .rol-selector {
+  @include t.use-typography("body-medium");
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  height: $s-32;
-  min-width: $s-160;
+  height: $sz-32;
+  min-width: $sz-160;
   width: fit-content;
-  padding: $s-4 $s-8;
+  padding: var(--sp-xs) var(--sp-s);
   border-radius: $br-8;
-  border-color: var(--menu-background-color-hover);
-  background-color: var(--menu-background-color-hover);
-  font-size: $fs-14;
+  border-color: var(--color-background-quaternary);
+  background-color: var(--color-background-quaternary);
 }
 
 .has-priv {
@@ -254,37 +284,96 @@
 }
 
 .roles-dropdown {
-  @extend .menu-dropdown;
-  bottom: calc(-1 * $s-76);
+  box-shadow: var(--el-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-tertiary);
+  border: $b-2 solid var(--color-background-quaternary);
+  margin: 0;
+  bottom: calc(-1 * px2rem(76));
   width: fit-content;
-  min-width: $s-160;
+  min-width: $sz-160;
 }
 
 .rol-dropdown-item {
-  @extend .menu-item-base;
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $sz-28;
+  width: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
 }
 
 // MEMBER ACTIONS
 .menu-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--color-foreground-primary);
 }
 
 .menu-btn {
-  @include buttonStyle;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.input-checkbox {
+  // TODO: remove this extended class.
+  @extend .input-checkbox;
+  cursor: pointer;
 }
 
 .actions-dropdown {
-  @extend .menu-dropdown;
-  bottom: calc(-1 * $s-32);
+  box-shadow: var(--el-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-tertiary);
+  border: $b-2 solid var(--color-background-quaternary);
+  margin: 0;
+  bottom: calc(-1 * var(--sp-xxxl));
   right: 0;
   left: unset;
   width: fit-content;
-  min-width: $s-160;
+  min-width: $sz-160;
 }
 
 .action-dropdown-item {
-  @extend .menu-item-base;
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $sz-28;
+  width: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
 }
 
 // TEAM INVITATION PAGE
@@ -293,9 +382,9 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding-inline-start: var(--sp-xl);
+  padding-block-start: var(--sp-xl);
+  border-top: $b-1 solid var(--color-background-quaternary);
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -304,12 +393,27 @@
   display: grid;
   grid-template-rows: auto 1fr;
   height: fit-content;
-  max-width: $s-1000;
+  max-width: $sz-1000;
   width: 100%;
 }
 
+.invitations-actions {
+  @include t.use-typography("body-medium");
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  gap: var(--sp-l);
+  color: var(--title-foreground-color);
+  height: $sz-40;
+  margin-block-end: px2rem(36);
+}
+
+.error-notification {
+  margin-block-end: var(--sp-xxl);
+}
+
 .table-row-invitations {
-  grid-template-columns: 43% 1fr $s-108 $s-12;
+  grid-template-columns: 43% 1fr $sz-88 var(--sp-xxl);
   align-items: center;
 }
 
@@ -317,19 +421,20 @@
   display: grid;
   place-items: center;
   align-content: center;
-  height: $s-156;
-  max-width: $s-1000;
+  height: px2rem(156);
+  max-width: $sz-1000;
   width: 100%;
-  margin-top: $s-16;
-  border: $s-1 solid var(--panel-border-color);
+  margin-top: var(--sp-l);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
-  color: var(--dashboard-list-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .btn-empty-invitations {
+  // TODO: Remove this extend add DS component
   @extend .button-primary;
-  margin-block-start: $s-16;
-  padding-inline: $s-12;
+  margin-block-start: var(--sp-l);
+  padding-inline: var(--sp-m);
 }
 
 .title-field-status {
@@ -337,16 +442,25 @@
   cursor: default;
 }
 
+.sort-inactive {
+  opacity: 0.5;
+}
+
+.sort-active {
+  opacity: 1;
+}
+
 .field-email {
   @include textEllipsis;
-  @include bodyLargeTypography;
-  display: grid;
+  @include t.use-typography("body-large");
+  display: flex;
+  gap: var(--sp-l);
   align-items: center;
 }
 
 .invitations-dropdown {
-  bottom: calc(-1 * $s-112);
-  right: calc(-1 * $s-20);
+  bottom: calc(-1 * px2rem(112));
+  right: calc(-1 * var(--sp-xl));
 }
 
 // WEBHOOKS SECTION
@@ -354,63 +468,64 @@
   display: grid;
   grid-template-rows: auto 1fr;
   justify-items: center;
-  gap: $s-24;
+  gap: var(--sp-xxl);
   width: 100%;
   height: 100%;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding-inline-start: var(--sp-xl);
+  padding-block-start: var(--sp-xl);
+  border-top: $b-1 solid var(--color-background-quaternary);
   overflow-y: auto;
 }
 
 .webhooks-hero-container {
   display: grid;
   grid-template-rows: auto 1fr;
-  margin: $s-80 auto $s-20 auto;
-  gap: $s-24;
+  margin: px2rem(80) auto var(--sp-xl) auto;
+  gap: var(--sp-xxl);
 }
 
 .webhooks-empty {
   display: grid;
   place-items: center;
   align-content: center;
-  height: $s-156;
-  max-width: $s-1000;
+  height: px2rem(156);
+  max-width: $sz-1000;
   width: 100%;
-  padding: $s-32;
-  border: $s-1 solid var(--panel-border-color);
+  padding: var(--sp-xxxl);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
-  color: var(--dashboard-list-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .webhooks-hero {
-  font-size: $fs-14;
+  @include t.use-typography("body-medium");
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: $s-32;
-  margin-top: $s-32;
+  gap: var(--sp-xxxl);
+  margin-top: var(--sp-xxxl);
   margin: 0;
-  padding: $s-32;
+  padding: var(--sp-xxxl);
   padding: 0;
-  width: $s-468;
+  width: px2rem(468);
 }
 
 .hero-title {
-  @include bigTitleTipography;
-  color: var(--dashboard-list-foreground-color);
+  @include t.use-typography("title-large");
+  color: var(--color-foreground-primary);
 }
 
 .hero-desc {
+  @include t.use-typography("body-large");
   color: var(--color-foreground-secondary);
   margin-bottom: 0;
-  font-size: $fs-16;
-  max-width: $s-512;
+  max-width: $sz-512;
 }
 
 .hero-btn {
+  //TODO: Remove this extended class using a DS component
   @extend .button-primary;
-  height: $s-32;
-  max-width: $s-512;
+  height: $sz-32;
+  max-width: $sz-512;
 }
 
 .webhook-table {
@@ -421,7 +536,7 @@
   display: grid;
   align-items: center;
   grid-template-columns: auto 1fr auto auto;
-  gap: $s-16;
+  gap: var(--sp-l);
 }
 
 .actions {
@@ -429,90 +544,143 @@
 }
 
 .menu-disabled {
-  color: var(--icon-foreground);
-  width: $s-28;
+  color: var(--color-foreground-secondary);
+  width: $sz-28;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .webhook-actions-dropdown {
-  @extend .menu-dropdown;
-  right: calc(-1 * $s-16);
-  bottom: calc(-1 * $s-40);
+  box-shadow: var(--el-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-tertiary);
+  border: $b-2 solid var(--color-background-quaternary);
+  margin: 0;
+  right: calc(-1 * var(--sp-l));
+  bottom: calc(-1 * $sz-40);
   width: fit-content;
-  min-width: $s-160;
+  min-width: $sz-160;
 }
 
 .webhook-dropdown-item {
-  @extend .menu-item-base;
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $sz-28;
+  width: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
 }
 
 .success-icon {
-  @extend .button-icon;
-  stroke: var(--alert-icon-foreground-color-success);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
+  stroke: var(--color-accent-success);
 }
 
 .warning-icon {
-  @extend .button-icon;
-  stroke: var(--alert-icon-foreground-color-warning);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
+  stroke: var(--color-accent-warning);
 }
 
 // INVITE MEMBERS MODAL
 .modal-team-container {
-  @extend .modal-container-base;
-  @include menuShadow;
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-width: $sz-364;
+  min-height: $sz-192;
+  max-width: $sz-512;
+  max-height: $sz-512;
+  box-shadow: var(--el-shadow-dark);
   position: fixed;
-  top: $s-72;
-  right: $s-12;
+  top: px2rem(72);
+  right: var(--sp-m);
   left: unset;
-  width: $s-400;
-  padding: $s-32;
-  background-color: var(--modal-background-color);
+  width: $sz-400;
+  padding: var(--sp-xxxl);
+  background-color: var(--color-background-primary);
 
   &.hero {
-    top: $s-216;
-    right: $s-32;
+    top: px2rem(216);
+    right: var(--sp-xxxl);
   }
 }
 
 .modal-team-container-workspace {
-  top: $s-40;
-  z-index: $z-index-modal;
+  top: $sz-40;
+  z-index: var(--z-index-set);
 }
 
 .modal-title {
-  @include headlineMediumTypography;
-  height: $s-32;
-  color: var(--modal-title-foreground-color);
+  @include t.use-typography("headline-medium");
+  height: $sz-32;
+  color: var(--color-foreground-primary);
 }
 
 .role-select {
-  @include flexColumn;
-  row-gap: $s-8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  row-gap: var(--sp-s);
 }
 
 .arrow-icon {
-  @extend .button-icon;
-  stroke: var(--icon-foreground);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
+  stroke: var(--color-foreground-secondary);
   transform: rotate(90deg);
 }
 
 .invite-team-member-text {
-  @include bodyLargeTypography;
-  margin: 0 0 $s-16 0;
-  color: var(--modal-title-foreground-color);
+  @include t.use-typography("body-large");
+  margin: 0 0 var(--sp-l) 0;
+  color: var(--color-foreground-primary);
 }
 
 .role-title {
-  @include bodyLargeTypography;
+  @include t.use-typography("body-large");
   margin: 0;
-  color: var(--modal-title-foreground-color);
+  color: var(--color-foreground-primary);
 }
 
 .invitation-row {
-  margin-top: $s-8;
-  margin-bottom: $s-24;
+  margin-top: var(--sp-s);
+  margin-bottom: var(--sp-xxl);
 }
 
 .action-buttons {
@@ -521,46 +689,68 @@
 }
 
 .accept-btn {
+  // TODO: remove this extend class creating a modal component
   @extend .modal-accept-btn;
 }
 
 // WEBHOOKS MODAL
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  min-width: $sz-364;
+  min-height: $sz-192;
+  max-width: $sz-512;
+  max-height: $sz-512;
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: var(--sp-xxl);
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
-  color: var(--modal-title-foreground-color);
+  @include t.use-typography("title-small");
+  color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
+  // TODO remove extended class creating a modal component
   @extend .modal-close-btn-base;
 }
 
 .modal-content {
-  @include flexColumn;
-  gap: $s-24;
-  @include bodySmallTypography;
-  margin-bottom: $s-24;
+  @include t.use-typography("body-small");
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+  margin-bottom: var(--sp-xxl);
 }
 
 .fields-row {
-  @include flexColumn;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }
 
 .select-title {
-  @include bodySmallTypography;
-  color: var(--modal-title-foreground-color);
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
 }
 
 .custom-input-checkbox {
@@ -568,9 +758,10 @@
 }
 
 .hint {
-  color: var(--modal-text-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
+// TODO: Remove this extended classes creating a modal component
 .action-buttons {
   @extend .modal-action-btns;
 
@@ -583,8 +774,68 @@
   }
 }
 
+// TODO: Remove this extended class using input component
 .email-input {
+  @include t.use-typography("body-small");
   @extend .input-base;
-  @include bodySmallTypography;
   height: auto;
+}
+// FIXME: This does not conform to our CSS Guidelines. Need to unnest and to use
+// custom properties to handle state changes.
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  @include t.use-typography("body-large");
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: px2rem(6);
+    cursor: pointer;
+    color: var(--color-foreground-primary);
+
+    &:focus,
+    &:focus-within {
+      span {
+        border-color: var(--color-accent-primary);
+      }
+    }
+    &:hover {
+      span {
+        border-color: var(--color-accent-primary-muted);
+      }
+    }
+  }
+
+  span {
+    @extend .checkbox-icon;
+    @include t.use-typography("body-small");
+    color: var(--color-foreground-secondary);
+  }
+  input {
+    margin: 0;
+    @include t.use-typography("body-small");
+    color: var(--color-foreground-secondary);
+  }
+}
+
+// INVITATION MODAL
+
+.modal-invitation-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-invitation-content {
+  overflow: auto;
+}
+
+.invitation-list p {
+  margin: 0;
+}
+
+.modal-invitation-action-buttons {
+  margin-block-start: var(--sp-xxxl);
+  gap: var(--sp-s);
 }

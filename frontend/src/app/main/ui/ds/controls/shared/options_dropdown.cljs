@@ -95,7 +95,7 @@
                     :icon (get option :icon)
                     :ref ref
                     :focused (= id focused)
-                    :dimmed false
+                    :dimmed (true? (:dimmed option))
                     :on-click on-click}]))))
 
 

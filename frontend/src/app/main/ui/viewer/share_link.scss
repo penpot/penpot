@@ -4,15 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .share-modal {
   display: block;
   position: absolute;
-  top: $s-52;
-  right: $s-12;
-  left: calc(100vw - $s-512);
-  z-index: $z-index-modal;
+  top: deprecated.$s-52;
+  right: deprecated.$s-12;
+  left: calc(100vw - deprecated.$s-512);
+  z-index: deprecated.$z-index-modal;
 }
 
 .share-link-dialog {
@@ -21,11 +21,11 @@
 }
 
 .share-link-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .share-link-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -34,18 +34,18 @@
 }
 
 .modal-content {
-  @include bodySmallTypography;
-  @include flexColumn;
-  gap: $s-24;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-24;
 }
 
 .share-link-section {
-  @include flexColumn;
-  gap: $s-8;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-8;
 }
 
 .hint-wrapper {
-  @include flexRow;
+  @include deprecated.flexRow;
 }
 
 .hint {
@@ -54,32 +54,32 @@
 }
 
 .custon-input-wrapper {
-  @include flexRow;
-  border-radius: $br-8;
-  height: $s-32;
+  @include deprecated.flexRow;
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
   width: 100%;
   background-color: var(--input-background-color);
 }
 
 .input-text {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--input-foreground-color-active);
-  padding-left: $s-8;
+  padding-left: deprecated.$s-8;
   margin: 0;
   flex-grow: 1;
   &:focus {
     outline: none;
-    border: $s-1 solid var(--input-border-color-active);
+    border: deprecated.$s-1 solid var(--input-border-color-active);
   }
 }
 
 .copy-button {
   @extend .button-secondary;
-  @include flexRow;
-  gap: $s-8;
-  height: $s-32;
-  width: $s-28;
+  @include deprecated.flexRow;
+  gap: deprecated.$s-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground-hover);
@@ -87,13 +87,13 @@
 }
 
 .description {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--modal-text-foreground-color);
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .actions {
-  @include flexRow;
+  @include deprecated.flexRow;
   justify-content: flex-end;
 }
 
@@ -110,23 +110,23 @@
 }
 
 .permissions-section {
-  @include flexColumn;
-  gap: $s-8;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-8;
 }
 
 .manage-permissions {
-  @include buttonStyle;
-  @include uppercaseTitleTipography;
+  @include deprecated.buttonStyle;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--menu-foreground-color-rest);
-  height: $s-32;
+  height: deprecated.$s-32;
   display: flex;
   align-items: center;
   padding: 0;
 }
 
 .icon {
-  @include flexCenter;
-  margin-right: $s-6;
+  @include deprecated.flexCenter;
+  margin-right: deprecated.$s-6;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -144,7 +144,7 @@
 }
 
 .view-mode {
-  max-height: $s-216;
+  max-height: deprecated.$s-216;
   overflow: hidden auto;
   scrollbar-gutter: stable;
 }
@@ -154,8 +154,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: $s-136;
-  height: $s-32;
+  width: deprecated.$s-136;
+  height: deprecated.$s-32;
 }
 
 .items {
@@ -163,10 +163,10 @@
   color: var(--input-foreground-color-active);
 }
 .select-all-row {
-  @include flexRow;
+  @include deprecated.flexRow;
   justify-content: space-between;
-  height: $s-32;
-  border-bottom: $s-1 solid var(--input-border-color-disabled);
+  height: deprecated.$s-32;
+  border-bottom: deprecated.$s-1 solid var(--input-border-color-disabled);
 }
 .select-all-label {
   color: var(--input-foreground-color-active);
@@ -174,7 +174,7 @@
 .pages-selection {
   margin: 0;
   li {
-    border-bottom: $s-1 solid var(--input-border-color-disabled);
+    border-bottom: deprecated.$s-1 solid var(--input-border-color-disabled);
   }
   li:last-child {
     border-bottom: none;
@@ -182,17 +182,17 @@
 }
 .count-pages,
 .current-tag {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--input-foreground-color);
 }
 
 .checkbox-wrapper {
   @extend .input-checkbox;
-  height: $s-32;
+  height: deprecated.$s-32;
   padding: 0;
   span.checked {
     background-color: var(--input-checkbox-background-color-active);
-    border: $s-1 solid var(--input-checkbox-background-color-active);
+    border: deprecated.$s-1 solid var(--input-checkbox-background-color-active);
     svg {
       @extend .button-icon-small;
       stroke: var(--input-checkbox-foreground-color-active);

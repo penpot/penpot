@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .options {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: $s-16;
+  gap: deprecated.$s-16;
 }

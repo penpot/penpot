@@ -34,6 +34,9 @@ If we consider that empty options have a special meaning, we can move them to th
 Each option of `select*` may accept an `icon`, which must contain an [icon ID](../foundations/assets/icon.mdx).
 These are available in the `app.main.ds.foundations.assets.icon` namespace.
 
+### Dimmed
+Each option can have an optional parameter `dimmed` with value `true` to show the option dimmed
+
 
 ```clj
 (ns app.main.ui.foo
@@ -42,7 +45,7 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
 ```
 
 ```clj
-[:> select*       
+[:> select*
     {:options [{ :label "Code"
                  :id "option-code"
                  :icon i/fill-content }
@@ -50,7 +53,8 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
                  :id "option-design"
                  :icon i/pentool }
                { :label "Menu"
-                 :id "option-menu" } 
+                 :id "option-menu"
+                 :dimmed true }
                ]}]
 ```
 
@@ -58,8 +62,8 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
 
 ### Where to use
 
-Used in a wide range of applications in the app, 
-to select among available text-based options, 
+Used in a wide range of applications in the app,
+to select among available text-based options,
 sometimes with icons that offers additional context.
 
 ### When to use
@@ -68,5 +72,5 @@ Consider using select when you have 5 or more options to choose from.
 
 ### Interaction / Behavior
 
-When the user clicks on the clickable area, a list of 
+When the user clicks on the clickable area, a list of
 options appears. When an option is chosen, the list is closed.

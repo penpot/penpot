@@ -170,6 +170,7 @@ function build-imagemagick-docker-image {
 function build {
     echo ">> build start: $1"
     local version=$(print-current-version);
+    local script=${2:-build}
 
     pull-devenv-if-not-exists;
     docker volume create ${DEVENV_PNAME}_user_data;
@@ -182,7 +183,7 @@ function build {
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build $version
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/$script $version
 
     echo ">> build end: $1"
 }
@@ -246,6 +247,22 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
+function build-storybook-bundle {
+    echo ">> bundle storybook start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/storybook";
+
+    build "frontend" "build-storybook";
+
+    rm -rf $bundle_dir;
+    mv ./frontend/storybook-static $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle storybook end";
+}
+
 function build-docs-bundle {
     echo ">> bundle docs start";
 
@@ -265,21 +282,40 @@ function build-docs-bundle {
 function build-frontend-docker-image {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
     pushd ./docker/images;
-    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
+    docker build \
+        -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest \
+        --build-arg BUNDLE_PATH="./bundle-frontend/" \
+        -f Dockerfile.frontend .;
     popd;
 }
 
 function build-backend-docker-image {
     rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
     pushd ./docker/images;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
+    docker build \
+        -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest \
+        --build-arg BUNDLE_PATH="./bundle-backend/" \
+        -f Dockerfile.backend .;
     popd;
 }
 
 function build-exporter-docker-image {
     rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
     pushd ./docker/images;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
+    docker build \
+        -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest \
+        --build-arg BUNDLE_PATH="./bundle-exporter/" \
+        -f Dockerfile.exporter .;
+    popd;
+}
+
+function build-storybook-docker-image {
+    rsync -avr --delete ./bundles/storybook/ ./docker/images/bundle-storybook/;
+    pushd ./docker/images;
+    docker build \
+        -t penpotapp/storybook:$CURRENT_BRANCH -t penpotapp/storybook:latest \
+        --build-arg BUNDLE_PATH="./bundle-storybook/" \
+        -f Dockerfile.storybook .;
     popd;
 }
 
@@ -303,12 +339,14 @@ function usage {
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
+    echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
     echo "- build-frontend-docker-image      Build frontend docker images."
     echo "- build-backend-docker-image       Build backend docker images."
     echo "- build-exporter-docker-image      Build exporter docker images."
+    echo "- build-storybook-docker-image     Build storybook docker images."
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -361,6 +399,7 @@ case $1 in
         build-frontend-bundle;
         build-backend-bundle;
         build-exporter-bundle;
+        build-storybook-bundle;
         ;;
 
     build-frontend-bundle)
@@ -373,6 +412,10 @@ case $1 in
 
     build-exporter-bundle)
         build-exporter-bundle;
+        ;;
+    
+    build-storybook-bundle)
+        build-storybook-bundle;
         ;;
 
     build-docs-bundle)
@@ -388,6 +431,7 @@ case $1 in
         build-frontend-docker-image
         build-backend-docker-image
         build-exporter-docker-image
+        build-storybook-docker-image
         ;;
 
     build-frontend-docker-image)
@@ -400,6 +444,10 @@ case $1 in
 
     build-exporter-docker-image)
         build-exporter-docker-image
+        ;;
+ 
+    build-storybook-docker-image)
+        build-storybook-docker-image
         ;;
 
     *)

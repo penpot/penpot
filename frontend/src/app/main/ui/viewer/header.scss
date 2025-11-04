@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .viewer-header {
   position: absolute;
@@ -12,12 +12,12 @@
   grid-column: 1 / span 1;
   grid-row: 1 / span 1;
   display: grid;
-  grid-template-columns: 1fr $s-92 1fr;
+  grid-template-columns: 1fr deprecated.$s-92 1fr;
   justify-content: space-between;
   align-items: center;
-  height: $s-48;
+  height: deprecated.$s-48;
   width: 100vw;
-  padding: $s-8 $s-12;
+  padding: deprecated.$s-8 deprecated.$s-12;
   transition: transform 400ms ease 300ms;
   background-color: var(--panel-background-color);
 }
@@ -29,7 +29,7 @@
   justify-content: flex-start;
   flex-basis: min-content;
   width: 100%;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 }
 
 .home-link {
@@ -39,43 +39,43 @@
 }
 
 .logo-icon {
-  width: $s-28;
-  height: $s-28;
+  width: deprecated.$s-28;
+  height: deprecated.$s-28;
   fill: var(--icon-foreground-hover);
 }
 
 .sitemap-zone {
-  @include flexColumn;
+  @include deprecated.flexColumn;
   position: relative;
   width: 100%;
 }
 
 .project-name {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--title-foreground-color);
 }
 
 .sitemap-text {
-  @include flexRow;
+  @include deprecated.flexRow;
 }
 
 .breadcrumb {
-  @include bodySmallTypography;
-  @include flexRow;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.flexRow;
   color: var(--title-foreground-color);
   cursor: pointer;
 }
 
 .breadcrumb-text {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   max-width: 12vw; // This is a fallback
   max-width: 12cqw; // This is a unit refered to container
 }
 
 .icon {
-  @include flexCenter;
-  height: $s-16;
-  width: $s-16;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
   svg {
     @extend .button-icon-small;
     transform: rotate(90deg);
@@ -90,17 +90,17 @@
 .dropdown-sitemap {
   @extend .menu-dropdown;
   left: 0;
-  top: calc($s-2 + $s-48);
-  width: $s-272;
-  padding: $s-6;
+  top: calc(deprecated.$s-2 + deprecated.$s-48);
+  width: deprecated.$s-272;
+  padding: deprecated.$s-6;
 }
 
 .dropdown-element {
   @extend .dropdown-element-base;
   .icon-check {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     height: 100%;
-    width: $s-16;
+    width: deprecated.$s-16;
     svg {
       @extend .button-icon-small;
       stroke: var(--icon-foreground);
@@ -112,8 +112,8 @@
 }
 
 .current-frame {
-  @include bodySmallTypography;
-  @include flexRow;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.flexRow;
   flex-grow: 1;
   color: var(--title-foreground-color-hover);
   cursor: pointer;
@@ -123,22 +123,22 @@
 }
 
 .frame-name {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   max-width: 17vw; // This is a fallback
   max-width: 17cqw; // This is a unit refered to container
 }
 
 // SECTION BUTTONS
 .mode-zone {
-  @include flexRow;
+  @include deprecated.flexRow;
   height: 100%;
 }
 
 .mode-zone-btn {
   @extend .button-tertiary;
-  @include flexCenter;
-  height: $s-32;
-  width: $s-28;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   padding: 0;
   svg {
     @extend .button-icon;
@@ -151,11 +151,11 @@
 
 // OPTION AREA
 .options-zone {
-  @include flexRow;
+  @include deprecated.flexRow;
   position: relative;
   justify-content: flex-end;
-  gap: $s-8;
-  z-index: $z-index-10;
+  gap: deprecated.$s-8;
+  z-index: deprecated.$z-index-10;
 }
 
 .view-options {
@@ -167,9 +167,9 @@
 
 .fullscreen-btn {
   @extend .button-tertiary;
-  @include flexCenter;
-  height: $s-32;
-  width: $s-28;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -178,16 +178,16 @@
 
 .share-btn {
   @extend .button-primary;
-  height: $s-32;
-  min-width: $s-72;
-  margin-left: $s-4;
+  height: deprecated.$s-32;
+  min-width: deprecated.$s-72;
+  margin-left: deprecated.$s-4;
 }
 
 .edit-btn {
   @extend .button-tertiary;
-  @include flexCenter;
-  height: $s-32;
-  width: $s-28;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -196,22 +196,22 @@
 
 .go-log-btn {
   @extend .button-tertiary;
-  @include bodySmallTypography;
-  height: $s-32;
-  padding: 0 $s-8;
-  border-radius: $br-8;
+  @include deprecated.bodySmallTypography;
+  height: deprecated.$s-32;
+  padding: 0 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   color: var(--button-tertiary-foreground-color-rest);
 }
 
 // ZOOM WIDGET
 .zoom-widget {
-  @include buttonStyle;
-  @include flexCenter;
-  height: $s-28;
-  min-width: $s-64;
-  border-radius: $br-8;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-28;
+  min-width: deprecated.$s-64;
+  border-radius: deprecated.$br-8;
   .label {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     color: var(--button-tertiary-foreground-color-rest);
   }
 
@@ -229,15 +229,15 @@
 
 .dropdown {
   @extend .menu-dropdown;
-  right: $s-2;
-  top: calc($s-2 + $s-48);
-  width: $s-272;
+  right: deprecated.$s-2;
+  top: calc(deprecated.$s-2 + deprecated.$s-48);
+  width: deprecated.$s-272;
 }
 
 .basic-zoom-bar {
   display: flex;
   justify-content: space-between;
-  padding: $s-6;
+  padding: deprecated.$s-6;
   cursor: auto;
 }
 
@@ -247,13 +247,13 @@
 
 .zoom-btn {
   @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
-  border-radius: $br-8;
+  height: deprecated.$s-28;
+  width: deprecated.$s-28;
+  border-radius: deprecated.$br-8;
   .zoom-icon {
-    @include flexCenter;
-    width: $s-24;
-    height: $s-32;
+    @include deprecated.flexCenter;
+    width: deprecated.$s-24;
+    height: deprecated.$s-32;
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
@@ -267,19 +267,19 @@
 }
 
 .zoom-text {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
-  min-width: $s-64;
+  min-width: deprecated.$s-64;
   padding: 0;
-  margin: 0 $s-2;
+  margin: 0 deprecated.$s-2;
   color: var(--modal-title-foreground-color);
 }
 
 .reset-btn {
   @extend .button-tertiary;
   color: var(--button-tertiary-foreground-color-hover);
-  height: $s-28;
-  border-radius: $br-8;
+  height: deprecated.$s-28;
+  border-radius: deprecated.$br-8;
 }
 
 .zoom-option {
@@ -305,13 +305,13 @@
   content: " ";
   position: absolute;
   width: 100%;
-  height: $s-48;
+  height: deprecated.$s-48;
   left: 0;
-  top: $s-48;
+  top: deprecated.$s-48;
 }
 
 [data-fullscreen="true"] .viewer-header {
-  transform: translateY(-$s-48);
+  transform: translateY(-#{deprecated.$s-48});
 }
 
 [data-force-visible="true"] .viewer-header,

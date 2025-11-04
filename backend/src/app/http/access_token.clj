@@ -14,18 +14,18 @@
    [app.tokens :as tokens]
    [yetti.request :as yreq]))
 
-(def header-re #"^Token\s+(.*)")
+(def header-re #"(?i)^Token\s+(.*)")
 
-(defn- get-token
+(defn get-token
   [request]
   (some->> (yreq/get-header request "authorization")
            (re-matches header-re)
            (second)))
 
 (defn- decode-token
-  [props token]
+  [cfg token]
   (when token
-    (tokens/verify props {:token token :iss "access-token"})))
+    (tokens/verify cfg {:token token :iss "access-token"})))
 
 (def sql:get-token-data
   "SELECT perms, profile_id, expires_at
@@ -43,11 +43,11 @@
 (defn- wrap-soft-auth
   "Soft Authentication, will be executed synchronously on the undertow
   worker thread."
-  [handler {:keys [::setup/props]}]
+  [handler cfg]
   (letfn [(handle-request [request]
             (try
               (let [token  (get-token request)
-                    claims (decode-token props token)]
+                    claims (decode-token cfg token)]
                 (cond-> request
                   (map? claims)
                   (assoc ::id (:tid claims))))

@@ -23,6 +23,7 @@
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.msgbus :as-alias mbus]
+   [app.redis :as rds]
    [app.rpc.climit :as climit]
    [app.rpc.cond :as cond]
    [app.rpc.helpers :as rph]
@@ -239,7 +240,6 @@
           'app.rpc.commands.files
           'app.rpc.commands.files-create
           'app.rpc.commands.files-share
-          'app.rpc.commands.files-temp
           'app.rpc.commands.files-update
           'app.rpc.commands.files-snapshot
           'app.rpc.commands.files-thumbnails
@@ -262,6 +262,7 @@
    ::session/manager
    ::http.client/client
    ::db/pool
+   ::rds/pool
    ::mbus/msgbus
    ::sto/storage
    ::mtx/metrics

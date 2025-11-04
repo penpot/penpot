@@ -15,18 +15,12 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
+   [app.main.ui.workspace.sidebar.options.rows.shadow-row :refer [shadow-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -49,193 +43,6 @@
   (->> (d/enumerate values)
        (filterv (fn [[idx _]] (not= idx index)))
        (mapv second)))
-
-(mf/defc shadow-entry*
-  [{:keys [index shadow is-open
-           on-reorder
-           on-toggle-open
-           on-detach-color
-           on-update
-           on-remove
-           on-toggle-visibility]}]
-  (let [shadow-style       (:style shadow)
-        shadow-id          (:id shadow)
-
-        hidden?            (:hidden shadow)
-
-        on-drop
-        (mf/use-fn
-         (mf/deps on-reorder index)
-         (fn [_ data]
-           (on-reorder index (:index data))))
-
-        [dprops dref]
-        (h/use-sortable
-         :data-type "penpot/shadow-entry"
-         :on-drop on-drop
-         :detect-center? false
-         :data {:id (dm/str "shadow-" index)
-                :index index
-                :name (dm/str "Border row" index)})
-
-        on-remove
-        (mf/use-fn (mf/deps index) #(on-remove index))
-
-        on-update-offset-x
-        (mf/use-fn
-         (mf/deps index)
-         (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-update index :offset-x value)))
-
-        on-update-offset-y
-        (mf/use-fn
-         (mf/deps index)
-         (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-update index :offset-y value)))
-
-        on-update-spread
-        (mf/use-fn
-         (mf/deps index)
-         (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-update index :spread value)))
-
-        on-update-blur
-        (mf/use-fn
-         (mf/deps index)
-         (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-update index :blur value)))
-
-        on-update-color
-        (mf/use-fn
-         (mf/deps index on-update)
-         (fn [color]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-update index :color color)))
-
-        on-detach-color
-        (mf/use-fn (mf/deps index) #(on-detach-color index))
-
-        on-style-change
-        (mf/use-fn
-         (mf/deps index)
-         (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-update index :style (keyword value))))
-
-        on-toggle-visibility
-        (mf/use-fn
-         (mf/deps index)
-         (fn []
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
-           (on-toggle-visibility index)))
-
-        on-toggle-open
-        (mf/use-fn
-         (mf/deps shadow-id on-toggle-open)
-         #(on-toggle-open shadow-id))
-
-        type-options
-        (mf/with-memo []
-          [{:value "drop-shadow" :label (tr "workspace.options.shadow-options.drop-shadow")}
-           {:value "inner-shadow" :label (tr "workspace.options.shadow-options.inner-shadow")}])
-
-        on-open-row
-        (mf/use-fn #(st/emit! (dwu/start-undo-transaction :color-row)))
-
-        on-close-row
-        (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :color-row)))]
-
-    [:div {:class (stl/css-case :global/shadow-option true
-                                :shadow-element true
-                                :dnd-over-top (= (:over dprops) :top)
-                                :dnd-over-bot (= (:over dprops) :bot))}
-     (when (some? on-reorder)
-       [:> reorder-handler* {:ref dref}])
-
-     [:*
-      [:div {:class (stl/css :basic-options)}
-       [:div {:class (stl/css-case :shadow-info true
-                                   :hidden hidden?)}
-        [:button {:class (stl/css-case :more-options true
-                                       :selected is-open)
-                  :on-click on-toggle-open}
-         deprecated-icon/menu]
-        [:div {:class (stl/css :type-select)}
-         [:& select
-          {:class (stl/css :shadow-type-select)
-           :default-value (d/name shadow-style)
-           :options type-options
-           :on-change on-style-change}]]]
-       [:div {:class (stl/css :actions)}
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.options.shadow-options.toggle-shadow")
-                          :on-click on-toggle-visibility
-                          :icon (if hidden? "hide" "shown")}]
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.options.shadow-options.remove-shadow")
-                          :on-click on-remove
-                          :icon i/remove}]]]
-      (when is-open
-        [:& advanced-options {:class (stl/css :shadow-advanced-options)
-                              :visible? is-open
-                              :on-close on-toggle-open}
-
-         [:div {:class (stl/css :first-row)}
-          [:div {:class (stl/css :offset-x-input)
-                 :title (tr "workspace.options.shadow-options.offsetx")}
-           [:span {:class (stl/css :input-label)}
-            "X"]
-           [:> numeric-input* {:class (stl/css :numeric-input)
-                               :no-validate true
-                               :placeholder "--"
-                               :on-change on-update-offset-x
-                               :value (:offset-x shadow)}]]
-
-          [:div {:class (stl/css :blur-input)
-                 :title (tr "workspace.options.shadow-options.blur")}
-           [:span {:class (stl/css :input-label)}
-            (tr "workspace.options.shadow-options.blur")]
-           [:> numeric-input* {:class (stl/css :numeric-input)
-                               :no-validate true
-                               :placeholder "--"
-                               :on-change on-update-blur
-                               :min 0
-                               :value (:blur shadow)}]]
-
-          [:div {:class (stl/css :spread-input)
-                 :title (tr "workspace.options.shadow-options.spread")}
-           [:span {:class (stl/css :input-label)}
-            (tr "workspace.options.shadow-options.spread")]
-           [:> numeric-input* {:class (stl/css :numeric-input)
-                               :no-validate true
-                               :placeholder "--"
-                               :on-change on-update-spread
-                               :value (:spread shadow)}]]]
-
-         [:div {:class (stl/css :second-row)}
-          [:div {:class (stl/css :offset-y-input)
-                 :title (tr "workspace.options.shadow-options.offsety")}
-           [:span {:class (stl/css :input-label)}
-            "Y"]
-           [:> numeric-input* {:class (stl/css :numeric-input)
-                               :no-validate true
-                               :placeholder "--"
-                               :on-change on-update-offset-y
-                               :value (:offset-y shadow)}]]
-
-          [:> color-row* {:class (stl/css :shadow-color)
-                          :color (:color shadow)
-                          :title (tr "workspace.options.shadow-options.color")
-                          :disable-gradient true
-                          :disable-image true
-                          :on-change on-update-color
-                          :on-detach on-detach-color
-                          :on-open on-open-row
-                          :on-close on-close-row}]]])]]))
 
 (def ^:private xf:add-index
   (map-indexed (fn [index shadow]
@@ -274,10 +81,10 @@
 
         handle-reorder
         (mf/use-fn
-         (fn [new-index index]
+         (fn [from-pos to-space-between-pos]
            (let [ids (mf/ref-val ids-ref)]
              (st/emit! (dw/trigger-bounding-box-cloaking ids))
-             (st/emit! (dc/reorder-shadows ids index new-index)))))
+             (st/emit! (dc/reorder-shadows ids from-pos to-space-between-pos)))))
 
         on-add-shadow
         (mf/use-fn
@@ -320,8 +127,8 @@
                                                           (-> shadow
                                                               (assoc attr value)
                                                               (ctss/check-shadow))))))))))]
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
+    [:div {:class (stl/css :shadow-section)}
+     [:div {:class (stl/css :shadow-title)}
       [:> title-bar* {:collapsable  has-shadows?
                       :collapsed    (not show-content?)
                       :on-collapsed toggle-content
@@ -329,7 +136,7 @@
                                       :multiple (tr "workspace.options.shadow-options.title.multiple")
                                       :group (tr "workspace.options.shadow-options.title.group")
                                       (tr "workspace.options.shadow-options.title"))
-                      :class        (stl/css-case :title-spacing-shadow (not has-shadows?))}
+                      :class        (stl/css-case :shadow-title-bar (not has-shadows?))}
 
        (when-not (= :multiple shadows)
          [:> icon-button* {:variant "ghost"
@@ -341,20 +148,20 @@
      (when show-content?
        (cond
          (= :multiple shadows)
-         [:div {:class (stl/css :element-set-content)}
-          [:div {:class (stl/css :multiple-shadows)}
-           [:div {:class (stl/css :label)} (tr "settings.multiple")]
-           [:div {:class (stl/css :actions)}
-            [:> icon-button* {:variant "ghost"
-                              :aria-label (tr "workspace.options.shadow-options.remove-shadow")
-                              :on-click on-remove-all
-                              :icon i/remove}]]]]
+         [:div {:class (stl/css :shadow-content)}
+          [:div {:class (stl/css :shadow-multiple)}
+           [:div {:class (stl/css :shadow-multiple-label)}
+            (tr "settings.multiple")]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.options.shadow-options.remove-shadow")
+                             :on-click on-remove-all
+                             :icon i/remove}]]]
 
          (some? shadows)
-         [:& h/sortable-container {}
-          [:div {:class (stl/css :element-set-content)}
+         [:> h/sortable-container* {}
+          [:div {:class (stl/css :shadow-content)}
            (for [{:keys [::index id] :as shadow} shadows]
-             [:> shadow-entry*
+             [:> shadow-row*
               {:key (dm/str index)
                :index index
                :shadow shadow

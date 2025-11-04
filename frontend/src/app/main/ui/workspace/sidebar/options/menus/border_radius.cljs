@@ -5,7 +5,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
@@ -68,6 +68,7 @@
             (change-radius (fn [shape]
                              (ctsr/set-radius-to-all-corners shape value))))))
 
+
         on-radius-4-change
         (mf/use-fn
          (mf/deps ids change-radius)
@@ -98,7 +99,7 @@
         [:> icon* {:icon-id i/corner-radius
                    :size "s"
                    :class (stl/css :icon)}]
-        [:> numeric-input*
+        [:> deprecated-input/numeric-input*
          {:placeholder (cond
                          (not all-equal?)
                          "Mixed"
@@ -113,7 +114,7 @@
 
        [:div {:class (stl/css :radius-4)}
         [:div {:class (stl/css :small-input)}
-         [:> numeric-input*
+         [:> deprecated-input/numeric-input*
           {:placeholder "--"
            :title (tr "workspace.options.radius-top-left")
            :min 0
@@ -121,7 +122,7 @@
            :value (:r1 values)}]]
 
         [:div {:class (stl/css :small-input)}
-         [:> numeric-input*
+         [:> deprecated-input/numeric-input*
           {:placeholder "--"
            :title (tr "workspace.options.radius-top-right")
            :min 0
@@ -129,7 +130,7 @@
            :value (:r2 values)}]]
 
         [:div {:class (stl/css :small-input)}
-         [:> numeric-input*
+         [:> deprecated-input/numeric-input*
           {:placeholder "--"
            :title (tr "workspace.options.radius-bottom-left")
            :min 0
@@ -137,7 +138,7 @@
            :value (:r4 values)}]]
 
         [:div {:class (stl/css :small-input)}
-         [:> numeric-input*
+         [:> deprecated-input/numeric-input*
           {:placeholder "--"
            :title (tr "workspace.options.radius-bottom-right")
            :min 0

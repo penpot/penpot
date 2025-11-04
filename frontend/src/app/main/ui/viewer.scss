@@ -4,12 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .viewer-layout {
   height: 100vh;
   display: grid;
-  grid-template-rows: $s-48 auto;
+  grid-template-rows: deprecated.$s-48 auto;
   grid-template-columns: 1fr;
   user-select: none;
 }
@@ -18,13 +18,13 @@
   overflow: hidden;
   grid-row: 2 / span 1;
   display: grid;
-  grid-template-rows: $s-252 auto;
+  grid-template-rows: deprecated.$s-252 auto;
   grid-template-columns: 1fr;
   background-color: var(--viewer-background-color);
 }
 
 .empty-state {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--empty-message-foreground-color);
   display: grid;
   place-items: center;
@@ -38,7 +38,7 @@
 
 .inspect-layout {
   display: grid;
-  grid-template-rows: $s-48 auto;
+  grid-template-rows: deprecated.$s-48 auto;
   grid-template-columns: 1fr;
   height: 100vh;
   margin-top: 0;
@@ -46,10 +46,10 @@
 }
 
 .thumbnails-close {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
-  z-index: $z-index-10;
+  z-index: deprecated.$z-index-10;
   background-color: var(--overlay-color);
 }
 
@@ -64,7 +64,7 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  height: calc(100vh - $s-48);
+  height: calc(100vh - deprecated.$s-48);
   flex-flow: wrap;
   overflow: auto;
 }
@@ -79,13 +79,13 @@
 .viewer-go-prev,
 .viewer-go-next {
   @extend .button-secondary;
-  @include flexCenter;
+  @include deprecated.flexCenter;
   position: absolute;
-  right: $s-8;
-  height: $s-64;
-  width: $s-32;
-  top: calc(50vh - $s-32);
-  z-index: $z-index-2;
+  right: deprecated.$s-8;
+  height: deprecated.$s-64;
+  width: deprecated.$s-32;
+  top: calc(50vh - deprecated.$s-32);
+  z-index: deprecated.$z-index-2;
   background-color: var(--viewer-controls-background-color);
   transition: transform 400ms ease 300ms;
   svg {
@@ -95,11 +95,11 @@
 }
 
 .viewer-go-next.comment-sidebar {
-  right: $s-280;
+  right: deprecated.$s-280;
 }
 
 .viewer-go-prev {
-  left: $s-8;
+  left: deprecated.$s-8;
   right: unset;
   svg {
     transform: rotate(180deg);
@@ -113,19 +113,19 @@
   align-items: flex-start;
   justify-content: space-between;
   width: 100%;
-  height: $s-40;
-  padding-right: 0 $s-8 $s-40 $s-8;
+  height: deprecated.$s-40;
+  padding-right: 0 deprecated.$s-8 deprecated.$s-40 deprecated.$s-8;
   transition: transform 400ms ease 300ms;
-  z-index: $z-index-2;
+  z-index: deprecated.$z-index-2;
   pointer-events: none;
 }
 
 .reset-button {
   @extend .button-secondary;
-  @include flexCenter;
-  height: $s-32;
-  width: $s-28;
-  margin-left: $s-8;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+  margin-left: deprecated.$s-8;
   background-color: var(--viewer-controls-background-color);
   pointer-events: all;
   svg {
@@ -135,11 +135,11 @@
 }
 
 .counter {
-  @include flexCenter;
-  @include bodySmallTypography;
-  border-radius: $br-8;
-  width: $s-64;
-  height: $s-32;
+  @include deprecated.flexCenter;
+  @include deprecated.bodySmallTypography;
+  border-radius: deprecated.$br-8;
+  width: deprecated.$s-64;
+  height: deprecated.$s-32;
   color: var(--viewer-thumbnails-control-foreground-color);
   background-color: var(--viewer-controls-background-color);
 }
@@ -193,7 +193,7 @@
 
 /** FULLSCREEN */
 [data-fullscreen="true"] .viewer-bottom {
-  transform: translateY($s-40);
+  transform: translateY(deprecated.$s-40);
 }
 
 [data-force-visible="true"] .viewer-bottom {
@@ -201,15 +201,15 @@
 }
 
 [data-fullscreen="true"] .viewer-go-next {
-  transform: translateX($s-40);
+  transform: translateX(deprecated.$s-40);
 }
 
 [data-fullscreen="true"] .viewer-go-prev {
-  transform: translateX(-$s-40);
+  transform: translateX(-#{deprecated.$s-40});
 }
 
 [data-fullscreen="true"] .viewer-content {
-  transform: translateY(-$s-48);
+  transform: translateY(-#{deprecated.$s-48});
   height: 100vh;
 }
 

@@ -3,7 +3,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v22.19.0 \
+    NODE_VERSION=v22.21.1 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:$PATH
 
@@ -89,7 +89,8 @@ RUN set -eux; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
 
-ADD --chown=penpot:penpot ./bundle-exporter/ /opt/penpot/exporter
+ARG BUNDLE_PATH="./bundle-exporter/"
+ADD --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot

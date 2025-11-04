@@ -4,15 +4,16 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .title-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   --arrow-icon-color: var(--icon-foreground);
   --title-color: var(--title-foreground-color);
 }
@@ -20,28 +21,29 @@
 .title,
 .title-only,
 .inspect-title {
-  @include headlineSmallTypography;
   display: grid;
   align-items: center;
   justify-content: flex-start;
   grid-auto-flow: column;
   height: 100%;
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   overflow: hidden;
 }
 
 .title {
+  @include t.use-typography("headline-small");
   color: var(--title-color);
 }
 
 .title-only {
+  @include t.use-typography("headline-small");
+  --title-bar-title-margin: #{deprecated.$s-8};
   color: var(--title-color);
-  --title-bar-title-margin: #{$s-8};
   margin-inline-start: var(--title-bar-title-margin);
 }
 
 .title-only-icon-gap {
-  --title-bar-title-margin: #{$s-12};
+  --title-bar-title-margin: #{deprecated.$s-12};
 }
 
 .inspect-title {
@@ -61,7 +63,7 @@
 }
 
 .icon-text-btn {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -75,8 +77,8 @@
 }
 
 .icon-btn {
-  @include buttonStyle;
-  @include flexCenter;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
 
   &:hover {
     --arrow-icon-color: var(--icon-foreground-hover);

@@ -4,41 +4,41 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .harmony-selector {
   display: flex;
   align-items: center;
-  gap: $s-8;
-  margin-top: $s-12;
-  margin-bottom: $s-8;
+  gap: deprecated.$s-8;
+  margin-top: deprecated.$s-12;
+  margin-bottom: deprecated.$s-8;
 }
 
 .hue-wheel-wrapper {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   position: relative;
 }
 
 .hue-wheel {
-  width: $s-196;
-  height: $s-196;
+  width: deprecated.$s-196;
+  height: deprecated.$s-196;
 }
 
 .handler {
   @extend .colorpicker-handler;
-  height: $s-16;
-  width: $s-16;
-  border: $s-2 solid var(--colorpicker-handlers-color);
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
+  border: deprecated.$s-2 solid var(--colorpicker-handlers-color);
 }
 
 .handler.complement {
   background-color: var(--colorpicker-handlers-color);
-  border: $s-2 solid var(--colorpicker-handlers-color);
+  border: deprecated.$s-2 solid var(--colorpicker-handlers-color);
 }
 
 .handlers-wrapper {
-  @include flexRow;
-  height: $s-200;
-  width: $s-52;
+  @include deprecated.flexRow;
+  height: deprecated.$s-200;
+  width: deprecated.$s-52;
   flex-grow: 1;
 }

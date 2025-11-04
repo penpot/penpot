@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+
+export PENPOT_MANAGEMENT_API_SHARED_KEY=super-secret-management-api-key
+export PENPOT_SECRET_KEY=super-secret-devenv-key
+export PENPOT_HOST=devenv
+
+export PENPOT_FLAGS="\
+       $PENPOT_FLAGS \
+       enable-login-with-ldap \
+       enable-login-with-password
+       enable-login-with-oidc \
+       enable-login-with-google \
+       enable-login-with-github \
+       enable-login-with-gitlab \
+       enable-backend-worker \
+       enable-backend-asserts \
+       disable-feature-fdata-pointer-map \
+       enable-feature-fdata-objects-map \
+       enable-audit-log \
+       enable-transit-readable-response \
+       enable-demo-users \
+       disable-secure-session-cookies \
+       enable-smtp \
+       enable-prepl-server \
+       enable-urepl-server \
+       enable-rpc-climit \
+       enable-rpc-rlimit \
+       enable-quotes \
+       enable-soft-rpc-rlimit \
+       enable-auto-file-snapshot \
+       enable-webhooks \
+       enable-access-tokens \
+       disable-tiered-file-data-storage \
+       enable-file-validation \
+       enable-file-schema-validation \
+       enable-redis-cache \
+       enable-subscriptions";
+
+# Default deletion delay for devenv
+export PENPOT_DELETION_DELAY="24h"
+
+# Setup default upload media file size to 100MiB
+export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
+
+# Setup default multipart upload size to 300MiB
+export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
+
+export AWS_ACCESS_KEY_ID=penpot-devenv
+export AWS_SECRET_ACCESS_KEY=penpot-devenv
+export PENPOT_OBJECTS_STORAGE_BACKEND=s3
+export PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=http://minio:9000
+export PENPOT_OBJECTS_STORAGE_S3_BUCKET=penpot
+
+export JAVA_OPTS="\
+       -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+       -Djdk.attach.allowAttachSelf \
+       -Dlog4j2.configurationFile=log4j2-devenv.xml \
+       -Djdk.tracePinnedThreads=full \
+       -Dim4java.useV7=true \
+       -XX:+UnlockExperimentalVMOptions \
+       -XX:+UseShenandoahGC \
+       -XX:+UseCompactObjectHeaders \
+       -XX:ShenandoahGCMode=generational \
+       -XX:-OmitStackTraceInFastThrow  \
+       --sun-misc-unsafe-memory-access=allow \
+       --enable-preview \
+       --enable-native-access=ALL-UNNAMED";
+
+function setup_minio() {
+    # Initialize MINIO config
+    mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
+    mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
+    mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
+    if [ "$?" = "1" ]; then
+        mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
+    fi
+    mc mb penpot-s3/penpot -p -q
+}
+
+

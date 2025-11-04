@@ -23,7 +23,7 @@
     :error/fn #(tr "workspace.tokens.invalid-json")}
 
    :error.import/invalid-token-name
-   {:error/code :error.import/invalid-json-data
+   {:error/code :error.import/invalid-token-name
     :error/fn #(tr "workspace.tokens.invalid-json-token-name")
     :error/detail #(tr "workspace.tokens.invalid-json-token-name-detail" %)}
 
@@ -87,6 +87,14 @@
    :error.style-dictionary/invalid-token-value-font-weight
    {:error/code :error.style-dictionary/invalid-token-value-font-weight
     :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-typography
+   {:error/code :error.style-dictionary/invalid-token-value-typography
+    :error/fn #(tr "workspace.tokens.invalid-token-value-typography" %)}
+
+   :error.style-dictionary/composite-line-height-needs-font-size
+   {:error/code :error.style-dictionary/composite-line-height-needs-font-size
+    :error/fn #(tr "workspace.tokens.composite-line-height-needs-font-size" %)}
 
    :error/unknown
    {:error/code :error/unknown

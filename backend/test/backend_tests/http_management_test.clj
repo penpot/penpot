@@ -25,8 +25,7 @@
 
 (t/deftest authenticate-method
   (let [profile  (th/create-profile* 1)
-        props    (get th/*system* :app.setup/props)
-        token    (#'sess/gen-token props {:profile-id (:id profile)})
+        token    (#'sess/gen-token th/*system* {:profile-id (:id profile)})
         request  {:params {:token token}}
         response (#'mgmt/authenticate th/*system* request)]
 

@@ -434,10 +434,10 @@
   (sm/validator schema:info))
 
 (defn- get-info
-  [{:keys [::provider ::setup/props] :as cfg} {:keys [params] :as request}]
+  [{:keys [::provider] :as cfg} {:keys [params] :as request}]
   (let [state  (get params :state)
         code   (get params :code)
-        state  (tokens/verify props {:token state :iss :oauth})
+        state  (tokens/verify cfg {:token state :iss :oauth})
         tdata  (fetch-access-token cfg code)
         info   (case (cf/get :oidc-user-info-source)
                  :token (get-user-info cfg tdata)
@@ -516,7 +516,7 @@
                       :iss :prepared-register
                       :exp (ct/in-future {:hours 48}))
 
-        params {:token (tokens/generate (::setup/props cfg) info)
+        params {:token (tokens/generate cfg info)
                 :provider (:provider (:path-params request))
                 :fullname (:fullname info)}
         params (d/without-nils params)]
@@ -569,7 +569,7 @@
       :else
       (let [sxf     (session/create-fn cfg (:id profile))
             token   (or (:invitation-token info)
-                        (tokens/generate (::setup/props cfg)
+                        (tokens/generate cfg
                                          {:iss :auth
                                           :exp (ct/in-future "15m")
                                           :profile-id (:id profile)}))
@@ -620,8 +620,7 @@
                 :external-session-id esid
                 :props props
                 :exp (ct/in-future "4h")}
-        state  (tokens/generate (::setup/props cfg)
-                                (d/without-nils params))
+        state  (tokens/generate cfg (d/without-nils params))
         uri    (build-auth-uri cfg state)]
     {::yres/status 200
      ::yres/body {:redirect-uri uri}}))

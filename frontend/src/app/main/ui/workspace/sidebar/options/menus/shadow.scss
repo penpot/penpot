@@ -4,149 +4,47 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
 
-.element-set {
-  margin: 0;
-}
-
-.title-spacing-shadow {
-  margin: 0;
-  padding-left: $s-2;
-}
-
-.element-set-content {
-  margin-top: $s-4;
-  @include flexColumn;
-}
-
-.multiple-shadows {
-  @include flexRow;
-}
-
-.label {
-  @extend .mixed-bar;
-}
-
-.actions {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: span 2;
-}
-
-.shadow-element {
-  @include flexColumn;
-  position: relative;
-
-  --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
-
-  &:hover {
-    --reorder-icon-visibility: visible;
-  }
-
-  &.dnd-over-top {
-    --reorder-top-display: block;
-  }
-
-  &.dnd-over-bot {
-    --reorder-bottom-display: block;
-  }
-}
-
-.basic-options {
+.shadow-section {
   display: grid;
   grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  column-gap: var(--sp-xs);
 }
 
-.shadow-info {
-  grid-column: span 6;
+.shadow-title {
+  grid-column: span 8;
+}
+
+.shadow-title-bar {
+  padding-inline-start: var(--sp-xxs);
+}
+
+.shadow-content {
+  grid-column: span 8;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+}
+
+.shadow-multiple {
   display: flex;
   align-items: center;
-  gap: $s-1;
-
-  .more-options {
-    @extend .button-secondary;
-    height: $s-32;
-    width: $s-28;
-    border-radius: $br-8 0 0 $br-8;
-    svg {
-      @extend .button-icon;
-    }
-    &.selected {
-      background-color: var(--button-radio-background-color-active);
-      svg {
-        stroke: var(--button-radio-foreground-color-active);
-      }
-    }
-  }
-  .type-select {
-    padding: 0;
-    border-radius: 0 $br-8 $br-8 0;
-    flex-grow: 1;
-    .shadow-type-select {
-      flex-grow: 1;
-      border-radius: 0 $br-8 $br-8 0;
-    }
-  }
-
-  &.hidden {
-    .more-options {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
-    }
-    .type-select {
-      @include hiddenElement;
-      .shadow-type-select {
-        @include hiddenElement;
-        border: $s-1 solid var(--input-border-color-disabled);
-      }
-    }
-  }
-}
-
-.shadow-advanced-options {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
   gap: var(--sp-xs);
 }
 
-.first-row,
-.second-row {
-  display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
-}
-
-.offset-x-input,
-.blur-input,
-.spread-input,
-.offset-y-input {
-  @extend .input-element;
-  @include bodySmallTypography;
-}
-
-.input-label {
-  width: $sz-48;
-}
-
-.offset-x-input {
-  grid-column: span 2;
-}
-
-.offset-y-input {
-  grid-column: span 2;
-}
-
-.blur-input {
-  grid-column: span 3;
-}
-
-.spread-input {
-  grid-column: span 3;
-}
-
-.shadow-color {
-  grid-column: span 6;
+.shadow-multiple-label {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }

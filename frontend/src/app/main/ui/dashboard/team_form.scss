@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -15,11 +15,11 @@
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -28,20 +28,20 @@
 }
 
 .modal-content {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .team-form {
-  min-width: $s-400;
+  min-width: deprecated.$s-400;
 }
 
 .group-name-input {
   @extend .input-element-label;
-  @include bodySmallTypography;
-  margin-bottom: $s-8;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-8;
   label {
-    @include flexColumn;
-    @include bodySmallTypography;
+    @include deprecated.flexColumn;
+    @include deprecated.bodySmallTypography;
     align-items: flex-start;
     width: 100%;
     border: none;
@@ -49,7 +49,7 @@
     height: 100%;
 
     input {
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
     }
   }
 }

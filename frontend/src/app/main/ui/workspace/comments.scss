@@ -4,30 +4,30 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .comments-section {
   position: relative;
   background-color: var(--panel-background-color);
   display: grid;
-  grid-template-rows: $s-40 $s-48 1fr;
+  grid-template-rows: deprecated.$s-40 deprecated.$s-48 1fr;
 }
 
 .from-viewer {
-  padding: 0 $s-8;
+  padding: 0 deprecated.$s-8;
 }
 
 .comments-section-title {
-  @include flexCenter;
-  @include uppercaseTitleTipography;
+  @include deprecated.flexCenter;
+  @include deprecated.uppercaseTitleTipography;
   position: relative;
-  height: $s-32;
-  min-height: $s-32;
-  margin: $s-8 $s-8 0 $s-8;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-8 deprecated.$s-8 0 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--panel-title-background-color);
   span {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     flex-grow: 1;
     color: var(--title-foreground-color-hover);
   }
@@ -35,20 +35,20 @@
 
 .viewer-title {
   margin: 0;
-  margin-block-start: $s-8;
+  margin-block-start: deprecated.$s-8;
 }
 
 .mode-dropdown-wrapper {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   @extend .asset-element;
   background-color: var(--color-background-tertiary);
   display: flex;
   width: 100%;
-  max-width: $s-256;
-  height: $s-32;
-  padding: $s-8;
-  border-radius: $br-8;
-  margin: $s-16 auto 0 auto;
+  max-width: deprecated.$s-256;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
+  margin: deprecated.$s-16 auto 0 auto;
   cursor: pointer;
   position: relative;
 }
@@ -61,9 +61,9 @@
 }
 
 .arrow-icon {
-  @include flexCenter;
-  height: $s-24;
-  width: $s-24;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
   svg {
     @extend .button-icon-small;
     transform: rotate(90deg);
@@ -73,30 +73,30 @@
 
 .comment-mode-dropdown {
   @extend .dropdown-wrapper;
-  top: $s-92;
-  left: $s-12;
-  max-width: $s-256;
+  top: deprecated.$s-92;
+  left: deprecated.$s-12;
+  max-width: deprecated.$s-256;
   width: 100%;
 }
 
 .viewer-dropdown {
-  left: $s-8;
+  left: deprecated.$s-8;
 }
 
 .dropdown-item {
   @extend .dropdown-element-base;
   justify-content: space-between;
   .icon {
-    @include flexCenter;
-    height: $s-24;
-    width: $s-24;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-24;
+    width: deprecated.$s-24;
     svg {
       @extend .button-icon-small;
       stroke: transparent;
     }
   }
   .label {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
   }
   &:hover {
     .icon svg {
@@ -114,7 +114,7 @@
 }
 
 .separator {
-  height: $s-12;
+  height: deprecated.$s-12;
 }
 
 .comments-section-content {
@@ -128,29 +128,29 @@
 }
 
 .thread-group-placeholder {
-  @include flexColumn;
+  @include deprecated.flexColumn;
   align-items: center;
   justify-content: flex-start;
-  margin-top: $s-36;
+  margin-top: deprecated.$s-36;
 }
 
 .placeholder-icon {
-  @include flexCenter;
-  height: $s-48;
-  width: $s-48;
-  border-radius: $br-circle;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-48;
+  width: deprecated.$s-48;
+  border-radius: deprecated.$br-circle;
   background-color: var(--empty-message-background-color);
   svg {
     @extend .button-icon;
-    height: $s-28;
-    width: $s-28;
+    height: deprecated.$s-28;
+    width: deprecated.$s-28;
     stroke: var(--empty-message-foreground-color);
   }
 }
 
 .placeholder-label {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   text-align: center;
-  width: $s-184;
+  width: deprecated.$s-184;
   color: var(--empty-message-foreground-color);
 }

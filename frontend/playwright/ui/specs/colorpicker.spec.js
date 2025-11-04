@@ -93,7 +93,9 @@ test("Create a LINEAR gradient", async ({ page }) => {
   await expect(inputOpacityGlobal).toHaveValue("50");
   await expect(inputOpacityGlobal).toBeVisible();
 
-  await expect(workspacePage.page.getByText("Linear gradient")).toBeVisible();
+  await expect(
+    workspacePage.page.getByText("Linear gradient").nth(1),
+  ).toBeVisible();
 });
 
 test("Create a RADIAL gradient", async ({ page }) => {
@@ -175,12 +177,14 @@ test("Create a RADIAL gradient", async ({ page }) => {
   await expect(inputOpacityGlobal).toHaveValue("50");
   await expect(inputOpacityGlobal).toBeVisible();
 
-  await expect(workspacePage.page.getByText("Radial gradient")).toBeVisible();
+  await expect(
+    workspacePage.page.getByText("Radial gradient").nth(1),
+  ).toBeVisible();
 });
 
 test("Gradient stops limit", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await workspacePage.mockConfigFlags(["enable-frontend-binary-fills"]);
+  await workspacePage.mockConfigFlags(["enable-feature-render-wasm"]);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.mockRPC(

@@ -131,6 +131,8 @@
   ([id toggle?]
    (dm/assert! (uuid? id))
    (ptk/reify ::select-shape
+     ev/PerformanceEvent
+
      ptk/UpdateEvent
      (update [_ state]
        (-> state
@@ -248,6 +250,8 @@
         (d/ordered-set? ids)))
 
   (ptk/reify ::select-shapes
+    ev/PerformanceEvent
+
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (dsh/lookup-page-objects state)
@@ -267,6 +271,8 @@
 (defn select-all
   []
   (ptk/reify ::select-all
+    ev/PerformanceEvent
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [;; Make the select-all aware of the focus mode; in this
@@ -457,7 +463,7 @@
                 library-data    (dsh/lookup-file-data state file-id)
 
                 changes         (-> (pcb/empty-changes it)
-                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id)
+                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id {:alt-duplication? alt-duplication?})
                                     (cll/generate-duplicate-changes-update-indices objects ids))
 
                 tags            (or (:tags changes) #{})

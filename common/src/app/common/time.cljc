@@ -52,6 +52,7 @@
    [cuerdas.core :as str])
   #?(:clj
      (:import
+      java.time.Clock
       java.time.Duration
       java.time.Instant
       java.time.OffsetDateTime
@@ -63,9 +64,11 @@
       java.time.temporal.TemporalAmount
       java.time.temporal.TemporalUnit)))
 
+#?(:clj (def ^:dynamic *clock* (Clock/systemDefaultZone)))
+
 (defn now
   []
-  #?(:clj (Instant/now)
+  #?(:clj (Instant/now *clock*)
      :cljs (new js/Date)))
 
 ;; --- DURATION
@@ -130,7 +133,6 @@
        ms-or-obj
 
        (integer? ms-or-obj)
-
        (Duration/ofMillis ms-or-obj)
 
        :else

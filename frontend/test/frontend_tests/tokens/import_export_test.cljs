@@ -24,8 +24,8 @@
              (dwti/import-file-stream "core")
              (rx/subs! (fn [tokens-lib]
                          (t/is (instance? ctob/TokensLib tokens-lib))
-                         (t/is (= "red" (-> (ctob/get-set tokens-lib "core")
-                                            (ctob/token-by-name "color")
+                         (t/is (= "red" (-> tokens-lib
+                                            (ctob/get-token-by-name "core" "color")
                                             (:value))))
                          (done))))))))
 

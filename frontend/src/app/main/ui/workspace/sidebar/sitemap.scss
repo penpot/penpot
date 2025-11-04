@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .sitemap {
   position: relative;
@@ -12,21 +12,21 @@
   flex-direction: column;
   flex: 1;
   width: 100%;
-  height: var(--height, $s-200);
+  height: var(--height, deprecated.$s-200);
 }
 
 .title {
-  margin-left: $s-2;
+  margin-left: deprecated.$s-2;
   color: var(--title-foreground-color-hover);
 }
 
 .resize-area {
   position: absolute;
-  bottom: calc(-1 * $s-8);
+  bottom: calc(-1 * deprecated.$s-8);
   left: 0;
   width: 100%;
-  height: $s-12;
-  border-top: $s-2 solid var(--resize-area-border-color);
+  height: deprecated.$s-12;
+  border-top: deprecated.$s-2 solid var(--resize-area-border-color);
   background-color: var(--resize-area-background-color);
   cursor: ns-resize;
   &:hover {
@@ -37,7 +37,7 @@
 .tool-window-content {
   display: flex;
   flex-direction: column;
-  height: calc(-38px + var(--height, $s-200));
+  height: calc(-38px + var(--height, deprecated.$s-200));
   width: var(--width);
   overflow-x: hidden;
   overflow-y: overlay;
@@ -50,63 +50,63 @@
 
 .pages-list {
   width: 100%;
-  max-height: $s-152;
-  margin-bottom: $s-12;
+  max-height: deprecated.$s-152;
+  margin-bottom: deprecated.$s-12;
 }
 
 .page-element {
-  @include bodySmallTypography;
-  min-height: $s-32;
+  @include deprecated.bodySmallTypography;
+  min-height: deprecated.$s-32;
   width: 100%;
   cursor: pointer;
   &.dnd-over-top {
-    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+    border-top: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
   }
   &.dnd-over-bot {
-    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+    border-bottom: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
   }
   .dnd-over > .element-list-body {
-    border: $s-1 solid var(--layer-row-foreground-color-drag);
+    border: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
   }
   .element-list-body {
     display: flex;
     align-items: center;
-    height: $s-32;
+    height: deprecated.$s-32;
     width: 100%;
-    padding: 0 $s-12 0 0;
+    padding: 0 deprecated.$s-12 0 0;
     transition: none;
     color: var(--layer-row-foreground-color);
     .page-name {
-      @include textEllipsis;
+      @include deprecated.textEllipsis;
       flex-grow: 1;
-      padding-left: $s-2;
+      padding-left: deprecated.$s-2;
     }
     .page-icon {
-      @include flexCenter;
-      height: $s-32;
-      width: $s-24;
-      padding: 0 $s-4 0 $s-8;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-32;
+      width: deprecated.$s-24;
+      padding: 0 deprecated.$s-4 0 deprecated.$s-8;
       svg {
         @extend .button-icon-small;
-        height: $s-12;
-        width: $s-12;
+        height: deprecated.$s-12;
+        width: deprecated.$s-12;
         color: transparent;
         fill: none;
         stroke: var(--icon-foreground);
       }
     }
     .page-actions {
-      height: $s-32;
+      height: deprecated.$s-32;
       button {
-        @include buttonStyle;
-        @include flexCenter;
-        width: $s-24;
+        @include deprecated.buttonStyle;
+        @include deprecated.flexCenter;
+        width: deprecated.$s-24;
         height: 100%;
-        opacity: $op-0;
+        opacity: deprecated.$op-0;
         svg {
           @extend .button-icon-small;
-          height: $s-12;
-          width: $s-12;
+          height: deprecated.$s-12;
+          width: deprecated.$s-12;
           color: transparent;
           fill: none;
           stroke: var(--icon-foreground);
@@ -114,20 +114,20 @@
       }
     }
     .element-name {
-      @include textEllipsis;
+      @include deprecated.textEllipsis;
       color: var(--layer-row-foreground-color-focus);
     }
     input.element-name {
-      @include textEllipsis;
-      @include bodySmallTypography;
-      @include removeInputStyle;
+      @include deprecated.textEllipsis;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.removeInputStyle;
       flex-grow: 1;
-      height: $s-28;
+      height: deprecated.$s-28;
       max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
-      padding-left: $s-6;
+      padding-left: deprecated.$s-6;
       margin: 0;
-      border-radius: $br-8;
-      border: $s-1 solid var(--input-border-color-focus);
+      border-radius: deprecated.$br-8;
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
       color: var(--layer-row-foreground-color);
     }
   }
@@ -151,7 +151,8 @@
     .element-list-body {
       color: var(--layer-row-foreground-color-selected);
       background-color: var(--layer-row-background-color-selected);
-      box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-selected);
+      box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+        var(--layer-row-background-color-selected);
       .page-actions button {
         svg {
           stroke: var(--layer-row-foreground-color-selected);
@@ -167,9 +168,10 @@
     .element-list-body {
       color: var(--layer-row-foreground-color-hover);
       background-color: var(--layer-row-background-color-hover);
-      box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-hover);
+      box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+        var(--layer-row-background-color-hover);
       .page-actions button {
-        opacity: $op-10;
+        opacity: deprecated.$op-10;
         svg {
           stroke: var(--layer-row-foreground-color-hover);
         }
@@ -182,10 +184,10 @@
   &:focus {
     .element-list-body {
       color: var(--layer-row-foreground-color-focus);
-      border: $s-1 solid var(--layer-row-border-color-focus);
+      border: deprecated.$s-1 solid var(--layer-row-border-color-focus);
       outline: none;
       .page-actions button {
-        opacity: $op-10;
+        opacity: deprecated.$op-10;
       }
     }
   }
@@ -193,7 +195,7 @@
     .element-list-body {
       outline: none;
       .page-actions button {
-        opacity: $op-10;
+        opacity: deprecated.$op-10;
       }
     }
   }
@@ -202,7 +204,7 @@
     .element-list-body {
       color: var(--layer-row-foreground-color-hidden);
       background-color: var(--layer-row-background-color-hidden);
-      opacity: $op-7;
+      opacity: deprecated.$op-7;
       .page-actions button {
         svg {
           stroke: var(--layer-row-foreground-color-hidden);
@@ -216,7 +218,7 @@
 }
 
 .title-spacing-sitemap {
-  padding-inline-start: $s-8;
-  margin-block-start: $s-8;
-  margin-block-end: $s-4;
+  padding-inline-start: deprecated.$s-8;
+  margin-block-start: deprecated.$s-8;
+  margin-block-end: deprecated.$s-4;
 }

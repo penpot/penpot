@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .group-title-wrapper {
   width: 100%;
@@ -29,18 +29,18 @@
 }
 
 .group-title {
-  padding-left: $s-4;
+  padding-left: deprecated.$s-4;
 }
 
 .pre-path {
-  margin-left: $s-2;
+  margin-left: deprecated.$s-2;
   text-transform: initial;
   color: var(--title-foreground-color);
 }
 
 .path {
-  @include textEllipsis;
-  margin-left: $s-2;
+  @include deprecated.textEllipsis;
+  margin-left: deprecated.$s-2;
   text-transform: initial;
   color: var(--title-foreground-color-hover);
 }
@@ -54,11 +54,11 @@
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -67,14 +67,14 @@
 }
 
 .modal-content {
-  @include bodySmallTypography;
-  margin-bottom: $s-24;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
   @extend .input-with-label;
-  @include bodySmallTypography;
-  margin-bottom: $s-8;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-8;
 }
 
 .action-buttons {

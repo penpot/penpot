@@ -17,18 +17,16 @@
   Use this for managing sets active state without having to modify a
   user created theme (\"no themes selected\" state in the ui)."
   [changes tokens-lib update-theme-fn]
-  (let [prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
-        active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
+  (let [active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
 
-        prev-hidden-theme  (ctob/get-hidden-theme tokens-lib)
-
-        hidden-theme       (-> (some-> prev-hidden-theme (ctob/set-sets active-token-set-names))
-                               (update-theme-fn))]
+        hidden-theme  (ctob/get-hidden-theme tokens-lib)
+        hidden-theme' (-> (some-> hidden-theme
+                                  (ctob/set-sets active-token-set-names))
+                          (update-theme-fn))]
     (-> changes
-        (pcb/update-active-token-themes #{(ctob/theme-path hidden-theme)} prev-active-token-themes)
-        (pcb/set-token-theme (:group prev-hidden-theme)
-                             (:name prev-hidden-theme)
-                             hidden-theme))))
+        (pcb/set-active-token-themes #{(ctob/get-theme-path hidden-theme')})
+        (pcb/set-token-theme (ctob/get-id hidden-theme)
+                             hidden-theme'))))
 
 (defn generate-toggle-token-set
   "Toggle a token set at `set-name` in `tokens-lib` without modifying a
@@ -139,3 +137,12 @@
   (if-let [params (calculate-move-token-set-or-set-group tokens-lib params)]
     (pcb/move-token-set-group changes params)
     changes))
+
+(defn generate-delete-token-set-group
+  "Create changes for deleting a token set group."
+  [changes tokens-lib path]
+  (let [sets (ctob/get-sets-at-path tokens-lib path)]
+    (reduce (fn [changes set]
+              (pcb/set-token-set changes (ctob/get-id set) nil))
+            changes
+            sets)))

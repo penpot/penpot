@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 // EXPORT MODAL
 .modal-overlay {
@@ -16,15 +16,15 @@
 
 .modal-container {
   @extend .modal-container-base;
-  max-height: calc(10 * $s-80);
+  max-height: calc(10 * deprecated.$s-80);
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include headlineMediumTypography;
+  @include deprecated.headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -33,32 +33,32 @@
 }
 
 .modal-content {
-  @include bodySmallTypography;
-  margin-bottom: $s-24;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-24;
   .modal-link {
-    @include bodyLargeTypography;
+    @include deprecated.bodyLargeTypography;
     text-decoration: none;
     cursor: pointer;
     color: var(--modal-link-foreground-color);
   }
   .selection-header {
-    @include flexRow;
-    height: $s-32;
-    margin-bottom: $s-4;
+    @include deprecated.flexRow;
+    height: deprecated.$s-32;
+    margin-bottom: deprecated.$s-4;
     .selection-btn {
-      @include buttonStyle;
+      @include deprecated.buttonStyle;
       @extend .input-checkbox;
-      @include flexCenter;
-      height: $s-24;
-      width: $s-24;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-24;
+      width: deprecated.$s-24;
       padding: 0;
-      margin-left: $s-16;
+      margin-left: deprecated.$s-16;
       span {
         @extend .checkbox-icon;
       }
     }
     .selection-title {
-      @include bodyLargeTypography;
+      @include deprecated.bodyLargeTypography;
       color: var(--modal-text-foreground-color);
     }
   }
@@ -82,67 +82,67 @@
     }
   }
   .selection-list {
-    @include flexColumn;
-    max-height: $s-400;
+    @include deprecated.flexColumn;
+    max-height: deprecated.$s-400;
     overflow-y: auto;
-    padding-bottom: $s-12;
+    padding-bottom: deprecated.$s-12;
     .selection-row {
-      @include flexRow;
+      @include deprecated.flexRow;
       background-color: var(--entry-background-color);
-      min-height: $s-40;
-      border-radius: $br-8;
+      min-height: deprecated.$s-40;
+      border-radius: deprecated.$br-8;
       .selection-btn {
-        @include buttonStyle;
+        @include deprecated.buttonStyle;
         display: grid;
         grid-template-columns: min-content auto 1fr auto auto;
         align-items: center;
         width: 100%;
         height: 10%;
-        gap: $s-8;
-        padding: 0 $s-16;
+        gap: deprecated.$s-8;
+        padding: 0 deprecated.$s-16;
         .checkbox-wrapper {
           @extend .input-checkbox;
-          @include flexCenter;
-          height: $s-24;
-          width: $s-24;
+          @include deprecated.flexCenter;
+          height: deprecated.$s-24;
+          width: deprecated.$s-24;
           padding: 0;
           .checkobox-tick {
             @extend .checkbox-icon;
           }
         }
         .selection-name {
-          @include bodyLargeTypography;
-          @include textEllipsis;
+          @include deprecated.bodyLargeTypography;
+          @include deprecated.textEllipsis;
           flex-grow: 1;
           color: var(--modal-text-foreground-color);
           text-align: start;
         }
         .selection-scale {
-          @include bodyLargeTypography;
-          @include textEllipsis;
-          min-width: $s-108;
-          padding: $s-12;
+          @include deprecated.bodyLargeTypography;
+          @include deprecated.textEllipsis;
+          min-width: deprecated.$s-108;
+          padding: deprecated.$s-12;
           color: var(--modal-text-foreground-color);
         }
         .selection-extension {
-          @include bodyLargeTypography;
-          @include textEllipsis;
-          min-width: $s-72;
-          padding: $s-12;
+          @include deprecated.bodyLargeTypography;
+          @include deprecated.textEllipsis;
+          min-width: deprecated.$s-72;
+          padding: deprecated.$s-12;
           color: var(--modal-text-foreground-color);
         }
       }
       .image-wrapper {
-        @include flexCenter;
-        min-height: $s-32;
-        min-width: $s-32;
+        @include deprecated.flexCenter;
+        min-height: deprecated.$s-32;
+        min-width: deprecated.$s-32;
         background-color: var(--app-white);
-        border-radius: $br-6;
+        border-radius: deprecated.$br-6;
         margin: auto 0;
         img,
         svg {
           object-fit: contain;
-          max-height: $s-40;
+          max-height: deprecated.$s-40;
         }
       }
     }
@@ -165,7 +165,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
 }
 
@@ -176,29 +176,29 @@
   label {
     align-items: flex-start;
     .modal-subtitle {
-      @include bodyLargeTypography;
+      @include deprecated.bodyLargeTypography;
       color: var(--modal-title-foreground-color);
       padding: 0.25rem 0;
     }
   }
   span {
-    margin-top: $s-8;
+    margin-top: deprecated.$s-8;
   }
 }
 
 .option-content {
-  @include flexColumn;
-  @include bodyLargeTypography;
+  @include deprecated.flexColumn;
+  @include deprecated.bodyLargeTypography;
 }
 
 .file-entry {
   .file-name {
-    @include flexRow;
+    @include deprecated.flexRow;
 
     .file-icon {
-      @include flexCenter;
-      height: $s-16;
-      width: $s-16;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-16;
+      width: deprecated.$s-16;
 
       svg {
         @extend .button-icon-small;
@@ -206,8 +206,8 @@
       }
     }
     .file-name-label {
-      @include bodyLargeTypography;
-      @include textEllipsis;
+      @include deprecated.bodyLargeTypography;
+      @include deprecated.textEllipsis;
     }
   }
   &.loading {

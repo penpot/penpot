@@ -191,20 +191,6 @@
       (d/not-empty? position-data)
       (assoc :position-data position-data))))
 
-(defn update-grow-type
-  [shape old-shape]
-  (let [auto-width? (= :auto-width (:grow-type shape))
-        auto-height? (= :auto-height (:grow-type shape))
-
-        changed-width? (> (mth/abs (- (:width shape) (:width old-shape))) 0.1)
-        changed-height? (> (mth/abs (- (:height shape) (:height old-shape))) 0.1)
-
-        change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
-                             (and auto-height? changed-height?))]
-    (cond-> shape
-      change-to-fixed?
-      (assoc :grow-type :fixed))))
-
 (defn- set-wasm-props!
   [objects prev-wasm-props wasm-props]
   (let [;; Set old value for previous properties
@@ -800,9 +786,7 @@
                 (-> shape
                     (gsh/transform-shape modifiers)
                     (cond-> (d/not-empty? pos-data)
-                      (assoc-position-data pos-data shape))
-                    (cond-> text-shape?
-                      (update-grow-type shape)))))]
+                      (assoc-position-data pos-data shape)))))]
 
         (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
                (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
@@ -847,23 +831,20 @@
             (rx/empty))))))))
 
 ;; Pure function to determine next grow-type for text layers
-(defn next-grow-type [current-grow-type resize-direction]
+(defn next-grow-type
+  [current-grow-type scalev]
   (cond
     (= current-grow-type :fixed)
     :fixed
 
-    (and (= resize-direction :horizontal)
-         (= current-grow-type :auto-width))
-    :auto-height
-
-    (and (= resize-direction :horizontal)
-         (= current-grow-type :auto-height))
-    :auto-height
-
-    (and (= resize-direction :vertical)
+    (and (not (mth/close? (:y scalev) 1.0))
          (or (= current-grow-type :auto-width)
              (= current-grow-type :auto-height)))
     :fixed
+
+    (and (not (mth/close? (:x scalev) 1.0))
+         (= current-grow-type :auto-width))
+    :auto-height
 
     :else
     current-grow-type))

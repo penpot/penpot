@@ -208,8 +208,6 @@
           profile2 (th/create-profile* 2 {:is-active true})
 
           team     (th/create-team* 1 {:profile-id (:id profile1)})
-
-          sprops   (:app.setup/props th/*system*)
           pool     (:app.db/pool th/*system*)]
 
       ;; Try to invite a not existing user
@@ -226,7 +224,7 @@
         (t/is (= 1 (-> out :result :total)))
 
         (let [token  (-> out :result :invitations first)
-              claims (tokens/decode sprops token)]
+              claims (tokens/decode th/*system* token)]
           (t/is (= :team-invitation (:iss claims)))
           (t/is (= (:id profile1) (:profile-id claims)))
           (t/is (= :editor (:role claims)))
@@ -250,7 +248,7 @@
         (t/is (= 1 (-> out :result :total)))
 
         (let [token (-> out :result :invitations first)
-              claims (tokens/decode sprops token)]
+              claims (tokens/decode th/*system* token)]
           (t/is (= :team-invitation (:iss claims)))
           (t/is (= (:id profile1) (:profile-id claims)))
           (t/is (= :editor (:role claims)))
@@ -266,10 +264,9 @@
 
         team     (th/create-team* 1 {:profile-id (:id profile1)})
 
-        sprops   (:app.setup/props th/*system*)
         pool     (:app.db/pool th/*system*)]
 
-    (let [token (tokens/generate sprops
+    (let [token (tokens/generate th/*system*
                                  {:iss :team-invitation
                                   :exp (ct/in-future "1h")
                                   :profile-id (:id profile1)
@@ -585,7 +582,7 @@
       (t/is (ct/inst? (:deleted-at (first rows)))))
 
     (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 5 (:processed result))))))
+      (t/is (= 7 (:processed result))))))
 
 (t/deftest create-team-access-request
   (with-mocks [mock {:target 'app.email/send! :return nil}]

@@ -4,22 +4,22 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .editable-select {
   @extend .asset-element;
   margin: 0;
   padding: 0;
-  border: $s-1 solid var(--input-border-color);
+  border: deprecated.$s-1 solid var(--input-border-color);
   position: relative;
   display: flex;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   cursor: pointer;
   .dropdown-button {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     svg {
       @extend .button-icon-small;
       transform: rotate(90deg);
@@ -29,10 +29,10 @@
 
   .custom-select-dropdown {
     @extend .dropdown-wrapper;
-    max-height: $s-320;
+    max-height: deprecated.$s-320;
     .separator {
       margin: 0;
-      height: $s-12;
+      height: deprecated.$s-12;
     }
     .dropdown-element {
       @extend .dropdown-element-base;
@@ -43,7 +43,7 @@
       }
 
       .check-icon {
-        @include flexCenter;
+        @include deprecated.flexCenter;
         svg {
           @extend .button-icon-small;
           visibility: hidden;

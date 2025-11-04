@@ -4,35 +4,41 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
 @use "common/refactor/common-dashboard";
 
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
+
 .dashboard-fonts {
-  border-top: $s-1 solid var(--color-background-quaternary);
+  border-top: $b-1 solid var(--color-background-quaternary);
   display: flex;
   flex-direction: column;
-  padding-left: $s-120;
+  padding-left: px2rem(120);
+  padding-bottom: px2rem(120);
   overflow-y: auto;
-  padding-bottom: $s-120;
 
   .btn-primary {
-    font-size: $fs-11;
-    height: $s-32;
-    min-width: $s-100;
+    font-size: px2rem(11);
+    height: $sz-32;
+    min-width: px2rem(100);
   }
 }
 
 .dashboard-installed-fonts {
-  max-width: $s-1000;
+  max-width: px2rem(1000);
   width: 100%;
   display: flex;
-  margin-top: $s-24;
+  margin-top: var(--sp-xxl);
   flex-direction: column;
 
   h3 {
-    font-size: $fs-14;
+    @include t.use-typography("title-small");
     color: var(--color-foreground-secondary);
-    margin: $s-4;
+    margin: var(--sp-xs);
   }
 
   .font-item {
@@ -41,21 +47,21 @@
 }
 
 .installed-fonts-header {
+  @include t.use-typography("headline-small");
   align-items: center;
   color: var(--color-foreground-secondary);
   display: flex;
-  font-size: $fs-12;
-  height: $s-40;
-  padding-left: $s-24;
-  text-transform: uppercase;
+  height: $sz-40;
+  padding-left: var(--sp-xxl);
 
   > .family {
-    min-width: $s-200;
-    width: $s-200;
+    @include twoLineTextEllipsis;
+    min-width: $sz-200;
+    width: $sz-200;
   }
 
   > .variants {
-    padding-left: $s-12;
+    padding-left: var(--sp-m);
   }
 }
 
@@ -65,19 +71,19 @@
   justify-content: flex-end;
 
   input {
+    @include t.use-typography("body-medium");
     background-color: var(--color-background-tertiary);
     border-color: transparent;
     border-radius: $br-8;
-    border: $s-1 solid transparent;
+    border: $b-1 solid transparent;
     color: var(--color-foreground-primary);
-    font-size: $fs-14;
-    height: $s-32;
+    height: $sz-32;
     margin: 0;
-    padding: 0 $s-8;
-    width: $s-152;
+    padding: 0 var(--sp-s);
+    width: px2rem(152);
 
     &:focus {
-      outline: $s-1 solid var(--color-accent-primary);
+      outline: $b-1 solid var(--color-accent-primary);
     }
     &::placeholder {
       color: var(--color-foreground-secondary);
@@ -86,67 +92,72 @@
 }
 
 .font-item {
+  @include t.use-typography("body-medium");
   align-items: center;
   background-color: var(--color-background-tertiary);
   border-radius: $br-4;
   color: var(--color-foreground-secondary);
   display: flex;
-  font-size: $fs-14;
   justify-content: space-between;
-  margin-top: $s-4;
-  max-width: $s-1000;
-  padding: $s-12 $s-24;
+  margin-top: var(--sp-xs);
+  max-width: px2rem(1000);
+  padding: var(--sp-m) var(--sp-xxl);
   width: 100%;
 
   input {
-    border: $s-1 solid transparent;
+    @include t.use-typography("body-medium");
+    @include textEllipsis;
+    border: $b-1 solid transparent;
     margin: 0;
-    padding: $s-8;
+    padding: var(--sp-s);
 
     background-color: var(--color-background-tertiary);
     border-radius: $br-8;
     color: var(--color-foreground-primary);
-    font-size: $fs-14;
 
     &:focus {
-      outline: $s-1 solid var(--color-accent-primary);
+      outline: $b-1 solid var(--color-accent-primary);
+      overflow: visible;
+      text-overflow: unset;
     }
   }
 
   > .family {
-    min-width: $s-200;
-    width: $s-200;
+    @include twoLineTextEllipsis;
+    min-width: $sz-200;
+    width: $sz-200;
   }
 
   > .filenames {
-    min-width: $s-200;
+    @include textEllipsis;
+    min-width: $sz-200;
   }
 
   > .variants {
-    font-size: $fs-14;
+    @include t.use-typography("body-medium");
     display: flex;
     flex-wrap: wrap;
     flex-grow: 1;
-    padding-left: $s-16;
-    gap: $s-6;
+    padding-left: var(--sp-l);
+    gap: $sz-6;
 
     .variant {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: $s-8 $s-12;
+      padding: var(--sp-s) var(--sp-m);
       cursor: pointer;
-      gap: $s-4;
+      gap: var(--sp-xs);
       .icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: $s-16;
-        width: $s-16;
+        height: $sz-16;
+        width: $sz-16;
         svg {
           fill: none;
-          width: $s-12;
-          height: $s-12;
+          width: $sz-12;
+          height: $sz-12;
           transform: rotate(45deg);
         }
       }
@@ -171,32 +182,33 @@
   }
 
   .filenames {
-    display: flex;
-    flex-direction: column;
-    font-size: $fs-12;
+    @include t.use-typography("body-small");
+    @include textEllipsis;
+    min-width: $sz-400;
+    padding-left: var(--sp-xxxl);
   }
 
   .options {
     display: flex;
     justify-content: flex-end;
-    min-width: $s-180;
+    min-width: px2rem(180);
 
     .icon {
-      width: $s-24;
+      width: $sz-24;
       cursor: pointer;
       display: flex;
-      margin-left: $s-12;
+      margin-left: var(--sp-m);
       justify-content: center;
       align-items: center;
       svg {
-        width: $s-16;
-        height: $s-16;
+        width: $sz-16;
+        height: $sz-16;
         stroke: var(--color-foreground-secondary);
         fill: none;
       }
 
       &.failure {
-        margin-right: $s-12;
+        margin-right: var(--sp-m);
         svg {
           stroke: var(--element-foreground-warning);
         }
@@ -214,46 +226,47 @@
 }
 
 .dashboard-fonts-upload {
-  max-width: $s-1000;
+  max-width: px2rem(1000);
   width: 100%;
   display: flex;
   flex-direction: column;
 
   .upload-button {
-    width: $s-100;
+    width: px2rem(100);
   }
 
   .btn-secondary {
-    margin-left: $s-12;
+    margin-left: var(--sp-m);
   }
 }
 
 .dashboard-fonts-hero {
-  font-size: $fs-14;
-  padding: $s-32 0;
-  margin-top: $s-80;
+  @include t.use-typography("body-medium");
+  padding: var(--sp-xxxl) 0;
+  margin-top: px2rem(80);
   display: flex;
   justify-content: space-between;
 
   .btn-primary {
-    height: $s-40;
+    height: $sz-40;
     width: 100%;
   }
 
   .desc {
     display: flex;
     flex-direction: column;
-    gap: $s-24;
+    gap: var(--sp-xxl);
     color: var(--color-background-secondary);
-    width: $s-500;
+    width: $sz-500;
 
     h2 {
       color: var(--color-foreground-primary);
       font-weight: 400;
     }
+
     p {
+      @include t.use-typography("body-large");
       color: var(--color-foreground-secondary);
-      font-size: $fs-16;
     }
   }
 
@@ -265,24 +278,24 @@
 .fonts-placeholder {
   align-items: center;
   border-radius: $br-8;
-  border: $s-1 solid var(--color-background-quaternary);
+  border: $b-1 solid var(--color-background-quaternary);
   display: flex;
   flex-direction: column;
-  height: $s-160;
+  height: $sz-160;
   justify-content: center;
-  margin-top: $s-16;
-  max-width: $s-1000;
+  margin-top: var(--sp-l);
+  max-width: px2rem(1000);
   width: 100%;
 
   .icon svg {
     stroke: var(--color-foreground-secondary);
     fill: none;
-    width: $s-32;
-    height: $s-32;
+    width: $sz-32;
+    height: $sz-32;
   }
 
   .label {
+    @include t.use-typography("body-medium");
     color: var(--color-foreground-secondary);
-    font-size: $fs-14;
   }
 }

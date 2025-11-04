@@ -4,11 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/typography.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .settings-bar-right {
-  min-width: $s-252;
+  min-width: deprecated.$s-252;
   width: 100%;
   height: 100vh;
   position: relative;
@@ -18,28 +19,28 @@
   overflow: hidden;
 
   &.viewer-code {
-    height: calc(100vh - $s-48);
+    height: calc(100vh - deprecated.$s-48);
   }
 }
 
 .viewer-code {
-  padding-inline-start: $s-8;
+  padding-inline-start: deprecated.$s-8;
 }
 
 .tool-windows {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   padding-left: var(--sp-m);
 }
 
 .shape-info {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: $s-8;
+  gap: deprecated.$s-8;
   align-items: center;
-  height: $s-32;
+  height: deprecated.$s-32;
 }
 
 .shape-info-subtitle {
@@ -49,16 +50,16 @@
 
 .layers-icon,
 .shape-icon {
-  @include flexCenter;
-  height: $s-32;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
   --icon-stroke-color: var(--color-foreground-primary);
 }
 
 .layer-title {
-  @include bodySmallTypography;
-  @include textEllipsis;
-  height: $s-32;
-  padding: $s-8 0;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8 0;
   color: var(--color-foreground-primary);
 }
 
@@ -68,8 +69,8 @@
 }
 
 .layer-subtitle {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   color: var(--assets-item-name-foreground-color-rest);
 }
 
@@ -77,17 +78,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $s-40;
-  padding-top: $s-24;
+  gap: deprecated.$s-40;
+  padding-top: deprecated.$s-24;
 }
 
 .code-info,
 .help-info {
-  @include flexColumn;
+  @include deprecated.flexColumn;
   align-items: center;
   justify-content: flex-start;
-  gap: $s-12;
-  margin-right: $s-8;
+  gap: deprecated.$s-12;
+  margin-right: deprecated.$s-8;
 }
 
 .placeholder-icon {
@@ -95,17 +96,17 @@
 }
 
 .placeholder-label {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   text-align: center;
-  width: $s-200;
+  width: deprecated.$s-200;
   color: var(--empty-message-foreground-color);
 }
 
 .more-info-btn {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  height: $s-32;
-  padding: $s-8 $s-24;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8 deprecated.$s-24;
 }
 
 .inspect-tab-switcher {
@@ -130,7 +131,7 @@
 }
 
 .inspect-tab-switcher-controls-color-space {
-  flex: 1;
+  flex: 1 0 $sz-24;
 }
 
 .inspect-tab-switcher-controls-tab {
@@ -145,6 +146,13 @@
 .viewer-tab-switcher {
   --tabs-nav-padding-inline-start: 0;
   --tabs-nav-padding-inline-end: var(--sp-m);
+
+  /* same height as .element-options in workspace/sidebar/options.scss */
+  /* which is one of the parents of this component */
+  --max-inspect-tab-height: var(--sidebar-element-options-height);
+  max-block-size: var(--max-inspect-tab-height);
+
+  overflow: auto;
 }
 
 .viewer-tab-switcher-layout {

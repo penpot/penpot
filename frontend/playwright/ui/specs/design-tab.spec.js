@@ -71,7 +71,7 @@ test.describe("Shape attributes", () => {
     page,
   }) => {
     const workspace = new WorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-frontend-binary-fills"]);
+    await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
 
@@ -250,4 +250,88 @@ test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
 
   await expect(fontSizeInput).toHaveValue("");
   await expect(fontSizeInput).toHaveAttribute("placeholder", "Mixed");
+});
+
+test("BUG 12287 Fix identical text fills not being added/removed", async ({
+  page,
+}) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-12287.json");
+
+  await workspace.goToWorkspace({
+    fileId: "4bdef584-e28a-8155-8006-f3f8a71b382e",
+    pageId: "4bdef584-e28a-8155-8006-f3f8a71b382f",
+  });
+
+  await workspace.clickLeafLayer("Lorem ipsum");
+
+  const addFillButton = workspace.page.getByRole("button", {
+    name: "Add fill",
+  });
+
+  await addFillButton.click();
+  await addFillButton.click();
+  await addFillButton.click();
+  await addFillButton.click();
+
+  await expect(
+    workspace.page.getByRole("button", { name: "#B1B2B5" }),
+  ).toHaveCount(4);
+
+  await workspace.page
+    .getByRole("button", { name: "Remove color" })
+    .first()
+    .click();
+
+  await expect(
+    workspace.page.getByRole("button", { name: "#B1B2B5" }),
+  ).toHaveCount(3);
+});
+
+test("BUG 12384 - Export crashing when exporting a board", async ({ page }) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-12384.json");
+
+  let hasExportRequestBeenIntercepted = false;
+  await workspace.page.route("**/api/export", (route) => {
+    if (hasExportRequestBeenIntercepted) {
+      route.continue();
+      return;
+    }
+
+    hasExportRequestBeenIntercepted = true;
+    const payload = route.request().postData();
+    const parsedPayload = JSON.parse(payload);
+
+    expect(parsedPayload["~:exports"]).toHaveLength(1);
+    expect(parsedPayload["~:exports"][0]["~:file-id"]).toBe(
+      "~ufa6ce865-34dd-80ac-8006-fe0dab5539a7",
+    );
+    expect(parsedPayload["~:exports"][0]["~:page-id"]).toBe(
+      "~ufa6ce865-34dd-80ac-8006-fe0dab5539a8",
+    );
+
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      response: {},
+    });
+  });
+
+  await workspace.goToWorkspace({
+    fileId: "fa6ce865-34dd-80ac-8006-fe0dab5539a7",
+    pageId: "fa6ce865-34dd-80ac-8006-fe0dab5539a8",
+  });
+
+  await workspace.clickLeafLayer("Board");
+
+  let exportRequest = workspace.page.waitForRequest("**/api/export");
+
+  await workspace.rightSidebar
+    .getByRole("button", { name: "Export 1 element" })
+    .click();
+
+  await exportRequest;
 });

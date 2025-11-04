@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -17,18 +17,18 @@
   max-height: initial;
 
   &.plugin-permissions {
-    width: $s-412;
-    max-width: $s-412;
+    width: deprecated.$s-412;
+    max-width: deprecated.$s-412;
   }
 
   &.plugin-management {
-    width: $s-472;
-    max-width: $s-472;
+    width: deprecated.$s-472;
+    max-width: deprecated.$s-472;
   }
 
   &.plugin-try-out {
-    width: $s-452;
-    max-width: $s-452;
+    width: deprecated.$s-452;
+    max-width: deprecated.$s-452;
   }
 
   hr {
@@ -50,11 +50,11 @@
 }
 
 .modal-title {
-  @include headlineMediumTypography;
-  margin-block-end: $s-32;
+  @include deprecated.headlineMediumTypography;
+  margin-block-end: deprecated.$s-32;
   color: var(--modal-title-foreground-color);
   display: flex;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 }
 
 .modal-content {
@@ -62,29 +62,29 @@
   flex-direction: column;
 
   .plugin-permissions & {
-    gap: $s-20;
+    gap: deprecated.$s-20;
   }
 
   .plugin-management & {
-    height: $s-380;
-    max-height: $s-380;
+    height: deprecated.$s-380;
+    max-height: deprecated.$s-380;
   }
 }
 
 .modal-message {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   color: var(--color-foreground-secondary);
 }
 
 .modal-paragraph {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   color: var(--color-foreground-primary);
 }
 
 .primary-button {
   @extend .button-primary;
-  @include headlineSmallTypography;
-  padding: $s-0 $s-16;
+  @include deprecated.headlineSmallTypography;
+  padding: deprecated.$s-0 deprecated.$s-16;
 }
 
 .button-expand {
@@ -94,14 +94,14 @@
 
 .cancel-button {
   @extend .button-secondary;
-  @include headlineSmallTypography;
-  padding: $s-0 $s-16;
+  @include deprecated.headlineSmallTypography;
+  padding: deprecated.$s-0 deprecated.$s-16;
 }
 
 .search-icon {
-  @include flexCenter;
-  width: $s-20;
-  padding: 0 0 0 $s-8;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-20;
+  padding: 0 0 0 deprecated.$s-8;
 
   svg {
     @extend .button-icon-small;
@@ -111,58 +111,58 @@
 
 .top-bar {
   display: flex;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .open-button {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: $s-68;
-  min-width: $s-68;
-  height: $s-32;
+  width: deprecated.$s-68;
+  min-width: deprecated.$s-68;
+  height: deprecated.$s-32;
   text-transform: uppercase;
 }
 
 .plugins-list {
-  padding-top: $s-20;
+  padding-top: deprecated.$s-20;
   overflow-x: hidden;
   overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 }
 
 .plugins-list-element {
   display: flex;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 }
 
 .plugin-icon {
-  min-width: $s-32;
-  min-height: $s-32;
-  width: $s-32;
-  height: $s-32;
+  min-width: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
   background: var(--button-secondary-background-color-rest);
-  padding: $s-2;
-  border-radius: $s-4;
+  padding: deprecated.$s-2;
+  border-radius: deprecated.$s-4;
 }
 
 .plugin-description {
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   width: 100%;
 }
 
 .plugin-title {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--color-foreground-secondary);
 }
 
@@ -170,15 +170,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $s-20;
+  gap: deprecated.$s-20;
   height: 100%;
   justify-content: center;
-  padding: $s-36 0;
+  padding: deprecated.$s-36 0;
 }
 
 .plugins-empty-logo {
-  width: $s-44;
-  height: $s-44;
+  width: deprecated.$s-44;
+  height: deprecated.$s-44;
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -186,25 +186,25 @@
   background: var(--color-background-tertiary);
 
   svg {
-    width: $s-16;
-    height: $s-16;
+    width: deprecated.$s-16;
+    height: deprecated.$s-16;
     stroke: var(--color-foreground-secondary);
     fill: none;
   }
 }
 
 .plugins-empty-text {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--color-foreground-primary);
 }
 
 div.input-error {
-  border: $s-1 solid var(--input-border-color-error);
+  border: deprecated.$s-1 solid var(--input-border-color-error);
 }
 
 .info {
-  @include bodySmallTypography;
-  margin-top: $s-4;
+  @include deprecated.bodySmallTypography;
+  margin-top: deprecated.$s-4;
 
   &.error {
     color: var(--input-border-color-error);
@@ -217,15 +217,15 @@ div.input-error {
 
 .plugins-link {
   color: var(--color-accent-primary);
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   display: inline-flex;
   align-items: center;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 
   svg {
-    margin-top: calc(-1 * $s-2);
-    width: $s-12;
-    height: $s-12;
+    margin-top: calc(-1 * deprecated.$s-2);
+    width: deprecated.$s-12;
+    height: deprecated.$s-12;
     stroke: var(--color-accent-primary);
     fill: none;
   }
@@ -237,46 +237,46 @@ div.input-error {
 .permissions-list {
   display: flex;
   flex-direction: column;
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 .permissions-list-entry {
   display: grid;
   grid-template-columns: 24px 1fr;
-  gap: $s-16;
+  gap: deprecated.$s-16;
   align-items: center;
 
   svg {
-    width: $s-24;
-    height: $s-24;
+    width: deprecated.$s-24;
+    height: deprecated.$s-24;
     stroke: var(--color-accent-primary);
     fill: none;
   }
 }
 
 .permissions-list-text {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   margin: 0;
   color: var(--color-foreground-secondary);
 }
 
 .permissions-disclaimer {
-  @include bodySmallTypography;
-  padding: $s-16;
+  @include deprecated.bodySmallTypography;
+  padding: deprecated.$s-16;
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
 }
 
 .action-buttons {
   display: flex;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 }
 
 .discover {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--color-foreground-secondary);
-  margin-top: $s-24;
+  margin-top: deprecated.$s-24;
 
   a {
     color: var(--color-accent-primary);

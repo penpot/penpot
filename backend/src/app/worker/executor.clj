@@ -7,97 +7,83 @@
 (ns app.worker.executor
   "Async tasks abstraction (impl)."
   (:require
-   [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
-   [app.common.time :as ct]
-   [app.metrics :as mtx]
    [app.worker :as-alias wrk]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
-   java.util.concurrent.ThreadPoolExecutor))
+   io.netty.channel.nio.NioEventLoopGroup
+   io.netty.util.concurrent.DefaultEventExecutorGroup
+   java.util.concurrent.ExecutorService
+   java.util.concurrent.ThreadFactory
+   java.util.concurrent.TimeUnit))
 
 (set! *warn-on-reflection* true)
 
 (sm/register!
  {:type ::wrk/executor
-  :pred #(instance? ThreadPoolExecutor %)
+  :pred #(instance? ExecutorService %)
   :type-properties
   {:title "executor"
-   :description "Instance of ThreadPoolExecutor"}})
+   :description "Instance of ExecutorService"}})
+
+(sm/register!
+ {:type ::wrk/netty-io-executor
+  :pred #(instance? NioEventLoopGroup %)
+  :type-properties
+  {:title "executor"
+   :description "Instance of NioEventLoopGroup"}})
+
+(sm/register!
+ {:type ::wrk/netty-executor
+  :pred #(instance? DefaultEventExecutorGroup %)
+  :type-properties
+  {:title "executor"
+   :description "Instance of DefaultEventExecutorGroup"}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; EXECUTOR
+;; IO Executor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/init-key ::wrk/executor
-  [_ _]
-  (let [factory  (px/thread-factory :prefix "penpot/default/")
-        executor (px/cached-executor :factory factory :keepalive 60000)]
-    (l/inf :hint "executor started")
-    executor))
+(defmethod ig/assert-key ::wrk/netty-io-executor
+  [_ {:keys [threads]}]
+  (assert (or (nil? threads) (int? threads))
+          "expected valid threads value, revisit PENPOT_NETTY_IO_THREADS environment variable"))
 
-(defmethod ig/halt-key! ::wrk/executor
+(defmethod ig/init-key ::wrk/netty-io-executor
+  [_ {:keys [threads]}]
+  (let [factory  (px/thread-factory :prefix "penpot/netty-io/")
+        nthreads (or threads (mth/round (/ (px/get-available-processors) 2)))
+        nthreads (max 2 nthreads)]
+    (l/inf :hint "start netty io executor" :threads nthreads)
+    (NioEventLoopGroup. (int nthreads) ^ThreadFactory factory)))
+
+(defmethod ig/halt-key! ::wrk/netty-io-executor
+  [_ instance]
+  (deref (.shutdownGracefully ^NioEventLoopGroup instance
+                              (long 100)
+                              (long 1000)
+                              TimeUnit/MILLISECONDS)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IO Offload Executor
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod ig/assert-key ::wrk/netty-executor
+  [_ {:keys [threads]}]
+  (assert (or (nil? threads) (int? threads))
+          "expected valid threads value, revisit PENPOT_EXEC_THREADS environment variable"))
+
+(defmethod ig/init-key ::wrk/netty-executor
+  [_ {:keys [threads]}]
+  (let [factory  (px/thread-factory :prefix "penpot/exec/")
+        nthreads (or threads (mth/round (/ (px/get-available-processors) 2)))
+        nthreads (max 2 nthreads)]
+    (l/inf :hint "start default executor" :threads nthreads)
+    (DefaultEventExecutorGroup. (int nthreads) ^ThreadFactory factory)))
+
+(defmethod ig/halt-key! ::wrk/netty-executor
   [_ instance]
   (px/shutdown! instance))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MONITOR
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- get-stats
-  [^ThreadPoolExecutor executor]
-  {:active (.getPoolSize ^ThreadPoolExecutor executor)
-   :running (.getActiveCount ^ThreadPoolExecutor executor)
-   :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
-
-(defmethod ig/expand-key ::wrk/monitor
-  [k v]
-  {k (-> (d/without-nils v)
-         (assoc ::interval (ct/duration "2s")))})
-
-(defmethod ig/init-key ::wrk/monitor
-  [_ {:keys [::wrk/executor ::mtx/metrics ::interval ::wrk/name]}]
-  (letfn [(monitor! [executor prev-completed]
-            (let [labels        (into-array String [(d/name name)])
-                  stats         (get-stats executor)
-
-                  completed     (:completed stats)
-                  completed-inc (- completed prev-completed)
-                  completed-inc (if (neg? completed-inc) 0 completed-inc)]
-
-              (mtx/run! metrics
-                        :id :executor-active-threads
-                        :labels labels
-                        :val (:active stats))
-
-              (mtx/run! metrics
-                        :id :executor-running-threads
-                        :labels labels
-                        :val (:running stats))
-
-              (mtx/run! metrics
-                        :id :executors-completed-tasks
-                        :labels labels
-                        :inc completed-inc)
-
-              completed-inc))]
-
-    (px/thread
-      {:name "penpot/executors-monitor" :virtual true}
-      (l/inf :hint "monitor started" :name name)
-      (try
-        (loop [completed 0]
-          (px/sleep interval)
-          (recur (long (monitor! executor completed))))
-        (catch InterruptedException _cause
-          (l/trc :hint "monitor: interrupted" :name name))
-        (catch Throwable cause
-          (l/err :hint "monitor: unexpected error" :name name :cause cause))
-        (finally
-          (l/inf :hint "monitor: terminated" :name name))))))
-
-(defmethod ig/halt-key! ::wrk/monitor
-  [_ thread]
-  (px/interrupt! thread))

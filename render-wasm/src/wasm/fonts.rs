@@ -1,9 +1,33 @@
+use macros::ToJs;
+
 use crate::mem;
+use crate::shapes::{FontFamily, FontStyle};
 use crate::utils::uuid_from_u32_quartet;
 use crate::with_state_mut;
 use crate::STATE;
 
-use crate::shapes::FontFamily;
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawFontStyle {
+    Normal = 0,
+    Italic = 1,
+}
+
+impl From<u8> for RawFontStyle {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawFontStyle> for FontStyle {
+    fn from(value: RawFontStyle) -> Self {
+        match value {
+            RawFontStyle::Normal => FontStyle::Normal,
+            RawFontStyle::Italic => FontStyle::Italic,
+        }
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn store_font(
@@ -23,8 +47,9 @@ pub extern "C" fn store_font(
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a2, b2, c2, d2);
         let font_bytes = mem::bytes();
+        let font_style = RawFontStyle::from(style);
 
-        let family = FontFamily::new(id, weight, style.into());
+        let family = FontFamily::new(id, weight, font_style.into());
         let _ =
             state
                 .render_state_mut()
@@ -52,7 +77,8 @@ pub extern "C" fn is_font_uploaded(
 ) -> bool {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        let family = FontFamily::new(id, weight, style.into());
+        let font_style = RawFontStyle::from(style);
+        let family = FontFamily::new(id, weight, font_style.into());
         let res = state.render_state().fonts().has_family(&family, is_emoji);
 
         res

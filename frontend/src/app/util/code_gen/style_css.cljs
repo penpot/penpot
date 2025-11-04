@@ -17,7 +17,7 @@
    [app.common.types.text :as types.text]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
-   [app.util.code-gen.style-css-formats :refer [format-value format-shadow]]
+   [app.util.code-gen.style-css-formats :refer [format-value format-shadow->css]]
    [app.util.code-gen.style-css-values :refer [get-value]]
    [cuerdas.core :as str]))
 
@@ -73,7 +73,10 @@ body {
    :transform
    :background
    :border
-   :border-radius
+   :border-start-start-radius
+   :border-start-end-radius
+   :border-end-start-radius
+   :border-end-end-radius
    :box-shadow
    :filter
    :opacity
@@ -89,7 +92,10 @@ body {
    :gap
    :column-gap
    :row-gap
-   :padding
+   :padding-inline-start
+   :padding-inline-end
+   :padding-block-start
+   :padding-block-end
    :z-index
 
    ;; Flex related properties
@@ -107,10 +113,18 @@ body {
    ;; Flex/grid self properties
    :flex-shrink
    :margin
+   :margin-block-start
+   :margin-block-end
+   :margin-inline-start
+   :margin-inline-end
    :max-height
+   :max-block-size
    :min-height
+   :min-block-size
    :max-width
+   :max-inline-size
    :min-width
+   :min-inline-size
    :align-self
    :justify-self
 
@@ -318,4 +332,4 @@ body {
 
 (defn shadow->css
   [shadow]
-  (dm/str "box-shadow: " (format-shadow shadow {})))
+  (dm/str "box-shadow: " (format-shadow->css shadow {})))

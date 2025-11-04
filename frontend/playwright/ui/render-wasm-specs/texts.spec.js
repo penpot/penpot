@@ -227,6 +227,96 @@ test("Renders a file with multiple emoji", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with multiple text shadows, strokes, and blur combinations", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-shadows-and-blurs.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
+    pageId: "15b74473-2908-8094-8006-bdb4fbd2c6a4",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with different text leaves decoration", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-leaves-decoration.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
+    pageId: "15b74473-2908-8094-8006-bdb4fbd2c6a4",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with different text shadows combinations", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-shadows-combination.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
+    pageId: "15b74473-2908-8094-8006-bc90c3982c74",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with multiple text shadows in order", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-shadows-order.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "48ffa82f-6950-81b5-8006-e49a2a39657f",
+    pageId: "48ffa82f-6950-81b5-8006-e49a2a396580",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with text in frames and different strokes, shadows, and blurs", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-frame-clipping-shadows-and-texts.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "44471494-966a-8178-8006-c5bd93f0fe72",
+    pageId: "44471494-966a-8178-8006-c5bd93f0fe73",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a file with texts with different alignments", async ({
   page,
 }) => {

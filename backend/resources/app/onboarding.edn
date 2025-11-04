@@ -1,6 +1,9 @@
 [{:id "tokens-starter-kit"
   :name "Design tokens starter kit"
-  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Tokens%20starter%20kit.penpot"},
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Tokens%20starter%20kit.penpot"}
+ {:id "penpot-design-system"
+  :name "Penpot Design System | Pencil"
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/penpot-app.penpot"}
  {:id "wireframing-kit"
   :name "Wireframe library"
   :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Wireframing%20kit%20v1.1.penpot"}
@@ -10,9 +13,6 @@
  {:id "plants-app"
   :name "UI mockup example"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Plants-app.penpot"}
- {:id "penpot-design-system"
-  :name "Design system example"
-  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Penpot%20-%20Design%20System%20v2.1.penpot"}
  {:id "tutorial-for-beginners"
   :name "Tutorial for beginners"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/tutorial-for-beginners.penpot"}

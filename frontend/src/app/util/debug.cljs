@@ -4,7 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.debug)
+(ns app.util.debug
+  (:require
+   [app.main.store :as st]))
 
 (defonce state (atom #{#_:events}))
 
@@ -95,7 +97,19 @@
     :gl-context
 
     ;; Show viewbox
-    :wasm-viewbox})
+    :wasm-viewbox
+
+    ;; Event times
+    :events-times})
+
+(defn handle-change
+  []
+  (set! st/*debug-events* (contains? @state :events))
+  (set! st/*debug-events-time* (contains? @state :events-times)))
+
+(when *assert*
+  (handle-change)
+  (add-watch state :watcher handle-change))
 
 (defn enable!
   [option]

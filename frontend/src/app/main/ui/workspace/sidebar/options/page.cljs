@@ -50,6 +50,7 @@
         :title (tr "workspace.options.canvas-background")
         :color color
         :on-change on-change
+        :origin :canvas
         :on-open on-open
         :on-close on-close}]]]))
 

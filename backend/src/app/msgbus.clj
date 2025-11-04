@@ -16,7 +16,6 @@
    [app.redis :as rds]
    [app.worker :as wrk]
    [integrant.core :as ig]
-   [promesa.core :as p]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
@@ -59,14 +58,16 @@
          (assoc ::timeout (ct/duration {:seconds 30})))})
 
 (def ^:private schema:params
-  [:map ::rds/redis ::wrk/executor])
+  [:map
+   ::rds/client
+   ::wrk/executor])
 
 (defmethod ig/assert-key ::msgbus
   [_ params]
   (assert (sm/check schema:params params)))
 
 (defmethod ig/init-key ::msgbus
-  [_ {:keys [::buffer-size ::wrk/executor ::timeout ::rds/redis] :as cfg}]
+  [_ {:keys [::buffer-size ::wrk/executor ::timeout] :as cfg}]
   (l/info :hint "initialize msgbus" :buffer-size buffer-size)
   (let [cmd-ch (sp/chan :buf buffer-size)
         rcv-ch (sp/chan :buf (sp/dropping-buffer buffer-size))
@@ -74,8 +75,9 @@
                         :xf  xform-prefix-topic)
         state  (agent {})
 
-        pconn  (rds/connect redis :type :default :timeout timeout)
-        sconn  (rds/connect redis :type :pubsub :timeout timeout)
+        ;; Open persistent connections to redis
+        pconn  (rds/connect cfg :timeout timeout)
+        sconn  (rds/connect-pubsub cfg :timeout timeout)
 
         _      (set-error-handler! state #(l/error :cause % :hint "unexpected error on agent" ::l/sync? true))
         _      (set-error-mode! state :continue)
@@ -189,14 +191,13 @@
 
 (defn- create-listener
   [rcv-ch]
-  (rds/pubsub-listener
-   :on-message (fn [_ topic message]
+  {:on-message (fn [_ topic message]
                  ;; There are no back pressure, so we use a slidding
                  ;; buffer for cases when the pubsub broker sends
                  ;; more messages that we can process.
-                 (let [val {:topic topic :message (t/decode message)}]
+                 (let [val {:topic topic :message (t/decode-str message)}]
                    (when-not (sp/offer! rcv-ch val)
-                     (l/warn :msg "dropping message on subscription loop"))))))
+                     (l/warn :msg "dropping message on subscription loop"))))})
 
 (defn- process-input
   [{:keys [::state ::wrk/executor] :as cfg} topic message]
@@ -216,8 +217,7 @@
   (rds/add-listener sconn (create-listener rcv-ch))
 
   (px/thread
-    {:name "penpot/msgbus/io-loop"
-     :virtual true}
+    {:name "penpot/msgbus"}
     (try
       (loop []
         (let [timeout-ch (sp/timeout-chan 1000)
@@ -263,7 +263,7 @@
   intended to be used in core.async go blocks."
   [{:keys [::pconn] :as cfg} {:keys [topic message]}]
   (try
-    (p/await! (rds/publish pconn topic (t/encode message)))
+    (rds/publish pconn topic (t/encode-str message))
     (catch InterruptedException cause
       (throw cause))
     (catch Throwable cause

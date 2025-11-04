@@ -4,42 +4,49 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
+.element-title {
+  grid-column: span 8;
 }
 
 .title-spacing-board-grid {
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
   margin: 0;
 }
 
 .element-set-content {
-  @include flexColumn;
-  margin: $s-4 0 $s-8 0;
+  @include deprecated.flexColumn;
+  grid-column: span 8;
+  margin: deprecated.$s-4 0 deprecated.$s-8 0;
 }
 
 .grid-title {
   display: grid;
   grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .option-row {
   grid-column: span 6;
   display: flex;
   align-items: center;
-  gap: $s-1;
-  border-radius: $br-8;
+  gap: deprecated.$s-1;
+  border-radius: deprecated.$br-8;
   background-color: var(--input-details-color);
   .show-options {
     @extend .button-secondary;
-    height: $s-32;
-    width: $s-28;
-    border-radius: $br-8 0 0 $br-8;
+    height: deprecated.$s-32;
+    width: deprecated.$s-28;
+    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
     box-sizing: border-box;
-    border: $s-1 solid var(--input-border-color);
+    border: deprecated.$s-1 solid var(--input-border-color);
     svg {
       @extend .button-icon;
     }
@@ -49,52 +56,52 @@
   }
   .type-select-wrapper {
     flex-grow: 1;
-    width: $s-96;
+    width: deprecated.$s-96;
     padding: 0;
     border-radius: 0;
-    height: $s-32;
+    height: deprecated.$s-32;
     .grid-type-select {
       border-radius: 0;
       height: 100%;
       box-sizing: border-box;
-      border: $s-1 solid var(--input-border-color);
+      border: deprecated.$s-1 solid var(--input-border-color);
       &:hover {
-        border: $s-1 solid var(--input-border-color-hover);
+        border: deprecated.$s-1 solid var(--input-border-color-hover);
       }
     }
   }
   .grid-size {
     @extend .asset-element;
-    width: $s-60;
+    width: deprecated.$s-60;
     margin: 0;
     padding: 0;
-    padding-left: $s-8;
-    border-radius: 0 $br-8 $br-8 0;
+    padding-left: deprecated.$s-8;
+    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     .numeric-input {
       @extend .input-base;
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
     }
   }
   .editable-select-wrapper {
     @extend .asset-element;
-    width: $s-60;
+    width: deprecated.$s-60;
     margin: 0;
     padding: 0;
     position: relative;
-    border-radius: 0 $br-8 $br-8 0;
+    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     .column-select {
-      height: $s-32;
-      border-radius: 0 $br-8 $br-8 0;
+      height: deprecated.$s-32;
+      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
       box-sizing: border-box;
-      border: $s-1 solid var(--input-border-color);
+      border: deprecated.$s-1 solid var(--input-border-color);
       .numeric-input {
         @extend .input-base;
-        @include bodySmallTypography;
+        @include deprecated.bodySmallTypography;
         margin: 0;
         padding: 0;
       }
       span {
-        @include flexCenter;
+        @include deprecated.flexCenter;
         svg {
           @extend .button-icon;
         }
@@ -104,28 +111,28 @@
 
   &.hidden {
     .show-options {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
     }
     .type-select-wrapper,
     .editable-select-wrapper {
-      @include hiddenElement;
+      @include deprecated.hiddenElement;
       .column-select,
       .grid-type-select {
-        @include hiddenElement;
-        border: $s-1 solid var(--input-border-color-disabled);
+        @include deprecated.hiddenElement;
+        border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
       .column-select {
-        @include hiddenElement;
-        border-radius: 0 $br-8 $br-8 0;
+        @include deprecated.hiddenElement;
+        border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
         .numeric-input {
-          @include hiddenElement;
+          @include deprecated.hiddenElement;
         }
       }
     }
     .grid-size {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
       .icon {
         stroke: var(--input-foreground-color-disabled);
       }
@@ -146,36 +153,36 @@
 }
 
 .actions {
-  @include flexRow;
+  @include deprecated.flexRow;
   grid-column: span 2;
 }
 
 .grid-advanced-options {
-  @include flexColumn;
-  margin-top: $s-4;
+  @include deprecated.flexColumn;
+  margin-top: deprecated.$s-4;
 }
 
 .column-row,
 .square-row {
-  @include flexColumn;
+  @include deprecated.flexColumn;
   position: relative;
 }
 
 .advanced-row {
   position: relative;
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   .orientation-select-wrapper {
-    width: $s-92;
+    width: deprecated.$s-92;
     padding: 0;
   }
   .color-wrapper {
-    width: $s-156;
+    width: deprecated.$s-156;
   }
   .show-more-options {
     @extend .button-tertiary;
-    height: $s-32;
-    width: $s-32;
+    height: deprecated.$s-32;
+    width: deprecated.$s-32;
     svg {
       @extend .button-icon;
     }
@@ -185,15 +192,15 @@
   }
   .height {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     .icon-text {
-      padding-top: $s-1;
+      padding-top: deprecated.$s-1;
     }
   }
   .gutter,
   .margin {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     .icon {
       &.rotated svg {
         transform: rotate(90deg);
@@ -202,27 +209,27 @@
   }
 
   .more-options {
-    @include menuShadow;
-    @include flexColumn;
+    @include deprecated.menuShadow;
+    @include deprecated.flexColumn;
     position: absolute;
-    top: calc($s-2 + $s-28);
+    top: calc(deprecated.$s-2 + deprecated.$s-28);
     right: 0;
-    width: $s-156;
-    max-height: $s-300;
-    padding: $s-2;
-    margin: 0 0 $s-40 0;
-    margin-top: $s-4;
-    border-radius: $br-8;
-    z-index: $z-index-4;
+    width: deprecated.$s-156;
+    max-height: deprecated.$s-300;
+    padding: deprecated.$s-2;
+    margin: 0 0 deprecated.$s-40 0;
+    margin-top: deprecated.$s-4;
+    border-radius: deprecated.$br-8;
+    z-index: deprecated.$z-index-4;
     overflow-y: auto;
     background-color: var(--menu-background-color);
     .option-btn {
-      @include buttonStyle;
+      @include deprecated.buttonStyle;
       display: flex;
       align-items: center;
-      height: $s-32;
-      padding: 0 $s-8;
-      border-radius: $br-6;
+      height: deprecated.$s-32;
+      padding: 0 deprecated.$s-8;
+      border-radius: deprecated.$br-6;
       color: var(--menu-foreground-color);
 
       &:hover {
@@ -237,9 +244,9 @@
   @extend .dropdown-wrapper;
   left: unset;
   right: 0;
-  width: $s-108;
+  width: deprecated.$s-108;
   .btn-options {
-    @include buttonStyle;
+    @include deprecated.buttonStyle;
     @extend .dropdown-element-base;
     width: 100%;
   }

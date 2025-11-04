@@ -4,24 +4,24 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .workspace-header-left {
   display: flex;
   align-items: center;
-  padding: $s-12 $s-12 $s-8 $s-12;
-  min-height: $s-52;
+  padding: deprecated.$s-12 deprecated.$s-12 deprecated.$s-8 deprecated.$s-12;
+  min-height: deprecated.$s-52;
 }
 
 .main-icon {
-  @include flexCenter;
-  width: $s-32;
-  height: $s-32;
-  min-height: $s-32;
-  margin-right: $s-4;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin-right: deprecated.$s-4;
   svg {
-    min-height: $s-32;
-    width: $s-32;
+    min-height: deprecated.$s-32;
+    width: deprecated.$s-32;
     fill: var(--icon-foreground-hover);
   }
 }
@@ -29,24 +29,24 @@
 .project-tree {
   position: relative;
   flex-grow: 1;
-  height: $s-32;
-  min-height: $s-32;
-  max-width: calc(100% - $s-64);
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  max-width: calc(100% - deprecated.$s-64);
 }
 
 .project-name,
 .file-name {
-  @include uppercaseTitleTipography;
-  @include textEllipsis;
-  height: $s-16;
+  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.textEllipsis;
+  height: deprecated.$s-16;
   width: 100%;
-  padding-bottom: $s-2;
+  padding-bottom: deprecated.$s-2;
   color: var(--title-foreground-color);
   cursor: pointer;
 }
 
 .file-name {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   text-transform: none;
   color: var(--title-foreground-color-hover);
   align-items: center;
@@ -55,20 +55,20 @@
 }
 
 .file-name-label {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
 }
 
 .file-name-input {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   width: 100%;
   margin: 0;
   border: 0;
   padding: 0;
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   background-color: var(--input-background-color);
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   color: var(--input-foreground-color);
-  z-index: $z-index-20;
+  z-index: deprecated.$z-index-20;
   white-space: break-spaces;
   &:focus {
     outline: none;
@@ -76,23 +76,23 @@
 }
 
 .shared-badge {
-  @include flexCenter;
-  width: $s-16;
-  height: $s-32;
-  margin-right: $s-4;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-16;
+  height: deprecated.$s-32;
+  margin-right: deprecated.$s-4;
   svg {
     stroke: var(--button-secondary-foreground-color-rest);
     fill: none;
-    height: $s-16;
-    width: $s-16;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
   }
 }
 
 .status-notification {
-  width: $s-6;
-  height: $s-6;
+  width: deprecated.$s-6;
+  height: deprecated.$s-6;
   border-radius: 50%;
-  margin-right: $s-4;
+  margin-right: deprecated.$s-4;
   flex-shrink: 0;
   background-color: var(--status-widget-background-color-pending);
 

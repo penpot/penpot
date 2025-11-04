@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.files.migrations :as fmg]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
@@ -45,12 +46,14 @@
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             cfeat/*current* features]
+
     (let [file (ctf/make-file {:id id
                                :project-id project-id
                                :name name
                                :revn revn
                                :is-shared is-shared
                                :features features
+                               :migrations fmg/available-migrations
                                :ignore-sync-until ignore-sync-until
                                :created-at modified-at
                                :deleted-at deleted-at}
@@ -66,7 +69,7 @@
                   {:modified-at (ct/now)}
                   {:id project-id})
 
-      file)))
+      (bfc/get-file cfg (:id file)))))
 
 (def ^:private schema:create-file
   [:map {:title "create-file"}

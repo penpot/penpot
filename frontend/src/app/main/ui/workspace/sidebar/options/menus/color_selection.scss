@@ -4,37 +4,44 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
+.element-title {
+  grid-column: span 8;
 }
 
 .title-spacing-selected-colors {
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
   margin: 0;
 }
 
 .add-fill {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
   }
 }
 
 .element-content {
-  @include flexColumn;
-  margin-bottom: $s-8;
+  grid-column: span 8;
+  @include deprecated.flexColumn;
+  margin-bottom: deprecated.$s-8;
 }
 
 .selected-color-group {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .more-colors-btn {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  height: $s-32;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
 }

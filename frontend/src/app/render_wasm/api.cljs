@@ -10,6 +10,7 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d :refer [not-empty?]]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.path :as path]
@@ -47,9 +48,11 @@
 (def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
 (def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
 
-(def ^:const GRID-LAYOUT-ROW-U8-SIZE 5)
-(def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 5)
-(def ^:const GRID-LAYOUT-CELL-U8-SIZE 37)
+(def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
+(def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
+(def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
+
+(def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
@@ -170,11 +173,10 @@
   [string]
   (+ (count string) 1))
 
+
 (defn- fetch-image
   [shape-id image-id]
-  (let [buffer-shape-id (uuid/get-u32 shape-id)
-        buffer-image-id (uuid/get-u32 image-id)
-        url             (cf/resolve-file-media {:id image-id})]
+  (let [url   (cf/resolve-file-media {:id image-id})]
     {:key url
      :callback #(->> (http/send! {:method :get
                                   :uri url
@@ -182,23 +184,32 @@
                      (rx/map :body)
                      (rx/mapcat wapi/read-file-as-array-buffer)
                      (rx/map (fn [image]
-                               ;; FIXME use bigger heap ptr size if it
-                               ;; is possible (if image size modulo
-                               ;; permits it)
-                               (let [size    (.-byteLength image)
-                                     offset  (mem/alloc size)
-                                     heap    (mem/get-heap-u8)
-                                     data    (js/Uint8Array. image)]
-                                 (.set heap data offset)
-                                 (h/call wasm/internal-module "_store_image"
-                                         (aget buffer-shape-id 0)
-                                         (aget buffer-shape-id 1)
-                                         (aget buffer-shape-id 2)
-                                         (aget buffer-shape-id 3)
-                                         (aget buffer-image-id 0)
-                                         (aget buffer-image-id 1)
-                                         (aget buffer-image-id 2)
-                                         (aget buffer-image-id 3))
+                               (let [size        (.-byteLength image)
+                                     padded-size (if (zero? (mod size 4)) size (+ size (- 4 (mod size 4))))
+                                     total-bytes (+ 32 padded-size) ; UUID size + padded size
+                                     offset      (mem/alloc->offset-32 total-bytes)
+                                     heap32      (mem/get-heap-u32)
+                                     data        (js/Uint8Array. image)
+                                     padded      (js/Uint8Array. padded-size)]
+
+                                 ;; 1. Set shape id
+                                 (mem.h32/write-uuid offset heap32 shape-id)
+
+                                 ;; 2. Set image id
+                                 (mem.h32/write-uuid (+ offset 4) heap32 image-id)
+
+                                 ;; 3. Adjust padding on image data
+                                 (.set padded data)
+                                 (when (< size padded-size)
+                                   (dotimes [i (- padded-size size)]
+                                     (aset padded (+ size i) 0)))
+
+                                 ;; 4. Set image data
+                                 (let [u32view (js/Uint32Array. (.-buffer padded))
+                                       image-u32-offset (+ offset 8)]
+                                   (.set heap32 u32view image-u32-offset))
+
+                                 (h/call wasm/internal-module "_store_image")
                                  true))))}))
 
 (defn- get-fill-images
@@ -309,15 +320,27 @@
     (h/call wasm/internal-module "stringToUTF8" str offset size)
     (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
-;; FIXME: revisit on heap refactor is merged to use u32 instead u8
 (defn set-shape-path-content
+  "Upload path content in chunks to WASM."
   [content]
-  (let [pdata  (path/content content)
-        size   (path/get-byte-size content)
-        offset (mem/alloc size)
-        heap   (mem/get-heap-u8)]
-    (path/write-to pdata (.-buffer heap) offset)
-    (h/call wasm/internal-module "_set_shape_path_content")))
+  (let [chunk-size (quot MAX_BUFFER_CHUNK_SIZE 4)
+        buffer-size (path/get-byte-size content)
+        padded-size (* 4 (mth/ceil (/ buffer-size 4)))
+        buffer (js/Uint8Array. padded-size)]
+    (path/write-to content (.-buffer buffer) 0)
+    (h/call wasm/internal-module "_start_shape_path_buffer")
+    (let [heapu32 (mem/get-heap-u32)]
+      (loop [offset 0]
+        (when (< offset padded-size)
+          (let [end (min padded-size (+ offset (* chunk-size 4)))
+                chunk (.subarray buffer offset end)
+                chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
+                offset-size (.-length chunk-u32)
+                heap-offset (mem/alloc->offset-32 (* 4 offset-size))]
+            (.set heapu32 chunk-u32 heap-offset)
+            (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
+            (recur end)))))
+    (h/call wasm/internal-module "_set_shape_path_buffer")))
 
 (defn set-shape-svg-raw-content
   [content]
@@ -364,30 +387,19 @@
   [bool-type]
   (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
 
-(defn- translate-blur-type
-  [blur-type]
-  (case blur-type
-    :layer-blur 1
-    0))
-
 (defn set-shape-blur
   [blur]
-  (let [type   (-> blur :type sr/translate-blur-type)
-        hidden (:hidden blur)
-        value  (:value blur)]
-    (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
+  (if (some? blur)
+    (let [type   (-> blur :type sr/translate-blur-type)
+          hidden (:hidden blur)
+          value  (:value blur)]
+      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+    (h/call wasm/internal-module "_clear_shape_blur")))
 
 (defn set-shape-corners
-  [shape]
-  (let [r1 (get shape :r1)
-        r2 (get shape :r2)
-        r3 (get shape :r3)
-        r4 (get shape :r4)]
-    (h/call wasm/internal-module "_set_shape_corners"
-            (d/nilv r1 0)
-            (d/nilv r2 0)
-            (d/nilv r3 0)
-            (d/nilv r4 0))))
+  [corners]
+  (let [[r1 r2 r3 r4] (map #(d/nilv % 0) corners)]
+    (h/call wasm/internal-module "_set_shape_corners" r1 r2 r3 r4)))
 
 (defn set-flex-layout
   [shape]
@@ -464,13 +476,9 @@
         dview   (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because of the nature of the grid row data
-              ;; structure memory layout we can't use fully 32 bits
-              ;; alligned writes, so for heteregeneus writes we use
-              ;; the buffer abstraction (DataView) for perform
-              ;; surgical writes.
               (-> offset
                   (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (+ 3) ;; padding
                   (mem/write-f32 dview value)
                   (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
@@ -486,17 +494,11 @@
         dview  (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because of the nature of the grid column data
-              ;; structure memory layout we can't use fully 32 bits
-              ;; alligned writes, so for heteregeneus writes we use
-              ;; the buffer abstraction (DataView) for perform
-              ;; surgical writes.
               (-> offset
                   (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (+ 3) ;; padding
                   (mem/write-f32 dview value)
                   (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-
-
             offset
             entries)
 
@@ -511,38 +513,17 @@
     (reduce-kv (fn [offset _ cell]
                  (let [shape-id  (-> (get cell :shapes) first)]
                    (-> offset
-                       ;; row: [u8; 4],
                        (mem/write-i32 dview (get cell :row))
-
-                       ;; row_span: [u8; 4],
                        (mem/write-i32 dview (get cell :row-span))
-
-                       ;; column: [u8; 4],
                        (mem/write-i32 dview (get cell :column))
-
-                       ;; column_span: [u8; 4],
                        (mem/write-i32 dview (get cell :column-span))
 
-                       ;; has_align_self: u8,
-                       (mem/write-bool dview (some? (get cell :align-self)))
-
-                       ;; align_self: u8,
-                       (mem/write-u8 dview (get cell :align-self))
-
-                       ;; has_justify_self: u8,
-                       (mem/write-bool dview (get cell :justify-self))
-
-                       ;; justify_self: u8,
+                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
                        (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-                       ;; has_shape_id: u8,
-                       ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
-                       (mem/write-u8 dview (some? shape-id))
+                       ;; padding
+                       (+ 2)
 
-                       ;; shape_id_a: [u8; 4],
-                       ;; shape_id_b: [u8; 4],
-                       ;; shape_id_c: [u8; 4],
-                       ;; shape_id_d: [u8; 4],
                        (mem/write-uuid dview (d/nilv shape-id uuid/zero))
                        (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
@@ -596,7 +577,7 @@
             (d/nilv max-w 0)
             has-min-w
             (d/nilv min-w 0)
-            (some? align-self)
+
             (d/nilv align-self 0)
             is-absolute
             (d/nilv z-index))))
@@ -644,8 +625,11 @@
         shadows))
 
 (defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
   [shape-id content]
+
   (h/call wasm/internal-module "_clear_shape_text")
+
   (set-shape-vertical-align (get content :vertical-align))
 
   (let [paragraph-set (first (get content :children))
@@ -677,8 +661,12 @@
         (let [updated-fonts
               (-> fonts
                   (cond-> ^boolean emoji? (f/add-emoji-font))
-                  (f/add-noto-fonts langs))]
-          (f/store-fonts shape-id updated-fonts))))))
+                  (f/add-noto-fonts langs))
+              result (f/store-fonts shape-id updated-fonts)]
+
+          (h/call wasm/internal-module "_update_shape_text_layout")
+
+          result)))))
 
 (defn set-shape-text
   [shape-id content]
@@ -747,7 +735,8 @@
         grow-type    (get shape :grow-type)
         blur         (get shape :blur)
         svg-attrs    (get shape :svg-attrs)
-        shadows      (get shape :shadow)]
+        shadows      (get shape :shadow)
+        corners      (map #(get shape %) [:r1 :r2 :r3 :r4])]
 
     (use-shape id)
     (set-parent-id parent-id)
@@ -761,11 +750,10 @@
     (set-shape-opacity opacity)
     (set-shape-hidden hidden)
     (set-shape-children children)
-    (set-shape-corners shape)
+    (set-shape-corners corners)
+    (set-shape-blur blur)
     (when (and (= type :group) masked)
       (set-masked masked))
-    (when (some? blur)
-      (set-shape-blur blur))
     (when (= type :bool)
       (set-shape-bool-type bool-type))
     (when (and (some? content)
@@ -803,6 +791,7 @@
            (rx/subs! (fn [_]
                        (clear-drawing-cache)
                        (request-render "pending-finished")
+                       (h/call wasm/internal-module "_update_shape_text_layout_for_all")
                        (.dispatchEvent ^js js/document event))))
       (do
         (clear-drawing-cache)
@@ -1078,10 +1067,40 @@
       (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
         (->> (js/dynamicImport (str uri))
              (p/mcat (fn [module]
-                       (let [default (unchecked-get module "default")]
+                       (let [default (unchecked-get module "default")
+                             serializers #js{:blur-type (unchecked-get module "RawBlurType")
+                                             :blend-mode (unchecked-get module "RawBlendMode")
+                                             :bool-type (unchecked-get module "RawBoolType")
+                                             :font-style (unchecked-get module "RawFontStyle")
+                                             :flex-direction (unchecked-get module "RawFlexDirection")
+                                             :grid-direction (unchecked-get module "RawGridDirection")
+                                             :grow-type (unchecked-get module "RawGrowType")
+                                             :align-items (unchecked-get module "RawAlignItems")
+                                             :align-self (unchecked-get module "RawAlignSelf")
+                                             :align-content (unchecked-get module "RawAlignContent")
+                                             :justify-items (unchecked-get module "RawJustifyItems")
+                                             :justify-content (unchecked-get module "RawJustifyContent")
+                                             :justify-self (unchecked-get module "RawJustifySelf")
+                                             :wrap-type (unchecked-get module "RawWrapType")
+                                             :grid-track-type (unchecked-get module "RawGridTrackType")
+                                             :shadow-style (unchecked-get module "RawShadowStyle")
+                                             :stroke-style (unchecked-get module "RawStrokeStyle")
+                                             :stroke-cap (unchecked-get module "RawStrokeCap")
+                                             :shape-type (unchecked-get module "RawShapeType")
+                                             :constraint-h (unchecked-get module "RawConstraintH")
+                                             :constraint-v (unchecked-get module "RawConstraintV")
+                                             :sizing (unchecked-get module "RawSizing")
+                                             :vertical-align (unchecked-get module "RawVerticalAlign")
+                                             :fill-data (unchecked-get module "RawFillData")
+                                             :text-align (unchecked-get module "RawTextAlign")
+                                             :text-direction (unchecked-get module "RawTextDirection")
+                                             :text-decoration (unchecked-get module "RawTextDecoration")
+                                             :text-transform (unchecked-get module "RawTextTransform")
+                                             :segment-data (unchecked-get module "RawSegmentData")}]
+                         (set! wasm/serializers serializers)
                          (default))))
-             (p/fmap (fn [module]
-                       (set! wasm/internal-module module)
+             (p/fmap (fn [default]
+                       (set! wasm/internal-module default)
                        true))
              (p/merr (fn [cause]
                        (js/console.error cause)

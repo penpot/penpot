@@ -21,18 +21,14 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- on-start-creation
   []
   (st/emit! (dwtl/start-token-set-creation [])))
-
-(defn- group-edition-id
-  "Prefix editing groups `edition-id` so it can be differentiated from sets with the same id."
-  [edition-id]
-  (str "group-" edition-id))
-
 
 (mf/defc editing-label*
   {::mf/private true}
@@ -111,8 +107,8 @@
 
 (mf/defc sets-tree-set-group*
   {::mf/private true}
-  [{:keys [id label tree-depth tree-path is-active is-selected is-draggable is-collapsed tree-index on-drop
-           on-toggle-collapse on-toggle is-editing on-start-edition on-reset-edition on-edit-submit]}]
+  [{:keys [id label is-editing is-active is-selected is-draggable is-collapsed path depth index
+           on-toggle on-drop on-start-edition on-reset-edition on-edit-submit on-toggle-collapse]}]
 
   (let [can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -122,7 +118,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-editing id tree-path can-edit?)
+         (mf/deps is-editing id path can-edit?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
@@ -131,47 +127,46 @@
                         {:position (dom/get-client-position event)
                          :is-group true
                          :id id
-                         :edition-id (group-edition-id id)
-                         :path tree-path})))))
+                         :path path})))))
 
         on-collapse-click
         (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (on-toggle-collapse tree-path)))
+           (on-toggle-collapse path)))
 
         on-double-click
-        (mf/use-fn (mf/deps id) #(on-start-edition (group-edition-id id)))
+        (mf/use-fn (mf/deps id) #(on-start-edition id))
 
         on-checkbox-click
         (mf/use-fn
-         (mf/deps on-toggle tree-path can-edit?)
-         #(on-toggle tree-path))
+         (mf/deps on-toggle path can-edit?)
+         #(on-toggle path))
 
         on-edit-submit'
         (mf/use-fn
-         (mf/deps tree-path on-edit-submit can-edit?)
-         #(on-edit-submit tree-path %))
+         (mf/deps path on-edit-submit can-edit?)
+         #(on-edit-submit path %))
 
         on-drop
         (mf/use-fn
-         (mf/deps tree-index on-drop)
+         (mf/deps index on-drop)
          (fn [position data]
-           (on-drop tree-index position data)))
+           (on-drop index position data)))
 
         [dprops dref]
         (h/use-sortable
          :data-type "penpot/token-set"
          :on-drop on-drop
-         :data {:index tree-index
+         :data {:index index
                 :is-group true}
          :detect-center? true
-         :draggable? is-draggable)]
+         :draggable? (and is-draggable (not is-editing)))]
 
     [:div {:ref dref
            :data-testid "tokens-set-group-item"
-           :style {"--tree-depth" tree-depth}
+           :style {"--tree-depth" depth}
            :class (stl/css-case :set-item-container true
                                 :set-item-group true
                                 :selected-set is-selected
@@ -209,24 +204,23 @@
           :arial-label (tr "workspace.tokens.select-set")}]])]))
 
 (mf/defc sets-tree-set*
-  [{:keys [id set label tree-depth tree-path tree-index is-selected is-active is-draggable is-editing
-           on-select on-drop on-toggle on-start-edition on-reset-edition on-edit-submit is-new]}]
+  [{:keys [id set label is-editing is-active is-selected is-draggable is-new path depth index
+           on-select on-toggle on-drop on-start-edition on-reset-edition on-edit-submit]}]
 
-  (let [set-name  (ctob/get-name set)
-        can-edit? (mf/use-ctx ctx/can-edit?)
+  (let [can-edit? (mf/use-ctx ctx/can-edit?)
 
         on-click
         (mf/use-fn
-         (mf/deps is-editing tree-path)
+         (mf/deps is-editing on-select id)
          (fn [event]
            (dom/stop-propagation event)
            (when-not is-editing
              (when (fn? on-select)
-               (on-select set-name)))))
+               (on-select id)))))
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-editing id tree-path can-edit?)
+         (mf/deps is-editing id path can-edit?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
@@ -235,8 +229,7 @@
                         {:position (dom/get-client-position event)
                          :is-group false
                          :id id
-                         :edition-id id
-                         :path tree-path})))))
+                         :path path})))))
 
         on-double-click
         (mf/use-fn
@@ -247,11 +240,11 @@
 
         on-checkbox-click
         (mf/use-fn
-         (mf/deps set-name on-toggle)
+         (mf/deps id on-toggle)
          (fn [event]
            (dom/stop-propagation event)
            (when (fn? on-toggle)
-             (on-toggle set-name))))
+             (on-toggle (ctob/get-name set)))))
 
         on-edit-submit'
         (mf/use-fn
@@ -260,25 +253,25 @@
 
         on-drag
         (mf/use-fn
-         (mf/deps tree-path)
+         (mf/deps path)
          (fn [_]
            (when-not is-selected
-             (on-select tree-path))))
+             (on-select path))))
 
         on-drop
         (mf/use-fn
-         (mf/deps tree-index on-drop)
+         (mf/deps index on-drop)
          (fn [position data]
-           (on-drop tree-index position data)))
+           (on-drop index position data)))
 
         [dprops dref]
         (h/use-sortable
          :data-type "penpot/token-set"
          :on-drag on-drag
          :on-drop on-drop
-         :data {:index tree-index
+         :data {:index index
                 :is-group false}
-         :draggable? is-draggable)
+         :draggable? (and is-draggable (not is-editing)))
 
         drop-over
         (get dprops :over)]
@@ -286,7 +279,8 @@
     [:div {:ref dref
            :role "button"
            :data-testid "tokens-set-item"
-           :style {"--tree-depth" tree-depth}
+           :id (str "token-set-item-" (str/join "/" path))
+           :style {"--tree-depth" depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set is-selected
                                 :dnd-over     (= drop-over :center)
@@ -300,7 +294,7 @@
      [:> icon*
       {:icon-id i/document
        :class (stl/css-case :icon true
-                            :root-icon (not tree-depth))}]
+                            :root-icon (not depth))}]
      (if is-editing
        [:> editing-label*
         {:default-value label
@@ -342,9 +336,9 @@
         on-drop
         (mf/use-fn
          (mf/deps collapsed-paths)
-         (fn [tree-index position data]
+         (fn [index position data]
            (let [params {:from-index (:index data)
-                         :to-index tree-index
+                         :to-index index
                          :position position
                          :collapsed-paths collapsed-paths}]
              (if (:is-group data)
@@ -358,79 +352,88 @@
                                       (disj % path)
                                       (conj % path)))))]
 
-    (for [{:keys [id token-set index is-new is-group path parent-path depth] :as node}
+    (mf/with-effect []
+      (let [sub (rx/subs! (fn [paths']
+                            (swap! collapsed-paths* (fn [paths] (apply disj paths paths'))))
+                          (->> st/stream
+                               (rx/filter (ptk/type? :expand-token-sets))
+                               (rx/map deref)
+                               (rx/map :paths)))]
+        (fn []
+          (rx/dispose! sub))))
+
+    (for [{:keys [token-set id index is-new is-group path depth] :as node}
           (ctob/sets-tree-seq token-sets
                               {:skip-children-pred collapsed?
                                :new-at-path new-path})]
-      (cond
-        ^boolean is-group
-        [:> sets-tree-set-group*
-         {:key index
-          :label (peek path)
-          :id id
-          :is-active (is-token-set-group-active path)
-          :is-selected false
-          :is-draggable is-draggable
-          :is-editing (= edition-id (group-edition-id id))
-          :is-collapsed (collapsed? path)
-          :on-select on-select
+      (do
+        (cond
+          ^boolean is-group
+          [:> sets-tree-set-group*
+           {:key index
+            :id id
+            :label (peek path)
+            :is-editing (= edition-id id)
+            :is-active (is-token-set-group-active path)
+            :is-selected false
+            :is-draggable is-draggable
+            :is-collapsed (collapsed? path)
 
-          :tree-path path
-          :tree-depth depth
-          :tree-index index
-          :tree-parent-path parent-path
+            :path path
+            :depth depth
+            :index index
 
-          :on-drop on-drop
-          :on-start-edition on-start-edition
-          :on-reset-edition on-reset-edition
-          :on-edit-submit on-edit-submit-group
-          :on-toggle-collapse on-toggle-collapse
-          :on-toggle on-toggle-set-group}]
+            :on-toggle on-toggle-set-group
+            :on-drop on-drop
+            :on-start-edition on-start-edition
+            :on-reset-edition on-reset-edition
+            :on-edit-submit on-edit-submit-group
+            :on-toggle-collapse on-toggle-collapse}]
 
-        ^boolean is-new
-        [:> sets-tree-set*
-         {:key index
-          :set token-set
-          :label ""
-          :id id
-          :is-editing true
-          :is-active true
-          :is-selected true
-          :is-new true
-          :tree-path path
-          :tree-depth depth
-          :tree-index index
-          :tree-parent-path parent-path
+          ^boolean is-new
+          [:> sets-tree-set*
+           {:key index
+            :id id
+            :set token-set
+            :label ""
+            :is-editing true
+            :is-active true
+            :is-selected true
+            :is-draggable false
+            :is-new true
 
-          :on-drop on-drop
-          :on-reset-edition on-reset-edition
-          :on-edit-submit sets-helpers/on-create-token-set}]
+            :path path
+            :depth depth
+            :index index
 
-        :else
-        [:> sets-tree-set*
-         {:key index
-          :set token-set
-          :id  id
-          :label (peek path)
-          :is-editing (= edition-id id)
-          :is-active (is-token-set-active id)
-          :is-selected (= selected id)
-          :is-draggable is-draggable
-          :on-select on-select
-          :tree-path path
-          :tree-depth depth
-          :tree-index index
-          :is-new false
-          :tree-parent-path parent-path
-          :on-toggle on-toggle-set
-          :edition-id edition-id
-          :on-start-edition on-start-edition
-          :on-drop on-drop
-          :on-reset-edition on-reset-edition
-          :on-edit-submit on-edit-submit-set}]))))
+            :on-drop on-drop
+            :on-reset-edition on-reset-edition
+            :on-edit-submit sets-helpers/on-create-token-set}]
+
+          :else
+          [:> sets-tree-set*
+           {:key index
+            :id id
+            :set token-set
+            :label (peek path)
+            :is-editing (= edition-id id)
+            :is-active (is-token-set-active (ctob/get-name token-set))
+            :is-selected (= selected id)
+            :is-draggable is-draggable
+            :is-new false
+
+            :path path
+            :depth depth
+            :index index
+
+            :on-select on-select
+            :on-toggle on-toggle-set
+            :on-drop on-drop
+            :on-start-edition on-start-edition
+            :on-reset-edition on-reset-edition
+            :on-edit-submit on-edit-submit-set}])))))
 
 (mf/defc controlled-sets-list*
-  {::mf/props :obj}
   [{:keys [token-sets
            selected
            on-update-token-set

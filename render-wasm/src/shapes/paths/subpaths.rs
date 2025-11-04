@@ -1,11 +1,9 @@
-use super::Segment;
-use crate::math::are_close_points;
+use crate::shapes::paths::Point;
+use crate::shapes::paths::Segment;
 
-type Result<T> = std::result::Result<T, String>;
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Subpath {
-    segments: Vec<Segment>,
+    pub segments: Vec<Segment>,
     closed: Option<bool>,
 }
 
@@ -17,199 +15,188 @@ impl Subpath {
         }
     }
 
-    pub fn starts_in(&self, other_segment: Option<&Segment>) -> bool {
-        if let (Some(start), Some(end)) = (self.start(), other_segment) {
-            start.is_close_to(end)
-        } else {
-            false
-        }
+    pub fn start(&self) -> Option<Point> {
+        self.segments.first().and_then(|s| match s {
+            Segment::MoveTo(p) | Segment::LineTo(p) => Some(*p),
+            _ => None,
+        })
     }
 
-    pub fn ends_in(&self, other_segment: Option<&Segment>) -> bool {
-        if let (Some(end), Some(start)) = (self.end(), other_segment) {
-            end.is_close_to(start)
-        } else {
-            false
-        }
-    }
-
-    pub fn start(&self) -> Option<&Segment> {
-        self.segments.first()
-    }
-
-    pub fn end(&self) -> Option<&Segment> {
-        self.segments.last()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.segments.is_empty()
+    pub fn end(&self) -> Option<Point> {
+        self.segments.iter().rev().find_map(|s| match s {
+            Segment::MoveTo(p) | Segment::LineTo(p) => Some(*p),
+            Segment::CurveTo((_, _, p)) => Some(*p),
+            _ => None,
+        })
     }
 
     pub fn is_closed(&self) -> bool {
         self.closed.unwrap_or_else(|| self.calculate_closed())
     }
 
-    pub fn add_segment(&mut self, segment: Segment) {
-        self.segments.push(segment);
-        self.closed = None;
-    }
-
     pub fn reversed(&self) -> Self {
-        let mut reversed = self.clone();
-        reversed.segments.reverse();
-        reversed
+        let mut rev = self.clone();
+        rev.segments.reverse();
+        rev.closed = None;
+        rev
     }
 
     fn calculate_closed(&self) -> bool {
         if self.segments.is_empty() {
-            return false;
+            return true;
         }
-
-        // Check if the path ends with a Close segment
         if let Some(Segment::Close) = self.segments.last() {
             return true;
         }
-
-        // Check if the first and last points are close to each other
-        if let (Some(first), Some(last)) = (self.segments.first(), self.segments.last()) {
-            let first_point = match first {
-                Segment::MoveTo(xy) => xy,
-                _ => return false,
-            };
-
-            let last_point = match last {
-                Segment::LineTo(xy) => xy,
-                Segment::CurveTo((_, _, xy)) => xy,
-                _ => return false,
-            };
-
-            return are_close_points(*first_point, *last_point);
+        if let (Some(first), Some(last)) = (self.start(), self.end()) {
+            return are_close_points(first, last);
         }
-
         false
     }
 }
 
-impl Default for Subpath {
-    fn default() -> Self {
-        Self::new(vec![])
+fn are_close_points(a: Point, b: Point) -> bool {
+    let tol = 1e-1;
+    (a.0 - b.0).abs() < tol && (a.1 - b.1).abs() < tol
+}
+
+#[derive(Debug, Clone)]
+enum MergeMode {
+    EndStart,
+    StartEnd,
+    EndEnd,
+    StartStart,
+}
+
+impl TryFrom<(&Subpath, &Subpath)> for Subpath {
+    type Error = &'static str;
+    fn try_from((a, b): (&Subpath, &Subpath)) -> Result<Self, Self::Error> {
+        let mut segs = a.segments.clone();
+        segs.extend_from_slice(&b.segments);
+        Ok(Subpath::new(segs))
     }
 }
 
-/// Joins two subpaths into a single subpath
-impl TryFrom<(&Subpath, &Subpath)> for Subpath {
-    type Error = String;
+pub fn closed_subpaths(subpaths: Vec<Subpath>) -> Vec<Subpath> {
+    let n = subpaths.len();
+    if n == 0 {
+        return vec![];
+    }
 
-    fn try_from((subpath, other): (&Subpath, &Subpath)) -> Result<Self> {
-        if subpath.is_empty() || other.is_empty() || subpath.end() != other.start() {
-            return Err("Subpaths cannot be joined".to_string());
+    let mut used = vec![false; n];
+    let mut result = Vec::with_capacity(n);
+
+    for i in 0..n {
+        if used[i] {
+            continue;
         }
 
-        let mut segments = subpath.segments.clone();
-        segments.extend_from_slice(&other.segments);
-        Ok(Subpath::new(segments))
+        let mut current = subpaths[i].clone();
+        used[i] = true;
+        let mut merged_any = false;
+
+        loop {
+            if current.is_closed() {
+                break;
+            }
+
+            let mut did_merge = false;
+
+            for j in 0..n {
+                if used[j] || subpaths[j].is_closed() {
+                    continue;
+                }
+
+                let candidate = &subpaths[j];
+                let maybe_merge = [
+                    (current.end(), candidate.start(), MergeMode::EndStart),
+                    (current.start(), candidate.end(), MergeMode::StartEnd),
+                    (current.end(), candidate.end(), MergeMode::EndEnd),
+                    (current.start(), candidate.start(), MergeMode::StartStart),
+                ]
+                .iter()
+                .find_map(|(p1, p2, mode)| {
+                    if let (Some(a), Some(b)) = (p1, p2) {
+                        if are_close_points(*a, *b) {
+                            Some(mode.clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                });
+
+                if let Some(mode) = maybe_merge {
+                    if let Some(new_current) = try_merge(&current, candidate, mode) {
+                        used[j] = true;
+                        current = new_current;
+                        merged_any = true;
+                        did_merge = true;
+                        break;
+                    }
+                }
+            }
+
+            if !did_merge {
+                break;
+            }
+        }
+
+        if !current.is_closed() && merged_any {
+            if let Some(start) = current.start() {
+                let mut segs = current.segments.clone();
+                segs.push(Segment::LineTo(start));
+                segs.push(Segment::Close);
+                current = Subpath::new(segs);
+            }
+        }
+
+        result.push(current);
+    }
+
+    result
+}
+
+fn try_merge(current: &Subpath, candidate: &Subpath, mode: MergeMode) -> Option<Subpath> {
+    match mode {
+        MergeMode::EndStart => Subpath::try_from((current, candidate)).ok(),
+        MergeMode::StartEnd => Subpath::try_from((candidate, current)).ok(),
+        MergeMode::EndEnd => Subpath::try_from((current, &candidate.reversed())).ok(),
+        MergeMode::StartStart => Subpath::try_from((&candidate.reversed(), current)).ok(),
     }
 }
 
-/// Groups segments into subpaths based on MoveTo segments
-fn get_subpaths(segments: &[Segment]) -> Vec<Subpath> {
-    let mut subpaths: Vec<Subpath> = vec![];
-    let mut current_subpath = Subpath::default();
+pub fn split_into_subpaths(segments: &[Segment]) -> Vec<Subpath> {
+    let mut subpaths = Vec::new();
+    let mut current_segments = Vec::new();
 
     for segment in segments {
         match segment {
             Segment::MoveTo(_) => {
-                if !current_subpath.is_empty() {
-                    subpaths.push(current_subpath);
+                // Start new subpath unless current is empty
+                if !current_segments.is_empty() {
+                    subpaths.push(Subpath::new(current_segments.clone()));
+                    current_segments.clear();
                 }
-                current_subpath = Subpath::default();
-                // Add the MoveTo segment to the new subpath
-                current_subpath.add_segment(*segment);
+                current_segments.push(*segment);
             }
-            _ => {
-                current_subpath.add_segment(*segment);
-            }
+            _ => current_segments.push(*segment),
         }
     }
 
-    if !current_subpath.is_empty() {
-        subpaths.push(current_subpath);
+    // Push last subpath if any
+    if !current_segments.is_empty() {
+        subpaths.push(Subpath::new(current_segments));
     }
 
     subpaths
 }
 
-/// Computes the merged candidate and the remaining, unmerged subpaths
-fn merge_paths(candidate: Subpath, others: Vec<Subpath>) -> Result<(Subpath, Vec<Subpath>)> {
-    if candidate.is_closed() {
-        return Ok((candidate, others));
-    }
-
-    let mut merged = candidate.clone();
-    let mut other_without_merged = vec![];
-
-    for subpath in others {
-        // Only merge if the candidate is not already closed and the subpath can be meaningfully connected
-        if !merged.is_closed() && !subpath.is_closed() {
-            if merged.ends_in(subpath.start()) {
-                merged = Subpath::try_from((&merged, &subpath))?;
-            } else if merged.starts_in(subpath.end()) {
-                merged = Subpath::try_from((&subpath, &merged))?;
-            } else if merged.ends_in(subpath.end()) {
-                merged = Subpath::try_from((&merged, &subpath.reversed()))?;
-            } else if merged.starts_in(subpath.start()) {
-                merged = Subpath::try_from((&subpath.reversed(), &merged))?;
-            } else {
-                other_without_merged.push(subpath);
-            }
-        } else {
-            // If either subpath is closed, don't merge
-            other_without_merged.push(subpath);
-        }
-    }
-
-    Ok((merged, other_without_merged))
-}
-
-/// Searches a path for potential subpaths that can be closed and merges them
-fn closed_subpaths(
-    current: &Subpath,
-    others: &[Subpath],
-    partial: &[Subpath],
-) -> Result<Vec<Subpath>> {
-    let mut result = partial.to_vec();
-
-    let (new_current, new_others) = if current.is_closed() {
-        (current.clone(), others.to_vec())
-    } else {
-        merge_paths(current.clone(), others.to_vec())?
-    };
-
-    // we haven't found any matching subpaths -> advance
-    if new_current == *current {
-        result.push(current.clone());
-        if new_others.is_empty() {
-            return Ok(result);
-        }
-
-        closed_subpaths(&new_others[0], &new_others[1..], &result)
-    }
-    // if diffrent, we have to search again with the merged subpaths
-    else {
-        closed_subpaths(&new_current, &new_others, &result)
-    }
-}
-
-pub fn is_open_path(segments: &[Segment]) -> Result<bool> {
-    let subpaths = get_subpaths(segments);
-    let closed_subpaths = if subpaths.len() > 1 {
-        closed_subpaths(&subpaths[0], &subpaths[1..], &[])?
-    } else {
-        subpaths
-    };
-
-    // return true if any subpath is open
-    Ok(closed_subpaths.iter().any(|subpath| !subpath.is_closed()))
+pub fn is_open_path(segments: &[Segment]) -> bool {
+    let subpaths = split_into_subpaths(segments);
+    let closed_subpaths = closed_subpaths(subpaths);
+    closed_subpaths.iter().any(|sp| !sp.is_closed())
 }
 
 #[cfg(test)]
@@ -235,8 +222,7 @@ mod tests {
             Segment::Close,
         ];
 
-        let result =
-            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        let result = subpaths::is_open_path(&segments);
         assert!(result, "Path should be open");
     }
 
@@ -249,8 +235,7 @@ mod tests {
             Segment::LineTo((223.0, 582.0)),
         ];
 
-        let result =
-            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        let result = subpaths::is_open_path(&segments);
         assert!(!result, "Path should be closed");
     }
 
@@ -300,16 +285,14 @@ mod tests {
             Segment::LineTo((400.1158, 610.0)),
         ];
 
-        let result =
-            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        let result = subpaths::is_open_path(&segments);
         assert!(result, "Path should be open");
     }
 
     #[test]
     fn test_is_open_path_4() {
         let segments = vec![];
-        let result =
-            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        let result = subpaths::is_open_path(&segments);
         assert!(!result, "Path should be closed");
     }
 }

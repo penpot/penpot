@@ -23,7 +23,7 @@
    [app.main.ui.workspace.sidebar.options.drawing :as drawing]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options*]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as layout-container]
@@ -46,7 +46,7 @@
 
 (mf/defc single-shape-options*
   {::mf/private true}
-  [{:keys [shape page-id file-id libraries] :as props}]
+  [{:keys [shape page-id file-id libraries] :rest props}]
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
@@ -54,7 +54,7 @@
         modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
         shape      (gsh/transform-shape shape modifiers)
-        props      (mf/spread-props props {:shape shape})]
+        props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id})]
 
     (case shape-type
       :frame   [:> frame/options* props]
@@ -89,7 +89,7 @@
   {::mf/private true}
   [{:keys [panel]}]
   (when (= (:type panel) :component-swap)
-    [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
+    [:> component-menu* {:shapes (:shapes panel) :is-swap-opened true}]))
 
 (mf/defc design-menu*
   {::mf/private true}

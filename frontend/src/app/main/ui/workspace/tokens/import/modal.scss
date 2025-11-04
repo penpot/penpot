@@ -4,10 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as t;
-@use "../../../ds/_borders.scss" as *;
-@use "../../../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .import-modal-wrapper {
   display: flex;

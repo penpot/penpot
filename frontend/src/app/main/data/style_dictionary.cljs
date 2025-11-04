@@ -12,7 +12,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.token :as ctt]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
@@ -88,8 +88,8 @@
       out-of-bounds
       {:errors [(wte/error-with-value :error.token/number-too-large value)]}
 
-      (seq (ctob/find-token-value-references value))
-      (let [references (seq (ctob/find-token-value-references value))]
+      (seq (cto/find-token-value-references value))
+      (let [references (seq (cto/find-token-value-references value))]
         {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
          :references references})
 
@@ -110,7 +110,7 @@
       parsed-value
       (if out-of-bounds
         {:errors [(wte/error-with-value :error.token/number-too-large value)]}
-        (if-let [references (seq (ctob/find-token-value-references value))]
+        (if-let [references (seq (cto/find-token-value-references value))]
           {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
            :references references}
           {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))))
@@ -120,10 +120,10 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (ctob/find-token-value-references value))
+  (let [missing-references? (seq (cto/find-token-value-references value))
         parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
-        references (seq (ctob/find-token-value-references value))]
+        references (seq (cto/find-token-value-references value))]
     (cond (and parsed-value (not out-of-scope))
           parsed-value
 
@@ -144,10 +144,10 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (ctob/find-token-value-references value))
+  (let [missing-references? (seq (cto/find-token-value-references value))
         parsed-value (cft/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)
-        references (seq (ctob/find-token-value-references value))]
+        references (seq (cto/find-token-value-references value))]
     (cond
       (and parsed-value (not out-of-scope))
       parsed-value
@@ -179,7 +179,7 @@
   [value]
   (let [normalized-value (str/lower (str/trim value))
         valid? (contains? #{"none" "uppercase" "lowercase" "capitalize"} normalized-value)
-        references (seq (ctob/find-token-value-references value))]
+        references (seq (cto/find-token-value-references value))]
     (cond
       valid?
       {:value normalized-value}
@@ -195,8 +195,8 @@
   "Parses `value` of a text-decoration `sd-token` into a map like `{:value \"underline\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [valid-text-decoration (ctt/valid-text-decoration value)
-        references (seq (ctob/find-token-value-references value))]
+  (let [valid-text-decoration (cto/valid-text-decoration value)
+        references (seq (cto/find-token-value-references value))]
     (cond
       valid-text-decoration
       {:value valid-text-decoration}
@@ -212,8 +212,8 @@
   "Parses `value` of a font-weight `sd-token` into a map like `{:value \"700\"}` or `{:value \"700 Italic\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [valid-font-weight (ctt/valid-font-weight-variant value)
-        references (seq (ctob/find-token-value-references value))]
+  (let [valid-font-weight (cto/valid-font-weight-variant value)
+        references (seq (cto/find-token-value-references value))]
     (cond
       valid-font-weight
       {:value value}
@@ -225,9 +225,37 @@
       :else
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-font-weight value)]})))
 
+(defn- parse-sd-token-typography-line-height
+  "Parses `line-height-value` of a composite typography token.
+  Uses `font-size-value` to calculate the relative line-height value.
+  Returns an error for an invalid font-size value."
+  [line-height-value font-size-value font-size-errors]
+  (let [missing-references (seq (some cto/find-token-value-references line-height-value))
+        error
+        (cond
+          missing-references
+          {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+           :references missing-references}
+
+          (or
+           (not font-size-value)
+           (seq font-size-errors))
+          {:errors [(wte/error-with-value :error.style-dictionary/composite-line-height-needs-font-size font-size-value)]
+           :font-size-value font-size-value})]
+    (or error
+        (try
+          (when-let [{:keys [unit value]} (cft/parse-token-value line-height-value)]
+            (case unit
+              "%" (/ value 100)
+              "px" (/ value font-size-value)
+              nil value
+              nil))
+          (catch :default _ nil))
+        {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value line-height-value)]})))
+
 (defn- parse-sd-token-font-family-value
   [value]
-  (let [missing-references (seq (some ctob/find-token-value-references value))]
+  (let [missing-references (seq (some cto/find-token-value-references value))]
     (cond
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
@@ -247,10 +275,12 @@
     nil))
 
 (defn- parse-composite-typography-value
+  "Parses composite typography `value` map.
+  Processes the `:line-height` based on the `:font-size` value in the map."
   [value]
   (let [missing-references
         (when (string? value)
-          (seq (ctob/find-token-value-references value)))]
+          (seq (cto/find-token-value-references value)))]
     (cond
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
@@ -261,14 +291,34 @@
 
       :else
       (let [converted (js->clj value :keywordize-keys true)
+            add-keyed-errors (fn [typography-map k errors]
+                               (update typography-map :errors concat (map #(assoc % :typography-key k) errors)))
+            ;; Separate line-height to process in an extra step
+            without-line-height (dissoc converted :line-height)
             valid-typography (reduce
                               (fn [acc [k v]]
                                 (let [{:keys [errors value]} (parse-atomic-typography-value k v)]
                                   (if (seq errors)
-                                    (update acc :errors concat (map #(assoc % :typography-key k) errors))
+                                    (add-keyed-errors acc k errors)
                                     (assoc-in acc [:value k] (or value v)))))
                               {:value {}}
-                              converted)]
+                              without-line-height)
+
+            ;; Calculate line-height based on the resolved font-size and add it back to the map
+            line-height (when-let [line-height (:line-height converted)]
+                          (-> (parse-sd-token-typography-line-height
+                               line-height
+                               (get-in valid-typography [:value :font-size])
+                               (get-in valid-typography [:errors :font-size]))))
+            valid-typography (cond
+                               (:errors line-height)
+                               (add-keyed-errors valid-typography :line-height (:errors line-height))
+
+                               line-height
+                               (assoc-in valid-typography [:value :line-height] line-height)
+
+                               :else
+                               valid-typography)]
         valid-typography))))
 
 (defn collect-typography-errors [token]
@@ -417,7 +467,6 @@
 
     ;; FIXME: this with effect with trigger all the time because
     ;; `config` will be always a different instance
-
     (mf/with-effect [tokens config]
       (let [cached (get @cache-atom tokens)]
         (cond

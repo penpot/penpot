@@ -17,12 +17,11 @@
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
+   [app.common.path-names :as cpn]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
-   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -77,11 +76,10 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [clojure.walk :as walk]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(log/set-level! :debug)
+(log/set-level! :info)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
@@ -89,7 +87,6 @@
 
 (declare ^:private workspace-initialized)
 (declare ^:private fetch-libraries)
-(declare ^:private libraries-fetched)
 
 ;; --- Initialize Workspace
 
@@ -131,37 +128,20 @@
                                         (rx/of [k v])))))))
        (rx/reduce conj {})))
 
-
-(defn process-fills
-  "A function responsible to analyze the file data or shape for references
-  and apply lookup-index on it."
-  [data]
-  (letfn [(process-map-form [form]
-            (let [fills (get form :fills)]
-              (if (vector? fills)
-                (assoc form :fills (types.fills/from-plain fills))
-                form)))
-
-          (process-form [form]
-            (if (map? form)
-              (process-map-form form)
-              form))]
-    (if (contains? cf/flags :frontend-binary-fills)
-      (walk/postwalk process-form data)
-      data)))
-
 (defn- resolve-file
   [file]
+  (log/inf :hint "resolve file"
+           :file-id (str (:id file))
+           :features (str/join " " (:features file)))
   (->> (fpmap/resolve-file file)
        (rx/map :data)
-       (rx/map process-fills)
        (rx/map
         (fn [data]
           (assoc file :data (d/removem (comp t/pointer? val) data))))))
 
-(defn- check-libraries-synchronozation
+(defn- check-libraries-synchronization
   [file-id libraries]
-  (ptk/reify ::check-libraries-synchronozation
+  (ptk/reify ::check-libraries-synchronization
     ptk/WatchEvent
     (watch [_ state _]
       (let [file         (dsh/lookup-file state file-id)
@@ -174,7 +154,7 @@
                   libraries)]
 
         (when needs-check?
-          (->> (rx/of (dwl/notify-sync-file file-id))
+          (->> (rx/of (dwl/notify-sync-file))
                (rx/delay 1000)))))))
 
 (defn- library-resolved
@@ -184,40 +164,36 @@
     (update [_ state]
       (update state :files assoc (:id library) library))))
 
-(defn- libraries-fetched
-  [file-id libraries]
-  (ptk/reify ::libraries-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :files merge
-              (->> libraries
-                   (map #(assoc % :library-of file-id))
-                   (d/index-by :id))))))
-
 (defn- fetch-libraries
   [file-id features]
   (ptk/reify ::fetch-libries
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-file-libraries {:file-id file-id})
-           (rx/mapcat
-            (fn [libraries]
-              (rx/concat
-               (rx/of (libraries-fetched file-id libraries))
-               (rx/merge
-                (->> (rx/from libraries)
-                     (rx/merge-map
-                      (fn [{:keys [id synced-at]}]
-                        (->> (rp/cmd! :get-file {:id id :features features})
-                             (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
-                     (rx/mapcat resolve-file)
-                     (rx/map library-resolved))
-                (->> (rx/from libraries)
-                     (rx/map :id)
-                     (rx/mapcat (fn [file-id]
-                                  (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                     (rx/map dwl/library-thumbnails-fetched)))
-               (rx/of (check-libraries-synchronozation file-id libraries)))))))))
+    (watch [_ _ stream]
+      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
+        (->> (rx/concat
+              (->> (rp/cmd! :get-file-libraries {:file-id file-id})
+                   (rx/mapcat
+                    (fn [libraries]
+                      (rx/concat
+                       (rx/of (dwl/libraries-fetched file-id libraries))
+                       (rx/merge
+                        (->> (rx/from libraries)
+                             (rx/merge-map
+                              (fn [{:keys [id synced-at]}]
+                                (->> (rp/cmd! :get-file {:id id :features features})
+                                     (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                             (rx/mapcat resolve-file)
+                             (rx/map library-resolved))
+                        (->> (rx/from libraries)
+                             (rx/map :id)
+                             (rx/mapcat (fn [file-id]
+                                          (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                             (rx/map dwl/library-thumbnails-fetched)))
+                       (rx/of (check-libraries-synchronization file-id libraries))))))
+
+              ;; This events marks that all the libraries have been resolved
+              (rx/of (ptk/data-event ::all-libraries-resolved)))
+             (rx/take-until stopper-s))))))
 
 (defn- workspace-initialized
   [file-id]
@@ -563,7 +539,7 @@
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
          (let [shape        (dsh/lookup-shape state shape-id)
                name         (str/trim name)
-               clean-name   (cfh/clean-path name)
+               clean-name   (cpn/clean-path name)
                valid?       (and (not (str/ends-with? name "/"))
                                  (string? clean-name)
                                  (not (str/blank? clean-name)))
@@ -940,8 +916,8 @@
             fdata     (dsh/lookup-file-data state file-id)
             component (cfv/get-primary-component fdata component-id)
             cpath     (:path component)
-            cpath     (cfh/split-path cpath)
-            paths     (map (fn [i] (cfh/join-path (take (inc i) cpath)))
+            cpath     (cpn/split-path cpath)
+            paths     (map (fn [i] (cpn/join-path (take (inc i) cpath)))
                            (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))

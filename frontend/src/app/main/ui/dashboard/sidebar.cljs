@@ -33,6 +33,7 @@
                                                show-subscription-dashboard-banner?
                                                get-subscription-type]]
    [app.main.ui.dashboard.team-form]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -762,10 +763,139 @@
           [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
      [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
 
+(mf/defc help-learning-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-close on-click]}]
+  (let [handle-click-url
+        (mf/use-fn
+         (fn [event]
+           (let [url       (-> (dom/get-current-target event)
+                               (dom/get-data "url"))
+                 eventname (-> (dom/get-current-target event)
+                               (dom/get-data "eventname"))]
+             (st/emit! (ptk/event ::ev/event {::ev/name eventname
+                                              ::ev/origin "menu:in-app"}))
+             (dom/open-new-window url))))
+
+        handle-feedback-click
+        (mf/use-fn #(on-click :settings-feedback %))]
+
+    [:> dropdown-menu* {:show true
+                        :class (stl/css :sub-menu :help-learning)
+                        :on-close on-close}
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://help.penpot.app"
+                              :on-click handle-click-url
+                              :data-eventname "explore-help-center-click"}
+      (tr "labels.help-center")]
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://penpot.app/learning-center"
+                              :on-click handle-click-url
+                              :data-eventname "explore-learning-center-click"}
+      (tr "labels.learning-center")]
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://penpot.app/penpothub"
+                              :on-click handle-click-url
+                              :data-eventname "explore-penpot-hub-click"}
+      (tr "labels.penpot-hub")]
+
+     (when (contains? cf/flags :user-feedback)
+       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                :on-click handle-feedback-click}
+        (tr "labels.give-feedback")])]))
+
+(mf/defc community-contributions-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-close]}]
+  (let [handle-click-url
+        (mf/use-fn
+         (fn [event]
+           (let [url       (-> (dom/get-current-target event)
+                               (dom/get-data "url"))
+                 eventname (-> (dom/get-current-target event)
+                               (dom/get-data "eventname"))]
+             (st/emit! (ptk/event ::ev/event {::ev/name eventname
+                                              ::ev/origin "menu:in-app"}))
+             (dom/open-new-window url))))]
+
+    [:> dropdown-menu* {:show true
+                        :class (stl/css :sub-menu :community)
+                        :on-close on-close}
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://github.com/penpot/penpot"
+                              :on-click handle-click-url
+                              :data-eventname "explore-github-repository-click"}
+      (tr "labels.github-repo")]
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://community.penpot.app"
+                              :on-click handle-click-url
+                              :data-eventname "explore-community-click"}
+      (tr "labels.community")]]))
+
+(mf/defc about-penpot-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-close]}]
+  (let [version cf/version
+        show-release-notes
+        (mf/use-fn
+         (fn [event]
+           (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version (:main version)}))
+           (if (and (kbd/alt? event) (kbd/mod? event))
+             (st/emit! (modal/show {:type :onboarding}))
+             (st/emit! (modal/show {:type :release-notes :version (:main version)})))))
+
+        handle-click-url
+        (mf/use-fn
+         (fn [event]
+           (let [url       (-> (dom/get-current-target event)
+                               (dom/get-data "url"))
+                 eventname (-> (dom/get-current-target event)
+                               (dom/get-data "eventname"))]
+             (st/emit! (ptk/event ::ev/event {::ev/name eventname
+                                              ::ev/origin "menu:in-app"}))
+             (dom/open-new-window url))))]
+
+    [:> dropdown-menu* {:show true
+                        :class (stl/css :sub-menu :about)
+                        :on-close on-close}
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :on-click show-release-notes}
+      (tr "labels.version-notes" (:base version))]
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://github.com/penpot/penpot/blob/develop/CHANGES.md"
+                              :on-click handle-click-url
+                              :data-eventname "explore-changelog-click"}
+      (tr "labels.penpot-changelog")]
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :data-url "https://penpot.app/terms"
+                              :on-click handle-click-url
+                              :data-eventname "explore-terms-service-click"}
+      (tr "auth.terms-of-service")]]))
+
 (mf/defc profile-section*
   [{:keys [profile team]}]
   (let [show-profile-menu* (mf/use-state false)
         show-profile-menu? (deref show-profile-menu*)
+        sub-menu*      (mf/use-state false)
+        sub-menu       (deref sub-menu*)
+        version        (:base cf/version)
+
+        close-sub-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! sub-menu* nil)))
 
         photo
         (cf/resolve-profile-photo-url profile)
@@ -778,15 +908,6 @@
            (if (keyword? section)
              (st/emit! (rt/nav section))
              (st/emit! section))))
-
-        show-release-notes
-        (mf/use-fn
-         (fn [event]
-           (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
-             (if (and (kbd/alt? event) (kbd/mod? event))
-               (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))
 
         show-comments* (mf/use-state false)
         show-comments? @show-comments*
@@ -816,16 +937,6 @@
         on-close
         (mf/use-fn #(reset! show-profile-menu* false))
 
-        handle-click-url
-        (mf/use-fn
-         (fn [event]
-           (let [url (-> (dom/get-current-target event)
-                         (dom/get-data "url"))]
-             (dom/open-new-window url))))
-
-        handle-feedback-click
-        (mf/use-fn #(on-click :settings-feedback %))
-
         handle-logout-click
         (mf/use-fn
          #(on-click (da/logout) %))
@@ -833,6 +944,15 @@
         handle-set-profile
         (mf/use-fn
          #(on-click :settings-profile %))
+
+        on-menu-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [menu (-> (dom/get-current-target event)
+                          (dom/get-data "testid")
+                          (keyword))]
+             (reset! sub-menu* menu))))
 
         on-power-up-click
         (mf/use-fn
@@ -887,52 +1007,44 @@
 
        [:li {:class (stl/css :profile-separator)}]
 
-       [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item)
-                                :data-url "https://help.penpot.app"
-                                :on-click handle-click-url
-                                :data-testid "help-center-profile-opt"}
-        (tr "labels.help-center")]
 
-       [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item)
-                                :data-url "https://community.penpot.app"
-                                :on-click handle-click-url}
-        (tr "labels.community")]
+       [:> dropdown-menu-item* {:class (stl/css-case :profile-dropdown-item true)
+                                :on-click    on-menu-click
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-menu-click event)))
+                                :on-pointer-enter on-menu-click
+                                :data-testid "help-learning"
+                                :id          "help-learning"}
+        [:span {:class (stl/css :item-name)} (tr "labels.help-learning")]
+        [:> icon* {:icon-id i/arrow :class (stl/css :open-arrow)}]]
 
-       [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item)
-                                :data-url "https://www.youtube.com/c/Penpot"
-                                :on-click handle-click-url}
-        (tr "labels.tutorials")]
+       [:> dropdown-menu-item* {:class (stl/css-case :profile-dropdown-item true)
+                                :on-click    on-menu-click
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-menu-click event)))
+                                :on-pointer-enter on-menu-click
+                                :data-testid "community-contributions"
+                                :id          "community-contributions"}
+        [:span {:class (stl/css :item-name)} (tr "labels.community-contributions")]
+        [:> icon* {:icon-id i/arrow :class (stl/css :open-arrow)}]]
 
-       [:> dropdown-menu-item* {:tab-index "0"
-                                :class (stl/css :profile-dropdown-item)
-                                :on-click show-release-notes}
-        (tr "labels.release-notes")]
+       [:> dropdown-menu-item* {:class (stl/css-case :profile-dropdown-item true)
+                                :on-click    on-menu-click
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (on-menu-click event)))
+                                :on-pointer-enter on-menu-click
+                                :data-testid "about-penpot"
+                                :id          "about-penpot"}
 
-       [:li {:class (stl/css :profile-separator)}]
-
-       [:> dropdown-menu-item* {:class     (stl/css :profile-dropdown-item)
-                                :data-url "https://penpot.app/libraries-templates"
-                                :on-click handle-click-url
-                                :data-testid "libraries-templates-profile-opt"}
-        (tr "labels.libraries-and-templates")]
-
-       [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item)
-                                :data-url "https://github.com/penpot/penpot"
-                                :on-click handle-click-url}
-        (tr "labels.github-repo")]
-
-       [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item)
-                                :data-url "https://penpot.app/terms"
-                                :on-click handle-click-url}
-        (tr "auth.terms-of-service")]
+        [:div {:class (stl/css :about-penpot)}
+         [:span {:class (stl/css :item-name)} (tr "labels.about-penpot")]
+         [:span {:class (stl/css :menu-version) :title version} version]]
+        [:> icon* {:icon-id i/arrow :class (stl/css :open-arrow)}]]
 
        [:li {:class (stl/css :profile-separator)}]
-
-       (when (contains? cf/flags :user-feedback)
-         [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item)
-                                  :on-click handle-feedback-click
-                                  :data-testid "feedback-profile-opt"}
-          (tr "labels.give-feedback")])
 
        [:> dropdown-menu-item* {:class (stl/css :profile-dropdown-item :item-with-icon)
                                 :on-click handle-logout-click
@@ -943,7 +1055,19 @@
       (when (and team profile)
         [:> comments-icon*
          {:profile profile
-          :on-show-comments handle-show-comments}])]]))
+          :on-show-comments handle-show-comments}])]
+
+     (when show-profile-menu?
+       (case sub-menu
+         :help-learning
+         [:> help-learning-menu* {:on-close close-sub-menu :on-click on-click}]
+
+         :community-contributions
+         [:> community-contributions-menu* {:on-close close-sub-menu}]
+
+         :about-penpot
+         [:> about-penpot-menu* {:on-close close-sub-menu}]
+         nil))]))
 
 (mf/defc sidebar*
   {::mf/props :obj

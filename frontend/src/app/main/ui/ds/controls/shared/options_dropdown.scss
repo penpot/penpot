@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../_borders.scss" as *;
-@use "../../_sizes.scss" as *;
-@use "../../typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 .option-list {
   --options-dropdown-icon-fg-color: var(--color-foreground-secondary);
@@ -17,6 +17,7 @@
   position: absolute;
   top: $sz-36;
   width: var(--dropdown-width, 100%);
+  transform: translateX(var(--dropdown-translate-distance, 0));
   background-color: var(--options-dropdown-bg-color);
   border-radius: $br-8;
   border: $b-1 solid var(--options-dropdown-border-color);

@@ -4,15 +4,17 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
+
+$width-settings-bar: deprecated.$s-276;
 
 .typography-entry {
   display: flex;
   flex-direction: row;
   align-items: center;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color-hover);
   &:hover,
@@ -22,7 +24,7 @@
   }
 
   &.selected {
-    border: $s-1 solid var(--assets-item-border-color);
+    border: deprecated.$s-1 solid var(--assets-item-border-color);
   }
 
   .element-set-actions {
@@ -31,8 +33,8 @@
     .element-set-actions-button,
     .menu-btn {
       @extend .button-tertiary;
-      height: $s-32;
-      width: $s-28;
+      height: deprecated.$s-32;
+      width: deprecated.$s-28;
       svg {
         @extend .button-icon;
       }
@@ -52,11 +54,11 @@
 
 .typography-selection-wrapper {
   display: grid;
-  grid-template-columns: $s-24 auto 1fr;
+  grid-template-columns: deprecated.$s-24 auto 1fr;
   flex: 1;
   height: 100%;
   width: 100%;
-  padding: 0 $s-12;
+  padding: 0 deprecated.$s-12;
 
   &.is-selectable {
     cursor: pointer;
@@ -64,64 +66,62 @@
 }
 
 .typography-sample {
-  @include flexCenter;
-  min-width: $s-24;
-  height: $s-32;
+  @include deprecated.flexCenter;
+  min-width: deprecated.$s-24;
+  height: deprecated.$s-32;
   color: var(--assets-item-name-foreground-color);
 }
 
 .typography-name,
 .typography-font {
-  @include bodySmallTypography;
-  @include textEllipsis;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-left: $s-6;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
+  display: block;
+  align-self: center;
+  margin-left: deprecated.$s-6;
+}
+
+.typography-name {
   color: var(--assets-item-name-foreground-color);
 }
 
 .typography-font {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  min-width: 0;
   color: var(--assets-item-name-foreground-color-rest);
 }
 
 .font-name-wrapper {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   align-items: center;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  border-radius: $br-8;
-  border: $s-1 solid transparent;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-1 solid transparent;
   box-sizing: border-box;
   background-color: var(--assets-item-background-color);
-  margin-bottom: $s-4;
-  padding: $s-8 $s-0 $s-8 $s-12;
+  margin-bottom: deprecated.$s-4;
+  padding: deprecated.$s-8 deprecated.$s-0 deprecated.$s-8 deprecated.$s-12;
 
   .typography-sample-input {
-    @include flexCenter;
-    width: $s-24;
+    @include deprecated.flexCenter;
+    width: deprecated.$s-24;
     height: 100%;
-    font-size: $fs-16;
+    font-size: deprecated.$fs-16;
     color: var(--assets-item-name-foreground-color-hover);
   }
   .adv-typography-name {
-    @include removeInputStyle;
-    font-size: $fs-12;
+    @include deprecated.removeInputStyle;
+    font-size: deprecated.$fs-12;
     color: var(--input-foreground-color-active);
     flex-grow: 1;
-    padding-left: $s-6;
+    padding-left: deprecated.$s-6;
     margin: 0;
   }
   .action-btn {
     @extend .button-tertiary;
-    @include flexCenter;
-    width: $s-28;
-    height: $s-28;
+    @include deprecated.flexCenter;
+    width: deprecated.$s-28;
+    height: deprecated.$s-28;
     svg {
       @extend .button-icon-small;
       stroke: var(--icon-foreground);
@@ -131,7 +131,7 @@
     }
   }
   &:focus-within {
-    border: $s-1 solid var(--input-border-color-active);
+    border: deprecated.$s-1 solid var(--input-border-color-active);
     .adv-typography-name {
       color: var(--input-foreground-color-active);
     }
@@ -148,39 +148,39 @@
 }
 
 .typography-info-wrapper {
-  @include flexColumn;
-  margin-bottom: $s-12;
+  @include deprecated.flexColumn;
+  margin-bottom: deprecated.$s-12;
   .typography-name-wrapper {
     @extend .asset-element;
     display: grid;
-    grid-template-columns: $s-24 auto 1fr $s-28;
+    grid-template-columns: deprecated.$s-24 auto 1fr deprecated.$s-28;
     flex: 1;
-    height: $s-32;
+    height: deprecated.$s-32;
     width: 100%;
-    padding: 0 0 0 $s-12;
+    padding: 0 0 0 deprecated.$s-12;
     background-color: var(--assets-item-background-color-hover);
-    margin-bottom: $s-4;
+    margin-bottom: deprecated.$s-4;
     .typography-sample {
-      @include flexCenter;
-      min-width: $s-24;
-      font-size: $fs-16;
-      height: $s-32;
+      @include deprecated.flexCenter;
+      min-width: deprecated.$s-24;
+      font-size: deprecated.$fs-16;
+      height: deprecated.$s-32;
       padding: 0;
       color: var(--assets-item-name-foreground-color-hover);
     }
     .typography-name {
-      @include bodySmallTypography;
-      @include textEllipsis;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.textEllipsis;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      margin-left: $s-6;
+      margin-left: deprecated.$s-6;
       color: var(--assets-item-name-foreground-color-hover);
     }
     .typography-font {
-      @include bodySmallTypography;
-      @include textEllipsis;
-      margin-left: $s-6;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.textEllipsis;
+      margin-left: deprecated.$s-6;
       display: flex;
       align-items: center;
       justify-content: flex-start;
@@ -189,8 +189,8 @@
     }
     .action-btn {
       @extend .button-tertiary;
-      width: $s-28;
-      height: $s-32;
+      width: deprecated.$s-28;
+      height: deprecated.$s-32;
       svg {
         @extend .button-icon;
       }
@@ -203,35 +203,35 @@
   .info-row {
     display: grid;
     grid-template-columns: 50% 50%;
-    height: $s-32;
-    --calcualted-width: calc(var(--width) - $s-48);
-    padding-left: $s-2;
+    height: deprecated.$s-32;
+    --calcualted-width: calc(var(--width) - deprecated.$s-48);
+    padding-left: deprecated.$s-2;
     .info-label {
-      @include bodySmallTypography;
-      @include textEllipsis;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.textEllipsis;
       width: calc(var(--calcualted-width) / 2);
-      padding-top: $s-8;
+      padding-top: deprecated.$s-8;
       color: var(--assets-item-name-foreground-color);
     }
     .info-content {
-      @include bodySmallTypography;
-      @include textEllipsis;
-      padding-top: $s-8;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.textEllipsis;
+      padding-top: deprecated.$s-8;
       width: calc(var(--calcualted-width) / 2);
       color: var(--assets-item-name-foreground-color-hover);
     }
   }
 
   .link-btn {
-    @include uppercaseTitleTipography;
+    @include deprecated.uppercaseTitleTipography;
     @extend .button-secondary;
     width: 100%;
-    height: $s-32;
-    border-radius: $br-8;
+    height: deprecated.$s-32;
+    border-radius: deprecated.$br-8;
     &:hover {
       background-color: var(--button-secondary-background-color-hover);
       color: var(--button-secondary-foreground-color-hover);
-      border: $s-1 solid var(--button-secondary-border-color-hover);
+      border: deprecated.$s-1 solid var(--button-secondary-border-color-hover);
       text-decoration: none;
       svg {
         stroke: var(--button-secondary-foreground-color-hover);
@@ -240,7 +240,7 @@
     &:focus {
       background-color: var(--button-secondary-background-color-focus);
       color: var(--button-secondary-foreground-color-focus);
-      border: $s-1 solid var(--button-secondary-border-color-focus);
+      border: deprecated.$s-1 solid var(--button-secondary-border-color-focus);
       svg {
         stroke: var(--button-secondary-foreground-color-focus);
       }
@@ -249,22 +249,30 @@
 }
 
 .text-options {
-  @include flexColumn;
+  @include deprecated.flexColumn;
+  max-width: calc(var(--width, $width-settings-bar) - deprecated.$s-16);
+
   &:not(.text-options-full-size) {
     position: relative;
   }
   .font-option {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     @extend .asset-element;
-    padding: $s-8 0 $s-8 $s-8;
+    padding: deprecated.$s-8 0 deprecated.$s-8 deprecated.$s-8;
     cursor: pointer;
+
     .name {
       flex-grow: 1;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
     }
     .icon {
-      @include flexCenter;
-      height: $s-28;
-      width: $s-28;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-28;
+      width: deprecated.$s-28;
       svg {
         @extend .button-icon-small;
         stroke: var(--icon-foreground);
@@ -274,21 +282,21 @@
   }
   .font-modifiers {
     display: flex;
-    gap: $s-4;
+    gap: deprecated.$s-4;
     .font-size-options {
       @extend .asset-element;
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
       flex-grow: 1;
-      width: $s-60;
+      width: deprecated.$s-60;
       margin: 0;
       padding: 0;
-      border: $s-1 solid var(--input-border-color);
+      border: deprecated.$s-1 solid var(--input-border-color);
       position: relative;
 
       .icon {
-        @include flexCenter;
-        height: $s-28;
-        min-width: $s-28;
+        @include deprecated.flexCenter;
+        height: deprecated.$s-28;
+        min-width: deprecated.$s-28;
         svg {
           @extend .button-icon-small;
           stroke: var(--icon-foreground);
@@ -302,16 +310,16 @@
     }
   }
   .typography-variations {
-    @include flexRow;
+    @include deprecated.flexRow;
     .spacing-options {
-      @include flexRow;
+      @include deprecated.flexRow;
       .line-height,
       .letter-spacing {
         @extend .input-element;
-        @include bodySmallTypography;
+        @include deprecated.bodySmallTypography;
         .icon {
-          @include flexCenter;
-          width: $s-28;
+          @include deprecated.flexCenter;
+          width: deprecated.$s-28;
           svg {
             @extend .button-icon-small;
           }
@@ -331,35 +339,35 @@
 }
 
 .font-size-select {
-  @include removeInputStyle;
-  @include bodySmallTypography;
-  height: $s-32;
+  @include deprecated.removeInputStyle;
+  @include deprecated.bodySmallTypography;
+  height: deprecated.$s-32;
   height: 100%;
   width: 100%;
   margin: 0;
-  padding: $s-8;
+  padding: deprecated.$s-8;
   .numeric-input {
     @extend .input-base;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     padding: 0;
   }
 }
 
 .font-selector {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 100%;
   width: 100%;
-  z-index: $z-index-4;
+  z-index: deprecated.$z-index-4;
 }
 
 .show-recent {
-  border-radius: $br-8 $br-8 0 0;
+  border-radius: deprecated.$br-8 deprecated.$br-8 0 0;
   background: var(--dropdown-background-color);
-  border: $s-1 solid var(--color-background-quaternary);
+  border: deprecated.$s-1 solid var(--color-background-quaternary);
   border-block-end: none;
 }
 
@@ -373,30 +381,30 @@
   }
   .header {
     display: grid;
-    row-gap: $s-2;
+    row-gap: deprecated.$s-2;
     .title {
-      @include uppercaseTitleTipography;
+      @include deprecated.uppercaseTitleTipography;
       color: var(--title-foreground-color);
       margin: 0;
-      padding: $s-12;
+      padding: deprecated.$s-12;
     }
   }
 }
 
 .font-wrapper {
-  padding-bottom: $s-4;
+  padding-bottom: deprecated.$s-4;
   cursor: pointer;
 }
 
 .font-item {
   @extend .asset-element;
-  margin-bottom: $s-4;
-  border-radius: $br-8;
+  margin-bottom: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
   display: flex;
   .icon {
-    @include flexCenter;
-    height: $s-28;
-    width: $s-28;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-28;
+    width: deprecated.$s-28;
     svg {
       @extend .button-icon-small;
       stroke: var(--icon-foreground);
@@ -412,8 +420,10 @@
   }
 
   .label {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
+    @include deprecated.textEllipsis;
     flex-grow: 1;
+    min-width: 0;
   }
 }
 
@@ -421,7 +431,7 @@
   height: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
   display: grid;
   grid-template-rows: auto 1fr;
-  padding: $s-2 $s-12 $s-12 $s-12;
+  padding: deprecated.$s-2 deprecated.$s-12 deprecated.$s-12 deprecated.$s-12;
 }
 
 .fonts-list {
@@ -432,19 +442,19 @@
   min-height: 100%;
   width: 100%;
   height: 100%;
-  padding: $s-2;
-  border-radius: $br-8;
+  padding: deprecated.$s-2;
+  border-radius: deprecated.$br-8;
   background-color: var(--dropdown-background-color);
   overflow: hidden;
   &:not(.fonts-list-full-size) {
-    margin-block-start: $s-2;
+    margin-block-start: deprecated.$s-2;
   }
 }
 
 .fonts-list-full-size {
   border-start-start-radius: 0;
   border-start-end-radius: 0;
-  border: $s-1 solid var(--color-background-quaternary);
+  border: deprecated.$s-1 solid var(--color-background-quaternary);
 
   // TODO: this should belong to typography-entry , but atm we don't have a clear
   // way of accessing whether we are in fullsize mode or not

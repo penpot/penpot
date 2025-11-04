@@ -1,8 +1,14 @@
-@use "common/refactor/common-refactor.scss" as *;
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
-@use "../ds/typography.scss" as t;
-@use "../ds/_borders.scss" as *;
-@use "../ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
 
 .cta-power-up {
   display: flex;
@@ -14,7 +20,7 @@
 }
 
 .cta-top-section {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
@@ -31,7 +37,7 @@
 }
 
 .icon-dropdown {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
   width: var(--sp-l);
 }
@@ -50,7 +56,7 @@
 }
 .cta-bottom-section .content {
   @include t.use-typography("body-medium");
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   color: var(--color-foreground-secondary);
   display: inline-block;
   text-align: left;
@@ -77,7 +83,7 @@
 }
 
 .cta-link {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   align-self: end;
   margin-inline-start: var(--sp-xs);
 }
@@ -86,7 +92,7 @@
   display: grid;
   grid-auto-rows: min-content;
   gap: var(--sp-s);
-  max-width: $s-1000;
+  max-width: deprecated.$s-1000;
   width: 100%;
 }
 
@@ -101,7 +107,7 @@
 }
 
 .manage-subscription-link {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   display: flex;
@@ -143,8 +149,8 @@
 .members-cta {
   height: fit-content;
   margin-block-start: var(--sp-s);
-  margin-inline-start: $s-52;
-  max-width: $s-220;
+  margin-inline-start: deprecated.$s-52;
+  max-width: deprecated.$s-220;
 
   .cta-title {
     line-height: 1.2;

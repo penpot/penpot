@@ -113,7 +113,7 @@
          :data {:id id
                 :index index
                 :name (:name page)}
-         :draggable? (not read-only?))
+         :draggable? (and (not read-only?) (not editing?)))
 
         on-context-menu
         (mf/use-fn
@@ -202,7 +202,7 @@
         editing-page-id (mf/deref refs/editing-page-item)
         current-page-id (mf/use-ctx ctx/current-page-id)]
     [:ul {:class (stl/css :page-list)}
-     [:& hooks/sortable-container {}
+     [:> hooks/sortable-container* {}
       (for [[index page-id] (d/enumerate pages)]
         [:& page-item-wrapper
          {:page-id page-id

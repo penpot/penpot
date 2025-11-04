@@ -6,6 +6,8 @@ repository = "https://github.com/penpot/penpot"
 license-file = "../LICENSE"
 description = "Wasm-based canvas renderer for Penpot"
 
+build = "build.rs"
+
 [features]
 default = []
 profile = ["profile-macros", "profile-raf"]
@@ -22,12 +24,13 @@ bezier-rs = "0.4.0"
 gl = "0.14.0"
 glam = "0.24.2"
 indexmap = "2.7.1"
+macros = { path = "macros" }
 skia-safe = { version = "0.87.0", default-features = false, features = [
   "gl",
   "svg",
   "textlayout",
   "binary-cache",
-  "webp"
+  "webp",
 ] }
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 

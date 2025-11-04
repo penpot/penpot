@@ -4,21 +4,26 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+
   .element-title {
+    grid-column: span 8;
+
     .title-spacing-layout {
-      padding-left: $s-2;
+      padding-left: deprecated.$s-2;
       margin: 0;
     }
 
     .title-actions {
       position: relative;
       display: flex;
-      gap: $s-4;
-      height: $s-32;
+      gap: deprecated.$s-4;
+      height: deprecated.$s-32;
       padding: 0;
       margin: 0;
       .layout-options {
@@ -33,14 +38,14 @@
     display: grid;
     grid-template-columns: repeat(8, var(--sp-xxxl));
     gap: var(--sp-xs);
-    margin-bottom: $s-8;
+    margin-bottom: deprecated.$s-8;
 
     .first-row {
       grid-column: 1 / -1;
       display: grid;
       grid-template-columns: subgrid;
-      margin-bottom: $s-12;
-      margin-top: $s-4;
+      margin-bottom: deprecated.$s-12;
+      margin-top: deprecated.$s-4;
 
       .align-row {
         grid-column: span 3;
@@ -52,9 +57,9 @@
 
       .wrap-button {
         @extend .button-tertiary;
-        border-radius: $br-8;
-        height: $s-32;
-        width: $s-32;
+        border-radius: deprecated.$br-8;
+        height: deprecated.$s-32;
+        width: deprecated.$s-32;
         svg {
           @extend .button-icon;
           stroke: var(--icon-foreground);
@@ -69,7 +74,7 @@
       grid-column: 1 / -1;
       display: grid;
       grid-template-columns: subgrid;
-      margin-bottom: $s-12;
+      margin-bottom: deprecated.$s-12;
 
       .align-content-row,
       .justify-content-row {
@@ -98,14 +103,14 @@
   grid-template-columns: subgrid;
   .column-gap {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     &.disabled {
       @extend .disabled-input;
     }
   }
   .row-gap {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     &.disabled {
       @extend .disabled-input;
     }
@@ -130,7 +135,7 @@
 
     .padding-simple {
       @extend .input-element;
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
     }
   }
 
@@ -142,15 +147,15 @@
 
     .padding-multiple {
       @extend .input-element;
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
     }
   }
 
   .padding-toggle {
     @extend .button-tertiary;
-    height: $s-32;
-    width: $s-32;
-    border-radius: $br-8;
+    height: deprecated.$s-32;
+    width: deprecated.$s-32;
+    border-radius: deprecated.$br-8;
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
@@ -175,7 +180,7 @@
   }
 
   .first-row {
-    margin-bottom: $s-8;
+    margin-bottom: deprecated.$s-8;
     display: grid;
     grid-template-columns: subgrid;
   }
@@ -195,23 +200,23 @@
 
   .grid-layout-menu-title {
     flex: 1;
-    font-size: $fs-11;
+    font-size: deprecated.$fs-11;
     color: var(--title-foreground-color-hover);
     grid-column: span 5;
   }
 
   .edit-mode-btn {
     @extend .button-secondary;
-    @include uppercaseTitleTipography;
+    @include deprecated.uppercaseTitleTipography;
     width: 100%;
-    padding: $s-8;
+    padding: deprecated.$s-8;
     grid-column: span 7;
   }
 
   .exit-btn {
     @extend .button-secondary;
-    @include uppercaseTitleTipography;
-    padding: $s-8 $s-20;
+    @include deprecated.uppercaseTitleTipography;
+    padding: deprecated.$s-8 deprecated.$s-20;
     grid-column: span 2;
   }
 
@@ -220,11 +225,11 @@
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
     gap: var(--sp-xs);
-    margin-top: $s-4;
+    margin-top: deprecated.$s-4;
   }
 
   .padding-section {
-    margin-top: $s-8;
+    margin-top: deprecated.$s-8;
   }
 
   .grid-tracks-row {
@@ -245,11 +250,11 @@
   grid-template-columns: subgrid;
 
   &.dnd-over-top {
-    border-top: $s-2 solid var(--button-foreground-hover);
+    border-top: deprecated.$s-2 solid var(--button-foreground-hover);
   }
 
   &.dnd-over-bot {
-    border-bottom: $s-2 solid var(--button-foreground-hover);
+    border-bottom: deprecated.$s-2 solid var(--button-foreground-hover);
   }
 
   .track-info-container {
@@ -259,9 +264,9 @@
 
   .track-info-dir-icon {
     cursor: pointer;
-    border-radius: $br-8 0 0 $br-8;
+    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
     background-color: var(--input-background-color);
-    padding: 0 $s-8;
+    padding: 0 deprecated.$s-8;
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
@@ -274,14 +279,14 @@
 
   .track-info-value {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     border-radius: 0;
-    border-right: $s-1 solid var(--panel-background-color);
+    border-right: deprecated.$s-1 solid var(--panel-background-color);
   }
 
   .track-info-unit-selector {
-    border-radius: 0 $br-8 $br-8 0;
-    width: $s-96;
+    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+    width: deprecated.$s-96;
   }
 }
 
@@ -289,22 +294,22 @@
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
-  margin-top: $s-8;
+  margin-top: deprecated.$s-8;
 
   .grid-track-header {
-    @include flexRow;
-    font-size: $fs-12;
-    border-radius: $br-8;
+    @include deprecated.flexRow;
+    font-size: deprecated.$fs-12;
+    border-radius: deprecated.$br-8;
     overflow: hidden;
     background: var(--button-secondary-background-color-rest);
-    height: $s-52;
+    height: deprecated.$s-52;
     grid-column: 1 / -1;
   }
 
   .track-title {
     display: grid;
     flex-grow: 1;
-    padding: $s-8;
+    padding: deprecated.$s-8;
     gap: 0;
     overflow: hidden;
   }
@@ -323,10 +328,10 @@
 
   .expand-icon {
     @extend .button-secondary;
-    height: $s-52;
+    height: deprecated.$s-52;
 
-    border-radius: $s-8 0 0 $s-8;
-    border-right: $s-1 solid var(--panel-background-color);
+    border-radius: deprecated.$s-8 0 0 deprecated.$s-8;
+    border-right: deprecated.$s-1 solid var(--panel-background-color);
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
@@ -343,12 +348,12 @@
 
   .add-column {
     @extend .button-tertiary;
-    height: $s-52;
+    height: deprecated.$s-52;
 
     svg {
       @extend .button-icon;
-      height: $s-12;
-      width: $s-12;
+      height: deprecated.$s-12;
+      width: deprecated.$s-12;
       stroke: var(--icon-foreground);
       fill: var(--icon-foreground);
     }
@@ -357,15 +362,15 @@
 
 .layout-options {
   @extend .dropdown-wrapper;
-  @include flexColumn;
+  @include deprecated.flexColumn;
   right: var(--sp-s);
   left: initial;
 
   button {
-    @include buttonStyle;
-    padding: $s-8;
+    @include deprecated.buttonStyle;
+    padding: deprecated.$s-8;
     color: var(--color-foreground-primary);
-    border-radius: $br-6;
+    border-radius: deprecated.$br-6;
 
     &:hover {
       background: var(--color-background-quaternary);

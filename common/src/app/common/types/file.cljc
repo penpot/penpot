@@ -114,10 +114,10 @@
 (sm/register! ::typographies schema:typographies)
 
 (def check-file
-  (sm/check-fn schema:file :hint "check error on validating file"))
+  (sm/check-fn schema:file :hint "invalid file"))
 
 (def check-file-data
-  (sm/check-fn schema:data))
+  (sm/check-fn schema:data :hint "invalid file data"))
 
 (def check-file-media
   (sm/check-fn schema:media))
@@ -155,7 +155,7 @@
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
-           ignore-sync-until created-at modified-at deleted-at]
+           metadata backend ignore-sync-until created-at modified-at deleted-at]
     :as params}
 
    & {:keys [create-page with-data page-id]
@@ -186,8 +186,9 @@
           :data data
           :features features
           :migrations migrations
+          :metadata metadata
+          :backend backend
           :ignore-sync-until ignore-sync-until
-          :has-media-trimmed false
           :created-at created-at
           :modified-at modified-at
           :deleted-at deleted-at})]
@@ -275,7 +276,7 @@
     (-> file-data
         (get-component-page component)
         (ctn/get-shape (:main-instance-id component)))
-    (ctk/get-component-root component)))
+    (ctk/get-deleted-component-root component)))
 
 (defn get-component-shape
   "Retrieve one shape in the component by id. If with-context? is true, add the
@@ -354,7 +355,7 @@
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
-  [container libraries shape]
+  [container libraries shape & {:keys [with-context?] :or {with-context? false}}]
   (let [top-instance        (ctn/get-component-shape (:objects container) shape)
         component-file      (get-in libraries [(:component-file top-instance) :data])
         component           (ctkl/get-component component-file (:component-id top-instance) true)
@@ -374,8 +375,12 @@
     (if (nil? remote-shape)
       nil
       (if (nil? (:shape-ref remote-shape))
-        remote-shape
-        (find-remote-shape component-container libraries remote-shape)))))
+        (cond-> remote-shape
+          (and remote-shape with-context?)
+          (with-meta {:file {:id (:id file-data)
+                             :data file-data}
+                      :container component-container}))
+        (find-remote-shape component-container libraries remote-shape :with-context? with-context?)))))
 
 (defn direct-copy?
   "Check if the shape is in a direct copy of the component (i.e. the shape-ref points to shapes inside
@@ -900,7 +905,7 @@
     (println))
 
   (when (seq (:objects component))
-    (let [root (ctk/get-component-root component)]
+    (let [root (ctk/get-deleted-component-root component)]
       (dump-shape (:id root)
                   1
                   (:objects component)

@@ -4,14 +4,20 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
+.element-title {
+  grid-column: span 8;
 }
 
 .title-spacing-export {
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
   margin: 0;
 }
 
@@ -22,13 +28,13 @@
 }
 
 .multiple-exports {
-  @include flexRow;
+  @include deprecated.flexRow;
   grid-column: 1 / span 9;
   .label {
     @extend .mixed-bar;
   }
   .actions {
-    @include flexRow;
+    @include deprecated.flexRow;
   }
 }
 
@@ -49,8 +55,8 @@
   padding: 0;
 
   .dropdown-upwards {
-    bottom: $s-36;
-    width: $s-80;
+    bottom: deprecated.$s-36;
+    width: deprecated.$s-80;
     top: unset;
   }
 }
@@ -59,21 +65,21 @@
   grid-column: span 2;
   padding: 0;
   .dropdown-upwards {
-    bottom: $s-36;
+    bottom: deprecated.$s-36;
     top: unset;
-    width: $s-80;
+    width: deprecated.$s-80;
   }
 }
 
 .suffix-input {
   grid-column: span 3;
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
 }
 
 .export-btn {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   grid-column: 1 / span 9;
-  height: $s-32;
+  height: deprecated.$s-32;
 }

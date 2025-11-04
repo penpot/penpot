@@ -10,9 +10,10 @@
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.shape.attrs :refer [default-color]]
-   [app.config :as cfg]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as feat]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -28,24 +29,11 @@
   #{:fills :hide-fill-on-export})
 
 (def ^:private
-  xf:take-max-fills
-  (take types.fills/MAX-FILLS))
-
-(def ^:private
-  xf:enumerate
+  xf:process-fills
   (map-indexed
    (fn [index item]
      (let [color (types.fills/fill->color item)]
        (with-meta item {:index index :color color})))))
-
-(def ^:private ^boolean binary-fills-enabled?
-  (contains? cfg/flags :frontend-binary-fills))
-
-(def ^:private
-  xf:process-fills
-  (if binary-fills-enabled?
-    (comp xf:take-max-fills xf:enumerate)
-    xf:enumerate))
 
 (defn- prepare-fills
   "Internal helper hook that prepares fills"
@@ -68,16 +56,27 @@
              n-vals  (unchecked-get n-props "values")
              o-fills (get o-vals :fills)
              n-fills (get n-vals :fills)
+             o-objects (get o-vals :objects)
+             n-objects (get n-vals :objects)
+             o-applied-tokens (get o-vals :applied-tokens)
+             n-applied-tokens (get n-vals :applied-tokens)
              o-hide  (get o-vals :hide-fill-on-export)
              n-hide  (get n-vals :hide-fill-on-export)]
          (and (identical? o-hide n-hide)
-              (identical? o-fills n-fills)))))
+              (identical? o-applied-tokens n-applied-tokens)
+              (identical? o-fills n-fills)
+              (identical? o-objects n-objects)))))
 
 (mf/defc fill-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values]}]
+  [{:keys [ids type values applied-tokens shapes objects]}]
+
   (let [fills          (get values :fills)
         hide-on-export (get values :hide-fill-on-export false)
+        fill-token-applied (:fill applied-tokens)
+
+        render-wasm?   (feat/use-feature "render-wasm/v1")
+
 
         ^boolean
         multiple?      (= :multiple fills)
@@ -100,7 +99,7 @@
         checkbox-ref   (mf/use-ref)
 
         can-add-fills?
-        (if binary-fills-enabled?
+        (if render-wasm?
           (and (not multiple?)
                (< (count fills) types.fills/MAX-FILLS))
           (not ^boolean multiple?))
@@ -132,8 +131,8 @@
         on-reorder
         (mf/use-fn
          (mf/deps ids)
-         (fn [new-index index]
-           (st/emit! (dc/reorder-fills ids index new-index))))
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dc/reorder-fills ids from-pos to-space-between-pos))))
 
         on-remove
         (mf/use-fn
@@ -172,7 +171,37 @@
          #(reset! disable-drag* true))
 
         on-blur
-        (mf/use-fn #(reset! disable-drag* false))]
+        (mf/use-fn #(reset! disable-drag* false))
+
+        on-token-change
+        (mf/use-fn
+         (mf/deps shapes objects)
+         (fn [_ token]
+           (let [expanded-shapes
+                 (if (= 1 (count shapes))
+                   (let [shape (first shapes)]
+                     (if (= (:type shape) :group)
+                       (keep objects (:shapes shape))
+                       [shape]))
+
+                   (mapcat (fn [shape]
+                             (if (= (:type shape) :group)
+                               (keep objects (:shapes shape))
+                               [shape]))
+                           shapes))]
+
+             (st/emit!
+              (dwta/toggle-token {:token token
+                                  :attrs #{:fill}
+                                  :shapes expanded-shapes})))))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token]
+           (st/emit! (dwta/unapply-token {:attributes #{:fill}
+                                          :token token
+                                          :shape-ids ids}))))]
 
     (mf/with-layout-effect [hide-on-export]
       (when-let [checkbox (mf/ref-val checkbox-ref)]
@@ -182,13 +211,13 @@
           (dom/set-attribute! checkbox "indeterminate" true)
           (dom/remove-attribute! checkbox "indeterminate"))))
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
+    [:div {:class (stl/css :fill-section)}
+     [:div {:class (stl/css :fill-title)}
       [:> title-bar* {:collapsable  has-fills?
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        label
-                      :class        (stl/css-case :title-spacing-fill (not has-fills?))}
+                      :class        (stl/css-case :fill-title-bar (not has-fills?))}
 
        (when (not (= :multiple fills))
          [:> icon-button* {:variant "ghost"
@@ -199,11 +228,11 @@
                            :icon i/add}])]]
 
      (when open?
-       [:div {:class (stl/css :element-content)}
+       [:div {:class (stl/css :fill-content)}
         (cond
           (= :multiple fills)
-          [:div {:class (stl/css :element-set-options-group)}
-           [:div {:class (stl/css :group-label)}
+          [:div {:class (stl/css :fill-multiple)}
+           [:div {:class (stl/css :fill-multiple-label)}
             (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.fill.remove-fill")
@@ -211,7 +240,7 @@
                              :icon i/remove}]]
 
           (some? fills)
-          [:& h/sortable-container {}
+          [:> h/sortable-container* {}
            (for [value fills]
              (let [mdata (meta value)
                    index (get mdata :index)
@@ -223,16 +252,20 @@
                                :on-change on-change
                                :on-reorder on-reorder
                                :on-detach on-detach
+                               :on-detach-token on-detach-token
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus
+                               :applied-token fill-token-applied
+                               :on-token-change on-token-change
+                               :origin :fill
                                :select-on-focus (not disable-drag?)
                                :on-blur on-blur}]))])
 
         (when (or (= type :frame)
                   (and (= type :multiple)
                        (some? hide-on-export)))
-          [:div {:class (stl/css :checkbox)}
+          [:div {:class (stl/css :fill-checkbox)}
            [:label {:for "show-fill-on-export"
                     :class (stl/css-case :global/checked (not hide-on-export))}
             [:span {:class (stl/css-case :check-mark true

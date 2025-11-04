@@ -4,44 +4,55 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .grid-cell-menu-container {
-  @include flexColumn;
-  margin-top: $s-8;
-  gap: $s-16;
+  @include deprecated.flexColumn;
+  margin-top: deprecated.$s-8;
+  gap: deprecated.$s-16;
+}
+
+.grid-cell-menu {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
 .grid-cell-menu-title {
-  font-size: $fs-11;
+  grid-column: span 8;
+  font-size: deprecated.$fs-11;
+}
+
+.grid-cell-menu-container {
+  grid-column: span 8;
 }
 
 .row {
-  @include flexRow;
+  @include deprecated.flexRow;
 }
 
 .cell-mode :global(label) {
-  padding: 0 $s-12;
+  padding: 0 deprecated.$s-12;
 }
 
 .edit-grid-btn {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   width: 100%;
-  padding: $s-8;
+  padding: deprecated.$s-8;
 }
 
 .area-input {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   width: 100%;
-  padding: $s-8;
+  padding: deprecated.$s-8;
 }
 
 .grid-coord-group {
-  @include flexRow;
-  border-radius: $br-8;
-  padding-left: $s-4;
+  @include deprecated.flexRow;
+  border-radius: deprecated.$br-8;
+  padding-left: deprecated.$s-4;
   background-color: var(--input-background-color);
 }
 
@@ -52,7 +63,7 @@
 
 .coord-input {
   @extend .input-element;
-  @include bodySmallTypography;
-  border-radius: 0 $br-8 $br-8 0;
-  border-left: $s-1 solid var(--panel-background-color);
+  @include deprecated.bodySmallTypography;
+  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+  border-left: deprecated.$s-1 solid var(--panel-background-color);
 }

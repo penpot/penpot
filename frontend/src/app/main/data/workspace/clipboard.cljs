@@ -848,6 +848,10 @@
                              index
                              0)
 
+              index        (if index
+                             index
+                             (dec (count (dm/get-in page-objects [parent-id :shapes]))))
+
               selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
                              (into (d/ordered-set) (reverse selected))
                              selected)
@@ -874,12 +878,17 @@
 
               orig-shapes  (map (d/getf all-objects) selected)
 
+              children-after (-> (pcb/get-objects changes)
+                                 (dm/get-in [parent-id :shapes])
+                                 set)
+
+              ;; At the end of the process, we want to select the new created shapes
+              ;; that are a direct child of the shape parent-id
               selected     (into (d/ordered-set)
                                  (comp
                                   (filter add-obj?)
-                                  (filter #(contains? selected (:old-id %)))
-                                  (map :obj)
-                                  (map :id))
+                                  (map (comp :id :obj))
+                                  (filter #(contains? children-after %)))
                                  (:redo-changes changes))
 
               changes      (cond-> changes

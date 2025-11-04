@@ -75,7 +75,7 @@ fn make_corner(
 pub fn rect_segments(shape: &Shape, corners: Option<Corners>) -> Vec<Segment> {
     let sr = shape.selrect;
 
-    if let Some([r1, r2, r3, r4]) = corners {
+    let segments = if let Some([r1, r2, r3, r4]) = corners {
         let p1 = (sr.x(), sr.y() + r1.y);
         let p2 = (sr.x() + r1.x, sr.y());
         let p3 = (sr.x() + sr.width() - r2.x, sr.y());
@@ -97,51 +97,86 @@ pub fn rect_segments(shape: &Shape, corners: Option<Corners>) -> Vec<Segment> {
             Segment::LineTo(p1),
         ]
     } else {
+        let p1 = (sr.x(), sr.y());
+        let p2 = (sr.x() + sr.width(), sr.y());
+        let p3 = (sr.x() + sr.width(), sr.y() + sr.height());
+        let p4 = (sr.x(), sr.y() + sr.height());
         vec![
-            Segment::MoveTo((sr.x(), sr.y())),
-            Segment::LineTo((sr.x() + sr.width(), sr.y())),
-            Segment::LineTo((sr.x() + sr.width(), sr.y() + sr.height())),
-            Segment::LineTo((sr.x(), sr.y() + sr.height())),
+            Segment::MoveTo(p1),
+            Segment::LineTo(p2),
+            Segment::LineTo(p3),
+            Segment::LineTo(p4),
             Segment::Close,
         ]
-    }
+    };
+
+    transform_segments(segments, shape)
+}
+
+fn transform_point(p: (f32, f32), matrix: &skia_safe::Matrix) -> (f32, f32) {
+    let pt = skia_safe::Point::new(p.0, p.1);
+    let tp = matrix.map_point(pt);
+    (tp.x, tp.y)
 }
 
 pub fn circle_segments(shape: &Shape) -> Vec<Segment> {
     let sr = shape.selrect;
-    let mx = sr.x() + sr.width() / 2.0;
-    let my = sr.y() + sr.height() / 2.0;
-    let ex = sr.x() + sr.width();
-    let ey = sr.y() + sr.height();
-
     let c = BEZIER_CIRCLE_C;
     let c1x = sr.x() + (sr.width() / 2.0 * (1.0 - c));
     let c2x = sr.x() + (sr.width() / 2.0 * (1.0 + c));
     let c1y = sr.y() + (sr.height() / 2.0 * (1.0 - c));
     let c2y = sr.y() + (sr.height() / 2.0 * (1.0 + c));
 
-    let p1x = mx;
-    let p1y = sr.y();
-    let p2x = ex;
-    let p2y = my;
-    let p3x = mx;
-    let p3y = ey;
-    let p4x = sr.x();
-    let p4y = my;
+    let mx = sr.x() + sr.width() / 2.0;
+    let my = sr.y() + sr.height() / 2.0;
+    let ex = sr.x() + sr.width();
+    let ey = sr.y() + sr.height();
 
-    vec![
-        Segment::MoveTo((p1x, p1y)),
-        Segment::CurveTo(((c2x, p1y), (p2x, c1y), (p2x, p2y))),
-        Segment::CurveTo(((p2x, c2y), (c2x, p3y), (p3x, p3y))),
-        Segment::CurveTo(((c1x, p3y), (p4x, c2y), (p4x, p4y))),
-        Segment::CurveTo(((p4x, c1y), (c1x, p1y), (p1x, p1y))),
-    ]
+    let p1 = (mx, sr.y());
+    let p2 = (ex, my);
+    let p3 = (mx, ey);
+    let p4 = (sr.x(), my);
+
+    let segments = vec![
+        Segment::MoveTo(p1),
+        Segment::CurveTo(((c2x, p1.1), (p2.0, c1y), p2)),
+        Segment::CurveTo(((p2.0, c2y), (c2x, p3.1), p3)),
+        Segment::CurveTo(((c1x, p3.1), (p4.0, c2y), p4)),
+        Segment::CurveTo(((p4.0, c1y), (c1x, p1.1), p1)),
+    ];
+
+    transform_segments(segments, shape)
 }
 
 fn join_paths(path: Path, other: Path) -> Path {
     let mut segments = path.segments().clone();
     segments.extend(other.segments().iter());
     Path::new(segments)
+}
+
+fn transform_segments(segments: Vec<Segment>, shape: &Shape) -> Vec<Segment> {
+    let mut matrix = shape.transform;
+    let center = shape.center();
+    matrix.post_translate(center);
+    matrix.pre_translate(-center);
+
+    if !matrix.is_identity() {
+        segments
+            .into_iter()
+            .map(|seg| match seg {
+                Segment::MoveTo(p) => Segment::MoveTo(transform_point(p, &matrix)),
+                Segment::LineTo(p) => Segment::LineTo(transform_point(p, &matrix)),
+                Segment::CurveTo((h1, h2, p)) => Segment::CurveTo((
+                    transform_point(h1, &matrix),
+                    transform_point(h2, &matrix),
+                    transform_point(p, &matrix),
+                )),
+                Segment::Close => Segment::Close,
+            })
+            .collect()
+    } else {
+        segments
+    }
 }
 
 impl ToPath for Shape {
@@ -174,7 +209,10 @@ impl ToPath for Shape {
                     };
                     result = join_paths(result, shape.to_path(shapes, modifiers, structure));
                 }
-                result
+                // Force closure of the group path
+                let mut segments = result.segments().clone();
+                segments.push(Segment::Close);
+                Path::new(segments)
             }
 
             Type::Bool(bool_data) => bool_data.path,
@@ -187,13 +225,14 @@ impl ToPath for Shape {
 
             Type::SVGRaw(_) => Path::default(),
 
-            Type::Text(text) => {
-                let text_paths = TextPaths::new(text);
+            Type::Text(ref text) => {
+                let text_paths = TextPaths::new(text.clone());
                 let mut result = Path::default();
                 for (path, _) in text_paths.get_paths(true) {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
-                result
+
+                Path::new(transform_segments(result.segments().clone(), &shape))
             }
         }
     }

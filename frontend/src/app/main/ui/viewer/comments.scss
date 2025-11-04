@@ -4,32 +4,32 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 // COMMENT DROPDOWN ON HEADER
 .view-options {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   align-items: center;
   position: relative;
-  gap: $s-4;
-  height: $s-32;
-  padding: $s-8;
-  border-radius: $br-8;
+  gap: deprecated.$s-4;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--input-background-color);
   cursor: pointer;
 }
 
 .dropdown {
   @extend .menu-dropdown;
-  right: $s-2;
-  top: calc($s-2 + $s-48);
-  width: $s-272;
-  padding: $s-6;
+  right: deprecated.$s-2;
+  top: calc(deprecated.$s-2 + deprecated.$s-48);
+  width: deprecated.$s-272;
+  padding: deprecated.$s-6;
 }
 
 .dropdown-title {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
@@ -41,9 +41,9 @@
 
 .icon,
 .icon-dropdown {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
-  width: $s-16;
+  width: deprecated.$s-16;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -57,9 +57,9 @@
 .dropdown-element {
   @extend .dropdown-element-base;
   .icon {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     height: 100%;
-    width: $s-16;
+    width: deprecated.$s-16;
     svg {
       @extend .button-icon-small;
       stroke: var(--icon-foreground);
@@ -80,7 +80,7 @@
 }
 
 .separator {
-  height: $s-8;
+  height: deprecated.$s-8;
 }
 
 // FLOATING COMMENT
@@ -90,7 +90,7 @@
   left: 0px;
   width: 100%;
   height: 100%;
-  z-index: $z-index-1;
+  z-index: deprecated.$z-index-1;
 }
 
 .threads {
@@ -103,10 +103,10 @@
 .comments-sidebar {
   position: absolute;
   right: 0;
-  top: $s-44;
-  width: $s-276;
-  height: calc(100vh - $s-48);
-  z-index: $z-index-10;
+  top: deprecated.$s-44;
+  width: deprecated.$s-276;
+  height: calc(100vh - deprecated.$s-48);
+  z-index: deprecated.$z-index-10;
   background-color: var(--panel-background-color);
 }
 

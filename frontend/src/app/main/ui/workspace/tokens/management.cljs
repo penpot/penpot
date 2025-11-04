@@ -69,20 +69,20 @@
           (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes))
 
         ;; This only checks for the currently explicitly selected set
-        ;; name, it is ephimeral and can be nil
+        ;; id, it is ephimeral and can be nil
         ;; FIXME: this is a repeated deref for the same `:workspace-tokens` state
-        selected-token-set-name
-        (mf/deref refs/selected-token-set-name)
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
 
         selected-token-set
-        (when selected-token-set-name
-          (some-> tokens-lib (ctob/get-set selected-token-set-name)))
+        (when selected-token-set-id
+          (some-> tokens-lib (ctob/get-set selected-token-set-id)))
 
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
         selected-token-set-tokens
-        (when selected-token-set
-          (ctob/get-tokens-map selected-token-set))
+        (when selected-token-set-id
+          (some-> tokens-lib (ctob/get-tokens selected-token-set-id)))
 
         tokens
         (mf/with-memo [active-tokens selected-token-set-tokens]
@@ -115,26 +115,26 @@
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))]
 
-    (mf/with-effect [tokens-lib selected-token-set-name]
+    (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
-                 (or (nil? selected-token-set-name)
-                     (and selected-token-set-name
-                          (not (ctob/get-set tokens-lib selected-token-set-name)))))
+                 (or (nil? selected-token-set-id)
+                     (and selected-token-set-id
+                          (not (ctob/get-set tokens-lib selected-token-set-id)))))
         (let [match (->> (ctob/get-sets tokens-lib)
                          (first))]
           (when match
-            (st/emit! (dwtl/set-selected-token-set-name (ctob/get-name match)))))))
+            (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
     [:*
      [:& token-context-menu]
      [:div {:class (stl/css :sets-header-container)}
-      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" selected-token-set-name)]
+      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
-       ;; NOTE: when no set in tokens-lib, the selected-token-set-name
+       ;; NOTE: when no set in tokens-lib, the selected-token-set-id
        ;; will be `nil`, so for properly hide the inactive message we
-       ;; check that at least `selected-token-set-name` has a value
-       (when (and (some? selected-token-set-name)
-                  (not (token-set-active? selected-token-set-name)))
+       ;; check that at least `selected-token-set-id` has a value
+       (when (and (some? selected-token-set-id)
+                  (not (token-set-active? (ctob/get-name selected-token-set))))
          [:*
           [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
           [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}

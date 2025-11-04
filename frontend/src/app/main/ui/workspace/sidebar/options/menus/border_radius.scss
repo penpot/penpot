@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .radius {
   display: grid;
@@ -14,7 +14,7 @@
 
 .radius-1 {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
 }
 
 .radius-4 {
@@ -25,7 +25,7 @@
 
 .small-input {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
 }
 
 .selected {
@@ -35,5 +35,5 @@
 }
 
 .icon {
-  margin-inline: $s-4;
+  margin-inline: deprecated.$s-4;
 }

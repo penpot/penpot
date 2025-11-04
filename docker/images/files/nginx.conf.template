@@ -1,0 +1,166 @@
+worker_processes auto;
+pid /tmp/nginx.pid;
+include /etc/nginx/overrides/main.d/*.conf;
+
+events {
+    worker_connections 2048;
+    multi_accept on;
+}
+
+http {
+    client_body_temp_path /tmp/client_temp;
+    proxy_temp_path       /tmp/proxy_temp_path;
+    fastcgi_temp_path     /tmp/fastcgi_temp;
+    uwsgi_temp_path       /tmp/uwsgi_temp;
+    scgi_temp_path        /tmp/scgi_temp;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_requests 30;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+
+    server_tokens off;
+
+    reset_timedout_connection on;
+    client_body_timeout 30s;
+    client_header_timeout 30s;
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    error_log /dev/stderr;
+    access_log /dev/stdout;
+
+    proxy_connect_timeout 300s;
+    proxy_send_timeout 300s;
+    proxy_read_timeout 300s;
+    send_timeout 300s;
+
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_static on;
+    gzip_comp_level 4;
+    gzip_buffers 16 8k;
+    gzip_http_version 1.1;
+
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json image/svg+xml;
+
+    proxy_buffer_size 16k;
+    proxy_busy_buffers_size 24k; # essentially, proxy_buffer_size + 2 small buffers of 4k
+    proxy_buffers 32 4k;
+
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    proxy_cache_path /tmp/cache/ levels=2:2 keys_zone=penpot:20m;
+    proxy_cache_methods GET HEAD;
+    proxy_cache_valid any 48h;
+    proxy_cache_key "$host$request_uri";
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Scheme $scheme;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    include /etc/nginx/overrides/http.d/*.conf;
+
+    server {
+        listen 8080 default_server;
+        server_name _;
+
+        client_max_body_size $PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE;
+        charset utf-8;
+
+        etag off;
+
+        root /var/www/app/;
+
+        location @handle_redirect {
+            set $redirect_uri "$upstream_http_location";
+            set $redirect_host "$upstream_http_x_host";
+            set $redirect_cache_control "$upstream_http_cache_control";
+            set $real_mtype "$upstream_http_x_mtype";
+
+            proxy_buffering off;
+
+            proxy_set_header Host "$redirect_host";
+            proxy_hide_header etag;
+            proxy_hide_header x-amz-id-2;
+            proxy_hide_header x-amz-request-id;
+            proxy_hide_header x-amz-meta-server-side-encryption;
+            proxy_hide_header x-amz-server-side-encryption;
+            proxy_ssl_server_name on;
+            proxy_pass $redirect_uri;
+
+            add_header x-internal-redirect "$redirect_uri";
+            add_header x-cache-control "$redirect_cache_control";
+            add_header cache-control "$redirect_cache_control";
+            add_header content-type "$real_mtype";
+        }
+
+        location /assets {
+            proxy_pass $PENPOT_BACKEND_URI/assets;
+            recursive_error_pages on;
+            proxy_intercept_errors on;
+            error_page 301 302 307 = @handle_redirect;
+        }
+
+        location /internal/assets {
+            internal;
+            alias /opt/data/assets;
+            add_header x-internal-redirect "$upstream_http_x_accel_redirect";
+        }
+
+        location /api/export {
+            proxy_pass $PENPOT_EXPORTER_URI;
+        }
+
+        location /api {
+            proxy_pass $PENPOT_BACKEND_URI/api;
+            proxy_buffering off;
+        }
+
+        location /readyz {
+            proxy_pass $PENPOT_BACKEND_URI$request_uri;
+        }
+
+        location /ws/notifications {
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_pass $PENPOT_BACKEND_URI/ws/notifications;
+        }
+
+        include /etc/nginx/overrides/server.d/*.conf;
+
+        location / {
+            include /etc/nginx/overrides/location.d/*.conf;
+
+            location ~ ^/js/config.js$ {
+                add_header Cache-Control "no-store, no-cache, max-age=0" always;
+            }
+
+            location ~* \.(js|css|jpg|svg|png|mjs|map)$ {
+                add_header Cache-Control "max-age=604800" always; # 7 days
+            }
+
+            location ~ ^/(/|css|fonts|images|js|wasm|mjs|map) {
+            }
+
+            location ~ ^/[^/]+/(.*)$ {
+                return 301 " /404";
+            }
+
+            add_header Last-Modified $date_gmt;
+            add_header Cache-Control "no-store, no-cache, max-age=0" always;
+            if_modified_since off;
+            try_files $uri /index.html$is_args$args /index.html =404;
+        }
+    }
+}

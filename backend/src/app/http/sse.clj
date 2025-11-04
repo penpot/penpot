@@ -55,7 +55,7 @@
      ::yres/body (yres/stream-body
                   (fn [_ output]
                     (let [channel  (sp/chan :buf buf :xf (keep encode))
-                          listener (events/start-listener
+                          listener (events/spawn-listener
                                     channel
                                     (partial write! output)
                                     (partial pu/close! output))]

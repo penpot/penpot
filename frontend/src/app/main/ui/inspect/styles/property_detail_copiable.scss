@@ -1,0 +1,71 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+
+.property-detail-copiable {
+  --detail-color: var(--color-foreground-primary);
+  --button-min-inline-size: #{$sz-154};
+  --button-min-block-size: #{$sz-36};
+}
+
+.property-detail-text {
+  color: var(--detail-color);
+}
+
+.property-detail-text-token {
+  @include use-typography("code-font");
+  --detail-color: var(--color-token-foreground);
+
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.property-detail-copiable {
+  --button-border-radius: #{$br-4};
+  --button-background: none;
+
+  appearance: none;
+  background: var(--button-background);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-s);
+  align-items: center;
+  width: 100%;
+  color: var(--detail-color);
+  min-block-size: var(--button-min-block-size);
+  min-inline-size: var(--button-min-inline-size);
+  padding: var(--sp-s);
+  border-radius: var(--button-border-radius);
+  border: $b-1 solid transparent;
+  text-align: left;
+
+  &:hover {
+    --button-background: var(--color-background-tertiary);
+
+    & .property-detail-icon {
+      display: block;
+    }
+  }
+}
+
+.property-detail-copiable-color {
+  grid-template-columns: auto 1fr auto;
+}
+
+.property-detail-copied {
+  --button-border-active: var(--color-accent-tertiary);
+  border: $b-1 solid var(--button-border-active);
+}
+
+.property-detail-icon {
+  display: none;
+}

@@ -4,26 +4,40 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "./utils.scss" as *;
+@use "ds/_utils.scss" as *;
 
 // TODO: create actual tokens once we have them from design
+$sz-1: px2rem(1);
 $sz-6: px2rem(6);
+$sz-12: px2rem(12);
+$sz-14: px2rem(14);
 $sz-16: px2rem(16);
 $sz-24: px2rem(24);
+$sz-28: px2rem(28);
 $sz-32: px2rem(32);
 $sz-36: px2rem(36);
 $sz-40: px2rem(40);
 $sz-48: px2rem(48);
-$sz-80: px2rem(80);
 $sz-88: px2rem(88);
+$sz-96: px2rem(96);
+$sz-120: px2rem(120);
+$sz-154: px2rem(154);
 $sz-160: px2rem(160);
+$sz-192: px2rem(192);
 $sz-200: px2rem(200);
 $sz-224: px2rem(224);
 $sz-252: px2rem(252);
 $sz-284: px2rem(284);
 $sz-318: px2rem(318);
 $sz-352: px2rem(352);
+$sz-364: px2rem(364);
+$sz-384: px2rem(384);
 $sz-400: px2rem(400);
+$sz-430: px2rem(430);
 $sz-480: px2rem(480);
 $sz-500: px2rem(500);
+$sz-512: px2rem(512);
+$sz-520: px2rem(520);
+$sz-712: px2rem(712);
 $sz-964: px2rem(964);
+$sz-1000: px2rem(1000);

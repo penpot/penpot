@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -18,11 +18,11 @@
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include headlineMediumTypography;
+  @include deprecated.headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -31,25 +31,25 @@
 }
 
 .modal-content {
-  @include bodyLargeTypography;
-  margin-bottom: $s-24;
+  @include deprecated.bodyLargeTypography;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-item-element {
-  @include flexRow;
+  @include deprecated.flexRow;
 }
 
 .modal-component-icon {
-  @include flexCenter;
-  height: $s-16;
-  width: $s-16;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
   svg {
     @extend .button-icon-small;
     stroke: var(--color);
   }
 }
 .modal-component-name {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
 }
 
 .action-buttons {
@@ -70,6 +70,6 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
 }

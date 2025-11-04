@@ -5,7 +5,7 @@ ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     DEBIAN_FRONTEND=noninteractive \
-    NODE_VERSION=v22.19.0 \
+    NODE_VERSION=v22.21.1 \
     TZ=Etc/UTC
 
 RUN set -ex; \
@@ -46,12 +46,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='6f8725d186d05c627176db9c46c732a6ef3ba41d9e9b3775c4727fc8ac642bb2'; \
-         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24.0.2%2B12/OpenJDK24U-jdk_aarch64_linux_hotspot_24.0.2_12.tar.gz'; \
+         ESUM='8c5321f16d9f1d8149f83e4e9ff8ca5d9e94320b92d205e6db42a604de3d1140'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='aea1cc55e51cf651c85f2f00ad021603fe269c4bb6493fa97a321ad770c9b096'; \
-         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24.0.2%2B12/OpenJDK24U-jdk_x64_linux_hotspot_24.0.2_12.tar.gz'; \
+         ESUM='471b3e62bdffaed27e37005d842d8639f10d244ccce1c7cdebf7abce06c8313e'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -87,14 +87,9 @@ RUN set -ex; \
     apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
+        curl \
         fontconfig \
         fontforge \
-        python3 \
-        python3-tabulate \
-        tzdata \
-        woff-tools \
-        woff2 \
-        \
         libfontconfig1 \
         libfreetype6 \
         libglib2.0-0 \
@@ -113,6 +108,11 @@ RUN set -ex; \
         libxml2 \
         libzip4t64 \
         libzstd1 \
+        python3 \
+        python3-tabulate \
+        tzdata \
+        woff-tools \
+        woff2 \
     ; \
     find tmp/usr/share/zoneinfo/* -type d ! -name 'Etc' |xargs rm -rf; \
     rm -rf /var/lib /var/cache; \
@@ -126,7 +126,9 @@ RUN set -ex; \
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
 COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
-COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
+
+ARG BUNDLE_PATH="./bundle-backend/"
+ADD --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/backend/
 
 USER penpot:penpot
 WORKDIR /opt/penpot/backend

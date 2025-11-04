@@ -4,69 +4,69 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .assets-bar {
   display: grid;
   height: 100%;
   grid-auto-rows: max-content;
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
-  height: calc(100vh - $s-92);
+  height: calc(100vh - deprecated.$s-92);
   scrollbar-gutter: stable;
   overflow-y: auto;
-  padding-top: $s-8;
+  padding-top: deprecated.$s-8;
 }
 
 .libraries-button {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  gap: $s-2;
-  height: $s-32;
+  @include deprecated.uppercaseTitleTipography;
+  gap: deprecated.$s-2;
+  height: deprecated.$s-32;
   width: 100%;
-  margin-bottom: $s-4;
-  border-radius: $s-8;
+  margin-bottom: deprecated.$s-4;
+  border-radius: deprecated.$s-8;
 
   &:hover {
     background-color: var(--button-secondary-background-color-hover);
     color: var(--button-secondary-foreground-color-hover);
-    border: $s-1 solid var(--button-secondary-border-color-hover);
+    border: deprecated.$s-1 solid var(--button-secondary-border-color-hover);
   }
 
   &:focus {
     background-color: var(--button-secondary-background-color-focus);
     color: var(--button-secondary-foreground-color-focus);
-    border: $s-1 solid var(--button-secondary-border-color-focus);
+    border: deprecated.$s-1 solid var(--button-secondary-border-color-focus);
   }
 }
 
 .add-library-button {
   @extend .button-primary;
-  @include uppercaseTitleTipography;
-  gap: $s-2;
-  height: $s-32;
+  @include deprecated.uppercaseTitleTipography;
+  gap: deprecated.$s-2;
+  height: deprecated.$s-32;
   width: 100%;
-  margin-bottom: $s-4;
-  border-radius: $s-8;
+  margin-bottom: deprecated.$s-4;
+  border-radius: deprecated.$s-8;
 }
 
 .section-button {
-  @include flexCenter;
-  @include buttonStyle;
-  height: $s-32;
-  width: $s-32;
+  @include deprecated.flexCenter;
+  @include deprecated.buttonStyle;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
   margin: 0;
-  border: $s-1 solid var(--input-border-color-rest);
-  border-radius: $br-8 $br-2 $br-2 $br-8;
+  border: deprecated.$s-1 solid var(--input-border-color-rest);
+  border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
   background-color: var(--input-background-color-rest);
 
   svg {
-    height: $s-16;
-    width: $s-16;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
     stroke: var(--icon-foreground);
   }
 
   &:focus {
-    border: $s-1 solid var(--input-border-color-focus);
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
     outline: 0;
     background-color: var(--input-background-color-focus);
     color: var(--input-foreground-color-focus);
@@ -77,7 +77,7 @@
   }
 
   &:hover {
-    border: $s-1 solid var(--input-border-color-hover);
+    border: deprecated.$s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
 
     svg {
@@ -86,7 +86,7 @@
     }
 
     &:focus {
-      border: $s-1 solid var(--input-border-color-focus);
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
       outline: 0;
       background-color: var(--input-background-color-focus);
       color: var(--input-foreground-color-focus);
@@ -103,37 +103,37 @@
 }
 
 .sections-container {
-  @include menuShadow;
-  @include flexColumn;
+  @include deprecated.menuShadow;
+  @include deprecated.flexColumn;
   position: absolute;
-  top: $s-84;
-  left: $s-12;
-  width: $s-192;
-  padding: $s-4;
-  border-radius: $br-8;
+  top: deprecated.$s-84;
+  left: deprecated.$s-12;
+  width: deprecated.$s-192;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
   background-color: var(--menu-background-color);
-  z-index: $z-index-2;
+  z-index: deprecated.$z-index-2;
 }
 
 .section-item {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: $s-6;
-  border-radius: $br-8;
+  padding: deprecated.$s-6;
+  border-radius: deprecated.$br-8;
 }
 
 .section-btn {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
 }
 
 .assets-header {
-  padding: 0 0 $s-24 $s-12;
+  padding: 0 0 deprecated.$s-24 deprecated.$s-12;
 }
 
 .search-wrapper {
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }

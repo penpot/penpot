@@ -17,15 +17,16 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
-    Target = 0b0_0000_0001,
-    Cache = 0b0_0000_0010,
-    Current = 0b0_0000_0100,
-    Fills = 0b0_0000_1000,
-    Strokes = 0b0_0001_0000,
-    DropShadows = 0b0_0010_0000,
-    InnerShadows = 0b0_0100_0000,
-    UI = 0b0_1000_0000,
-    Debug = 0b1_0000_0000,
+    Target = 0b00_0000_0001,
+    Cache = 0b00_0000_0010,
+    Current = 0b00_0000_0100,
+    Fills = 0b00_0000_1000,
+    Strokes = 0b00_0001_0000,
+    DropShadows = 0b00_0010_0000,
+    InnerShadows = 0b00_0100_0000,
+    TextDropShadows = 0b00_1000_0000,
+    UI = 0b01_0000_0000,
+    Debug = 0b10_0000_0001,
 }
 
 pub struct Surfaces {
@@ -42,6 +43,8 @@ pub struct Surfaces {
     drop_shadows: skia::Surface,
     // used for rendering over shadows.
     inner_shadows: skia::Surface,
+    // used for rendering text drop shadows
+    text_drop_shadows: skia::Surface,
     // used for displaying auxiliary workspace elements
     ui: skia::Surface,
     // for drawing debug info.
@@ -73,6 +76,8 @@ impl Surfaces {
             gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
         let inner_shadows =
             gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
+        let text_drop_shadows =
+            gpu_state.create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims);
         let shape_fills =
             gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
         let shape_strokes =
@@ -88,6 +93,7 @@ impl Surfaces {
             current,
             drop_shadows,
             inner_shadows,
+            text_drop_shadows,
             shape_fills,
             shape_strokes,
             ui,
@@ -166,6 +172,9 @@ impl Surfaces {
         if ids & SurfaceId::InnerShadows as u32 != 0 {
             f(self.get_mut(SurfaceId::InnerShadows));
         }
+        if ids & SurfaceId::TextDropShadows as u32 != 0 {
+            f(self.get_mut(SurfaceId::TextDropShadows));
+        }
         if ids & SurfaceId::DropShadows as u32 != 0 {
             f(self.get_mut(SurfaceId::DropShadows));
         }
@@ -175,20 +184,29 @@ impl Surfaces {
         performance::begin_measure!("apply_mut::flags");
     }
 
-    pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
-        let translation = (
+    pub fn get_render_context_translation(
+        &mut self,
+        render_area: skia::Rect,
+        scale: f32,
+    ) -> (f32, f32) {
+        (
             -render_area.left() + self.margins.width as f32 / scale,
             -render_area.top() + self.margins.height as f32 / scale,
-        );
+        )
+    }
+
+    pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
+        let translation = self.get_render_context_translation(render_area, scale);
         self.apply_mut(
             SurfaceId::Fills as u32
                 | SurfaceId::Strokes as u32
-                | SurfaceId::DropShadows as u32
-                | SurfaceId::InnerShadows as u32,
+                | SurfaceId::InnerShadows as u32
+                | SurfaceId::TextDropShadows as u32,
             |s| {
-                s.canvas().restore();
-                s.canvas().save();
-                s.canvas().translate(translation);
+                let canvas = s.canvas();
+                canvas.reset_matrix();
+                canvas.scale((scale, scale));
+                canvas.translate(translation);
             },
         );
     }
@@ -201,6 +219,7 @@ impl Surfaces {
             SurfaceId::Current => &mut self.current,
             SurfaceId::DropShadows => &mut self.drop_shadows,
             SurfaceId::InnerShadows => &mut self.inner_shadows,
+            SurfaceId::TextDropShadows => &mut self.text_drop_shadows,
             SurfaceId::Fills => &mut self.shape_fills,
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
@@ -251,16 +270,16 @@ impl Surfaces {
 
     pub fn reset(&mut self, color: skia::Color) {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
-        self.canvas(SurfaceId::DropShadows).restore_to_count(1);
         self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
+        self.canvas(SurfaceId::TextDropShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
         self.apply_mut(
             SurfaceId::Fills as u32
                 | SurfaceId::Strokes as u32
                 | SurfaceId::Current as u32
-                | SurfaceId::DropShadows as u32
-                | SurfaceId::InnerShadows as u32,
+                | SurfaceId::InnerShadows as u32
+                | SurfaceId::TextDropShadows as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();
             },

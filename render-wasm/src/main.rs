@@ -17,7 +17,7 @@ mod wasm;
 use indexmap::IndexSet;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
-use shapes::{BoolType, StructureEntry, StructureEntryType, TransformEntry, Type};
+use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
 use utils::uuid_from_u32_quartet;
@@ -238,20 +238,6 @@ pub extern "C" fn set_shape_masked_group(masked: bool) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_bool_type(BoolType::from(raw_bool_type));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_type(shape_type: u8) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_shape_type(Type::from(shape_type));
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
     with_state_mut!(state, {
         state.set_selrect_for_current_shape(left, top, right, bottom);
@@ -315,34 +301,6 @@ pub extern "C" fn set_children() {
 }
 
 #[no_mangle]
-pub extern "C" fn store_image(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
-) {
-    with_state_mut!(state, {
-        let image_id = uuid_from_u32_quartet(a2, b2, c2, d2);
-        let image_bytes = mem::bytes();
-
-        if let Err(msg) = state.render_state_mut().add_image(image_id, &image_bytes) {
-            eprintln!("{}", msg);
-        }
-
-        mem::free_bytes();
-    });
-
-    with_state_mut!(state, {
-        let shape_id = uuid_from_u32_quartet(a1, b1, c1, d1);
-        state.update_tile_for_shape(shape_id);
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
@@ -365,13 +323,6 @@ pub extern "C" fn set_shape_svg_raw_content() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_blend_mode(mode: i32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_blend_mode(render::BlendMode::from(mode));
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn set_shape_opacity(opacity: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_opacity(opacity);
@@ -386,32 +337,10 @@ pub extern "C" fn set_shape_hidden(hidden: bool) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_blur(blur_type, hidden, value);
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_corners((r1, r2, r3, r4));
     });
-}
-
-#[no_mangle]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
-        mem::write_vec(result)
-    })
 }
 
 #[no_mangle]
@@ -511,6 +440,21 @@ pub extern "C" fn clean_modifiers() {
 }
 
 #[no_mangle]
+pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
+        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_state!(state, {
+        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
+        mem::write_vec(result)
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn set_modifiers() {
     let bytes = mem::bytes();
 
@@ -524,31 +468,6 @@ pub extern "C" fn set_modifiers() {
             state.modifiers.insert(entry.id, entry.transform);
         }
         state.rebuild_modifier_tiles();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn add_shape_shadow(
-    raw_color: u32,
-    blur: f32,
-    spread: f32,
-    x: f32,
-    y: f32,
-    raw_style: u8,
-    hidden: bool,
-) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        let style = shapes::ShadowStyle::from(raw_style);
-        let shadow = shapes::Shadow::new(color, blur, spread, (x, y), style, hidden);
-        shape.add_shadow(shadow);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clear_shape_shadows() {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.clear_shadows();
     });
 }
 

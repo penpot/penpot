@@ -95,9 +95,11 @@
                   :option-highlighted? true)
 
            (when wasm-renderer-enabled?
-             (doseq [shape ids]
-               (wasm.api/use-shape (:id shape))
-               (wasm.api/set-shape-blend-mode value)))
+             (doseq [id ids]
+               (wasm.api/use-shape id)
+               (wasm.api/set-shape-blend-mode value)
+               (wasm.api/update-shape-tiles)
+               (wasm.api/request-render "preview-blend-mode")))
 
            (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (st/emit! (dw/set-preview-blend-mode ids value))))

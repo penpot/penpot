@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
@@ -62,7 +63,7 @@
                  (let [path (if (str/empty? path)
                               (if reverse? "z" "a")
                               path)]
-                   (str/lower (cfh/merge-path-item path name))))
+                   (str/lower (cpn/merge-path-item path name))))
                (if ^boolean reverse? > <))
 
       :always
@@ -71,30 +72,30 @@
 (defn add-group
   [asset group-name]
   (-> (:path asset)
-      (cfh/merge-path-item group-name)
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item group-name)
+      (cpn/merge-path-item (:name asset))))
 
 (defn rename-group
   [asset path last-path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cfh/split-path)
+      (cpn/split-path)
       butlast
       (vec)
       (conj last-path)
-      (cfh/join-path)
+      (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item (:name asset))))
 
 (defn ungroup
   [asset path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cfh/split-path)
+      (cpn/split-path)
       butlast
-      (cfh/join-path)
+      (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item (:name asset))))
 
 (s/def ::asset-name ::us/not-empty-string)
 (s/def ::name-group-form
@@ -116,8 +117,7 @@
   [state]
   (assoc state :open? false))
 
-(mf/defc assets-context-menu
-  {::mf/wrap-props false}
+(mf/defc assets-context-menu*
   [{:keys [options state on-close]}]
   [:> context-menu*
    {:show (:open? state)
@@ -139,9 +139,8 @@
   [section assets-count]
   (or (not (= section :tokens)) (and (< 0 assets-count) (= section :tokens))))
 
-(mf/defc asset-section
-  {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count icon open? on-click]}]
+(mf/defc asset-section*
+  [{:keys [children file-id title section assets-count icon is-open on-click]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
@@ -153,10 +152,10 @@
 
         on-collapsed
         (mf/use-fn
-         (mf/deps file-id section open? assets-count)
+         (mf/deps file-id section is-open assets-count)
          (fn [_]
            (when (< 0 assets-count)
-             (st/emit! (dw/set-assets-section-open file-id section (not open?))))))
+             (st/emit! (dw/set-assets-section-open file-id section (not is-open))))))
 
         title
         (mf/html
@@ -174,23 +173,22 @@
 
     [:div {:class (stl/css-case :asset-section true
                                 :opened (and (< 0 assets-count)
-                                             open?))
+                                             is-open))
            :on-click on-click}
      [:> title-bar*
       {:collapsable   (< 0 assets-count)
-       :collapsed     (not open?)
+       :collapsed     (not is-open)
        :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
        :title         title}
       buttons]
      (when ^boolean (and (< 0 assets-count)
-                         open?)
-       [:div {:class (stl/css-case :title-spacing open?)}
+                         is-open)
+       [:div {:class (stl/css-case :title-spacing is-open)}
         content])]))
 
-(mf/defc asset-section-block
-  {::mf/wrap-props false}
+(mf/defc asset-section-block*
   [{:keys [children]}]
   [:* children])
 
@@ -282,7 +280,7 @@
         (st/emit!
          (rename
           (:id target-asset)
-          (cfh/merge-path-item prefix (:name target-asset))))))))
+          (cpn/merge-path-item prefix (:name target-asset))))))))
 
 (mf/defc component-item-thumbnail*
   "Component that renders the thumbnail image or the original SVG."
@@ -393,7 +391,7 @@
         ;; and the variant-container in which it will be restored still exists
         (fn [shape]
           (let [component (find-component shape true)
-                main      (ctk/get-component-root component)
+                main      (ctk/get-deleted-component-root component)
                 objects   (dm/get-in libraries [(:component-file shape)
                                                 :data
                                                 :pages-index

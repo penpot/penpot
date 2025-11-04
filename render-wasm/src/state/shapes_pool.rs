@@ -78,4 +78,13 @@ impl ShapesPool {
         let idx = *self.shapes_uuid_to_idx.get(id)?;
         Some(&self.shapes[idx])
     }
+
+    #[allow(dead_code)]
+    pub fn iter(&self) -> std::slice::Iter<'_, Shape> {
+        self.shapes.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Shape> {
+        self.shapes.iter_mut()
+    }
 }

@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.data.workspace.tokens.warnings :as wtw]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
@@ -18,9 +19,10 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(def ^:private schema::input-tokens-value
+(def ^:private schema::input-token
   [:map
-   [:label :string]
+   [:label {:optional true} [:maybe :string]]
+   [:aria-label {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
@@ -41,7 +43,7 @@
                                 (str/join "\n"))
                   errors (->> (wte/humanize-errors errors)
                               (str/join "\n"))
-                  :else (tr "workspace.tokens.resolved-value" (or resolved-value result)))
+                  :else (tr "workspace.tokens.resolved-value" (dwtf/format-token-value (or resolved-value result))))
         type (cond
                empty-message? "hint"
                errors "error"
@@ -53,28 +55,24 @@
       :class (stl/css-case :resolved-value (not (or empty-message? (seq warnings) (seq errors))))
       :type type}]))
 
-(mf/defc input-tokens-value*
-  {::mf/props :obj
-   ::mf/forward-ref true
-   ::mf/schema schema::input-tokens-value}
-  [{:keys [class label placeholder value icon slot-start token-resolve-result] :rest props} ref]
+(mf/defc input-token*
+  {::mf/forward-ref true
+   ::mf/schema schema::input-token}
+  [{:keys [class label token-resolve-result] :rest props} ref]
   (let [error (not (nil? (:errors token-resolve-result)))
         id (mf/use-id)
         input-ref (mf/use-ref)
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
-                                      :placeholder placeholder
-                                      :value value
                                       :variant "comfortable"
                                       :hint-type (when error "error")
-                                      :slot-start slot-start
-                                      :icon icon
                                       :ref (or ref input-ref)})]
     [:*
      [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                    :input-error error))}
-      [:> label* {:for id} label]
+      (when label
+        [:> label* {:for id} label])
       [:> input-field* props]]
      (when token-resolve-result
        [:> token-value-hint* {:result token-resolve-result}])]))

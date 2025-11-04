@@ -1,0 +1,58 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+
+// TOKENS ROW
+
+.property-row {
+  --term-color: var(--color-foreground-secondary);
+  --detail-color: var(--color-foreground-primary);
+  --button-min-inline-size: #{$sz-154};
+  --button-min-block-size: #{$sz-36};
+
+  display: grid;
+  grid-template-columns: 30% 1fr;
+  align-items: center;
+  min-inline-size: var(--button-min-inline-size);
+  min-block-size: var(--button-min-block-size);
+}
+
+.property-term,
+.property-detail {
+  @include use-typography("body-small");
+}
+
+.property-term {
+  color: var(--term-color);
+}
+
+.property-detail {
+  color: var(--detail-color);
+}
+
+// TOOLTIP CONTENT
+
+.tooltip-token {
+  --title-color: var(--color-foreground-secondary);
+  --title-value: var(--color-foreground-primary);
+}
+
+.tooltip-token-title {
+  @include use-typography("body-small");
+  color: var(--title-color);
+}
+
+.tooltip-token-value {
+  @include use-typography("body-small");
+  color: var(--title-value);
+}
+
+.tooltip-token-wrapper {
+  inline-size: 100%;
+}

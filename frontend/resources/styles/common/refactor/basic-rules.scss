@@ -4,6 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "./spacing.scss" as *;
+@use "./borders.scss" as *;
+@use "./mixins.scss" as *;
+@use "./focus.scss" as *;
+@use "./shadows.scss" as *;
+@use "./z-index.scss" as *;
+
 // SCROLLBAR
 .new-scrollbar {
   scrollbar-width: thin;
@@ -52,7 +59,6 @@
 .button-primary {
   @include buttonStyle;
   @include flexCenter;
-  @include focusPrimary;
   @include headlineSmallTypography;
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
@@ -63,15 +69,16 @@
   span svg {
     stroke: var(--button-primary-foreground-color-rest);
   }
+  @include focusPrimary;
   &:hover {
     background-color: var(--button-primary-background-color-hover);
     border: $s-1 solid var(--button-primary-border-color-hover);
     color: var(--button-primary-foreground-color-hover);
+    text-decoration: none;
     svg,
     span svg {
       stroke: var(--button-primary-foreground-color-hover);
     }
-    text-decoration: none;
   }
   &:active {
     background-color: var(--button-primary-background-color-active);
@@ -96,7 +103,6 @@
 .button-secondary {
   @include buttonStyle;
   @include flexCenter;
-  @include focusSecondary;
   border-radius: $br-8;
   background-color: var(--button-secondary-background-color-rest);
   border: $s-1 solid var(--button-secondary-border-color-rest);
@@ -105,6 +111,7 @@
   span svg {
     stroke: var(--button-secondary-foreground-color-rest);
   }
+  @include focusSecondary;
   &:hover {
     background-color: var(--button-secondary-background-color-hover);
     border: $s-1 solid var(--button-secondary-border-color-hover);
@@ -138,7 +145,6 @@
 .button-tertiary {
   @include buttonStyle;
   @include flexCenter;
-  @include focusTertiary;
   --button-tertiary-border-width: #{$s-2};
   border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
@@ -150,6 +156,7 @@
   span svg {
     stroke: var(--button-tertiary-foreground-color-rest);
   }
+  @include focusTertiary;
   &:hover {
     background-color: var(--button-tertiary-background-color-hover);
     color: var(--button-tertiary-foreground-color-hover);
@@ -197,7 +204,6 @@
 .button-radio {
   @include buttonStyle;
   @include flexCenter;
-  @include focusRadio;
   border-radius: $br-8;
   color: var(--button-radio-foreground-color-rest);
   border-color: $s-1 solid var(--button-radio-background-color-rest);
@@ -205,6 +211,7 @@
   span svg {
     stroke: var(--button-radio-foreground-color-rest);
   }
+  @include focusRadio;
   &:hover {
     background-color: var(--button-radio-background-color-rest);
     color: var(--button-radio-foreground-color-hover);
@@ -324,7 +331,6 @@
 }
 
 .input-element {
-  @include focusInput;
   display: flex;
   align-items: center;
   height: $s-32;
@@ -349,6 +355,7 @@
     color: var(--input-placeholder-color);
   }
 
+  @include focusInput;
   &:hover {
     border: $s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);

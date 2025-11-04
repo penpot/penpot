@@ -4,19 +4,22 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
 .element-title {
-  margin: 0;
+  grid-column: span 8;
 }
 
 .element-content {
-  @include flexColumn;
-  margin-top: $s-4;
+  grid-column: span 8;
+  @include deprecated.flexColumn;
+  margin-top: deprecated.$s-4;
 }
 
 .multiple-typography {
@@ -24,15 +27,15 @@
 }
 
 .multiple-text {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
 
 .multiple-typography-button {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
   }
@@ -40,7 +43,7 @@
 
 .text-align-options {
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .align-options,
@@ -48,10 +51,10 @@
 .vertical-align-options,
 .grow-options,
 .text-decoration-options {
-  height: $s-32;
+  height: deprecated.$s-32;
 }
 
 .text-decoration-options {
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }

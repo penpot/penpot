@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/_sizes.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 $width-settings-bar: $sz-318;
 $width-settings-bar-max: $sz-500;
@@ -15,7 +15,7 @@ $width-settings-bar-max: $sz-500;
   grid-template-areas:
     "header header"
     "content resize";
-  grid-template-rows: $s-52 1fr;
+  grid-template-rows: deprecated.$s-52 1fr;
   grid-template-columns: 1fr 0;
   position: relative;
   grid-area: left-sidebar;
@@ -25,7 +25,7 @@ $width-settings-bar-max: $sz-500;
   background-color: var(--panel-background-color);
   height: 100vh;
   max-height: 100vh;
-  z-index: $z-index-1;
+  z-index: deprecated.$z-index-1;
 
   .resize-area {
     grid-area: resize;
@@ -33,7 +33,7 @@ $width-settings-bar-max: $sz-500;
 }
 
 .layers-tab {
-  padding-top: $s-4;
+  padding-top: deprecated.$s-4;
   overflow-x: hidden;
 }
 
@@ -43,21 +43,21 @@ $width-settings-bar-max: $sz-500;
 
 .settings-bar-content {
   grid-area: content;
-  right: calc(-1 * $s-8);
+  right: calc(-1 * deprecated.$s-8);
 }
 
 .resize-area {
   position: absolute;
   top: 0;
   left: unset;
-  z-index: $z-index-4;
-  width: $s-8;
+  z-index: deprecated.$z-index-4;
+  width: deprecated.$s-8;
   cursor: ew-resize;
   height: 100%;
 }
 
 .tab-spacing {
-  margin-inline: $s-12;
+  margin-inline: deprecated.$s-12;
 }
 
 .right-settings-bar {
@@ -67,7 +67,7 @@ $width-settings-bar-max: $sz-500;
   height: 100vh;
   width: $width-settings-bar;
   background-color: var(--panel-background-color);
-  z-index: $z-index-1;
+  z-index: deprecated.$z-index-1;
   &.not-expand {
     max-width: $width-settings-bar;
   }
@@ -80,7 +80,7 @@ $width-settings-bar-max: $sz-500;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
 
-    height: calc(100vh - $s-52);
+    height: calc(100vh - deprecated.$s-52);
     overflow: hidden;
   }
 }
@@ -90,13 +90,13 @@ $width-settings-bar-max: $sz-500;
   position: absolute;
   left: 0;
   width: 100%;
-  padding: $s-3 0 $s-1 0;
-  height: $s-6;
+  padding: deprecated.$s-3 0 deprecated.$s-1 0;
+  height: deprecated.$s-6;
   cursor: ns-resize;
 }
 
 .resize-handle-horiz {
-  border-bottom: $s-2 solid var(--resize-area-border-color);
+  border-bottom: deprecated.$s-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }
 
@@ -107,11 +107,11 @@ $width-settings-bar-max: $sz-500;
 
 .collapse-sidebar-button {
   --collapse-icon-color: var(--color-foreground-secondary);
-  @include flexCenter;
-  @include buttonStyle;
+  @include deprecated.flexCenter;
+  @include deprecated.buttonStyle;
   height: 100%;
-  width: $s-24;
-  border-radius: $br-5;
+  width: deprecated.$s-24;
+  border-radius: deprecated.$br-5;
   color: var(--collapse-icon-color);
   transform: rotate(180deg);
   &:hover {
@@ -122,5 +122,5 @@ $width-settings-bar-max: $sz-500;
 .versions-tab {
   width: 100%;
   overflow: hidden;
-  height: calc(100vh - $s-88);
+  height: calc(100vh - deprecated.$s-88);
 }

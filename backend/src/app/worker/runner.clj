@@ -8,7 +8,6 @@
   "Async tasks abstraction (impl)."
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -20,7 +19,9 @@
    [app.worker :as wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [promesa.exec :as px])
+  (:import
+   java.lang.AutoCloseable))
 
 (set! *warn-on-reflection* true)
 
@@ -37,7 +38,7 @@
    [:max-retries :int]
    [:retry-num :int]
    [:priority :int]
-   [:status [:enum "scheduled" "completed" "new" "retry" "failed"]]
+   [:status [:enum "scheduled" "running" "completed" "new" "retry" "failed"]]
    [:label {:optional true} :string]
    [:props :map]])
 
@@ -68,7 +69,7 @@
            (decode-task-row))))
 
 (defn- run-task
-  [{:keys [::wrk/registry ::id ::queue] :as cfg} task]
+  [{:keys [::db/pool ::wrk/registry ::id ::queue] :as cfg} task]
   (try
     (l/dbg :hint "start"
            :name (:name task)
@@ -76,6 +77,14 @@
            :queue queue
            :runner-id id
            :retry (:retry-num task))
+
+    ;; Mark task as running
+    (db/update! pool :task
+                {:status "running"
+                 :modified-at (ct/now)}
+                {:id (:id task)}
+                {::db/return-keys false})
+
     (let [tpoint  (ct/tpoint)
           task-fn (wrk/get-task registry (:name task))
           result  (when task-fn (task-fn task))
@@ -119,7 +128,7 @@
               {:status "retry" :error cause})))))))
 
 (defn- run-task!
-  [{:keys [::id ::timeout] :as cfg} task-id]
+  [{:keys [::id ::timeout] :as cfg} task-id scheduled-at]
   (loop [task (get-task cfg task-id)]
     (cond
       (ex/exception? task)
@@ -127,20 +136,26 @@
               (db/serialization-error? task))
         (do
           (l/wrn :hint "connection error on retrieving task from database (retrying in some instants)"
-                 :id id
+                 :runner-id id
                  :cause task)
           (px/sleep timeout)
           (recur (get-task cfg task-id)))
         (do
           (l/err :hint "unhandled exception on retrieving task from database (retrying in some instants)"
-                 :id id
+                 :runner-id id
                  :cause task)
           (px/sleep timeout)
           (recur (get-task cfg task-id))))
 
+      (not= (inst-ms scheduled-at)
+            (inst-ms (:scheduled-at task)))
+      (l/wrn :hint "skiping task, rescheduled"
+             :task-id task-id
+             :runner-id id)
+
       (nil? task)
       (l/wrn :hint "no task found on the database"
-             :id id
+             :runner-id id
              :task-id task-id)
 
       :else
@@ -149,7 +164,7 @@
           {::task task})))))
 
 (defn- run-worker-loop!
-  [{:keys [::db/pool ::rds/rconn ::timeout ::queue] :as cfg}]
+  [{:keys [::db/pool ::rds/conn ::timeout ::queue] :as cfg}]
   (letfn [(handle-task-retry [{:keys [error inc-by delay] :or {inc-by 1 delay 1000} :as result}]
             (let [explain (if (ex/exception? error)
                             (ex-message error)
@@ -183,21 +198,23 @@
               (db/update! pool :task
                           {:completed-at now
                            :modified-at now
+                           :error nil
                            :status "completed"}
                           {:id (:id task)})
               nil))
 
-          (decode-payload [^bytes payload]
+          (decode-payload [payload]
             (try
-              (let [task-id (t/decode payload)]
-                (if (uuid? task-id)
-                  task-id
-                  (l/err :hint "received unexpected payload (uuid expected)"
-                         :payload task-id)))
+              (let [[task-id scheduled-at :as payload] (t/decode-str payload)]
+                (if (and (uuid? task-id)
+                         (ct/inst? scheduled-at))
+                  payload
+                  (l/err :hint "received unexpected payload"
+                         :payload payload)))
               (catch Throwable cause
                 (l/err :hint "unable to decode payload"
                        :payload payload
-                       :length (alength payload)
+                       :length (alength ^String/1 payload)
                        :cause cause))))
 
           (process-result [{:keys [status] :as result}]
@@ -209,8 +226,8 @@
                (throw (IllegalArgumentException.
                        (str "invalid status received: " status))))))
 
-          (run-task-loop [task-id]
-            (loop [result (run-task! cfg task-id)]
+          (run-task-loop [[task-id scheduled-at]]
+            (loop [result (run-task! cfg task-id scheduled-at)]
               (when-let [cause (process-result result)]
                 (if (or (db/connection-error? cause)
                         (db/serialization-error? cause))
@@ -220,14 +237,12 @@
                     (px/sleep timeout)
                     (recur result))
                   (do
-                    (l/err :hint "unhandled exception on processing task result (retrying in some instants)"
-                           :cause cause)
-                    (px/sleep timeout)
-                    (recur result))))))]
+                    (l/err :hint "unhandled exception on processing task result"
+                           :cause cause))))))]
 
     (try
-      (let [key       (str/ffmt "taskq:%" queue)
-            [_ payload] (rds/blpop rconn timeout [key])]
+      (let [key         (str/ffmt "penpot.worker.queue:%" queue)
+            [_ payload] (rds/blpop conn [key] timeout)]
         (some-> payload
                 decode-payload
                 run-task-loop))
@@ -246,36 +261,37 @@
           (l/err :hint "unhandled exception" :cause cause))))))
 
 (defn- start-thread!
-  [{:keys [::rds/redis ::id ::queue ::wrk/tenant] :as cfg}]
+  [{:keys [::id ::queue ::wrk/tenant] :as cfg}]
   (px/thread
-    {:name (format "penpot/worker/runner:%s" id)}
+    {:name (str "penpot/job-runner/" id)}
     (l/inf :hint "started" :id id :queue queue)
-    (try
-      (dm/with-open [rconn (rds/connect redis)]
-        (let [cfg    (-> cfg
-                         (assoc ::rds/rconn rconn)
-                         (assoc ::queue (str/ffmt "%:%" tenant queue))
-                         (assoc ::timeout (ct/duration "5s")))]
-          (loop []
-            (when (px/interrupted?)
-              (throw (InterruptedException. "interrupted")))
 
-            (run-worker-loop! cfg)
-            (recur))))
+    (let [rconn (rds/connect cfg)]
+      (try
+        (loop [cfg (-> cfg
+                       (assoc ::rds/conn rconn)
+                       (assoc ::queue (str/ffmt "%:%" tenant queue))
+                       (assoc ::timeout (ct/duration "5s")))]
+          (when (px/interrupted?)
+            (throw (InterruptedException. "interrupted")))
 
-      (catch InterruptedException _
-        (l/dbg :hint "interrupted"
-               :id id
-               :queue queue))
-      (catch Throwable cause
-        (l/err :hint "unexpected exception"
-               :id id
-               :queue queue
-               :cause cause))
-      (finally
-        (l/inf :hint "terminated"
-               :id id
-               :queue queue)))))
+          (run-worker-loop! cfg)
+          (recur cfg))
+
+        (catch InterruptedException _
+          (l/dbg :hint "interrupted"
+                 :id id
+                 :queue queue))
+        (catch Throwable cause
+          (l/err :hint "unexpected exception"
+                 :id id
+                 :queue queue
+                 :cause cause))
+        (finally
+          (.close ^AutoCloseable rconn)
+          (l/inf :hint "terminated"
+                 :id id
+                 :queue queue))))))
 
 (def ^:private schema:params
   [:map
@@ -285,7 +301,7 @@
    ::wrk/registry
    ::mtx/metrics
    ::db/pool
-   ::rds/redis])
+   ::rds/client])
 
 (defmethod ig/assert-key ::wrk/runner
   [_ params]
@@ -303,7 +319,7 @@
       (l/wrn :hint "not started (db is read-only)" :queue queue :parallelism parallelism)
       (doall
        (->> (range parallelism)
-            (map #(assoc cfg ::id %))
+            (map #(assoc cfg ::id (str queue "/" %)))
             (map start-thread!))))))
 
 (defmethod ig/halt-key! ::wrk/runner

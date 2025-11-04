@@ -27,6 +27,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.setup :as-alias setup]
+   [app.setup.clock :as clock]
    [app.srepl.main :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
@@ -49,11 +50,17 @@
 
 (defn index-handler
   [_cfg _request]
-  {::yres/status  200
-   ::yres/headers {"content-type" "text/html"}
-   ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
-                      (tmpl/render {:version (:full cf/version)
-                                    :supported-features cfeat/supported-features}))})
+  (let [{:keys [clock offset]} @clock/current]
+    {::yres/status  200
+     ::yres/headers {"content-type" "text/html"}
+     ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
+                        (tmpl/render {:version (:full cf/version)
+                                      :current-clock  (str clock)
+                                      :current-offset (if offset
+                                                        (ct/format-duration offset)
+                                                        "NO OFFSET")
+                                      :current-time  (ct/format-inst (ct/now) :http)
+                                      :supported-features cfeat/supported-features}))}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
@@ -390,34 +397,6 @@
                            ::yres/headers {"content-type" "text/plain"}
                            ::yres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))))
 
-
-(defn- reset-file-version
-  [cfg {:keys [params] :as request}]
-  (let [file-id (some-> params :file-id d/parse-uuid)
-        version (some-> params :version d/parse-integer)]
-
-    (when-not (contains? params :force)
-      (ex/raise :type :validation
-                :code :missing-force
-                :hint "missing force checkbox"))
-
-    (when (nil? file-id)
-      (ex/raise :type :validation
-                :code :invalid-file-id
-                :hint "provided invalid file id"))
-
-    (when (nil? version)
-      (ex/raise :type :validation
-                :code :invalid-version
-                :hint "provided invalid version"))
-
-    (db/tx-run! cfg srepl/process-file! file-id #(assoc % :version version))
-
-    {::yres/status  200
-     ::yres/headers {"content-type" "text/plain"}
-     ::yres/body    "OK"}))
-
-
 (defn- handle-team-features
   [cfg {:keys [params] :as request}]
   (let [team-id    (some-> params :team-id d/parse-uuid)
@@ -461,6 +440,24 @@
         {::yres/status  200
          ::yres/headers {"content-type" "text/plain"}
          ::yres/body    "OK"}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; VIRTUAL CLOCK
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- set-virtual-clock
+  [_ {:keys [params] :as request}]
+  (let [offset (some-> params :offset str/trim not-empty ct/duration)
+        reset? (contains? params :reset)]
+    (if (= "production" (cf/get :tenant))
+      {::yres/status 501
+       ::yres/body "OPERATION NOT ALLOWED"}
+      (do
+        (if (or reset? (zero? (inst-ms offset)))
+          (clock/set-offset! nil)
+          (clock/set-offset! offset))
+        {::yres/status 302
+         ::yres/headers {"location" "/dbg"}}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
@@ -548,10 +545,10 @@
     ["/error/:id" {:handler (partial error-handler cfg)}]
     ["/error" {:handler (partial error-list-handler cfg)}]
     ["/actions" {:middleware [[errors]]}
+     ["/set-virtual-clock"
+      {:handler (partial set-virtual-clock cfg)}]
      ["/resend-email-verification"
       {:handler (partial resend-email-notification cfg)}]
-     ["/reset-file-version"
-      {:handler (partial reset-file-version cfg)}]
      ["/handle-team-features"
       {:handler (partial handle-team-features cfg)}]
      ["/file-export" {:handler (partial export-handler cfg)}]

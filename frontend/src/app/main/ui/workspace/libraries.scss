@@ -4,36 +4,65 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/mixins.scss" as *;
 
 // Library modal
 .modal-overlay {
-  @extend .modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  border: $b-2 solid var(--modal-border-color);
   display: grid;
   grid-template-rows: auto 1fr;
-  height: $s-520;
-  max-height: $s-520;
-  width: $s-712;
-  max-width: $s-712;
+  min-width: $sz-364;
+  min-height: $sz-192;
+  height: $sz-520;
+  max-height: $sz-520;
+  width: $sz-712;
+  max-width: $sz-712;
 }
 
+// TODO: Remove this extended creating modal component
 .close-btn {
   @extend .modal-close-btn-base;
 }
 
 .close-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--icon-foreground);
 }
 
 .modal-title {
-  @include headlineMediumTypography;
-  margin-block-end: $s-16;
-  color: var(--modal-title-foreground-color);
+  @include t.use-typography("headline-medium");
+  margin-block-end: var(--sp-l);
+  color: var(--color-foreground-primary);
 }
 
 // Tabs content
@@ -41,9 +70,9 @@
 .updates-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: $s-32;
-  max-height: $s-400;
-  padding-block-start: $s-16;
+  gap: var(--sp-xxxl);
+  max-height: $sz-400;
+  padding-block-start: var(--sp-l);
 }
 
 .lib-section,
@@ -51,30 +80,40 @@
 .shared-section {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: $s-8;
+  gap: var(--sp-s);
+
+  .section-list {
+    .section-list-item:first-child {
+      border: none;
+    }
+  }
 }
 
 .shared-section {
   grid-template-rows: auto auto 1fr;
+  row-gap: var(--sp-l);
 }
 
 .title-spacing-lib {
-  margin: 0 0 0 calc(-1 * $s-8);
+  margin: 0 0 0 calc(-1 * var(--sp-s));
 }
 
 .section-list,
 .section-list-shared {
   display: grid;
   grid-auto-rows: min-content;
-  gap: $s-8;
-  max-height: $s-320;
+  gap: var(--sp-s);
+  max-height: px2rem(320);
   overflow-y: auto;
 }
 
 .section-list-item {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: $s-8;
+  gap: var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  padding: var(--sp-s) var(--sp-s) var(--sp-m) var(--sp-m);
+  border-radius: $br-8;
 }
 
 .item-content {
@@ -83,82 +122,107 @@
 
 .item-publish,
 .item-unpublish {
+  // TODO: remove this extended by using DS button component
   @extend .button-primary;
-  @include uppercaseTitleTipography;
-  height: $s-32;
-  min-width: $s-92;
-  padding: $s-8 $s-24;
+  @include t.use-typography("headline-small");
+  height: $sz-32;
+  min-width: px2rem(92);
+  padding: var(--sp-s) var(--sp-xxl);
   margin: 0;
   border-radius: $br-8;
 }
 
 .item-unpublish {
+  // TODO: remove this extended by using DS button component
   @extend .button-secondary;
 }
 
 .item-button,
 .item-button-shared {
+  // TODO: remove this extended by using DS button component
   @extend .button-secondary;
-  height: $s-32;
-  width: $s-32;
-  margin-inline-start: $s-2;
-  margin-inline-end: $s-8;
-  padding: $s-8;
+  height: $sz-32;
+  width: $sz-32;
+  margin-inline-start: var(--sp-xxs);
+  padding: var(--sp-s);
 }
 
 .detach-icon,
 .add-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--icon-foreground);
 }
 
 .section-list-shared {
-  max-height: $s-272;
+  max-height: px2rem(272);
 }
 
 .section-title {
-  @include headlineSmallTypography;
-  margin-block-end: $s-12;
+  @include t.use-typography("headline-small");
+  margin-block-end: var(--sp-m);
   color: var(--title-foreground-color);
 }
 
 .search-icon {
-  @include flexCenter;
-  width: $s-20;
-  padding: 0 0 0 $s-8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: px2rem(20);
+  padding: 0 0 0 var(--sp-s);
 
   svg {
-    @extend .button-icon-small;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+    fill: none;
+    height: px2rem(12);
+    width: px2rem(12);
+    stroke-width: 1.33px;
     stroke: var(--icon-foreground);
   }
 }
 
 // empty state
 .section-list-empty {
-  @include bodyMediumTypography;
+  @include t.use-typography("body-medium");
   display: grid;
   grid-template-rows: auto 1fr;
   justify-items: center;
-  gap: $s-8;
+  gap: var(--sp-s);
   text-align: center;
   height: fit-content;
-  margin-block: $s-16;
+  margin-block: var(--sp-l);
   color: var(--modal-title-foreground-color);
 }
 
 .empty-state-icon {
-  @include flexCenter;
-  width: $s-48;
-  height: $s-48;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: $sz-48;
+  height: $sz-48;
   border-radius: $br-circle;
   background-color: var(--pill-background-color);
 }
 
 .library-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--icon-foreground);
-  height: $s-32;
-  width: $s-32;
+  height: $sz-32;
+  width: $sz-32;
 }
 
 // Update library tab
@@ -166,8 +230,8 @@
   @extend .link;
   direction: rtl;
   grid-column: span 3;
-  margin-block-start: $s-8;
-  margin-inline-start: $s-8;
+  margin-block-start: var(--sp-s);
+  margin-inline-start: var(--sp-s);
   margin: 0;
 }
 
@@ -178,59 +242,59 @@
 .libraries-updates {
   display: grid;
   grid-column: span 3;
-  grid-template-columns: repeat(auto-fill, minmax($s-160, 1fr));
-  gap: $s-24;
-  margin-block-start: $s-16;
+  grid-template-columns: repeat(auto-fill, minmax(px2rem(160), 1fr));
+  gap: deprecated.$s-24;
+  margin-block-start: var(--sp-l);
 }
 
 .libraries-updates-column {
   display: grid;
-  gap: $s-4;
+  gap: var(--sp-xs);
 }
 
 .libraries-updates-item {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
-  gap: $s-8;
+  gap: var(--sp-s);
   color: var(--library-content-foreground-color);
 }
 
 .component-svg {
   background-color: var(--color-canvas);
   border-radius: $br-4;
-  border: $s-2 solid transparent;
-  height: $s-24;
-  width: $s-24;
-  min-height: $s-24;
-  min-width: $s-24;
+  border: $b-2 solid transparent;
+  height: $sz-24;
+  width: $sz-24;
+  min-height: $sz-24;
+  min-width: $sz-24;
 }
 
 .name-block {
   color: var(--library-content-foreground-color);
-  width: $s-168;
+  width: px2rem(168);
 }
 
 .ellipsis {
-  padding-inline-start: calc($s-24 + #{$s-8});
+  padding-inline-start: calc(var(--sp-xxl) + var(--sp-s));
 }
 
 .item-name {
-  @include bodyLargeTypography;
+  @include t.use-typography("body-large");
   @include textEllipsis;
   margin: 0;
-  max-width: $s-244;
+  max-width: px2rem(216);
   color: var(--library-name-foreground-color);
 }
 
 .item-update {
   @extend .button-primary;
-  @include headlineSmallTypography;
-  height: $s-32;
-  min-width: $s-92;
-  padding: $s-8 $s-24;
-  margin-inline-end: $s-2;
+  @include t.use-typography("headline-small");
+  height: $sz-32;
+  min-width: px2rem(92);
+  padding: var(--sp-s) var(--sp-xxl);
+  margin-inline-end: var(--sp-xxs);
   border-radius: $br-8;
 
   &:disabled {
@@ -239,7 +303,7 @@
 }
 
 .item-contents {
-  @include bodyMediumTypography;
+  @include t.use-typography("body-small");
   color: var(--library-content-foreground-color);
   display: flex;
   flex-wrap: wrap;
@@ -251,33 +315,41 @@
 
   &:not(:last-child)::after {
     content: "·";
-    margin-inline: $s-4;
+    margin-inline: var(--sp-xs);
   }
+}
+
+.connected-to-wrapper {
+  display: block;
+}
+
+.connected-to-values {
+  color: var(--color-foreground-primary);
 }
 
 // Modal Component v2 update
 .modal-v2-info {
-  width: $s-664;
+  width: px2rem(664);
   height: fit-content;
   max-height: fit-content;
 }
 
 .modal-v2-title {
-  @include headlineMediumTypography;
+  @include t.use-typography("headline-medium");
   color: var(--modal-title-foreground-color);
 }
 
 .info-content {
   display: grid;
   grid-template-rows: repeat(4, 1fr);
-  margin-top: $s-32;
-  gap: $s-24;
+  margin-top: var(--sp-xxxl);
+  gap: var(--sp-xxl);
 }
 
 .info-block {
   display: grid;
   grid-template-columns: auto 1fr;
-  column-gap: $s-20;
+  column-gap: var(--sp-xl);
   grid-template:
     "icon title"
     "icon content";
@@ -285,9 +357,9 @@
 
 .info-icon {
   grid-area: icon;
-  width: $s-52;
-  height: $s-52;
-  margin-top: $s-8;
+  width: px2rem(52);
+  height: px2rem(52);
+  margin-top: var(--sp-s);
   border-radius: $br-circle;
   background: var(--color-background-quaternary);
   display: flex;
@@ -295,20 +367,20 @@
   align-items: center;
 
   svg {
-    width: $s-32;
-    height: $s-32;
+    width: $sz-32;
+    height: $sz-32;
     fill: var(--icon-foreground-active);
   }
 }
 
 .info-block-title {
-  @include bodyLargeTypography;
+  @include t.use-typography("body-large");
   grid-area: title;
   color: var(--modal-title-foreground-color);
 }
 
 .info-block-content {
-  @include bodyMediumTypography;
+  @include t.use-typography("body-medium");
   grid-area: content;
   color: var(--library-content-foreground-color);
 }
@@ -316,36 +388,37 @@
 .info-bottom {
   display: flex;
   justify-content: flex-end;
-  margin-block-start: $s-24;
-  margin-inline-end: $s-8;
+  margin-block-start: var(--sp-xxl);
+  margin-inline-end: var(--sp-s);
 }
 
 .primary-button {
   @extend .button-primary;
-  @include headlineSmallTypography;
-  padding: $s-0 $s-16;
+  @include t.use-typography("headline-small");
+  padding: 0 var(--sp-l);
 }
 
 .sample-libraries-info {
+  @include t.use-typography("body-small");
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
-  margin: $s-32;
+  margin: var(--sp-xxxl);
   color: var(--color-foreground-secondary);
 }
 
 .sample-libraries-link {
+  @include t.use-typography("body-small");
   color: var(--color-accent-primary);
-  font-weight: $fw400;
+
   &:hover {
     text-decoration: underline;
   }
 }
 
 .sample-libraries-container {
+  @include t.use-typography("body-small");
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
   width: 100%;
   align-items: start;
   color: var(--color-foreground-secondary);
@@ -356,30 +429,32 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-top: $s-8;
+  margin-top: var(--sp-s);
 }
 
 .sample-library-item-name {
-  font-size: $fs-14;
+  @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: $s-232;
+  max-width: px2rem(232);
 }
 
+// TODO: Remove this extended using a DS component
 .sample-library-add {
   @extend .button-secondary;
 }
 
+// TODO: Remove this extended using a DS component
 .sample-library-adding {
   @extend .button-disabled;
 }
 
 .sample-library-button {
-  @include uppercaseTitleTipography;
-  height: $s-32;
-  width: $s-80;
+  @include t.use-typography("headline-small");
+  height: $sz-32;
+  width: px2rem(80);
   margin: 0;
   border-radius: $br-8;
   white-space: nowrap;

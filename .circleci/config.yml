@@ -326,24 +326,16 @@ jobs:
 workflows:
   penpot:
     jobs:
-      - lint
       - test-frontend:
           requires:
             - lint: success
 
       - test-library:
           requires:
-            - test-frontend: success
             - lint: success
 
       - test-components:
           requires:
-            - test-frontend: success
-            - lint: success
-
-      - test-integration:
-          requires:
-            - test-frontend: success
             - lint: success
 
       - test-backend:
@@ -354,4 +346,6 @@ workflows:
           requires:
             - lint: success
 
+      - lint
+      - test-integration
       - test-render-wasm

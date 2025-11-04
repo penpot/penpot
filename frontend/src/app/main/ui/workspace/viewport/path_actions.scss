@@ -4,23 +4,23 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .sub-actions {
   cursor: initial;
   pointer-events: initial;
   position: absolute;
-  top: $s-12;
+  top: deprecated.$s-12;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  height: $s-56;
-  padding: $s-8 $s-16;
-  border-radius: $s-8;
-  gap: $s-16;
-  border: $s-2 solid var(--panel-border-color);
-  z-index: $z-index-3;
+  height: deprecated.$s-56;
+  padding: deprecated.$s-8 deprecated.$s-16;
+  border-radius: deprecated.$s-8;
+  gap: deprecated.$s-16;
+  border: deprecated.$s-2 solid var(--panel-border-color);
+  z-index: deprecated.$z-index-3;
   background-color: var(--color-background-primary);
   transition:
     top 0.3s,
@@ -33,20 +33,20 @@
   display: flex;
   align-items: center;
   margin: 0;
-  opacity: $op-10;
+  opacity: deprecated.$op-10;
   transition: opacity 0.3s ease;
 }
 
 .topbar-btn {
   --pathbar-icon-color: var(--color-foreground-secondary);
   @extend .button-tertiary;
-  height: $s-36;
-  width: $s-36;
+  height: deprecated.$s-36;
+  width: deprecated.$s-36;
   flex-shrink: 0;
   background-color: transparent;
-  border-radius: $s-8;
+  border-radius: deprecated.$s-8;
   border: none;
-  margin: 0 $s-2;
+  margin: 0 deprecated.$s-2;
 
   &.is-toggled {
     --pathbar-icon-color: var(--button-radio-foreground-color-active);

@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .custom-select {
   --border-color: var(--menu-background-color);
@@ -12,18 +12,18 @@
   --icon-color: var(--icon-foreground);
   --text-color: var(--menu-foreground-color);
   @extend .new-scrollbar;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
   margin: 0;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--bg-color);
-  border: $s-1 solid var(--border-color);
+  border: deprecated.$s-1 solid var(--border-color);
   color: var(--text-color);
   cursor: pointer;
 
@@ -53,7 +53,7 @@
 }
 
 .dropdown-button {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   margin-inline-end: var(--sp-xxs);
   svg {
     @extend .button-icon-small;
@@ -63,9 +63,9 @@
 }
 
 .current-icon {
-  @include flexCenter;
-  width: $s-24;
-  padding-right: $s-4;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-24;
+  padding-right: deprecated.$s-4;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -76,23 +76,23 @@
   @extend .dropdown-wrapper;
   .separator {
     margin: 0;
-    height: $s-12;
-    border-block-start: $s-1 solid var(--dropdown-separator-color);
+    height: deprecated.$s-12;
+    border-block-start: deprecated.$s-1 solid var(--dropdown-separator-color);
   }
 }
 
 .custom-select-dropdown[data-direction="up"] {
-  bottom: $s-32;
+  bottom: deprecated.$s-32;
   top: auto;
 }
 
 .checked-element {
   @extend .dropdown-element-base;
   .icon {
-    @include flexCenter;
-    height: $s-24;
-    width: $s-24;
-    padding-right: $s-4;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-24;
+    width: deprecated.$s-24;
+    padding-right: deprecated.$s-4;
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
@@ -105,7 +105,7 @@
   }
 
   .check-icon {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     svg {
       @extend .button-icon-small;
       visibility: hidden;
@@ -126,5 +126,5 @@
 }
 
 .current-label {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
 }

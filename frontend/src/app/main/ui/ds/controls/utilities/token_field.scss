@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../_borders.scss" as *;
-@use "../../_sizes.scss" as *;
-@use "../../typography.scss" as t;
-@use "../../colors.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/colors.scss" as *;
 
 .token-field {
   --token-field-bg-color: var(--color-background-tertiary);
@@ -25,7 +25,7 @@
   inline-size: 100%;
   background: var(--token-field-bg-color);
   border-radius: $br-8;
-  padding: var(--sp-s);
+  padding: var(--sp-xs);
   outline: $b-1 solid var(--token-field-outline-color);
 
   &:hover {

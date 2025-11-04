@@ -17,6 +17,7 @@
    [app.common.math :as mth]
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
@@ -490,11 +491,7 @@
       ;; We don't have the fills attribute. It's an old text without color
       ;; so need to be black
       (and (nil? (:fills node)) (empty? color-attrs))
-      (assoc :fills (txt/get-default-text-fills))
-
-      ;; Remove duplicates from the fills
-      :always
-      (update :fills types.fills/update distinct))))
+      (assoc :fills (txt/get-default-text-fills)))))
 
 (defn migrate-content
   [content]
@@ -585,12 +582,17 @@
 
                         shape
                         (cond-> shape
-                          (and (not-changed? shape-width new-width) (= grow-type :auto-width))
+                          (and (or (not (ctl/any-layout-immediate-child? objects shape))
+                                   (not (ctl/fill-width? shape)))
+                               (not-changed? shape-width new-width)
+                               (= grow-type :auto-width))
                           (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width {:ignore-lock? true})))
 
                         shape
                         (cond-> shape
-                          (and (not-changed? shape-height new-height)
+                          (and (or (not (ctl/any-layout-immediate-child? objects shape))
+                                   (not (ctl/fill-height? shape)))
+                               (not-changed? shape-height new-height)
                                (or (= grow-type :auto-height) (= grow-type :auto-width)))
                           (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height {:ignore-lock? true})))]
 
@@ -598,7 +600,8 @@
 
           (let [ids (into #{} (filter changed-text?) (keys props))]
             (rx/of (dwu/start-undo-transaction undo-id)
-                   (dwsh/update-shapes ids update-fn {:reg-objects? true
+                   (dwsh/update-shapes ids update-fn {:with-objects? true
+                                                      :reg-objects? true
                                                       :stack-undo? true
                                                       :ignore-touched true})
                    (ptk/data-event :layout/update {:ids ids})

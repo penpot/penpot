@@ -13,35 +13,14 @@
    [app.common.types.color :as cc]
    [app.config :as cf]
    [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.inspect.common.colors :as isc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
-
-(def file-colors-ref
-  (l/derived (l/in [:viewer :file :data :colors]) st/state))
-
-(defn make-colors-library-ref
-  [libraries-place file-id]
-  (let [get-library
-        (fn [state]
-          (get-in state [libraries-place file-id :data :colors]))]
-    (l/derived get-library st/state)))
-
-(defn- use-colors-library
-  [{:keys [ref-file] :as color}]
-  (let [library (mf/with-memo [ref-file]
-                  (make-colors-library-ref :files ref-file))]
-    (mf/deref library)))
-
-;; FIXME: this breaks react hooks rule (broken code)
-(defn- get-file-colors []
-  (or (mf/deref file-colors-ref) (mf/deref refs/workspace-file-colors)))
 
 (defn get-css-rule-humanized [property]
   (as-> property $
@@ -51,8 +30,10 @@
     (str/capital $)))
 
 (mf/defc color-row [{:keys [color format copy-data on-change-format]}]
-  (let [colors-library     (use-colors-library color)
-        file-colors        (get-file-colors)
+  (let [colors-library     (isc/use-colors-library color)
+        file-colors-ref (mf/deref isc/file-colors-ref)
+        file-colors-wokspace (mf/deref refs/workspace-file-colors)
+        file-colors (or file-colors-ref file-colors-wokspace)
         color-library-name (get-in (or colors-library file-colors) [(:ref-id color) :name])
         color              (assoc color :name color-library-name)
         image              (:image color)]

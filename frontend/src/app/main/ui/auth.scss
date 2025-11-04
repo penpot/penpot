@@ -4,17 +4,17 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .auth-section {
   position: relative;
   align-items: center;
   background: var(--panel-background-color);
   display: grid;
-  gap: $s-32;
+  gap: deprecated.$s-32;
   grid-template-columns: repeat(5, 1fr);
   height: 100%;
-  padding: $s-32;
+  padding: deprecated.$s-32;
   width: 100%;
   overflow: auto;
 
@@ -36,13 +36,13 @@
 
 .logo-container {
   position: absolute;
-  top: $s-20;
-  left: $s-20;
+  top: deprecated.$s-20;
+  left: deprecated.$s-20;
   display: flex;
   justify-content: flex-start;
-  width: $s-120;
-  height: $s-96;
-  margin-block-end: $s-52;
+  width: deprecated.$s-120;
+  height: deprecated.$s-96;
+  margin-block-end: deprecated.$s-52;
 }
 
 .login-illustration {
@@ -67,18 +67,18 @@
   grid-column: 4 / 6;
   display: grid;
   grid-template-rows: 1fr auto;
-  gap: $s-24;
+  gap: deprecated.$s-24;
   height: fit-content;
-  max-width: $s-412;
-  padding-block-end: $s-8;
+  max-width: deprecated.$s-412;
+  padding-block-end: deprecated.$s-8;
   position: relative;
   width: 100%;
 }
 
 .logo-btn {
   svg {
-    width: $s-120;
-    height: $s-40;
+    width: deprecated.$s-120;
+    height: deprecated.$s-40;
     fill: var(--main-icon-foreground);
   }
 }

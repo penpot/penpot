@@ -16,7 +16,6 @@
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
    [app.common.types.text :as txt]
-   [app.config :as cfg]
    [app.main.broadcast :as mbc]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
@@ -155,23 +154,8 @@
 
      (transform-fill* state ids transform-attrs options))))
 
-(defn swap-attrs [shape attr index new-index]
-  (let [first (get-in shape [attr index])
-        second (get-in shape [attr new-index])]
-    (-> shape
-        (assoc-in [attr index] second)
-        (assoc-in [attr new-index] first))))
-
-(defn- swap-fills-index
-  [fills index new-index]
-  (let [first  (get fills index)
-        second (get fills new-index)]
-    (-> fills
-        (assoc index second)
-        (assoc new-index first))))
-
 (defn reorder-fills
-  [ids index new-index]
+  [ids from-pos to-space-between-pos]
   (ptk/reify ::reorder-fills
     ptk/WatchEvent
     (watch [_ state _]
@@ -183,7 +167,7 @@
 
             transform-attrs
             (fn [object]
-              (update object :fills types.fills/update swap-fills-index index new-index))]
+              (update object :fills types.fills/update d/reorder from-pos to-space-between-pos))]
 
         (rx/concat
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
@@ -516,22 +500,22 @@
                                    {:attrs [:strokes]}))))))
 
 (defn reorder-shadows
-  [ids index new-index]
+  [ids from-pos to-space-between-pos]
   (ptk/reify ::reorder-shadow
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dwsh/update-shapes
               ids
-              #(swap-attrs % :shadow index new-index))))))
+              #(update % :shadow d/reorder from-pos to-space-between-pos))))))
 
 (defn reorder-strokes
-  [ids index new-index]
+  [ids from-pos to-space-between-pos]
   (ptk/reify ::reorder-strokes
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dwsh/update-shapes
               ids
-              #(swap-attrs % :strokes index new-index)
+              #(update % :strokes d/reorder from-pos to-space-between-pos)
               {:attrs [:strokes]})))))
 
 (defn picker-for-selected-shape
@@ -899,7 +883,7 @@
     (update [_ state]
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
-                (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
+                (let [cap-stops?    (features/active-feature? state "render-wasm/v1")
                       can-add-stop? (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
                     (if (clr/uniform-spread? stops)
@@ -945,9 +929,9 @@
       (update state :colorpicker
               (fn [state]
                 (let [stops (:stops state)
+
                       cap-stops?
-                      (or (features/active-feature? state "render-wasm/v1")
-                          (contains? cfg/flags :frontend-binary-fills))
+                      (features/active-feature? state "render-wasm/v1")
 
                       can-add-stop?
                       (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
@@ -972,8 +956,7 @@
       (update state :colorpicker
               (fn [state]
                 (let [stop  (or (:editing-stop state) 0)
-                      cap-stops? (or (features/active-feature? state "render-wasm/v1")
-                                     (contains? cfg/flags :frontend-binary-fills))
+                      cap-stops? (features/active-feature? state "render-wasm/v1")
                       stops (mapv split-color-components
                                   (if cap-stops?
                                     (take types.fills/MAX-GRADIENT-STOPS stops)

@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_borders.scss" as *;
-@use "../_sizes.scss" as *;
-@use "../colors.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/colors.scss" as *;
 
 .swatch {
   --border-color: var(--color-accent-primary-muted);
@@ -17,10 +17,9 @@
   --checkerboard-background: repeating-conic-gradient(lightgray 0% 25%, white 0% 50%);
   --checkerboard-size: 0.5rem 0.5rem;
 
-  border: 1px solid var(--border-color);
+  border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
-
   &:focus {
     --border-color: var(--color-accent-primary);
   }
@@ -108,4 +107,8 @@
 .swatch-opacity-side {
   flex: 1;
   display: block;
+}
+
+.swatch-error {
+  background: var(--color-background-primary);
 }

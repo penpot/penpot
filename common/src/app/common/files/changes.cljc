@@ -317,17 +317,19 @@
      [:type [:= :add-component]]
      [:id ::sm/uuid]
      [:name :string]
-     [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
-     [:path {:optional true} :string]
+     [:path :string]
      [:main-instance-id ::sm/uuid]
-     [:main-instance-page ::sm/uuid]]]
+     [:main-instance-page ::sm/uuid]
+     ;; Only used by external processes (like Penpot SDK)
+     [:variant-id {:optional true} ::sm/uuid]
+     [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
    [:mod-component
-    [:map {:title "ModCompoenentChange"}
+    [:map {:title "ModComponentChange"}
      [:type [:= :mod-component]]
      [:id ::sm/uuid]
-     [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
      [:name {:optional true} :string]
+     [:path {:optional true} :string]
      [:variant-id {:optional true} ::sm/uuid]
      [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
@@ -366,9 +368,33 @@
      [:type [:= :del-typography]]
      [:id ::sm/uuid]]]
 
-   [:update-active-token-themes
-    [:map {:title "UpdateActiveTokenThemes"}
-     [:type [:= :update-active-token-themes]]
+   [:set-tokens-lib
+    [:map {:title "SetTokensLib"}
+     [:type [:= :set-tokens-lib]]
+     [:tokens-lib ::sm/any]]]  ;; TODO: we should define a plain object schema for tokens-lib
+
+   [:set-token
+    [:map {:title "SetTokenChange"}
+     [:type [:= :set-token]]
+     [:set-id ::sm/uuid]
+     [:token-id ::sm/uuid]
+     [:attrs [:maybe ctob/schema:token-attrs]]]]
+
+   [:set-token-set
+    [:map {:title "SetTokenSetChange"}
+     [:type [:= :set-token-set]]
+     [:id ::sm/uuid]
+     [:attrs [:maybe ctob/schema:token-set-attrs]]]]
+
+   [:set-token-theme
+    [:map {:title "SetTokenThemeChange"}
+     [:type [:= :set-token-theme]]
+     [:id ::sm/uuid]
+     [:attrs [:maybe ctob/schema:token-theme-attrs]]]]
+
+   [:set-active-token-themes
+    [:map {:title "SetActiveTokenThemes"}
+     [:type [:= :set-active-token-themes]]
      [:theme-paths [:set :string]]]]
 
    [:rename-token-set-group
@@ -392,39 +418,6 @@
      [:to-path [:vector :string]]
      [:before-path [:maybe [:vector :string]]]
      [:before-group [:maybe :boolean]]]]
-
-   [:set-token-theme
-    [:map {:title "SetTokenThemeChange"}
-     [:type [:= :set-token-theme]]
-     [:theme-name :string]
-     [:group :string]
-     [:theme [:maybe ctob/schema:token-theme-attrs]]]]
-
-   [:set-tokens-lib
-    [:map {:title "SetTokensLib"}
-     [:type [:= :set-tokens-lib]]
-     [:tokens-lib ::sm/any]]]
-
-   [:set-token-set
-    [:map {:title "SetTokenSetChange"}
-     [:type [:= :set-token-set]]
-     [:set-name :string]
-     [:group? :boolean]
-
-     ;; FIXME: we should not pass private types as part of changes
-     ;; protocol, the changes protocol should reflect a
-     ;; method/protocol for perform surgical operations on file data,
-     ;; this has nothing todo with internal types of a file data
-     ;; structure.
-     [:token-set {:gen/gen (sg/generator ctob/schema:token-set)}
-      [:maybe [:fn ctob/token-set?]]]]]
-
-   [:set-token
-    [:map {:title "SetTokenChange"}
-     [:type [:= :set-token]]
-     [:set-name :string]
-     [:token-id ::sm/uuid]
-     [:token [:maybe ctob/schema:token-attrs]]]]
 
    [:set-base-font-size
     [:map {:title "ModBaseFontSize"}
@@ -978,64 +971,63 @@
   [data {:keys [id]}]
   (ctyl/delete-typography data id))
 
-;; -- Tokens
+;; -- Design Tokens
 
 (defmethod process-change :set-tokens-lib
   [data {:keys [tokens-lib]}]
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-name token-id token]}]
+  [data {:keys [set-id token-id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not token)
-                (ctob/delete-token-from-set lib' set-name token-id)
+                (not attrs)
+                (ctob/delete-token lib' set-id token-id)
 
-                (not (ctob/get-token-in-set lib' set-name token-id))
-                (ctob/add-token-in-set lib' set-name (ctob/make-token token))
+                (not (ctob/get-token lib' set-id token-id))
+                (ctob/add-token lib' set-id (ctob/make-token attrs))
 
                 :else
-                (ctob/update-token-in-set lib' set-name token-id (fn [prev-token]
-                                                                   (ctob/make-token (merge prev-token token)))))))))
+                (ctob/update-token lib' set-id token-id
+                                   (fn [prev-token]
+                                     (ctob/make-token (merge prev-token attrs)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [set-name group? token-set]}]
+  [data {:keys [id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not token-set)
-                (if group?
-                  (ctob/delete-set-group lib' set-name)
-                  (ctob/delete-set lib' set-name))
+                (not attrs)
+                (ctob/delete-set lib' id)
 
-                (not (ctob/get-set lib' set-name))
-                (ctob/add-set lib' token-set)
+                (not (ctob/get-set lib' id))
+                (ctob/add-set lib' (ctob/make-token-set attrs))
 
                 :else
-                (ctob/update-set lib' set-name (fn [_] token-set)))))))
+                (ctob/update-set lib' id (fn [_] (ctob/make-token-set attrs))))))))
 
 (defmethod process-change :set-token-theme
-  [data {:keys [group theme-name theme]}]
+  [data {:keys [id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not theme)
-                (ctob/delete-theme lib' group theme-name)
+                (not attrs)
+                (ctob/delete-theme lib' id)
 
-                (not (ctob/get-theme lib' group theme-name))
-                (ctob/add-theme lib' (ctob/make-token-theme theme))
+                (not (ctob/get-theme lib' id))
+                (ctob/add-theme lib' (ctob/make-token-theme attrs))
 
                 :else
                 (ctob/update-theme lib'
-                                   group theme-name
+                                   id
                                    (fn [prev-token-theme]
-                                     (ctob/make-token-theme (merge prev-token-theme theme)))))))))
+                                     (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
 
-(defmethod process-change :update-active-token-themes
+(defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-paths))))
@@ -1059,7 +1051,7 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group))))
 
-;; === Base font size
+;; === Design Tokens configuration
 
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]

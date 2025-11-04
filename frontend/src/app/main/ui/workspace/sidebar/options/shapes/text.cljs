@@ -35,6 +35,9 @@
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 
+        applied-tokens
+        (get shape :applied-tokens)
+
         measure-values
         (select-keys shape measure-attrs)
 
@@ -101,12 +104,6 @@
           :shape shape
           :attrs (conj txt/text-fill-attrs :fills)})
 
-        fill-values
-        (if (not (contains? fill-values :fills))
-          ;; Old fill format
-          {:fills [fill-values]}
-          fill-values)
-
         text-values
         (merge
          (select-keys shape [:grow-type])
@@ -132,6 +129,7 @@
      [:> measures-menu*
       {:ids ids
        :type type
+       :applied-tokens applied-tokens
        :values measure-values
        :shapes shapes}]
 
@@ -169,12 +167,16 @@
      [:> fill/fill-menu*
       {:ids ids
        :type type
-       :values fill-values}]
+       :values fill-values
+       :shapes shapes
+       :applied-tokens applied-tokens}]
 
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values
-                      :disable-stroke-style true}]
+                      :shapes shapes
+                      :disable-stroke-style true
+                      :applied-tokens applied-tokens}]
 
      (when (= :multiple (:fills fill-values))
        [:> color-selection-menu*

@@ -4,44 +4,61 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
 
-.element-set {
-  margin: 0;
+.fill-section {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
-.element-title {
-  margin: 0;
+.fill-title {
+  grid-column: span 8;
 }
 
-.title-spacing-fill {
-  padding-left: $s-2;
-  margin: 0;
+.fill-title-bar {
+  padding-inline-start: var(--sp-xxs);
 }
 
-.element-content {
+.fill-content {
+  grid-column: span 8;
+
   display: flex;
   flex-direction: column;
-  gap: $s-12;
-  margin: $s-4 0 $s-8 0;
+  gap: var(--sp-m);
+  margin: var(--sp-xs) 0 var(--sp-s) 0;
 }
 
-.element-set-options-group {
-  @include flexRow;
+.fill-multiple {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
-.group-label {
-  @extend .mixed-bar;
+.fill-multiple-label {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }
 
-.checkbox {
+.fill-checkbox {
+  // TODO create a checkbox component in the DS
   @extend .input-checkbox;
-  padding-left: $s-8;
+  padding-inline-start: var(--sp-s);
   span.checked {
-    background-color: var(--input-border-color-active);
+    background-color: var(--color-accent-primary);
     svg {
       @extend .button-icon-small;
-      stroke: var(--input-details-color);
+      stroke: var(--color-background-primary);
     }
   }
 }

@@ -34,7 +34,7 @@
 
 (mf/defc menu*
   {::mf/private true}
-  [{:keys [is-group id edition-id path]}]
+  [{:keys [is-group id path]}]
   (let [create-set-at-path
         (mf/use-fn (mf/deps path) #(st/emit! (dwtl/start-token-set-creation path)))
 
@@ -42,18 +42,20 @@
         (mf/use-fn
          (mf/deps id)
          (fn []
-           (st/emit! (dwtl/start-token-set-edition edition-id))))
+           (st/emit! (dwtl/start-token-set-edition id))))
 
         on-duplicate
         (mf/use-fn
          (mf/deps is-group id)
          (fn []
-           (st/emit! (dwtl/duplicate-token-set id is-group))))
+           (st/emit! (dwtl/duplicate-token-set id))))
 
         on-delete
         (mf/use-fn
          (mf/deps is-group path)
-         #(st/emit! (dwtl/delete-token-set-path is-group path)))]
+         (if is-group
+           #(st/emit! (dwtl/delete-token-set-group path))
+           #(st/emit! (dwtl/delete-token-set id))))]
 
     [:ul {:class (stl/css :context-list)}
      (when is-group
@@ -65,7 +67,7 @@
 
 (mf/defc token-set-context-menu*
   []
-  (let [{:keys [position is-group id edition-id path]}
+  (let [{:keys [position is-group id path]}
         (mf/deref ref:token-sets-context-menu)
 
         position-top
@@ -86,5 +88,4 @@
             :on-context-menu prevent-default}
       [:> menu* {:is-group is-group
                  :id id
-                 :edition-id edition-id
                  :path path}]]]))

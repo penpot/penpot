@@ -125,5 +125,4 @@
           (wasm/initialize false))
 
         (log/inf :hint "initialized"
-                 :enabled (str/join "," features)
-                 :runtime (str/join "," (:features-runtime state)))))))
+                 :enabled (str/join " " features))))))

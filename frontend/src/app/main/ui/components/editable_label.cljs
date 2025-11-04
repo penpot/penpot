@@ -7,29 +7,15 @@
 (ns app.main.ui.components.editable-label
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
    [rumext.v2 :as mf]))
 
-(mf/defc editable-label
-  {::mf/wrap-props false}
-  [props]
-  (let [value             (unchecked-get props "value")
-        on-change         (unchecked-get props "on-change")
-        on-cancel         (unchecked-get props "on-cancel")
-        editing?          (unchecked-get props "editing")
-        dbl-click?        (unchecked-get props "disable-dbl-click")
-        class             (unchecked-get props "class")
-        tooltip           (unchecked-get props "tooltip")
-        display-value           (unchecked-get props "display-value")
-
-
-        final-class       (dm/str class " " (stl/css :editable-label))
-        input-ref         (mf/use-ref nil)
+(mf/defc editable-label*
+  [{:keys [value class-input class-label is-editing tooltip display-value on-change on-cancel]}]
+  (let [input-ref         (mf/use-ref nil)
         internal-editing* (mf/use-state false)
         internal-editing? (deref internal-editing*)
 
@@ -63,14 +49,6 @@
            (when (fn? on-cancel)
              (on-cancel))))
 
-
-        on-dbl-click
-        (mf/use-fn
-         (mf/deps dbl-click? start-edition)
-         (fn [_]
-           (when-not dbl-click?
-             (start-edition))))
-
         on-key-up
         (mf/use-fn
          (mf/deps cancel-edition accept-edition)
@@ -82,26 +60,18 @@
              (kbd/enter? event)
              (accept-edition))))]
 
-    (mf/with-effect [editing? internal-editing? start-edition]
-      (when (and editing? (not internal-editing?))
+    (mf/with-effect [is-editing internal-editing? start-edition]
+      (when (and is-editing (not internal-editing?))
         (start-edition)))
 
     (if ^boolean internal-editing?
-      [:div {:class final-class}
-       [:input
-        {:class (stl/css :editable-label-input)
-         :ref input-ref
-         :default-value value
-         :on-key-up on-key-up
-         :on-double-click on-dbl-click
-         :max-length max-input-length
-         :on-blur cancel-edition}]
+      [:input {:class [(stl/css :editable-label-input) class-input]
+               :ref input-ref
+               :default-value value
+               :on-key-up on-key-up
+               :max-length max-input-length
+               :on-blur cancel-edition}]
 
-       [:span {:class (stl/css :editable-label-close)
-               :on-click cancel-edition}
-        deprecated-icon/delete-text]]
-
-      [:span {:class final-class
-              :title tooltip
-              :on-double-click on-dbl-click}
+      [:span {:class [(stl/css :editable-label-text) class-label]
+              :title tooltip}
        display-value])))

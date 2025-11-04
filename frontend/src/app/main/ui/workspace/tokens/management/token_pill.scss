@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as *;
-@use "../../../ds/borders.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .token-pill {
   @include use-typography("code-font");
@@ -16,7 +16,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: $s-6;
+  gap: $sz-6;
   border: $b-1 solid var(--token-pill-border);
   outline: $b-2 solid var(--token-pill-outline);
   height: var(--sp-xxl);
@@ -40,7 +40,7 @@
 }
 
 .divided-name-wrapper {
-  height: $s-16;
+  height: var(--sp-l);
   display: flex;
   align-items: center;
   white-space: nowrap;

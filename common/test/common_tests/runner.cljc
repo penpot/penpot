@@ -30,7 +30,7 @@
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.token-test]
    [common-tests.media-test]
-   [common-tests.pages-helpers-test]
+   [common-tests.path-names-test]
    [common-tests.record-test]
    [common-tests.schema-test]
    [common-tests.svg-path-test]
@@ -82,7 +82,7 @@
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.token-test
    'common-tests.media-test
-   'common-tests.pages-helpers-test
+   'common-tests.path-names-test
    'common-tests.record-test
    'common-tests.schema-test
    'common-tests.svg-path-test

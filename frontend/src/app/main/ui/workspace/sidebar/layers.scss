@@ -4,36 +4,36 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .tool-window-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: $s-32;
-  min-height: $s-32;
-  margin: $s-8 0 $s-4 $s-8;
-  padding-right: $s-12;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-8 0 deprecated.$s-4 deprecated.$s-8;
+  padding-right: deprecated.$s-12;
 
   &.search {
-    padding: 0 $s-12 0 $s-8;
-    gap: $s-4;
+    padding: 0 deprecated.$s-12 0 deprecated.$s-8;
+    gap: deprecated.$s-4;
     .filter-button {
-      @include flexCenter;
-      @include buttonStyle;
-      height: $s-32;
-      width: $s-32;
+      @include deprecated.flexCenter;
+      @include deprecated.buttonStyle;
+      height: deprecated.$s-32;
+      width: deprecated.$s-32;
       margin: 0;
-      border: $s-1 solid var(--color-background-tertiary);
-      border-radius: $br-8 $br-2 $br-2 $br-8;
+      border: deprecated.$s-1 solid var(--color-background-tertiary);
+      border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
       background-color: var(--color-background-tertiary);
       svg {
-        height: $s-16;
-        width: $s-16;
+        height: deprecated.$s-16;
+        width: deprecated.$s-16;
         stroke: var(--icon-foreground);
       }
       &:focus {
-        border: $s-1 solid var(--input-border-color-focus);
+        border: deprecated.$s-1 solid var(--input-border-color-focus);
         outline: 0;
         background-color: var(--input-background-color-active);
         color: var(--input-foreground-color-active);
@@ -42,7 +42,7 @@
         }
       }
       &:hover {
-        border: $s-1 solid var(--input-border-color-hover);
+        border: deprecated.$s-1 solid var(--input-border-color-hover);
         background-color: var(--input-background-color-hover);
         svg {
           background-color: var(--input-background-color-hover);
@@ -57,17 +57,17 @@
 }
 
 .page-name {
-  @include uppercaseTitleTipography;
-  padding: 0 $s-12;
+  @include deprecated.uppercaseTitleTipography;
+  padding: 0 deprecated.$s-12;
   color: var(--title-foreground-color);
 }
 
 .icon-search {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  border-radius: $br-8;
-  margin-right: $s-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+  border-radius: deprecated.$br-8;
+  margin-right: deprecated.$s-8;
   padding: 0;
   svg {
     @extend .button-icon;
@@ -76,7 +76,7 @@
 }
 
 .focus-title {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -85,10 +85,10 @@
 }
 
 .back-button {
-  @include flexCenter;
-  height: $s-32;
-  width: $s-24;
-  padding: 0 $s-4 0 $s-8;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-24;
+  padding: 0 deprecated.$s-4 0 deprecated.$s-8;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -97,30 +97,30 @@
 }
 
 .focus-name {
-  @include textEllipsis;
-  @include bodySmallTypography;
-  padding-left: $s-4;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodySmallTypography;
+  padding-left: deprecated.$s-4;
   color: var(--title-foreground-color);
 }
 
 .focus-mode-tag-wrapper {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
-  margin-right: $s-12;
+  margin-right: deprecated.$s-12;
 }
 
 .active-filters {
-  @include flexRow;
+  @include deprecated.flexRow;
   flex-wrap: wrap;
-  margin: 0 $s-12;
+  margin: 0 deprecated.$s-12;
 }
 
 .layer-filter {
   @extend .button-tag;
-  gap: $s-6;
-  height: $s-24;
-  margin: $s-2 0;
-  border-radius: $br-6;
+  gap: deprecated.$s-6;
+  height: deprecated.$s-24;
+  margin: deprecated.$s-2 0;
+  border-radius: deprecated.$br-6;
   background-color: var(--pill-background-color);
   cursor: pointer;
 }
@@ -131,8 +131,8 @@
 }
 
 .layer-filter-name {
-  @include flexCenter;
-  @include bodySmallTypography;
+  @include deprecated.flexCenter;
+  @include deprecated.bodySmallTypography;
   color: var(--pill-foreground-color);
 }
 
@@ -143,26 +143,26 @@
 .filters-container {
   @extend .menu-dropdown;
   position: absolute;
-  left: $s-20;
-  width: $s-192;
+  left: deprecated.$s-20;
+  width: deprecated.$s-192;
   .filter-menu-item {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: $s-6;
-    border-radius: $br-8;
+    padding: deprecated.$s-6;
+    border-radius: deprecated.$br-8;
 
     .filter-menu-item-name-wrapper {
       display: flex;
       align-items: center;
-      gap: $s-8;
+      gap: deprecated.$s-8;
       .filter-menu-item-icon {
         color: var(--menu-foreground-color);
       }
       .filter-menu-item-name {
-        padding-top: $s-2;
+        padding-top: deprecated.$s-2;
         color: var(--menu-foreground-color);
       }
     }
@@ -203,7 +203,7 @@
 }
 
 .tool-window-content {
-  --calculated-height: calc(#{$s-136} + var(--height, #{$s-200}));
+  --calculated-height: calc(#{deprecated.$s-136} + var(--height, #{deprecated.$s-200}));
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));

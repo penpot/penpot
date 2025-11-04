@@ -33,6 +33,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
+   [app.common.types.tokens-lib :as types.tokens-lib]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -74,7 +75,9 @@
         data
         (-> data
             (assoc :id id)
-            (dissoc :version :libs))]
+            (dissoc :version)
+            (dissoc :libs)
+            (ctf/check-file-data))]
 
     (-> file
         (assoc :data data)
@@ -1538,6 +1541,13 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0013-fix-component-path"
+  [data _]
+  (let [update-component
+        (fn [component]
+          (update component :path #(d/nilv % "")))]
+    (d/update-when data :components d/update-vals update-component)))
+
 (def ^:private valid-stroke?
   (sm/lazy-validator cts/schema:stroke))
 
@@ -1607,6 +1617,10 @@
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
+  [data _]
+  (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
 
 (defmethod migrate-data "0014-clear-components-nil-objects"
   [data _]
@@ -1684,5 +1698,7 @@
          "0010-fix-swap-slots-pointing-non-existent-shapes"
          "0011-fix-invalid-text-touched-flags"
          "0012-fix-position-data"
+         "0013-fix-component-path"
          "0013-clear-invalid-strokes-and-fills"
+         "0014-fix-tokens-lib-duplicate-ids"
          "0014-clear-components-nil-objects"]))

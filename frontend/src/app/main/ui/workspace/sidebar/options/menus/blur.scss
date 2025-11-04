@@ -4,20 +4,26 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
+}
+
+.element-title {
+  grid-column: span 8;
 }
 
 .title-spacing-blur {
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
   margin: 0;
 }
 
 .element-set-content {
-  @include flexColumn;
-  margin-bottom: $s-8;
+  @include deprecated.flexColumn;
+  margin-bottom: deprecated.$s-8;
 }
 
 .first-row {
@@ -29,17 +35,17 @@
     grid-column: span 6;
     display: flex;
     align-items: center;
-    gap: $s-1;
+    gap: deprecated.$s-1;
     flex-grow: 1;
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
     background-color: var(--input-details-color);
     .show-more {
       @extend .button-secondary;
-      height: $s-32;
-      width: $s-28;
-      border-radius: $br-8 0 0 $br-8;
+      height: deprecated.$s-32;
+      width: deprecated.$s-28;
+      border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
       box-sizing: border-box;
-      border: $s-1 solid var(--button-secondary-background-color-rest);
+      border: deprecated.$s-1 solid var(--button-secondary-background-color-rest);
       svg {
         @extend .button-icon;
       }
@@ -51,33 +57,33 @@
       }
     }
     .label {
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
       flex-grow: 1;
       display: flex;
       align-items: center;
-      height: $s-32;
-      padding: 0 $s-8;
-      border-radius: 0 $br-8 $br-8 0;
+      height: deprecated.$s-32;
+      padding: 0 deprecated.$s-8;
+      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
       background-color: var(--input-background-color);
       color: var(--menu-foreground-color);
       box-sizing: border-box;
-      border: $s-1 solid var(--input-border-color);
+      border: deprecated.$s-1 solid var(--input-border-color);
     }
   }
   .actions {
-    @include flexRow;
+    @include deprecated.flexRow;
   }
 
   &.hidden {
     .blur-info {
-      @include hiddenElement;
+      @include deprecated.hiddenElement;
       .show-more {
-        @include hiddenElement;
-        border: $s-1 solid var(--input-border-color-disabled);
+        @include deprecated.hiddenElement;
+        border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
       .label {
-        @include hiddenElement;
-        border: $s-1 solid var(--input-border-color-disabled);
+        @include deprecated.hiddenElement;
+        border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
     }
   }
@@ -85,10 +91,10 @@
 
 .second-row {
   @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-92;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-92;
   .label {
-    padding-left: $s-8;
-    width: $s-60;
+    padding-left: deprecated.$s-8;
+    width: deprecated.$s-60;
   }
 }

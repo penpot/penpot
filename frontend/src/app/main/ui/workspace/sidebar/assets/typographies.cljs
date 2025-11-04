@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -76,9 +76,9 @@
 
         on-typography-drag-start
         (mf/use-fn
-         (mf/deps typography file-id selected item-ref read-only?)
+         (mf/deps typography file-id selected item-ref read-only? renaming? open?)
          (fn [event]
-           (if read-only?
+           (if (or read-only? renaming? open?)
              (dom/prevent-default event)
              (cmm/on-asset-drag-start event file-id typography selected item-ref :typographies identity))))
 
@@ -170,12 +170,12 @@
            :on-drag-leave on-drag-leave
            :on-drag-over dom/prevent-default
            :on-drop on-drop}
-     [:& grp/asset-group-title {:file-id file-id
-                                :section :typographies
-                                :path prefix
-                                :group-open? group-open?
-                                :on-rename on-rename-group
-                                :on-ungroup on-ungroup}]
+     [:> grp/asset-group-title* {:file-id file-id
+                                 :section :typographies
+                                 :path prefix
+                                 :is-group-open group-open?
+                                 :on-rename on-rename-group
+                                 :on-ungroup on-ungroup}]
 
      (when group-open?
        [:*
@@ -212,7 +212,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& typographies-group {:file-id file-id
-                                    :prefix (cfh/merge-path-item prefix path-item)
+                                    :prefix (cpn/merge-path-item prefix path-item)
                                     :key (dm/str "group-" path-item)
                                     :groups content
                                     :open-groups open-groups
@@ -230,9 +230,9 @@
                                     :on-context-menu on-context-menu
                                     :selected-full selected-full}]))])]))
 
-(mf/defc typographies-section
-  {::mf/wrap-props false}
-  [{:keys [file file-id local? typographies open? force-open? open-status-ref selected reverse-sort?
+(mf/defc typographies-section*
+  [{:keys [file file-id typographies open-status-ref selected
+           is-local is-open is-force-open is-reverse-sort
            on-asset-click on-assets-delete on-clear-selection]}]
   (let [state          (mf/use-state {:detail-open? false :id nil})
         local-data     (mf/deref lens:typography-section-state)
@@ -243,8 +243,8 @@
         typographies   (mf/with-memo [typographies]
                          (mapv dwl/extract-path-if-missing typographies))
 
-        groups         (mf/with-memo [typographies reverse-sort?]
-                         (grp/group-assets typographies reverse-sort?))
+        groups         (mf/with-memo [typographies is-reverse-sort]
+                         (grp/group-assets typographies is-reverse-sort))
 
         selected       (:typographies selected)
         selected-full  (mf/with-memo [selected typographies]
@@ -393,28 +393,28 @@
          (st/emit! #(update % :workspace-global dissoc :edit-typography)))))
 
     [:*
-     [:& cmm/asset-section {:file-id file-id
-                            :title (tr "workspace.assets.typography")
-                            :section :typographies
-                            :assets-count (count typographies)
-                            :open? open?}
-      (when local?
-        [:& cmm/asset-section-block {:role :title-button}
+     [:> cmm/asset-section* {:file-id file-id
+                             :title (tr "workspace.assets.typography")
+                             :section :typographies
+                             :assets-count (count typographies)
+                             :is-open is-open}
+      (when is-local
+        [:> cmm/asset-section-block* {:role :title-button}
          (when-not read-only?
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.assets.typography.add-typography")
                              :on-click add-typography
                              :icon i/add}])])
 
-      [:& cmm/asset-section-block {:role :content}
+      [:> cmm/asset-section-block* {:role :content}
        [:& typographies-group {:file-id file-id
                                :prefix ""
                                :groups groups
                                :open-groups open-groups
-                               :force-open? force-open?
+                               :force-open? is-force-open
                                :state state
                                :file file
-                               :local? local?
+                               :local? is-local
                                :selected selected
                                :editing-id editing-id
                                :renaming-id renaming-id
@@ -426,8 +426,8 @@
                                :on-context-menu on-context-menu
                                :selected-full selected-full}]
 
-       (if local?
-         [:& cmm/assets-context-menu
+       (if is-local
+         [:> cmm/assets-context-menu*
           {:on-close on-close-menu
            :state @menu-state
            :options [(when-not (or multi-typographies? multi-assets?)
@@ -449,7 +449,7 @@
                         :id      "assets-group-typography"
                         :handler on-group})]}]
 
-         [:& cmm/assets-context-menu
+         [:> cmm/assets-context-menu*
           {:on-close on-close-menu
            :state @menu-state
            :options [{:name   "show info"

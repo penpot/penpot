@@ -84,6 +84,9 @@
   (l/derived :shared-files st/state))
 
 (defn select-libraries
+  "Find between all the given files, those who are libraries of the file-id.
+   Also include the file-id file itself.
+   Return a map of id -> library."
   [files file-id]
   (persistent!
    (reduce-kv (fn [result id file]
@@ -437,18 +440,18 @@
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
 
 (defn workspace-token-theme
-  [group name]
+  [id]
   (l/derived
    (fn [lib]
      (when lib
-       (ctob/get-theme lib group name)))
+       (ctob/get-theme lib id)))
    tokens-lib))
 
 (def workspace-token-theme-tree-no-hidden
   (l/derived (fn [lib]
                (or
                 (some-> lib
-                        (ctob/delete-theme ctob/hidden-theme-group ctob/hidden-theme-name)
+                        (ctob/delete-theme ctob/hidden-theme-id)
                         (ctob/get-theme-tree))
                 []))
              tokens-lib))
@@ -459,8 +462,8 @@
 (def workspace-token-themes-no-hidden
   (l/derived #(remove ctob/hidden-theme? %) workspace-token-themes))
 
-(def selected-token-set-name
-  (l/derived (l/key :selected-token-set-name) workspace-tokens))
+(def selected-token-set-id
+  (l/derived (l/key :selected-token-set-id) workspace-tokens))
 
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
