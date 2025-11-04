@@ -29,6 +29,7 @@
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.worker :as mw]
    [app.util.mouse :as mse]
@@ -595,14 +596,25 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper (rx/filter #(or (= ::toggle-focus-mode (ptk/type %))
-                                    (= :app.main.data.workspace/finalize-page (ptk/type %))) stream)]
+      (let [;; Stop on explicit events (toggle or finalize)
+            stopper (rx/filter #(or (= ::toggle-focus-mode (ptk/type %))
+                                    (= :app.main.data.workspace/finalize-page (ptk/type %)))
+                               stream)
+            page-id (:current-page-id state)
+            ;; Stop if focus becomes inactive or page changes
+            focus-should-continue?
+            (fn []
+              (let [current-state @st/state
+                    current-page-id (:current-page-id current-state)
+                    focus-active? (d/not-empty? (:workspace-focus-selected current-state))]
+                (and (= page-id current-page-id) focus-active?)))]
         (when (d/not-empty? (:workspace-focus-selected state))
           (rx/merge
            (rx/of dwz/zoom-to-selected-shape
                   (deselect-all))
            (->> (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
                 (rx/take-until stopper)
+                (rx/take-while #(focus-should-continue?))
                 (rx/map (comp set keys))
                 (rx/buffer 2 1)
                 (rx/merge-map
