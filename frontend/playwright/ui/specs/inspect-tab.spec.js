@@ -57,12 +57,45 @@ const shapeToLayerName = {
   },
 };
 
+/**
+ * Copy the shorthand CSS from a full panel property
+ * @param {object} panel - The style panel locator
+ */
+const copyShorthand = async (panel) => {
+  const panelShorthandButton = panel.getByTestId("copy-shorthand");
+  await panelShorthandButton.click();
+};
+
+/**
+ * Copy the CSS property from a property row by clicking its copy button
+ * @param {object} panel - The style panel locator
+ * @param {string} property - The property name to filter by
+ */
+const copyPropertyFromPropertyRow = async (panel, property) => {
+  const propertyRow = panel
+    .getByTestId("property-row")
+    .filter({ hasText: property });
+  const copyButton = propertyRow.getByRole("button");
+  await copyButton.click();
+};
+
+/**
+ * Returns the style panel by its title
+ * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {string} title - The title of the panel to retrieve
+ */
 const getPanelByTitle = async (workspacePage, title) => {
   return workspacePage.page
     .getByTestId("style-panel")
     .filter({ hasText: title });
 };
 
+/**
+ * Selects a layer in the layers panel
+ * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {string} layerName - The name of the layer to select
+ * @param {string} parentLayerName - The name of the parent layer to expand (optional)
+ */
 const selectLayer = async (workspacePage, layerName, parentLayerName) => {
   await workspacePage.clickToggableLayer("Board");
   if (parentLayerName) {
@@ -70,6 +103,11 @@ const selectLayer = async (workspacePage, layerName, parentLayerName) => {
   }
   await workspacePage.clickLeafLayer(layerName);
 };
+
+/**
+ * Opens the Inspect tab
+ * @param {WorkspacePage} workspacePage - The workspace page instance
+ */
 
 const openInspectTab = async (workspacePage) => {
   const inspectButton = workspacePage.page.getByRole("tab", {
@@ -547,7 +585,6 @@ test.describe("Inspect tab - Styles", () => {
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(1);
 
-      // Test with multiple tokens
       const compositeTypographyRow = propertyRow.filter({
         hasText: "Typography",
       });
@@ -556,6 +593,43 @@ test.describe("Inspect tab - Styles", () => {
 
       const textPreview = panel.getByTestId("text-preview");
       await expect(textPreview).toBeVisible();
+    });
+  });
+
+  test.describe("Copy properties", () => {
+    test("Copy single property", async ({ page }) => {
+      const workspacePage = new WorkspacePage(page);
+      await setupFile(workspacePage);
+
+      await selectLayer(workspacePage, shapeToLayerName.flex);
+      await openInspectTab(workspacePage);
+
+      const panel = await getPanelByTitle(workspacePage, "Layout");
+      await expect(panel).toBeVisible();
+
+      await copyPropertyFromPropertyRow(panel, "Display");
+
+      const shorthand = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(shorthand).toBe("display: flex;");
+    });
+    test("Copy shorthand - multiple properties", async ({ page }) => {
+      const workspacePage = new WorkspacePage(page);
+      await setupFile(workspacePage);
+
+      await selectLayer(workspacePage, shapeToLayerName.shadow);
+      await openInspectTab(workspacePage);
+
+      const panel = await getPanelByTitle(workspacePage, "Shadow");
+      await expect(panel).toBeVisible();
+
+      await copyShorthand(panel);
+
+      const shorthand = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(shorthand).toBe("box-shadow: 4px 4px 4px 0px #00000033;");
     });
   });
 });

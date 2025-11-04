@@ -68,7 +68,8 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "inspect.tabs.styles.panel.copy-style-shorthand")
                           :on-click copy-shorthand
-                          :icon i/clipboard}])]
+                          :icon i/clipboard
+                          :data-testid "copy-shorthand"}])]
      (when expanded
        [:div {:class (stl/css :style-box-content) :id (str "style-box-" (d/name panel))}
         [:div {:class (stl/css :style-box-panel-wrapper)} children]])]))
