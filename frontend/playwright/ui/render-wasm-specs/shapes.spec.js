@@ -228,3 +228,19 @@ test("Renders a file with paths and svg attrs", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with nested frames with inherited blur", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-frame-with-nested-blur.json");
+
+  await workspace.goToWorkspace({
+    id: "58c5cc60-d124-81bd-8007-0ee4e5030609",
+    pageId: "58c5cc60-d124-81bd-8007-0ee4e503060a",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
