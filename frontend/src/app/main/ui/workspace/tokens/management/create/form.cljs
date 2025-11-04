@@ -37,8 +37,7 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
-   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token*
-                                                                              token-value-hint*]]
+   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -46,72 +45,37 @@
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [malli.core :as m]
-   [malli.error :as me]
    [rumext.v2 :as mf]))
 
 ;; Helpers ---------------------------------------------------------------------
 
-(defn finalize-name [name]
+(defn- clean-name [name]
   (-> (str/trim name)
       ;; Remove trailing dots
       (str/replace #"\.+$" "")))
 
-(defn valid-name? [name]
-  (seq (finalize-name (str name))))
-
-(defn finalize-value [value]
-  (-> (str value)
-      (str/trim)))
-
-(defn valid-value? [value]
-  (seq (finalize-value value)))
+(defn- valid-name? [name]
+  (seq (clean-name (str name))))
 
 ;; Schemas ---------------------------------------------------------------------
 
-(def ^:private well-formed-token-name-regexp
-  "Only allow letters and digits for token names.
-  Also allow one `.` for a namespace separator.
+(defn- make-token-name-schema
+  "Generate a dynamic schema validation to check if a token path derived
+  from the name already exists at `tokens-tree`."
+  [tokens-tree]
+  [:and
+   [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
+   (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
+   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
+    #(not (cft/token-name-path-exists? % tokens-tree))]])
 
-  Caution: This will allow a trailing dot like `token-name.`,
-  But we will trim that in the `finalize-name`,
-  to not throw too many errors while the user is editing."
-  #"(?!\$)([a-zA-Z0-9-$_]+\.?)*")
+(def ^:private schema:token-description
+  [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
-(def ^:private well-formed-token-name-schema
-  (m/-simple-schema
-   {:type :token/invalid-token-name
-    :pred #(re-matches well-formed-token-name-regexp %)
-    :type-properties {:error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))}}))
-
-(defn- token-name-schema
-  "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
-  [{:keys [tokens-tree]}]
-  (let [path-exists-schema
-        (m/-simple-schema
-         {:type :token/name-exists
-          :pred #(not (cft/token-name-path-exists? % tokens-tree))
-          :type-properties {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}})]
-    (m/schema
-     [:and
-      [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-      well-formed-token-name-schema
-      path-exists-schema])))
-
-(defn- validate-token-name
-  [tokens-tree name]
-  (let [schema     (token-name-schema {:tokens-tree tokens-tree})
-        validation (m/explain schema (finalize-name name))]
-    (me/humanize validation)))
-
-(def ^:private token-description-schema
-  (m/schema
-   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]))
-
-(defn- validate-token-description
-  [description]
-  (let [validation (m/explain token-description-schema description)]
-    (me/humanize validation)))
+(def ^:private validate-token-description
+  (let [explainer (sm/lazy-explainer schema:token-description)]
+    (fn [description]
+      (-> description explainer sm/simplify not-empty))))
 
 ;; Value Validation -------------------------------------------------------------
 
@@ -153,15 +117,15 @@
                 :else (rx/throw {:errors (or (seq errors)
                                              [(wte/get-error-code :error/unknown-error)])}))))))))
 
-(defn validate-token-with [token validators]
+(defn- validate-token-with [token validators]
   (if-let [error (some (fn [validate] (validate token)) validators)]
     (rx/throw {:errors [error]})
     (rx/of token)))
 
-(def default-validators
+(def ^:private default-validators
   [check-token-empty-value check-self-reference])
 
-(defn default-validate-token
+(defn- default-validate-token
   "Validates a token by confirming a list of `validator` predicates and resolving the token using `tokens` with StyleDictionary.
   Returns rx stream of either a valid resolved token or an errors map.
 
@@ -189,16 +153,16 @@
          ;; Resolving token via StyleDictionary
          (rx/mapcat #(validate-resolve-token % prev-token tokens)))))
 
-(defn check-coll-self-reference
+(defn- check-coll-self-reference
   "Invalidate a collection of `token-vals` for a self-refernce against `token-name`.,"
   [token-name token-vals]
   (when (some #(cto/token-value-self-reference? token-name %) token-vals)
     (wte/get-error-code :error.token/direct-self-reference)))
 
-(defn check-font-family-token-self-reference [token]
+(defn- check-font-family-token-self-reference [token]
   (check-coll-self-reference (:name token) (:value token)))
 
-(defn validate-font-family-token
+(defn- validate-font-family-token
   [props]
   (-> props
       (update :token-value cto/split-font-family)
@@ -208,7 +172,7 @@
                           check-font-family-token-self-reference])
       (default-validate-token)))
 
-(defn check-typography-token-self-reference
+(defn- check-typography-token-self-reference
   "Check token when any of the attributes in token value have a self-reference."
   [token]
   (let [token-name (:name token)
@@ -220,11 +184,11 @@
               (assoc err :typography-key k)))
           token-values)))
 
-(defn check-empty-typography-token [token]
+(defn- check-empty-typography-token [token]
   (when (empty? (:value token))
     (wte/get-error-code :error.token/empty-input)))
 
-(defn check-shadow-token-self-reference
+(defn- check-shadow-token-self-reference
   "Check token when any of the attributes in a shadow's value have a self-reference."
   [token]
   (let [token-name (:name token)
@@ -236,13 +200,13 @@
                   shadow-map))
           (d/enumerate shadow-values))))
 
-(defn check-empty-shadow-token [token]
+(defn- check-empty-shadow-token [token]
   (when (or (empty? (:value token))
             (some (fn [shadow] (not-every? #(contains? shadow %) [:offsetX :offsetY :blur :spread :color]))
                   (:value token)))
     (wte/get-error-code :error.token/empty-input)))
 
-(defn validate-typography-token
+(defn- validate-typography-token
   [{:keys [token-value] :as props}]
   (cond
     ;; Entering form without a value - show no error just resolve nil
@@ -260,7 +224,7 @@
                             check-typography-token-self-reference])
         (default-validate-token))))
 
-(defn validate-shadow-token
+(defn- validate-shadow-token
   [{:keys [token-value] :as props}]
   (cond
     ;; Entering form without a value - show no error just resolve nil
@@ -281,32 +245,30 @@
                             check-shadow-token-self-reference])
         (default-validate-token))))
 
-(defn use-debonced-resolve-callback
+(defn- use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
    This function is debounced as the resolving might be an expensive calculation.
    Uses a custom debouncing logic, as the resolve function is async."
   [{:keys [timeout name-ref token tokens callback validate-token]
     :or {timeout 160}}]
-  (let [timeout-id-ref (mf/use-ref nil)
-        debounced-resolver-callback
-        (mf/use-fn
-         (mf/deps token callback tokens)
-         (fn [value]
-           (let [timeout-id (js/Symbol)
-                 ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
-                 timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
-             (mf/set-ref-val! timeout-id-ref timeout-id)
-             (js/setTimeout
-              (fn []
-                (when (not (timeout-outdated-cb?))
-                  (->> (validate-token {:token-value value
-                                        :token-name @name-ref
-                                        :prev-token token
-                                        :tokens tokens})
-                       (rx/filter #(not (timeout-outdated-cb?)))
-                       (rx/subs! callback callback))))
-              timeout))))]
-    debounced-resolver-callback))
+  (let [timeout-id-ref (mf/use-ref nil)]
+    (mf/use-fn
+     (mf/deps token callback tokens)
+     (fn [value]
+       (let [timeout-id (js/Symbol)
+             ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
+             timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
+         (mf/set-ref-val! timeout-id-ref timeout-id)
+         (js/setTimeout
+          (fn []
+            (when (not (timeout-outdated-cb?))
+              (->> (validate-token {:token-value value
+                                    :token-name (mf/ref-val name-ref)
+                                    :prev-token token
+                                    :tokens tokens})
+                   (rx/filter #(not (timeout-outdated-cb?)))
+                   (rx/subs! callback callback))))
+          timeout))))))
 
 (defonce form-token-cache-atom (atom nil))
 
@@ -342,64 +304,87 @@
            custom-input-token-value
            custom-input-token-value-props]
     :or {validate-token default-validate-token}}]
-  (let [token (or token {:type token-type})
-        token-properties (dwta/get-token-properties token)
-        tokens-in-selected-set (mf/deref refs/workspace-all-tokens-in-selected-set)
 
-        active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
-                              ;; Ensure that the resolved value uses the currently editing token
-                              ;; even if the name has been overriden by a token with the same name
-                              ;; in another set below.
-                              (and (:name token) (:value token))
-                              (assoc (:name token) token)
+  (let [token
+        (mf/with-memo [token]
+          (or token {:type token-type}))
 
-                              ;; Style dictionary resolver needs font families to be an array of strings
-                              (= :font-family (or (:type token) token-type))
-                              (update-in [(:name token) :value] cto/split-font-family)
+        token-name        (get token :name)
+        token-description (get token :description)
+        token-name-ref    (mf/use-ref token-name)
 
-                              (= :typography (or (:type token) token-type))
-                              (d/update-in-when [(:name token) :font-family :value] cto/split-font-family))
+        name-ref          (mf/use-ref nil)
 
-        resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
-                                                                     :interactive? true})
-        token-path (mf/use-memo
-                    (mf/deps (:name token))
-                    #(cft/token-name->path (:name token)))
+        name-errors*      (mf/use-state nil)
+        name-errors       (deref name-errors*)
 
-        tokens-tree-in-selected-set (mf/use-memo
-                                     (mf/deps token-path tokens-in-selected-set)
-                                     (fn []
-                                       (-> (ctob/tokens-tree tokens-in-selected-set)
-                                           ;; Allow setting editing token to it's own path
-                                           (d/dissoc-in token-path))))
-        ;; Name
-        touched-name* (mf/use-state false)
-        touched-name? (deref touched-name*)
-        warning-name-change* (mf/use-state false)
-        warning-name-change? (deref warning-name-change*)
-        token-name-ref (mf/use-var (:name token))
-        name-ref (mf/use-ref nil)
-        name-errors* (mf/use-state nil)
-        name-errors (deref name-errors*)
+        touched-name*     (mf/use-state false)
+        touched-name?     (deref touched-name*)
+
+        warning-name-change*
+        (mf/use-state false)
+
+        warning-name-change?
+        (deref warning-name-change*)
+
+        token-properties
+        (dwta/get-token-properties token)
+
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
+        active-theme-tokens
+        (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
+          ;; Ensure that the resolved value uses the currently editing token
+          ;; even if the name has been overriden by a token with the same name
+          ;; in another set below.
+          (and (:name token) (:value token))
+          (assoc (:name token) token)
+
+          ;; Style dictionary resolver needs font families to be an array of strings
+          (= :font-family (or (:type token) token-type))
+          (update-in [(:name token) :value] cto/split-font-family)
+
+          (= :typography (or (:type token) token-type))
+          (d/update-in-when [(:name token) :font-family :value] cto/split-font-family))
+
+        resolved-tokens
+        (sd/use-resolved-tokens active-theme-tokens
+                                {:cache-atom form-token-cache-atom
+                                 :interactive? true})
+
+        token-path
+        (mf/with-memo [token-name]
+          (cft/token-name->path token-name))
+
+        tokens-tree-in-selected-set
+        (mf/with-memo [token-path tokens-in-selected-set]
+          (-> (ctob/tokens-tree tokens-in-selected-set)
+              ;; Allow setting editing token to it's own path
+              (d/dissoc-in token-path)))
+
+        validate-token-name
+        (mf/with-memo [tokens-tree-in-selected-set]
+          (let [schema    (make-token-name-schema tokens-tree-in-selected-set)
+                explainer (sm/explainer schema)]
+            (fn [name]
+              (-> name explainer sm/simplify not-empty))))
 
         on-blur-name
         (mf/use-fn
-         (mf/deps touched-name? warning-name-change? tokens-tree-in-selected-set)
+         (mf/deps touched-name? validate-token-name)
          (fn [e]
-           (let [value (dom/get-target-val e)
-                 errors (validate-token-name tokens-tree-in-selected-set value)]
-             (when touched-name?
-               (reset! warning-name-change* true))
+           (let [value  (dom/get-target-val e)
+                 errors (validate-token-name value)]
+             (when touched-name? (reset! warning-name-change* true))
              (reset! name-errors* errors))))
 
         on-update-name-debounced
-        (mf/use-fn
-         (mf/deps touched-name? tokens-tree-in-selected-set)
-         (uf/debounce (fn [token-name]
-                        (let [errors (validate-token-name tokens-tree-in-selected-set token-name)]
-                          (when touched-name?
-                            (reset! name-errors* errors))))
-                      300))
+        (mf/with-memo [touched-name? validate-token-name]
+          (uf/debounce (fn [token-name]
+                         (when touched-name?
+                           (reset! name-errors* (validate-token-name token-name))))
+                       300))
 
         on-update-name
         (mf/use-fn
@@ -408,19 +393,24 @@
            (let [ref (mf/ref-val name-ref)
                  token-name (dom/get-value ref)]
              (reset! touched-name* true)
-             (reset! token-name-ref token-name)
+
+             (mf/set-ref-val! token-name-ref token-name)
              (on-update-name-debounced token-name))))
 
-        valid-name-field? (and
-                           (not name-errors)
-                           (valid-name? @token-name-ref))
+        valid-name-field?
+        (and
+         (not name-errors)
+         (valid-name? (mf/ref-val token-name-ref)))
 
         ;; Value
         value-input-ref (mf/use-ref nil)
-        value-ref (mf/use-ref (:value token))
+        value-ref       (mf/use-ref (:value token))
 
-        token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
-        token-resolve-result  (deref token-resolve-result*)
+        token-resolve-result*
+        (mf/use-state #(get resolved-tokens (cft/token-identifier token)))
+
+        token-resolve-result
+        (deref token-resolve-result*)
 
         clear-resolve-value
         (mf/use-fn
@@ -464,73 +454,73 @@
            (mf/set-ref-val! value-ref next-value)
            (on-update-value-debounced next-value)))
 
-        value-error? (seq (:errors token-resolve-result))
-        valid-value-field? (and token-resolve-result (not value-error?))
+        value-error?        (seq (:errors token-resolve-result))
+        valid-value-field?  (and token-resolve-result (not value-error?))
 
         ;; Description
-        description-ref (mf/use-var (:description token))
+        description-ref     (mf/use-ref token-description)
         description-errors* (mf/use-state nil)
-        description-errors (deref description-errors*)
+        description-errors  (deref description-errors*)
 
         on-update-description-debounced
-        (mf/use-fn
-         (uf/debounce (fn [e]
-                        (let [value (dom/get-target-val e)
-                              errors (validate-token-description value)]
-                          (reset! description-errors* errors)))))
+        (mf/with-memo []
+          (uf/debounce (fn [e]
+                         (let [value  (dom/get-target-val e)
+                               errors (validate-token-description value)]
+                           (reset! description-errors* errors)))))
 
         on-update-description
         (mf/use-fn
          (mf/deps on-update-description-debounced)
          (fn [e]
-           (reset! description-ref (dom/get-target-val e))
+           (mf/set-ref-val! description-ref (dom/get-target-val e))
            (on-update-description-debounced e)))
-        valid-description-field? (empty? description-errors)
+
+        valid-description-field?
+        (empty? description-errors)
 
         ;; Form
-        disabled? (or (not valid-name-field?)
-                      (not valid-value-field?)
-                      (not valid-description-field?))
+        disabled?
+        (or (not valid-name-field?)
+            (not valid-value-field?)
+            (not valid-description-field?))
 
         on-submit
         (mf/use-fn
-         (mf/deps is-create tokens-tree-in-selected-set token active-theme-tokens validate-token)
+         (mf/deps is-create token active-theme-tokens validate-token validate-token-name validate-token-description)
          (fn [e]
            (dom/prevent-default e)
            ;; We have to re-validate the current form values before submitting
            ;; because the validation is asynchronous/debounced
            ;; and the user might have edited a valid form to make it invalid,
            ;; and press enter before the next validations could return.
-           (let [final-name (finalize-name @token-name-ref)
-                 valid-name? (try
-                               (empty? (:errors (validate-token-name tokens-tree-in-selected-set final-name)))
-                               (catch js/Error _ nil))
-                 value (mf/ref-val value-ref)
-                 final-description @description-ref
-                 valid-description? (if final-description
-                                      (try
-                                        (empty? (:errors (validate-token-description final-description)))
-                                        (catch js/Error _ nil))
-                                      true)]
+
+           (let [clean-name         (clean-name (mf/ref-val token-name-ref))
+                 valid-name?        (empty? (validate-token-name clean-name))
+
+                 value              (mf/ref-val value-ref)
+                 clean-description  (mf/ref-val description-ref)
+                 valid-description? (or (some-> clean-description validate-token-description empty?) true)]
+
              (when (and valid-name? valid-description?)
                (->> (validate-token {:token-value value
-                                     :token-name final-name
-                                     :token-description final-description
+                                     :token-name clean-name
+                                     :token-description clean-description
                                      :prev-token token
                                      :tokens active-theme-tokens})
                     (rx/subs!
                      (fn [valid-token]
                        (st/emit!
                         (if is-create
-                          (dwtl/create-token {:name final-name
+                          (dwtl/create-token {:name clean-name
                                               :type token-type
                                               :value (:value valid-token)
-                                              :description final-description})
+                                              :description clean-description})
 
                           (dwtl/update-token (:id token)
-                                             {:name final-name
+                                             {:name clean-name
                                               :value (:value valid-token)
-                                              :description final-description}))
+                                              :description clean-description}))
                         (dwtp/propagate-workspace-tokens)
                         (modal/hide)))))))))
 
@@ -570,21 +560,18 @@
              (on-submit e))))]
 
     ;; Clear form token cache on unmount
-    (mf/use-effect
-     (fn []
-       #(reset! form-token-cache-atom nil)))
+    (mf/with-effect []
+      #(reset! form-token-cache-atom nil))
 
     ;; Update the value when editing an existing token
     ;; so the user doesn't have to interact with the form to validate the token
-    (mf/use-effect
-     (mf/deps is-create token resolved-tokens token-resolve-result set-resolve-value)
-     (fn []
-       (when (and (not is-create)
-                  (:value token) ;; Don't retrigger this effect when switching tabs on composite tokens
-                  (not token-resolve-result)
-                  resolved-tokens)
-         (-> (get resolved-tokens @token-name-ref)
-             (set-resolve-value)))))
+    (mf/with-effect [is-create token resolved-tokens token-resolve-result set-resolve-value]
+      (when (and (not is-create)
+                 (:value token) ;; Don't retrigger this effect when switching tabs on composite tokens
+                 (not token-resolve-result)
+                 resolved-tokens)
+        (-> (get resolved-tokens (mf/ref-val token-name-ref))
+            (set-resolve-value))))
 
     [:form {:class (stl/css :form-wrapper)
             :on-submit on-submit}
@@ -602,7 +589,7 @@
                      :max-length max-input-length
                      :variant "comfortable"
                      :auto-focus true
-                     :default-value @token-name-ref
+                     :default-value (mf/ref-val token-name-ref)
                      :hint-type (when-not (empty? name-errors) "error")
                      :hint-message (first name-errors)
                      :ref name-ref
@@ -644,7 +631,7 @@
                    :is-optional true
                    :max-length max-input-length
                    :variant "comfortable"
-                   :default-value @description-ref
+                   :default-value (mf/ref-val description-ref)
                    :hint-type (when-not (empty? description-errors) "error")
                    :hint-message (first description-errors)
                    :on-blur on-update-description
