@@ -131,6 +131,11 @@
   [{:keys [::id ::timeout] :as cfg} task-id scheduled-at]
   (loop [task (get-task cfg task-id)]
     (cond
+      (nil? task)
+      (l/wrn :hint "no task found on the database"
+             :runner-id id
+             :task-id task-id)
+
       (ex/exception? task)
       (if (or (db/connection-error? task)
               (db/serialization-error? task))
@@ -152,11 +157,6 @@
       (l/wrn :hint "skiping task, rescheduled"
              :task-id task-id
              :runner-id id)
-
-      (nil? task)
-      (l/wrn :hint "no task found on the database"
-             :runner-id id
-             :task-id task-id)
 
       :else
       (let [result (run-task cfg task)]
