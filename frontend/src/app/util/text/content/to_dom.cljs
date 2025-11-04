@@ -99,14 +99,26 @@
     (dissoc styles :line-height)))
 
 (defn get-inline-children
-  [inline]
-  [(if (= "" (:text inline))
+  [inline paragraph]
+  [(if (and (= "" (:text inline))
+            (= 1 (count (:children paragraph))))
      (dom/create-element "br")
      (dom/create-text (:text inline)))])
 
 (defn create-random-key
   []
   (.toString (.floor js/Math (* (.random js/Math) (.-MAX_SAFE_INTEGER js/Number))) 36))
+
+(defn has-content?
+  [paragraph]
+  (some #(not= "" (:text % "")) (:children paragraph)))
+
+(defn should-filter-empty-paragraph?
+  [paragraphs index]
+  (and (not (has-content? (nth paragraphs index)))
+       (< index (count paragraphs))
+       (some has-content? (drop (inc index) paragraphs))
+       (every? #(not (has-content? %)) (take (inc index) paragraphs))))
 
 (defn create-inline
   [inline paragraph]
@@ -115,7 +127,7 @@
    {:id (or (:key inline) (create-random-key))
     :data {:itype "inline"}
     :style (get-inline-styles inline paragraph)}
-   (get-inline-children inline)))
+   (get-inline-children inline paragraph)))
 
 (defn create-paragraph
   [paragraph]
@@ -128,10 +140,15 @@
 
 (defn create-root
   [root]
-  (let [root-styles (get-root-styles root)]
+  (let [root-styles (get-root-styles root)
+        paragraphs (get-in root [:children 0 :children])
+        filtered-paragraphs (->> paragraphs
+                                 (map-indexed vector)
+                                 (remove (fn [[index _]] (should-filter-empty-paragraph? paragraphs index)))
+                                 (mapv second))]
     (create-element
      "div"
      {:id (or (:key root) (create-random-key))
       :data {:itype "root"}
       :style root-styles}
-     (mapv create-paragraph (get-in root [:children 0 :children])))))
+     (mapv create-paragraph filtered-paragraphs))))
