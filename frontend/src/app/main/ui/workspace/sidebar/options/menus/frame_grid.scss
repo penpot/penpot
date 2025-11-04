@@ -23,6 +23,7 @@
 
 .element-set-content {
   @include deprecated.flexColumn;
+  grid-column: span 8;
   margin: deprecated.$s-4 0 deprecated.$s-8 0;
 }
 
