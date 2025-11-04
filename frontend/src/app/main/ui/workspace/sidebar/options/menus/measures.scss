@@ -5,37 +5,20 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set {
-  /* 
-    This element do not match the 8 column grid of sidebar
-
-   |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|  -> 8 column grid, (--sp-xxxl) width each
-
-   |__________________|-|__________________|-|___|  -> 2 inputs blocks + 1 button.
-
-    We need to calculate the total width of each input block:
-    - 3.5 columns of the the base grid (--sp-xxxl)
-    - plus 3 inter-column gaps (3 * --sp-xs)
-    - minus half a gap (--sp-xs / 2) because the last spacing is shared
-      with the next block, keeping the overall visual rhythm consistent.
-  */
-
-  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - (var(--sp-xs) / 2));
-
   display: grid;
   grid-template-columns:
-    var(--input-width) /* first input block */
-    var(--input-width) /* second input block */
+    var(--grid-exception-input-width) /* first input block */
+    var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
   gap: var(--sp-xs);
   margin-bottom: var(--sp-s);
 }
 
 .presets {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
   grid-column: 1 / -1;
 }
 
@@ -207,5 +190,5 @@
 
 // TODO: Add a proper variable to this sizing
 .numeric-input-measures {
-  --dropdown-width: var(--8-columns-dropdown-width);
+  --dropdown-width: var(--7-columns-dropdown-width);
 }

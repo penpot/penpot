@@ -8,11 +8,10 @@
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .fill-section {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .fill-title {

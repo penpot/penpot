@@ -9,7 +9,7 @@
 @use "ds/_utils.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/typography.scss" as t;
-
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .annotation {
@@ -446,9 +446,7 @@
 }
 
 .component-section {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .component-title {
@@ -651,9 +649,7 @@
 }
 
 .variant-property-container {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .variant-property-name-wrapper {

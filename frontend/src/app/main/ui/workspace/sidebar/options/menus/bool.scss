@@ -5,11 +5,10 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .boolean-options {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
   height: var(--sp-xxxl);
 }
 

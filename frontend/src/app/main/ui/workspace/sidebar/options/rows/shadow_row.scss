@@ -9,6 +9,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .shadow-element {
   display: flex;
@@ -30,9 +31,7 @@
 }
 
 .shadow-basic {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .shadow-basic-info {
@@ -67,9 +66,7 @@
 }
 
 .shadow-advanced {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .shadow-advanced-row {

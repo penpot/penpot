@@ -7,11 +7,10 @@
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .stroke-section {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .stroke-title {
