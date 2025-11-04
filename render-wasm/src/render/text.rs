@@ -28,13 +28,15 @@ pub fn stroke_paragraph_builder_group_from_text(
     let fonts = get_font_collection();
     let mut paragraph_group = Vec::new();
     let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
+    let is_stroke_render = true;
 
     for paragraph in text_content.paragraphs() {
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
         for span in paragraph.children().iter() {
-            let text_paint: skia_safe::Handle<_> = merge_fills(span.fills(), *bounds);
+            let text_paint: skia_safe::Handle<_> =
+                merge_fills(span.fills(), *bounds, is_stroke_render);
             let stroke_paints = get_text_stroke_paints(
                 stroke,
                 bounds,

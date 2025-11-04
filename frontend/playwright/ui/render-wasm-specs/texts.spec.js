@@ -367,6 +367,22 @@ test("Renders a file with texts with tabs", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with empty text fills and strokes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-empty-fills.json");
+
+  await workspace.goToWorkspace({
+    id: "58c5cc60-d124-81bd-8007-0f19b52444eb",
+    pageId: "58c5cc60-d124-81bd-8007-0f19b52444ec",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test.skip("Updates text alignment edition - part 1", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();

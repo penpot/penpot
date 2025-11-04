@@ -226,12 +226,16 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
     }
 }
 
-pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
+pub fn merge_fills(fills: &[Fill], bounding_box: Rect, is_stroke_render: bool) -> skia::Paint {
     let mut combined_shader: Option<skia::Shader> = None;
     let mut fills_paint = skia::Paint::default();
 
     if fills.is_empty() {
-        combined_shader = Some(skia::shaders::color(skia::Color::TRANSPARENT));
+        combined_shader = if is_stroke_render {
+            Some(skia::shaders::color(skia::Color::TRANSPARENT))
+        } else {
+            Some(skia::shaders::color(skia::Color::BLACK))
+        };
         fills_paint.set_shader(combined_shader);
         return fills_paint;
     }

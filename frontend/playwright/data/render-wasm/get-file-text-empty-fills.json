@@ -1,0 +1,133 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u6bd7c17d-4f59-815e-8006-5c1f6882469a",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "text_without_fills_and_strokes",
+    "~:revn": 8,
+    "~:modified-at": "~m1762268037819",
+    "~:vern": 0,
+    "~:id": "~u58c5cc60-d124-81bd-8007-0f19b52444eb",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content-v2",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content-v2",
+            "0004-clean-shadow-color",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0008-fix-library-colors-v4",
+            "0009-clean-library-colors",
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes",
+            "0011-fix-invalid-text-touched-flags",
+            "0012-fix-position-data",
+            "0013-fix-component-path",
+            "0013-clear-invalid-strokes-and-fills",
+            "0014-fix-tokens-lib-duplicate-ids",
+            "0014-clear-components-nil-objects"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    "~:created-at": "~m1762267656337",
+    "~:backend": "legacy-db",
+    "~:data": {
+        "~:pages": [
+            "~u58c5cc60-d124-81bd-8007-0f19b52444ec"
+        ],
+        "~:pages-index": {
+            "~u58c5cc60-d124-81bd-8007-0f19b52444ec": {
+                "~:objects": {
+                    "~#penpot/objects-map/v2": {
+                        "~u00000000-0000-0000-0000-000000000000": "[\"~#shape\",[\"^ \",\"~:y\",0,\"~:hide-fill-on-export\",false,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"Root Frame\",\"~:width\",0.01,\"~:type\",\"~:frame\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",0.0,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.01]],[\"^:\",[\"^ \",\"~:x\",0.0,\"~:y\",0.01]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^3\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",0,\"~:proportion\",1.0,\"~:r4\",0,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^6\",0.01,\"~:height\",0.01,\"~:x1\",0,\"~:y1\",0,\"~:x2\",0.01,\"~:y2\",0.01]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#FFFFFF\",\"~:fill-opacity\",1]],\"~:flip-x\",null,\"^H\",0.01,\"~:flip-y\",null,\"~:shapes\",[\"~u3238c45b-33fb-801d-8007-0f19b62450a7\"]]]",
+                        "~u3238c45b-33fb-801d-8007-0f19b62450a7": "[\"~#shape\",[\"^ \",\"~:y\",381.99999669259154,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:grow-type\",\"~:auto-height\",\"~:content\",[\"^ \",\"~:type\",\"root\",\"~:key\",\"1r86dcy9p58\",\"~:children\",[[\"^ \",\"^7\",\"paragraph-set\",\"^9\",[[\"^ \",\"~:line-height\",\"1.4\",\"~:font-style\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"~:text-transform\",\"none\",\"~:font-id\",\"sourcesanspro\",\"^8\",\"1fjx7ben114\",\"~:font-size\",\"24\",\"~:font-weight\",\"400\",\"~:font-variant-id\",\"regular\",\"~:text-decoration\",\"none\",\"~:letter-spacing\",\"0\",\"~:fills\",[],\"~:font-family\",\"sourcesanspro\",\"~:text\",\"The trigger defines the user action that will start the interaction. Penpot currently provides the following triggers (more of them will come):\"]],\"^<\",\"none\",\"~:text-align\",\"left\",\"^=\",\"sourcesanspro\",\"^8\",\"cij53\",\"^>\",\"0\",\"^?\",\"400\",\"~:text-direction\",\"ltr\",\"^7\",\"paragraph\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\"],[\"^ \",\"^:\",\"1.4\",\"^;\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"^<\",\"none\",\"^=\",\"sourcesanspro\",\"^8\",\"21yhyt9l8uh\",\"^>\",\"24\",\"^?\",\"400\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\",\"^E\",\"\"]],\"^<\",\"none\",\"^F\",\"left\",\"^=\",\"sourcesanspro\",\"^8\",\"fgv3l\",\"^>\",\"24\",\"^?\",\"400\",\"^G\",\"ltr\",\"^7\",\"paragraph\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\"],[\"^ \",\"^:\",\"1.4\",\"^;\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"^<\",\"none\",\"^=\",\"sourcesanspro\",\"^8\",\"19ji8i80hsm\",\"^>\",\"24\",\"^?\",\"400\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\",\"^E\",\"- On click: when user clicks or tap the hotspot.\"]],\"^<\",\"none\",\"^F\",\"left\",\"^=\",\"sourcesanspro\",\"^8\",\"e2thg\",\"^>\",\"0\",\"^?\",\"400\",\"^G\",\"ltr\",\"^7\",\"paragraph\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\"],[\"^ \",\"^:\",\"1.4\",\"^;\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"^<\",\"none\",\"^=\",\"sourcesanspro\",\"^8\",\"gvj74uc2uc\",\"^>\",\"24\",\"^?\",\"400\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\",\"^E\",\"- Mouse enter: when the mouse enter the hotspot area.\"]],\"^<\",\"none\",\"^F\",\"left\",\"^=\",\"sourcesanspro\",\"^8\",\"civc1\",\"^>\",\"0\",\"^?\",\"400\",\"^G\",\"ltr\",\"^7\",\"paragraph\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\"],[\"^ \",\"^:\",\"1.4\",\"^;\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"^<\",\"none\",\"^=\",\"sourcesanspro\",\"^8\",\"x3d0k98pu2\",\"^>\",\"24\",\"^?\",\"400\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\",\"^E\",\"- Mouse leave: when the mouse leaves the hotspot area.\"]],\"^<\",\"none\",\"^F\",\"left\",\"^=\",\"sourcesanspro\",\"^8\",\"5417i\",\"^>\",\"0\",\"^?\",\"400\",\"^G\",\"ltr\",\"^7\",\"paragraph\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\"],[\"^ \",\"^:\",\"1.4\",\"^;\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"^<\",\"none\",\"^=\",\"sourcesanspro\",\"^8\",\"1vy4ufwv8zk\",\"^>\",\"24\",\"^?\",\"400\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\",\"^E\",\"- After delay: when a certain time has passed after an artboard is shown. Note: this can only be set at artboards.\"]],\"^<\",\"none\",\"^F\",\"left\",\"^=\",\"sourcesanspro\",\"^8\",\"fu1m0\",\"^>\",\"0\",\"^?\",\"400\",\"^G\",\"ltr\",\"^7\",\"paragraph\",\"^@\",\"regular\",\"^A\",\"none\",\"^B\",\"0\",\"^C\",[],\"^D\",\"sourcesanspro\"]]]],\"~:vertical-align\",\"\"],\"~:name\",\"empty-fills-text\",\"~:width\",927.0000000047354,\"^7\",\"^E\",\"~:svg-attrs\",[\"^ \"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",481.00000762939453,\"~:y\",382.0000047821965]],[\"^M\",[\"^ \",\"~:x\",1408.0000076341296,\"~:y\",381.9999886029866]],[\"^M\",[\"^ \",\"~:x\",1408.0000076341296,\"~:y\",654.0000054110197]],[\"^M\",[\"^ \",\"~:x\",481.00000762939453,\"~:y\",654.0000215902297]]],\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:page-id\",\"~ub67e0975-9540-809b-8004-fc65f513641e\",\"~:id\",\"~u3238c45b-33fb-801d-8007-0f19b62450a7\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:position-data\",[[\"~#rect\",[\"^ \",\"~:y\",412.91651947252967,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"~:y1\",2.4166717529296875,\"^J\",915.9666748046875,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"~:x1\",0,\"~:y2\",31.166671752929688,\"^C\",[],\"~:x2\",915.9666748046875,\"~:direction\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"~:height\",28.75,\"^E\",\"The trigger defines the user action that will start the interaction. Penpot currently \"]],[\"^S\",[\"^ \",\"~:y\",446.51651031725623,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",36.01666259765625,\"^J\",627.933349609375,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",64.76666259765625,\"^C\",[],\"^W\",627.933349609375,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\"provides the following triggers (more of them will come):\"]],[\"^S\",[\"^ \",\"~:y\",480.11651642077186,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",69.61666870117188,\"^J\",5.883331298828125,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",98.36666870117188,\"^C\",[],\"^W\",5.883331298828125,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\" \"]],[\"^S\",[\"^ \",\"~:y\",513.7165072654984,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",103.21665954589844,\"^J\",516.3333129882812,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",131.96665954589844,\"^C\",[],\"^W\",516.3333129882812,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\"- On click: when user clicks or tap the hotspot.\"]],[\"^S\",[\"^ \",\"~:y\",547.316513369014,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",136.81666564941406,\"^J\",617.433349609375,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",165.56666564941406,\"^C\",[],\"^W\",617.433349609375,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\"- Mouse enter: when the mouse enter the hotspot area.\"]],[\"^S\",[\"^ \",\"~:y\",580.9165194725297,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",170.4166717529297,\"^J\",627.3499755859375,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",199.1666717529297,\"^C\",[],\"^W\",627.3499755859375,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\"- Mouse leave: when the mouse leaves the hotspot area.\"]],[\"^S\",[\"^ \",\"~:y\",614.5165103172562,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",204.01666259765625,\"^J\",882.2666625976562,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",232.76666259765625,\"^C\",[],\"^W\",882.2666625976562,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\"- After delay: when a certain time has passed after an artboard is shown. Note: \"]],[\"^S\",[\"^ \",\"~:y\",648.1165164207719,\"^;\",\"normal\",\"^<\",\"none\",\"^>\",\"24px\",\"^?\",\"400\",\"^T\",237.61666870117188,\"^J\",365.58331298828125,\"^A\",\"none\",\"^B\",\"normal\",\"~:x\",480.7500076317621,\"^U\",0,\"^V\",266.3666687011719,\"^C\",[],\"^W\",365.58331298828125,\"^X\",\"ltr\",\"^D\",\"\\\"Rubik\\\"\",\"^Y\",28.75,\"^E\",\"this can only be set at artboards.\"]]],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",481.0000076293944,\"~:selrect\",[\"^S\",[\"^ \",\"~:x\",481.0000076293944,\"~:y\",381.99999669259154,\"^J\",927.0000000047354,\"^Y\",272.0000168080332,\"^U\",481.0000076293944,\"^T\",381.99999669259154,\"^W\",1408.0000076341298,\"^V\",654.0000135006247]],\"~:flip-x\",null,\"^Y\",272.0000168080332,\"~:flip-y\",null]]"
+                    }
+                },
+                "~:id": "~u58c5cc60-d124-81bd-8007-0f19b52444ec",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u58c5cc60-d124-81bd-8007-0f19b52444eb",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}

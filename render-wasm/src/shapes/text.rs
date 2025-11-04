@@ -351,6 +351,7 @@ impl TextContent {
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
+        let is_stroke_render = false;
         let mut paragraph_group = Vec::new();
 
         for paragraph in self.paragraphs() {
@@ -363,6 +364,7 @@ impl TextContent {
                     fallback_fonts,
                     remove_alpha,
                     paragraph.line_height(),
+                    is_stroke_render,
                 );
                 let text: String = span.apply_text_transform();
                 builder.push_style(&text_style);
@@ -678,6 +680,7 @@ impl TextSpan {
         fallback_fonts: &HashSet<String>,
         remove_alpha: bool,
         paragraph_line_height: f32,
+        is_stroke_render: bool,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
         let mut paint = paint::Paint::default();
@@ -686,7 +689,7 @@ impl TextSpan {
             paint.set_color(skia::Color::BLACK);
             paint.set_alpha(255);
         } else {
-            paint = merge_fills(&self.fills, *content_bounds);
+            paint = merge_fills(&self.fills, *content_bounds, is_stroke_render);
         }
 
         let max_line_height = f32::max(paragraph_line_height, self.line_height);
@@ -723,11 +726,13 @@ impl TextSpan {
         remove_alpha: bool,
         paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
+        let is_stroke_render = true;
         let mut style = self.to_style(
             &Rect::default(),
             fallback_fonts,
             remove_alpha,
             paragraph_line_height,
+            is_stroke_render,
         );
         if remove_alpha {
             let mut paint = skia::Paint::default();
