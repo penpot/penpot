@@ -76,6 +76,15 @@
     (let [variant (font-db-data font-id font-variant-id)]
       (:ttf-url variant))))
 
+(defn update-text-layout
+  [id]
+  (let [shape-id-buffer (uuid/get-u32 id)]
+    (h/call wasm/internal-module "_update_shape_text_layout_for"
+            (aget shape-id-buffer 0)
+            (aget shape-id-buffer 1)
+            (aget shape-id-buffer 2)
+            (aget shape-id-buffer 3))))
+
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
 (defn- store-font-buffer
   [shape-id font-data font-array-buffer emoji? fallback?]
@@ -100,11 +109,7 @@
             emoji?
             fallback?)
 
-    (h/call wasm/internal-module "_update_shape_text_layout_for"
-            (aget shape-id-buffer 0)
-            (aget shape-id-buffer 1)
-            (aget shape-id-buffer 2)
-            (aget shape-id-buffer 3))
+    (update-text-layout shape-id)
 
     true))
 

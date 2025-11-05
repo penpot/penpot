@@ -238,6 +238,7 @@ pub(crate) struct RenderState {
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
+    pub touched_ids: HashSet<Uuid>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -307,6 +308,7 @@ impl RenderState {
             nested_blurs: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
+            touched_ids: HashSet::default(),
         }
     }
 
@@ -325,6 +327,19 @@ impl RenderState {
         image_data: &[u8],
     ) -> Result<(), String> {
         self.images.add(id, is_thumbnail, image_data)
+    }
+
+    /// Adds an image from an existing WebGL texture, avoiding re-decoding
+    pub fn add_image_from_gl_texture(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        texture_id: u32,
+        width: i32,
+        height: i32,
+    ) -> Result<(), String> {
+        self.images
+            .add_image_from_gl_texture(id, is_thumbnail, texture_id, width, height)
     }
 
     pub fn has_image(&self, id: &Uuid, is_thumbnail: bool) -> bool {
@@ -849,7 +864,8 @@ impl RenderState {
         // debug::render_debug_tiles_for_viewbox(self);
 
         performance::begin_measure!("tile_cache");
-        self.pending_tiles.update(&self.tile_viewbox);
+        self.pending_tiles
+            .update(&self.tile_viewbox, &self.surfaces);
         performance::end_measure!("tile_cache");
 
         self.pending_nodes.clear();
@@ -1174,10 +1190,9 @@ impl RenderState {
                 node_render_state.id
             ))?;
 
-            // If the shape is not in the tile set, then we update
-            // it.
+            // If the shape is not in the tile set, then we add them.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                self.update_tile_for(element, tree);
+                self.add_shape_tiles(element, tree);
             }
 
             if visited_children {
@@ -1431,6 +1446,7 @@ impl RenderState {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) =
                         self.render_shape_tree_partial_uncached(tree, timestamp)?;
+
                     if early_return {
                         return Ok(());
                     }
@@ -1513,50 +1529,77 @@ impl RenderState {
         Ok(())
     }
 
+    /*
+     * Given a shape returns the TileRect with the range of tiles that the shape is in
+     */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let extrect = shape.extrect(tree);
         let tile_size = tiles::get_tile_size(self.get_scale());
         tiles::get_tiles_for_rect(extrect, tile_size)
     }
 
-    pub fn update_tile_for(&mut self, shape: &Shape, tree: ShapesPoolRef) {
+    /*
+     * Given a shape, check the indexes and update it's location in the tile set
+     * returns the tiles that have changed in the process.
+     */
+    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
-        let old_tiles: HashSet<tiles::Tile> = self
+
+        let old_tiles = self
             .tiles
             .get_tiles_of(shape.id)
-            .map_or(HashSet::new(), |tiles| tiles.iter().cloned().collect());
-        let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
-            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
-            .collect();
+            .map_or(Vec::new(), |tiles| tiles.iter().copied().collect());
+
+        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)));
+
+        let mut result = HashSet::<tiles::Tile>::new();
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
-            self.remove_cached_tile_shape(tile, shape.id);
+            self.tiles.remove_shape_at(tile, shape.id);
+            result.insert(tile);
         }
 
         // Then, add the shape to the new tiles
         for tile in new_tiles {
-            self.remove_cached_tile_shape(tile, shape.id);
             self.tiles.add_shape_at(tile, shape.id);
+            result.insert(tile);
         }
+
+        result.iter().copied().collect()
     }
 
-    pub fn remove_cached_tile_shape(&mut self, tile: tiles::Tile, id: Uuid) {
+    /*
+     * Add the tiles forthe shape to the index.
+     * returns the tiles that have been updated
+     */
+    pub fn add_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
+        let tiles: Vec<_> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
+            .collect();
+
+        for tile in tiles.iter() {
+            self.tiles.add_shape_at(*tile, shape.id);
+        }
+        tiles
+    }
+
+    pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
         let rect = self.get_aligned_tile_bounds(tile);
         self.surfaces
             .remove_cached_tile_surface(tile, rect, self.background_color);
-        self.tiles.remove_shape_at(tile, id);
     }
 
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
-        self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles(self.background_color);
+
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    self.update_tile_for(shape, tree);
+                    all_tiles.extend(self.update_shape_tiles(shape, tree));
                 } else {
                     // We only need to rebuild tiles from the first level.
                     for child_id in shape.children_ids_iter(false) {
@@ -1565,18 +1608,29 @@ impl RenderState {
                 }
             }
         }
+
+        // Update the changed tiles
+        self.surfaces.remove_cached_tiles(self.background_color);
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
     pub fn rebuild_tiles(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles");
+
         self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles(self.background_color);
+
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
+
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    self.update_tile_for(shape, tree);
+                    // We have invalidated the tiles so we only need to add the shape
+                    all_tiles.extend(self.add_shape_tiles(shape, tree));
                 }
 
                 for child_id in shape.children_ids_iter(false) {
@@ -1584,7 +1638,43 @@ impl RenderState {
                 }
             }
         }
+
+        // Update the changed tiles
+        self.surfaces.remove_cached_tiles(self.background_color);
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+
         performance::end_measure!("rebuild_tiles");
+    }
+
+    /*
+     * Rebuild the tiles for the shapes that have been modified from the
+     * last time this was executed.
+     */
+    pub fn rebuild_touched_tiles(&mut self, tree: ShapesPoolRef) {
+        performance::begin_measure!("rebuild_touched_tiles");
+
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
+
+        let ids = self.touched_ids.clone();
+
+        for shape_id in ids.iter() {
+            if let Some(shape) = tree.get(shape_id) {
+                if shape_id != &Uuid::nil() {
+                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                }
+            }
+        }
+
+        // Update the changed tiles
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+
+        self.clean_touched();
+
+        performance::end_measure!("rebuild_touched_tiles");
     }
 
     /// Invalidates extended rectangles and updates tiles for a set of shapes
@@ -1595,18 +1685,18 @@ impl RenderState {
     ///
     /// This is useful when you have a pre-computed set of shape IDs that need to be refreshed,
     /// regardless of their relationship to other shapes (e.g., ancestors, descendants, or any other collection).
-    pub fn invalidate_and_update_tiles(
-        &mut self,
-        shape_ids: &IndexSet<Uuid>,
-        tree: ShapesPoolMutRef<'_>,
-    ) {
+    pub fn update_tiles_shapes(&mut self, shape_ids: &IndexSet<Uuid>, tree: ShapesPoolMutRef<'_>) {
+        performance::begin_measure!("invalidate_and_update_tiles");
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
         for shape_id in shape_ids {
             if let Some(shape) = tree.get(shape_id) {
-                if !shape.id.is_nil() {
-                    self.update_tile_for(shape, tree);
-                }
+                all_tiles.extend(self.update_shape_tiles(shape, tree));
             }
         }
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+        performance::end_measure!("invalidate_and_update_tiles");
     }
 
     /// Rebuilds tiles for shapes with modifiers and processes their ancestors
@@ -1617,7 +1707,7 @@ impl RenderState {
     /// This is crucial for frames and groups that contain transformed children.
     pub fn rebuild_modifier_tiles(&mut self, tree: ShapesPoolMutRef<'_>, ids: Vec<Uuid>) {
         let ancestors = all_with_ancestors(&ids, tree, false);
-        self.invalidate_and_update_tiles(&ancestors, tree);
+        self.update_tiles_shapes(&ancestors, tree);
     }
 
     pub fn get_scale(&self) -> f32 {
@@ -1626,5 +1716,13 @@ impl RenderState {
 
     pub fn get_cached_scale(&self) -> f32 {
         self.cached_viewbox.zoom() * self.options.dpr()
+    }
+
+    pub fn mark_touched(&mut self, uuid: Uuid) {
+        self.touched_ids.insert(uuid);
+    }
+
+    pub fn clean_touched(&mut self) {
+        self.touched_ids.clear();
     }
 }

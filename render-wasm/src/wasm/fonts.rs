@@ -57,11 +57,9 @@ pub extern "C" fn store_font(
                 .add(family, &font_bytes, is_emoji, is_fallback);
 
         mem::free_bytes();
-    });
 
-    with_state_mut!(state, {
         let shape_id = uuid_from_u32_quartet(a1, b1, c1, d1);
-        state.update_tile_for_shape(shape_id);
+        state.touch_shape(shape_id);
     });
 }
 

@@ -318,7 +318,7 @@ impl Surfaces {
         }
     }
 
-    pub fn has_cached_tile_surface(&mut self, tile: Tile) -> bool {
+    pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
         self.tiles.has(tile)
     }
 
@@ -365,7 +365,7 @@ impl TileTextureCache {
         }
     }
 
-    pub fn has(&mut self, tile: Tile) -> bool {
+    pub fn has(&self, tile: Tile) -> bool {
         self.grid.contains_key(&tile)
     }
 

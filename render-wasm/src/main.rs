@@ -58,6 +58,9 @@ macro_rules! with_current_shape_mut {
             STATE.as_mut()
         }
         .expect("Got an invalid state pointer");
+
+        $state.touch_current();
+
         if let Some($shape) = $state.current_shape_mut() {
             $block
         }
@@ -103,15 +106,14 @@ pub extern "C" fn init(width: i32, height: i32) {
 
 #[no_mangle]
 pub extern "C" fn clean_up() {
+    with_state_mut!(state, {
+        // Cancel the current animation frame if it exists so
+        // it won't try to render without context
+        let render_state = state.render_state_mut();
+        render_state.cancel_animation_frame();
+    });
     unsafe { STATE = None }
     mem::free_bytes();
-}
-
-#[no_mangle]
-pub extern "C" fn clear_drawing_cache() {
-    with_state_mut!(state, {
-        state.rebuild_tiles();
-    });
 }
 
 #[no_mangle]
@@ -128,13 +130,14 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
         state.set_background_color(color);
-        state.rebuild_tiles();
+        state.rebuild_tiles_shallow();
     });
 }
 
 #[no_mangle]
 pub extern "C" fn render(_: i32) {
     with_state_mut!(state, {
+        state.rebuild_touched_tiles();
         state
             .start_render_loop(performance::get_time())
             .expect("Error rendering");
@@ -189,15 +192,20 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state_mut!(state, {
         let render_state = state.render_state_mut();
         render_state.viewbox.set_all(zoom, x, y);
-        with_state_mut!(state, {
-            // We can have renders in progress
-            state.render_state.cancel_animation_frame();
-            if state.render_state.options.is_profile_rebuild_tiles() {
-                state.rebuild_tiles();
-            } else {
-                state.rebuild_tiles_shallow();
-            }
-        });
+        state.render_from_cache();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_view_end() {
+    with_state_mut!(state, {
+        // We can have renders in progress
+        state.render_state.cancel_animation_frame();
+        if state.render_state.options.is_profile_rebuild_tiles() {
+            state.rebuild_tiles();
+        } else {
+            state.rebuild_tiles_shallow();
+        }
     });
 }
 
@@ -613,13 +621,6 @@ pub extern "C" fn set_modifiers() {
     with_state_mut!(state, {
         state.set_modifiers(modifiers);
         state.rebuild_modifier_tiles(ids);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn update_shape_tiles() {
-    with_state_mut!(state, {
-        state.update_tile_for_current_shape();
     });
 }
 

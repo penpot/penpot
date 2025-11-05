@@ -198,7 +198,7 @@
 
 (defn ^:export dump-object
   [name]
-  (get-object @st/state name))
+  (clj->js (get-object @st/state name)))
 
 (defn get-selected
   [state]

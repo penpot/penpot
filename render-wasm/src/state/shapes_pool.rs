@@ -265,6 +265,7 @@ impl<'a> ShapesPoolImpl<'a> {
         self.shapes.iter()
     }
 
+    #[allow(dead_code)]
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Shape> {
         self.shapes.iter_mut()
     }
