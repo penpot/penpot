@@ -319,5 +319,9 @@
   ([key default]
    (c/get config key default)))
 
+(defn logging-context
+  []
+  {:version/backend (:full version)})
+
 ;; Set value for all new threads bindings.
 (alter-var-root #'*assert* (constantly (contains? flags :backend-asserts)))
