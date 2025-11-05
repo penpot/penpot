@@ -818,30 +818,31 @@
                 (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
 
           (move-objects [objects]
-            (let [valid?   (every? (partial is-valid-move? objects) shapes)
-                  parent   (get objects parent-id)
-                  after-shape-index (d/index-of (:shapes parent) after-shape)
-                  index (if (nil? after-shape-index) index (inc after-shape-index))
-                  frame-id (if (= :frame (:type parent))
-                             (:id parent)
-                             (:frame-id parent))]
+            (let [parent (get objects parent-id)]
+              ;; Do not proceed with the move if parent does not
+              ;; exists; this can happen on a race condition when an
+              ;; inflight move operations lands when parent is deleted
+              (if (and (seq shapes) (every? (partial is-valid-move? objects) shapes) parent)
+                (let [index    (or (some-> (d/index-of (:shapes parent) after-shape) inc) index)
+                      frame-id (if (cfh/frame-shape? parent)
+                                 (:id parent)
+                                 (:frame-id parent))]
+                  (as-> objects $
+                    ;; Add the new shapes to the parent object.
+                    (d/update-when $ parent-id #(add-to-parent % index shapes))
 
-              (if (and valid? (seq shapes))
-                (as-> objects $
-                  ;; Add the new shapes to the parent object.
-                  (d/update-when $ parent-id #(add-to-parent % index shapes))
+                    ;; Update each individual shape link to the new parent
+                    (reduce update-parent-id $ shapes)
 
-                  ;; Update each individual shape link to the new parent
-                  (reduce update-parent-id $ shapes)
+                    ;; Analyze the old parents and clear the old links
+                    ;; only if the new parent is different form old
+                    ;; parent.
+                    (reduce (partial remove-from-old-parent objects) $ shapes)
 
-                  ;; Analyze the old parents and clear the old links
-                  ;; only if the new parent is different form old
-                  ;; parent.
-                  (reduce (partial remove-from-old-parent objects) $ shapes)
+                    ;; Ensure that all shapes of the new parent has a
+                    ;; correct link to the topside frame.
+                    (reduce (partial update-frame-id frame-id) $ shapes)))
 
-                  ;; Ensure that all shapes of the new parent has a
-                  ;; correct link to the topside frame.
-                  (reduce (partial assign-frame-id frame-id) $ shapes))
                 objects)))]
 
     (if page-id
