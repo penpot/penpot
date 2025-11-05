@@ -205,10 +205,9 @@ fn draw_text(
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
 ) {
     let text_content = shape.get_text_content();
-    // FIXME: this does not always return the height we need
-    // let text_height = text_content.size.height;
-    let text_width = text_content.get_width();
-    let text_height = text_content.get_height(text_width);
+    let selrect_width = shape.selrect().width();
+    let text_width = text_content.get_width(selrect_width);
+    let text_height = text_content.get_height(selrect_width);
     let selrect_height = shape.selrect().height();
     let mut global_offset_y = match shape.vertical_align() {
         VerticalAlign::Center => (selrect_height - text_height) / 2.0,

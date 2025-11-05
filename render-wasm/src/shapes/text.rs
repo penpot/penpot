@@ -403,13 +403,14 @@ impl TextContent {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+
         let (width, height) =
             paragraphs
                 .iter()
                 .flatten()
                 .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
                     (
-                        f32::max(paragraph.max_intrinsic_width(), auto_width),
+                        f32::max(paragraph.longest_line(), auto_width),
                         auto_height + paragraph.height(),
                     )
                 });
@@ -452,11 +453,11 @@ impl TextContent {
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
-    pub fn get_width(&self) -> f32 {
+    pub fn get_width(&self, width: f32) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
             self.size.width
         } else {
-            self.bounds.width()
+            width
         }
     }
 
@@ -599,7 +600,6 @@ impl Paragraph {
         self.line_height
     }
 
-    // FIXME: move serialization to wasm module
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
 
@@ -711,7 +711,7 @@ impl TextSpan {
         style.set_font_families(&font_families);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
-        style.set_half_leading(true);
+        style.set_half_leading(false);
 
         style
     }
@@ -753,12 +753,18 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
+    fn remove_ignored_chars(text: &str) -> String {
+        text.chars()
+            .filter(|&c| c >= '\u{0020}' && c != '\u{2028}' && c != '\u{2029}')
+            .collect()
+    }
+
     pub fn apply_text_transform(&self) -> String {
+        let text = Self::remove_ignored_chars(&self.text);
         match self.text_transform {
-            Some(TextTransform::Uppercase) => self.text.to_uppercase(),
-            Some(TextTransform::Lowercase) => self.text.to_lowercase(),
-            Some(TextTransform::Capitalize) => self
-                .text
+            Some(TextTransform::Uppercase) => text.to_uppercase(),
+            Some(TextTransform::Lowercase) => text.to_lowercase(),
+            Some(TextTransform::Capitalize) => text
                 .split_whitespace()
                 .map(|word| {
                     let mut chars = word.chars();
@@ -769,7 +775,7 @@ impl TextSpan {
                 })
                 .collect::<Vec<_>>()
                 .join(" "),
-            None => self.text.clone(),
+            None => text,
         }
     }
 

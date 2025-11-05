@@ -330,7 +330,7 @@ impl Shape {
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
             text.update_layout(self.selrect);
-            text.set_xywh(left, top, right - left, bottom - top);
+            text.set_xywh(left, top, self.selrect.width(), self.selrect.height());
         }
     }
 

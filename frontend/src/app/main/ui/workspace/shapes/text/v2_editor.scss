@@ -35,15 +35,10 @@
   }
 
   [data-itype="inline"] {
-    display: inline-block;
+    display: inline;
     line-break: auto;
     line-height: inherit;
     caret-color: var(--text-editor-caret-color);
-
-    // firefox-only
-    white-space: preserve-spaces;
-
-    // others
     white-space-collapse: pre;
     tab-size: 2;
     -o-tab-size: 2;
