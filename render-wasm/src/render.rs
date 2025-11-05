@@ -329,6 +329,19 @@ impl RenderState {
         self.images.add(id, is_thumbnail, image_data)
     }
 
+    /// Adds an image from an existing WebGL texture, avoiding re-decoding
+    pub fn add_image_from_gl_texture(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        texture_id: u32,
+        width: i32,
+        height: i32,
+    ) -> Result<(), String> {
+        self.images
+            .add_image_from_gl_texture(id, is_thumbnail, texture_id, width, height)
+    }
+
     pub fn has_image(&self, id: &Uuid, is_thumbnail: bool) -> bool {
         self.images.contains(id, is_thumbnail)
     }
