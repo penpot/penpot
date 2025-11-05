@@ -2,7 +2,7 @@
 const config = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   staticDirs: ["../resources/public"],
-  addons: ["@storybook/addon-essentials", "@storybook/addon-themes", "@storybook/addon-interactions"],
+  addons: ["@storybook/addon-themes", "@storybook/addon-docs"],
   core: {
     builder: "@storybook/builder-vite",
     options: {
