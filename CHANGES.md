@@ -64,6 +64,7 @@ penpot on-premise you will need to apply the same changes on your own
 - Add toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
 - Make the file export process more reliable [Taiga #12555](https://tree.taiga.io/project/penpot/us/12555)
 - Add auth flow changes [Taiga #12333](https://tree.taiga.io/project/penpot/us/12333)
+- Add new shape validation mechanism for shapes [Github #7696](https://github.com/penpot/penpot/pull/7696)
 
 ### :bug: Bugs fixed
 
