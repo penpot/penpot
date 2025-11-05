@@ -1187,10 +1187,11 @@ impl RenderState {
 
             if !node_render_state.is_root() {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
+                let extrect = element.extrect(tree);
+                // FIXME: we need to find a way to update the extrect properly instead
+                let bounds = transformed_element.apply_children_blur(extrect, tree);
 
-                let is_visible = transformed_element
-                    .extrect(tree)
-                    .intersects(self.render_area)
+                let is_visible = bounds.intersects(self.render_area)
                     && !transformed_element.hidden
                     && !transformed_element.visually_insignificant(self.get_scale(), tree);
 
@@ -1351,9 +1352,7 @@ impl RenderState {
 
             match element.shape_type {
                 Type::Frame(_) | Type::Group(_) => {
-                    if let Some(blur) = element.blur {
-                        self.nested_blurs.push(Some(blur));
-                    }
+                    self.nested_blurs.push(element.blur);
                 }
                 _ => {}
             }

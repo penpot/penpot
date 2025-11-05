@@ -861,6 +861,45 @@ impl Shape {
         rect
     }
 
+    pub fn apply_children_blur(&self, mut rect: math::Rect, tree: ShapesPoolRef) -> math::Rect {
+        let mut children_blur = 0.0;
+        let mut current_parent_id = self.parent_id;
+
+        while let Some(parent_id) = current_parent_id {
+            if parent_id.is_nil() {
+                break;
+            }
+
+            if let Some(parent) = tree.get(&parent_id) {
+                match parent.shape_type {
+                    Type::Frame(_) | Type::Group(_) => {
+                        if let Some(blur) = parent.blur {
+                            if !blur.hidden && blur.blur_type == BlurType::LayerBlur {
+                                children_blur += blur.value;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+
+                current_parent_id = parent.parent_id;
+            } else {
+                break;
+            }
+        }
+
+        let blur = children_blur;
+
+        if blur > 0.0 {
+            rect.left -= blur;
+            rect.top -= blur;
+            rect.right += blur;
+            rect.bottom += blur;
+        }
+
+        rect
+    }
+
     pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
@@ -886,6 +925,7 @@ impl Shape {
         rect = self.apply_shadow_bounds(rect);
         rect = self.apply_blur_bounds(rect);
         rect = self.apply_children_bounds(rect, shapes_pool);
+        rect = self.apply_children_blur(rect, shapes_pool);
 
         rect
     }
