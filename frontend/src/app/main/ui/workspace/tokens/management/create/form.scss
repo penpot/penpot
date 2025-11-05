@@ -41,34 +41,6 @@
   gap: var(--sp-xs);
 }
 
-.nested-input-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-m);
-}
-
-.typography-inputs-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-m);
-}
-
-.typography-inputs {
-  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
-  padding-inline-start: var(--sp-m);
-}
-
-.title-bar {
-  display: grid;
-  grid-template-columns: 1fr auto;
-}
-.title {
-  @include t.use-typography("body-small");
-  color: var(--color-foreground-primary);
-  display: flex;
-  align-items: center;
-}
-
 .warning-name-change-notification-wrapper {
   margin-block-start: var(--sp-l);
 }

@@ -38,6 +38,7 @@
     :opacity "percentage"
     :number "number"
     :rotation "rotation"
+    :shadow "drop-shadow"
     :spacing "padding-extended"
     :string "text-mixed"
     :stroke-width "stroke-size"

@@ -1,0 +1,31 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+
+.typography-inputs-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.title-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.title {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+}
+
+.typography-inputs {
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
+  padding-inline-start: var(--sp-m);
+}
