@@ -264,3 +264,13 @@
       "regular" (unchecked-get values "normal")
       "italic" (unchecked-get values "italic")
       default)))
+
+(defn translate-browser
+  [browser]
+  (case browser
+    :firefox 0
+    :chrome 1
+    :safari 2
+    :edge 3
+    :unknown 4
+    4))

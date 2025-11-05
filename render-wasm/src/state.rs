@@ -22,6 +22,7 @@ pub(crate) struct State<'a> {
     pub render_state: RenderState,
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
+    pub current_browser: u8,
     pub shapes: ShapesPool<'a>,
 }
 
@@ -31,6 +32,7 @@ impl<'a> State<'a> {
             render_state: RenderState::new(width, height),
             text_editor_state: TextEditorState::new(),
             current_id: None,
+            current_browser: 0,
             shapes: ShapesPool::new(),
         }
     }
@@ -121,6 +123,10 @@ impl<'a> State<'a> {
 
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.render_state.set_background_color(color);
+    }
+
+    pub fn set_browser(&mut self, browser: u8) {
+        self.current_browser = browser;
     }
 
     /// Sets the parent for the current shape and updates the parent's extended rectangle

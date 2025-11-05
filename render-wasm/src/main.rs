@@ -92,13 +92,19 @@ macro_rules! with_state_mut_current_shape {
     };
 }
 
-/// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
     let state_box = Box::new(State::new(width, height));
     unsafe {
         STATE = Some(state_box);
     }
+}
+
+#[no_mangle]
+pub extern "C" fn set_browser(browser: u8) {
+    with_state_mut!(state, {
+        state.set_browser(browser);
+    });
 }
 
 #[no_mangle]

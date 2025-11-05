@@ -98,12 +98,18 @@
         styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)]
     (dissoc styles :line-height)))
 
+(defn normalize-spaces
+  "Add zero-width spaces after forward slashes to enable word breaking"
+  [text]
+  (when text
+    (.replace text (js/RegExp "/" "g") "/\u200B")))
+
 (defn get-inline-children
   [inline paragraph]
   [(if (and (= "" (:text inline))
             (= 1 (count (:children paragraph))))
      (dom/create-element "br")
-     (dom/create-text (:text inline)))])
+     (dom/create-text (normalize-spaces (:text inline))))])
 
 (defn create-random-key
   []

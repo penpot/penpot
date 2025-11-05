@@ -35,11 +35,13 @@
   }
 
   [data-itype="inline"] {
+    box-sizing: content-box;
     display: inline;
-    line-break: auto;
     line-height: inherit;
     caret-color: var(--text-editor-caret-color);
     white-space-collapse: pre;
+    word-break: normal;
+    overflow-wrap: break-word;
     tab-size: 2;
     -o-tab-size: 2;
   }
