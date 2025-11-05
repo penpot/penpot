@@ -463,35 +463,16 @@
 
 ;; Changes Processing Impl
 
-(defn validate-shapes!
-  [data-old data-new items]
-  (letfn [(validate-shape! [[page-id id]]
-            (let [shape-old (dm/get-in data-old [:pages-index page-id :objects id])
-                  shape-new (dm/get-in data-new [:pages-index page-id :objects id])]
-
-              ;; If object has changed or is new verify is correct
-              (when (and (some? shape-new)
-                         (not= shape-old shape-new))
-                (when-not (and (cts/valid-shape? shape-new)
-                               (cts/shape? shape-new))
-                  (ex/raise :type :assertion
-                            :code :data-validation
-                            :hint (str "invalid shape found after applying changes on file "
-                                       (:id data-new))
-                            :file-id (:id data-new)
-                            ::sm/explain (cts/explain-shape shape-new))))))]
-
-    (->> (into #{} (map :page-id) items)
-         (mapcat (fn [page-id]
-                   (filter #(= page-id (:page-id %)) items)))
-         (mapcat (fn [{:keys [type id page-id] :as item}]
-                   (sequence
-                    (map (partial vector page-id))
-                    (case type
-                      (:add-obj :mod-obj :del-obj) (cons id nil)
-                      (:mov-objects :reg-objects)  (:shapes item)
-                      nil))))
-         (run! validate-shape!))))
+#_:clj-kondo/ignore
+(defn- validate-shape
+  [{:keys [id] :as shape} page-id]
+  (when-not (cts/valid-shape? shape)
+    (ex/raise :type :assertion
+              :code :data-validation
+              :hint (str "invalid shape found '" id "'")
+              :page-id page-id
+              :shape-id id
+              ::sm/explain (cts/explain-shape shape))))
 
 (defn- process-touched-change
   [data {:keys [id page-id component-id]}]
@@ -518,14 +499,8 @@
      (check-changes items))
 
    (binding [*touched-changes* (volatile! #{})]
-     (let [result (reduce #(or (process-change %1 %2) %1) data items)
-           result (reduce process-touched-change result @*touched-changes*)]
-       ;; Validate result shapes (only on the backend)
-       ;;
-       ;; TODO: (PERF) add changed shapes tracking and only validate
-       ;; the tracked changes instead of iterate over all shapes
-       #?(:clj (validate-shapes! data result items))
-       result))))
+     (let [result (reduce #(or (process-change %1 %2) %1) data items)]
+       (reduce process-touched-change result @*touched-changes*)))))
 
 ;; --- Comment Threads
 
@@ -613,9 +588,10 @@
 
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
-  (let [update-container
-        (fn [container]
-          (ctst/add-shape id obj container frame-id parent-id index ignore-touched))]
+  ;; NOTE: we only perform hard validation on backend
+  #?(:clj (validate-shape obj page-id))
+
+  (let [update-container #(ctst/add-shape id obj % frame-id parent-id index ignore-touched)]
 
     (when *state*
       (swap! *state* collect-shape-media-refs obj page-id))
@@ -637,6 +613,9 @@
 
       (when (and *state* page-id)
         (swap! *state* collect-shape-media-refs shape page-id))
+
+      ;; NOTE: we only perform hard validation on backend
+      #?(:clj (validate-shape shape page-id))
 
       (assoc objects id shape))
 
@@ -720,22 +699,24 @@
 
           (update-group [group objects]
             (let [lookup   (d/getf objects)
-                  children (get group :shapes)]
-              (cond
-                ;; If the group is empty we don't make any changes. Will be removed by a later process
-                (empty? children)
-                group
+                  children (get group :shapes)
+                  group    (cond
+                             ;; If the group is empty we don't make any changes. Will be removed by a later process
+                             (empty? children)
+                             group
 
-                (= :bool (:type group))
-                (path/update-bool-shape group objects)
+                             (= :bool (:type group))
+                             (path/update-bool-shape group objects)
 
-                (:masked-group group)
-                (->> (map lookup children)
-                     (set-mask-selrect group))
+                             (:masked-group group)
+                             (->> (map lookup children)
+                                  (set-mask-selrect group))
 
-                :else
-                (->> (map lookup children)
-                     (gsh/update-group-selrect group)))))]
+                             :else
+                             (->> (map lookup children)
+                                  (gsh/update-group-selrect group)))]
+              #?(:clj (validate-shape group page-id))
+              group))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)
@@ -817,6 +798,11 @@
                 (not (cfh/frame-shape? obj))
                 (as-> $$ (reduce (partial update-frame-id frame-id) $$ (:shapes obj))))))
 
+          (validate-shape [objects #_:clj-kondo/ignore shape-id]
+            #?(:clj (when-let [shape (get objects shape-id)]
+                      (validate-shape shape page-id)))
+            objects)
+
           (move-objects [objects]
             (let [parent (get objects parent-id)]
               ;; Do not proceed with the move if parent does not
@@ -841,7 +827,10 @@
 
                     ;; Ensure that all shapes of the new parent has a
                     ;; correct link to the topside frame.
-                    (reduce (partial update-frame-id frame-id) $ shapes)))
+                    (reduce (partial update-frame-id frame-id) $ shapes)
+
+                    ;; Perform validation of the affected shapes
+                    (reduce validate-shape $ shapes)))
 
                 objects)))]
 
