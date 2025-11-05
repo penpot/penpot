@@ -7,7 +7,7 @@
 import * as React from "react";
 import Components from "@target/components";
 
-import { userEvent, within, expect } from "@storybook/test";
+import { userEvent, within, expect } from "storybook/test";
 
 const { Combobox } = Components;
 
