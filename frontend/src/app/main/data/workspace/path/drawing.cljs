@@ -20,6 +20,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.helpers :as helpers]
@@ -43,7 +44,7 @@
      (= type :app.main.data.workspace.path.shortcuts/esc-pressed)
      (= type :app.main.data.workspace.common/clear-edition-mode)
      (= type :app.main.data.workspace.edition/clear-edition-mode)
-     (= type :app.main.data.workspace/finalize-page)
+     (= type ::dwpg/finalize-page)
      (= event :interrupt) ;; ESC
      (and ^boolean (mse/mouse-event? event)
           ^boolean (mse/mouse-double-click-event? event)))))

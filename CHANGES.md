@@ -99,6 +99,7 @@
 - Fix paste without selection sends the new element in the back [Taiga #12382](https://tree.taiga.io/project/penpot/issue/12382)
 - Fix options button does not work for comments created in the lower part of the screen [Taiga #12422](https://tree.taiga.io/project/penpot/issue/12422)
 - Fix problem when checking usage with removed teams [Taiga #12442](https://tree.taiga.io/project/penpot/issue/12442)
+- Fix focus mode persisting across page/file navigation [Taiga #12469](https://tree.taiga.io/project/penpot/issue/12469)
 
 ## 2.10.1
 
