@@ -218,6 +218,9 @@
     (when (or (nil? revn) (= revn (:revn file)))
       file)))
 
+;; FIXME: we should skip files that does not match the revn on the
+;; props and add proper schema for this task props
+
 (defn- process-file!
   [cfg {:keys [file-id] :as props}]
   (if-let [file (get-file cfg props)]

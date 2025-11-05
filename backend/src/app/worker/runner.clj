@@ -158,7 +158,9 @@
             (inst-ms (:scheduled-at task)))
       (l/wrn :hint "skiping task, rescheduled"
              :task-id task-id
-             :runner-id id)
+             :runner-id id
+             :scheduled-at (ct/format-inst (:scheduled-at task))
+             :expected-scheduled-at (ct/format-inst scheduled-at))
 
       :else
       (let [result (run-task cfg task)]
@@ -179,7 +181,8 @@
                           {:error explain
                            :status "retry"
                            :modified-at now
-                           :scheduled-at (ct/plus now delay)
+                           :scheduled-at (-> (ct/plus now delay)
+                                             (ct/truncate :millisecond))
                            :retry-num nretry}
                           {:id (:id task)})
               nil))
