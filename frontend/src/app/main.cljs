@@ -6,6 +6,7 @@
 
 (ns app.main
   (:require
+   ["@penpot/ts" :refer [setTranslation]]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.types.objects-map]
@@ -37,6 +38,8 @@
 
 (log/setup! {:app :info})
 (log/set-level! :debug)
+
+(setTranslation i18n/tr)
 
 (when (= :browser cf/target)
   (log/inf :version (:full cf/version)

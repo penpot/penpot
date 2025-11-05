@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
   (:require
+   ["@penpot/ts" :refer [TestTsxComponent]]
    [app.common.geom.point :as gpt]
    [app.common.time :as ct]
    [app.main.data.common :as dcm]
@@ -50,8 +51,11 @@
    ::mf/props :obj
    ::mf/private true}
   [{:keys [can-edit]}]
+;;  (js/console.log "xxxx" TestTsxComponent)
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+     [:div
+      [:> TestTsxComponent]]
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
      (when can-edit
