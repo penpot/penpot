@@ -17,6 +17,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.notifications :as-alias wnt]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
    [app.main.render :as render]
@@ -254,7 +255,7 @@
       (let [stopper-s (rx/filter
                        (fn [event]
                          (as-> (ptk/type event) type
-                           (or (= :app.main.data.workspace/finalize-page type)
+                           (or (= ::dwpg/finalize-page type)
                                (= ::watch-state-changes type))))
                        stream)
 
