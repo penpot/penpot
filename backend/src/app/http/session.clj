@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.http.auth :as-alias http.auth]
    [app.http.session.tasks :as-alias tasks]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
@@ -25,13 +26,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFAULTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; A default cookie name for storing the session.
-(def default-auth-token-cookie-name "auth-token")
-
-;; A cookie that we can use to check from other sites of the same
-;; domain if a user is authenticated.
-(def default-auth-data-cookie-name "auth-data")
 
 ;; Default value for cookie max-age
 (def default-cookie-max-age (ct/duration {:days 7}))
@@ -169,7 +163,7 @@
   [{:keys [::manager]}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request response]
-    (let [cname   (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
+    (let [cname   (cf/get :auth-token-cookie-name)
           cookie  (yreq/get-cookie request cname)]
       (l/trc :hint "delete" :profile-id (:profile-id request))
       (some->> (:value cookie) (delete! manager))
@@ -183,21 +177,14 @@
   (tokens/generate cfg {:iss "authentication"
                         :iat created-at
                         :uid profile-id}))
-(defn- decode-token
+(defn decode-token
   [cfg token]
-  (when token
-    (tokens/verify cfg {:token token :iss "authentication"})))
-
-(defn- get-token
-  [request]
-  (let [cname  (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-        cookie (some-> (yreq/get-cookie request cname) :value)]
-    (when-not (str/empty? cookie)
-      cookie)))
-
-(defn- get-session
-  [manager token]
-  (some->> token (read manager)))
+  (try
+    (tokens/verify cfg {:token token :iss "authentication"})
+    (catch Throwable cause
+      (l/trc :hint "exception on decoding token"
+             :token token
+             :cause cause))))
 
 (defn- renew-session?
   [{:keys [updated-at] :as session}]
@@ -205,44 +192,38 @@
        (let [elapsed (ct/diff updated-at (ct/now))]
          (neg? (compare default-renewal-max-age elapsed)))))
 
-(defn- wrap-soft-auth
+(defn- wrap-authz
   [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
-  (letfn [(handle-request [request]
-            (try
-              (let [token  (get-token request)
-                    claims (decode-token cfg token)]
-                (cond-> request
-                  (map? claims)
-                  (-> (assoc ::token-claims claims)
-                      (assoc ::token token))))
-              (catch Throwable cause
-                (l/trc :hint "exception on decoding malformed token" :cause cause)
-                request)))]
+  (fn [{:keys [::http.auth/token-type] :as request}]
+    (cond
+      (= token-type :cookie)
+      (let [session (some->> (get request ::http.auth/token)
+                             (read manager))
+            request (cond-> request
+                      (some? session)
+                      (-> (assoc ::profile-id (:profile-id session))
+                          (assoc ::id (:id session))))
 
-    (fn [request]
-      (handler (handle-request request)))))
+            response (handler request)]
 
-(defn- wrap-authz
-  [handler {:keys [::manager]}]
-  (assert (manager? manager) "expected valid session manager")
-  (fn [request]
-    (let [session  (get-session manager (::token request))
-          request  (cond-> request
-                     (some? session)
-                     (assoc ::profile-id (:profile-id session)
-                            ::id (:id session)))
-          response (handler request)]
+        (if (renew-session? session)
+          (let [session (update! manager session)]
+            (-> response
+                (assign-auth-token-cookie session)))
+          response))
 
-      (if (renew-session? session)
-        (let [session (update! manager session)]
-          (-> response
-              (assign-auth-token-cookie session)))
-        response))))
+      (= token-type :bearer)
+      (let [session (some->> (get request ::http.auth/token)
+                             (read manager))
+            request (cond-> request
+                      (some? session)
+                      (-> (assoc ::profile-id (:profile-id session))
+                          (assoc ::id (:id session))))]
+        (handler request))
 
-(def soft-auth
-  {:name ::soft-auth
-   :compile (constantly wrap-soft-auth)})
+      :else
+      (handler request))))
 
 (def authz
   {:name ::authz
@@ -259,7 +240,7 @@
         secure?    (contains? cf/flags :secure-session-cookies)
         strict?    (contains? cf/flags :strict-session-cookies)
         cors?      (contains? cf/flags :cors)
-        name       (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
+        name       (cf/get :auth-token-cookie-name)
         comment    (str "Renewal at: " (ct/format-inst renewal :rfc1123))
         cookie     {:path "/"
                     :http-only true
@@ -272,7 +253,7 @@
 
 (defn- clear-auth-token-cookie
   [response]
-  (let [cname (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
+  (let [cname (cf/get :auth-token-cookie-name)]
     (update response :cookies assoc cname {:path "/" :value "" :max-age 0})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

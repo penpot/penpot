@@ -47,6 +47,7 @@
    :auto-file-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"
+
    :host "localhost"
    :tenant "default"
 
@@ -56,6 +57,8 @@
 
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
+
+   :auth-token-cookie-name "auth-token"
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -90,7 +93,7 @@
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} :string]
-    [:public-uri {:optional false} :string]
+    [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 
     [:http-server-port {:optional true} ::sm/int]

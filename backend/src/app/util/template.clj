@@ -9,7 +9,7 @@
    [app.common.exceptions :as ex]
    [selmer.parser :as sp]))
 
-;; (sp/cache-off!)
+(sp/cache-off!)
 
 (defn render
   [path context]

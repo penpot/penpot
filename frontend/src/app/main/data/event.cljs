@@ -243,7 +243,7 @@
 (defn- persist-events
   [events]
   (if (seq events)
-    (let [uri    (u/join cf/public-uri "api/rpc/command/push-audit-events")
+    (let [uri    (u/join cf/public-uri "api/rpc/methods/push-audit-events")
           params {:uri uri
                   :method :post
                   :credentials "include"

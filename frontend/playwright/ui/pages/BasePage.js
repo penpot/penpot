@@ -9,7 +9,7 @@ export class BasePage {
       );
     }
 
-    const url = typeof path === "string" ? `**/api/rpc/command/${path}` : path;
+    const url = typeof path === "string" ? `**/api/rpc/methods/${path}` : path;
     const interceptConfig = {
       status: 200,
       contentType: "application/transit+json",

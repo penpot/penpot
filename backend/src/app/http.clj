@@ -25,7 +25,6 @@
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
-   [app.rpc.doc :as-alias rpc.doc]
    [app.setup :as-alias setup]
    [integrant.core :as ig]
    [reitit.core :as r]
@@ -149,7 +148,6 @@
   [:map
    [::ws/routes schema:routes]
    [::rpc/routes schema:routes]
-   [::rpc.doc/routes schema:routes]
    [::oidc/routes schema:routes]
    [::assets/routes schema:routes]
    [::debug/routes schema:routes]
@@ -171,8 +169,9 @@
                       [sec/sec-fetch-metadata]
                       [mw/params]
                       [mw/format-response]
-                      [session/soft-auth cfg]
-                      [actoken/soft-auth cfg]
+                      [mw/auth {:bearer (partial session/decode-token cfg)
+                                :cookie (partial session/decode-token cfg)
+                                :token  (partial actoken/decode-token cfg)}]
                       [mw/parse-request]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
@@ -188,9 +187,5 @@
       (::mgmt/routes cfg)]
 
      (::ws/routes cfg)
-
-     ["/api" {:middleware [[mw/cors]
-                           [sec/client-header-check]]}
-      (::oidc/routes cfg)
-      (::rpc.doc/routes cfg)
-      (::rpc/routes cfg)]]]))
+     (::oidc/routes cfg)
+     (::rpc/routes cfg)]]))

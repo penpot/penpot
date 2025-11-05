@@ -12,6 +12,7 @@
    [app.common.schema :as-alias sm]
    [app.common.transit :as t]
    [app.config :as cf]
+   [app.http.auth :as-alias auth]
    [app.http.errors :as errors]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
@@ -240,3 +241,61 @@
              (if (contains? allowed method)
                (handler request)
                {::yres/status 405}))))))})
+
+(defn- wrap-auth
+  [handler decoders]
+  (let [token-re
+        #"(?i)^(Token|Bearer)\s+(.*)"
+
+        get-token-from-authorization
+        (fn [request]
+          (when-let [[_ token-type token] (some->> (yreq/get-header request "authorization")
+                                                   (re-matches token-re))]
+            (if (= "token" (str/lower token-type))
+              [:token token]
+              [:bearer token])))
+
+        get-token-from-cookie
+        (fn [request]
+          (let [cname (cf/get :auth-token-cookie-name)
+                token (some-> (yreq/get-cookie request cname) :value)]
+            (when-not (str/empty? token)
+              [:cookie token])))
+
+        get-token
+        (some-fn get-token-from-cookie get-token-from-authorization)
+
+        process-request
+        (fn [request]
+          (if-let [[token-type token] (get-token request)]
+            (let [request (-> request
+                              (assoc ::auth/token token)
+                              (assoc ::auth/token-type token-type))
+                  decoder (get decoders token-type)]
+
+              (if (fn? decoder)
+                (assoc request ::auth/claims (delay (decoder token)))
+                request))
+            request))]
+
+    (fn [request]
+      (-> request process-request handler))))
+
+(def auth
+  {:name ::auth
+   :compile (constantly wrap-auth)})
+
+(defn- wrap-shared-key-auth
+  [handler shared-key]
+  (if shared-key
+    (fn [request]
+      (let [key (yreq/get-header request "x-shared-key")]
+        (if (= key shared-key)
+          (handler request)
+          {::yres/status 403})))
+    (fn [_ _]
+      {::yres/status 403})))
+
+(def shared-key-auth
+  {:name ::shared-key-auth
+   :compile (constantly wrap-shared-key-auth)})

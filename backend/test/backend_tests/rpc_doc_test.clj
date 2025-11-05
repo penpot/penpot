@@ -23,7 +23,7 @@
   (smt/check!
    (smt/for [context (->> sg/int
                           (sg/fmap (fn [_]
-                                     (rpc.doc/prepare-openapi-context (::rpc/methods th/*system*)))))]
+                                     (#'rpc.doc/openapi-context (::rpc/methods th/*system*)))))]
      (try
        (json/encode context)
        true

@@ -21,6 +21,8 @@
    [app.email.whitelist :as email.whitelist]
    [app.http.client :as http]
    [app.http.errors :as errors]
+   [app.http.middleware :as mw]
+   [app.http.security :as sec]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as rpc]
@@ -690,8 +692,9 @@
 (defmethod ig/init-key ::routes
   [_ cfg]
   (let [cfg (update cfg :providers d/without-nils)]
-    ["" {:middleware [[session/authz cfg]
-                      [provider-lookup cfg]]}
+    ["/api" {:middleware [[mw/cors]
+                          [sec/client-header-check]
+                          [provider-lookup cfg]]}
      ["/auth/oauth"
       ["/:provider"
        {:handler auth-handler

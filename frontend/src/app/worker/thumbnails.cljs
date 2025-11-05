@@ -43,7 +43,7 @@
 
 (defn- request-data-for-thumbnail
   [file-id revn]
-  (let [path    "api/rpc/command/get-file-data-for-thumbnail"
+  (let [path    "api/rpc/methods/get-file-data-for-thumbnail"
         params   {:file-id file-id
                   :revn revn
                   :strip-frames-with-thumbnails true}
