@@ -38,7 +38,7 @@
   display: flex;
   flex-direction: column;
   height: calc(-38px + var(--height, deprecated.$s-200));
-  width: var(--width);
+  width: var(--left-sidebar-width);
   overflow-x: hidden;
   overflow-y: overlay;
   scrollbar-gutter: stable;

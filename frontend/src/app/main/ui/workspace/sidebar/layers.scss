@@ -207,13 +207,13 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));
-  width: calc(var(--width) + var(--depth) * var(--layer-indentation-size));
+  width: calc(var(--left-sidebar-width) + var(--depth) * var(--layer-indentation-size));
   overflow-x: auto;
   overflow-y: overlay;
   scrollbar-gutter: stable;
 
   .element-list {
-    width: var(--width);
+    width: var(--left-sidebar-width);
     display: grid;
   }
 }
