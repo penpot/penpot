@@ -2,6 +2,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token*]]
    [app.util.dom :as dom]
@@ -39,6 +41,8 @@
                 reference-label
                 set-active-tab
                 title
+                type
+                on-add-shadow
                 update-composite-backup-value]} custom-input-token-value-props
         reference-tab-active? (= :reference active-tab)
         ;; Backup value ref
@@ -90,7 +94,13 @@
        [:& radio-button {:icon deprecated-icon/tokens
                          :value "reference"
                          :title (tr "workspace.tokens.use-reference")
-                         :id "reference-opt"}]]]
+                         :id "reference-opt"}]]
+      (when (= type :shadow)
+        [:> icon-button* {:icon i/add
+                          :type "button"
+                          :on-click on-add-shadow
+                          :data-testid "shadow-add-button"
+                          :aria-label (tr "workspace.tokens.shadow-add-shadow")}])]
      [:div {:class (stl/css :typography-inputs)}
       (if reference-tab-active?
         [:> composite-reference-input*

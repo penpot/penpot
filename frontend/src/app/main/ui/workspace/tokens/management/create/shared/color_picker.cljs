@@ -69,7 +69,7 @@
   (let [{:keys [color on-display-colorpicker]} custom-input-token-value-props
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
-
+        _ (.log js/console (clj->js token-resolve-result))
         on-click-swatch
         (mf/use-fn
          (mf/deps color-ramp-open? on-display-colorpicker)
@@ -125,4 +125,5 @@
        [:> ramp*
         {:color (some-> color (tinycolor/valid-color))
          :on-change on-change'}])
-     [:> token-value-hint* {:result token-resolve-result}]]))
+     (when token-resolve-result
+       [:> token-value-hint* {:result token-resolve-result}])]))

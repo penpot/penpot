@@ -658,13 +658,13 @@
 (mf/defc composite-form*
   "Wrapper around form* that manages composite/reference tab state.
    Takes the same props as form* plus a function to determine if a token value is a reference."
-  [{:keys [token is-reference-fn composite-tab reference-icon title update-composite-backup-value] :rest props}]
+  [{:keys [token is-reference-fn composite-tab reference-icon title update-composite-backup-value type on-add-shadow] :rest props}]
   (let [active-tab* (mf/use-state (if (is-reference-fn (:value token)) :reference :composite))
         active-tab (deref active-tab*)
 
         custom-input-token-value-props
         (mf/use-memo
-         (mf/deps active-tab composite-tab reference-icon title update-composite-backup-value is-reference-fn)
+         (mf/deps active-tab composite-tab reference-icon title update-composite-backup-value is-reference-fn type)
          (fn []
            {:active-tab active-tab
             :set-active-tab #(reset! active-tab* %)
@@ -672,6 +672,8 @@
             :reference-icon reference-icon
             :reference-label (tr "workspace.tokens.reference-composite")
             :title title
+            :type type
+            :on-add-shadow on-add-shadow
             :update-composite-backup-value update-composite-backup-value
             :is-reference-fn is-reference-fn}))
 
@@ -728,7 +730,7 @@
 (mf/defc shadow-form*
   [{:keys [token] :rest props}]
   (let [on-get-token-value
-        (mf/use-callback
+        (mf/use-fn
          (fn [e prev-composite-value]
            (let [prev-composite-value (or prev-composite-value [])
                  [idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
@@ -742,7 +744,7 @@
                :else (assoc-in prev-composite-value token-type-at-index input-value)))))
 
         update-composite-backup-value
-        (mf/use-callback
+        (mf/use-fn
          (fn [prev-composite-value e]
            (let [[idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
                  token-value (case token-type
@@ -754,7 +756,19 @@
              (if valid?
                (assoc-in (or prev-composite-value []) token-type-at-index token-value)
                ;; Remove empty values so they don't retrigger validation when switching tabs
-               (update prev-composite-value idx dissoc token-type)))))]
+               (update prev-composite-value idx dissoc token-type)))))
+        
+        on-add-shadow
+        #(prn "Add shadow clicked")
+        ;; (mf/use-fn
+        ;;  (mf/deps shadows update-composite-value)
+        ;;  (fn []
+        ;;    (update-composite-backup-value
+        ;;     (fn [state]
+        ;;       (let [new-state (update state :composite (fnil conj []) {})]
+        ;;         (reset! shadows* (:composite new-state))
+        ;;         new-state)))))
+        ]
     [:> composite-form*
      (mf/spread-props props {:token token
                              :composite-tab shadow-value-inputs*
@@ -762,6 +776,8 @@
                              :is-reference-fn cto/typography-composite-token-reference?
                              :title (tr "workspace.tokens.shadow-title")
                              :validate-token validate-shadow-token
+                             :type :shadow
+                             :on-add-shadow on-add-shadow
                              :on-get-token-value on-get-token-value
                              :update-composite-backup-value update-composite-backup-value})]))
 

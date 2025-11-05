@@ -11,11 +11,9 @@
 
    [app.common.types.token :as cto]
    [app.main.data.style-dictionary :as sd]
-
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token*]]
    [app.main.ui.workspace.tokens.management.create.shared.color-picker :refer [color-picker*]]
    [app.util.i18n :refer [tr]]
@@ -24,7 +22,7 @@
 
 (mf/defc inset-type-select*
   {::mf/private true}
-  [{:keys [default-value shadow-idx label on-change]}]
+  [{:keys [default-value shadow-idx on-change]}]
   (let [selected* (mf/use-state (or (str default-value) "false"))
         selected (deref selected*)
 
@@ -32,25 +30,29 @@
         (mf/use-fn
          (mf/deps on-change selected shadow-idx)
          (fn [value e]
-           (obj/set! e "tokenValue" (if (= "true" value) true false))
-           (on-change e)
-           (reset! selected* (str value))))]
+           #_(obj/set! e "tokenValue" (if (= "true" value) true false))
+           (prn value)
+          ;;  (on-change e)
+           #_(reset! selected* value)))
+        options 
+        (mf/with-memo []
+          [{:id "drop-shadow" :label "drop-shadow" :icon i/drop-shadow}
+           {:id "inner-shadow" :label "inner-shadow" :icon i/inner-shadow}])]
+    
     [:div {:class (stl/css :input-row)}
-     [:div {:class (stl/css :inset-label)} label]
-     [:& radio-buttons {:selected selected
-                        :on-change on-change
-                        :name (str "inset-select-" shadow-idx)}
-      [:& radio-button {:value "false"
-                        :title "false"
-                        :icon "❌"
-                        :id (str "inset-default-" shadow-idx)}]
-      [:& radio-button {:value "true"
-                        :title "true"
-                        :icon "✅"
-                        :id (str "inset-false-" shadow-idx)}]]]))
+     [:> select* {:default-selected selected
+                  :variant "ghost"
+                  :options options
+                  :on-change on-change}]]))
 
 (def ^:private shadow-inputs
   #(d/ordered-map
+    :inset
+    {:label (tr "workspace.tokens.shadow-inset")
+     :placeholder (tr "workspace.tokens.shadow-inset")}
+    :color
+    {:label (tr "workspace.tokens.shadow-color")
+     :placeholder (tr "workspace.tokens.shadow-color")}
     :offsetX
     {:label (tr "workspace.tokens.shadow-x")
      :placeholder (tr "workspace.tokens.shadow-x")}
@@ -62,13 +64,11 @@
      :placeholder (tr "workspace.tokens.shadow-blur")}
     :spread
     {:label (tr "workspace.tokens.shadow-spread")
-     :placeholder (tr "workspace.tokens.shadow-spread")}
-    :color
-    {:label (tr "workspace.tokens.shadow-color")
-     :placeholder (tr "workspace.tokens.shadow-color")}
-    :inset
-    {:label (tr "workspace.tokens.shadow-inset")
-     :placeholder (tr "workspace.tokens.shadow-inset")}))
+     :placeholder (tr "workspace.tokens.shadow-spread")}))
+
+(def ^:private input-icon
+  {:offsetX i/character-x
+   :offsetY i/character-y})
 
 (mf/defc shadow-color-picker-wrapper*
   "Wrapper for color-picker* that passes shadow color state from parent.
@@ -99,7 +99,6 @@
   {::mf/private true}
   [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-external-update-value token-resolve-result errors-by-key shadow-color]}]
   (let [color-input-ref (mf/use-ref)
-
         on-change
         (mf/use-fn
          (mf/deps shadow-idx input-type on-update-value)
@@ -130,24 +129,31 @@
         :shadow-idx shadow-idx
         :label label
         :on-change on-change}]
+      
       :color
       [:> shadow-color-picker-wrapper*
        {:placeholder placeholder
-        :label label
+        :aria-label label
         :default-value default-value
         :input-ref color-input-ref
         :on-update-value on-change
         :on-external-update-value on-external-update-value'
         :token-resolve-result token-prop
-        :shadow-color shadow-color
+        :shadow-color (or shadow-color nil)
         :data-testid (str "shadow-color-input-" shadow-idx)}]
+      
       [:div {:class (stl/css :input-row)
              :data-testid (str "shadow-" (name input-type) "-input-" shadow-idx)}
        [:> input-token*
-        {:label label
+        {:aria-label label
+         :icon (get input-icon input-type)
          :placeholder placeholder
          :default-value default-value
          :on-change on-change
+         :slot-start (cond (= input-type :blur)
+                       (mf/html [:span {:class (stl/css :shadow-prop-label)} "Blur"])
+                       (= input-type :spread)
+                       (mf/html [:span {:class (stl/css :shadow-prop-label)} "Spread"]))
          :token-resolve-result token-prop}]])))
 
 (mf/defc shadow-input-fields*
@@ -157,7 +163,8 @@
         (mf/use-fn
          (mf/deps shadow-idx on-remove-shadow)
          #(on-remove-shadow shadow-idx))]
-    [:div {:data-testid (str "shadow-input-fields-" shadow-idx)}
+    [:div {:data-testid (str "shadow-input-fields-" shadow-idx)
+           :class (stl/css :shadow-input-fields)}
      [:> icon-button* {:icon i/add
                        :type "button"
                        :on-click on-add-shadow

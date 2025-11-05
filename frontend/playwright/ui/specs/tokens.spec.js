@@ -1318,7 +1318,7 @@ test.describe("Tokens: Apply token", () => {
       const firstColorValue = await colorInput.inputValue();
 
       // User adds a second shadow
-      const addButton = firstShadowFields.getByTestId("shadow-add-button-0");
+      const addButton = firstShadowFields.getByTestId("shadow-add-button");
       await addButton.click();
 
       const secondShadowFields = tokensUpdateCreateModal.getByTestId(
@@ -1327,7 +1327,7 @@ test.describe("Tokens: Apply token", () => {
       await expect(secondShadowFields).toBeVisible();
 
       // User adds a third shadow
-      const addButton2 = secondShadowFields.getByTestId("shadow-add-button-1");
+      const addButton2 = secondShadowFields.getByTestId("shadow-add-button");
       await addButton2.click();
 
       const thirdShadowFields = tokensUpdateCreateModal.getByTestId(
@@ -1353,7 +1353,7 @@ test.describe("Tokens: Apply token", () => {
       await removeButton2.click();
 
       // Verify second shadow is removed
-      await expect(secondShadowFields.getByTestId("shadow-add-button-3")).not.toBeVisible();
+      await expect(secondShadowFields.getByTestId("shadow-add-button")).not.toBeVisible();
 
       // Verify that the first shadow kept its values
       const firstOffsetXValue = await firstShadowFields.getByLabel("X").inputValue();
