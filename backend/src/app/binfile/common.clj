@@ -550,7 +550,7 @@
   [cfg data file-id]
   (let [library-ids (get-libraries cfg [file-id])]
     (reduce (fn [data library-id]
-              (if-let [library (get-file cfg library-id)]
+              (if-let [library (get-file cfg library-id :include-deleted? true)]
                 (ctf/absorb-assets data (:data library))
                 data))
             data

@@ -25,10 +25,10 @@
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.tasks.file-gc]
    [app.util.services :as sv]
-   [app.worker :as-alias wrk]
-   [yetti.response :as yres]))
+   [app.worker :as-alias wrk]))
 
 (set! *warn-on-reflection* true)
 
@@ -44,7 +44,7 @@
 
 (defn stream-export-v1
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (yres/stream-body
+  (rph/stream
    (fn [_ output-stream]
      (try
        (-> cfg
@@ -59,7 +59,7 @@
 
 (defn stream-export-v3
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (yres/stream-body
+  (rph/stream
    (fn [_ output-stream]
      (try
        (-> cfg
@@ -79,16 +79,11 @@
    ::sm/params schema:export-binfile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id version file-id] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
-  (fn [_]
-    (let [version (or version 1)
-          body    (case (int version)
-                    1 (stream-export-v1 cfg params)
-                    2 (throw (ex-info "not-implemented" {}))
-                    3 (stream-export-v3 cfg params))]
-
-      {::yres/status 200
-       ::yres/headers {"content-type" "application/octet-stream"}
-       ::yres/body body})))
+  (let [version (or version 1)]
+    (case (int version)
+      1 (stream-export-v1 cfg params)
+      2 (throw (ex-info "not-implemented" {}))
+      3 (stream-export-v3 cfg params))))
 
 ;; --- Command: import-binfile
 
