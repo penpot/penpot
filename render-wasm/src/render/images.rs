@@ -62,6 +62,48 @@ pub struct ImageStore {
     context: Box<DirectContext>,
 }
 
+/// Creates a Skia image from an existing WebGL texture.
+/// This avoids re-decoding the image, as the browser has already decoded
+/// and uploaded it to the GPU.
+fn create_image_from_gl_texture(
+    context: &mut Box<DirectContext>,
+    texture_id: u32,
+    width: i32,
+    height: i32,
+) -> Result<Image, String> {
+    use skia_safe::gpu;
+    use skia_safe::gpu::gl::TextureInfo;
+
+    // Create a TextureInfo describing the existing GL texture
+    let texture_info = TextureInfo {
+        target: gl::TEXTURE_2D,
+        id: texture_id,
+        format: gl::RGBA8,
+        protected: gpu::Protected::No,
+    };
+
+    // Create a backend texture from the GL texture using the new API
+    let label = format!("shared_texture_{}", texture_id);
+    let backend_texture = unsafe {
+        gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, texture_info, label)
+    };
+
+    // Create a Skia image from the backend texture
+    // Use TopLeft origin because HTML images have their origin at top-left,
+    // while WebGL textures traditionally use bottom-left
+    let image = Image::from_texture(
+        context.as_mut(),
+        &backend_texture,
+        gpu::SurfaceOrigin::TopLeft,
+        skia::ColorType::RGBA8888,
+        skia::AlphaType::Premul,
+        None,
+    )
+    .ok_or("Failed to create Skia image from GL texture")?;
+
+    Ok(image)
+}
+
 // Decode and upload to GPU
 fn decode_image(context: &mut Box<DirectContext>, raw_data: &[u8]) -> Option<Image> {
     let data = unsafe { skia::Data::new_bytes(raw_data) };
@@ -119,6 +161,30 @@ impl ImageStore {
         } else {
             self.images.insert(key, StoredImage::Raw(raw_data));
         }
+        Ok(())
+    }
+
+    /// Creates a Skia image from an existing WebGL texture, avoiding re-decoding.
+    /// This is much more efficient as it reuses the texture that was already
+    /// decoded and uploaded to GPU by the browser.
+    pub fn add_image_from_gl_texture(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        texture_id: u32,
+        width: i32,
+        height: i32,
+    ) -> Result<(), String> {
+        let key = (id, is_thumbnail);
+
+        if self.images.contains_key(&key) {
+            return Err("Image already exists".to_string());
+        }
+
+        // Create a Skia image from the existing GL texture
+        let image = create_image_from_gl_texture(&mut self.context, texture_id, width, height)?;
+        self.images.insert(key, StoredImage::Gpu(image));
+
         Ok(())
     }
 
