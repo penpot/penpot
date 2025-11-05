@@ -692,8 +692,6 @@
       (d/update-in-when data [:pages-index page-id] fix-container)
       (d/update-in-when data [:components component-id] fix-container))))
 
-;; FIXME: remove, seems like this method is already unused
-;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id component-id shapes]}]
   ;; FIXME: Improve performance
@@ -744,26 +742,36 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape allow-altering-copies syncing]}]
+  ;; FIXME: ignore-touched is no longer used, so we can consider it deprecated
+  [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape allow-altering-copies syncing]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
                    (reduce reduce-fn #{shape-id}))))
 
-          ;; Avoid placing a shape as a direct or indirect child of itself,
-          ;; or inside its main component if it's in a copy,
-          ;; or inside a copy, or from a copy
+          ;; Avoid placing a shape as a direct or indirect child of itself, or
+          ;; inside its main component if it's in a copy, or inside a copy, or
+          ;; from a copy
           (is-valid-move? [objects shape-id]
             (let [invalid-targets (calculate-invalid-targets objects shape-id)
                   shape (get objects shape-id)]
               (and shape
                    (not (invalid-targets parent-id))
                    (not (cfh/components-nesting-loop? objects shape-id parent-id))
-                   (or allow-altering-copies ;; In some cases (like a component swap) it's allowed to change the structure of a copy
-                       syncing ;; If we are syncing the changes of a main component, it's allowed to change the structure of a copy
-                       (and
-                        (not (ctk/in-component-copy? (get objects (:parent-id shape)))) ;; We don't want to change the structure of component copies
-                        (not (ctk/in-component-copy? (get objects parent-id))))))))     ;; We need to check the origin and target frames
+                   (or
+                    ;; In some cases (like a component
+                    ;; swap) it's allowed to change the
+                    ;; structure of a copy
+                    allow-altering-copies
+
+                    ;; DEPRECATED, remove once v2.12 released
+                    syncing
+
+                    (and
+                     ;; We don't want to change the structure of component copies
+                     (not (ctk/in-component-copy? (get objects (:parent-id shape))))
+                     ;; We need to check the origin and target frames
+                     (not (ctk/in-component-copy? (get objects parent-id))))))))
 
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]
@@ -772,17 +780,13 @@
                 (cfh/append-at-the-end prev-shapes shapes))))
 
           (add-to-parent [parent index shapes]
-            (let [parent (-> parent
-                             (update :shapes insert-items index shapes)
-                             ;; We need to ensure that no `nil` in the
-                             ;; shapes list after adding all the
-                             ;; incoming shapes to the parent.
-                             (update :shapes d/vec-without-nils))]
-              (cond-> parent
-                (and (:shape-ref parent)
-                     (#{:group :frame} (:type parent))
-                     (not ignore-touched))
-                (dissoc :remote-synced))))
+            (update parent :shapes
+                    (fn [parent-shapes]
+                      (-> parent-shapes
+                          (insert-items index shapes)
+                          ;; We need to ensure that no `nil` in the shapes list
+                          ;; after adding all the incoming shapes to the parent.
+                          (d/vec-without-nils)))))
 
           (remove-from-old-parent [old-objects objects shape-id]
             (let [prev-parent-id (dm/get-in old-objects [shape-id :parent-id])]
@@ -790,32 +794,28 @@
               ;; the new destination target parent id.
               (if (= prev-parent-id parent-id)
                 objects
-                (let [sid        shape-id
-                      pid        prev-parent-id
-                      obj        (get objects pid)
-                      component? (and (:shape-ref obj)
-                                      (= (:type obj) :group)
-                                      (not ignore-touched))]
-                  (-> objects
-                      (d/update-in-when [pid :shapes] d/without-obj sid)
-                      (d/update-in-when [pid :shapes] d/vec-without-nils)
-                      (cond-> component? (d/update-when pid #(dissoc % :remote-synced))))))))
+                (d/update-in-when objects [prev-parent-id :shapes]
+                                  (fn [shapes]
+                                    (-> shapes
+                                        (d/without-obj shape-id)
+                                        (d/vec-without-nils)))))))
 
           (update-parent-id [objects id]
-            (-> objects
-                (d/update-when id assoc :parent-id parent-id)))
+            (d/update-when objects id assoc :parent-id parent-id))
 
           ;; Updates the frame-id references that might be outdated
-          (assign-frame-id [frame-id objects id]
-            (let [objects (d/update-when objects id assoc :frame-id frame-id)
-                  obj     (get objects id)]
+          (update-frame-id [frame-id objects id]
+            (let [obj (some-> (get objects id)
+                              (assoc :frame-id frame-id))]
               (cond-> objects
-                ;; If we moving frame, the parent frame is the root
-                ;; and we DO NOT NEED update children because the
-                ;; children will point correctly to the frame what we
-                ;; are currently moving
-                (not= :frame (:type obj))
-                (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
+                (some? obj)
+                (assoc id obj)
+
+                ;; If we moving a frame, we DO NOT NEED update
+                ;; children because the children will point correctly
+                ;; to the frame what we are currently moving
+                (not (cfh/frame-shape? obj))
+                (as-> $$ (reduce (partial update-frame-id frame-id) $$ (:shapes obj))))))
 
           (move-objects [objects]
             (let [parent (get objects parent-id)]
