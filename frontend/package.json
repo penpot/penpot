@@ -46,7 +46,7 @@
     "clear:shadow-cache": "rm -rf .shadow-cljs",
     "watch:app": "yarn run clear:shadow-cache && concurrently \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
     "watch": "yarn run watch:app:assets",
-    "watch:storybook": "concurrently \"storybook dev -p 6006 --no-open\" \"yarn run watch:storybook:assets\"",
+    "watch:storybook": "yarn run build:storybook:assets && concurrently \"storybook dev -p 6006 --no-open\" \"yarn run watch:storybook:assets\"",
     "watch:storybook:assets": "node ./scripts/watch-storybook.js"
   },
   "devDependencies": {
