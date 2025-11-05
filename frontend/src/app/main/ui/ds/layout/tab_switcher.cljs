@@ -176,7 +176,7 @@
         props
         (mf/spread-props props {:class [class (stl/css :tabs)]})]
 
-    [:> :article props
+    [:> :div props
      [:div {:class (stl/css :padding-wrapper)}
       [:> tab-nav* {:button-position action-button-position
                     :action-button action-button

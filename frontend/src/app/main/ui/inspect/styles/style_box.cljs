@@ -51,8 +51,7 @@
          (mf/deps shorthand)
          (fn []
            (wapi/write-to-clipboard (str shorthand))))]
-    [:article {:class (stl/css :style-box)
-               :data-testid "style-panel"}
+    [:article {:class (stl/css :style-box)}
      [:header {:class (stl/css :disclosure-header)}
       [:button {:class (stl/css :disclosure-button)
                 :aria-expanded expanded
@@ -62,14 +61,12 @@
        [:> icon* {:icon-id (if expanded "arrow-down" "arrow")
                   :class (stl/css :disclosure-icon)
                   :size "s"}]]
-      [:span {:class (stl/css :panel-title)
-              :data-testid "panel-title"} title]
+      [:span {:class (stl/css :panel-title)} title]
       (when shorthand
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "inspect.tabs.styles.panel.copy-style-shorthand")
                           :on-click copy-shorthand
-                          :icon i/clipboard
-                          :data-testid "copy-shorthand"}])]
+                          :icon i/clipboard}])]
      (when expanded
        [:div {:class (stl/css :style-box-content) :id (str "style-box-" (d/name panel))}
         [:div {:class (stl/css :style-box-panel-wrapper)} children]])]))

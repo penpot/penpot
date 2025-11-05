@@ -162,8 +162,7 @@
         [:div {:class (stl/css :inspect-content)}
          (if (contains? cf/flags :inspect-styles)
            [:div {:class (stl/css :inspect-tab-switcher)}
-            [:span {:class (stl/css :inspect-tab-switcher-label)
-                    :data-testid "inspect-tab-switcher-label"} (tr "inspect.tabs.switcher.label")]
+            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.tabs.switcher.label")]
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
               [:> select* {:options color-spaces

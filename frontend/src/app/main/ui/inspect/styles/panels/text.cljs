@@ -197,8 +197,8 @@
                           (reset! copied* true)
                           (wapi/write-to-clipboard formatted-text)
                           (tm/schedule 1000 #(reset! copied* false)))))]
-                 [:div {:class (stl/css :text-content-wrapper)
-                        :data-testid "text-preview"}
+                 [:pre {:class (stl/css :text-content-wrapper)
+                        :role "presentation"}
                   [:> property-detail-copiable* {:copied copied
                                                  :on-click copy-text}
                    [:span {:class (stl/css :text-content)

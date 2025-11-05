@@ -112,13 +112,12 @@
                                         :copied copied
                                         :on-click copy-attr} formatted-color-value])]]
      (when (:image color)
-       [:div {:class (stl/css :color-image-preview)
-              :data-testid "color-image-preview"}
+       [:figure {:class (stl/css :color-image-preview)}
         [:div {:class (stl/css :color-image-preview-wrapper)}
          [:img {:class (stl/css :color-image)
                 :src color-image-url
                 :title color-image-name
-                :alt ""}]]
+                :alt (tr "inspect.attributes.image.preview")}]]
         [:> button* {:variant "secondary"
                      :to color-image-url
                      :target "_blank"

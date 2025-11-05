@@ -62,7 +62,9 @@ const shapeToLayerName = {
  * @param {object} panel - The style panel locator
  */
 const copyShorthand = async (panel) => {
-  const panelShorthandButton = panel.getByTestId("copy-shorthand");
+  const panelShorthandButton = panel.getByRole("button", {
+    name: "Copy CSS shorthand to clipboard",
+  });
   await panelShorthandButton.click();
 };
 
@@ -85,9 +87,10 @@ const copyPropertyFromPropertyRow = async (panel, property) => {
  * @param {string} title - The title of the panel to retrieve
  */
 const getPanelByTitle = async (workspacePage, title) => {
-  return workspacePage.page
-    .getByTestId("style-panel")
-    .filter({ hasText: title });
+  const sidebar = workspacePage.page.getByTestId("right-sidebar");
+  const article = sidebar.getByRole("article");
+  const panel = article.filter({ hasText: title });
+  return panel;
 };
 
 /**
@@ -124,9 +127,9 @@ test.describe("Inspect tab - Styles", () => {
     await selectLayer(workspacePage, shapeToLayerName.flex);
     await openInspectTab(workspacePage);
 
-    const switcherLabel = workspacePage.page.getByTestId(
-      "inspect-tab-switcher-label",
-    );
+    const switcherLabel = workspacePage.page.getByText("Layer info", {
+      exact: true,
+    });
     await expect(switcherLabel).toBeVisible();
     await expect(switcherLabel).toHaveText("Layer info");
   });
@@ -383,7 +386,9 @@ test.describe("Inspect tab - Styles", () => {
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(1);
 
-      const imagePreview = panel.getByTestId("color-image-preview");
+      const imagePreview = panel.getByRole("img", {
+        name: "Preview of the shape's fill",
+      });
       await expect(imagePreview).toBeVisible();
     });
 
@@ -401,7 +406,9 @@ test.describe("Inspect tab - Styles", () => {
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(3);
 
-      const imagePreview = panel.getByTestId("color-image-preview");
+      const imagePreview = panel.getByRole("img", {
+        name: "Preview of the shape's fill",
+      });
       await expect(imagePreview).toBeVisible();
     });
 
@@ -472,7 +479,9 @@ test.describe("Inspect tab - Styles", () => {
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(1);
 
-      const imagePreview = panel.getByTestId("color-image-preview");
+      const imagePreview = panel.getByRole("img", {
+        name: "Preview of the shape's fill",
+      });
       await expect(imagePreview).toBeVisible();
     });
 
@@ -490,7 +499,9 @@ test.describe("Inspect tab - Styles", () => {
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(3);
 
-      const imagePreview = panel.getByTestId("color-image-preview");
+      const imagePreview = panel.getByRole("img", {
+        name: "Preview of the shape's fill",
+      });
       await expect(imagePreview).toBeVisible();
     });
 
@@ -531,7 +542,7 @@ test.describe("Inspect tab - Styles", () => {
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(1);
 
-      const textPreview = panel.getByTestId("text-preview");
+      const textPreview = panel.getByRole("presentation");
       await expect(textPreview).toBeVisible();
     });
 
@@ -568,7 +579,7 @@ test.describe("Inspect tab - Styles", () => {
       await expect(fontWeightToken).toBeVisible();
       expect(fontWeightToken).toContainText("bold");
 
-      const textPreview = panel.getByTestId("text-preview");
+      const textPreview = panel.getByRole("presentation");
       await expect(textPreview).toBeVisible();
     });
     test("Text - composite token", async ({ page }) => {
@@ -591,7 +602,7 @@ test.describe("Inspect tab - Styles", () => {
       await expect(compositeTypographyRow).toBeVisible();
       expect(compositeTypographyRow).toContainText("body");
 
-      const textPreview = panel.getByTestId("text-preview");
+      const textPreview = panel.getByRole("presentation");
       await expect(textPreview).toBeVisible();
     });
   });
