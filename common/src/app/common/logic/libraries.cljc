@@ -1512,7 +1512,7 @@
                                                   :shapes [(:id shape)]
                                                   :index index-after
                                                   :ignore-touched true
-                                                  :syncing true}))
+                                                  :allow-altering-copies true}))
                      (update :undo-changes conj (make-change
                                                  container
                                                  {:type :mov-objects
@@ -1520,7 +1520,7 @@
                                                   :shapes [(:id shape)]
                                                   :index index-before
                                                   :ignore-touched true
-                                                  :syncing true})))]
+                                                  :allow-altering-copies true})))]
 
     (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
