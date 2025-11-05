@@ -77,8 +77,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private sql:insert-new-task
-  "insert into task (id, name, props, queue, label, priority, max_retries, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, now() + ?)
+  "insert into task (id, name, props, queue, label, priority, max_retries, created_at, modified_at, scheduled_at)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    returning id")
 
 (def ^:private
@@ -88,7 +88,7 @@
       AND queue=?
       AND label=?
       AND status = 'new'
-      AND scheduled_at > now()")
+      AND scheduled_at > ?")
 
 (def ^:private schema:options
   [:map {:title "submit-options"}
@@ -111,17 +111,19 @@
 
   (check-options! options)
 
-  (let [duration  (ct/duration delay)
-        interval  (db/interval duration)
-        props     (db/tjson params)
-        id        (uuid/next)
-        tenant    (cf/get :tenant)
-        task      (d/name task)
-        queue     (str/ffmt "%:%" tenant (d/name queue))
-        conn      (db/get-connectable options)
-        deleted   (when dedupe
-                    (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label])
-                        :next.jdbc/update-count))]
+  (let [delay        (ct/duration delay)
+        now          (ct/now)
+        scheduled-at (-> (ct/plus now delay)
+                         (ct/truncate :millisecond))
+        props        (db/tjson params)
+        id           (uuid/next)
+        tenant       (cf/get :tenant)
+        task         (d/name task)
+        queue        (str/ffmt "%:%" tenant (d/name queue))
+        conn         (db/get-connectable options)
+        deleted      (when dedupe
+                       (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label now])
+                           (db/get-update-count)))]
 
     (l/trc :hint "submit task"
            :name task
@@ -129,11 +131,13 @@
            :queue queue
            :label label
            :dedupe (boolean dedupe)
-           :delay (ct/format-duration duration)
+           :delay (ct/format-duration delay)
            :replace (or deleted 0))
 
     (db/exec-one! conn [sql:insert-new-task id task props queue
-                        label priority max-retries interval])
+                        label priority max-retries
+                        now now scheduled-at])
+
     id))
 
 (defn invoke!
