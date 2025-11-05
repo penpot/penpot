@@ -1278,7 +1278,7 @@
     (watch [_ _ stream]
       (let [stopper-s
             (->> stream
-                 (rx/filter #(or (= ::dw/finalize-page (ptk/type %))
+                 (rx/filter #(or (= ::dwpg/finalize-page (ptk/type %))
                                  (= ::watch-component-changes (ptk/type %)))))
 
             workspace-data-s

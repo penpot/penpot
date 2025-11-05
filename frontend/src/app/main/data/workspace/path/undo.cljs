@@ -10,6 +10,8 @@
    [app.common.data.undo-stack :as u]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.edition :as-alias dwe]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
@@ -133,8 +135,8 @@
 
 (defn- stop-undo? [event]
   (let [type (ptk/type event)]
-    (or (= :app.main.data.workspace.edition/clear-edition-mode type)
-        (= :app.main.data.workspace/finalize-page type))))
+    (or (= ::dwe/clear-edition-mode type)
+        (= ::dwpg/finalize-page type))))
 
 (def path-content-ref
   (letfn [(selector [state]
