@@ -196,7 +196,6 @@
       (mf/set-ref-val! options-ref options))
 
     [:div {:class (stl/css :select-wrapper)
-           :on-click on-click
            :ref select-ref
            :on-blur on-blur}
 
