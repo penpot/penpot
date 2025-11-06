@@ -76,6 +76,7 @@
 - Fix options button does not work for comments created in the lower part of the screen [Taiga #12422](https://tree.taiga.io/project/penpot/issue/12422)
 - Fix problem when checking usage with removed teams [Taiga #12442](https://tree.taiga.io/project/penpot/issue/12442)
 - Fix focus mode persisting across page/file navigation [Taiga #12469](https://tree.taiga.io/project/penpot/issue/12469)
+- Fix shadow color validation [Github #7705](https://github.com/penpot/penpot/pull/7705)
 
 ## 2.10.1
 
