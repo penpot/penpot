@@ -1472,6 +1472,10 @@ impl RenderState {
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
+                    if element.is_flex() && !element.is_flex_reverse() {
+                        children_ids.reverse();
+                    }
+
                     children_ids.sort_by(|id1, id2| {
                         let z1 = tree.get(id1).map_or_else(|| 0, |s| s.z_index());
                         let z2 = tree.get(id2).map_or_else(|| 0, |s| s.z_index());

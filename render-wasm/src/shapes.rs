@@ -328,6 +328,28 @@ impl Shape {
         )
     }
 
+    pub fn is_flex(&self) -> bool {
+        matches!(
+            self.shape_type,
+            Type::Frame(Frame {
+                layout: Some(layouts::Layout::FlexLayout(_, _)),
+                ..
+            })
+        )
+    }
+
+    pub fn is_flex_reverse(&self) -> bool {
+        matches!(
+            self.shape_type,
+            Type::Frame(Frame {
+                layout: Some(layouts::Layout::FlexLayout(_, FlexData {
+                    direction: layouts::FlexDirection::RowReverse | layouts::FlexDirection::ColumnReverse, ..
+                })),
+                ..
+            })
+        )
+    }
+
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.invalidate_bounds();
         self.invalidate_extrect();
