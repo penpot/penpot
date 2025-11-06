@@ -550,8 +550,8 @@
 
         handle-key-down-save
         (mf/use-fn
+         (mf/deps on-submit)
          (fn [e]
-           (mf/deps on-submit)
            (when (k/enter? e)
              (on-submit e))))]
 
