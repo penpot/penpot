@@ -19,6 +19,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
@@ -212,13 +213,14 @@
         ;; Create a new objects only with the temporary modifications
         objects-changed
         (->> wasm-props
+             (group-by first)
              (reduce
               (fn [objects [id properties]]
                 (let [shape
                       (->> properties
                            (reduce
-                            (fn [shape {:keys [property value]}]
-                              (assoc shape property value))
+                            (fn [shape [_ operation]]
+                              (ctm/apply-modifier shape operation))
                             (get objects id)))]
                   (assoc objects id shape)))
               objects))]
