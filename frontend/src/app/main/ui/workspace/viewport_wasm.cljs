@@ -66,9 +66,9 @@
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
   (->> modifiers
-       (filter #(contains? selected (:id %)))
+       (filter #(contains? selected (first %)))
        (reduce
-        (fn [objects {:keys [id transform]}]
+        (fn [objects [id transform]]
           (update objects id gsh/apply-transform transform))
         objects)))
 
