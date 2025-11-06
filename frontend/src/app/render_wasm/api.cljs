@@ -1101,13 +1101,28 @@
   (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
 
+(defn- get-browser
+  []
+  (when (exists? js/navigator)
+    (let [user-agent (.-userAgent js/navigator)]
+      (when user-agent
+        (cond
+          (re-find #"(?i)firefox" user-agent) :firefox
+          (re-find #"(?i)chrome" user-agent) :chrome
+          (re-find #"(?i)safari" user-agent) :safari
+          (re-find #"(?i)edge" user-agent) :edge
+          :else :unknown)))))
+
+
 (defn init-canvas-context
   [canvas]
   (let [gl      (unchecked-get wasm/internal-module "GL")
         flags   (debug-flags)
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
         context (.getContext ^js canvas context-id context-options)
-        context-init? (not (nil? context))]
+        context-init? (not (nil? context))
+        browser (get-browser)
+        browser (sr/translate-browser browser)]
     (when-not (nil? context)
       (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
         (.makeContextCurrent ^js gl handle)
@@ -1119,6 +1134,10 @@
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
         (h/call wasm/internal-module "_set_render_options" flags dpr))
       (set! wasm/context-initialized? true))
+
+    (h/call wasm/internal-module "_set_browser" browser)
+
+    (h/call wasm/internal-module "_set_render_options" flags dpr)
     (set-canvas-size canvas)
     context-init?))
 

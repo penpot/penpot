@@ -1,6 +1,7 @@
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
+    utils::Browser,
 };
 
 use core::f32;
@@ -19,6 +20,7 @@ use crate::math::Point;
 use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
+use crate::STATE;
 
 // TODO: maybe move this to the wasm module?
 pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
@@ -607,6 +609,7 @@ impl Paragraph {
         style.set_text_align(self.text_align);
         style.set_text_direction(self.text_direction);
         style.set_replace_tab_characters(true);
+        style.set_apply_rounding_hack(true);
         style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
     }
@@ -711,7 +714,7 @@ impl TextSpan {
         style.set_font_families(&font_families);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
-        style.set_half_leading(false);
+        style.set_half_leading(true);
 
         style
     }
@@ -753,15 +756,26 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
-    fn remove_ignored_chars(text: &str) -> String {
+    fn process_ignored_chars(text: &str, browser: u8) -> String {
         text.chars()
-            .filter(|&c| c >= '\u{0020}' && c != '\u{2028}' && c != '\u{2029}')
+            .filter_map(|c| {
+                if c < '\u{0020}' || c == '\u{2028}' || c == '\u{2029}' {
+                    if browser == Browser::Firefox as u8 {
+                        None
+                    } else {
+                        Some(' ')
+                    }
+                } else {
+                    Some(c)
+                }
+            })
             .collect()
     }
 
     pub fn apply_text_transform(&self) -> String {
-        let text = Self::remove_ignored_chars(&self.text);
-        match self.text_transform {
+        let browser = crate::with_state!(state, { state.current_browser });
+        let text = Self::process_ignored_chars(&self.text, browser);
+        let transformed_text = match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
             Some(TextTransform::Capitalize) => text
@@ -776,7 +790,9 @@ impl TextSpan {
                 .collect::<Vec<_>>()
                 .join(" "),
             None => text,
-        }
+        };
+
+        transformed_text.replace("/", "/\u{200B}")
     }
 
     pub fn scale_content(&mut self, value: f32) {
