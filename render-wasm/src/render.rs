@@ -101,8 +101,9 @@ impl NodeRenderState {
     /// Calculates the clip bounds for shadow rendering of a given shape.
     ///
     /// This function determines the clipping region that should be applied when rendering a
-    /// shadow for a shape element. It uses the shadow bounds but calculates the
-    /// transformation center based on the original shape, not the shadow bounds.
+    /// shadow for a shape element. For frames, it uses the shadow bounds to clip nested
+    /// shadows. For groups, it returns the existing clip bounds since groups should not
+    /// constrain nested shadows based on their selection rectangle bounds.
     ///
     /// # Parameters
     ///
@@ -123,18 +124,22 @@ impl NodeRenderState {
             "Shape must be a Frame or Group for nested shadow clip bounds calculation"
         );
 
-        let bounds = element.get_selrect_shadow_bounds(shadow);
-        let mut transform = element.transform;
-        transform.post_translate(element.center());
-        transform.pre_translate(-element.center());
+        match &element.shape_type {
+            Type::Frame(_) => {
+                let bounds = element.get_selrect_shadow_bounds(shadow);
+                let mut transform = element.transform;
+                transform.post_translate(element.center());
+                transform.pre_translate(-element.center());
 
-        let corners = match &element.shape_type {
-            Type::Rect(data) => data.corners,
-            Type::Frame(data) => data.corners,
-            _ => None,
-        };
+                let corners = match &element.shape_type {
+                    Type::Frame(data) => data.corners,
+                    _ => None,
+                };
 
-        Some((bounds, corners, transform))
+                Some((bounds, corners, transform))
+            }
+            _ => self.clip_bounds,
+        }
     }
 }
 
@@ -234,6 +239,7 @@ pub(crate) struct RenderState {
     // Frames contained in groups must reset this nested_fills stack pushing a new empty vector.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
+    pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     pub touched_ids: HashSet<Uuid>,
@@ -304,6 +310,7 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_blurs: vec![],
+            nested_shadows: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
@@ -453,6 +460,31 @@ impl RenderState {
         self.focus_mode.set_shapes(shapes);
     }
 
+    fn get_inherited_drop_shadows(&self) -> Option<Vec<skia_safe::Paint>> {
+        let drop_shadows: Vec<&Shadow> = self
+            .nested_shadows
+            .iter()
+            .flat_map(|shadows| shadows.iter())
+            .filter(|shadow| !shadow.hidden() && shadow.style() == crate::shapes::ShadowStyle::Drop)
+            .collect();
+
+        if drop_shadows.is_empty() {
+            return None;
+        }
+
+        Some(
+            drop_shadows
+                .into_iter()
+                .map(|shadow| {
+                    let mut paint = skia_safe::Paint::default();
+                    let filter = shadow.get_drop_shadow_filter();
+                    paint.set_image_filter(filter);
+                    paint
+                })
+                .collect(),
+        )
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
@@ -575,7 +607,12 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let drop_shadows = shape.drop_shadow_paints();
+                let mut drop_shadows = shape.drop_shadow_paints();
+
+                if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
+                    drop_shadows.extend(inherited_shadows);
+                }
+
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
@@ -612,14 +649,14 @@ impl RenderState {
 
                 if let Some(parent_shadows) = parent_shadows {
                     if !shape.has_visible_strokes() {
-                        for shadow in &parent_shadows {
+                        for shadow in parent_shadows {
                             text::render(
                                 Some(self),
                                 None,
                                 &shape,
                                 &mut paragraphs_with_shadows,
                                 text_drop_shadows_surface_id.into(),
-                                Some(shadow),
+                                Some(&shadow),
                                 blur_filter.as_ref(),
                             );
                         }
@@ -875,6 +912,7 @@ impl RenderState {
         // being incorrectly applied to new frames
         self.nested_fills.clear();
         self.nested_blurs.clear();
+        self.nested_shadows.clear();
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
@@ -923,7 +961,10 @@ impl RenderState {
         // other already drawn elements.
         if let Type::Group(group) = element.shape_type {
             let fills = &element.fills;
+            let shadows = &element.shadows;
             self.nested_fills.push(fills.to_vec());
+            self.nested_shadows.push(shadows.to_vec());
+
             if group.masked {
                 let paint = skia::Paint::default();
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -1005,6 +1046,7 @@ impl RenderState {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_fills.pop();
                 self.nested_blurs.pop();
+                self.nested_shadows.pop();
             }
             _ => {}
         }
@@ -1269,6 +1311,7 @@ impl RenderState {
                                 if shadow_shape.hidden {
                                     continue;
                                 }
+
                                 let clip_bounds = node_render_state
                                     .get_nested_shadow_clip_bounds(element, shadow);
 
@@ -1382,7 +1425,6 @@ impl RenderState {
             if element.is_recursive() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
-
                 let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
 
                 // Z-index ordering on Layouts

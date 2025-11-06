@@ -407,6 +407,22 @@ test("Renders a file with texts with breaking words", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with group with text with inherited shadows", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-group-with-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "58c5cc60-d124-81bd-8007-0f30f1ac452a",
+    pageId: "58c5cc60-d124-81bd-8007-0f30f1ac452b",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test.skip("Updates text alignment edition - part 1", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
