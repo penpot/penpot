@@ -2135,8 +2135,8 @@ msgid "labels.copy-invitation-link"
 msgstr "Copy link"
 
 #: src/app/main/ui/static.cljs:63
-msgid "labels.copyright"
-msgstr "Kaleidos @2024"
+msgid "labels.copyright-period"
+msgstr "Kaleidos © 2019-present"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
 msgid "labels.create"
@@ -5574,8 +5574,8 @@ msgstr "Add"
 
 #: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
 msgid "workspace.libraries.colors"
-msgid_plural "workspace.libraries.colors" 
-msgstr[0] "1 color" 
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 color"
 msgstr[1] "%s colors"
 
 #: src/app/main/ui/workspace/color_palette.cljs:147
@@ -5614,8 +5614,8 @@ msgstr "Save color style"
 
 #: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
 msgid "workspace.libraries.components"
-msgid_plural "workspace.libraries.components" 
-msgstr[0] "1 component" 
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 component"
 msgstr[1] "%s components"
 
 #: src/app/main/ui/workspace/libraries.cljs:349
@@ -5640,8 +5640,8 @@ msgstr "File library"
 
 #: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
 msgid "workspace.libraries.graphics"
-msgid_plural "workspace.libraries.graphics" 
-msgstr[0] "1 graphic" 
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 graphic"
 msgstr[1] "%s graphics"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
@@ -5700,8 +5700,8 @@ msgstr "Unlink all typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
 msgid "workspace.libraries.typography"
-msgid_plural "workspace.libraries.typography" 
-msgstr[0] "1 typography" 
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 typography"
 msgstr[1] "%s typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:354

@@ -776,10 +776,6 @@ msgstr "ยืนยันรหัสผ่าน"
 msgid "labels.copy-invitation-link"
 msgstr "คัดลอกลิงก์"
 
-#: src/app/main/ui/static.cljs:63
-msgid "labels.copyright"
-msgstr "Kaleidos @2024"
-
 #: src/app/main/ui/dashboard/team_form.cljs:100, src/app/main/ui/dashboard/team_form.cljs:120
 msgid "labels.create-team"
 msgstr "สร้างทีมใหม่"

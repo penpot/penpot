@@ -2014,10 +2014,6 @@ msgstr "Ievietot krāsu starpliktuvē"
 msgid "labels.copy-invitation-link"
 msgstr "Kopēt saiti"
 
-#: src/app/main/ui/static.cljs:63
-msgid "labels.copyright"
-msgstr "Kaleidos @2024"
-
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
 msgid "labels.create"
 msgstr "Izveidot"
