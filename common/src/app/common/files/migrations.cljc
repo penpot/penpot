@@ -1357,38 +1357,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(defmethod migrate-data "0004-clean-shadow-color"
-  [data _]
-  (let [decode-color (sm/decoder types.color/schema:color sm/json-transformer)
-
-        clean-shadow-color
-        (fn [color]
-          (let [ref-id   (get color :id)
-                ref-file (get color :file-id)]
-            (-> (d/without-qualified color)
-                (select-keys [:opacity :color :gradient :image :ref-id :ref-file])
-                (cond-> ref-id
-                  (assoc :ref-id ref-id))
-                (cond-> ref-file
-                  (assoc :ref-file ref-file))
-                (decode-color))))
-
-        clean-shadow
-        (fn [shadow]
-          (update shadow :color clean-shadow-color))
-
-        update-object
-        (fn [object]
-          (d/update-when object :shadow #(mapv clean-shadow %)))
-
-        update-container
-        (fn [container]
-          (d/update-when container :objects d/update-vals update-object))]
-
-    (-> data
-        (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container))))
-
 (defmethod migrate-data "0005-deprecate-image-type"
   [data _]
   (letfn [(update-object [object]
@@ -1630,6 +1598,45 @@
   ;; as value; this migration fixes it.
   (d/update-when data :components d/update-vals d/without-nils))
 
+(defmethod migrate-data "0015-clean-shadow-color"
+  [data _]
+  (let [decode-shadow-color
+        (sm/decoder ctss/schema:color sm/json-transformer)
+
+        clean-shadow-color
+        (fn [color]
+          (let [ref-id   (get color :id)
+                ref-file (get color :file-id)]
+            (-> (d/without-qualified color)
+                (select-keys ctss/color-attrs)
+                (cond-> ref-id
+                  (assoc :ref-id ref-id))
+                (cond-> ref-file
+                  (assoc :ref-file ref-file))
+                (decode-shadow-color)
+                (d/without-nils))))
+
+        clean-shadow
+        (fn [shadow]
+          (update shadow :color clean-shadow-color))
+
+        clean-xform
+        (comp
+         (keep clean-shadow)
+         (filter ctss/valid-shadow?))
+
+        update-object
+        (fn [object]
+          (d/update-when object :shadow #(into [] clean-xform %)))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1689,7 +1696,6 @@
          "0002-clean-shape-interactions"
          "0003-fix-root-shape"
          "0003-convert-path-content-v2"
-         "0004-clean-shadow-color"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
          "0008-fix-library-colors-v4"
@@ -1701,4 +1707,5 @@
          "0013-fix-component-path"
          "0013-clear-invalid-strokes-and-fills"
          "0014-fix-tokens-lib-duplicate-ids"
-         "0014-clear-components-nil-objects"]))
+         "0014-clear-components-nil-objects"
+         "0015-clean-shadow-color"]))
