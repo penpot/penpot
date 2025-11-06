@@ -42,10 +42,10 @@
    [:include-libraries ::sm/boolean]
    [:embed-assets ::sm/boolean]])
 
-(defn stream-export-v1
+(defn- stream-export-v1
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
   (rph/stream
-   (fn [_ output-stream]
+   (fn [output-stream]
      (try
        (-> cfg
            (assoc ::bfc/ids #{file-id})
@@ -57,20 +57,34 @@
                 :file-id (str file-id)
                 :cause cause))))))
 
-(defn stream-export-v3
+(defn- stream-export-v3
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (rph/stream
-   (fn [_ output-stream]
-     (try
-       (-> cfg
-           (assoc ::bfc/ids #{file-id})
-           (assoc ::bfc/embed-assets embed-assets)
-           (assoc ::bfc/include-libraries include-libraries)
-           (bf.v3/export-files! output-stream))
-       (catch Throwable cause
-         (l/err :hint "exception on exporting file"
-                :file-id (str file-id)
-                :cause cause))))))
+  (letfn [(export [output-stream]
+            ;; (throw (ex-info "kakota" {}))
+            (-> cfg
+                (assoc ::bfc/ids #{file-id})
+                (assoc ::bfc/embed-assets embed-assets)
+                (assoc ::bfc/include-libraries include-libraries)
+                (bf.v3/export-files! output-stream)))]
+
+    (rph/stream export)))
+
+        ;; (with-meta {:file-id file-id
+        ;;             :include-libraries include-libraries
+        ;;             :embed-assets embed-assets}))))
+  ;; (->
+  ;; (rph/stream
+  ;;  (fn [output-stream]
+  ;;    (try
+  ;;      (-> cfg
+  ;;          (assoc ::bfc/ids #{file-id})
+  ;;          (assoc ::bfc/embed-assets embed-assets)
+  ;;          (assoc ::bfc/include-libraries include-libraries)
+  ;;          (bf.v3/export-files! output-stream))
+  ;;      (catch Throwable cause
+  ;;        (l/err :hint "exception on exporting file"
+  ;;               :file-id (str file-id)
+  ;;               :cause cause))))))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."

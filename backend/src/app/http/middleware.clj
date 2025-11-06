@@ -13,6 +13,7 @@
    [app.common.transit :as t]
    [app.config :as cf]
    [app.http.errors :as errors]
+   [app.http.request :as http.request]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
@@ -197,7 +198,8 @@
   [handler on-error]
   (fn [request]
     (try
-      (handler request)
+      (binding [http.request/*current* request]
+        (handler request))
       (catch Throwable cause
         (on-error cause request)))))
 

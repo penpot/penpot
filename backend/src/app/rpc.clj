@@ -15,7 +15,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.http :as-alias http]
+   [app.http :as http]
    [app.http.access-token :as actoken]
    [app.http.client :as-alias http.client]
    [app.http.session :as session]

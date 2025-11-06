@@ -9,7 +9,11 @@
   (:refer-clojure :exclude [with-meta])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.logging :as l]
+   [app.config :as cf]
    [app.http :as-alias http]
+   [app.http.errors :as errors]
+   [app.http.request :as http.request]
    [app.rpc :as-alias rpc]
    [yetti.response :as yres]))
 
@@ -80,6 +84,15 @@
                  (update response ::yres/headers assoc "cache-control" val)))))
 
 (defn stream
-  "A convenience allias for yetti.response/stream-body"
   [f]
-  (yres/stream-body f))
+  (let [request http.request/*current*]
+    (yres/stream-body
+     (fn [this response]
+       (try
+         (f response)
+         (catch Throwable cause
+           (binding [l/*context* (errors/request->context request)]
+             (l/err :hint "exception streaming response"
+                    :cause cause
+                    ::l/context (meta this)))))))))
+
