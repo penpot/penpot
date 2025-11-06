@@ -11,6 +11,7 @@
 
    [app.common.types.token :as cto]
    [app.main.data.style-dictionary :as sd]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -22,7 +23,34 @@
 
 (mf/defc inset-type-select*
   {::mf/private true}
-  [{:keys [default-value shadow-idx on-change]}]
+  [{:keys [default-value on-change]}]
+  (let [selected* (mf/use-state (or (str default-value) "false"))
+        selected (deref selected*)
+        
+        on-change
+        (mf/use-fn
+         (mf/deps on-change selected)
+         (fn [value evento]
+         (.log js/console (clj->js value))
+           (.log js/console (clj->js evento))
+           (obj/set! evento "tokenValue" (if (= "true" value) true false))
+
+           (on-change evento)
+           (reset! selected* (str value))))
+        
+        options 
+        (mf/with-memo []
+          [{:id "false" :label "drop-shadow" :icon i/drop-shadow}
+           {:id "true" :label "inner-shadow" :icon i/inner-shadow}])]
+    
+    [:div {:class (stl/css :input-row)}
+     [:> select* {:default-selected selected
+                  :variant "ghost"
+                  :options options
+                  :on-change on-change}]]))
+
+#_(mf/defc inset-type-select*
+  [{:keys [default-value shadow-idx label on-change]}]
   (let [selected* (mf/use-state (or (str default-value) "false"))
         selected (deref selected*)
 
@@ -30,20 +58,26 @@
         (mf/use-fn
          (mf/deps on-change selected shadow-idx)
          (fn [value e]
-           #_(obj/set! e "tokenValue" (if (= "true" value) true false))
-           (prn value)
-          ;;  (on-change e)
-           #_(reset! selected* value)))
-        options 
-        (mf/with-memo []
-          [{:id "drop-shadow" :label "drop-shadow" :icon i/drop-shadow}
-           {:id "inner-shadow" :label "inner-shadow" :icon i/inner-shadow}])]
-    
+           (.log js/console (clj->js value))
+           (.log js/console (clj->js e))
+           (obj/set! e "tokenValue" (if (= "true" value) true false))
+
+           (on-change e)
+           (reset! selected* (str value))))]
+
     [:div {:class (stl/css :input-row)}
-     [:> select* {:default-selected selected
-                  :variant "ghost"
-                  :options options
-                  :on-change on-change}]]))
+     [:div {:class (stl/css :inset-label)} label]
+     [:& radio-buttons {:selected selected
+                        :on-change on-change
+                        :name (str "inset-select-" shadow-idx)}
+      [:& radio-button {:value "false"
+                        :title "false"
+                        :icon "❌"
+                        :id (str "inset-default-" shadow-idx)}]
+      [:& radio-button {:value "true"
+                        :title "true"
+                        :icon "✅"
+                        :id (str "inset-false-" shadow-idx)}]]]))
 
 (def ^:private shadow-inputs
   #(d/ordered-map
@@ -99,11 +133,12 @@
   {::mf/private true}
   [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-external-update-value token-resolve-result errors-by-key shadow-color]}]
   (let [color-input-ref (mf/use-ref)
+
         on-change
         (mf/use-fn
          (mf/deps shadow-idx input-type on-update-value)
-         (fn [e]
-           (-> (obj/set! e "tokenTypeAtIndex" [shadow-idx input-type])
+         (fn [evento]
+           (-> (obj/set! evento "tokenTypeAtIndex" [shadow-idx input-type])
                (on-update-value))))
 
         on-external-update-value'
@@ -129,7 +164,7 @@
         :shadow-idx shadow-idx
         :label label
         :on-change on-change}]
-      
+
       :color
       [:> shadow-color-picker-wrapper*
        {:placeholder placeholder
@@ -141,7 +176,7 @@
         :token-resolve-result token-prop
         :shadow-color (or shadow-color nil)
         :data-testid (str "shadow-color-input-" shadow-idx)}]
-      
+
       [:div {:class (stl/css :input-row)
              :data-testid (str "shadow-" (name input-type) "-input-" shadow-idx)}
        [:> input-token*
@@ -151,9 +186,9 @@
          :default-value default-value
          :on-change on-change
          :slot-start (cond (= input-type :blur)
-                       (mf/html [:span {:class (stl/css :shadow-prop-label)} "Blur"])
-                       (= input-type :spread)
-                       (mf/html [:span {:class (stl/css :shadow-prop-label)} "Spread"]))
+                           (mf/html [:span {:class (stl/css :shadow-prop-label)} "Blur"])
+                           (= input-type :spread)
+                           (mf/html [:span {:class (stl/css :shadow-prop-label)} "Spread"]))
          :token-resolve-result token-prop}]])))
 
 (mf/defc shadow-input-fields*

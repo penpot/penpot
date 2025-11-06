@@ -69,7 +69,7 @@
         handle-change-tab
         (mf/use-fn
          (mf/deps from on-change-section)
-         (fn [new-section]
+         (fn [new-section _e ]
            (reset! section (keyword new-section))
            (when on-change-section
              (on-change-section (keyword new-section))
@@ -89,7 +89,7 @@
 
         handle-change-color-space
         (mf/use-fn
-         (fn [color-space]
+         (fn [color-space _e]
            (reset! color-space* color-space)))
 
         color-spaces

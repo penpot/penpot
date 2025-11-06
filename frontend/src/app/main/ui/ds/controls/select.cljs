@@ -112,7 +112,7 @@
              (reset! focused-id* nil)
              (reset! is-open* false)
              (when (fn? on-change)
-               (on-change id)))))
+               (on-change id event)))))
 
         on-click
         (mf/use-fn

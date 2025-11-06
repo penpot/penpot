@@ -490,7 +490,7 @@
         switch-component
         (mf/use-fn
          (mf/deps shapes)
-         (fn [pos val]
+         (fn [pos val _e]
            (if (= val mixed-label)
              (reset! key* (uuid/next))
              (let [error-msg (if (> (count shapes) 1)
