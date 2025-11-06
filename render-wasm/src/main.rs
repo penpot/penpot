@@ -192,6 +192,7 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state_mut!(state, {
         let render_state = state.render_state_mut();
         render_state.viewbox.set_all(zoom, x, y);
+        state.render_state.cancel_animation_frame();
         state.render_from_cache();
     });
 }
