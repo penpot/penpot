@@ -603,6 +603,8 @@
 
         team-id     (get team :id)
 
+        _ (prn team)
+
         projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
         libs?       (= section :dashboard-libraries)
@@ -702,6 +704,9 @@
     [:*
      [:div {:class (stl/css-case :sidebar-content true)
             :ref container}
+      [:div {:class (stl/css :sidebar-content-section)}
+       [:div {:class (stl/css :sidebar-section-title)}
+        (str (:organization-name team))]]
       [:> sidebar-team-switch* {:team team :profile profile}]
 
       [:> sidebar-search* {:search-term search-term

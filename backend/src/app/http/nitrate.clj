@@ -17,9 +17,11 @@
    [app.db :as db]
    [app.http.access-token :refer [get-token]]
    [app.main :as-alias main]
+   [app.msgbus :as mbus]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.worker :as-alias wrk]
+   [clojure.walk :as walk]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
 
@@ -29,6 +31,10 @@
 (declare ^:private get-organization)
 (declare ^:private create-organization)
 (declare ^:private update-organization)
+(declare ^:private list-organizations)
+(declare ^:private list-teams)
+(declare ^:private set-team-org)
+
 
 (defmethod ig/assert-key ::routes
   [_ params]
@@ -44,9 +50,9 @@
            (let [token (get-token request)]
              (if (= token shared-key)
                (handler request)
-               {::yres/status 403})))
+               {::yres/status 401})))
          (fn [_ _]
-           {::yres/status 403}))))})
+           {::yres/status 401}))))})
 
 (def ^:private default-system
   {:name ::default-system
@@ -73,6 +79,21 @@
    ["/authenticate"
     {:handler authenticate
      :allowed-methods #{:post}}]
+
+   ["/list-organizations"
+    {:handler list-organizations
+     :allowed-methods #{:post}
+     :transaction true}]
+
+   ["/list-teams"
+    {:handler list-teams
+     :allowed-methods #{:post}
+     :transaction true}]
+
+   ["/set-team-org"
+    {:handler set-team-org
+     :allowed-methods #{:post}
+     :transaction true}]
 
    ["/get-organization"
     {:handler get-organization
@@ -108,7 +129,7 @@
 
 (defn with-current-user
   "Wraps a handler to inject the current user ID if the provided token is valid.
-   Returns 403 if no valid user is found or token verification fails.
+   Returns 401 if no valid user is found or token verification fails.
 
    @param handler - function of [cfg request current-user-id]
    @return handler of [cfg request]"
@@ -119,18 +140,31 @@
           uid   (:uid auth)]
       (if uid
         (handler cfg request uid)
-        {::yres/status 403}))))
+        {::yres/status 401}))))
 
 (def ^:private sql:get-role
   "SELECT role
      FROM organization_profile_rel
-    WHERE organization_id=?
-      and profile_id=?;")
+    WHERE organization_id = ?
+      and profile_id = ?;")
 
-(defn- get-role
-  [cfg organization_id profile-id]
-  (let [result (db/exec-one! cfg [sql:get-role organization_id profile-id])]
-    (:role result)))
+(defn- is-org-owner?
+  [cfg organization-id current-user-id]
+  (let [result (db/exec-one! cfg [sql:get-role organization-id current-user-id])]
+    (= "owner" (:role result))))
+
+(def ^:private sql:is-team-owner
+  "SELECT COUNT(*) AS n
+     FROM team_profile_rel
+    WHERE team_id = ?
+      AND profile_id = ?
+      AND is_owner = true;")
+
+(defn- is-team-owner?
+  [cfg team-id current-user-id]
+  (-> (db/exec-one! cfg [sql:is-team-owner team-id current-user-id])
+      :n
+      pos?))
 
 ;; ---- API: AUTHENTICATE
 
@@ -143,7 +177,7 @@
      token (string): The access token to validate.
    @returns
      200 OK: Returns decoded token claims if valid.
-     403 Forbidden: If the shared key or token is invalid."
+     401 Unauthorized: If the shared key or token is invalid."
   [cfg request]
   (let [token  (-> request :params :token)
         result (tokens/verify cfg {:token token :iss "authentication"})]
@@ -170,12 +204,40 @@
    @returns
      200 OK: Returns the organization record.
      400 Bad Request: Invalid input data.
-     403 Forbidden: If the shared key or user token is invalid.
+     401 Unauthorized: If the shared key or user token is invalid.
      404 Not Found: Organization not found."
   (with-current-user
     (fn [cfg request _]
       (let [organization-id (-> request :params coerce-get-organization-params :id)
-            result          (db/get-by-id cfg :organization organization-id)]
+            result          (-> (db/get-by-id cfg :organization organization-id)
+                                (walk/stringify-keys))]
+        {::yres/status 200
+         ::yres/body result}))))
+
+;; ---- API: LIST-ORGANIZATIONS
+
+(def ^:private sql:list-organizations
+  "SELECT o.*
+     FROM organization AS o
+     JOIN organization_profile_rel AS opr ON o.id = opr.organization_id
+    WHERE opr.profile_id = ?
+      AND opr.role = 'owner';")
+
+
+(def list-organizations
+  "List organizations for which current user is owner.
+
+   @api POST /list-organizations
+   @auth SharedKey
+   @returns
+     200 OK: Returns the list of organizations for the user.
+     401 Unauthorized: If the shared key or user token is invalid."
+  (with-current-user
+    (fn [cfg _request current-user-id]
+      (let [result (->> (db/exec! cfg [sql:list-organizations current-user-id])
+                        (map #(update % :id str))
+                        vec
+                        walk/stringify-keys)]
         {::yres/status 200
          ::yres/body result}))))
 
@@ -201,7 +263,8 @@
      name (string, max 250): Name of the organization.
    @returns
      201 Created: Returns the newly created organization.
-     400 Bad Request: Invalid data."
+     400 Bad Request: Invalid data.
+     401 Unauthorized: If the shared key or user token is invalid."
   (with-current-user
     (fn [cfg request current-user-id]
       (let [{:keys [name]}
@@ -236,31 +299,112 @@
      id (uuid): Organization identifier.
      name (string, max 250): New organization name.
    @returns
-     201 Updated: Operation successful.
+     204 Updated: Operation successful.
      400 Bad Request: Invalid input data.
-     401 Unauthorized: The user is not authenticated (missing or invalid credentials).
-     403 Forbidden: Insufficient permissions."
+     401 Unauthorized: If the shared key or user token is invalid.
+     403 Forbidden: The user doesn't have permissions to execute this operation."
   (with-current-user
     (fn [cfg request current-user-id]
       (let [{:keys [id name]}
             (-> request :params coerce-update-organization-params)
+            org-owner?   (is-org-owner? cfg id current-user-id)]
 
-            organization (db/get-by-id cfg :organization id)
-
-            role         (when organization (get-role cfg id current-user-id))]
-
-        (if (= (keyword role) :owner)
+        (if org-owner?
           (do
-            (l/dbg :hint "update organization"
-                   :id (str id)
-                   :name name)
-
             (db/update! cfg :organization
                         {:name name}
                         {:id id}
                         {::db/return-keys false})
 
-            {::yres/status 201
+            {::yres/status 204
              ::yres/body nil})
           {::yres/status 403
            ::yres/body nil})))))
+
+;; ---- API: LIST-TEAMS
+
+(def ^:private sql:list-teams
+  "SELECT t.*
+     FROM team AS t
+     JOIN team_profile_rel AS tpr ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND tpr.is_owner = 't'
+      AND t.is_default = 'f';")
+
+
+(def list-teams
+  "List teams for which current user is owner.
+
+   @api POST /list-teams
+   @auth SharedKey
+   @returns
+     200 OK: Returns the list of teams for the user.
+     401 Unauthorized: If the shared key or user token is invalid."
+  (with-current-user
+    (fn [cfg _request current-user-id]
+      (let [result (->> (db/exec! cfg [sql:list-teams current-user-id])
+                        (map #(dissoc % :features :subscription :is-default))
+                        (map #(update % :organization-id str))
+                        (map #(update % :id str))
+                        vec
+                        walk/stringify-keys)]
+        {::yres/status 200
+         ::yres/body result}))))
+
+
+;; ---- API: SET-TEAM-ORG
+
+(def ^:private schema:set-team-org
+  [:map
+   [:team-id ::sm/uuid]
+   [:organization-id {:optional true} [:maybe ::sm/uuid]]])
+
+(def ^:private coerce-set-team-org-params
+  (coercer schema:set-team-org
+           :type :validation
+           :hint "invalid data provided for `set-team-org` rpc call"))
+
+(def ^:private sql:set-team-org
+  "UPDATE team
+      SET organization_id = ?
+      WHERE team.id = ?;")
+
+
+(def set-team-org
+  "Set the organization of a team.
+
+   @api POST /set-team-org
+   @auth SharedKey
+   @params
+     team-id (uuid): Team identifier.
+     organization-id (uuid | null): Organization identifier, or null to remove association.
+   @returns
+     204 Updated: Operation successful.
+     401 Unauthorized: If the shared key or user token is invalid.
+     403 Forbidden: The user doesn't have permissions to execute this operation."
+  (with-current-user
+    (fn [cfg request current-user-id]
+      (let [{:keys [organization-id team-id]}
+            (-> request :params coerce-set-team-org-params)
+            org-owner?   (if (nil? organization-id)
+                           true
+                           (is-org-owner? cfg organization-id current-user-id))
+
+            team-owner?  (is-team-owner? cfg team-id current-user-id)
+            organization (when (and team-owner? org-owner?) (db/get-by-id cfg :organization organization-id))
+            msgbus (::mbus/msgbus cfg)]
+
+
+        (if (or
+             (not team-owner?)
+             (not org-owner?))
+          {::yres/status 403}
+          (do
+            (db/exec! cfg [sql:set-team-org organization-id team-id])
+            (mbus/pub! msgbus
+                       :topic uuid/zero #_team-id
+                       :message {:type :team-org-change
+                                 :team-id team-id
+                                 :organization-id organization-id
+                                 :organization-name (:name organization)})
+            {::yres/status 204}))))))

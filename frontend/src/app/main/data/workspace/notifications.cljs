@@ -59,6 +59,8 @@
                         {:type :subscribe-team
                          :team-id team-id}]
 
+            _ (prn "messages for team-id" team-id)
+
             endmsg     {:type :unsubscribe-file
                         :file-id file-id}
 
@@ -72,6 +74,7 @@
                                   (rx/filter (ptk/type? ::dws/message))
                                   (rx/map deref)
                                   (rx/filter (fn [{:keys [topic] :as msg}]
+                                               (prn "topic" topic)
                                                (or (= topic uuid/zero)
                                                    (= topic profile-id)
                                                    (= topic team-id)
@@ -122,8 +125,12 @@
                 (dpl/close-current-plugin {:close-only-edition-plugins? true}))
          (rx/of (dwly/set-options-mode :design)))))))
 
+
+
+
 (defn- process-message
   [{:keys [type] :as msg}]
+  (prn "process-message" msg)
   (case type
     :join-file              (handle-presence msg)
     :leave-file             (handle-presence msg)

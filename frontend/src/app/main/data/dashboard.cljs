@@ -649,10 +649,23 @@
       (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
+
+(defn handle-change-team-org
+  [{:keys [team-id organization-id organization-name] :as message}]
+  (ptk/reify ::handle-change-team-org
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (contains? (:teams state) team-id)
+        (-> state
+            (assoc-in [:teams team-id :organization-id] organization-id)
+            (assoc-in [:teams team-id :organization-name] organization-name))
+        state))))
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
     :notification           (dcm/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dcm/team-membership-change msg)
+    :team-org-change        (handle-change-team-org msg)
     nil))

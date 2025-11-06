@@ -279,7 +279,8 @@
 
    ::nitrate/routes
    {::db/pool            (ig/ref ::db/pool)
-    ::setup/props        (ig/ref ::setup/props)}
+    ::setup/props        (ig/ref ::setup/props)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)

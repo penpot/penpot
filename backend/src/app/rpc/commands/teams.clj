@@ -121,9 +121,11 @@
           tp.is_owner,
           tp.is_admin,
           tp.can_edit,
-          (t.id = ?) AS is_default
+          (t.id = ?) AS is_default,
+          o.name AS organization_name
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
+     LEFT JOIN organization AS o ON o.id = t.organization_id
     WHERE t.deleted_at IS null
       AND tp.profile_id = ?
     ORDER BY tp.created_at ASC")
@@ -134,6 +136,7 @@
           tp.is_admin,
           tp.can_edit,
           (t.id = ?) AS is_default,
+          o.name AS organization_name,
 
           jsonb_build_object(
             '~:type', COALESCE(p.props->'~:subscription'->>'~:type', 'professional'),
@@ -149,6 +152,7 @@
        ON (tpr.team_id = t.id AND tpr.is_owner IS true)
      JOIN profile AS p
        ON (tpr.profile_id = p.id)
+     LEFT JOIN organization AS o ON o.id = t.organization_id
     WHERE t.deleted_at IS null
       AND tp.profile_id = ?
     ORDER BY tp.created_at ASC")
