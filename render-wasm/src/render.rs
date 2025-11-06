@@ -30,8 +30,6 @@ use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
 
-use indexmap::IndexSet;
-
 pub use fonts::*;
 pub use images::*;
 
@@ -1492,11 +1490,14 @@ impl RenderState {
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
                             .iter()
-                            .filter_map(|id| root_ids.get(id).map(|_| *id))
+                            .filter(|id| root_ids.contains(id))
+                            .copied()
                             .collect();
 
                         // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| root_ids.get_index_of(id));
+                        valid_ids.sort_by_key(|id| {
+                            root_ids.iter().position(|x| x == id).unwrap_or(usize::MAX)
+                        });
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -1687,7 +1688,7 @@ impl RenderState {
     ///
     /// This is useful when you have a pre-computed set of shape IDs that need to be refreshed,
     /// regardless of their relationship to other shapes (e.g., ancestors, descendants, or any other collection).
-    pub fn update_tiles_shapes(&mut self, shape_ids: &IndexSet<Uuid>, tree: ShapesPoolMutRef<'_>) {
+    pub fn update_tiles_shapes(&mut self, shape_ids: &[Uuid], tree: ShapesPoolMutRef<'_>) {
         performance::begin_measure!("invalidate_and_update_tiles");
         let mut all_tiles = HashSet::<tiles::Tile>::new();
         for shape_id in shape_ids {

@@ -136,19 +136,24 @@ impl<'a> State<'a> {
     /// invalidated and recalculated to include the new child. This ensures that frames
     /// and groups properly encompass their children.
     pub fn set_parent_for_current_shape(&mut self, id: Uuid) {
-        let shape = {
-            let Some(shape) = self.current_shape_mut() else {
-                panic!("Invalid current shape")
-            };
-            shape.set_parent(id);
-
-            // TODO this clone doesn't seem necessary
-            shape.clone()
+        let Some(shape) = self.current_shape_mut() else {
+            panic!("Invalid current shape")
         };
 
-        if let Some(parent) = shape.parent_id.and_then(|id| self.shapes.get_mut(&id)) {
+        // If the shape already has the same parent, do nothing
+        if shape.parent_id == Some(id) {
+            return;
+        }
+
+        shape.set_parent(id);
+
+        // Note: We don't call parent.add_child() here because we are
+        // asuming the parent is updating its children list via set_children() calls.
+        // Calling add_child here would create duplicates.
+
+        // Invalidate parent's extrect so it gets recalculated to include the new child
+        if let Some(parent) = self.shapes.get_mut(&id) {
             parent.invalidate_extrect();
-            parent.add_child(shape.id);
         }
     }
 
