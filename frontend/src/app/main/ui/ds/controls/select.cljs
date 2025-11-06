@@ -119,6 +119,7 @@
          (mf/deps disabled)
          (fn [event]
            (dom/stop-propagation event)
+           (dom/prevent-default event)
            (when-not disabled
              (swap! is-open* not))))
 
