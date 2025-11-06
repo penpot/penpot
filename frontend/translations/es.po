@@ -1694,6 +1694,10 @@ msgstr "RGBA"
 msgid "inspect.attributes.fill"
 msgstr "Relleno"
 
+#: src/app/main/ui/inspect/attributes/fill.cljs:53
+msgid "inspect.attributes.image.preview"
+msgstr "Previsualización de la imagen de relleno"
+
 #: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:127
 msgid "inspect.attributes.image.download"
 msgstr "Descargar imagen original"

@@ -1696,6 +1696,10 @@ msgstr "RGBA"
 msgid "inspect.attributes.fill"
 msgstr "Fill"
 
+#: src/app/main/ui/inspect/attributes/fill.cljs:53
+msgid "inspect.attributes.image.preview"
+msgstr "Preview of the shape's fill image"
+
 #: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:127
 msgid "inspect.attributes.image.download"
 msgstr "Download source image"
