@@ -688,6 +688,7 @@
         pinned-projects
         (mf/with-memo [projects]
           (->> projects
+               (remove :deleted-at)
                (remove :is-default)
                (filter :is-pinned)
                (sort-by :name)

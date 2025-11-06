@@ -245,7 +245,10 @@
         [:div {:class (stl/css-case :project-actions true
                                     :pinned-project (:is-pinned project))}
          (when-not (:is-default project)
-           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+           [:> pin-button* {:class (stl/css :pin-button)
+                            :is-pinned (:is-pinned project)
+                            :on-click toggle-pin
+                            :tab-index 0}])
 
          (when ^boolean can-edit
            [:button {:class (stl/css :add-file-btn)
@@ -315,6 +318,7 @@
   (let [projects
         (mf/with-memo [projects]
           (->> projects
+               (remove :deleted-at)
                (sort-by :modified-at)
                (reverse)))
 

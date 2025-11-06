@@ -19,6 +19,7 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -142,126 +143,112 @@
           (t/is (= 0 (count result))))))))
 
 (t/deftest file-gc-with-fragments
-  (letfn [(update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-            (let [params {::th/type :update-file
-                          ::rpc/profile-id profile-id
-                          :id file-id
-                          :session-id (uuid/random)
-                          :revn revn
-                          :vern 0
-                          :features cfeat/supported-features
-                          :changes changes}
-                  out    (th/command! params)]
-              ;; (th/print-result! out)
-              (t/is (nil? (:error out)))
-              (:result out)))]
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
 
-    (let [profile (th/create-profile* 1)
-          file    (th/create-file* 1 {:profile-id (:id profile)
-                                      :project-id (:default-project-id profile)
-                                      :is-shared false})
+        page-id  (uuid/random)
+        shape-id (uuid/random)]
 
-          page-id  (uuid/random)
-          shape-id (uuid/random)]
+    ;; Preventive file-gc
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file) :revn (:revn file)})))
 
-      ;; Preventive file-gc
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file) :revn (:revn file)})))
+    ;; Check the number of fragments before adding the page
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      (t/is (= 2 (count rows))))
 
-      ;; Check the number of fragments before adding the page
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        (t/is (= 2 (count rows))))
+    ;; Add page
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-page
+       :name "test"
+       :id page-id}])
 
-      ;; Add page
-      (update-file!
-       :file-id (:id file)
-       :profile-id (:id profile)
-       :revn 0
-       :vern 0
-       :changes
-       [{:type :add-page
-         :name "test"
-         :id page-id}])
+    ;; Check the number of fragments before adding the page
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      (t/is (= 3 (count rows))))
 
-      ;; Check the number of fragments before adding the page
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        (t/is (= 3 (count rows))))
+    ;; The file-gc should mark for remove unused fragments
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; The file-gc should mark for remove unused fragments
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    ;; Check the number of fragments
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      (t/is (= 5 (count rows)))
+      (t/is (= 3 (count (filterv :deleted-at rows)))))
 
-      ;; Check the number of fragments
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        (t/is (= 5 (count rows)))
-        (t/is (= 3 (count (filterv :deleted-at rows)))))
+    ;; The objects-gc should remove unused fragments
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 3 (:processed res))))
 
-      ;; The objects-gc should remove unused fragments
-      (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 3 (:processed res))))
+    ;; Check the number of fragments
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      (t/is (= 2 (count rows))))
 
-      ;; Check the number of fragments
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        (t/is (= 2 (count rows))))
+    ;; Add shape to page that should add a new fragment
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id page-id
+       :id shape-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id shape-id
+              :name "image"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :rect})}])
 
-      ;; Add shape to page that should add a new fragment
-      (update-file!
-       :file-id (:id file)
-       :profile-id (:id profile)
-       :revn 0
-       :vern 0
-       :changes
-       [{:type :add-obj
-         :page-id page-id
-         :id shape-id
-         :parent-id uuid/zero
-         :frame-id uuid/zero
-         :components-v2 true
-         :obj (cts/setup-shape
-               {:id shape-id
-                :name "image"
-                :frame-id uuid/zero
-                :parent-id uuid/zero
-                :type :rect})}])
+    ;; Check the number of fragments
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      (t/is (= 3 (count rows))))
 
-      ;; Check the number of fragments
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        (t/is (= 3 (count rows))))
+    ;; The file-gc should mark for remove unused fragments
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; The file-gc should mark for remove unused fragments
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    ;; The objects-gc should remove unused fragments
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 3 (:processed res))))
 
-      ;; The objects-gc should remove unused fragments
-      (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 3 (:processed res))))
+    ;; Check the number of fragments;
+    (let [rows (th/db-query :file-data {:file-id (:id file)
+                                        :type "fragment"
+                                        :deleted-at nil})]
+      (t/is (= 2 (count rows))))
 
-      ;; Check the number of fragments;
-      (let [rows (th/db-query :file-data {:file-id (:id file)
-                                          :type "fragment"
-                                          :deleted-at nil})]
-        (t/is (= 2 (count rows))))
+    ;; Lets proceed to delete all changes
+    (th/db-delete! :file-change {:file-id (:id file)})
+    (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
 
-      ;; Lets proceed to delete all changes
-      (th/db-delete! :file-change {:file-id (:id file)})
-      (th/db-delete! :file-data {:file-id (:id file) :type "snapshot"})
+    (th/db-update! :file
+                   {:has-media-trimmed false}
+                   {:id (:id file)})
 
-      (th/db-update! :file
-                     {:has-media-trimmed false}
-                     {:id (:id file)})
+    ;; The file-gc should remove fragments related to changes
+    ;; snapshots previously deleted.
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      ;; The file-gc should remove fragments related to changes
-      ;; snapshots previously deleted.
-      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
+    ;; Check the number of fragments;
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      ;; (pp/pprint rows)
+      (t/is (= 4 (count rows)))
+      (t/is (= 2 (count (remove :deleted-at rows)))))
 
-      ;; Check the number of fragments;
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        ;; (pp/pprint rows)
-        (t/is (= 4 (count rows)))
-        (t/is (= 2 (count (remove :deleted-at rows)))))
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 2 (:processed res))))
 
-      (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res))))
-
-      (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
-        (t/is (= 2 (count rows)))))))
+    (let [rows (th/db-query :file-data {:file-id (:id file) :type "fragment"})]
+      (t/is (= 2 (count rows))))))
 
 (t/deftest file-gc-with-thumbnails
   (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
@@ -277,20 +264,6 @@
                           :content mfile}
                   out    (th/command! params)]
 
-              ;; (th/print-result! out)
-              (t/is (nil? (:error out)))
-              (:result out)))
-
-          (update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-            (let [params {::th/type :update-file
-                          ::rpc/profile-id profile-id
-                          :id file-id
-                          :session-id (uuid/random)
-                          :revn revn
-                          :vern 0
-                          :features cfeat/supported-features
-                          :changes changes}
-                  out    (th/command! params)]
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
               (:result out)))]
@@ -1893,3 +1866,125 @@
 
       (t/is (= (:id file-2) (:file-id (get rows 0))))
       (t/is (nil? (:deleted-at (get rows 0)))))))
+
+(t/deftest deleted-files-permanently-delete
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+
+    (binding [ct/*clock* (clock/fixed now)]
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "foobar"
+                  :is-shared false
+                  :components-v2 true}
+            out (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (= (:name data) (:name result)))
+          (t/is (= proj-id (:project-id result)))))
+
+      (let [data {::th/type :delete-file
+                  :id file-id
+                  ::rpc/profile-id (:id prof)}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out))))
+
+      ;; get deleted files
+      (let [data {::th/type :get-team-deleted-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [[row1 :as result] (:result out)]
+          (t/is (= 1 (count result)))
+          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+
+      (let [data {::th/type :permanently-delete-team-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :ids #{file-id}}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (= (:ids data) result)))
+
+        (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+          (t/is (= (:deleted-at row) now)))))))
+
+(t/deftest deleted-files-restore
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+
+    (binding [ct/*clock* (clock/fixed now)]
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "foobar"
+                  :is-shared false
+                  :components-v2 true}
+            out (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (= (:name data) (:name result)))
+          (t/is (= proj-id (:project-id result)))))
+
+      (let [data {::th/type :delete-file
+                  :id file-id
+                  ::rpc/profile-id (:id prof)}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out))))
+
+      ;; get deleted files
+      (let [data {::th/type :get-team-deleted-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [[row1 :as result] (:result out)]
+          (t/is (= 1 (count result)))
+          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+
+      (let [data {::th/type :restore-deleted-team-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :ids #{file-id}}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (fn? result))
+
+          (let [events (th/consume-sse result)]
+            ;; (pp/pprint events)
+            (t/is (= 2 (count events)))
+            (t/is (= :end (first (last events))))
+            (t/is (= (:ids data) (last (last events)))))))
+
+      (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+        (t/is (nil? (:deleted-at row)))))))
