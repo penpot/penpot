@@ -48,7 +48,6 @@ pub use text::*;
 pub use transform::*;
 
 use crate::math::{self, Bounds, Matrix, Point};
-use indexmap::IndexSet;
 
 use crate::state::ShapesPoolRef;
 
@@ -161,7 +160,7 @@ pub struct Shape {
     pub id: Uuid,
     pub parent_id: Option<Uuid>,
     pub shape_type: Type,
-    pub children: IndexSet<Uuid>,
+    pub children: Vec<Uuid>,
     pub selrect: math::Rect,
     pub transform: Matrix,
     pub rotation: f32,
@@ -201,16 +200,21 @@ pub fn all_with_ancestors(
     shapes: &[Uuid],
     shapes_pool: ShapesPoolRef,
     include_hidden: bool,
-) -> IndexSet<Uuid> {
+) -> Vec<Uuid> {
     let mut pending = Vec::from_iter(shapes.iter());
-    let mut result = IndexSet::new();
+    let mut result = Vec::new();
+    let mut seen = HashSet::new();
 
     while !pending.is_empty() {
         let Some(current_id) = pending.pop() else {
             break;
         };
 
-        result.insert(*current_id);
+        if !seen.insert(*current_id) {
+            continue;
+        }
+
+        result.push(*current_id);
 
         let Some(parent_id) = shapes_pool.get(current_id).and_then(|s| s.parent_id) else {
             continue;
@@ -220,7 +224,7 @@ pub fn all_with_ancestors(
             continue;
         }
 
-        if result.contains(&parent_id) {
+        if seen.contains(&parent_id) {
             continue;
         }
 
@@ -244,7 +248,7 @@ impl Shape {
             id,
             parent_id: None,
             shape_type: Type::Rect(Rect::default()),
-            children: IndexSet::<Uuid>::new(),
+            children: Vec::new(),
             selrect: math::Rect::new_empty(),
             transform: Matrix::default(),
             rotation: 0.,
@@ -560,15 +564,15 @@ impl Shape {
     }
 
     pub fn add_child(&mut self, id: Uuid) {
-        self.children.insert(id);
+        self.children.push(id);
     }
 
-    pub fn compute_children_differences(
-        &mut self,
-        children: &IndexSet<Uuid>,
-    ) -> (IndexSet<Uuid>, IndexSet<Uuid>) {
-        let added = children.difference(&self.children).cloned().collect();
-        let removed = self.children.difference(children).cloned().collect();
+    pub fn compute_children_differences(&mut self, children: &[Uuid]) -> (Vec<Uuid>, Vec<Uuid>) {
+        let current_set: HashSet<Uuid> = self.children.iter().copied().collect();
+        let new_set: HashSet<Uuid> = children.iter().copied().collect();
+
+        let added: Vec<Uuid> = new_set.difference(&current_set).copied().collect();
+        let removed: Vec<Uuid> = current_set.difference(&new_set).copied().collect();
         (added, removed)
     }
 
@@ -946,26 +950,26 @@ impl Shape {
         self.children.first()
     }
 
-    pub fn children_ids(&self, include_hidden: bool) -> IndexSet<Uuid> {
+    pub fn children_ids(&self, include_hidden: bool) -> Vec<Uuid> {
         if include_hidden {
-            return self.children.clone().into_iter().rev().collect();
+            return self.children.iter().rev().copied().collect();
         }
 
         if let Type::Bool(_) = self.shape_type {
-            IndexSet::<Uuid>::new()
+            Vec::new()
         } else if let Type::Group(group) = self.shape_type {
             if group.masked {
                 self.children
                     .iter()
                     .rev()
                     .take(self.children.len() - 1)
-                    .cloned()
+                    .copied()
                     .collect()
             } else {
-                self.children.clone().into_iter().rev().collect()
+                self.children.iter().rev().copied().collect()
             }
         } else {
-            self.children.clone().into_iter().rev().collect()
+            self.children.iter().rev().copied().collect()
         }
     }
 
@@ -992,7 +996,7 @@ impl Shape {
         shapes: ShapesPoolRef,
         include_hidden: bool,
         include_self: bool,
-    ) -> IndexSet<Uuid> {
+    ) -> Vec<Uuid> {
         let all_children = self.children_ids_iter(include_hidden).flat_map(|id| {
             shapes
                 .get(id)

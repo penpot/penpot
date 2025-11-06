@@ -14,7 +14,6 @@ mod view;
 mod wapi;
 mod wasm;
 
-use indexmap::IndexSet;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
@@ -303,8 +302,8 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     });
 }
 
-fn set_children_set(entries: IndexSet<Uuid>) {
-    let mut deleted = IndexSet::new();
+fn set_children_set(entries: Vec<Uuid>) {
+    let mut deleted = Vec::new();
     let mut parent_id = None;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
@@ -326,13 +325,13 @@ fn set_children_set(entries: IndexSet<Uuid>) {
 
 #[no_mangle]
 pub extern "C" fn set_children_0() {
-    let entries = IndexSet::from_iter(vec![]);
+    let entries = vec![];
     set_children_set(entries);
 }
 
 #[no_mangle]
 pub extern "C" fn set_children_1(a1: u32, b1: u32, c1: u32, d1: u32) {
-    let entries = IndexSet::from_iter(vec![uuid_from_u32_quartet(a1, b1, c1, d1)]);
+    let entries = vec![uuid_from_u32_quartet(a1, b1, c1, d1)];
     set_children_set(entries);
 }
 
@@ -347,10 +346,10 @@ pub extern "C" fn set_children_2(
     c2: u32,
     d2: u32,
 ) {
-    let entries = IndexSet::from_iter(vec![
+    let entries = vec![
         uuid_from_u32_quartet(a1, b1, c1, d1),
         uuid_from_u32_quartet(a2, b2, c2, d2),
-    ]);
+    ];
     set_children_set(entries);
 }
 
@@ -369,11 +368,11 @@ pub extern "C" fn set_children_3(
     c3: u32,
     d3: u32,
 ) {
-    let entries = IndexSet::from_iter(vec![
+    let entries = vec![
         uuid_from_u32_quartet(a1, b1, c1, d1),
         uuid_from_u32_quartet(a2, b2, c2, d2),
         uuid_from_u32_quartet(a3, b3, c3, d3),
-    ]);
+    ];
     set_children_set(entries);
 }
 
@@ -396,12 +395,12 @@ pub extern "C" fn set_children_4(
     c4: u32,
     d4: u32,
 ) {
-    let entries = IndexSet::from_iter(vec![
+    let entries = vec![
         uuid_from_u32_quartet(a1, b1, c1, d1),
         uuid_from_u32_quartet(a2, b2, c2, d2),
         uuid_from_u32_quartet(a3, b3, c3, d3),
         uuid_from_u32_quartet(a4, b4, c4, d4),
-    ]);
+    ];
     set_children_set(entries);
 }
 
@@ -428,13 +427,13 @@ pub extern "C" fn set_children_5(
     c5: u32,
     d5: u32,
 ) {
-    let entries = IndexSet::from_iter(vec![
+    let entries = vec![
         uuid_from_u32_quartet(a1, b1, c1, d1),
         uuid_from_u32_quartet(a2, b2, c2, d2),
         uuid_from_u32_quartet(a3, b3, c3, d3),
         uuid_from_u32_quartet(a4, b4, c4, d4),
         uuid_from_u32_quartet(a5, b5, c5, d5),
-    ]);
+    ];
     set_children_set(entries);
 }
 
@@ -442,7 +441,7 @@ pub extern "C" fn set_children_5(
 pub extern "C" fn set_children() {
     let bytes = mem::bytes_or_empty();
 
-    let entries: IndexSet<Uuid> = bytes
+    let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
         .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
         .collect();

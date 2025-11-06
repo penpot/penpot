@@ -5,7 +5,6 @@ use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 use bezier_rs::{Bezier, BezierHandles, ProjectionOptions, TValue};
 use glam::DVec2;
-use indexmap::IndexSet;
 use skia_safe as skia;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
@@ -384,11 +383,7 @@ fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
     result
 }
 
-pub fn bool_from_shapes(
-    bool_type: BoolType,
-    children_ids: &IndexSet<Uuid>,
-    shapes: ShapesPoolRef,
-) -> Path {
+pub fn bool_from_shapes(bool_type: BoolType, children_ids: &[Uuid], shapes: ShapesPoolRef) -> Path {
     if children_ids.is_empty() {
         return Path::default();
     }

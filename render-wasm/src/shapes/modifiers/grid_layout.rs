@@ -6,7 +6,6 @@ use crate::shapes::{
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
-use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
 
 use super::common::GetBounds;
@@ -538,7 +537,7 @@ fn cell_bounds(
 
 pub fn create_cell_data<'a>(
     layout_bounds: &Bounds,
-    children: &IndexSet<Uuid>,
+    children: &[Uuid],
     shapes: ShapesPoolRef<'a>,
     cells: &Vec<GridCell>,
     column_tracks: &[TrackData],
