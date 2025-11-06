@@ -1515,6 +1515,8 @@ impl RenderState {
         }
         self.render_in_progress = false;
 
+        self.surfaces.gc();
+
         // Cache target surface in a texture
         self.cached_viewbox = self.viewbox;
         self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));

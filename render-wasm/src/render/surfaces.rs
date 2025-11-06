@@ -6,7 +6,7 @@ use skia_safe::{self as skia, IRect, Paint, RRect};
 use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SIZE};
 
 use base64::{engine::general_purpose, Engine as _};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 const TEXTURES_CACHE_CAPACITY: usize = 512;
 const TEXTURES_BATCH_DELETE: usize = 32;
@@ -322,17 +322,12 @@ impl Surfaces {
         self.tiles.has(tile)
     }
 
-    pub fn remove_cached_tile_surface(
-        &mut self,
-        tile: Tile,
-        rect: skia::Rect,
-        color: skia::Color,
-    ) -> bool {
+    pub fn remove_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
         // Clear the specific tile area in the cache surface with color
         let mut paint = skia::Paint::default();
         paint.set_color(color);
         self.cache.canvas().draw_rect(rect, &paint);
-        self.tiles.remove(tile)
+        self.tiles.remove(tile);
     }
 
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
@@ -352,24 +347,50 @@ impl Surfaces {
         self.tiles.clear();
         self.cache.canvas().clear(color);
     }
+
+    pub fn gc(&mut self) {
+        self.tiles.gc();
+    }
 }
 
 pub struct TileTextureCache {
     grid: HashMap<Tile, skia::Image>,
+    removed: HashSet<Tile>,
 }
 
 impl TileTextureCache {
     pub fn new() -> Self {
         Self {
-            grid: HashMap::new(),
+            grid: HashMap::default(),
+            removed: HashSet::default(),
         }
     }
 
     pub fn has(&self, tile: Tile) -> bool {
-        self.grid.contains_key(&tile)
+        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
     }
 
-    fn remove_list(&mut self, marked: Vec<Tile>) {
+    fn gc(&mut self) {
+        // Make a real remove
+        for tile in self.removed.iter() {
+            self.grid.remove(tile);
+        }
+    }
+
+    fn free_tiles(&mut self, tile_viewbox: &TileViewbox) {
+        let marked: Vec<_> = self
+            .grid
+            .iter_mut()
+            .filter_map(|(tile, _)| {
+                if !tile_viewbox.is_visible(tile) {
+                    Some(*tile)
+                } else {
+                    None
+                }
+            })
+            .take(TEXTURES_BATCH_DELETE)
+            .collect();
+
         for tile in marked.iter() {
             self.grid.remove(tile);
         }
@@ -377,21 +398,19 @@ impl TileTextureCache {
 
     pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile, image: skia::Image) {
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
-            let marked: Vec<_> = self
-                .grid
-                .iter_mut()
-                .filter_map(|(tile, _)| {
-                    if !tile_viewbox.is_visible(tile) {
-                        Some(*tile)
-                    } else {
-                        None
-                    }
-                })
-                .take(TEXTURES_BATCH_DELETE)
-                .collect();
-            self.remove_list(marked);
+            // First we try to remove the obsolete tiles
+            self.gc();
         }
+
+        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
+            self.free_tiles(tile_viewbox);
+        }
+
         self.grid.insert(*tile, image);
+
+        if self.removed.contains(tile) {
+            self.removed.remove(tile);
+        }
     }
 
     pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Image, String> {
@@ -399,15 +418,13 @@ impl TileTextureCache {
         Ok(image)
     }
 
-    pub fn remove(&mut self, tile: Tile) -> bool {
-        if !self.grid.contains_key(&tile) {
-            return false;
-        }
-        self.grid.remove(&tile);
-        true
+    pub fn remove(&mut self, tile: Tile) {
+        self.removed.insert(tile);
     }
 
     pub fn clear(&mut self) {
-        self.grid.clear();
+        for k in self.grid.keys() {
+            self.removed.insert(*k);
+        }
     }
 }
