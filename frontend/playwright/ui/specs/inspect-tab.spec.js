@@ -27,6 +27,7 @@ const shapeToLayerName = {
   gridElement: "shape - layout - grid - element",
   shadow: "shape - shadow - single",
   shadowMultiple: "shape - shadow - multiple",
+  shadowComposite: "shape - shadow - composite",
   blur: "shape - blur",
   borderRadius: {
     main: "shape - borderRadius",
@@ -218,6 +219,31 @@ test.describe("Inspect tab - Styles", () => {
       const propertyRowCount = await propertyRow.count();
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(4);
+    });
+
+    test("Shape Shadow - Composite shadow", async ({ page }) => {
+      const workspacePage = new WorkspacePage(page);
+      await setupFile(workspacePage);
+
+      await selectLayer(workspacePage, shapeToLayerName.shadowComposite);
+      await openInspectTab(workspacePage);
+
+      const panel = await getPanelByTitle(workspacePage, "Shadow");
+      await expect(panel).toBeVisible();
+
+      const propertyRow = panel.getByTestId("property-row");
+      const propertyRowCount = await propertyRow.count();
+
+      expect(propertyRowCount).toBeGreaterThanOrEqual(3);
+
+      const compositeShadowRow = propertyRow.first();
+      await expect(compositeShadowRow).toBeVisible();
+
+      const compositeShadowTerm = compositeShadowRow.locator("dt");
+      const compositeShadowDefinition = compositeShadowRow.locator("dd");
+
+      expect(compositeShadowTerm).toHaveText("Shadow", { exact: true });
+      expect(compositeShadowDefinition).toContainText("shadowToken");
     });
   });
 

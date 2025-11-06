@@ -250,6 +250,7 @@
               [:> style-box* {:panel :shadow
                               :shorthand (:shadow shorthands)}
                [:> shadow-panel* {:shapes shapes
+                                  :resolved-tokens resolved-active-tokens
                                   :color-space color-space
                                   :on-shadow-shorthand set-shorthands}]]))
 

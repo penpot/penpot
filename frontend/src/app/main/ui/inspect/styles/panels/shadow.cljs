@@ -15,6 +15,17 @@
    [app.util.code-gen.style-css-formats :as scf]
    [rumext.v2 :as mf]))
 
+(defn- get-applied-tokens-in-shape
+  [shape-tokens property]
+  (get shape-tokens property))
+
+(defn- get-resolved-token
+  [property shape resolved-tokens]
+  (let [shape-tokens (:applied-tokens shape)
+        applied-tokens-in-shape (get-applied-tokens-in-shape shape-tokens property)
+        token (get resolved-tokens applied-tokens-in-shape)]
+    token))
+
 (defn- generate-shadow-shorthand
   [shapes]
   (when (= (count shapes) 1)
@@ -30,7 +41,7 @@
       (dm/str shorthand-property shorthand-value ";"))))
 
 (mf/defc shadow-panel*
-  [{:keys [shapes color-space on-shadow-shorthand]}]
+  [{:keys [shapes resolved-tokens color-space on-shadow-shorthand]}]
   (let [shorthand* (mf/use-state #(generate-shadow-shorthand shapes))
         shorthand (deref shorthand*)]
     (mf/use-effect
@@ -41,16 +52,25 @@
                              :property shorthand})))
     [:div {:class (stl/css :shadow-panel)}
      (for [shape shapes]
-       (for [[idx shadow] (map-indexed vector (:shadow shape))]
-         [:div {:key (dm/str idx) :class (stl/css :shadow-shape)}
-          [:> color-properties-row* {:term "Shadow Color"
-                                     :color (:color shadow)
-                                     :format color-space
-                                     :copiable true}]
-          (let [value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
-                property-name (cmm/get-css-rule-humanized (:style shadow))
-                property-value (css/shadow->css shadow)]
-            [:> properties-row* {:term property-name
-                                 :detail (dm/str value)
-                                 :property property-value
-                                 :copiable true}])]))]))
+       (let [composite-shadow-token (get-resolved-token :shadow shape resolved-tokens)]
+         (for [[idx shadow] (map-indexed vector (:shadow shape))]
+           [:div {:key (dm/str idx) :class (stl/css :shadow-shape)}
+            (when composite-shadow-token
+              [:> properties-row* {:term "Shadow"
+                                   :detail (:name composite-shadow-token)
+                                   :token composite-shadow-token
+                                   :property (:name composite-shadow-token)
+                                   :copiable true}])
+            [:> color-properties-row* {:term "Shadow Color"
+                                       :color (:color shadow)
+                                       :format color-space
+                                       :copiable true}]
+
+            (let [value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
+                  property-name (cmm/get-css-rule-humanized (:style shadow))
+                  property-value (css/shadow->css shadow)]
+
+              [:> properties-row* {:term property-name
+                                   :detail (dm/str value)
+                                   :property property-value
+                                   :copiable true}])])))]))

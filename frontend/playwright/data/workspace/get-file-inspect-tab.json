@@ -25,8 +25,8 @@
   "~:has-media-trimmed": false,
   "~:comment-thread-seqn": 0,
   "~:name": "Fitxer nou 4 (còpia)",
-  "~:revn": 161,
-  "~:modified-at": "~m1762259088973",
+  "~:revn": 169,
+  "~:modified-at": "~m1762429557622",
   "~:vern": 0,
   "~:id": "~u7b2da435-6186-815a-8007-0daa95d2f26d",
   "~:is-shared": false,
@@ -314,7 +314,7 @@
           },
           "~u5403f14e-eb02-80be-8007-048a9fb2671a": {
             "~#shape": {
-              "~:y": 702,
+              "~:y": 1038,
               "~:transform": {
                 "~#matrix": {
                   "~:a": 1.0,
@@ -381,10 +381,10 @@
               "~:width": 37,
               "~:type": "~:text",
               "~:points": [
-                { "~#point": { "~:x": 770, "~:y": 702 } },
-                { "~#point": { "~:x": 807, "~:y": 702 } },
-                { "~#point": { "~:x": 807, "~:y": 724 } },
-                { "~#point": { "~:x": 770, "~:y": 724 } }
+                { "~#point": { "~:x": 1327, "~:y": 1038 } },
+                { "~#point": { "~:x": 1364, "~:y": 1038 } },
+                { "~#point": { "~:x": 1364, "~:y": 1060 } },
+                { "~#point": { "~:x": 1327, "~:y": 1060 } }
               ],
               "~:transform-inverse": {
                 "~#matrix": {
@@ -402,7 +402,7 @@
               "~:position-data": [
                 {
                   "~#rect": {
-                    "~:y": 723.3000030517578,
+                    "~:y": 1059.3000030517578,
                     "~:font-style": "normal",
                     "~:text-transform": "none",
                     "~:font-size": "18px",
@@ -411,7 +411,7 @@
                     "~:width": 36.366668701171875,
                     "~:text-decoration": "none",
                     "~:letter-spacing": "normal",
-                    "~:x": 770,
+                    "~:x": 1327,
                     "~:x1": 0,
                     "~:y2": 21.300003051757812,
                     "~:fills": [
@@ -427,17 +427,17 @@
               ],
               "~:frame-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
               "~:strokes": [],
-              "~:x": 770,
+              "~:x": 1327,
               "~:selrect": {
                 "~#rect": {
-                  "~:x": 770,
-                  "~:y": 702,
+                  "~:x": 1327,
+                  "~:y": 1038,
                   "~:width": 37,
                   "~:height": 22,
-                  "~:x1": 770,
-                  "~:y1": 702,
-                  "~:x2": 807,
-                  "~:y2": 724
+                  "~:x1": 1327,
+                  "~:y1": 1038,
+                  "~:x2": 1364,
+                  "~:y2": 1060
                 }
               },
               "~:fills": [],
@@ -1256,6 +1256,83 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 27,
+              "~:flip-y": null
+            }
+          },
+          "~u63c623e4-0e89-80ce-8007-1168f74c90c0": {
+            "~#shape": {
+              "~:y": 717,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "shape - shadow - composite",
+              "~:width": 221,
+              "~:type": "~:rect",
+              "~:points": [
+                { "~#point": { "~:x": 695, "~:y": 717 } },
+                { "~#point": { "~:x": 916, "~:y": 717 } },
+                { "~#point": { "~:x": 916, "~:y": 866 } },
+                { "~#point": { "~:x": 695, "~:y": 866 } }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u63c623e4-0e89-80ce-8007-1168f74c90c0",
+              "~:parent-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
+              "~:applied-tokens": { "~:shadow": "shadowToken" },
+              "~:frame-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
+              "~:strokes": [],
+              "~:x": 695,
+              "~:proportion": 1,
+              "~:shadow": [
+                {
+                  "~:id": "~u5d50013d-dbc4-4ee8-b35a-3eb331840bf1",
+                  "~:hidden": false,
+                  "~:offset-x": 10,
+                  "~:offset-y": 10,
+                  "~:blur": 4,
+                  "~:color": { "~:color": "#a04949", "~:opacity": 1 },
+                  "~:spread": 10,
+                  "~:style": "~:inner-shadow"
+                }
+              ],
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 695,
+                  "~:y": 717,
+                  "~:width": 221,
+                  "~:height": 149,
+                  "~:x1": 695,
+                  "~:y1": 717,
+                  "~:x2": 916,
+                  "~:y2": 866
+                }
+              },
+              "~:fills": [{ "~:fill-color": "#B1B2B5", "~:fill-opacity": 1 }],
+              "~:flip-x": null,
+              "~:height": 149,
               "~:flip-y": null
             }
           },
@@ -3443,6 +3520,140 @@
               "~:flip-y": null
             }
           },
+          "~u63c623e4-0e89-80ce-8007-1168fbe0e852": {
+            "~#shape": {
+              "~:y": 692,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:auto-width",
+              "~:content": {
+                "~:type": "root",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:text-transform": "none",
+                            "~:text-align": "left",
+                            "~:font-id": "gfont-albert-sans",
+                            "~:font-size": "18",
+                            "~:font-weight": "400",
+                            "~:text-direction": "ltr",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              { "~:fill-color": "#000000", "~:fill-opacity": 1 }
+                            ],
+                            "~:font-family": "Albert Sans",
+                            "~:text": "composite"
+                          }
+                        ],
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "gfont-albert-sans",
+                        "~:key": "1tgq4",
+                        "~:font-size": "18",
+                        "~:font-weight": "400",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          { "~:fill-color": "#000000", "~:fill-opacity": 1 }
+                        ],
+                        "~:font-family": "Albert Sans"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "composite",
+              "~:width": 88,
+              "~:type": "~:text",
+              "~:points": [
+                { "~#point": { "~:x": 695, "~:y": 692 } },
+                { "~#point": { "~:x": 783, "~:y": 692 } },
+                { "~#point": { "~:x": 783, "~:y": 714 } },
+                { "~#point": { "~:x": 695, "~:y": 714 } }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:id": "~u63c623e4-0e89-80ce-8007-1168fbe0e852",
+              "~:parent-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
+              "~:applied-tokens": { "~:typography": "body" },
+              "~:position-data": [
+                {
+                  "~#rect": {
+                    "~:y": 713.3000030517578,
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:font-size": "18px",
+                    "~:font-weight": "400",
+                    "~:y1": 0.3000030517578125,
+                    "~:width": 87.94999694824219,
+                    "~:text-decoration": "none",
+                    "~:letter-spacing": "normal",
+                    "~:x": 695,
+                    "~:x1": 0,
+                    "~:y2": 21.300003051757812,
+                    "~:fills": [
+                      { "~:fill-color": "#000000", "~:fill-opacity": 1 }
+                    ],
+                    "~:x2": 87.94999694824219,
+                    "~:direction": "ltr",
+                    "~:font-family": "\"Albert Sans\"",
+                    "~:height": 21,
+                    "~:text": "composite"
+                  }
+                }
+              ],
+              "~:frame-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
+              "~:strokes": [],
+              "~:x": 695,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 695,
+                  "~:y": 692,
+                  "~:width": 88,
+                  "~:height": 22,
+                  "~:x1": 695,
+                  "~:y1": 692,
+                  "~:x2": 783,
+                  "~:y2": 714
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 22,
+              "~:flip-y": null
+            }
+          },
           "~u6ce76eb4-b183-804e-8007-04b05cc6d7db": {
             "~#shape": {
               "~:y": 924,
@@ -3658,6 +3869,7 @@
                 "~u6ce76eb4-b183-804e-8007-04b07bc58c4a",
                 "~u6ce76eb4-b183-804e-8007-04b258ecdfff",
                 "~u6ce76eb4-b183-804e-8007-04b261218dbe",
+                "~u63c623e4-0e89-80ce-8007-1168fbe0e852",
                 "~u6ce76eb4-b183-804e-8007-04b14cc0b236",
                 "~u6ce76eb4-b183-804e-8007-04b1541dd680",
                 "~u6ce76eb4-b183-804e-8007-04b15b636f6a",
@@ -3665,6 +3877,7 @@
                 "~u5403f14e-eb02-80be-8007-0487bbc6ea5e",
                 "~u5403f14e-eb02-80be-8007-048a7f80ca80",
                 "~u6ce76eb4-b183-804e-8007-04b25da1d244",
+                "~u63c623e4-0e89-80ce-8007-1168f74c90c0",
                 "~u5403f14e-eb02-80be-8007-048a99988f3d",
                 "~u6ce76eb4-b183-804e-8007-04b035b88460",
                 "~u6ce76eb4-b183-804e-8007-04b69f6ca2af",
@@ -3691,7 +3904,7 @@
           },
           "~u5403f14e-eb02-80be-8007-048a9fb22a88": {
             "~#shape": {
-              "~:y": 733,
+              "~:y": 1069,
               "~:transform": {
                 "~#matrix": {
                   "~:a": 1.0,
@@ -3709,10 +3922,10 @@
               "~:width": 221,
               "~:type": "~:rect",
               "~:points": [
-                { "~#point": { "~:x": 770, "~:y": 733 } },
-                { "~#point": { "~:x": 991, "~:y": 733 } },
-                { "~#point": { "~:x": 991, "~:y": 882 } },
-                { "~#point": { "~:x": 770, "~:y": 882 } }
+                { "~#point": { "~:x": 1327, "~:y": 1069 } },
+                { "~#point": { "~:x": 1548, "~:y": 1069 } },
+                { "~#point": { "~:x": 1548, "~:y": 1218 } },
+                { "~#point": { "~:x": 1327, "~:y": 1218 } }
               ],
               "~:r2": 0,
               "~:proportion-lock": false,
@@ -3738,20 +3951,20 @@
               "~:parent-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
               "~:frame-id": "~u5403f14e-eb02-80be-8007-0487afa26386",
               "~:strokes": [],
-              "~:x": 770,
+              "~:x": 1327,
               "~:proportion": 1,
               "~:shadow": [],
               "~:r4": 0,
               "~:selrect": {
                 "~#rect": {
-                  "~:x": 770,
-                  "~:y": 733,
+                  "~:x": 1327,
+                  "~:y": 1069,
                   "~:width": 221,
                   "~:height": 149,
-                  "~:x1": 770,
-                  "~:y1": 733,
-                  "~:x2": 991,
-                  "~:y2": 882
+                  "~:x1": 1327,
+                  "~:y1": 1069,
+                  "~:x2": 1548,
+                  "~:y2": 1218
                 }
               },
               "~:fills": [{ "~:fill-color": "#B1B2B5", "~:fill-opacity": 1 }],
@@ -5569,7 +5782,7 @@
                   "~:id": "~u5403f14e-eb02-80be-8007-0494f09cefca",
                   "~:name": "Global",
                   "~:description": "",
-                  "~:modified-at": "~m1761570802864",
+                  "~:modified-at": "~m1762429549085",
                   "~:tokens": {
                     "~#ordered-map": [
                       [
@@ -5718,6 +5931,28 @@
                             "~:value": "20px",
                             "~:description": "",
                             "~:modified-at": "~m1761570799828"
+                          }
+                        }
+                      ],
+                      [
+                        "shadowToken",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u63c623e4-0e89-80ce-8007-1168ea143ca8",
+                            "~:name": "shadowToken",
+                            "~:type": "~:shadow",
+                            "~:value": [
+                              {
+                                "~:blur": "4",
+                                "~:spread": "10",
+                                "~:color": "rgb(160, 73, 73)",
+                                "~:inset": true,
+                                "~:offsetX": "10",
+                                "~:offsetY": "10"
+                              }
+                            ],
+                            "~:description": "",
+                            "~:modified-at": "~m1762429549085"
                           }
                         }
                       ]
