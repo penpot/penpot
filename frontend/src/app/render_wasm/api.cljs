@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
@@ -315,7 +316,14 @@
                                    (aset heap32 (+ offset 11) height)
 
                                    (h/call wasm/internal-module "_store_image_from_texture")
-                                   true)))))}))
+                                   true))))
+                     (rx/catch (fn [cause]
+                                 (log/error :hint "Could not fetch image"
+                                            :image-id image-id
+                                            :thumbnail? thumbnail?
+                                            :url url
+                                            :cause cause)
+                                 (rx/empty))))}))
 
 (defn- get-fill-images
   [leaf]
