@@ -79,6 +79,7 @@ $grayish-red: #bfbfbf;
   --color-accent-select: #{$purple-600-10};
   --color-accent-action: #{$purple-400};
   --color-accent-action-hover: #{$purple-500};
+  --color-accent-off: #{$gray-50};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-200};
@@ -92,6 +93,7 @@ $grayish-red: #bfbfbf;
   --color-background-default: #{$white};
   --color-accent-default: #{$gray-100};
   --color-icon-default: #{$blue-teal-700};
+  --color-background-disabled: #{$gray-200};
 
   --color-background-primary: #{$white};
   --color-background-secondary: #{$gray-200};
@@ -105,6 +107,7 @@ $grayish-red: #bfbfbf;
   --color-static-black: #{$black};
 
   --color-shadow-dark: #{color.change($gray-200, $alpha: 0.6)};
+  --color-shadow-light: #{color.change($black, $alpha: 0.3)};
   --color-overlay-default: #{$white-60};
   --color-overlay-onboarding: #{$white-90};
   --color-canvas: #{$grayish-red};
@@ -127,6 +130,7 @@ $grayish-red: #bfbfbf;
   --color-accent-select: #{$mint-250-10};
   --color-accent-action: #{$purple-400};
   --color-accent-action-hover: #{$purple-500};
+  --color-accent-off: #{$gray-50};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-950};
@@ -140,6 +144,7 @@ $grayish-red: #bfbfbf;
   --color-background-default: #{$gray-950};
   --color-accent-default: #{$gray-800};
   --color-icon-default: #{$grayish-blue-500};
+  --color-background-disabled: #{$gray-800};
 
   --color-background-primary: #{$gray-950};
   --color-background-secondary: #{$black};
@@ -153,6 +158,7 @@ $grayish-red: #bfbfbf;
   --color-static-black: #{$black};
 
   --color-shadow-dark: #{color.change($black, $alpha: 0.6)};
+  --color-shadow-light: #{color.change($black, $alpha: 0.3)};
   --color-overlay-default: #{$gray-950-60};
   --color-overlay-onboarding: #{$gray-950-90};
   --color-canvas: #{$grayish-red};

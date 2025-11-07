@@ -1,0 +1,52 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as Switch from "./switch.stories";
+
+<Meta title="Controls/Switch" />
+
+# Switch
+
+The `switch*` component is a toggle control that allows users to switch between two mutually exclusive options.
+
+<Canvas of={Switch.Default} />
+
+## Anatomy
+
+The switch component consists of three main parts:
+
+- **Label** (optional): text that describes what the switch controls
+- **Track**: the pill-shaped background that indicates the current state
+- **Thumb**: the circular knob that moves between positions
+
+## Accesibility
+
+When no visible label is provided, use `aria-label` for accessibility.
+
+## Variants
+
+### With Label
+
+```clj
+[:> switch* {:label "Toggle dark mode"
+             :default-checked false}]
+```
+
+<Canvas of={Switch.WithLabel} />
+
+## Usage Guidelines
+
+### When to Use
+
+- For binary settings that take effect immediately
+- In preference panels and configuration screens
+
+### When Not to Use
+
+- For actions that require confirmation (use buttons instead)
+- For multiple choice selections (use radio buttons or select)
+- For temporary states that need explicit "Apply" action

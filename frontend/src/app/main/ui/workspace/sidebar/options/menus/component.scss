@@ -662,6 +662,14 @@
   align-self: center;
 }
 
+.variant-property-value-switch-wrapper {
+  grid-column: span 5;
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  padding-inline-start: var(--sp-s);
+}
+
 .variant-property-name {
   @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
