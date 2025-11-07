@@ -18,6 +18,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
+   [app.main.ui.debug.playground :refer [playground]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
@@ -208,6 +209,10 @@
        :debug-icons-preview
        (when *assert*
          [:& icons-preview])
+
+       :debug-playground
+       (when *assert*
+         [:& playground])
 
        (:dashboard-search
         :dashboard-recent

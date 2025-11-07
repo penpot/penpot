@@ -46,6 +46,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
+   [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
@@ -58,7 +59,6 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
-
 
 (defn copy-selected
   []
@@ -183,7 +183,7 @@
         (let [text (wapi/get-current-selected-text)]
           (if-not (str/empty? text)
             (try
-              (wapi/write-to-clipboard text)
+              (clipboard/to-clipboard text)
               (catch :default e
                 (on-copy-error e)))
 
@@ -227,7 +227,7 @@
                               (rx/map #(t/encode-str % {:type :json-verbose}))
                               (rx/map #(wapi/create-blob % "text/plain"))
                               (rx/subs! resolve reject))))]
-                  (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
+                  (->> (rx/from (clipboard/to-clipboard-promise "text/plain" resolve-data-promise))
                        (rx/catch on-copy-error)
                        (rx/ignore)))
 
@@ -240,7 +240,7 @@
                      (rx/map (partial sort-selected state))
                      (rx/map (partial advance-copies state selected))
                      (rx/map #(t/encode-str % {:type :json-verbose}))
-                     (rx/map wapi/write-to-clipboard)
+                     (rx/map clipboard/to-clipboard)
                      (rx/catch on-copy-error)
                      (rx/ignore))))))))))
 
@@ -252,49 +252,45 @@
 (declare ^:private paste-svg-text)
 (declare ^:private paste-shapes)
 
+(defn create-paste-from-blob
+  [in-viewport?]
+  (fn [blob]
+    (let [type (.-type blob)
+          result (cond
+                   (= type "image/svg+xml")
+                   (->> (rx/from (.text blob))
+                        (rx/map paste-svg-text))
+
+                   (some #(= type %) clipboard/image-types)
+                   (rx/of (paste-image blob))
+
+                   (= type "text/html")
+                   (->> (rx/from (.text blob))
+                        (rx/map paste-html-text))
+
+                   (= type "application/transit+json")
+                   (->> (rx/from (.text blob))
+                        (rx/map (fn [text]
+                                  (let [transit-data (t/decode-str text)]
+                                    (assoc transit-data :in-viewport in-viewport?))))
+                        (rx/map paste-transit-shapes))
+
+                   :else
+                   (->> (rx/from (.text blob))
+                        (rx/map paste-text)))]
+      result)))
+
+(def default-paste-from-blob (create-paste-from-blob false))
+
 (defn paste-from-clipboard
   "Perform a `paste` operation using the Clipboard API."
   []
-  (letfn [(decode-entry [entry]
-            (try
-              [:transit (t/decode-str entry)]
-              (catch :default _cause
-                [:text entry])))
-
-          (process-entry [[type data]]
-            (case type
-              :text
-              (cond
-                (str/empty? data)
-                (rx/empty)
-
-                (re-find #"<svg\s" data)
-                (rx/of (paste-svg-text data))
-
-                :else
-                (rx/of (paste-text data)))
-
-              :transit
-              (rx/of (paste-transit-shapes data))))
-
-          (on-error [cause]
-            (let [data (ex-data cause)]
-              (if (:not-implemented data)
-                (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-                (js/console.error "Clipboard error:" cause))
-              (rx/empty)))]
-
-    (ptk/reify ::paste-from-clipboard
-      ptk/WatchEvent
-      (watch [_ _ _]
-        (->> (rx/concat
-              (->> (wapi/read-from-clipboard)
-                   (rx/map decode-entry)
-                   (rx/mapcat process-entry))
-              (->> (wapi/read-image-from-clipboard)
-                   (rx/map paste-image)))
-             (rx/take 1)
-             (rx/catch on-error))))))
+  (ptk/reify ::paste-from-clipboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (clipboard/from-clipboard)
+           (rx/mapcat default-paste-from-blob)
+           (rx/take 1)))))
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -310,30 +306,8 @@
         ;; we forbid that scenario so the default behaviour is executed
         (if is-editing?
           (rx/empty)
-          (let [pdata        (wapi/read-from-paste-event event)
-                image-data   (some-> pdata wapi/extract-images)
-                text-data    (some-> pdata wapi/extract-text)
-                html-data    (some-> pdata wapi/extract-html-text)
-                transit-data (ex/ignoring (some-> text-data t/decode-str))]
-            (cond
-              (and (string? text-data) (re-find #"<svg\s" text-data))
-              (rx/of (paste-svg-text text-data))
-
-              (seq image-data)
-              (->> (rx/from image-data)
-                   (rx/map paste-image))
-
-              (coll? transit-data)
-              (rx/of (paste-transit-shapes (assoc transit-data :in-viewport in-viewport?)))
-
-              (and (string? html-data) (d/not-empty? html-data))
-              (rx/of (paste-html-text html-data text-data))
-
-              (and (string? text-data) (d/not-empty? text-data))
-              (rx/of (paste-text text-data))
-
-              :else
-              (rx/empty))))))))
+          (->> (clipboard/from-synthetic-clipboard-event event)
+               (rx/mapcat (create-paste-from-blob in-viewport?))))))))
 
 (defn copy-selected-svg
   []
@@ -352,7 +326,7 @@
 
             shapes          (mapv maybe-translate selected)
             svg-formatted   (svg/generate-formatted-markup objects shapes)]
-        (wapi/write-to-clipboard svg-formatted)))))
+        (clipboard/to-clipboard svg-formatted)))))
 
 (defn copy-selected-css
   []
@@ -362,7 +336,7 @@
       (let [objects (dsh/lookup-page-objects state)
             selected (->> (dsh/lookup-selected state) (mapv (d/getf objects)))
             css (css/generate-style objects selected selected {:with-prelude? false})]
-        (wapi/write-to-clipboard css)))))
+        (clipboard/to-clipboard css)))))
 
 (defn copy-selected-css-nested
   []
@@ -374,7 +348,7 @@
                           (cfh/selected-with-children objects)
                           (mapv (d/getf objects)))
             css (css/generate-style objects selected selected {:with-prelude? false})]
-        (wapi/write-to-clipboard css)))))
+        (clipboard/to-clipboard css)))))
 
 (defn copy-selected-text
   []
@@ -405,7 +379,7 @@
                       (-> shape :content txt/content->text))))
                  (str/join "\n"))]
 
-        (wapi/write-to-clipboard text)))))
+        (clipboard/to-clipboard text)))))
 
 (defn copy-selected-props
   []
@@ -474,7 +448,7 @@
                                   (rx/map #(wapi/create-blob % "text/plain"))
                                   (rx/subs! resolve reject))))]
 
-                      (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
+                      (->> (rx/from (clipboard/to-clipboard-promise "text/plain" resolve-data-promise))
                            (rx/catch on-copy-error)
                            (rx/ignore)))
                     ;; FIXME: this is to support Firefox versions below 116 that don't support
@@ -482,7 +456,7 @@
                     ;; https://caniuse.com/?search=ClipboardItem
                     (->> (rx/of copy-data)
                          (rx/mapcat resolve-images)
-                         (rx/map #(wapi/write-to-clipboard (t/encode-str % {:type :json-verbose})))
+                         (rx/map #(clipboard/to-clipboard (t/encode-str % {:type :json-verbose})))
                          (rx/catch on-copy-error)
                          (rx/ignore))))))))))))
 
@@ -502,7 +476,8 @@
                       (js/console.error "Clipboard error:" cause))
                     (rx/empty)))]
 
-          (->> (wapi/read-from-clipboard)
+          (->> (clipboard/from-clipboard)
+               (rx/mapcat #(.text %))
                (rx/map decode-entry)
                (rx/take 1)
                (rx/catch on-error)))))))
@@ -968,17 +943,21 @@
     (deref ms/mouse-position)))
 
 (defn- paste-html-text
-  [html text]
+  [html]
+  (js/console.log html)
   (dm/assert! (string? html))
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
       (let [style   (deref refs/workspace-clipboard-style)
             root    (dwtxt/create-root-from-html html style)
+            text    (.-textContent root)
             content (tc/dom->cljs root)]
+        (js/console.log "root" root "content" content)
         (when (types.text/valid-content? content)
+          (js/console.log "valid-content")
           (let [id     (uuid/next)
-                width (max 8 (min (* 7 (count text)) 700))
+                width  (max 8 (min (* 7 (count text)) 700))
                 height 16
                 {:keys [x y]} (calculate-paste-position state)
 
@@ -1051,4 +1030,4 @@
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (wapi/write-to-clipboard (rt/get-current-href)))))
+      (clipboard/to-clipboard (rt/get-current-href)))))
