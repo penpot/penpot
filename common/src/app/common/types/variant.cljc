@@ -320,7 +320,7 @@
                      {"true" true "false" false}]]
     (when (= (count v) 2)
       (some (fn [b]
-              (when (and (contains? b (first v))
-                         (contains? b (last v)))
+              (when (and (contains? b (-> v first str/trim str/lower))
+                         (contains? b (-> v last str/trim str/lower)))
                 b))
             bool-values))))

@@ -164,6 +164,8 @@
 (t/deftest find-boolean-pair
   (t/testing "find-boolean-pair"
     (t/is (= (ctv/find-boolean-pair ["off" "on"]) {"on" true "off" false}))
+    (t/is (= (ctv/find-boolean-pair ["OfF" "oN"]) {"on" true "off" false}))
+    (t/is (= (ctv/find-boolean-pair [" OfF" "oN "]) {"on" true "off" false}))
     (t/is (= (ctv/find-boolean-pair ["on" "off"]) {"on" true "off" false}))
     (t/is (= (ctv/find-boolean-pair ["off" "on" "other"]) nil))
     (t/is (= (ctv/find-boolean-pair ["yes" "no"]) {"yes" true "no" false}))
