@@ -89,14 +89,14 @@
                  (let [value (rotate-option-backward options index length)]
                    (swap! state* assoc :current-value value)
                    (when (fn? on-change)
-                     (on-change (dm/str value))))
+                     (on-change value)))
 
                  (or (kbd/right-arrow? e)
                      (kbd/down-arrow? e))
                  (let [value (rotate-option-forward options index)]
                    (swap! state* assoc :current-value value)
                    (when (fn? on-change)
-                     (on-change (dm/str value))))
+                     (on-change value)))
 
                  (or (kbd/enter? e)
                      (kbd/space? e))

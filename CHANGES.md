@@ -77,6 +77,7 @@
 - Fix problem when checking usage with removed teams [Taiga #12442](https://tree.taiga.io/project/penpot/issue/12442)
 - Fix focus mode persisting across page/file navigation [Taiga #12469](https://tree.taiga.io/project/penpot/issue/12469)
 - Fix shadow color validation [Github #7705](https://github.com/penpot/penpot/pull/7705)
+- Fix exception on selection blend-mode using keyboard [Github #7710](https://github.com/penpot/penpot/pull/7710)
 
 ## 2.10.1
 
