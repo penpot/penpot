@@ -64,7 +64,7 @@
       [:div {:class (stl/css :container)} children]]
 
      [:div {:class (stl/css :deco-after2)}
-      [:span (tr "labels.copyright")]
+      [:span (tr "labels.copyright-period")]
       deprecated-icon/logo-error-screen
       [:span (tr "not-found.made-with-love")]]]))
 
