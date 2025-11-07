@@ -25,6 +25,7 @@
 - Fix search shortcut [Taiga #10265](https://tree.taiga.io/project/penpot/issue/10265)
 - Fix shortcut conflict in text editor (increase/decrease font size vs word selection)
 - Fix problem with plugins generating code for pages different than current one [Taiga #12312](https://tree.taiga.io/project/penpot/issue/12312)
+- Fix input confirmation behavior is not uniform [Taiga #12294](https://tree.taiga.io/project/penpot/issue/12294)
 
 ## 2.11.0 (Unreleased)
 
