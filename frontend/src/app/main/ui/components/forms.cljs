@@ -426,7 +426,18 @@
                       (dom/prevent-default event)
                       (when (fn? on-submit)
                         (on-submit form event))))]
-    [:& (mf/provider form-ctx) {:value form}
+    [:> (mf/provider form-ctx) {:value form}
+     [:form {:class class :on-submit on-submit'} children]]))
+
+(mf/defc form*
+  [{:keys [on-submit form children class]}]
+  (let [on-submit' (mf/use-fn
+                    (mf/deps on-submit)
+                    (fn [event]
+                      (dom/prevent-default event)
+                      (when (fn? on-submit)
+                        (on-submit form event))))]
+    [:> (mf/provider form-ctx) {:value form}
      [:form {:class class :on-submit on-submit'} children]]))
 
 (defn- conj-dedup
