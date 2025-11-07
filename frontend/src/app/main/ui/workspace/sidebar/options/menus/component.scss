@@ -672,6 +672,7 @@
 
 .variant-property-name {
   @include t.use-typography("body-small");
+  margin-inline-start: var(--sp-s);
   color: var(--color-foreground-secondary);
   display: block;
   overflow: hidden;
