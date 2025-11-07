@@ -21,6 +21,7 @@
 
 .flex-element-menu {
   @include sidebar.option-grid-structure;
+  gap: var(--sp-xs);
 }
 
 .behaviour-menu {
