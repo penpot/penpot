@@ -21,9 +21,9 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.webapi :as wapi]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -133,7 +133,7 @@
 
         copy-link
         (fn [_]
-          (wapi/write-to-clipboard current-link)
+          (clipboard/to-clipboard current-link)
           (st/emit! (ntf/show {:level :info
                                :type :toast
                                :content (tr "common.share-link.link-copied-success")
