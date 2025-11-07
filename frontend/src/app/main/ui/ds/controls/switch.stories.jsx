@@ -13,10 +13,6 @@ export default {
   title: "Controls/Switch",
   component: Switch,
   argTypes: {
-    defaultChecked: {
-      control: { type: "boolean" },
-      description: "Default checked state for uncontrolled mode",
-    },
     label: {
       control: { type: "text" },
       description: "Label text displayed next to the switch",
@@ -27,33 +23,37 @@ export default {
     }
   },
   args: {
-    defaultChecked: false,
     disabled: false
   },
   parameters: {
-    controls: { exclude: ["id", "class", "aria-label", "on-change"] },
+    controls: { exclude: ["id", "class", "aria-label", "default-checked", "on-change"] },
   },
   render: ({ ...args }) => (
     <Switch {...args} />
   ),
 };
 
-export const Default = {};
-
-export const WithLabel = {
+export const Default = {
   args: {
-    defaultChecked: false,
-    label: "Enable something",
+    label: "Toggle something",
     disabled: false,
   },
   render: ({ ...args }) => (
-    <Switch {...args} aria-label="Enable notification"/>
+    <Switch {...args} />
+  ),
+};
+
+export const WithoutLabel = {
+  args: {
+    disabled: false,
+  },
+  render: ({ ...args }) => (
+    <Switch {...args} />
   ),
 };
 
 export const WithLongLabel = {
   args: {
-    defaultChecked: false,
     label: "This is a very long label that demonstrates how the switch component handles text wrapping and layout when the label content is extensive",
     disabled: false,
   },

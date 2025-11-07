@@ -68,11 +68,10 @@
                                 :disabled disabled?})]
 
     [:> :div props
+     [:div {:id id
+            :class (stl/css :switch-track)}
+      [:div {:class (stl/css :switch-thumb)}]]
      (when has-label?
        [:label {:for id
                 :class (stl/css :switch-label)}
-        label])
-
-     [:div {:id id
-            :class (stl/css :switch-track)}
-      [:div {:class (stl/css :switch-thumb)}]]]))
+        label])]))
