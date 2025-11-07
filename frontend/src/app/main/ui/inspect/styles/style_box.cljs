@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.util.clipboard :as clipboard]
    [app.util.i18n :refer [tr]]
-   [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
 
 (defn- panel->title
@@ -50,7 +50,7 @@
         (mf/use-fn
          (mf/deps shorthand)
          (fn []
-           (wapi/write-to-clipboard (str shorthand))))]
+           (clipboard/to-clipboard (str shorthand))))]
     [:article {:class (stl/css :style-box)}
      [:header {:class (stl/css :disclosure-header)}
       [:button {:class (stl/css :disclosure-button)
