@@ -36,7 +36,7 @@
 
 (defn type
   [s]
-  (m/-type s))
+  (m/type s default-options))
 
 (defn properties
   [s]
@@ -45,6 +45,10 @@
 (defn type-properties
   [s]
   (m/type-properties s))
+
+(defn children
+  [s]
+  (m/children s default-options))
 
 (defn schema
   [s]
@@ -127,9 +131,19 @@
 
 (defn keys
   "Given a map schema, return all keys as set"
-  [schema]
-  (->> (entries schema)
-       (into #{} xf:map-key)))
+  [schema']
+  (let [schema' (m/schema schema' default-options)]
+    (case (m/type schema')
+      :map
+      (->> (entries schema')
+           (into #{} xf:map-key))
+
+      :merge
+      (->> (m/children schema')
+           (mapcat m/entries)
+           (into #{} xf:map-key))
+
+      (throw (ex-info "not supported schema type" {:type (m/type schema')})))))
 
 (defn update-properties
   [s f & args]
