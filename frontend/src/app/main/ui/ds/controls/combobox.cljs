@@ -202,7 +202,9 @@
                            dom/get-value)]
              (reset! selected-id* value)
              (reset! filter-id* value)
-             (reset! focused-id* nil))))
+             (reset! focused-id* nil)
+             (when (fn? on-change)
+               (on-change value)))))
 
         selected-option
         (mf/with-memo [options selected-id]

@@ -70,7 +70,7 @@
                :default-value value
                :on-key-up on-key-up
                :max-length max-input-length
-               :on-blur cancel-edition}]
+               :on-blur accept-edition}]
 
       [:span {:class [(stl/css :editable-label-text) class-label]
               :title tooltip}
