@@ -15,10 +15,10 @@
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
+   [app.util.clipboard :as clipboard]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
-   [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -86,7 +86,7 @@
          (mf/deps copied formatted-color-value)
          (fn []
            (reset! copied* true)
-           (wapi/write-to-clipboard copiable-value)
+           (clipboard/to-clipboard copiable-value)
            (tm/schedule 1000 #(reset! copied* false))))]
     [:*
      [:dl {:class [(stl/css :property-row) class]

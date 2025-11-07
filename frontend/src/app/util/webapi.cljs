@@ -7,7 +7,6 @@
 (ns app.util.webapi
   "HTML5 web api helpers."
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.util.globals :as globals]
@@ -114,68 +113,6 @@
 (defn get-current-selected-text
   []
   (.. js/window getSelection toString))
-
-(defn write-to-clipboard
-  [data]
-  (assert (string? data) "`data` should be string")
-  (let [cboard (unchecked-get js/navigator "clipboard")]
-    (.writeText ^js cboard data)))
-
-(defn write-to-clipboard-promise
-  [mimetype promise]
-  (let [cboard (unchecked-get js/navigator "clipboard")
-        data   (js/ClipboardItem.
-                (-> (obj/create)
-                    (obj/set! mimetype promise)))]
-    (.write ^js cboard #js [data])))
-
-(defn read-from-clipboard
-  []
-  (try
-    (let [cboard (unchecked-get js/navigator "clipboard")]
-      (if (.-readText ^js cboard)
-        (rx/from (.readText ^js cboard))
-        (rx/throw (ex-info "This browser does not implement read from clipboard protocol"
-                           {:not-implemented true}))))
-    (catch :default cause
-      (rx/throw cause))))
-
-(defn read-image-from-clipboard
-  []
-  (try
-    (let [cboard (unchecked-get js/navigator "clipboard")
-          read-item (fn [item]
-                      (let [img-type (->> (.-types ^js item)
-                                          (d/seek #(str/starts-with? % "image/")))]
-                        (if img-type
-                          (rx/from (.getType ^js item img-type))
-                          (rx/empty))))]
-      (->> (rx/from (.read ^js cboard)) ;; Get a stream of item lists
-           (rx/mapcat identity)     ;; Convert each item into an emission
-           (rx/switch-map read-item)))
-    (catch :default cause
-      (rx/throw cause))))
-
-(defn read-from-paste-event
-  [event]
-  (let [target (.-target ^js event)]
-    (when (and (not (.-isContentEditable ^js target)) ;; ignore when pasting into
-               (not= (.-tagName ^js target) "INPUT")) ;; an editable control
-      (.. ^js event getBrowserEvent -clipboardData))))
-
-(defn extract-html-text
-  [clipboard-data]
-  (.getData clipboard-data "text/html"))
-
-(defn extract-text
-  [clipboard-data]
-  (.getData clipboard-data "text"))
-
-(defn extract-images
-  "Get image files from clipboard data. Returns a native js array."
-  [clipboard-data]
-  (let [files (obj/into-array (.-files ^js clipboard-data))]
-    (.filter ^js files #(str/starts-with? (obj/get % "type") "image/"))))
 
 (defn create-canvas-element
   [width height]
