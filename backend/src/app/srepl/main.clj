@@ -844,6 +844,26 @@
                                                      :id id})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SSO
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn add-sso-config
+  [& {:keys [base-uri client-id client-secret domain]}]
+
+  (assert (and (string? base-uri) (str/starts-with? base-uri "http")) "expected a valid base-uri")
+  (assert (string? client-id) "expected a valid client-id")
+  (assert (string? client-secret) "expected a valid client-secret")
+  (assert (string? domain) "expected a valid domain")
+  (db/insert! main/system :sso-provider
+              {:id (uuid/next)
+               :type "oidc"
+               :client-id client-id
+               :client-secret client-secret
+               :domain domain
+               :base-uri base-uri}))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
