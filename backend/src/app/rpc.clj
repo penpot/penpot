@@ -367,16 +367,11 @@
   (let [public-uri (cf/get :public-uri)]
     ["/api"
 
-     ;; NOTE: keep redirect for backward compatibility
-     ["/_doc" {:handler (redirect (u/join public-uri "/api/rpc/doc"))}]
-     ["/doc" {:handler (redirect (u/join public-uri "/api/rpc/doc"))}]
-     ["/openapi" {:handler (redirect (u/join public-uri "/api/rpc/doc/openapi"))}]
-     ["/openapi.join" {:handler (redirect (u/join public-uri "/api/rpc/doc/openapi.json"))}]
 
-     ["/management" {:middleware [[session/authz cfg]]}
-
+     ["/management"
       ["/methods/:type"
-       {:middleware [[mw/shared-key-auth (cf/get :management-api-shared-key)]]
+       {:middleware [[mw/shared-key-auth (cf/get :management-api-shared-key)]
+                     [session/authz cfg]]
         :handler (make-rpc-handler management-methods)}]
 
       (doc/routes :methods management-methods
@@ -384,19 +379,28 @@
                   :base-uri (u/join public-uri "/api/management")
                   :description "MANAGEMENT API")]
 
-     ["/rpc" {:middleware [[mw/cors]
-                           [sec/client-header-check]
-                           [session/authz cfg]
-                           [actoken/authz cfg]]}
-
-      ;; BACKWARD COMPATIBILITY
-      ["/command/:type"
-       {:handler (make-rpc-handler methods)}]
-
+     ["/main"
       ["/methods/:type"
-       {:handler (make-rpc-handler methods)}]
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (make-rpc-handler methods)}]
 
       (doc/routes :methods methods
-                  :label "rpc"
-                  :base-uri (u/join public-uri "/api/rpc")
-                  :description "RPC API")]]))
+                  :label "main"
+                  :base-uri (u/join public-uri "/api/main")
+                  :description "MAIN API")]
+
+     ;; BACKWARD COMPATIBILITY
+     ["/_doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]
+     ["/doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]
+     ["/openapi" {:handler (redirect (u/join public-uri "/api/main/doc/openapi"))}]
+     ["/openapi.join" {:handler (redirect (u/join public-uri "/api/main/doc/openapi.json"))}]
+
+     ["/rpc/command/:type"
+      {:middleware [[mw/cors]
+                    [sec/client-header-check]
+                    [session/authz cfg]
+                    [actoken/authz cfg]]
+       :handler (make-rpc-handler methods)}]]))

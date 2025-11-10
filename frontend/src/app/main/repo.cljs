@@ -115,7 +115,7 @@
 
         request
         {:method method
-         :uri (u/join cf/public-uri "api/rpc/methods/" nid)
+         :uri (u/join cf/public-uri "api/main/methods/" nid)
          :credentials "include"
          :headers {"accept" "application/transit+json,text/event-stream,*/*"
                    "x-external-session-id" (cf/external-session-id)
@@ -207,7 +207,7 @@
 (defmethod cmd! ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
-                    :uri  (u/join cf/public-uri "api/rpc/methods/" (name id))
+                    :uri  (u/join cf/public-uri "api/main/methods/" (name id))
                     :credentials "include"
                     :headers {"x-external-session-id" (cf/external-session-id)
                               "x-event-origin" (::ev/origin (meta params))}

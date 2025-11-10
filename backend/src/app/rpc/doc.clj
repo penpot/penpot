@@ -226,7 +226,7 @@
         template
         (case label
           "management" "app/templates/management-api-doc.tmpl"
-          "rpc"        "app/templates/api-doc.tmpl")]
+          "main"       "app/templates/main-api-doc.tmpl")]
 
     ["/doc"
      ["" {:handler (handler :methods methods
