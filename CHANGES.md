@@ -78,6 +78,7 @@
 - Fix focus mode persisting across page/file navigation [Taiga #12469](https://tree.taiga.io/project/penpot/issue/12469)
 - Fix shadow color validation [Github #7705](https://github.com/penpot/penpot/pull/7705)
 - Fix exception on selection blend-mode using keyboard [Github #7710](https://github.com/penpot/penpot/pull/7710)
+- Fix crash when using decimal (floating-point) values for X/Y or width/height [Taiga #12543](https://tree.taiga.io/project/penpot/issue/12543)
 
 ## 2.10.1
 
