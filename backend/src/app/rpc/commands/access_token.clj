@@ -28,6 +28,7 @@
         expires-at (some-> expiration (ct/in-future))
         created-at (ct/now)
         token      (tokens/generate cfg {:iss "access-token"
+                                         :uid profile-id
                                          :iat created-at
                                          :tid token-id})
 

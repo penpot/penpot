@@ -4,6 +4,12 @@
 
 ### :boom: Breaking changes & Deprecations
 
+- The backend RPC API URLS are changed from `/api/rpc/command/<name>`
+  to `/api/main/methods/<name>` (the previou PATH is preserved for
+  backward compatibility; however, if you are a user of this API, it
+  is strongly recommended that you adapt your code to use the new
+  PATH.
+
 ### :rocket: Epics and highlights
 
 ### :heart: Community contributions (Thank you!)

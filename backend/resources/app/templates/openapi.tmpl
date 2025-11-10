@@ -7,7 +7,7 @@
     name="description"
     content="SwaggerUI"
   />
-  <title>PENPOT Swagger UI</title>
+  <title>{{label|upper}} API</title>
   <style>{{swagger-css|safe}}</style>
 </head>
 <body>
@@ -16,7 +16,7 @@
 <script>
   window.onload = () => {
     window.ui = SwaggerUIBundle({
-      url: '{{public-uri}}/api/openapi.json',
+      url: '{{uri}}',
       dom_id: '#swagger-ui',      
       presets: [
         SwaggerUIBundle.presets.apis,

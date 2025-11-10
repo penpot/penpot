@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
+   [app.http.auth :as-alias auth]
    [app.http.session :as-alias session]
    [app.util.inet :as inet]
    [clojure.spec.alpha :as s]
@@ -22,16 +23,14 @@
 (defn request->context
   "Extracts error report relevant context data from request."
   [request]
-  (let [claims (-> {}
-                   (into (::session/token-claims request))
-                   (into (::actoken/token-claims request)))]
+  (let [claims (some-> (get request ::auth/claims) deref)]
     (-> (cf/logging-context)
         (assoc :request/path (:path request))
         (assoc :request/method (:method request))
         (assoc :request/params (:params request))
         (assoc :request/user-agent (yreq/get-header request "user-agent"))
         (assoc :request/ip-addr (inet/parse-request request))
-        (assoc :request/profile-id (:uid claims))
+        (assoc :request/profile-id (get claims :uid))
         (assoc :version/frontend (or (yreq/get-header request "x-frontend-version") "unknown")))))
 
 (defmulti handle-error

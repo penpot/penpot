@@ -16,6 +16,7 @@
    [app.common.schema.desc-native :as smdn]
    [app.common.schema.openapi :as oapi]
    [app.common.schema.registry :as sr]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.sse :as-alias sse]
    [app.loggers.webhooks :as-alias webhooks]
@@ -25,7 +26,6 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]
    [pretty-spec.core :as ps]
    [yetti.response :as-alias yres]))
 
@@ -33,8 +33,8 @@
 ;; DOC (human readable)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- prepare-doc-context
-  [methods]
+(defn- context
+  [{:keys [methods entrypoint label openapi]}]
   (letfn [(fmt-spec [mdata]
             (when-let [spec (ex/ignoring (s/spec (::sv/spec mdata)))]
               (with-out-str
@@ -62,8 +62,10 @@
              :added (::added mdata)
              :changes (some->> (::changes mdata) (partition-all 2) (map vec))
              :spec (fmt-spec mdata)
-             :entrypoint (str (cf/get :public-uri) "/api/rpc/command/" (::sv/name mdata))
-
+             :entrypoint (-> entrypoint
+                             (u/ensure-path-slash)
+                             (u/join (::sv/name mdata))
+                             (str))
              :params-schema-js   (fmt-schema :js mdata ::sm/params)
              :result-schema-js   (fmt-schema :js mdata ::sm/result)
              :webhook-schema-js  (fmt-schema :js mdata ::sm/webhook)
@@ -72,6 +74,9 @@
              :webhook-schema-clj (fmt-schema :clj mdata ::sm/webhook)})]
 
     {:version (:main cf/version)
+     :label label
+     :entrypoint (str entrypoint)
+     :openapi (str openapi)
      :methods
      (->> methods
           (map val)
@@ -80,17 +85,19 @@
           (map get-context)
           (sort-by (juxt :module :name)))}))
 
-(defn- doc-handler
-  [context]
+(defn- handler
+  [& {:keys [template] :as options}]
   (if (contains? cf/flags :backend-api-doc)
-    (fn [request]
-      (let [params  (:query-params request)
-            pstyle  (:type params "js")
-            context (assoc @context :param-style pstyle)]
+    (let [context  (delay (context options))
+          template (or template "app/templates/api-doc.tmpl")]
+      (fn [request]
+        (let [params  (:query-params request)
+              pstyle  (:type params "js")
+              context (assoc @context :param-style pstyle)]
 
-        {::yres/status 200
-         ::yres/body (-> (io/resource "app/templates/api-doc.tmpl")
-                         (tmpl/render context))}))
+          {::yres/status 200
+           ::yres/body (-> (io/resource template)
+                           (tmpl/render context))})))
     (fn [_]
       {::yres/status 404})))
 
@@ -98,8 +105,8 @@
 ;; OPENAPI / SWAGGER (v3.1)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn prepare-openapi-context
-  [methods]
+(defn- openapi-context
+  [{:keys [methods entrypoint description]}]
   (let [definitions (atom {})
         options {:registry sr/default-registry
                  ::oapi/definitions-path "#/components/schemas/"
@@ -112,7 +119,9 @@
         (fn [tsx schema]
           (let [schema  (sm/schema schema)
                 example (sm/generate schema)
-                example (sm/encode schema example output-transformer)]
+                example (sm/encode schema example output-transformer)
+                example (json/encode example :key-fn json/write-camel-key)]
+
             {:default
              {:description "A default response"
               :content
@@ -123,7 +132,9 @@
         gen-params-doc
         (fn [tsx schema]
           (let [example (sm/generate schema)
-                example (sm/encode schema example output-transformer)]
+                example (sm/encode schema example output-transformer)
+                example (json/encode example :key-fn json/write-camel-key)]
+
             {:required true
              :content
              {"application/json"
@@ -158,34 +169,35 @@
                (map gen-method-doc)
                (sort-by (juxt :module :name))
                (map (fn [doc]
-                      [(str/ffmt "/command/%" (:name doc)) (:repr doc)]))
+                      [(:name doc) (:repr doc)]))
                (into {})))]
 
     {:openapi "3.0.0"
      :info {:version (:main cf/version)}
-     :servers [{:url (str/ffmt "%/api/rpc" (cf/get :public-uri))
-                ;; :description "penpot backend"
-                }]
+     :servers [{:url (str entrypoint)
+                :description (or description "")}]
      :paths paths
      :components {:schemas @definitions}}))
 
-(defn openapi-json-handler
-  [context]
+(defn- openapi-json-handler
+  [& {:as options}]
   (if (contains? cf/flags :backend-openapi-doc)
-    (fn [_]
-      {::yres/status 200
-       ::yres/headers {"content-type" "application/json; charset=utf-8"}
-       ::yres/body (json/encode @context)})
+    (let [context (delay (openapi-context options))]
+      (fn [_]
+        {::yres/status 200
+         ::yres/headers {"content-type" "application/json; charset=utf-8"}
+         ::yres/body (json/encode @context)}))
     (fn [_]
       {::yres/status 404})))
 
-(defn openapi-handler
-  []
+(defn- openapi-handler
+  [& {:keys [uri label]}]
   (if (contains? cf/flags :backend-openapi-doc)
     (fn [_]
       (let [swagger-js (slurp (io/resource "app/assets/swagger-ui-4.18.3.js"))
             swagger-cs (slurp (io/resource "app/assets/swagger-ui-4.18.3.css"))
-            context    {:public-uri (cf/get :public-uri)
+            context    {:uri (str uri)
+                        :label label
                         :swagger-js swagger-js
                         :swagger-css swagger-cs}]
         {::yres/status 200
@@ -196,27 +208,43 @@
       {::yres/status 404})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MODULE INIT
+;; ROUTES HELPER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::routes
-  [_ params]
-  (assert (sm/valid? ::rpc/methods (::rpc/methods params)) "expected valid methods"))
+(defn routes
+  [& {:keys [label base-uri description methods]}]
+  (let [entrypoint
+        (-> base-uri
+            (u/ensure-path-slash)
+            (u/join "methods"))
 
-(defmethod ig/init-key ::routes
-  [_ {:keys [::rpc/methods] :as cfg}]
-  [(let [context (delay (prepare-doc-context methods))]
-     [["/_doc"
-       {:handler (doc-handler context)
-        :allowed-methods #{:get}}]
-      ["/doc"
-       {:handler (doc-handler context)
-        :allowed-methods #{:get}}]])
+        openapi
+        (-> base-uri
+            (u/ensure-path-slash)
+            (u/join "doc/openapi"))
 
-   (let [context (delay (prepare-openapi-context methods))]
-     [["/openapi"
-       {:handler (openapi-handler)
-        :allowed-methods #{:get}}]
-      ["/openapi.json"
-       {:handler (openapi-json-handler context)
-        :allowed-methods #{:get}}]])])
+        template
+        (case label
+          "management" "app/templates/management-api-doc.tmpl"
+          "main"       "app/templates/main-api-doc.tmpl")]
+
+    ["/doc"
+     ["" {:handler (handler :methods methods
+                            :label label
+                            :entrypoint entrypoint
+                            :openapi openapi
+                            :template template)
+          :allowed-methods #{:get}}]
+
+     ["/openapi"
+      {:handler (openapi-handler
+                 :uri (u/join openapi "openapi.json")
+                 :label label)
+       :allowed-methods #{:get}}]
+
+     ["/openapi.json"
+      {:handler (openapi-json-handler {:entrypoint entrypoint
+                                       :description description
+                                       :methods methods})
+
+       :allowed-methods #{:get}}]]))
