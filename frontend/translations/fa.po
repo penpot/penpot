@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-11-10 07:51+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -28,7 +28,7 @@ msgstr ""
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
-msgstr "تایید کلمه‌عبور"
+msgstr "تایید رمزعبور"
 
 #: src/app/main/ui/auth/register.cljs:227
 msgid "auth.create-demo-account"
@@ -203,7 +203,7 @@ msgstr "انتشار"
 
 #: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
 msgid "common.share-link.all-users"
-msgstr "همه کاربران Penpot"
+msgstr "همه کاربران پنپات"
 
 #: src/app/main/ui/viewer/share_link.cljs:200
 msgid "common.share-link.confirm-deletion-link-description"
@@ -3304,3 +3304,31 @@ msgstr "برای بستن مسیر کلیک کنید"
 
 #~ msgid "workspace.options.blur-options.background-blur"
 #~ msgstr "پس‌زمینه"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "این توکن وجود ندارد یا حذف شده است."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "افزودن فایل"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:114
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "کتابخانه‌های اضافه شده به پروژه در اینجا نمایش داده می‌شوند."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "ایجاد فایل جدید"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:732
+msgid "workspace.options.interactions"
+msgstr "تعاملات"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:99
+msgid "shortcuts.cut"
+msgstr "برش"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+msgid "shortcuts.duplicate"
+msgstr "تکثیر"
