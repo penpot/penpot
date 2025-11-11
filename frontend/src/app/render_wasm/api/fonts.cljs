@@ -66,9 +66,10 @@
     :custom
     (let [font-uuid (custom-font-id->uuid font-id)
           matching-font (d/seek (fn [[_ font]]
-                                  (and (= (:font-id font) font-uuid)
-                                       (or (nil? (:font-variant-id font))
-                                           (= (:font-variant-id font) font-variant-id))))
+                                  (let [variant-id (or (:font-variant-id font) (dm/str (:font-style font) "-" (:font-weight font)))]
+                                    (and (= (:font-id font) font-uuid)
+                                         (or (nil? font-variant-id)
+                                             (= variant-id font-variant-id)))))
                                 (seq @fonts))]
       (when matching-font
         (:ttf-file-id (second matching-font))))
