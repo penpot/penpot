@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.11.0 (Unreleased)
+## 2.11.0
 
 ### :boom: Breaking changes & Deprecations
 
@@ -27,10 +27,6 @@
   `PENPOT_NETTY_IO_THREADS` used to configure a shared netty resources across different
   services which use netty internally (redis connection, S3 SDK client). This
   configuration is not very commonly used so don't expected real impact on any user.
-
-### :rocket: Epics and highlights
-
-### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
 
