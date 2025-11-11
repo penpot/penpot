@@ -96,6 +96,16 @@
       (->> (rx/from ids)
            (rx/map resize-wasm-text)))))
 
+;; -- Content helpers
+
+(defn- v2-content-has-text?
+  [content]
+  (boolean
+   (when content
+     (some (fn [node]
+             (not (str/blank? (:text node ""))))
+           (txt/node-seq txt/is-text-node? content)))))
+
 ;; -- Editor
 
 (defn update-editor
@@ -948,28 +958,34 @@
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
               new-shape?   (nil? (:content shape))]
-          (rx/of
-           (dwsh/update-shapes
-            [id]
-            (fn [shape]
-              (let [new-shape (-> shape
-                                  (assoc :content content)
-                                  (cond-> (and update-name? (some? name))
-                                    (assoc :name name)))]
-                new-shape))
-            {:undo-group (when new-shape? id)})
+          (rx/concat
+           (rx/of
+            (dwsh/update-shapes
+             [id]
+             (fn [shape]
+               (let [new-shape (-> shape
+                                   (assoc :content content)
+                                   (cond-> (and update-name? (some? name))
+                                     (assoc :name name)))]
+                 new-shape))
+             {:undo-group (when new-shape? id)})
 
-           (if (and (not= :fixed (:grow-type shape)) finalize?)
-             (dwm/apply-wasm-modifiers
-              (resize-wasm-text-modifiers shape content)
-              {:undo-group (when new-shape? id)})
+            (if (and (not= :fixed (:grow-type shape)) finalize?)
+              (dwm/apply-wasm-modifiers
+               (resize-wasm-text-modifiers shape content)
+               {:undo-group (when new-shape? id)})
 
-             (dwm/set-wasm-modifiers
-              (resize-wasm-text-modifiers shape content)
-              {:undo-group (when new-shape? id)}))
+              (dwm/set-wasm-modifiers
+               (resize-wasm-text-modifiers shape content)
+               {:undo-group (when new-shape? id)})))
 
            (when finalize?
-             (dwt/finish-transform))))
+             (rx/concat
+              (when (and (not (v2-content-has-text? content)) (some? id))
+                (rx/of
+                 (dws/deselect-shape id)
+                 (dwsh/delete-shapes #{id})))
+              (rx/of (dwt/finish-transform))))))
 
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
