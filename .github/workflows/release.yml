@@ -37,36 +37,43 @@ jobs:
           ref: ${{ steps.vars.outputs.gh_ref }}
 
       # --- Publicly release the docker images ---
-      - name: Login to private registry
-        uses: docker/login-action@v3
+      - name: Configure ECR credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          aws-access-key-id: ${{ secrets.DOCKER_USERNAME }}
+          aws-secret-access-key: ${{ secrets.DOCKER_PASSWORD }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.PUB_DOCKER_USERNAME }}
-          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
-
-      - name: Publish docker images to DockerHub
-        env:
-          TAG: ${{ steps.vars.outputs.gh_ref }}
-          REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-          HUB: ${{ secrets.PUB_DOCKER_HUB }}
+      - name: Install Skopeo
         run: |
-          IMAGES=("frontend" "backend" "exporter")
-          EXTRA_TAGS=("main" "latest")
+          sudo apt-get update -y
+          sudo apt-get install -y skopeo
+
+      - name: Copy images from AWS ECR to Docker Hub
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          PUB_DOCKER_USERNAME: ${{ secrets.PUB_DOCKER_USERNAME }}
+          PUB_DOCKER_PASSWORD: ${{ secrets.PUB_DOCKER_PASSWORD }}
+          TAG: ${{ steps.vars.outputs.gh_ref }}
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+            skopeo login --username AWS --password-stdin \
+            $DOCKER_REGISTRY
+
+          echo "$PUB_DOCKER_PASSWORD" | skopeo login --username "$PUB_DOCKER_USERNAME" --password-stdin docker.io
+
+          IMAGES=("frontend" "backend" "exporter" "storybook")
 
           for image in "${IMAGES[@]}"; do
-            docker pull "$REGISTRY/penpotapp/$image:$TAG"
-            docker tag "$REGISTRY/penpotapp/$image:$TAG" "penpotapp/$image:$TAG"
-            docker push "penpotapp/$image:$TAG"
+            skopeo copy --all \
+              docker://$DOCKER_REGISTRY/$image:$TAG \
+              docker://docker.io/$PUB_DOCKER_USERNAME/$image:$TAG
 
-            for tag in "${EXTRA_TAGS[@]}"; do
-              docker tag "$REGISTRY/penpotapp/$image:$TAG" "penpotapp/$image:$tag"
-              docker push "penpotapp/$image:$tag"
+            for alias in main latest; do
+              skopeo copy --all \
+                docker://$DOCKER_REGISTRY/$image:$TAG \
+                docker://docker.io/$PUB_DOCKER_USERNAME/$image:$alias
             done
           done
 
@@ -93,3 +100,15 @@ jobs:
           tag_name: ${{ steps.vars.outputs.gh_ref }}
           name: ${{ steps.vars.outputs.gh_ref }}
           body: ${{ steps.extract_release_notes.outputs.release_notes }}
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 🚀 *[PENPOT] Error releasing penpot.*
+            📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
