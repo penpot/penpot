@@ -86,7 +86,7 @@
             (aget shape-id-buffer 2)
             (aget shape-id-buffer 3))))
 
-;; IMPORTANT: It should be noted that only TTF fonts can be stored.
+;; IMPORTANT: Only TTF fonts can be stored.
 (defn- store-font-buffer
   [shape-id font-data font-array-buffer emoji? fallback?]
   (let [font-id-buffer  (:family-id-buffer font-data)
@@ -231,6 +231,7 @@
                    :weight weight}]
 
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
+
 
 (defn store-fonts
   [shape-id fonts]

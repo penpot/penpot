@@ -904,7 +904,7 @@
        (map :id)
        (run! f/update-text-layout)))
 
-(defn process-pending
+(defn process-pending!
   [shapes thumbnails full]
   (let [event (js/CustomEvent. "wasm:set-objects-finished")
         pending-thumbnails (-> (d/index-by :key :callback thumbnails) vals)
@@ -925,7 +925,7 @@
 (defn process-object
   [shape]
   (let [{:keys [thumbnails full]} (set-object [] shape)]
-    (process-pending [shape] thumbnails full)))
+    (process-pending! [shape] thumbnails full)))
 
 (defn set-objects
   [objects]
@@ -943,7 +943,7 @@
                      (into full-acc full)))
             {:thumbnails thumbnails-acc :full full-acc}))]
     (perf/end-measure "set-objects")
-    (process-pending shapes thumbnails full)))
+    (process-pending! shapes thumbnails full)))
 
 (defn clear-focus-mode
   []
