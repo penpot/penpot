@@ -1105,7 +1105,8 @@ impl RenderState {
     }
 
     pub fn get_shape_extrect_bounds(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Rect {
-        let rect = shape.extrect(tree);
+        let scale = self.get_scale();
+        let rect = self.get_cached_extrect(shape, tree, scale);
         self.get_rect_bounds(rect)
     }
 
@@ -1149,9 +1150,13 @@ impl RenderState {
         translation: (f32, f32),
     ) {
         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
-        transformed_shadow.to_mut().offset = (0., 0.);
+        transformed_shadow.to_mut().offset = (0.0, 0.0);
         transformed_shadow.to_mut().color = skia::Color::BLACK;
-        transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
+
+        // Scale blur to maintain consistent appearance across zoom levels
+        // When canvas is scaled down (zoom out), blur should be scaled down too
+        transformed_shadow.to_mut().blur = shadow.blur * scale;
+        transformed_shadow.to_mut().spread = shadow.spread * scale;
 
         let mut plain_shape = Cow::Borrowed(shape);
 
@@ -1242,13 +1247,12 @@ impl RenderState {
 
             if !node_render_state.is_root() {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
-                let extrect = element.extrect(tree);
-                // FIXME: we need to find a way to update the extrect properly instead
-                let bounds = transformed_element.apply_children_blur(extrect, tree);
+                let scale = self.get_scale();
+                let extrect = transformed_element.extrect(tree, scale);
 
-                let is_visible = bounds.intersects(self.render_area)
+                let is_visible = extrect.intersects(self.render_area)
                     && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(self.get_scale(), tree);
+                    && !transformed_element.visually_insignificant(scale, tree);
 
                 if self.options.is_debug_visible() {
                     let shape_extrect_bounds =
@@ -1339,10 +1343,12 @@ impl RenderState {
                                         .translate(translation);
 
                                     let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
-                                    // transformed_shadow.to_mut().offset = (0., 0.);
+
                                     transformed_shadow.to_mut().color = skia::Color::BLACK;
                                     transformed_shadow.to_mut().blur =
                                         transformed_shadow.blur * scale;
+                                    transformed_shadow.to_mut().spread =
+                                        transformed_shadow.spread * scale;
 
                                     let mut new_shadow_paint = skia::Paint::default();
                                     new_shadow_paint.set_image_filter(
@@ -1578,8 +1584,9 @@ impl RenderState {
      * Given a shape returns the TileRect with the range of tiles that the shape is in
      */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
-        let extrect = shape.extrect(tree);
-        let tile_size = tiles::get_tile_size(self.get_scale());
+        let scale = self.get_scale();
+        let extrect = self.get_cached_extrect(shape, tree, scale);
+        let tile_size = tiles::get_tile_size(scale);
         tiles::get_tiles_for_rect(extrect, tile_size)
     }
 
@@ -1769,5 +1776,9 @@ impl RenderState {
 
     pub fn clean_touched(&mut self) {
         self.touched_ids.clear();
+    }
+
+    pub fn get_cached_extrect(&mut self, shape: &Shape, tree: ShapesPoolRef, scale: f32) -> Rect {
+        shape.extrect(tree, scale)
     }
 }

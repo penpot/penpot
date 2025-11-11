@@ -2,7 +2,7 @@ use skia_safe::{self as skia};
 
 use crate::uuid::Uuid;
 use std::borrow::Cow;
-use std::cell::OnceCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::HashSet;
 use std::iter::once;
 
@@ -178,8 +178,8 @@ pub struct Shape {
     pub svg_attrs: Option<SvgAttrs>,
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
-    pub extrect: OnceCell<math::Rect>,
     pub bounds: OnceCell<math::Bounds>,
+    pub extrect_cache: RefCell<Option<(math::Rect, u32)>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
 }
@@ -266,8 +266,8 @@ impl Shape {
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
             layout_item: None,
-            extrect: OnceCell::new(),
             bounds: OnceCell::new(),
+            extrect_cache: RefCell::new(None),
             svg_transform: None,
             ignore_constraints: false,
         }
@@ -289,12 +289,12 @@ impl Shape {
             .for_each(|i| i.scale_content(value));
     }
 
-    pub fn invalidate_extrect(&mut self) {
-        self.extrect = OnceCell::new();
-    }
-
     pub fn invalidate_bounds(&mut self) {
         self.bounds = OnceCell::new();
+    }
+
+    pub fn invalidate_extrect(&mut self) {
+        *self.extrect_cache.borrow_mut() = None;
     }
 
     pub fn set_parent(&mut self, id: Uuid) {
@@ -329,8 +329,8 @@ impl Shape {
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
-        self.invalidate_extrect();
         self.invalidate_bounds();
+        self.invalidate_extrect();
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
             text.update_layout(self.selrect);
@@ -350,10 +350,12 @@ impl Shape {
 
     pub fn set_rotation(&mut self, angle: f32) {
         self.rotation = angle;
+        self.invalidate_extrect();
     }
 
     pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
         self.transform = Matrix::new_all(a, c, e, b, d, f, 0.0, 0.0, 1.0);
+        self.invalidate_extrect();
     }
 
     pub fn set_opacity(&mut self, opacity: f32) {
@@ -621,7 +623,6 @@ impl Shape {
     }
 
     pub fn set_path_segments(&mut self, segments: Vec<Segment>) {
-        self.invalidate_extrect();
         let path = Path::new(segments);
         match &mut self.shape_type {
             Type::Bool(Bool { bool_type, .. }) => {
@@ -635,6 +636,8 @@ impl Shape {
             }
             _ => {}
         };
+        self.invalidate_bounds();
+        self.invalidate_extrect();
     }
 
     pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
@@ -662,6 +665,8 @@ impl Shape {
     pub fn set_corners(&mut self, raw_corners: (f32, f32, f32, f32)) {
         if let Some(corners) = make_corners(raw_corners) {
             self.shape_type.set_corners(corners);
+            self.invalidate_bounds();
+            self.invalidate_extrect();
         }
     }
 
@@ -686,8 +691,12 @@ impl Shape {
         self.selrect.width()
     }
 
+    pub fn extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        self.calculate_extrect(shapes_pool, scale)
+    }
+
     pub fn visually_insignificant(&self, scale: f32, shapes_pool: ShapesPoolRef) -> bool {
-        let extrect = self.extrect(shapes_pool);
+        let extrect = self.extrect(shapes_pool, scale);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
@@ -728,12 +737,6 @@ impl Shape {
 
     pub fn selrect(&self) -> math::Rect {
         self.selrect
-    }
-
-    pub fn extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
-        *self
-            .extrect
-            .get_or_init(|| self.calculate_extrect(shapes_pool))
     }
 
     pub fn get_text_content(&self) -> &TextContent {
@@ -781,10 +784,10 @@ impl Shape {
             shadow_rect.top += y;
             shadow_rect.bottom += y;
 
-            shadow_rect.left += shadow.blur;
-            shadow_rect.top += shadow.blur;
-            shadow_rect.right -= shadow.blur;
-            shadow_rect.bottom -= shadow.blur;
+            shadow_rect.left -= shadow.blur;
+            shadow_rect.top -= shadow.blur;
+            shadow_rect.right += shadow.blur;
+            shadow_rect.bottom += shadow.blur;
 
             if let Some(max_stroke) = max_stroke {
                 shadow_rect.left -= max_stroke;
@@ -809,20 +812,23 @@ impl Shape {
         result
     }
 
-    fn apply_shadow_bounds(&self, mut rect: math::Rect) -> math::Rect {
+    fn apply_shadow_bounds(&self, mut rect: math::Rect, scale: f32) -> math::Rect {
         for shadow in self.shadows_visible() {
             if !shadow.hidden() {
                 let (x, y) = shadow.offset;
                 let mut shadow_rect = rect;
+
                 shadow_rect.left += x;
                 shadow_rect.right += x;
                 shadow_rect.top += y;
                 shadow_rect.bottom += y;
 
-                shadow_rect.left -= shadow.blur;
-                shadow_rect.top -= shadow.blur;
-                shadow_rect.right += shadow.blur;
-                shadow_rect.bottom += shadow.blur;
+                let safe_margin = 2.0 / scale.max(0.1);
+                let total_expansion = shadow.blur + shadow.spread + safe_margin;
+                shadow_rect.left -= total_expansion;
+                shadow_rect.top -= total_expansion;
+                shadow_rect.right += total_expansion;
+                shadow_rect.bottom += total_expansion;
 
                 rect.join(shadow_rect);
             }
@@ -830,14 +836,16 @@ impl Shape {
         rect
     }
 
-    fn apply_blur_bounds(&self, mut rect: math::Rect) -> math::Rect {
+    fn apply_blur_bounds(&self, mut rect: math::Rect, scale: f32) -> math::Rect {
         let blur = self.blur.as_ref();
         if let Some(blur) = blur {
             if !blur.hidden {
-                rect.left -= blur.value;
-                rect.top -= blur.value;
-                rect.right += blur.value;
-                rect.bottom += blur.value;
+                let safe_margin = 1.0 / scale.max(0.1);
+                let scaled_blur = blur.value + safe_margin;
+                rect.left -= scaled_blur;
+                rect.top -= scaled_blur;
+                rect.right += scaled_blur;
+                rect.bottom += scaled_blur;
             }
         }
         rect
@@ -847,6 +855,7 @@ impl Shape {
         &self,
         mut rect: math::Rect,
         shapes_pool: ShapesPoolRef,
+        scale: f32,
     ) -> math::Rect {
         let include_children = match self.shape_type {
             Type::Group(_) => true,
@@ -857,7 +866,8 @@ impl Shape {
         if include_children {
             for child_id in self.children_ids_iter(false) {
                 if let Some(child_shape) = shapes_pool.get(child_id) {
-                    rect.join(child_shape.extrect(shapes_pool));
+                    let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+                    rect.join(child_extrect);
                 }
             }
         }
@@ -865,7 +875,12 @@ impl Shape {
         rect
     }
 
-    pub fn apply_children_blur(&self, mut rect: math::Rect, tree: ShapesPoolRef) -> math::Rect {
+    pub fn apply_children_blur(
+        &self,
+        mut rect: math::Rect,
+        tree: ShapesPoolRef,
+        scale: f32,
+    ) -> math::Rect {
         let mut children_blur = 0.0;
         let mut current_parent_id = self.parent_id;
 
@@ -892,7 +907,8 @@ impl Shape {
             }
         }
 
-        let blur = children_blur;
+        let safe_margin = 1.0 / scale.max(0.1);
+        let blur = children_blur + safe_margin;
 
         if blur > 0.0 {
             rect.left -= blur;
@@ -904,7 +920,22 @@ impl Shape {
         rect
     }
 
-    pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
+    pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        let scale_key = (scale * 1000.0).round() as u32;
+
+        if let Some((cached_extrect, cached_scale)) = *self.extrect_cache.borrow() {
+            if cached_scale == scale_key {
+                return cached_extrect;
+            }
+        }
+
+        let extrect = self.calculate_extrect_uncached(shapes_pool, scale);
+
+        *self.extrect_cache.borrow_mut() = Some((extrect, scale_key));
+        extrect
+    }
+
+    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
@@ -926,10 +957,10 @@ impl Shape {
         };
 
         rect = self.apply_stroke_bounds(rect, max_stroke);
-        rect = self.apply_shadow_bounds(rect);
-        rect = self.apply_blur_bounds(rect);
-        rect = self.apply_children_bounds(rect, shapes_pool);
-        rect = self.apply_children_blur(rect, shapes_pool);
+        rect = self.apply_shadow_bounds(rect, scale);
+        rect = self.apply_blur_bounds(rect, scale);
+        rect = self.apply_children_bounds(rect, shapes_pool, scale);
+        rect = self.apply_children_blur(rect, shapes_pool, scale);
 
         rect
     }
@@ -1154,7 +1185,6 @@ impl Shape {
     }
 
     pub fn add_paragraph(&mut self, paragraph: Paragraph) -> Result<(), String> {
-        self.invalidate_extrect();
         match self.shape_type {
             Type::Text(ref mut text) => {
                 text.add_paragraph(paragraph);
