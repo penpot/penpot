@@ -38,6 +38,7 @@ body {
   align-items: center;
   width: 100vw;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 * {

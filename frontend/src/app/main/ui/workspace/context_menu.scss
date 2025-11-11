@@ -23,6 +23,7 @@
   border: deprecated.$s-2 solid var(--panel-border-color);
   background-color: var(--menu-background-color);
   max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
 }
 

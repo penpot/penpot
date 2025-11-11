@@ -8,6 +8,7 @@
 
 .viewer-layout {
   height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-rows: deprecated.$s-48 auto;
   grid-template-columns: 1fr;
@@ -41,6 +42,7 @@
   grid-template-rows: deprecated.$s-48 auto;
   grid-template-columns: 1fr;
   height: 100vh;
+  height: 100dvh;
   margin-top: 0;
   user-select: none;
 }
@@ -211,10 +213,12 @@
 [data-fullscreen="true"] .viewer-content {
   transform: translateY(-#{deprecated.$s-48});
   height: 100vh;
+  height: 100dvh;
 }
 
 [data-fullscreen="true"] .viewer-section {
   height: 100vh;
+  height: 100dvh;
 }
 
 [data-force-visible="true"] .viewer-go-next {

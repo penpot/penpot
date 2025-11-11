@@ -11,6 +11,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
     }
     canvas {
@@ -51,14 +52,14 @@
       dv.setFloat32(ptr + offset + 24, y1, true);
       offset += 28;
 
-      // LINE     
+      // LINE
       dv.setUint16(ptr + offset + 0, 2, true); // LINE
       dv.setFloat32(ptr + offset + 20, x2, true);
       dv.setFloat32(ptr + offset + 24, y2, true);
       offset += 28;
 
       Module._set_shape_path_content();
-      Module._set_shape_selrect(x1, y1, x2, y2);      
+      Module._set_shape_selrect(x1, y1, x2, y2);
     }
 
     initWasmModule().then(Module => {
@@ -103,7 +104,7 @@
       const { duration } = performance.measure('render', 'render:begin', 'render:end');
       // alert(`render time: ${duration.toFixed(2)}ms`);
     });
-    
+
   </script>
 </body>
 </html>

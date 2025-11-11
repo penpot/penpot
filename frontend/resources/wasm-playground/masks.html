@@ -11,6 +11,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
     }
     canvas {
@@ -50,7 +51,7 @@
       Module._set_shape_type(3);
       Module._set_shape_selrect(100, 100, 200, 200);
       addShapeSolidFill(hexToU32ARGB("#aabbcc", 1));
-      
+
       const group_children = [];
 
       let uuid = "a822d9e3-16c5-802c-8006-2d6d04f9c3e5";
@@ -80,7 +81,7 @@
       Module._set_view(1, 0, 0);
       Module._render(Date.now());
     });
-    
+
   </script>
 </body>
 </html>

@@ -9,8 +9,11 @@
 .workspace {
   @extend .new-scrollbar;
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   user-select: none;
   display: grid;
   grid-template-areas: "left-sidebar viewport right-sidebar";

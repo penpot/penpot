@@ -30,6 +30,7 @@
   border: deprecated.$s-2 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
   max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
 }
 
