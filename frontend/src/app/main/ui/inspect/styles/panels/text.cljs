@@ -62,7 +62,7 @@
         property-value (:name typography)]
     (when typography
       [:> properties-row* {:term "Typography"
-                           :detail (:name typography)
+                           :detail property-value
                            :property property-value
                            :copiable true}])))
 

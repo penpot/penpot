@@ -51,19 +51,31 @@
      [:dd {:class (stl/css :property-detail)}
       (if copiable?
         (if token
-          [:> tooltip* {:id (:name token)
-                        :class (stl/css :tooltip-token-wrapper)
-                        :content #(mf/html
-                                   [:div {:class (stl/css :tooltip-token)}
-                                    [:div {:class (stl/css :tooltip-token-title)} (tr "inspect.tabs.styles.token.resolved-value")]
-                                    [:div {:class (stl/css :tooltip-token-value)} (if (= :typography (:type token))
-                                                                                    [:ul {:class (stl/css :tooltip-token-resolved-values)}
-                                                                                     (for [[property value] (:resolved-value token)]
-                                                                                       [:li {:key property} (str (category-dictionary property) ": " (format-token-value value))])]
-                                                                                    (:resolved-value token))]])}
-           [:> property-detail-copiable* {:token token
-                                          :copied copied
-                                          :on-click copy-attr} detail]]
+          (let [token-type (:type token)]
+            [:> tooltip* {:id (:name token)
+                          :class (stl/css :tooltip-token-wrapper)
+                          :content #(mf/html
+                                     [:div {:class (stl/css :tooltip-token)}
+                                      [:div {:class (stl/css :tooltip-token-title)}
+                                       (tr "inspect.tabs.styles.token.resolved-value")]
+                                      [:div {:class (stl/css :tooltip-token-value)}
+                                       (cond
+                                         (= :typography token-type)
+                                         [:ul {:class (stl/css :tooltip-token-resolved-values)}
+                                          (for [[property value] (:resolved-value token)]
+                                            [:li {:key property}
+                                             (str (category-dictionary property) ": " (format-token-value value))])]
+                                         (= :shadow token-type)
+                                         [:ul {:class (stl/css :tooltip-token-resolved-values)}
+                                          (for [property (:resolved-value token)
+                                                [key value] property]
+                                            [:li {:key key}
+                                             (str (category-dictionary key) ": " (format-token-value value))])]
+                                         :else
+                                         (:resolved-value token))]])}
+             [:> property-detail-copiable* {:token token
+                                            :copied copied
+                                            :on-click copy-attr} detail]])
           [:> property-detail-copiable* {:copied copied
                                          :on-click copy-attr} detail])
         detail)]]))
