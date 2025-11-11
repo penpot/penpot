@@ -1992,7 +1992,7 @@ msgstr "Valor resuelto:"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"
-msgstr "Información sobre la capa"
+msgstr "Info. de capa"
 
 #: src/app/main/ui/dashboard/comments.cljs:96
 msgid "label.mark-all-as-read"
