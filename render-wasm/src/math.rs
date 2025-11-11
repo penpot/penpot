@@ -51,6 +51,13 @@ pub fn identitish(m: &Matrix) -> bool {
         && is_close_to(m.skew_y(), 0.0)
 }
 
+pub fn is_move_only_matrix(m: &Matrix) -> bool {
+    is_close_to(m.scale_x(), 1.0)
+        && is_close_to(m.scale_y(), 1.0)
+        && is_close_to(m.skew_x(), 0.0)
+        && is_close_to(m.skew_y(), 0.0)
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Bounds {
     pub nw: Point,

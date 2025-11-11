@@ -1,5 +1,7 @@
 use skia_safe::{self as skia};
 
+use indexmap::IndexSet;
+
 use crate::uuid::Uuid;
 use std::borrow::Cow;
 use std::cell::{OnceCell, RefCell};
@@ -342,9 +344,14 @@ impl Shape {
         matches!(
             self.shape_type,
             Type::Frame(Frame {
-                layout: Some(layouts::Layout::FlexLayout(_, FlexData {
-                    direction: layouts::FlexDirection::RowReverse | layouts::FlexDirection::ColumnReverse, ..
-                })),
+                layout: Some(layouts::Layout::FlexLayout(
+                    _,
+                    FlexData {
+                        direction: layouts::FlexDirection::RowReverse
+                            | layouts::FlexDirection::ColumnReverse,
+                        ..
+                    }
+                )),
                 ..
             })
         )
@@ -1279,13 +1286,14 @@ impl Shape {
     }
 
     pub fn apply_structure(&mut self, structure: &Vec<StructureEntry>) {
-        let mut result: Vec<Uuid> = Vec::from_iter(self.children.iter().copied());
+        let mut result = IndexSet::<Uuid>::from_iter(self.children.iter().copied());
         let mut to_remove = HashSet::<&Uuid>::new();
 
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    result.insert(st.index as usize, st.id);
+                    let index = usize::min(result.len() - 1, st.index as usize);
+                    result.shift_insert(index, st.id);
                 }
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);

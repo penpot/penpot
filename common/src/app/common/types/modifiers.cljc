@@ -767,6 +767,11 @@
       :always
       (ctl/update-flex-child value))))
 
+(defn remove-children-set
+  [shapes children-to-remove]
+  (let [remove? (set children-to-remove)]
+    (d/removev remove? shapes)))
+
 (defn apply-modifier
   [shape operation]
   (let [type (dm/get-prop operation :type)]
@@ -793,7 +798,7 @@
 
       :remove-children
       (let [value (dm/get-prop operation :value)]
-        (update shape :shapes remove-children value))
+        (update shape :shapes remove-children-set value))
 
       :scale-content
       (let [value (dm/get-prop operation :value)]
@@ -810,11 +815,6 @@
 (defn apply-structure-modifiers
   "Apply structure changes to a shape"
   [shape modifiers]
-  (let [remove-children
-        (fn [shapes children-to-remove]
-          (let [remove? (set children-to-remove)]
-            (d/removev remove? shapes)))]
-
-    (as-> shape $
-      (reduce apply-modifier $ (dm/get-prop modifiers :structure-parent))
-      (reduce apply-modifier $ (dm/get-prop modifiers :structure-child)))))
+  (as-> shape $
+    (reduce apply-modifier $ (dm/get-prop modifiers :structure-parent))
+    (reduce apply-modifier $ (dm/get-prop modifiers :structure-child))))

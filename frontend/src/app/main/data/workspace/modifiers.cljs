@@ -19,7 +19,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.modifiers :as ctm]
    [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]

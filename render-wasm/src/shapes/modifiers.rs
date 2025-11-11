@@ -6,11 +6,12 @@ mod flex_layout;
 pub mod common;
 pub mod grid_layout;
 
-use crate::math::{self as math, bools, identitish, Bounds, Matrix, Point};
+use crate::math::{self as math, bools, identitish, is_close_to, Bounds, Matrix, Point};
 use common::GetBounds;
 
 use crate::shapes::{
-    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry, Type,
+    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry,
+    TransformEntrySource, Type,
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
@@ -75,7 +76,7 @@ fn propagate_children(
             child.ignore_constraints,
         );
 
-        result.push_back(Modifier::transform(*child_id, transform));
+        result.push_back(Modifier::transform_propagate(*child_id, transform));
     }
 
     result
@@ -182,33 +183,43 @@ fn propagate_transform(
 
     let mut transform = entry.transform;
 
-    // NOTA: No puedo utilizar un clone porque entonces estaríamos
-    // perdiendo la referencia al contenido del layout...
-    if let Type::Text(text_content) = &mut shape.shape_type.clone() {
-        if text_content.needs_update_layout() {
-            text_content.update_layout(shape.selrect);
-        }
-        match text_content.grow_type() {
-            GrowType::AutoHeight => {
-                let height = text_content.size.height;
-                let resize_transform = math::resize_matrix(
-                    &shape_bounds_after,
-                    &shape_bounds_after,
-                    shape_bounds_after.width(),
-                    height,
-                );
-                shape_bounds_after = shape_bounds_after.transform(&resize_transform);
-                transform.post_concat(&resize_transform);
+    // Only check the text layout when the width/height changes
+    if !is_close_to(shape_bounds_before.width(), shape_bounds_after.width())
+        || !is_close_to(shape_bounds_before.height(), shape_bounds_after.height())
+    {
+        if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+            match text_content.grow_type() {
+                GrowType::AutoHeight => {
+                    if text_content.needs_update_layout() {
+                        text_content.update_layout(shape.selrect);
+                    }
+                    let height = text_content.size.height;
+                    let resize_transform = math::resize_matrix(
+                        &shape_bounds_after,
+                        &shape_bounds_after,
+                        shape_bounds_after.width(),
+                        height,
+                    );
+                    shape_bounds_after = shape_bounds_after.transform(&resize_transform);
+                    transform.post_concat(&resize_transform);
+                }
+                GrowType::AutoWidth => {
+                    if text_content.needs_update_layout() {
+                        text_content.update_layout(shape.selrect);
+                    }
+                    let width = text_content.width();
+                    let height = text_content.size.height;
+                    let resize_transform = math::resize_matrix(
+                        &shape_bounds_after,
+                        &shape_bounds_after,
+                        width,
+                        height,
+                    );
+                    shape_bounds_after = shape_bounds_after.transform(&resize_transform);
+                    transform.post_concat(&resize_transform);
+                }
+                GrowType::Fixed => {}
             }
-            GrowType::AutoWidth => {
-                let width = text_content.width();
-                let height = text_content.size.height;
-                let resize_transform =
-                    math::resize_matrix(&shape_bounds_after, &shape_bounds_after, width, height);
-                shape_bounds_after = shape_bounds_after.transform(&resize_transform);
-                transform.post_concat(&resize_transform);
-            }
-            GrowType::Fixed => {}
         }
     }
 
@@ -234,12 +245,19 @@ fn propagate_transform(
     shape_modif.post_concat(&transform);
     modifiers.insert(shape.id, shape_modif);
 
-    if shape.has_layout() {
+    let is_resize = !math::is_move_only_matrix(&transform);
+    let is_propagate = entry.source == TransformEntrySource::Propagate;
+
+    // If this is a layout and we're only moving don't need to reflow
+    if shape.has_layout() && is_resize {
         entries.push_back(Modifier::reflow(shape.id));
     }
 
     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
-        if parent.has_layout() || parent.is_group_like() {
+        // When the parent is either a group or a layout we only mark for reflow
+        // if the current transformation is not a move propagation.
+        // If it's a move propagation we don't need to reflow, the parent is already changed.
+        if (parent.has_layout() || parent.is_group_like()) && (is_resize || !is_propagate) {
             entries.push_back(Modifier::reflow(parent.id));
         }
     }
@@ -360,7 +378,14 @@ pub fn propagate_modifiers(
 ) -> Vec<TransformEntry> {
     let mut entries: VecDeque<_> = modifiers
         .iter()
-        .map(|entry| Modifier::Transform(entry.clone()))
+        .map(|entry| {
+            // If we receibe a identity matrix we force a reflow
+            if math::identitish(&entry.transform) {
+                Modifier::Reflow(entry.id)
+            } else {
+                Modifier::Transform(entry.clone())
+            }
+        })
         .collect();
 
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
@@ -407,7 +432,7 @@ pub fn propagate_modifiers(
 
     modifiers
         .iter()
-        .map(|(key, val)| TransformEntry::new(*key, *val))
+        .map(|(key, val)| TransformEntry::from_input(*key, *val))
         .collect()
 }
 

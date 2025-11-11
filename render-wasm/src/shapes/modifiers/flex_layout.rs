@@ -623,7 +623,7 @@ pub fn reflow_flex_layout(
                 transform.post_concat(&Matrix::translate(delta_v));
             }
 
-            result.push_back(Modifier::transform(child.id, transform));
+            result.push_back(Modifier::transform_propagate(child.id, transform));
 
             shape_anchor = next_anchor(
                 layout_data,

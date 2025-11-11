@@ -791,7 +791,7 @@ pub fn reflow_grid_layout(
             transform.post_concat(&Matrix::translate(delta_v));
         }
 
-        result.push_back(Modifier::transform(child.id, transform));
+        result.push_back(Modifier::transform_propagate(child.id, transform));
     }
 
     if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
