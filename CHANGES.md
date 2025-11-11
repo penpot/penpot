@@ -33,7 +33,7 @@
 - Fix problem with plugins generating code for pages different than current one [Taiga #12312](https://tree.taiga.io/project/penpot/issue/12312)
 - Fix input confirmation behavior is not uniform [Taiga #12294](https://tree.taiga.io/project/penpot/issue/12294)
 
-## 2.11.0 (Unreleased)
+## 2.11.0
 
 ### :boom: Breaking changes & Deprecations
 
@@ -60,10 +60,6 @@
   `PENPOT_NETTY_IO_THREADS` used to configure a shared netty resources across different
   services which use netty internally (redis connection, S3 SDK client). This
   configuration is not very commonly used so don't expected real impact on any user.
-
-### :rocket: Epics and highlights
-
-### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
 
@@ -110,6 +106,8 @@
 - Fix problem when checking usage with removed teams [Taiga #12442](https://tree.taiga.io/project/penpot/issue/12442)
 - Fix focus mode persisting across page/file navigation [Taiga #12469](https://tree.taiga.io/project/penpot/issue/12469)
 - Fix shadow color validation [Github #7705](https://github.com/penpot/penpot/pull/7705)
+- Fix exception on selection blend-mode using keyboard [Github #7710](https://github.com/penpot/penpot/pull/7710)
+- Fix crash when using decimal (floating-point) values for X/Y or width/height [Taiga #12543](https://tree.taiga.io/project/penpot/issue/12543)
 
 ## 2.10.1
 

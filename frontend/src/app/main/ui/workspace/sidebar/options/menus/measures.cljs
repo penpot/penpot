@@ -301,7 +301,7 @@
         (mf/use-fn
          (mf/deps ids shapes)
          (fn [value attr]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (run! #(do-size-change value attr) shapes))
@@ -330,7 +330,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (run! #(do-position-change %1 value attr) shapes))
@@ -353,7 +353,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (run! #(do-rotation-change value) shapes))

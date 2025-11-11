@@ -12,6 +12,7 @@
    [app.common.pprint :as pp]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -315,9 +316,10 @@
           trace      (:app.main.errors/trace data)
           instance   (:app.main.errors/instance data)]
       (with-out-str
-        (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
-        (println "Prof ID:" (str (or profile-id "--")))
-        (println "Team ID:" (str (or team-id "--")))
+        (println "Hint:    " (or (:hint data) (ex-message instance) "--"))
+        (println "Prof ID: " (str (or profile-id "--")))
+        (println "Team ID: " (str (or team-id "--")))
+        (println "URI:     " cf/public-uri)
 
         (when-let [file-id (:file-id data)]
           (println "File ID:" (str file-id)))
