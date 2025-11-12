@@ -8,38 +8,38 @@
   "A maintenance task that is responsible of properly scheduling the
   file-gc task for all files that matches the eligibility threshold."
   (:require
+   [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [integrant.core :as ig]))
 
 (def ^:private
   sql:get-candidates
   "SELECT f.id,
+          f.revn,
           f.modified_at
      FROM file AS f
     WHERE f.has_media_trimmed IS false
-      AND f.modified_at < now() - ?::interval
+      AND f.modified_at < ?
       AND f.deleted_at IS NULL
     ORDER BY f.modified_at DESC
-      FOR UPDATE
+      FOR UPDATE OF f
      SKIP LOCKED")
 
-(defn- get-candidates
-  [{:keys [::db/conn ::min-age] :as cfg}]
-  (let [min-age (db/interval min-age)]
-    (db/cursor conn [sql:get-candidates min-age] {:chunk-size 10})))
-
 (defn- schedule!
-  [{:keys [::min-age] :as cfg}]
-  (let [total (reduce (fn [total {:keys [id]}]
-                        (let [params {:file-id id :min-age min-age}]
+  [{:keys [::db/conn] :as cfg} threshold]
+  (let [total (reduce (fn [total {:keys [id modified-at revn]}]
+                        (let [params {:file-id id :revn revn}]
+                          (l/trc :hint "schedule"
+                                 :file-id (str id)
+                                 :revn revn
+                                 :modified-at (ct/format-inst modified-at))
                           (wrk/submit! (assoc cfg ::wrk/params params))
                           (inc total)))
                       0
-                      (get-candidates cfg))]
-
+                      (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
     {:processed total}))
 
 (defmethod ig/assert-key ::handler
@@ -48,17 +48,17 @@
 
 (defmethod ig/expand-key ::handler
   [k v]
-  {k (assoc v ::min-age (cf/get-deletion-delay))})
+  {k (assoc v ::min-age (cf/get-file-clean-delay))})
 
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))]
+    (let [threshold (-> (ct/duration (or (:min-age props) (::min-age cfg)))
+                        (ct/in-past))]
       (-> cfg
           (assoc ::db/rollback (:rollback? props))
-          (assoc ::min-age min-age)
           (assoc ::wrk/task :file-gc)
           (assoc ::wrk/priority 10)
           (assoc ::wrk/mark-retries 0)
-          (assoc ::wrk/delay 1000)
-          (db/tx-run! schedule!)))))
+          (assoc ::wrk/delay 10000)
+          (db/tx-run! schedule! threshold)))))

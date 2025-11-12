@@ -4,35 +4,35 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .collapsed-sidebar {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   position: absolute;
-  top: $s-48;
+  top: deprecated.$s-48;
   left: 0;
-  padding: $s-4;
-  border-radius: $br-8;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
   background: var(--color-background-primary);
   margin-inline-start: var(--sp-m);
 }
 .collapsed-title {
-  @include flexCenter;
-  height: $s-36;
-  width: $s-24;
-  border-radius: $br-8;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-36;
+  width: deprecated.$s-24;
+  border-radius: deprecated.$br-8;
   background: var(--color-background-secondary);
 }
 .collapsed-button {
-  @include buttonStyle;
-  height: $s-24;
-  width: $s-16;
+  @include deprecated.buttonStyle;
+  height: deprecated.$s-24;
+  width: deprecated.$s-16;
   padding: 0;
-  border-radius: $br-5;
+  border-radius: deprecated.$br-5;
   svg {
-    @include flexCenter;
-    height: $s-16;
-    width: $s-16;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
     color: transparent;
     fill: none;
     stroke: var(--icon-foreground);

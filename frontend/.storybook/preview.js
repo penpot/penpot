@@ -13,9 +13,10 @@ export const decorators = [
   }),
 ];
 
-/** @type { import('@storybook/react').Preview } */
+/** @type { import('@storybook/react-vite').Preview } */
 const preview = {
   decorators: decorators,
+
   parameters: {
     controls: {
       disableSaveFromUI: true,
@@ -25,12 +26,17 @@ const preview = {
       },
     },
     backgrounds: {
-      values: [
-        { name: 'theme', value: 'var(--color-background-secondary)' },
-      ],
-      default: 'theme',
+      options: {
+        theme: { name: 'theme', value: 'var(--color-background-secondary)' }
+      }
     },
   },
+
+  initialGlobals: {
+    backgrounds: {
+      value: "theme"
+    }
+  }
 };
 
 export default preview;

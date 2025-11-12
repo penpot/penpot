@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -23,7 +24,6 @@
    [app.setup :as-alias setup]
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [cuerdas.core :as str]))
 
@@ -108,9 +108,9 @@
    [::ip-addr {:optional true} ::sm/text]
    [::props {:optional true} [:map-of :keyword :any]]
    [::context {:optional true} [:map-of :keyword :any]]
-   [::tracked-at {:optional true} ::sm/inst]
+   [::tracked-at {:optional true} ::ct/inst]
    [::webhooks/event? {:optional true} ::sm/boolean]
-   [::webhooks/batch-timeout {:optional true} ::dt/duration]
+   [::webhooks/batch-timeout {:optional true} ::ct/duration]
    [::webhooks/batch-key {:optional true}
     [:or ::sm/fn ::sm/text :keyword]]])
 
@@ -199,7 +199,7 @@
 (defn- handle-event!
   [cfg event]
   (let [params (event->params event)
-        tnow   (dt/now)]
+        tnow   (ct/now)]
 
     (when (contains? cf/flags :audit-log)
       ;; NOTE: this operation may cause primary key conflicts on inserts
@@ -273,7 +273,7 @@
     (let [event (-> (d/without-nils event)
                     (check-event))]
       (db/run! cfg (fn [cfg]
-                     (let [tnow   (dt/now)
+                     (let [tnow   (ct/now)
                            params (-> (event->params event)
                                       (assoc :created-at tnow)
                                       (update :tracked-at #(or % tnow)))]

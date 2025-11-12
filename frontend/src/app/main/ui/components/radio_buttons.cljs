@@ -38,6 +38,7 @@
 
 
     [:label {:html-for id
+             :data-testid id
              :title title
              :class (stl/css-case
                      :radio-icon true

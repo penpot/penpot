@@ -9,6 +9,7 @@
   (:require
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
@@ -19,7 +20,7 @@
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -27,7 +28,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
   {::mf/props :obj
@@ -86,7 +87,8 @@
                        (when-not (str/empty? name)
                          (st/emit! (-> (dd/rename-project (assoc project :name name))
                                        (with-meta {::ev/origin "project"}))))
-                       (swap! local assoc :edition false)))}]
+                       (swap! local assoc :edition false)))
+           :max-length 250}]
          [:div {:class (stl/css :dashboard-title)}
           [:h1 {:on-double-click on-edit
                 :data-testid "project-title"
@@ -127,7 +129,7 @@
                            :left (- (:x (:menu-pos @local)) 180)
                            :top (:y (:menu-pos @local))
                            :on-edit on-edit
-                           :on-menu-close on-menu-close
+                           :on-close on-menu-close
                            :on-import on-import}])]]))
 
 (mf/defc files-section*
@@ -181,6 +183,8 @@
     (mf/with-effect [project-id]
       (st/emit! (dpj/fetch-files project-id)
                 (dd/clear-selected-files)))
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries)
 
     [:*
      [:> header* {:team team

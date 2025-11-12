@@ -12,8 +12,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
    [app.util.keyboard :as kbd]
@@ -136,11 +136,11 @@
                            vec))))
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable false
-                     :title       (tr "workspace.options.export")
-                     :class       (stl/css :title-spacing-export-viewer)}
+      [:> title-bar* {:collapsable false
+                      :title       (tr "workspace.options.export")
+                      :class       (stl/css :title-spacing-export-viewer)}
        [:button {:class (stl/css :add-export)
-                 :on-click add-export} i/add]]]
+                 :on-click add-export} deprecated-icon/add]]]
 
      (cond
        (= :multiple exports)
@@ -149,7 +149,7 @@
         [:div {:class (stl/css :actions)}
          [:button {:class (stl/css :action-btn)
                    :on-click ()}
-          i/remove-icon]]]
+          deprecated-icon/remove-icon]]]
 
        (seq @exports)
        [:div {:class (stl/css :element-set-content)}
@@ -183,7 +183,7 @@
 
            [:button {:class (stl/css :action-btn)
                      :on-click (partial delete-export index)}
-            i/remove-icon]])])
+            deprecated-icon/remove-icon]])])
      (when (or (= :multiple exports) (seq @exports))
        [:button
         {:on-click (when-not in-progress? on-download)

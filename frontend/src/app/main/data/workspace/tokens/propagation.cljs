@@ -8,6 +8,7 @@
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
@@ -16,36 +17,10 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
-
-;; Constants -------------------------------------------------------------------
-
-(def ^:private filter-existing-values? false)
-
-(def ^:private attributes->shape-update
-  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
-   ctt/color-keys dwta/update-fill-stroke
-   ctt/stroke-width-keys dwta/update-stroke-width
-   ctt/sizing-keys dwta/update-shape-dimensions
-   ctt/opacity-keys dwta/update-opacity
-   #{:line-height} dwta/update-line-height
-   #{:x :y} dwta/update-shape-position
-   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
-   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
-   #{:column-gap :row-gap} dwta/update-layout-spacing
-   #{:width :height} dwta/update-shape-dimensions
-   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits
-   ctt/rotation-keys dwta/update-rotation})
-
-(def attribute-actions-map
-  (reduce
-   (fn [acc [ks action]]
-     (into acc (map (fn [k] [k action]) ks)))
-   {} attributes->shape-update))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -59,6 +34,48 @@
      :else b))
   ([a b & rest]
    (reduce deep-merge a (cons b rest))))
+
+(defn- flatten-set-keyed-map
+  "Flattens a map where the keys are sets of keywords."
+  [m into-m]
+  (reduce
+   (fn [acc [ks action]]
+     (into acc (map (fn [k] [k action]) ks)))
+   into-m m))
+
+;; Constants -------------------------------------------------------------------
+
+(def ^:private filter-existing-values? false)
+
+(def ^:private attributes->shape-update
+  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
+   ctt/color-keys dwta/update-fill-stroke
+   ctt/stroke-width-keys dwta/update-stroke-width
+   ctt/sizing-keys dwta/update-shape-dimensions
+   ctt/opacity-keys dwta/update-opacity
+   ctt/rotation-keys dwta/update-rotation
+
+   ;; Typography
+   ctt/font-family-keys dwta/update-font-family
+   ctt/font-size-keys dwta/update-font-size
+   ctt/font-weight-keys dwta/update-font-weight
+   ctt/letter-spacing-keys dwta/update-letter-spacing
+   ctt/text-case-keys dwta/update-text-case
+   ctt/text-decoration-keys dwta/update-text-decoration
+   ctt/typography-token-keys dwta/update-typography
+   ctt/shadow-keys dwta/update-shadow
+   #{:line-height} dwta/update-line-height
+
+   ;; Layout
+   #{:x :y} dwta/update-shape-position
+   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
+   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
+   #{:column-gap :row-gap} dwta/update-layout-spacing
+   #{:width :height} dwta/update-shape-dimensions
+   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits})
+
+(def ^:private attribute-actions-map
+  (flatten-set-keyed-map attributes->shape-update {}))
 
 ;; Data flows ------------------------------------------------------------------
 
@@ -139,7 +156,7 @@
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
-        tpoint          (dt/tpoint-ms)]
+        tpoint          (ct/tpoint-ms)]
 
     (l/inf :status "START" :hint "propagate-tokens")
     (->> (rx/concat
@@ -155,7 +172,10 @@
                   (collect-shapes-update-info resolved-tokens (:objects page))
 
                   actions
-                  (actionize-shapes-update-info page-id attrs)]
+                  (actionize-shapes-update-info page-id attrs)
+
+                  ;; Composed updates return observables and need to be executed differently
+                  {:keys [observable normal]} (group-by #(if (rx/observable? %) :observable :normal) actions)]
 
               (l/inf :status "PROGRESS"
                      :hint "propagate-tokens"
@@ -164,7 +184,9 @@
                      ::l/sync? true)
 
               (rx/merge
-               (rx/from actions)
+               (when (seq observable) (apply rx/merge observable))
+               (when (seq normal) (rx/concat-all (rx/of normal)))
+
                (->> (rx/from frame-ids)
                     (rx/mapcat (fn [frame-id]
                                  (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")

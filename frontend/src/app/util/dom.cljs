@@ -469,6 +469,11 @@
   (when (some? node)
     (.focus node)))
 
+(defn click!
+  [^js node]
+  (when (some? node)
+    (.click node)))
+
 (defn focus?
   [^js node]
   (and node
@@ -891,3 +896,12 @@
 (defn last-child
   [^js node]
   (.. node -lastChild))
+
+(defn prevent-browser-gesture-navigation!
+  []
+  ;; Prevent the browser from interpreting trackpad horizontal swipe as back/forth
+  ;;
+  ;; In theory We could disable this only for the workspace. However gets too unreliable.
+  ;; It is better to be safe and disable for the dashboard as well.
+  (set! (.. js/document -documentElement -style -overscrollBehaviorX) "none")
+  (set! (.. js/document -body -style -overscrollBehaviorX) "none"))

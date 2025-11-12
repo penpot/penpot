@@ -21,6 +21,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- get-project-name
@@ -55,11 +56,11 @@
           projects))
 
 (mf/defc file-menu*
-  [{:keys [files on-edit on-menu-close top left navigate origin parent-id can-edit]}]
+  [{:keys [files on-edit on-close top left navigate origin parent-id can-edit]}]
 
   (assert (seq files) "missing `files` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
-  (assert (fn? on-menu-close) "missing `on-menu-close` prop")
+  (assert (fn? on-close) "missing `on-close` prop")
   (assert (boolean? navigate) "missing `navigate` prop")
 
   (let [is-lib-page?     (= :libraries origin)
@@ -161,13 +162,12 @@
                   (on-move-accept params team-id project-id))))))
 
         add-shared
-        #(st/emit! (dd/set-file-shared (assoc file :is-shared true)))
+        (fn []
+          (st/emit! (dd/set-file-shared (assoc file :is-shared true))))
 
         del-shared
-        (mf/use-fn
-         (mf/deps files)
-         (fn [_]
-           (run! #(st/emit! (dd/set-file-shared (assoc % :is-shared false))) files)))
+        (fn [_]
+          (run! #(st/emit! (dd/set-file-shared (assoc % :is-shared false))) files))
 
         on-add-shared
         (fn [event]
@@ -186,31 +186,34 @@
                       :count-libraries file-count})))
 
         on-export-files
-        (mf/use-fn
-         (mf/deps files)
-         (fn [format]
-           (st/emit! (with-meta (fexp/export-files files format)
-                       {::ev/origin "dashboard"}))))
+        (fn [format]
+          (st/emit! (with-meta (fexp/export-files files format)
+                      {::ev/origin "dashboard"})))
 
         on-export-binary-files
-        (mf/use-fn
-         (mf/deps on-export-files)
-         (partial on-export-files :binfile-v1))
+        (partial on-export-files :binfile-v1)
 
         on-export-binary-files-v3
-        (mf/use-fn
-         (mf/deps on-export-files)
-         (partial on-export-files :binfile-v3))
+        (partial on-export-files :binfile-v3)
 
         on-export-standard-files
-        (mf/use-fn
-         (mf/deps on-export-files)
-         (partial on-export-files :legacy-zip))]
+        (partial on-export-files :legacy-zip)]
 
     (mf/with-effect []
       (->> (rp/cmd! :get-all-projects)
            (rx/map group-by-team)
            (rx/subs! #(reset! teams* %))))
+
+    (mf/with-effect [on-close]
+      (st/emit! (ptk/data-event :dropdown/open {:id "file-menu"}))
+      (let [stream (->> st/stream
+                        (rx/filter (ptk/type? :dropdown/open))
+                        (rx/map deref)
+                        (rx/filter #(not= "file-menu" (:id %)))
+                        (rx/take 1))
+            subs   (rx/subs! nil nil on-close stream)]
+        (fn []
+          (rx/dispose! subs))))
 
     (let [sub-options
           (concat
@@ -328,7 +331,7 @@
                 :handler on-delete})])]
 
       [:> context-menu*
-       {:on-close on-menu-close
+       {:on-close on-close
         :fixed (or (not= top 0) (not= left 0))
         :show true
         :min-width true

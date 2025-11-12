@@ -8,21 +8,21 @@
 // MAIN STYLES
 //#################################################
 
-@import "common/dependencies/reset";
-@import "common/refactor/color-defs.scss";
-@import "common/dependencies/fonts";
-@import "common/dependencies/animations";
-@import "common/dependencies/highlight.scss";
-@import "common/dependencies/storybook.scss";
+@forward "common/dependencies/reset";
+@forward "common/refactor/color-defs.scss";
+@forward "common/dependencies/fonts";
+@forward "common/dependencies/animations";
+@forward "common/dependencies/highlight.scss";
+@forward "common/dependencies/storybook.scss";
 
-@import "common/refactor/themes.scss";
-@import "common/refactor/design-tokens.scss";
+@forward "common/refactor/themes.scss";
+@forward "common/refactor/design-tokens.scss";
 
 //#################################################
 // Layouts
 //#################################################
 
-@import "common/base";
+@forward "common/base";
 
 //#################################################
 // Commons
@@ -30,4 +30,4 @@
 
 // TODO: remove this stylesheet once the new text editor is in place
 //       https: //tree.taiga.io/project/penpot/us/8165
-@import "main/partials/texts";
+@forward "main/partials/texts";

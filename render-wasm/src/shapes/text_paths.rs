@@ -1,6 +1,10 @@
 use crate::shapes::text::TextContent;
-use skia_safe::{self as skia, textlayout::ParagraphBuilder, Path, Paint};
+use skia_safe::{
+    self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
+};
 use std::ops::Deref;
+
+use crate::{with_state_mut, STATE};
 
 pub struct TextPaths(TextContent);
 
@@ -8,86 +12,82 @@ pub struct TextPaths(TextContent);
 // It's an example of how to convert texts to paths
 #[allow(dead_code)]
 impl TextPaths {
-    pub fn new(content: TextContent) -> Self {
-        Self(content)
-    }
-        
-    pub fn get_skia_paragraphs(&self) -> Vec<ParagraphBuilder> {
-        let mut paragraphs = self.to_paragraphs();
-        self.collect_paragraphs(&mut paragraphs);
-        paragraphs
+    pub fn new(text_content: TextContent) -> Self {
+        Self(text_content)
     }
 
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
         let mut paths = Vec::new();
-
         let mut offset_y = self.bounds.y();
-        let mut paragraphs = self.get_skia_paragraphs();
-        for paragraph_builder in paragraphs.iter_mut() {
-            // 1. Get paragraph and set the width layout
-            let mut skia_paragraph = paragraph_builder.build();
-            let text = paragraph_builder.get_text();
-            let paragraph_width = self.bounds.width();
-            skia_paragraph.layout(paragraph_width);
+        let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
 
-            let mut line_offset_y = offset_y;
+        for paragraphs in paragraph_builders.iter_mut() {
+            for paragraph_builder in paragraphs.iter_mut() {
+                // 1. Get paragraph and set the width layout
+                let mut skia_paragraph = paragraph_builder.build();
+                let text = paragraph_builder.get_text();
+                let paragraph_width = self.bounds.width();
+                skia_paragraph.layout(paragraph_width);
 
-            // 2. Iterate through each line in the paragraph
-            for line_metrics in skia_paragraph.get_line_metrics() {
-                let line_baseline = line_metrics.baseline as f32;
-                let start = line_metrics.start_index;
-                let end = line_metrics.end_index;
+                let mut line_offset_y = offset_y;
 
-                // 3. Get styles present in line for each text leaf
-                let style_metrics = line_metrics.get_style_metrics(start..end);
+                // 2. Iterate through each line in the paragraph
+                for line_metrics in skia_paragraph.get_line_metrics() {
+                    let line_baseline = line_metrics.baseline as f32;
+                    let start = line_metrics.start_index;
+                    let end = line_metrics.end_index;
 
-                let mut offset_x = 0.0;
+                    // 3. Get styles present in line for each text span
+                    let style_metrics = line_metrics.get_style_metrics(start..end);
 
-                for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
-                    let end_index = style_metrics.get(i + 1).map_or(end, |next| next.0);
+                    let mut offset_x = 0.0;
 
-                    let start_byte = text
-                        .char_indices()
-                        .nth(*start_index)
-                        .map(|(i, _)| i)
-                        .unwrap_or(0);
-                    let end_byte = text
-                        .char_indices()
-                        .nth(end_index)
-                        .map(|(i, _)| i)
-                        .unwrap_or(text.len());
+                    for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
+                        let end_index = style_metrics.get(i + 1).map_or(end, |next| next.0);
 
-                    let leaf_text = &text[start_byte..end_byte];
+                        let start_byte = text
+                            .char_indices()
+                            .nth(*start_index)
+                            .map(|(i, _)| i)
+                            .unwrap_or(0);
+                        let end_byte = text
+                            .char_indices()
+                            .nth(end_index)
+                            .map(|(i, _)| i)
+                            .unwrap_or(text.len());
 
-                    let font = skia_paragraph.get_font_at(*start_index);
+                        let span_text = &text[start_byte..end_byte];
 
-                    let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
-                    let blob_offset_y = line_offset_y;
+                        let font = skia_paragraph.get_font_at(*start_index);
 
-                    // 4. Get the path for each text leaf
-                    if let Some((text_path, paint)) = self.generate_text_path(
-                        leaf_text,
-                        &font,
-                        blob_offset_x,
-                        blob_offset_y,
-                        style_metric,
-                        antialias,
-                    ) {
-                        let text_width = font.measure_text(leaf_text, None).0;
-                        offset_x += text_width;
-                        paths.push((text_path, paint));
+                        let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
+                        let blob_offset_y = line_offset_y;
+
+                        // 4. Get the path for each text span
+                        if let Some((text_path, paint)) = self.generate_text_path(
+                            span_text,
+                            &font,
+                            blob_offset_x,
+                            blob_offset_y,
+                            style_metric,
+                            antialias,
+                        ) {
+                            let text_width = font.measure_text(span_text, None).0;
+                            offset_x += text_width;
+                            paths.push((text_path, paint));
+                        }
                     }
+                    line_offset_y = offset_y + line_baseline;
                 }
-                line_offset_y = offset_y + line_baseline;
+                offset_y += skia_paragraph.height();
             }
-            offset_y += skia_paragraph.height();
         }
         paths
     }
 
     fn generate_text_path(
         &self,
-        leaf_text: &str,
+        span_text: &str,
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
@@ -99,10 +99,10 @@ impl TextPaths {
         // This is used to avoid rendering empty paths, but we can
         // revisit this logic later
         if let Some((text_blob_path, text_blob_bounds)) =
-            Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y)
+            Self::get_text_blob_path(span_text, font, blob_offset_x, blob_offset_y)
         {
             let mut text_path = text_blob_path.clone();
-            let text_width = font.measure_text(leaf_text, None).0;
+            let text_width = font.measure_text(span_text, None).0;
 
             let decoration = style_metric.text_style.decoration();
             let font_metrics = style_metric.font_metrics;
@@ -164,15 +164,14 @@ impl TextPaths {
         }
     }
 
-
     fn get_text_blob_path(
-        leaf_text: &str,
+        span_text: &str,
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
     ) -> Option<(skia::Path, skia::Rect)> {
-        with_state!(state, {
-            let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
+        with_state_mut!(state, {
+            let utf16_text = span_text.encode_utf16().collect::<Vec<u16>>();
             let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
             let emoji_font = state.render_state.fonts().get_emoji_font(font.size());
             let use_font = emoji_font.as_ref().unwrap_or(font);

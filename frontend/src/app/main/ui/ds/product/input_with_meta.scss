@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_borders.scss" as *;
-@use "../spacing.scss" as *;
-@use "../_sizes.scss" as *;
-@use "../typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
 .input-with-meta-container {
   --input-meta-value: var(--color-foreground-primary);

@@ -117,6 +117,12 @@
   ([shape]
    (d/not-empty? (:shapes shape))))
 
+(defn has-layout?
+  "Returns true if the provided shape has a layout assigned"
+  [objects id]
+  (let [shape (get objects id)]
+    (boolean (and shape (:layout shape)))))
+
 (defn group-like-shape?
   ([objects id]
    (group-like-shape? (get objects id)))
@@ -127,13 +133,41 @@
 
 ;; ---- ACCESSORS
 
-(defn get-children-ids
+(defn get-selected-type
+  "Returns the type of the shape if only one, or :multiple if more
+  than one"
+  [objects selected]
+  (if (= 1 (count selected))
+    (let [shape (get objects (first selected))]
+      (:type shape))
+    :multiple))
+
+(defn get-shape-type
+  "Returns the type of the shape, or 'root' if it's Root Frame, always
+  as string"
   [objects id]
-  (letfn [(get-children-ids-rec [id processed]
-            (when (not (contains? processed id))
-              (when-let [shapes (-> (get objects id) :shapes (some-> vec))]
-                (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
-    (get-children-ids-rec id #{})))
+  (let [shape (get objects id)]
+    (if (root? shape)
+      :root
+      (dm/get-prop shape :type))))
+
+(defn get-children-ids
+  "Returns the ids of all the descendants of the shape identified
+  by the id. Optionally, you can pass an ignore function to indicate
+  when to ignore a descendant (and all its descendants)"
+  ([objects id]
+   (get-children-ids objects id {}))
+  ([objects id {:keys [ignore-children-fn]
+                ;;ignore-children-fn should receive a shape and return a boolean
+                :or {ignore-children-fn (constantly false)}}]
+   (letfn [(get-children-ids-rec [id processed]
+             (when-not (contains? processed id)
+               (when-let [shapes (as-> (get objects id) $
+                                   (:shapes $)
+                                   (remove ignore-children-fn $)
+                                   (some-> $ vec))]
+                 (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
+     (get-children-ids-rec id #{}))))
 
 (defn get-children-ids-with-self
   [objects id]
@@ -392,15 +426,15 @@
 
 (defn components-nesting-loop?
   "Check if a nesting loop would be created if the given shape is moved below the given parent"
-  [objects shape-id parent-id]
-  (let [xf-get-component-id (keep :component-id)
-
-        children            (get-children-with-self objects shape-id)
-        child-components    (into #{} xf-get-component-id children)
-
-        parents             (get-parents-with-self objects parent-id)
-        parent-components   (into #{} xf-get-component-id parents)]
-    (seq (set/intersection child-components parent-components))))
+  ([objects shape-id parent-id]
+   (let [children (get-children-with-self objects shape-id)
+         parents  (get-parents-with-self objects parent-id)]
+     (components-nesting-loop? children parents)))
+  ([children parents]
+   (let [xf-get-component-id (keep :component-id)
+         child-components    (into #{} xf-get-component-id children)
+         parent-components   (into #{} xf-get-component-id parents)]
+     (seq (set/intersection child-components parent-components)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ALGORITHMS & TRANSFORMATIONS FOR SHAPES
@@ -658,121 +692,8 @@
     (walk/postwalk process-form data)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SHAPES ORGANIZATION (PATH MANAGEMENT)
+;; SHAPES ORGANIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn split-path
-  "Decompose a string in the form 'one / two / three' into
-  a vector of strings, normalizing spaces."
-  [path]
-  (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
-    (->> (str/split path "/")
-         (into [] xf))))
-
-(defn join-path
-  "Regenerate a path as a string, from a vector."
-  [path-vec]
-  (str/join " / " path-vec))
-
-(defn join-path-with-dot
-  "Regenerate a path as a string, from a vector."
-  [path-vec]
-  (str/join "\u00A0\u2022\u00A0" path-vec))
-
-(defn clean-path
-  "Remove empty items from the path."
-  [path]
-  (->> (split-path path)
-       (join-path)))
-
-(defn parse-path-name
-  "Parse a string in the form 'group / subgroup / name'.
-  Retrieve the path and the name in separated values, normalizing spaces."
-  [path-name]
-  (let [path-name-split (split-path path-name)
-        path (str/join " / " (butlast path-name-split))
-        name (or (last path-name-split) "")]
-    [path name]))
-
-(defn merge-path-item
-  "Put the item at the end of the path."
-  [path name]
-  (if-not (empty? path)
-    (if-not (empty? name)
-      (str path " / " name)
-      path)
-    name))
-
-(defn merge-path-item-with-dot
-  "Put the item at the end of the path."
-  [path name]
-  (if-not (empty? path)
-    (if-not (empty? name)
-      (str path "\u00A0\u2022\u00A0" name)
-      path)
-    name))
-
-(defn compact-path
-  "Separate last item of the path, and truncate the others if too long:
-    'one'                          ->  ['' 'one' false]
-    'one / two / three'            ->  ['one / two' 'three' false]
-    'one / two / three / four'     ->  ['one / two / ...' 'four' true]
-    'one-item-but-very-long / two' ->  ['...' 'two' true] "
-  [path max-length dot?]
-  (let [path-split (split-path path)
-        last-item  (last path-split)
-        merge-path (if dot?
-                     merge-path-item-with-dot
-                     merge-path-item)]
-    (loop [other-items (seq (butlast path-split))
-           other-path  ""]
-      (if-let [item (first other-items)]
-        (let [full-path (-> other-path
-                            (merge-path item)
-                            (merge-path last-item))]
-          (if (> (count full-path) max-length)
-            [(merge-path other-path "...") last-item true]
-            (recur (next other-items)
-                   (merge-path other-path item))))
-        [other-path last-item false]))))
-
-(defn butlast-path
-  "Remove the last item of the path."
-  [path]
-  (let [split (split-path path)]
-    (if (= 1 (count split))
-      ""
-      (join-path (butlast split)))))
-
-(defn butlast-path-with-dots
-  "Remove the last item of the path."
-  [path]
-  (let [split (split-path path)]
-    (if (= 1 (count split))
-      ""
-      (join-path-with-dot (butlast split)))))
-
-(defn last-path
-  "Returns the last item of the path."
-  [path]
-  (last (split-path path)))
-
-(defn compact-name
-  "Append the first item of the path and the name."
-  [path name]
-  (let [path-split (split-path path)]
-    (merge-path-item (first path-split) name)))
-
-
-(defn split-by-last-period
-  "Splits a string into two parts:
-   the text before and including the last period,
-   and the text after the last period."
-  [s]
-  (if-let [last-period (str/last-index-of s ".")]
-    [(subs s 0 (inc last-period)) (subs s (inc last-period))]
-    [s ""]))
 
 (defn get-frame-objects
   "Retrieves a new objects map only with the objects under frame-id (with frame-id)"

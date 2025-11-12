@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .button {
   --pin-button-icon-color: var(--button-icon-foreground-color);
   --pin-button-bg-color: none;
   --pin-button-border-color: none;
 
-  width: $s-32;
-  height: $s-32;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
   background: var(--pin-button-bg-color);
-  border: $s-2 solid var(--pin-button-border-color);
-  border-radius: $br-8;
+  border: deprecated.$s-2 solid var(--pin-button-border-color);
+  border-radius: deprecated.$br-8;
   display: grid;
   place-content: center;
   cursor: pointer;
@@ -28,8 +28,8 @@
 }
 
 .icon {
-  width: $s-16;
-  height: $s-16;
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
   fill: none;
   stroke: var(--pin-button-icon-color);
 }

@@ -86,7 +86,7 @@
 
 (t/deftest internal-encode-decode
   (smt/check!
-   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator cts/schema:shape))
                        (cg/not-empty))]
      (let [obj1 (omap/wrap data)
            obj2 (omap/create (deref obj1))
@@ -103,7 +103,7 @@
 
 (t/deftest fressian-encode-decode
   (smt/check!
-   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator cts/schema:shape))
                        (cg/not-empty)
                        (cg/fmap omap/wrap)
                        (cg/fmap (fn [o] {:objects o})))]
@@ -119,7 +119,7 @@
 
 (t/deftest transit-encode-decode
   (smt/check!
-   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator cts/schema:shape))
                        (cg/not-empty)
                        (cg/fmap omap/wrap)
                        (cg/fmap (fn [o] {:objects o})))]

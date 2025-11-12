@@ -314,7 +314,7 @@
   --modal-button-foreground-color-error: var(--color-foreground-primary);
   --modal-link-foreground-color: var(--color-accent-primary);
   --modal-border-color: var(--color-background-quaternary);
-  --modal-separator-backogrund-color: var(--color-background-quaternary);
+  --modal-separator-background-color: var(--color-background-quaternary);
   --modal-navigator-foreground-color-rest: var(--color-background-quaternary);
   --modal-navigator-foreground-color-active: var(--color-accent-primary);
 
@@ -384,11 +384,6 @@
   --dashboard-list-foreground-color: var(--color-foreground-primary);
   --dashboard-list-text-foreground-color: var(--color-foreground-secondary);
 
-  --flow-tag-background-color: var(--color-background-tertiary);
-  --flow-tag-foreground-color: var(--color-foreground-secondary);
-  --flow-tag-background-color-hover: var(--color-background-quaternary);
-  --flow-tag-foreground-color-hover: var(--color-accent-primary);
-
   --communication-tag-background-color: var(--color-foreground-primary);
   --communication-tag-foreground-color: var(--color-background-tertiary);
 
@@ -404,6 +399,7 @@
   // TEXT SELECTION
   --text-editor-selection-background-color: var(--da-tertiary-70);
   --text-editor-selection-foreground-color: var(--app-white);
+  --text-editor-caret-color: var(--app-black);
 
   // NEW TEAM BUTTON
   // TODO: we should not put these functional tokens here, but rather in the components they belong to

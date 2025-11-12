@@ -8,13 +8,13 @@
   "Page options menu entries."
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.types.color :as clr]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -38,9 +38,9 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable false
-                     :title       (tr "workspace.options.canvas-background")
-                     :class       (stl/css :title-spacing-page)}]]
+      [:> title-bar* {:collapsable false
+                      :title       (tr "workspace.options.canvas-background")
+                      :class       (stl/css :title-spacing-page)}]]
      [:div {:class (stl/css :element-content)}
 
       [:> color-row*
@@ -50,6 +50,7 @@
         :title (tr "workspace.options.canvas-background")
         :color color
         :on-change on-change
+        :origin :canvas
         :on-open on-open
         :on-close on-close}]]]))
 

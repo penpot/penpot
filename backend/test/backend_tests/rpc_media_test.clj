@@ -6,11 +6,11 @@
 
 (ns backend-tests.rpc-media-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
@@ -48,7 +48,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 122785 (:size mobj1)))
-        (t/is (= 3299 (:size mobj2)))))))
+        (t/is (= 3297 (:size mobj2)))))))
 
 (t/deftest media-object-upload
   (let [prof   (th/create-profile* 1)
@@ -85,7 +85,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
-        (t/is (= 3901   (:size mobj2)))))))
+        (t/is (= 3890   (:size mobj2)))))))
 
 
 (t/deftest media-object-upload-idempotency
@@ -163,7 +163,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 122785 (:size mobj1)))
-        (t/is (= 3299 (:size mobj2)))))))
+        (t/is (= 3297 (:size mobj2)))))))
 
 (t/deftest media-object-upload-command
   (let [prof   (th/create-profile* 1)
@@ -200,7 +200,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
-        (t/is (= 3901   (:size mobj2)))))))
+        (t/is (= 3890   (:size mobj2)))))))
 
 
 (t/deftest media-object-upload-idempotency-command
@@ -257,7 +257,7 @@
                                    :is-shared false})
 
         _      (th/db-update! :file
-                              {:deleted-at (dt/now)}
+                              {:deleted-at (ct/now)}
                               {:id (:id file)})
 
         mfile  {:filename "sample.jpg"

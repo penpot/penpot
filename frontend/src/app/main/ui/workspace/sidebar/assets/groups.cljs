@@ -7,64 +7,80 @@
 (ns app.main.ui.workspace.sidebar.assets.groups
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc asset-group-title
-  [{:keys [file-id section path group-open? on-rename on-ungroup]}]
+(mf/defc asset-group-title*
+  [{:keys [file-id section path is-group-open on-rename on-ungroup on-group-combine-variants is-can-combine]}]
   (when-not (empty? path)
-    (let [[other-path last-path truncated] (cfh/compact-path path 35 true)
+    (let [[other-path last-path truncated] (cpn/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
           on-fold-group
           (mf/use-fn
-           (mf/deps file-id section path group-open?)
+           (mf/deps file-id section path is-group-open)
            (fn [event]
              (dom/stop-propagation event)
              (st/emit! (dw/set-assets-group-open file-id
                                                  section
                                                  path
-                                                 (not group-open?)))))
+                                                 (not is-group-open)))))
           on-context-menu
           (mf/use-fn
            (fn [event]
              (dom/prevent-default event)
+             (dom/stop-propagation event)
              (let [pos (dom/get-client-position event)]
                (swap! menu-state cmm/open-context-menu pos))))
 
           on-close-menu
           (mf/use-fn #(swap! menu-state cmm/close-context-menu))]
-      [:div {:class (stl/css :group-title)
-             :on-context-menu on-context-menu}
-       [:& title-bar {:collapsable    true
-                      :collapsed      (not group-open?)
-                      :all-clickable  true
-                      :on-collapsed   on-fold-group
-                      :title          (mf/html [:* (when-not (empty? other-path)
-                                                     [:span {:class (stl/css :pre-path)
-                                                             :title (when truncated path)}
-                                                      other-path "\u00A0\u2022\u00A0"])
-                                                [:span {:class (stl/css :path)
-                                                        :title (when truncated path)}
-                                                 last-path]])}]
-       [:& cmm/assets-context-menu
-        {:on-close on-close-menu
-         :state @menu-state
-         :options [{:name    (tr "workspace.assets.rename")
-                    :id      "assets-rename-group"
-                    :handler #(on-rename % path last-path)}
-                   {:name    (tr "workspace.assets.ungroup")
-                    :id      "assets-ungroup-group"
-                    :handler  #(on-ungroup path)}]}]])))
+      [:div {:class (stl/css :group-title-wrapper)}
+       [:div {:class (stl/css :group-title)
+              :on-context-menu on-context-menu}
+        [:> title-bar* {:collapsable    true
+                        :collapsed      (not is-group-open)
+                        :all-clickable  true
+                        :on-collapsed   on-fold-group
+                        :title          (mf/html [:* (when-not (empty? other-path)
+                                                       [:span {:class (stl/css :pre-path)
+                                                               :title (when truncated path)}
+                                                        other-path "\u00A0\u2022\u00A0"])
+                                                  [:span {:class (stl/css :path)
+                                                          :title (when truncated path)}
+                                                   last-path]])}]
+
+        [:> cmm/assets-context-menu*
+         {:on-close on-close-menu
+          :state @menu-state
+          :options (cond-> [{:name    (tr "workspace.assets.rename")
+                             :id      "assets-rename-group"
+                             :handler #(on-rename % path last-path)}
+                            {:name    (tr "workspace.assets.ungroup")
+                             :id      "assets-ungroup-group"
+                             :handler  #(on-ungroup path)}]
+                     is-can-combine
+                     (conj
+                      {:name    (tr "workspace.shape.menu.combine-as-variants")
+                       :id      "assets-combine-as-variants"
+                       :handler  #(on-group-combine-variants path)}))}]]
+
+       [:div {:class (stl/css :title-menu)}
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.assets.component-group-options")
+                          :on-click on-context-menu
+                          :icon i/menu}]]])))
 
 (defn group-assets
   "Convert a list of assets in a nested structure like this:
@@ -78,7 +94,7 @@
   [assets reverse-sort?]
   (when-not (empty? assets)
     (reduce (fn [groups {:keys [path] :as asset}]
-              (let [path (cfh/split-path (or path ""))]
+              (let [path (cpn/split-path (or path ""))]
                 (update-in groups
                            (conj path "")
                            (fn [group]
@@ -125,7 +141,7 @@
           (tr "workspace.assets.create-group")
           (tr "workspace.assets.rename-group"))]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} i/close]]
+                 :on-click modal/hide!} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:& fm/form {:form form :on-submit on-accept}

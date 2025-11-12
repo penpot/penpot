@@ -4,29 +4,35 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
+  "packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
+  "type": "module",
   "dependencies": {
     "archiver": "^7.0.1",
     "cookies": "^0.9.1",
+    "date-fns": "^4.1.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
-    "ioredis": "^5.6.1",
-    "luxon": "^3.6.1",
-    "playwright": "^1.52.0",
-    "raw-body": "^3.0.0",
+    "ioredis": "^5.8.1",
+    "playwright": "^1.55.1",
+    "raw-body": "^3.0.1",
+    "source-map-support": "^0.5.21",
     "svgo": "penpot/svgo#v3.1",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.2"
   },
   "devDependencies": {
-    "shadow-cljs": "3.0.5",
-    "source-map-support": "^0.5.21"
+    "ws": "^8.18.3"
   },
   "scripts": {
+    "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
+    "watch:app": "clojure -M:dev:shadow-cljs watch main",
+    "watch": "yarn run clear:shadow-cache && yarn run watch:app",
+    "build:app": "clojure -M:dev:shadow-cljs release main",
+    "build": "yarn run clear:shadow-cache && yarn run build:app",
     "fmt:clj:check": "cljfmt check --parallel=false src/",
     "fmt:clj": "cljfmt fix --parallel=true src/",
     "lint:clj": "clj-kondo --parallel --lint src/"

@@ -12,12 +12,12 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.text :as txt]
-   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.library :as ctl]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.text :as txt]
    [app.common.types.typographies-list :as ctyl]
    [clojure.test :as t]))
 
@@ -80,7 +80,7 @@
         _ (thf/validate-file! file')
 
         ;; Get
-        colors' (ctc/colors-seq (ctf/file-data file'))
+        colors' (vals (ctl/get-colors (ctf/file-data file')))
         shape1' (ths/get-shape file' :shape1)
         fill'   (first (:fills shape1'))]
 

@@ -9,16 +9,16 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu* component-variant-main*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
@@ -27,71 +27,95 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options*
-  [{:keys [shape file-id shapes-with-children libraries] :as props}]
+  [{:keys [shape shapes-with-children libraries file-id page-id] :as props}]
   (let [shape-id   (dm/get-prop shape :id)
         shape-type (dm/get-prop shape :type)
+        ids        (mf/with-memo [shape-id] [shape-id])
+        shapes     (mf/with-memo [shape] [shape])
 
-        ids        (mf/with-memo [shape-id]
-                     [shape-id])
+        applied-tokens
+        (get shape :applied-tokens)
 
-        shapes     (mf/with-memo [shape]
-                     [shape])
+        stroke-values
+        (select-keys shape stroke-attrs)
 
-        stroke-values           (select-keys shape stroke-attrs)
-        layer-values            (select-keys shape layer-attrs)
-        measure-values          (select-measure-keys shape)
-        constraint-values       (select-keys shape constraint-attrs)
-        layout-container-values (select-keys shape layout-container-flex-attrs)
-        layout-item-values      (select-keys shape layout-item-attrs)
+        layer-values
+        (select-keys shape layer-attrs)
+
+        measure-values
+        (select-measure-keys shape)
+
+        constraint-values
+        (select-keys shape constraint-attrs)
+
+        layout-container-values
+        (select-keys shape layout-container-flex-attrs)
+
+        layout-item-values
+        (select-keys shape layout-item-attrs)
 
         is-layout-child-ref
         (mf/with-memo [ids]
           (refs/is-layout-child? ids))
+
         is-layout-child?
         (mf/deref is-layout-child-ref)
 
         is-flex-parent-ref
         (mf/with-memo [ids]
           (refs/flex-layout-child? ids))
+
         is-flex-parent?
         (mf/deref is-flex-parent-ref)
 
         is-grid-parent-ref
         (mf/with-memo [ids]
           (refs/grid-layout-child? ids))
+
         is-grid-parent?
         (mf/deref is-grid-parent-ref)
 
         parents-by-ids-ref
         (mf/with-memo [ids]
           (refs/parents-by-ids ids))
+
         parents
         (mf/deref parents-by-ids-ref)
 
-        is-layout-container?      (ctl/any-layout? shape)
-        is-flex-layout?           (ctl/flex-layout? shape)
-        is-grid-layout?           (ctl/grid-layout? shape)
-        is-layout-child-absolute? (ctl/item-absolute? shape)
-        variants?                 (features/use-feature "variants/v1")
-        is-variant?               (when variants? (ctk/is-variant-container? shape))]
+        is-layout-container?
+        (ctl/any-layout? shape)
+
+        is-flex-layout?
+        (ctl/flex-layout? shape)
+
+        is-grid-layout?
+        (ctl/grid-layout? shape)
+
+        is-layout-child-absolute?
+        (ctl/item-absolute? shape)
+
+        is-variant?
+        (ctk/is-variant-container? shape)]
 
     [:*
-     [:& layer-menu {:ids ids
-                     :type shape-type
-                     :values layer-values}]
+     [:> layer-menu* {:ids ids
+                      :type shape-type
+                      :values layer-values}]
      [:> measures-menu* {:ids ids
+                         :applied-tokens applied-tokens
                          :values measure-values
                          :type shape-type
-                         :shape shape}]
+                         :shapes shapes}]
 
-     [:& component-menu {:shapes shapes}]
+     [:> component-menu* {:shapes shapes}]
 
      (when is-variant?
-       [:> variant-menu* {:shapes shapes}])
+       [:> component-variant-main* {:shapes shapes}])
 
      [:& layout-container-menu
       {:type shape-type
        :ids ids
+       :applied-tokens applied-tokens
        :values layout-container-values
        :multiple false}]
 
@@ -117,12 +141,16 @@
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
 
-     [:& fill-menu {:ids ids
-                    :type shape-type
-                    :values (select-keys shape fill-attrs-shape)}]
+     [:> fill/fill-menu*
+      {:ids ids
+       :type shape-type
+       :values shape
+       :applied-tokens applied-tokens}]
+
      [:& stroke-menu {:ids ids
                       :type shape-type
-                      :values stroke-values}]
+                      :values stroke-values
+                      :applied-tokens applied-tokens}]
      [:> color-selection-menu* {:type shape-type
                                 :shapes shapes-with-children
                                 :file-id file-id
@@ -130,4 +158,10 @@
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
-     [:& frame-grid {:shape shape}]]))
+     [:& frame-grid {:shape shape}]
+     [:> exports-menu* {:type type
+                        :ids ids
+                        :shapes shapes
+                        :values (select-keys shape exports-attrs)
+                        :page-id page-id
+                        :file-id file-id}]]))

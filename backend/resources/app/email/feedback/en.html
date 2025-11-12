@@ -8,38 +8,41 @@
   <body>
     <p>
       <strong>Feedback from:</strong><br />
-      {% if profile %}
-        <span>
-          <span>Name: </span>
-          <span><code>{{profile.fullname|abbreviate:25}}</code></span>
-        </span>
-        <br />
-
-        <span>
-          <span>Email: </span>
-          <span>{{profile.email}}</span>
-        </span>
-        <br />
-
-        <span>
-          <span>ID: </span>
-          <span><code>{{profile.id}}</code></span>
-        </span>
-      {% else %}
-        <span>
-          <span>Email: </span>
-          <span>{{profile.email}}</span>
-        </span>
-      {% endif %}
+      <span>
+        <span>Name: </span>
+        <span><code>{{profile.fullname|abbreviate:25}}</code></span>
+      </span>
+      <br />
+      <span>
+        <span>Email: </span>
+        <span>{{profile.email}}</span>
+      </span>
+      <br />
+      <span>
+        <span>ID: </span>
+        <span><code>{{profile.id}}</code></span>
+      </span>
     </p>
     <p>
       <strong>Subject:</strong><br />
-      <span>{{subject|abbreviate:300}}</span>
+      <span>{{feedback-subject|abbreviate:300}}</span>
     </p>
 
     <p>
+      <strong>Type:</strong><br />
+      <span>{{feedback-type|abbreviate:300}}</span>
+    </p>
+
+    {% if feedback-error-href %}
+    <p>
+      <strong>Error HREF:</strong><br />
+      <span>{{feedback-error-href|abbreviate:500}}</span>
+    </p>
+    {% endif %}
+
+    <p>
       <strong>Message:</strong><br />
-      {{content|linebreaks-br|safe}}
+      {{feedback-content|linebreaks-br}}
     </p>
   </body>
 </html>

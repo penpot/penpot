@@ -1,0 +1,114 @@
+name: Release Publisher
+
+on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Tag to release'
+        type: string
+        required: true
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Tag to release'
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    environment: release-admins
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.vars.outputs.gh_ref }}
+      release_notes: ${{ steps.extract_release_notes.outputs.release_notes }}
+    steps:
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.vars.outputs.gh_ref }}
+
+      # --- Publicly release the docker images ---
+      - name: Configure ECR credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.DOCKER_USERNAME }}
+          aws-secret-access-key: ${{ secrets.DOCKER_PASSWORD }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Skopeo
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y skopeo
+
+      - name: Copy images from AWS ECR to Docker Hub
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          PUB_DOCKER_USERNAME: ${{ secrets.PUB_DOCKER_USERNAME }}
+          PUB_DOCKER_PASSWORD: ${{ secrets.PUB_DOCKER_PASSWORD }}
+          TAG: ${{ steps.vars.outputs.gh_ref }}
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+            skopeo login --username AWS --password-stdin \
+            $DOCKER_REGISTRY
+
+          echo "$PUB_DOCKER_PASSWORD" | skopeo login --username "$PUB_DOCKER_USERNAME" --password-stdin docker.io
+
+          IMAGES=("frontend" "backend" "exporter" "storybook")
+
+          for image in "${IMAGES[@]}"; do
+            skopeo copy --all \
+              docker://$DOCKER_REGISTRY/$image:$TAG \
+              docker://docker.io/$PUB_DOCKER_USERNAME/$image:$TAG
+
+            for alias in main latest; do
+              skopeo copy --all \
+                docker://$DOCKER_REGISTRY/$image:$TAG \
+                docker://docker.io/$PUB_DOCKER_USERNAME/$image:$alias
+            done
+          done
+
+      # --- Release notes extraction ---
+      - name: Extract release notes from CHANGES.md
+        id: extract_release_notes
+        env:
+          TAG: ${{ steps.vars.outputs.gh_ref }}
+        run: |
+          RELEASE_NOTES=$(awk "/^## $TAG$/{flag=1; next} /^## /{flag=0} flag" CHANGES.md | awk '{$1=$1};1')
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="No changes for $TAG according to CHANGES.md"
+          fi
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # --- Create GitHub release ---
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.vars.outputs.gh_ref }}
+          name: ${{ steps.vars.outputs.gh_ref }}
+          body: ${{ steps.extract_release_notes.outputs.release_notes }}
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 🚀 *[PENPOT] Error releasing penpot.*
+            📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra

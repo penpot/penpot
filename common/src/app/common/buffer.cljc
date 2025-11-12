@@ -5,7 +5,8 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.buffer
-  "A collection of helpers and macros for work with byte buffers"
+  "A collection of helpers and macros for work with byte
+  buffer (ByteBuffer on JVM and DataView on JS)."
   (:refer-clojure :exclude [clone])
   (:require
    [app.common.uuid :as uuid])
@@ -19,35 +20,49 @@
   (if (:ns &env)
     `(.getInt8 ~target ~offset true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(long (.get ~target ~offset)))))
+      `(long (.get ~target (unchecked-int ~offset))))))
+
+(defmacro read-unsigned-byte
+  [target offset]
+  (if (:ns &env)
+    `(.getUint8 ~target ~offset true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(bit-and (long (.get ~target (unchecked-int ~offset))) 0xff))))
 
 (defmacro read-bool
   [target offset]
   (if (:ns &env)
     `(== 1 (.getInt8 ~target ~offset true))
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(== 1 (.get ~target ~offset)))))
+      `(== 1 (.get ~target (unchecked-int ~offset))))))
 
 (defmacro read-short
   [target offset]
   (if (:ns &env)
     `(.getInt16 ~target ~offset true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(.getShort ~target ~offset))))
+      `(.getShort ~target (unchecked-int ~offset)))))
 
 (defmacro read-int
   [target offset]
   (if (:ns &env)
     `(.getInt32 ~target ~offset true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(long (.getInt ~target ~offset)))))
+      `(long (.getInt ~target (unchecked-int ~offset))))))
+
+(defmacro read-long
+  [target offset]
+  (if (:ns &env)
+    `(.getInt64 ~target ~offset true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.getLong ~target (unchecked-int ~offset)))))
 
 (defmacro read-float
   [target offset]
   (if (:ns &env)
     `(.getFloat32 ~target ~offset true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(double (.getFloat ~target ~offset)))))
+      `(double (.getFloat ~target (unchecked-int ~offset))))))
 
 (defmacro read-uuid
   [target offset]
@@ -61,39 +76,104 @@
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(try
          (.order ~target ByteOrder/BIG_ENDIAN)
-         (let [msb# (.getLong ~target (+ ~offset 0))
-               lsb# (.getLong ~target (+ ~offset 8))]
+         (let [msb# (.getLong ~target (unchecked-int (+ ~offset 0)))
+               lsb# (.getLong ~target (unchecked-int (+ ~offset 8)))]
            (java.util.UUID. (long msb#) (long lsb#)))
          (finally
            (.order ~target ByteOrder/LITTLE_ENDIAN))))))
+
+(defmacro read-bytes
+  "Get a byte array from buffer. It is potentially unsafe because on
+  JS/CLJS it returns a subarray without doing any copy of data."
+  [target offset size]
+  (if (:ns &env)
+    `(new js/Uint8Array
+          (.-buffer ~target)
+          (+ (.-byteOffset ~target) ~offset)
+          ~size)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
+          bbuf   (with-meta (gensym "bbuf") {:tag bytes})]
+      `(let [~bbuf (byte-array ~size)]
+         (.get ~target
+               (unchecked-int ~offset)
+               ~bbuf
+               0
+               ~size)
+         ~bbuf))))
+
+;; FIXME: implement in cljs
+(defmacro write-bytes
+  ([target offset src size]
+   `(write-bytes ~target ~offset ~src 0 ~size))
+  ([target offset src src-offset size]
+   (if (:ns &env)
+     (throw (ex-info "not implemented" {}))
+     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
+           src    (with-meta src {:tag 'bytes})]
+       `(.put ~target
+              (unchecked-int ~offset)
+              ~src
+              (unchecked-int ~src-offset)
+              (unchecked-int ~size))))))
 
 (defmacro write-byte
   [target offset value]
   (if (:ns &env)
     `(.setInt8 ~target ~offset ~value true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.put ~target (unchecked-int ~offset) (unchecked-byte ~value)))))
+
+(defmacro write-u8
+  [target offset value]
+  (if (:ns &env)
+    `(.setUint8 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.put ~target ~offset (unchecked-byte ~value)))))
+
+(defmacro write-bool
+  [target offset value]
+  (if (:ns &env)
+    `(.setInt8 ~target ~offset (if ~value 0x01 0x00) true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.put ~target (unchecked-int ~offset) (unchecked-byte (if ~value 0x01 0x00))))))
 
 (defmacro write-short
   [target offset value]
   (if (:ns &env)
     `(.setInt16 ~target ~offset ~value true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(.putShort ~target ~offset (unchecked-short ~value)))))
+      `(.putShort ~target (unchecked-int ~offset) (unchecked-short ~value)))))
 
 (defmacro write-int
   [target offset value]
   (if (:ns &env)
     `(.setInt32 ~target ~offset ~value true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.putInt ~target (unchecked-int ~offset) (unchecked-int ~value)))))
+
+(defmacro write-u32
+  [target offset value]
+  (if (:ns &env)
+    `(.setUint32 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.putInt ~target ~offset (unchecked-int ~value)))))
+
+(defmacro write-i32
+  "Idiomatic alias for `write-int`"
+  [target offset value]
+  `(write-int ~target ~offset ~value))
 
 (defmacro write-float
   [target offset value]
   (if (:ns &env)
     `(.setFloat32 ~target ~offset ~value true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
-      `(.putFloat ~target ~offset (unchecked-float ~value)))))
+      `(.putFloat ~target (unchecked-int ~offset) (unchecked-float ~value)))))
+
+(defmacro write-f32
+  "Idiomatic alias for `write-float`."
+  [target offset value]
+  `(write-float ~target ~offset ~value))
 
 (defmacro write-uuid
   [target offset value]
@@ -105,17 +185,25 @@
        (.setUint32 ~target (+ ~offset 12) (aget barray# 3) true))
 
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})
-          value  (with-meta value {:tag 'java.util.UUID})]
-      `(try
-         (.order ~target ByteOrder/BIG_ENDIAN)
-         (.putLong ~target (+ ~offset 0) (.getMostSignificantBits ~value))
-         (.putLong ~target (+ ~offset 8) (.getLeastSignificantBits ~value))
-         (finally
-           (.order ~target ByteOrder/LITTLE_ENDIAN))))))
+          value  (with-meta value {:tag 'java.util.UUID})
+          prev   (with-meta (gensym "prev-") {:tag 'java.nio.ByteOrder})]
+      `(let [~prev (.order ~target)]
+         (try
+           (.order ~target ByteOrder/BIG_ENDIAN)
+           (.putLong ~target (unchecked-int (+ ~offset 0)) (.getMostSignificantBits ~value))
+           (.putLong ~target (unchecked-int (+ ~offset 8)) (.getLeastSignificantBits ~value))
+           (finally
+             (.order ~target ~prev)))))))
+
+(defn wrap
+  [data]
+  #?(:clj  (let [buffer (ByteBuffer/wrap ^bytes data)]
+             (.order buffer ByteOrder/LITTLE_ENDIAN))
+     :cljs (new js/DataView (.-buffer ^js data))))
 
 (defn allocate
   [size]
-  #?(:clj (let [buffer (ByteBuffer/allocate (int size))]
+  #?(:clj (let [buffer (ByteBuffer/allocate (unchecked-int size))]
             (.order buffer ByteOrder/LITTLE_ENDIAN))
      :cljs (new js/DataView (new js/ArrayBuffer size))))
 
@@ -135,6 +223,14 @@
            dst-view (js/Uint32Array. dst-buff)]
        (.set dst-view src-view)
        (js/DataView. dst-buff))))
+
+;; FIXME: cljs impl
+#?(:clj
+   (defn copy-bytes
+     [src src-offset size dst dst-offset]
+     (let [tmp (byte-array size)]
+       (.get ^ByteBuffer src src-offset tmp 0 size)
+       (.put ^ByteBuffer dst dst-offset tmp 0 size))))
 
 (defn equals?
   [buffer-a buffer-b]
@@ -163,3 +259,18 @@
   [o]
   #?(:clj (instance? ByteBuffer o)
      :cljs (instance? js/DataView o)))
+
+(defn slice
+  [buffer offset size]
+  #?(:cljs
+     (let [offset (+ (.-byteOffset buffer) offset)]
+       (new js/DataView (.-buffer buffer) offset size))
+
+     :clj
+     (-> (.slice ^ByteBuffer buffer (unchecked-int offset) (unchecked-int size))
+         (.order ByteOrder/LITTLE_ENDIAN))))
+
+(defn size
+  [o]
+  #?(:cljs (.-byteLength ^js o)
+     :clj  (.capacity ^ByteBuffer o)))

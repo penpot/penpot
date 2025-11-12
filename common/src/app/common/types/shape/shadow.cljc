@@ -7,24 +7,28 @@
 (ns app.common.types.shape.shadow
   (:require
    [app.common.schema :as sm]
-   [app.common.schema.generators :as sg]
    [app.common.types.color :as ctc]))
 
 (def styles #{:drop-shadow :inner-shadow})
 
+(def schema:color
+  [:merge {:title "ShadowColor"}
+   ctc/schema:color-attrs
+   ctc/schema:plain-color])
+
+(def color-attrs
+  (sm/keys schema:color))
+
 (def schema:shadow
   [:map {:title "Shadow"}
    [:id [:maybe ::sm/uuid]]
-   [:style
-    [:and {:gen/gen (sg/elements styles)}
-     :keyword
-     [::sm/one-of styles]]]
+   [:style [::sm/one-of styles]]
    [:offset-x ::sm/safe-number]
    [:offset-y ::sm/safe-number]
    [:blur ::sm/safe-number]
    [:spread ::sm/safe-number]
    [:hidden :boolean]
-   [:color ctc/schema:color]])
+   [:color schema:color]])
 
 (def check-shadow
   (sm/check-fn schema:shadow))

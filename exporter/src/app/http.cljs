@@ -6,11 +6,11 @@
 
 (ns app.http
   (:require
-   ["cookies" :as Cookies]
-   ["http" :as http]
-   ["inflation" :as inflate]
-   ["raw-body" :as raw-body]
-   ["stream" :as stream]
+   ["cookies$default" :as Cookies]
+   ["inflation$default" :as inflate]
+   ["node:http" :as http]
+   ["node:stream$default" :as stream]
+   ["raw-body$default" :as raw-body]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.config :as cf]
@@ -169,6 +169,7 @@
                     (wrap-error handlers/on-error))
         server  (create-server handler)
         port    (cf/get :http-server-port 6061)]
+
     (.listen server port)
     (l/info :hint "welcome to penpot"
             :module "exporter"

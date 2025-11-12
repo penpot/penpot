@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-profile-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -14,7 +15,6 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.java.io :as io]
    [clojure.test :as t]
@@ -158,11 +158,11 @@
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
                          {::db/remove-deleted false})]
-      (t/is (dt/instant? (:deleted-at row))))
+      (t/is (ct/inst? (:deleted-at row))))
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 4 (:processed result))))
+      (t/is (= 6 (:processed result))))
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
@@ -212,7 +212,7 @@
         ;; (th/print-result! out)
 
         (let [team (th/db-get :team {:id (:id team1)} {::db/remove-deleted false})]
-          (t/is (dt/instant? (:deleted-at team)))))
+          (t/is (ct/inst? (:deleted-at team)))))
 
       ;; Request profile to be deleted
       (let [params {::th/type :delete-profile
@@ -324,7 +324,7 @@
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 4 (:processed result))))
+      (t/is (= 6 (:processed result))))
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof1)}
@@ -363,7 +363,7 @@
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 8 (:processed result))))))
+      (t/is (= 10 (:processed result))))))
 
 
 (t/deftest email-blacklist-1
@@ -379,15 +379,14 @@
 (t/deftest prepare-register-and-register-profile-1
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
+               :fullname "foobar"
                :password "foobar"}
         out   (th/command! data)
         token (get-in out [:result :token])]
     (t/is (string? token))
 
     ;; try register without token
-    (let [data  {::th/type :register-profile
-                 :fullname "foobar"
-                 :accept-terms-and-privacy true}
+    (let [data  {::th/type :register-profile}
           out   (th/command! data)]
       ;; (th/print-result! out)
       (let [error (:error out)]
@@ -398,11 +397,8 @@
     ;; try correct register
     (let [data  {::th/type :register-profile
                  :token token
-                 :fullname "foobar"
                  :utm_campaign "utma"
-                 :mtm_campaign "mtma"
-                 :accept-terms-and-privacy true
-                 :accept-newsletter-subscription true}]
+                 :mtm_campaign "mtma"}]
       (let [{:keys [result error]} (th/command! data)]
         (t/is (nil? error))))
 
@@ -424,6 +420,7 @@
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
+                   :fullname "foobar"
                    :password "foobar"}
             out   (th/command! data)
             token (get-in out [:result :token])]
@@ -432,10 +429,7 @@
 
       ;; DO REGISTRATION
       (let [data  {::th/type :register-profile
-                   :token @current-token
-                   :fullname "foobar"
-                   :accept-terms-and-privacy true
-                   :accept-newsletter-subscription true}
+                   :token @current-token}
             out   (th/command! data)]
         (t/is (nil? (:error out)))
         (t/is (= 1 (:call-count @mock))))
@@ -445,6 +439,7 @@
       ;; PREPARE REGISTER: second attempt
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
+                   :fullname "foobar"
                    :password "foobar"}
             out   (th/command! data)
             token (get-in out [:result :token])]
@@ -479,6 +474,7 @@
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
+                   :fullname "foobar"
                    :password "foobar"}
             out   (th/command! data)
             token (get-in out [:result :token])]
@@ -487,10 +483,7 @@
 
       ;; DO REGISTRATION
       (let [data  {::th/type :register-profile
-                   :token @current-token
-                   :fullname "foobar"
-                   :accept-terms-and-privacy true
-                   :accept-newsletter-subscription true}
+                   :token @current-token}
             out   (th/command! data)]
         (t/is (nil? (:error out)))
         (t/is (= 1 (:call-count @mock))))
@@ -504,6 +497,7 @@
       ;; PREPARE REGISTER: second attempt
       (let [data  {::th/type :prepare-register-profile
                    :email "hello@example.com"
+                   :fullname "foobar"
                    :password "foobar"}
             out   (th/command! data)
             token (get-in out [:result :token])]
@@ -514,24 +508,21 @@
                       :return true}]
         ;; DO REGISTRATION: second attempt
         (let [data  {::th/type :register-profile
-                     :token @current-token
-                     :fullname "foobar"
-                     :accept-terms-and-privacy true
-                     :accept-newsletter-subscription true}
+                     :token @current-token}
               out   (th/command! data)]
           (t/is (nil? (:error out)))
           (t/is (= 0 (:call-count @mock))))))))
 
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-1
-  (let [sprops (:app.setup/props th/*system*)
-        itoken (tokens/generate sprops
+  (let [itoken (tokens/generate th/*system*
                                 {:iss :team-invitation
-                                 :exp (dt/in-future "48h")
+                                 :exp (ct/in-future "48h")
                                  :role :editor
                                  :team-id uuid/zero
                                  :member-email "user@example.com"})
         data  {::th/type :prepare-register-profile
                :invitation-token itoken
+               :fullname "foobar"
                :email "user@example.com"
                :password "foobar"}
 
@@ -542,8 +533,7 @@
 
     (let [rtoken (:token result)
           data   {::th/type :register-profile
-                  :token rtoken
-                  :fullname "foobar"}
+                  :token rtoken}
 
           {:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
@@ -552,10 +542,9 @@
       (t/is (string? (:invitation-token result))))))
 
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-2
-  (let [sprops (:app.setup/props th/*system*)
-        itoken (tokens/generate sprops
+  (let [itoken (tokens/generate th/*system*
                                 {:iss :team-invitation
-                                 :exp (dt/in-future "48h")
+                                 :exp (ct/in-future "48h")
                                  :role :editor
                                  :team-id uuid/zero
                                  :member-email "user2@example.com"})
@@ -563,6 +552,7 @@
         data  {::th/type :prepare-register-profile
                :invitation-token itoken
                :email "user@example.com"
+               :fullname "foobar"
                :password "foobar"}
         out   (th/command! data)]
 
@@ -573,15 +563,15 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
   (with-redefs [app.config/flags [:disable-registration]]
-    (let [sprops (:app.setup/props th/*system*)
-          itoken (tokens/generate sprops
+    (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
-                                   :exp (dt/in-future "48h")
+                                   :exp (ct/in-future "48h")
                                    :role :editor
                                    :team-id uuid/zero
                                    :member-email "user@example.com"})
           data  {::th/type :prepare-register-profile
                  :invitation-token itoken
+                 :fullname "foobar"
                  :email "user@example.com"
                  :password "foobar"}
           out (th/command! data)]
@@ -593,10 +583,9 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
   (with-redefs [app.config/flags [:disable-registration]]
-    (let [sprops (:app.setup/props th/*system*)
-          itoken (tokens/generate sprops
+    (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
-                                   :exp (dt/in-future "48h")
+                                   :exp (ct/in-future "48h")
                                    :role :editor
                                    :team-id uuid/zero
                                    :member-email "user2@example.com"})
@@ -604,6 +593,7 @@
           data  {::th/type :prepare-register-profile
                  :invitation-token itoken
                  :email "user@example.com"
+                 :fullname "foobar"
                  :password "foobar"}
           out   (th/command! data)]
 
@@ -614,16 +604,16 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-login-with-password
   (with-redefs [app.config/flags [:disable-login-with-password]]
-    (let [sprops (:app.setup/props th/*system*)
-          itoken (tokens/generate sprops
+    (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
-                                   :exp (dt/in-future "48h")
+                                   :exp (ct/in-future "48h")
                                    :role :editor
                                    :team-id uuid/zero
                                    :member-email "user2@example.com"})
 
           data  {::th/type :prepare-register-profile
                  :invitation-token itoken
+                 :fullname "foobar"
                  :email "user@example.com"
                  :password "foobar"}
           out   (th/command! data)]
@@ -636,6 +626,7 @@
 (t/deftest prepare-register-with-registration-disabled
   (with-redefs [app.config/flags #{}]
     (let [data  {::th/type :prepare-register-profile
+                 :fullname "foobar"
                  :email "user@example.com"
                  :password "foobar"}
           out  (th/command! data)]
@@ -648,6 +639,7 @@
 (t/deftest prepare-register-with-existing-user
   (let [profile (th/create-profile* 1)
         data    {::th/type :prepare-register-profile
+                 :fullname "foobar"
                  :email (:email profile)
                  :password "foobar"}
         out     (th/command! data)]
@@ -660,6 +652,7 @@
 
   (let [pool  (:app.db/pool th/*system*)
         data  {::th/type :prepare-register-profile
+               :fullname "foobar"
                :email "user@example.com"
                :password "foobar"}]
 
@@ -674,6 +667,7 @@
 (t/deftest register-profile-with-complained-email
   (let [pool  (:app.db/pool th/*system*)
         data  {::th/type :prepare-register-profile
+               :fullname "foobar"
                :email "user@example.com"
                :password "foobar"}]
 
@@ -688,6 +682,7 @@
 
 (t/deftest register-profile-with-email-as-password
   (let [data {::th/type :prepare-register-profile
+              :fullname "foobar"
               :email "user@example.com"
               :password "USER@example.com"}
         out  (th/command! data)]

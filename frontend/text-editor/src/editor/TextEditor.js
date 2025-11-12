@@ -10,12 +10,15 @@ import clipboard from "./clipboard/index.js";
 import commands from "./commands/index.js";
 import ChangeController from "./controllers/ChangeController.js";
 import SelectionController from "./controllers/SelectionController.js";
-import { createSelectionImposterFromClientRects } from "./selection/Imposter.js";
 import { addEventListeners, removeEventListeners } from "./Event.js";
-import { mapContentFragmentFromHTML, mapContentFragmentFromString } from "./content/dom/Content.js";
+import {
+  mapContentFragmentFromHTML,
+  mapContentFragmentFromString,
+} from "./content/dom/Content.js";
+import { resetInertElement } from "./content/dom/Style.js";
 import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
 import { createParagraph } from "./content/dom/Paragraph.js";
-import { createEmptyInline, createInline } from "./content/dom/Inline.js";
+import { createEmptyTextSpan, createTextSpan } from "./content/dom/TextSpan.js";
 import { isLineBreak } from "./content/dom/LineBreak.js";
 import LayoutType from "./layout/LayoutType.js";
 
@@ -59,13 +62,6 @@ export class TextEditor extends EventTarget {
   #selectionController = null;
 
   /**
-   * Selection imposter keeps selection elements.
-   *
-   * @type {HTMLElement}
-   */
-  #selectionImposterElement = null;
-
-  /**
    * Style defaults.
    *
    * @type {Object.<string, *>}
@@ -81,17 +77,25 @@ export class TextEditor extends EventTarget {
   #fixInsertCompositionText = false;
 
   /**
+   * Canvas element that renders text.
+   *
+   * @type {HTMLCanvasElement}
+   */
+  #canvas = null;
+
+  /**
    * Constructor.
    *
    * @param {HTMLElement} element
+   * @param {HTMLCanvasElement} canvas
    */
-  constructor(element, options) {
+  constructor(element, canvas, options) {
     super();
     if (!(element instanceof HTMLElement))
       throw new TypeError("Invalid text editor element");
 
     this.#element = element;
-    this.#selectionImposterElement = options?.selectionImposterElement;
+    this.#canvas = canvas;
     this.#events = {
       blur: this.#onBlur,
       focus: this.#onFocus,
@@ -110,7 +114,7 @@ export class TextEditor extends EventTarget {
   /**
    * Setups editor properties.
    */
-  #setupElementProperties() {
+  #setupElementProperties(options) {
     if (!this.#element.isContentEditable) {
       this.#element.contentEditable = "true";
       // In `jsdom` it isn't enough to set the attribute 'contentEditable'
@@ -128,6 +132,9 @@ export class TextEditor extends EventTarget {
     if (this.#element.ariaAutoComplete) this.#element.ariaAutoComplete = false;
     if (!this.#element.ariaMultiLine) this.#element.ariaMultiLine = true;
     this.#element.dataset.itype = "editor";
+    if (options.shouldUpdatePositionOnScroll) {
+      this.#updatePositionFromCanvas();
+    }
   }
 
   /**
@@ -137,6 +144,86 @@ export class TextEditor extends EventTarget {
     this.#root = createEmptyRoot(this.#styleDefaults);
     this.#element.appendChild(this.#root);
   }
+
+  /**
+   * Setups event listeners.
+   */
+  #setupListeners(options) {
+    this.#changeController.addEventListener("change", this.#onChange);
+    this.#selectionController.addEventListener(
+      "stylechange",
+      this.#onStyleChange,
+    );
+    if (options.shouldUpdatePositionOnScroll) {
+      window.addEventListener("scroll", this.#onScroll);
+    }
+    addEventListeners(this.#element, this.#events, {
+      capture: true,
+    });
+  }
+
+  /**
+   * Setups the elements, the properties and the
+   * initial content.
+   */
+  #setup(options) {
+    this.#setupElementProperties(options);
+    this.#setupRoot(options);
+    this.#changeController = new ChangeController(this);
+    this.#selectionController = new SelectionController(
+      this,
+      document.getSelection(),
+      options,
+    );
+    this.#setupListeners(options);
+  }
+
+  /**
+   * Updates position from canvas.
+   */
+  #updatePositionFromCanvas() {
+    const boundingClientRect = this.#canvas.getBoundingClientRect();
+    this.#element.parentElement.style.top = boundingClientRect.top + "px";
+    this.#element.parentElement.style.left = boundingClientRect.left + "px";
+  }
+
+  /**
+   * Updates caret position using a transform object.
+   *
+   * @param {*} transform
+   */
+  updatePositionWithTransform(transform) {
+    const x = transform?.x ?? 0.0;
+    const y = transform?.y ?? 0.0;
+    const rotation = transform?.rotation ?? 0.0;
+    const scale = transform?.scale ?? 1.0;
+    this.#updatePositionFromCanvas();
+    this.#element.style.transformOrigin = 'top left';
+    this.#element.style.transform = `scale(${scale}) translate(${x}px, ${y}px) rotate(${rotation}deg)`;
+  }
+
+  /**
+   * Updates caret position using viewport and shape.
+   *
+   * @param {Viewport} viewport
+   * @param {Shape} shape
+   */
+  updatePositionWithViewportAndShape(viewport, shape) {
+    this.updatePositionWithTransform({
+      x: viewport.x + shape.selrect.x,
+      y: viewport.y + shape.selrect.y,
+      rotation: shape.rotation,
+      scale: viewport.zoom,
+    })
+  }
+
+  /**
+   * Updates editor position when the page dispatches
+   * a scroll event.
+   *
+   * @returns
+   */
+  #onScroll = () => this.#updatePositionFromCanvas();
 
   /**
    * Dispatchs a `change` event.
@@ -153,57 +240,8 @@ export class TextEditor extends EventTarget {
    * @returns {void}
    */
   #onStyleChange = (e) => {
-    if (this.#selectionImposterElement.children.length > 0) {
-      // We need to recreate the selection imposter when we've
-      // already have one.
-      this.#createSelectionImposter();
-    }
     this.dispatchEvent(new e.constructor(e.type, e));
   };
-
-  /**
-   * Setups the elements, the properties and the
-   * initial content.
-   */
-  #setup(options) {
-    this.#setupElementProperties();
-    this.#setupRoot();
-    this.#changeController = new ChangeController(this);
-    this.#changeController.addEventListener("change", this.#onChange);
-    this.#selectionController = new SelectionController(
-      this,
-      document.getSelection(),
-      options
-    );
-    this.#selectionController.addEventListener(
-      "stylechange",
-      this.#onStyleChange
-    );
-    addEventListeners(this.#element, this.#events, {
-      capture: true,
-    });
-  }
-
-  /**
-   * Creates the selection imposter.
-   */
-  #createSelectionImposter() {
-    // We only create a selection imposter if there's any selection
-    // and if there is a selection imposter element to attach the
-    // rects.
-    if (
-      this.#selectionImposterElement &&
-      !this.#selectionController.isCollapsed
-    ) {
-      const rects = this.#selectionController.range?.getClientRects();
-      if (rects) {
-        const rect = this.#selectionImposterElement.getBoundingClientRect();
-        this.#selectionImposterElement.replaceChildren(
-          createSelectionImposterFromClientRects(rect, rects)
-        );
-      }
-    }
-  }
 
   /**
    * On blur we create a new FakeSelection if there's any.
@@ -213,7 +251,6 @@ export class TextEditor extends EventTarget {
   #onBlur = (e) => {
     this.#changeController.notifyImmediately();
     this.#selectionController.saveSelection();
-    this.#createSelectionImposter();
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
 
@@ -226,9 +263,6 @@ export class TextEditor extends EventTarget {
   #onFocus = (e) => {
     if (!this.#selectionController.restoreSelection()) {
       this.selectAll();
-    }
-    if (this.#selectionImposterElement) {
-      this.#selectionImposterElement.replaceChildren();
     }
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
@@ -258,7 +292,15 @@ export class TextEditor extends EventTarget {
    *
    * @param {ClipboardEvent} e
    */
-  #onCopy = (e) => clipboard.copy(e, this, this.#selectionController);
+  #onCopy = (e) => {
+    this.dispatchEvent(
+      new CustomEvent("clipboardchange", {
+        detail: this.currentStyle,
+      }),
+    );
+
+    clipboard.copy(e, this, this.#selectionController);
+  };
 
   /**
    * Event called before the DOM is modified.
@@ -304,7 +346,10 @@ export class TextEditor extends EventTarget {
       return;
     }
 
-    if (e.inputType === "insertCompositionText" && this.#fixInsertCompositionText) {
+    if (
+      e.inputType === "insertCompositionText" &&
+      this.#fixInsertCompositionText
+    ) {
       e.preventDefault();
       this.#fixInsertCompositionText = false;
       if (e.data) {
@@ -331,7 +376,7 @@ export class TextEditor extends EventTarget {
           type: type,
           mutations: mutations,
         },
-      })
+      }),
     );
   }
 
@@ -383,8 +428,8 @@ export class TextEditor extends EventTarget {
   }
 
   /**
-   * CSS Style declaration for the current inline. From here we
-   * can infer root, paragraph and inline declarations.
+   * CSS Style declaration for the current text span. From here we
+   * can infer root, paragraph and text span declarations.
    *
    * @type {CSSStyleDeclaration}
    */
@@ -427,27 +472,27 @@ export class TextEditor extends EventTarget {
   }
 
   /**
-   * Creates a new inline from a string.
+   * Creates a new text span from a string.
    *
    * @param {string} text
    * @param {Object.<string,*>|CSSStyleDeclaration} styles
    * @returns {HTMLSpanElement}
    */
-  createInlineFromString(text, styles) {
+  createTextSpanFromString(text, styles) {
     if (text === "") {
-      return createEmptyInline(styles);
+      return createEmptyTextSpan(styles);
     }
-    return createInline(new Text(text), styles);
+    return createTextSpan(new Text(text), styles);
   }
 
   /**
-   * Creates a new inline.
+   * Creates a new text span.
    *
    * @param  {...any} args
    * @returns {HTMLSpanElement}
    */
-  createInline(...args) {
-    return createInline(...args);
+  createTextSpan(...args) {
+    return createTextSpan(...args);
   }
 
   /**
@@ -492,7 +537,7 @@ export class TextEditor extends EventTarget {
     this.#changeController = null;
     this.#selectionController.removeEventListener(
       "stylechange",
-      this.#onStyleChange
+      this.#onStyleChange,
     );
     this.#selectionController.dispose();
     this.#selectionController = null;
@@ -502,10 +547,11 @@ export class TextEditor extends EventTarget {
   }
 }
 
-export function createRootFromHTML(html) {
-  const fragment = mapContentFragmentFromHTML(html);
-  const root = createRoot([]);
+export function createRootFromHTML(html, style = undefined) {
+  const fragment = mapContentFragmentFromHTML(html, style || undefined);
+  const root = createRoot([], style);
   root.replaceChildren(fragment);
+  resetInertElement();
   return root;
 }
 
@@ -517,7 +563,7 @@ export function createRootFromString(string) {
 }
 
 export function isEditor(instance) {
-  return (instance instanceof TextEditor);
+  return instance instanceof TextEditor;
 }
 
 /* Convenience function based API for Text Editor */
@@ -537,8 +583,8 @@ export function setRoot(instance, root) {
   return instance;
 }
 
-export function create(element, options) {
-  return new TextEditor(element, {...options});
+export function create(element, canvas, options) {
+  return new TextEditor(element, canvas, { ...options });
 }
 
 export function getCurrentStyle(instance) {

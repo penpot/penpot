@@ -10,7 +10,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.notifications.shared.notification-pill :refer [notification-pill*]]
    [rumext.v2 :as mf]))
 
@@ -62,4 +62,4 @@
                                         :level-error    (= level :error)
                                         :level-success  (= level :success)
                                         :level-info     (= level :info))}
-      [:> i/icon* {:icon-id i/close}]]]))
+      [:> icon* {:icon-id i/close}]]]))

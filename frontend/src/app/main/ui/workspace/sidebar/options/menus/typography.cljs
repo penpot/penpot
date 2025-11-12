@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
@@ -23,10 +23,10 @@
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -79,7 +79,7 @@
      [:div {:class  (stl/css-case :font-item true
                                   :selected is-current)}
       [:span {:class (stl/css :label)} (:name font)]
-      [:span {:class (stl/css :icon)} (when is-current i/tick)]]]))
+      [:span {:class (stl/css :icon)} (when is-current deprecated-icon/tick)]]]))
 
 (declare row-renderer)
 
@@ -181,10 +181,10 @@
     [:div {:class (stl/css :font-selector)}
      [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
       [:div {:class (stl/css :header)}
-       [:& search-bar {:on-change on-filter-change
-                       :value (:term state)
-                       :auto-focus true
-                       :placeholder (tr "workspace.options.search-font")}]
+       [:> search-bar* {:on-change on-filter-change
+                        :value (:term state)
+                        :auto-focus true
+                        :placeholder (tr "workspace.options.search-font")}]
        (when (and recent-fonts show-recent)
          [:section {:class (stl/css :show-recent)}
           [:p {:class (stl/css :title)} (tr "workspace.options.recent-fonts")]
@@ -228,9 +228,9 @@
   [{:keys [values on-change on-blur show-recent full-size-selector]}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
-        font-id         (or font-id (:font-id txt/default-text-attrs))
-        font-size       (or font-size (:font-size txt/default-text-attrs))
-        font-variant-id (or font-variant-id (:font-variant-id txt/default-text-attrs))
+        font-id         (or font-id (:font-id txt/default-typography))
+        font-size       (or font-size (:font-size txt/default-typography))
+        font-variant-id (or font-variant-id (:font-variant-id txt/default-typography))
 
         fonts           (mf/deref fonts/fontsdb)
         font            (get fonts font-id)
@@ -311,7 +311,7 @@
          [:span {:class (stl/css :name)}
           (:name font)]
          [:span {:class (stl/css :icon)}
-          i/arrow]]
+          deprecated-icon/arrow]]
 
         :else
         (tr "dashboard.fonts.deleted-placeholder"))]
@@ -360,11 +360,8 @@
   [{:keys [values on-change on-blur]}]
   (let [{:keys [line-height
                 letter-spacing]} values
-
         line-height (or line-height "1.2")
         letter-spacing (or letter-spacing "0")
-        line-height-nillable (if (= (str line-height) "1.2") false true)
-
         handle-change
         (fn [value attr]
           (on-change {attr (str value)}))]
@@ -374,16 +371,16 @@
             :title (tr "inspect.attributes.typography.line-height")}
       [:span {:class (stl/css :icon)
               :alt (tr "workspace.options.text-options.line-height")}
-       i/text-lineheight]
+       deprecated-icon/text-lineheight]
       [:> numeric-input*
        {:min -200
         :max 200
         :step 0.1
-        :default "1.2"
+        :default-value "1.2"
         :class (stl/css :line-height-input)
         :value (attr->string line-height)
-        :placeholder (tr "settings.multiple")
-        :nillable line-height-nillable
+        :placeholder (if (= :multiple line-height) (tr "settings.multiple") "--")
+        :nillable (= :multiple line-height)
         :on-change #(handle-change % :line-height)
         :on-blur on-blur}]]
 
@@ -392,15 +389,17 @@
       [:span
        {:class (stl/css :icon)
         :alt (tr "workspace.options.text-options.letter-spacing")}
-       i/text-letterspacing]
+       deprecated-icon/text-letterspacing]
       [:> numeric-input*
        {:min -200
         :max 200
         :step 0.1
+        :default-value "0"
         :class (stl/css :letter-spacing-input)
         :value (attr->string letter-spacing)
-        :placeholder (tr "settings.multiple")
+        :placeholder (if (= :multiple letter-spacing) (tr "settings.multiple") "--")
         :on-change #(handle-change % :letter-spacing)
+        :nillable (= :multiple letter-spacing)
         :on-blur on-blur}]]]))
 
 (mf/defc text-transform-options
@@ -419,17 +418,17 @@
      [:& radio-buttons {:selected text-transform
                         :on-change handle-change
                         :name "text-transform"}
-      [:& radio-button {:icon i/text-uppercase
+      [:& radio-button {:icon deprecated-icon/text-uppercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.uppercase")
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
-      [:& radio-button {:icon i/text-mixed
+      [:& radio-button {:icon deprecated-icon/text-mixed
                         :type "checkbox"
                         :value "capitalize"
-                        :title (tr "inspect.attributes.typography.text-transform.titlecase")
+                        :title (tr "inspect.attributes.typography.text-transform.capitalize")
                         :id "text-transform-capitalize"}]
-      [:& radio-button {:icon i/text-lowercase
+      [:& radio-button {:icon deprecated-icon/text-lowercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.lowercase")
                         :value "lowercase"
@@ -491,7 +490,7 @@
 
            [:div {:class (stl/css :action-btn)
                   :on-click on-close}
-            i/tick]]
+            deprecated-icon/tick]]
 
           [:& text-options {:values typography
                             :on-change on-change
@@ -513,10 +512,10 @@
             (:name font-data)]
            [:div {:class (stl/css :action-btn)
                   :on-click on-close}
-            i/menu]]
+            deprecated-icon/menu]]
 
           [:div {:class (stl/css :info-row)}
-           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-variant-id")]
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-style")]
            [:span {:class (stl/css :info-content)} (:font-variant-id typography)]]
 
           [:div {:class (stl/css :info-row)}
@@ -644,10 +643,10 @@
        (when ^boolean on-detach
          [:button {:class (stl/css :element-set-actions-button)
                    :on-click on-detach}
-          i/detach])
+          deprecated-icon/detach])
        [:button {:class (stl/css :menu-btn)
                  :on-click on-open}
-        i/menu]]]
+        deprecated-icon/menu]]]
 
      [:& typography-advanced-options
       {:visible? open?

@@ -20,7 +20,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.webapi :as wapi]
@@ -174,7 +174,7 @@
        [:button {:class (stl/css :modal-close-button)
                  :on-click on-close
                  :title (tr "labels.close")}
-        i/close]]
+        deprecated-icon/close]]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :share-link-section)}
         (when (and (not confirm?) (some? current-link))
@@ -188,7 +188,7 @@
            [:button {:class (stl/css :copy-button)
                      :title (tr "viewer.header.share.copy-link")
                      :on-click copy-link}
-            i/clipboard]])
+            deprecated-icon/clipboard]])
 
         [:div {:class (stl/css :hint-wrapper)}
          (when (not ^boolean confirm?)
@@ -229,7 +229,7 @@
                     :on-click toggle-perms-visibility}
            [:span {:class (stl/css-case :icon true
                                         :rotated perms-visible?)}
-            i/arrow]
+            deprecated-icon/arrow]
            (tr "common.share-link.manage-ops")]
 
           (when ^boolean perms-visible?
@@ -249,7 +249,7 @@
                              :class (stl/css-case :global/checked true)}
 
                      [:span  {:class (stl/css :checked)}
-                      i/status-tick]
+                      deprecated-icon/status-tick]
 
                      (:name current-page)]
 
@@ -267,7 +267,7 @@
                                :class (stl/css :select-all-label)}
                        [:span {:class (stl/css-case :global/checked all-selected?)}
                         (when all-selected?
-                          i/status-tick)]
+                          deprecated-icon/status-tick)]
                        (tr "common.share-link.view-all")
                        [:input {:type "checkbox"
                                 :id "view-all"
@@ -285,7 +285,7 @@
                         [:label {:for (dm/str "page-" id)}
                          [:span {:class (stl/css-case :global/checked (contains? selected id))}
                           (when (contains? selected id)
-                            i/status-tick)]
+                            deprecated-icon/status-tick)]
                          name
                          (when (= current-page-id id)
                            [:div {:class (stl/css :current-tag)} (dm/str  " " (tr "common.share-link.current-tag"))])

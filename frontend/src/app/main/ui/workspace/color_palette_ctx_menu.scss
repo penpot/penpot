@@ -4,17 +4,17 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .palette-menu {
   position: absolute;
   left: auto;
   bottom: var(--height);
-  max-width: $s-480;
-  padding: $s-4;
-  margin: 0 0 $s-4 0;
-  z-index: $z-index-4;
-  border-radius: $br-10;
+  max-width: deprecated.$s-480;
+  padding: deprecated.$s-4;
+  margin: 0 0 deprecated.$s-4 0;
+  z-index: deprecated.$z-index-4;
+  border-radius: deprecated.$br-10;
   background-color: var(--context-menu-background-color);
 
   .palette-library,
@@ -24,36 +24,36 @@
     display: flex;
     align-items: flex-start;
     width: 100%;
-    padding: $s-8;
-    border-radius: $br-8;
-    margin-bottom: $s-4;
+    padding: deprecated.$s-8;
+    border-radius: deprecated.$br-8;
+    margin-bottom: deprecated.$s-4;
     &:last-child {
       margin-bottom: 0;
     }
     .option-wrapper {
       width: 100%;
       .library-name {
-        @include bodySmallTypography;
+        @include deprecated.bodySmallTypography;
         color: var(--context-menu-foreground-color);
         display: grid;
-        grid-template-columns: 1fr $s-24;
+        grid-template-columns: 1fr deprecated.$s-24;
         .lib-name-wrapper {
           display: flex;
-          max-width: $s-400;
+          max-width: deprecated.$s-400;
           .lib-name {
-            @include textEllipsis;
-            max-width: $s-380;
+            @include deprecated.textEllipsis;
+            max-width: deprecated.$s-380;
           }
           .lib-num {
-            margin-left: $s-4;
+            margin-left: deprecated.$s-4;
           }
         }
         .icon-wrapper {
-          margin-left: $s-4;
-          @include flexCenter;
+          margin-left: deprecated.$s-4;
+          @include deprecated.flexCenter;
           svg {
             @extend .button-icon-small;
-            @include flexCenter;
+            @include deprecated.flexCenter;
             stroke: var(--icon-foreground);
           }
         }
@@ -61,8 +61,8 @@
       .color-sample {
         display: flex;
         flex-direction: row;
-        gap: $s-8;
-        margin-top: $s-4;
+        gap: deprecated.$s-8;
+        margin-top: deprecated.$s-4;
       }
     }
 
@@ -71,9 +71,9 @@
       .option-wrapper .library-name {
         color: var(--context-menu-foreground-color-selected);
         .icon-wrapper {
-          @include flexCenter;
+          @include deprecated.flexCenter;
           svg {
-            @include flexCenter;
+            @include deprecated.flexCenter;
             @extend .button-icon-small;
             stroke: var(--context-menu-foreground-color-selected);
           }

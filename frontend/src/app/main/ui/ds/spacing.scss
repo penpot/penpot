@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "./utils.scss" as *;
+@use "ds/_utils.scss" as *;
 
 $_sp-2: px2rem(2);
 $_sp-4: px2rem(4);
@@ -14,8 +14,6 @@ $_sp-16: px2rem(16);
 $_sp-20: px2rem(20);
 $_sp-24: px2rem(24);
 $_sp-32: px2rem(32);
-$_sp-600: px2rem(600);
-$_sp-800: px2rem(800);
 
 :global(:root) {
   --sp-xxs: #{$_sp-2};
@@ -26,6 +24,4 @@ $_sp-800: px2rem(800);
   --sp-xl: #{$_sp-20};
   --sp-xxl: #{$_sp-24};
   --sp-xxxl: #{$_sp-32};
-  --sp-600: #{$_sp-600};
-  --sp-800: #{$_sp-800};
 }

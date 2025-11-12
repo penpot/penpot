@@ -54,7 +54,7 @@
   (sm/encoder types.tokens-lib/schema:tokens-lib sm/json-transformer))
 
 (def encode-plugin-data
-  (sm/encoder ::ctpg/plugin-data sm/json-transformer))
+  (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
 
 (def ^:private valid-buckets
   #{"file-media-object"
@@ -183,17 +183,22 @@
 
 (defn- generate-manifest-procs
   [state]
-  (let [files (->> (get state ::fb/files)
-                   (mapv (fn [[file-id file]]
-                           {:id file-id
-                            :name (:name file)
-                            :features (:features file)})))
+  (let [opts   (get state :options)
+        files  (->> (get state ::fb/files)
+                    (mapv (fn [[file-id file]]
+                            {:id file-id
+                             :name (:name file)
+                             :features (:features file)})))
         params {:type "penpot/export-files"
                 :version 1
                 :generated-by "penpot-library/%version%"
+                :referer (get opts :referer)
                 :files files
-                :relations []}]
-    ["manifest.json" (delay (json/encode params))]))
+                :relations []}
+        params (d/without-nils params)]
+
+    ["manifest.json"
+     (delay (json/encode params))]))
 
 (defn- generate-procs
   [state]

@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/spacing.scss" as *;
-@use "../ds/z-index.scss" as *;
-@use "../ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/_sizes.scss" as *;
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .palette-wrapper {
   position: absolute;
   width: 100vw;
   left: 0;
   bottom: 0;
-  padding-bottom: $s-4;
+  padding-bottom: deprecated.$s-4;
 
   /** Aligns AI Chat button **/
   display: flex;
@@ -25,7 +25,7 @@
 }
 
 .palettes {
-  z-index: $z-index-2;
+  z-index: deprecated.$z-index-2;
   position: relative;
   right: 0;
   grid-area: color-palette;
@@ -33,15 +33,15 @@
   grid-template-areas:
     "resize resize resize"
     "buttons actions palette";
-  grid-template-rows: $s-8 1fr;
-  grid-template-columns: $s-32 auto 1fr;
-  max-height: $s-80;
+  grid-template-rows: deprecated.$s-8 1fr;
+  grid-template-columns: deprecated.$s-32 auto 1fr;
+  max-height: deprecated.$s-80;
   height: var(--height);
   width: fit-content;
-  padding: $s-0 $s-0 $s-8 $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-0 deprecated.$s-0 deprecated.$s-8 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--palette-background-color);
-  border: $s-2 solid var(--panel-border-color);
+  border: deprecated.$s-2 solid var(--panel-border-color);
   transition:
     right 0.3s,
     opacity 0.2s,
@@ -52,36 +52,36 @@
 
   .resize-area {
     grid-area: resize;
-    height: $s-8;
-    z-index: $z-index-4;
-    width: calc(100% - $s-8);
-    border-radius: $br-circle;
+    height: deprecated.$s-8;
+    z-index: deprecated.$z-index-4;
+    width: calc(100% - deprecated.$s-8);
+    border-radius: deprecated.$br-circle;
     cursor: ns-resize;
     background-color: var(--palette-background-color);
   }
   .palette-btn-list {
     grid-area: buttons;
     background-color: var(--palette-background-color);
-    height: calc(var(--height) - $s-16);
-    width: $s-32;
-    margin: $s-0;
+    height: calc(var(--height) - deprecated.$s-16);
+    width: deprecated.$s-32;
+    margin: deprecated.$s-0;
     list-style: none;
-    z-index: $z-index-2;
-    gap: $s-2;
+    z-index: deprecated.$z-index-2;
+    gap: deprecated.$s-2;
     &.mid-palette,
     &.small-palette {
       display: flex;
     }
     .palette-item {
-      @include flexCenter;
-      border-radius: $br-8;
-      opacity: $op-10;
+      @include deprecated.flexCenter;
+      border-radius: deprecated.$br-8;
+      opacity: deprecated.$op-10;
       transition: opacity 1s ease;
       .palette-btn {
         @extend .button-tertiary;
-        height: $s-32;
-        width: $s-32;
-        border-radius: $br-8;
+        height: deprecated.$s-32;
+        width: deprecated.$s-32;
+        border-radius: deprecated.$br-8;
         background-clip: padding-box;
         padding: 0;
         svg {
@@ -98,13 +98,13 @@
   .palette-actions {
     @extend .button-tertiary;
     grid-area: actions;
-    height: calc(var(--height) - $s-16);
-    width: $s-32;
+    height: calc(var(--height) - deprecated.$s-16);
+    width: deprecated.$s-32;
     padding: 0;
-    margin-left: $s-4;
-    border-radius: $br-8;
+    margin-left: deprecated.$s-4;
+    border-radius: deprecated.$br-8;
     background-color: var(--palette-background-color);
-    z-index: $z-index-2;
+    z-index: deprecated.$z-index-2;
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
@@ -118,41 +118,41 @@
 }
 
 .handler {
-  @include buttonStyle;
-  @include flexCenter;
-  width: $s-12;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-12;
   height: 100%;
   .handler-btn {
-    width: $s-4;
+    width: deprecated.$s-4;
     height: 100%;
-    max-height: $s-40;
-    margin: $s-8 $s-4;
+    max-height: deprecated.$s-40;
+    margin: deprecated.$s-8 deprecated.$s-4;
     padding: 0;
-    border-radius: $s-4;
+    border-radius: deprecated.$s-4;
     background-color: var(--palette-handler-background-color);
   }
 }
 
 .mid-palette,
 .small-palette {
-  grid-template-columns: $s-64 auto 1fr;
+  grid-template-columns: deprecated.$s-64 auto 1fr;
 }
 
 .hidden-bts {
-  right: $s-2;
-  z-index: $z-index-1;
+  right: deprecated.$s-2;
+  z-index: deprecated.$z-index-1;
   width: 22px;
-  grid-template-columns: $s-8 auto 1fr;
+  grid-template-columns: deprecated.$s-8 auto 1fr;
   padding: 0;
   border-inline-start: 0;
   border-start-start-radius: 0;
   border-end-start-radius: 0;
   .palette-btn-list {
-    opacity: $op-0;
+    opacity: deprecated.$op-0;
     visibility: hidden;
     width: 0;
     .palette-item {
-      opacity: $op-0;
+      opacity: deprecated.$op-0;
       visibility: hidden;
       z-index: 0;
     }
@@ -171,7 +171,7 @@
     z-index: 0;
   }
   .handler {
-    padding-bottom: $s-8;
+    padding-bottom: deprecated.$s-8;
   }
 }
 
@@ -182,7 +182,7 @@
   @extend .button-secondary;
   inline-size: $sz-40;
   block-size: $sz-40;
-  border-radius: $br-circle;
+  border-radius: deprecated.$br-circle;
   border: none;
   &.selected {
     @extend .button-icon-selected;

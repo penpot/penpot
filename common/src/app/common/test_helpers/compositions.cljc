@@ -8,15 +8,18 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.variants :as clv]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.text :as txt]
    [app.common.types.container :as ctn]
-   [app.common.types.shape :as cts]))
+   [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]))
 
 ;; ----- File building
 
@@ -32,12 +35,10 @@
 (defn add-text
   [file text-label content & {:keys [text-params] :as text}]
   (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0})
-                  (txt/change-text content))]
+                  (update :content txt/change-text content))]
     (ths/add-sample-shape file text-label
                           (merge shape
                                  text-params))))
-
-
 
 (defn add-frame
   [file frame-label & {:keys [] :as params}]
@@ -73,7 +74,7 @@
 (defn add-frame-with-text
   [file frame-label child-label text & {:keys [frame-params child-params]}]
   (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                  (txt/change-text text)
+                  (update :content txt/change-text text)
                   (assoc :position-data nil
                          :parent-label frame-label))]
     (-> file
@@ -277,25 +278,37 @@
 
 (defn swap-component
   "Swap the specified shape by the component specified by component-tag"
-  [file shape component-tag & {:keys [page-label propagate-fn]}]
+  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label]}]
   (let [page    (if page-label
                   (thf/get-page file page-label)
                   (thf/current-page file))
+        libraries {(:id  file) file}
 
-        [_ _all-parents changes]
+        orig-shapes (when keep-touched? (cfh/get-children-with-self (:objects page) (:id shape)))
+
+        [new-shape _all-parents changes]
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
                                      shape
                                      (:data file)
                                      page
-                                     {(:id  file) file}
+                                     libraries
                                      (->  (thc/get-component file component-tag)
                                           :id)
                                      0
                                      nil
-                                     {})
+                                     {}
+                                     (true? keep-touched?))
+
+        [changes _] (if keep-touched?
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries (:data file))
+                      [changes nil])
+
 
         file' (thf/apply-changes file changes)]
+    (when new-shape-label
+      (thi/rm-id! (:id new-shape))
+      (thi/set-id! new-shape-label (:id new-shape)))
     (if propagate-fn
       (propagate-fn file')
       file')))

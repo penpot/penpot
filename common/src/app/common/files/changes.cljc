@@ -21,6 +21,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
+   [app.common.types.library :as ctl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path :as path]
@@ -82,24 +83,25 @@
 
     [:multi {:decode/json #(update % :grid-type keyword)
              :gen/gen gen
+             :title "SetDefaultGridChange"
              :dispatch :grid-type
              ::smd/simplified true}
      [:square
-      [:map
+      [:map {:title "SetDefautSquareGridAttrs"}
        [:type [:= :set-default-grid]]
        [:page-id ::sm/uuid]
        [:grid-type [:= :square]]
        [:params [:maybe ctg/schema:square-params]]]]
 
      [:column
-      [:map
+      [:map {:title "SetDefaultColumnGridAttrs"}
        [:type [:= :set-default-grid]]
        [:page-id ::sm/uuid]
        [:grid-type [:= :column]]
        [:params [:maybe ctg/schema:column-params]]]]
 
      [:row
-      [:map
+      [:map {:title "SetDefaultRowGridAttrs"}
        [:type [:= :set-default-grid]]
        [:page-id ::sm/uuid]
        [:grid-type [:= :row]]
@@ -110,20 +112,20 @@
                 [:type [:= :set-guide]]
                 [:page-id ::sm/uuid]
                 [:id ::sm/uuid]
-                [:params [:maybe ::ctp/guide]]]
+                [:params [:maybe ctp/schema:guide]]]
         gen    (->> (sg/generator schema)
                     (sg/fmap (fn [change]
                                (if (some? (:params change))
                                  (update change :params assoc :id (:id change))
                                  change))))]
-    [:schema {:gen/gen gen} schema]))
+    (sm/update-properties schema assoc :gen/gen gen)))
 
 (def schema:set-flow-change
   (let [schema [:map {:title "SetFlowChange"}
                 [:type [:= :set-flow]]
                 [:page-id ::sm/uuid]
                 [:id ::sm/uuid]
-                [:params [:maybe ::ctp/flow]]]
+                [:params [:maybe ctp/schema:flow]]]
 
         gen    (->> (sg/generator schema)
                     (sg/fmap (fn [change]
@@ -131,7 +133,7 @@
                                  (update change :params assoc :id (:id change))
                                  change))))]
 
-    [:schema {:gen/gen gen} schema]))
+    (sm/update-properties schema assoc :gen/gen gen)))
 
 (def schema:set-plugin-data-change
   (let [types  #{:file :page :shape :color :typography :component}
@@ -168,280 +170,267 @@
 
                                  :else
                                  (dissoc change :page-id)))))]
-
-    [:and {:gen/gen gen} schema check1]))
+    [:and (sm/update-properties schema assoc :gen/gen gen) check1]))
 
 (def schema:change
-  [:schema
-   [:multi {:dispatch :type
-            :title "Change"
-            :decode/json #(update % :type keyword)
-            ::smd/simplified true}
-    [:set-option
+  [:multi {:dispatch :type
+           :title "Change"
+           :decode/json #(update % :type keyword)
+           ::smd/simplified true}
 
-     ;; DEPRECATED: remove before 2.3 release
-     ;;
-     ;; Is still there for not cause error when event is received
-     [:map {:title "SetOptionChange"}]]
+   [:set-comment-thread-position
+    [:map {:title "SetCommentThreadPositionChange"}
+     [:comment-thread-id ::sm/uuid]
+     [:page-id ::sm/uuid]
+     [:frame-id [:maybe ::sm/uuid]]
+     [:position [:maybe ::gpt/point]]]]
 
-    [:set-comment-thread-position
-     [:map
-      [:comment-thread-id ::sm/uuid]
-      [:page-id ::sm/uuid]
-      [:frame-id [:maybe ::sm/uuid]]
-      [:position [:maybe ::gpt/point]]]]
+   [:add-obj
+    [:map {:title "AddObjChange"}
+     [:type [:= :add-obj]]
+     [:id ::sm/uuid]
+     [:obj cts/schema:shape]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:frame-id ::sm/uuid]
+     [:parent-id {:optional true} [:maybe ::sm/uuid]]
+     [:index {:optional true} [:maybe :int]]
+     [:ignore-touched {:optional true} :boolean]]]
 
-    [:add-obj
-     [:map {:title "AddObjChange"}
-      [:type [:= :add-obj]]
-      [:id ::sm/uuid]
-      [:obj :map]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:frame-id ::sm/uuid]
-      [:parent-id {:optional true} [:maybe ::sm/uuid]]
-      [:index {:optional true} [:maybe :int]]
-      [:ignore-touched {:optional true} :boolean]]]
+   [:mod-obj
+    [:map {:title "ModObjChange"}
+     [:type [:= :mod-obj]]
+     [:id ::sm/uuid]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:operations [:vector {:gen/max 5} schema:operation]]]]
 
-    [:mod-obj
-     [:map {:title "ModObjChange"}
-      [:type [:= :mod-obj]]
-      [:id ::sm/uuid]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:operations [:vector {:gen/max 5} schema:operation]]]]
+   [:del-obj
+    [:map {:title "DelObjChange"}
+     [:type [:= :del-obj]]
+     [:id ::sm/uuid]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:ignore-touched {:optional true} :boolean]]]
 
-    [:del-obj
-     [:map {:title "DelObjChange"}
-      [:type [:= :del-obj]]
-      [:id ::sm/uuid]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:ignore-touched {:optional true} :boolean]]]
+   [:set-guide schema:set-guide-change]
+   [:set-flow schema:set-flow-change]
+   [:set-default-grid schema:set-default-grid-change]
 
-    [:set-guide schema:set-guide-change]
-    [:set-flow schema:set-flow-change]
-    [:set-default-grid schema:set-default-grid-change]
+   [:fix-obj
+    [:map {:title "FixObjChange"}
+     [:type [:= :fix-obj]]
+     [:id ::sm/uuid]
+     [:fix {:optional true} :keyword]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]]]
 
-    [:fix-obj
-     [:map {:title "FixObjChange"}
-      [:type [:= :fix-obj]]
-      [:id ::sm/uuid]
-      [:fix {:optional true} :keyword]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]]]
+   [:mov-objects
+    [:map {:title "MovObjectsChange"}
+     [:type [:= :mov-objects]]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:ignore-touched {:optional true} :boolean]
+     [:parent-id ::sm/uuid]
+     [:shapes ::sm/any]
+     [:index {:optional true} [:maybe :int]]
+     [:after-shape {:optional true} ::sm/any]
+     [:allow-altering-copies {:optional true} :boolean]]]
 
-    [:mov-objects
-     [:map {:title "MovObjectsChange"}
-      [:type [:= :mov-objects]]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:ignore-touched {:optional true} :boolean]
-      [:parent-id ::sm/uuid]
-      [:shapes ::sm/any]
-      [:index {:optional true} [:maybe :int]]
-      [:after-shape {:optional true} ::sm/any]
-      [:component-swap {:optional true} :boolean]]]
+   [:reorder-children
+    [:map {:title "ReorderChildrenChange"}
+     [:type [:= :reorder-children]]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:ignore-touched {:optional true} :boolean]
+     [:parent-id ::sm/uuid]
+     [:shapes ::sm/any]]]
 
-    [:reorder-children
-     [:map {:title "ReorderChildrenChange"}
-      [:type [:= :reorder-children]]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:ignore-touched {:optional true} :boolean]
-      [:parent-id ::sm/uuid]
-      [:shapes ::sm/any]]]
+   [:add-page
+    [:map {:title "AddPageChange"}
+     [:type [:= :add-page]]
+     [:id {:optional true} ::sm/uuid]
+     [:name {:optional true} :string]
+     [:page {:optional true} ::sm/any]]]
 
-    [:add-page
-     [:map {:title "AddPageChange"}
-      [:type [:= :add-page]]
-      [:id {:optional true} ::sm/uuid]
-      [:name {:optional true} :string]
-      [:page {:optional true} ::sm/any]]]
+   [:mod-page
+    [:map {:title "ModPageChange"}
+     [:type [:= :mod-page]]
+     [:id ::sm/uuid]
+     ;; All props are optional, background can be nil because is the
+     ;; way to remove already set background
+     [:background {:optional true} [:maybe ctc/schema:hex-color]]
+     [:name {:optional true} :string]]]
 
-    [:mod-page
-     [:map {:title "ModPageChange"}
-      [:type [:= :mod-page]]
-      [:id ::sm/uuid]
-      ;; All props are optional, background can be nil because is the
-      ;; way to remove already set background
-      [:background {:optional true} [:maybe ctc/schema:hex-color]]
-      [:name {:optional true} :string]]]
+   [:set-plugin-data schema:set-plugin-data-change]
 
-    [:set-plugin-data schema:set-plugin-data-change]
+   [:del-page
+    [:map {:title "DelPageChange"}
+     [:type [:= :del-page]]
+     [:id ::sm/uuid]]]
 
-    [:del-page
-     [:map {:title "DelPageChange"}
-      [:type [:= :del-page]]
-      [:id ::sm/uuid]]]
+   [:mov-page
+    [:map {:title "MovPageChange"}
+     [:type [:= :mov-page]]
+     [:id ::sm/uuid]
+     [:index :int]]]
 
-    [:mov-page
-     [:map {:title "MovPageChange"}
-      [:type [:= :mov-page]]
-      [:id ::sm/uuid]
-      [:index :int]]]
+   [:reg-objects
+    [:map {:title "RegObjectsChange"}
+     [:type [:= :reg-objects]]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:shapes [:vector {:gen/max 5} ::sm/uuid]]]]
 
-    [:reg-objects
-     [:map {:title "RegObjectsChange"}
-      [:type [:= :reg-objects]]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:shapes [:vector {:gen/max 5} ::sm/uuid]]]]
+   [:add-color
+    [:map {:title "AddColorChange"}
+     [:type [:= :add-color]]
+     [:color ctc/schema:library-color]]]
 
-    [:add-color
-     [:map {:title "AddColorChange"}
-      [:type [:= :add-color]]
-      [:color ctc/schema:library-color]]]
+   [:mod-color
+    [:map {:title "ModColorChange"}
+     [:type [:= :mod-color]]
+     [:color ctc/schema:library-color]]]
 
-    [:mod-color
-     [:map {:title "ModColorChange"}
-      [:type [:= :mod-color]]
-      [:color ctc/schema:library-color]]]
+   [:del-color
+    [:map {:title "DelColorChange"}
+     [:type [:= :del-color]]
+     [:id ::sm/uuid]]]
 
-    [:del-color
-     [:map {:title "DelColorChange"}
-      [:type [:= :del-color]]
-      [:id ::sm/uuid]]]
+   [:add-media
+    [:map {:title "AddMediaChange"}
+     [:type [:= :add-media]]
+     [:object ctf/schema:media]]]
 
-    ;; DEPRECATED: remove before 2.3
-    [:add-recent-color
-     [:map {:title "AddRecentColorChange"}]]
+   [:mod-media
+    [:map {:title "ModMediaChange"}
+     [:type [:= :mod-media]]
+     [:object ctf/schema:media]]]
 
-    [:add-media
-     [:map {:title "AddMediaChange"}
-      [:type [:= :add-media]]
-      [:object ctf/schema:media]]]
+   [:del-media
+    [:map {:title "DelMediaChange"}
+     [:type [:= :del-media]]
+     [:id ::sm/uuid]]]
 
-    [:mod-media
-     [:map {:title "ModMediaChange"}
-      [:type [:= :mod-media]]
-      [:object ctf/schema:media]]]
+   [:add-component
+    [:map {:title "AddComponentChange"}
+     [:type [:= :add-component]]
+     [:id ::sm/uuid]
+     [:name :string]
+     [:path :string]
+     [:main-instance-id ::sm/uuid]
+     [:main-instance-page ::sm/uuid]
+     ;; Only used by external processes (like Penpot SDK)
+     [:variant-id {:optional true} ::sm/uuid]
+     [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
-    [:del-media
-     [:map {:title "DelMediaChange"}
-      [:type [:= :del-media]]
-      [:id ::sm/uuid]]]
+   [:mod-component
+    [:map {:title "ModComponentChange"}
+     [:type [:= :mod-component]]
+     [:id ::sm/uuid]
+     [:name {:optional true} :string]
+     [:path {:optional true} :string]
+     [:variant-id {:optional true} ::sm/uuid]
+     [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
-    [:add-component
-     [:map {:title "AddComponentChange"}
-      [:type [:= :add-component]]
-      [:id ::sm/uuid]
-      [:name :string]
-      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
-      [:path {:optional true} :string]]]
+   [:del-component
+    [:map {:title "DelComponentChange"}
+     [:type [:= :del-component]]
+     [:id ::sm/uuid]
+     ;; when it is an undo of a cut-paste, we need to undo the movement
+     ;; of the shapes so we need to move them delta
+     [:delta {:optional true} ::gpt/point]
+     [:skip-undelete? {:optional true} :boolean]]]
 
-    [:mod-component
-     [:map {:title "ModCompoenentChange"}
-      [:type [:= :mod-component]]
-      [:id ::sm/uuid]
-      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
-      [:name {:optional true} :string]
-      [:variant-id {:optional true} ::sm/uuid]
-      [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
+   [:restore-component
+    [:map {:title "RestoreComponentChange"}
+     [:type [:= :restore-component]]
+     [:id ::sm/uuid]
+     [:page-id ::sm/uuid]]]
 
-    [:del-component
-     [:map {:title "DelComponentChange"}
-      [:type [:= :del-component]]
-      [:id ::sm/uuid]
-      ;; when it is an undo of a cut-paste, we need to undo the movement
-      ;; of the shapes so we need to move them delta
-      [:delta {:optional true} ::gpt/point]
-      [:skip-undelete? {:optional true} :boolean]]]
+   [:purge-component
+    [:map {:title "PurgeComponentChange"}
+     [:type [:= :purge-component]]
+     [:id ::sm/uuid]]]
 
-    [:restore-component
-     [:map {:title "RestoreComponentChange"}
-      [:type [:= :restore-component]]
-      [:id ::sm/uuid]
-      [:page-id ::sm/uuid]]]
+   [:add-typography
+    [:map {:title "AddTypogrphyChange"}
+     [:type [:= :add-typography]]
+     [:typography ctt/schema:typography]]]
 
-    [:purge-component
-     [:map {:title "PurgeComponentChange"}
-      [:type [:= :purge-component]]
-      [:id ::sm/uuid]]]
+   [:mod-typography
+    [:map {:title "ModTypogrphyChange"}
+     [:type [:= :mod-typography]]
+     [:typography ctt/schema:typography]]]
 
-    [:add-typography
-     [:map {:title "AddTypogrphyChange"}
-      [:type [:= :add-typography]]
-      [:typography ::ctt/typography]]]
+   [:del-typography
+    [:map {:title "DelTypogrphyChange"}
+     [:type [:= :del-typography]]
+     [:id ::sm/uuid]]]
 
-    [:mod-typography
-     [:map {:title "ModTypogrphyChange"}
-      [:type [:= :mod-typography]]
-      [:typography ::ctt/typography]]]
+   [:set-tokens-lib
+    [:map {:title "SetTokensLib"}
+     [:type [:= :set-tokens-lib]]
+     [:tokens-lib ::sm/any]]]  ;; TODO: we should define a plain object schema for tokens-lib
 
-    [:del-typography
-     [:map {:title "DelTypogrphyChange"}
-      [:type [:= :del-typography]]
-      [:id ::sm/uuid]]]
+   [:set-token
+    [:map {:title "SetTokenChange"}
+     [:type [:= :set-token]]
+     [:set-id ::sm/uuid]
+     [:token-id ::sm/uuid]
+     [:attrs [:maybe ctob/schema:token-attrs]]]]
 
-    [:update-active-token-themes
-     [:map {:title "UpdateActiveTokenThemes"}
-      [:type [:= :update-active-token-themes]]
-      [:theme-paths [:set :string]]]]
+   [:set-token-set
+    [:map {:title "SetTokenSetChange"}
+     [:type [:= :set-token-set]]
+     [:id ::sm/uuid]
+     [:attrs [:maybe ctob/schema:token-set-attrs]]]]
 
-    [:rename-token-set-group
-     [:map {:title "RenameTokenSetGroup"}
-      [:type [:= :rename-token-set-group]]
-      [:set-group-path [:vector :string]]
-      [:set-group-fname :string]]]
+   [:set-token-theme
+    [:map {:title "SetTokenThemeChange"}
+     [:type [:= :set-token-theme]]
+     [:id ::sm/uuid]
+     [:attrs [:maybe ctob/schema:token-theme-attrs]]]]
 
-    [:move-token-set
-     [:map {:title "MoveTokenSet"}
-      [:type [:= :move-token-set]]
-      [:from-path [:vector :string]]
-      [:to-path [:vector :string]]
-      [:before-path [:maybe [:vector :string]]]
-      [:before-group [:maybe :boolean]]]]
+   [:set-active-token-themes
+    [:map {:title "SetActiveTokenThemes"}
+     [:type [:= :set-active-token-themes]]
+     [:theme-paths [:set :string]]]]
 
-    [:move-token-set-group
-     [:map {:title "MoveTokenSetGroup"}
-      [:type [:= :move-token-set-group]]
-      [:from-path [:vector :string]]
-      [:to-path [:vector :string]]
-      [:before-path [:maybe [:vector :string]]]
-      [:before-group [:maybe :boolean]]]]
+   [:rename-token-set-group
+    [:map {:title "RenameTokenSetGroup"}
+     [:type [:= :rename-token-set-group]]
+     [:set-group-path [:vector :string]]
+     [:set-group-fname :string]]]
 
-    [:set-token-theme
-     [:map {:title "SetTokenThemeChange"}
-      [:type [:= :set-token-theme]]
-      [:theme-name :string]
-      [:group :string]
-      [:theme [:maybe ctob/schema:token-theme-attrs]]]]
+   [:move-token-set
+    [:map {:title "MoveTokenSet"}
+     [:type [:= :move-token-set]]
+     [:from-path [:vector :string]]
+     [:to-path [:vector :string]]
+     [:before-path [:maybe [:vector :string]]]
+     [:before-group [:maybe :boolean]]]]
 
-    [:set-tokens-lib
-     [:map {:title "SetTokensLib"}
-      [:type [:= :set-tokens-lib]]
-      [:tokens-lib ::sm/any]]]
+   [:move-token-set-group
+    [:map {:title "MoveTokenSetGroup"}
+     [:type [:= :move-token-set-group]]
+     [:from-path [:vector :string]]
+     [:to-path [:vector :string]]
+     [:before-path [:maybe [:vector :string]]]
+     [:before-group [:maybe :boolean]]]]
 
-    [:set-token-set
-     [:map {:title "SetTokenSetChange"}
-      [:type [:= :set-token-set]]
-      [:set-name :string]
-      [:group? :boolean]
-      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
-
-    [:set-token
-     [:map {:title "SetTokenChange"}
-      [:type [:= :set-token]]
-      [:set-name :string]
-      [:token-name :string]
-      [:token [:maybe ctob/schema:token-attrs]]]]
-
-    [:set-base-font-size
-     [:map {:title "ModBaseFontSize"}
-      [:type [:= :set-base-font-size]]
-      [:base-font-size :string]]]]])
+   [:set-base-font-size
+    [:map {:title "ModBaseFontSize"}
+     [:type [:= :set-base-font-size]]
+     [:base-font-size :string]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
 
-(sm/register! ::change schema:change)
-(sm/register! ::changes schema:changes)
-
 (def valid-change?
   (sm/lazy-validator schema:change))
 
-(def check-changes!
+(def check-changes
   (sm/check-fn schema:changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -487,7 +476,9 @@
                                (cts/shape? shape-new))
                   (ex/raise :type :assertion
                             :code :data-validation
-                            :hint "invalid shape found after applying changes"
+                            :hint (str "invalid shape found after applying changes on file "
+                                       (:id data-new))
+                            :file-id (:id data-new)
                             ::sm/explain (cts/explain-shape shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
@@ -524,10 +515,9 @@
    ;; When verify? false we spec the schema validation. Currently used
    ;; to make just 1 validation even if the changes are applied twice
    (when verify?
-     (check-changes! items))
+     (check-changes items))
 
-   (binding [*touched-changes* (volatile! #{})
-             cts/*wasm-sync* true]
+   (binding [*touched-changes* (volatile! #{})]
      (let [result (reduce #(or (process-change %1 %2) %1) data items)
            result (reduce process-touched-change result @*touched-changes*)]
        ;; Validate result shapes (only on the backend)
@@ -536,11 +526,6 @@
        ;; the tracked changes instead of iterate over all shapes
        #?(:clj (validate-shapes! data result items))
        result))))
-
-;; DEPRECATED: remove after 2.3 release
-(defmethod process-change :set-option
-  [data _]
-  data)
 
 ;; --- Comment Threads
 
@@ -759,7 +744,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape component-swap syncing]}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape allow-altering-copies syncing]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -774,7 +759,7 @@
               (and shape
                    (not (invalid-targets parent-id))
                    (not (cfh/components-nesting-loop? objects shape-id parent-id))
-                   (or component-swap ;; On a component swap it's allowed to change the structure of a copy
+                   (or allow-altering-copies ;; In some cases (like a component swap) it's allowed to change the structure of a copy
                        syncing ;; If we are syncing the changes of a main component, it's allowed to change the structure of a copy
                        (and
                         (not (ctk/in-component-copy? (get objects (:parent-id shape)))) ;; We don't want to change the structure of component copies
@@ -925,21 +910,15 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (ctc/add-color data color))
+  (ctl/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (ctc/set-color data color))
+  (ctl/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (ctc/delete-color data id))
-
-;; DEPRECATED: remove before 2.3
-(defmethod process-change :add-recent-color
-  [data _]
-  data)
-
+  (ctl/delete-color data id))
 
 ;; -- Media
 
@@ -991,65 +970,63 @@
   [data {:keys [id]}]
   (ctyl/delete-typography data id))
 
-;; -- Tokens
+;; -- Design Tokens
 
 (defmethod process-change :set-tokens-lib
   [data {:keys [tokens-lib]}]
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-name token-name token]}]
+  [data {:keys [set-id token-id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not token)
-                (ctob/delete-token-from-set lib' set-name token-name)
+                (not attrs)
+                (ctob/delete-token lib' set-id token-id)
 
-                (not (ctob/get-token-in-set lib' set-name token-name))
-                (ctob/add-token-in-set lib' set-name (ctob/make-token token))
+                (not (ctob/get-token lib' set-id token-id))
+                (ctob/add-token lib' set-id (ctob/make-token attrs))
 
                 :else
-                (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
-                                                                     (ctob/make-token (merge prev-token token)))))))))
+                (ctob/update-token lib' set-id token-id
+                                   (fn [prev-token]
+                                     (ctob/make-token (merge prev-token attrs)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [set-name group? token-set]}]
+  [data {:keys [id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not token-set)
-                (if group?
-                  (ctob/delete-set-group lib' set-name)
-                  (ctob/delete-set lib' set-name))
+                (not attrs)
+                (ctob/delete-set lib' id)
 
-                (not (ctob/get-set lib' set-name))
-                (ctob/add-set lib' (ctob/make-token-set token-set))
+                (not (ctob/get-set lib' id))
+                (ctob/add-set lib' (ctob/make-token-set attrs))
 
                 :else
-                (ctob/update-set lib' set-name (fn [prev-token-set]
-                                                 (ctob/make-token-set (merge prev-token-set token-set)))))))))
+                (ctob/update-set lib' id (fn [_] (ctob/make-token-set attrs))))))))
 
 (defmethod process-change :set-token-theme
-  [data {:keys [group theme-name theme]}]
+  [data {:keys [id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not theme)
-                (ctob/delete-theme lib' group theme-name)
+                (not attrs)
+                (ctob/delete-theme lib' id)
 
-                (not (ctob/get-theme lib' group theme-name))
-                (ctob/add-theme lib' (ctob/make-token-theme theme))
+                (not (ctob/get-theme lib' id))
+                (ctob/add-theme lib' (ctob/make-token-theme attrs))
 
                 :else
                 (ctob/update-theme lib'
-                                   group theme-name
+                                   id
                                    (fn [prev-token-theme]
-                                     (ctob/make-token-theme (merge prev-token-theme theme)))))))))
+                                     (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
 
-(defmethod process-change :update-active-token-themes
+(defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-paths))))
@@ -1073,7 +1050,7 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group))))
 
-;; === Base font size
+;; === Design Tokens configuration
 
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
@@ -1082,21 +1059,23 @@
 
 ;; === Operations
 
-(def ^:private decode-shape
-  (sm/decoder cts/schema:shape sm/json-transformer))
+(def  decode-shape-attrs
+  (sm/decoder cts/schema:shape-attrs sm/json-transformer))
 
 (defmethod process-operation :assign
   [{:keys [type] :as shape} {:keys [value] :as op}]
   (let [modifications (assoc value :type type)
-        modifications (decode-shape modifications)]
+        modifications (decode-shape-attrs modifications)]
     (reduce-kv (fn [shape k v]
-                 (process-operation shape {:type :set
-                                           :attr k
-                                           :val v
-                                           :ignore-touched (:ignore-touched op)
-                                           :ignore-geometry (:ignore-geometry op)}))
+                 (if (not= v (get shape k))
+                   (process-operation shape {:type :set
+                                             :attr k
+                                             :val v
+                                             :ignore-touched (:ignore-touched op)
+                                             :ignore-geometry (:ignore-geometry op)})
+                   shape))
                shape
-               modifications)))
+               (dissoc modifications :type))))
 
 (defmethod process-operation :set
   [shape op]

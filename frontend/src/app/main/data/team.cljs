@@ -16,12 +16,14 @@
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.media :as di]
+   [app.main.data.profile :as dp]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.util.storage :as storage]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [clojure.string :as str]
    [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
@@ -142,8 +144,9 @@
 
 (defn update-member-role
   [{:keys [role member-id] :as params}]
-  (dm/assert! (uuid? member-id))
-  (dm/assert! (contains? ctt/valid-roles role))
+
+  (assert (uuid? member-id))
+  (assert (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-member-role
     ptk/WatchEvent
@@ -152,13 +155,13 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-members team-id)
+                          (rx/of (dp/refresh-profile)
+                                 (fetch-members team-id)
                                  (fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "update-team-member-role"
-                                                  :team-id team-id
-                                                  :role role
-                                                  :member-id member-id})))))))))
+                                 (ev/event {::ev/name "update-team-member-role"
+                                            :team-id team-id
+                                            :role role
+                                            :member-id member-id})))))))))
 
 (defn delete-member
   [{:keys [member-id] :as params}]
@@ -349,26 +352,46 @@
              (rx/catch on-error))))))
 
 (defn create-invitations
-  [{:keys [emails role team-id resend?] :as params}]
+  "Unified function to create invitations. Supports two parameter formats:
+  1. {:emails #{...} :role :admin :team-id uuid} - single role for all emails
+  2. {:invitations [{:email ... :role ...}] :team-id uuid} - individual roles per email"
+  [{:keys [emails role team-id invitations resend?] :as params}]
 
-  (assert (keyword? role))
   (assert (uuid? team-id))
-  (assert (sm/check-set-of-emails emails))
+  ;; Validate input format - must have either emails+role OR invitations
+  (assert (or (and emails role (sm/check-set-of-emails emails) (keyword? role))
+              (and invitations
+                   (sm/check-set-of-emails (map :email invitations))
+                   (every? #(contains? ctt/valid-roles (:role %)) invitations)))
+          "Must provide either emails+role or invitations with individual roles")
 
   (ptk/reify ::create-invitations
     ev/Event
     (-data [_]
-      {:role role
+      {:role (if invitations
+               (->> invitations (map :role) distinct (map name) (str/join ", "))
+               (name role))
        :team-id team-id
-       :resend resend?})
+       :resend (boolean resend?)})
 
     ptk/WatchEvent
     (watch [it _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            params (dissoc params :resend?)]
-        (->> (rp/cmd! :create-team-invitations (with-meta params (meta it)))
+            ;; Prepare parameters based on format
+            rpc-params (cond
+                         ;; Format 1: emails + single role
+                         (and emails role)
+                         {:emails emails :role role :team-id team-id}
+
+                         ;; Format 2: invitations with individual roles
+                         invitations
+                         {:invitations invitations :team-id team-id}
+
+                         :else
+                         (throw (ex-info " Invalid parameters " params)))]
+        (->> (rp/cmd! :create-team-invitations (with-meta rpc-params (meta it)))
              (rx/tap on-success)
              (rx/catch on-error))))))
 

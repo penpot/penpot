@@ -12,7 +12,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -66,7 +66,7 @@
              (dm/str "(" (count colors) ")")]]
            (when (= selected id)
              [:span {:class (stl/css :icon-wrapper)}
-              i/tick])]
+              deprecated-icon/tick])]
           [:div {:class (stl/css :color-sample)
                  :style {:--bullet-size "20px"}}
            (for [color colors]
@@ -91,7 +91,7 @@
 
          (when (= selected :file)
            [:span {:class (stl/css :icon-wrapper)}
-            i/tick])]
+            deprecated-icon/tick])]
         [:div {:class (stl/css :color-sample)
                :style {:--bullet-size "20px"}}
          (for [color local-colors]
@@ -114,7 +114,7 @@
 
          (when (= selected :recent)
            [:span {:class (stl/css :icon-wrapper)}
-            i/tick])]
+            deprecated-icon/tick])]
         [:div {:class (stl/css :color-sample)
                :style {:--bullet-size "20px"}}
 

@@ -8,10 +8,6 @@
   (:refer-clojure :exclude [divide min max abs zero?])
   (:require
    #?(:clj [app.common.fressian :as fres])
-   #?(:cljs [cljs.core :as c]
-      :clj [clojure.core :as c])
-   #?(:cljs [cljs.pprint :as pp]
-      :clj  [clojure.pprint :as pp])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -20,9 +16,9 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
-   [app.common.spec :as us]
    [app.common.transit :as t]
-   [clojure.spec.alpha :as s]
+   [clojure.core :as c]
+   [clojure.pprint :as pp]
    [cuerdas.core :as str])
   #?(:clj
      (:import
@@ -32,24 +28,10 @@
 
 (cr/defrecord Point [x y])
 
-(defn s
-  [pt]
-  (dm/str "(" (dm/get-prop pt :x) "," (dm/get-prop pt :y) ")"))
-
 (defn point?
   "Return true if `v` is Point instance."
   [v]
   (instance? Point v))
-
-;; FIXME: deprecated
-(s/def ::x ::us/safe-number)
-(s/def ::y ::us/safe-number)
-
-(s/def ::point-attrs
-  (s/keys :req-un [::x ::y]))
-
-(s/def ::point
-  (s/and ::point-attrs point?))
 
 (def ^:private schema:point-attrs
   [:map {:title "PointAttrs"}
@@ -536,7 +518,19 @@
 
 ;; --- Debug
 
-(defmethod pp/simple-dispatch Point [obj] (pr obj))
+#?(:clj
+   (defmethod print-method Point
+     [o w]
+     (print-dup o w)))
+
+#?(:clj
+   (defmethod print-dup Point
+     [^Point pt ^java.io.Writer writer]
+     (.write writer (str "#penpot/point \"" (dm/get-prop pt :x) "," (dm/get-prop pt :y) "\""))))
+
+(defmethod pp/simple-dispatch Point
+  [obj]
+  (pr obj))
 
 #?(:clj
    (fres/add-handlers!

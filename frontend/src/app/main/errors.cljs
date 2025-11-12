@@ -25,6 +25,9 @@
 ;; From app.main.data.workspace we can use directly because it causes a circular dependency
 (def reload-file nil)
 
+;; Will contain the latest error report assigned
+(def last-report nil)
+
 (defn- print-data!
   [data]
   (-> data
@@ -102,23 +105,27 @@
                   (print-trace! error)
                   (print-data! error))))
 
-;; We receive a explicit authentication error;
-;; If the uri is for workspace, dashboard or view assign the
-;; exception for the 'Oops' page. Otherwise this explicitly clears
-;; all profile data and redirect the user to the login page. This is
-;; here and not in app.main.errors because of circular dependency.
+;; We receive a explicit authentication error; If the uri is for
+;; workspace, dashboard, viewer or settings, then assign the exception
+;; for show the error page. Otherwise this explicitly clears all
+;; profile data and redirect the user to the login page. This is here
+;; and not in app.main.errors because of circular dependency.
 (defmethod ptk/handle-error :authentication
-  [e]
-  (let [msg        (tr "errors.auth.unable-to-login")
-        uri        (.-href glob/location)
-        show-oops? (or (str/includes? uri "workspace")
-                       (str/includes? uri "dashboard")
-                       (str/includes? uri "view"))]
-    (if show-oops?
-      (st/async-emit! (rt/assign-exception e))
+  [error]
+  (let [message (tr "errors.auth.unable-to-login")
+        uri     (rt/get-current-href)
+
+        show-error?
+        (or (str/includes? uri "workspace")
+            (str/includes? uri "dashboard")
+            (str/includes? uri "view")
+            (str/includes? uri "settings"))]
+
+    (if show-error?
+      (st/async-emit! (rt/assign-exception error))
       (do
         (st/emit! (da/logout))
-        (ts/schedule 500 #(st/emit! (ntf/warn msg)))))))
+        (ts/schedule 500 #(st/emit! (ntf/warn message)))))))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -143,6 +150,38 @@
 
     (= code :vern-conflict)
     (st/emit! (ptk/event ::dw/reload-current-file))
+
+    (= code :snapshot-is-locked)
+    (let [message (tr "errors.version-locked")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
+    (= code :only-creator-can-lock)
+    (let [message (tr "errors.only-creator-can-lock")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
+    (= code :only-creator-can-unlock)
+    (let [message (tr "errors.only-creator-can-unlock")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
+    (= code :snapshot-already-locked)
+    (let [message (tr "errors.version-already-locked")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
 
     :else
     (st/async-emit! (rt/assign-exception error))))
@@ -250,7 +289,7 @@
       (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
 
     (= :max-quote-reached code)
-    (let [message (tr "errors.max-quote-reached" (:target error))]
+    (let [message (tr "errors.max-quota-reached" (:target error))]
       (st/emit! (modal/show {:type :alert :message message})))
 
     (or (= :paste-feature-not-enabled code)

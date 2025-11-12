@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../_borders.scss" as *;
-@use "../../_sizes.scss" as *;
-@use "../../typography.scss" as *;
-@use "../../colors.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/colors.scss" as *;
 
 .input-wrapper {
   --input-bg-color: var(--color-background-tertiary);
@@ -25,7 +25,7 @@
 
   background: var(--input-bg-color);
   border-radius: $br-8;
-  padding: 0 var(--sp-s);
+  padding: 0 var(--input-padding-size, var(--sp-s));
   outline: $b-1 solid var(--input-outline-color);
 
   &:hover {

@@ -7,7 +7,6 @@
 (ns app.main.data.workspace.path.tools
   (:require
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
    [app.main.data.changes :as dch]
@@ -48,12 +47,10 @@
                  (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
 
              (rx/concat
-              (if (cfh/path-shape? shape)
-                (rx/empty)
-                (rx/of (dwsh/update-shapes [id] path/convert-to-path)))
-              (rx/of (dch/commit-changes changes)
-                     (when (empty? new-content)
-                       (dwe/clear-edition-mode)))))))))))
+              (rx/of (dwsh/update-shapes [id] path/convert-to-path)
+                     (dch/commit-changes changes))
+              (when (empty? new-content)
+                (rx/of (dwe/clear-edition-mode)))))))))))
 
 (defn make-corner
   ([]

@@ -7,7 +7,7 @@ eleventyNavigation:
 ---
 
 <div class="main-illus">
-  <img src="/img/home-techguide.png" alt="Technical Guide" border="0">
+  <img src="/img/home-technical-guide.webp" alt="Technical Guide" border="0">
 </div>
 
 # Technical Guide

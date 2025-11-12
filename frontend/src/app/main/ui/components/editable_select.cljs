@@ -13,7 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
@@ -182,7 +182,7 @@
 
      [:span {:class (stl/css :dropdown-button)
              :on-click toggle-dropdown}
-      i/arrow]
+      deprecated-icon/arrow]
 
      [:& dropdown {:show (or is-open? false)
                    :on-close close-dropdown}
@@ -201,4 +201,4 @@
                :on-click select-item}
               [:span {:class (stl/css :label)} label]
               [:span {:class (stl/css :check-icon)}
-               i/tick]])))]]]))
+               deprecated-icon/tick]])))]]]))

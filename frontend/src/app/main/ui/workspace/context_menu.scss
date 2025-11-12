@@ -4,23 +4,23 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .workspace-context-menu {
   position: absolute;
-  top: $s-40;
-  left: $s-736;
-  z-index: $z-index-4;
+  top: deprecated.$s-40;
+  left: deprecated.$s-736;
+  z-index: deprecated.$z-index-4;
 }
 
 .context-list,
 .workspace-context-submenu {
-  @include menuShadow;
+  @include deprecated.menuShadow;
   display: grid;
-  width: $s-240;
-  padding: $s-4;
-  border-radius: $br-8;
-  border: $s-2 solid var(--panel-border-color);
+  width: deprecated.$s-240;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-2 solid var(--panel-border-color);
   background-color: var(--menu-background-color);
   max-height: 100vh;
   overflow-y: auto;
@@ -31,33 +31,33 @@
 }
 
 .separator {
-  height: $s-12;
+  height: deprecated.$s-12;
 }
 
 .context-menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: $s-28;
+  height: deprecated.$s-28;
   width: 100%;
-  padding: $s-6;
-  border-radius: $br-8;
+  padding: deprecated.$s-6;
+  border-radius: deprecated.$br-8;
   cursor: pointer;
 
   .title {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     color: var(--menu-foreground-color);
   }
   .shortcut {
-    @include flexCenter;
-    gap: $s-2;
+    @include deprecated.flexCenter;
+    gap: deprecated.$s-2;
     color: var(--menu-shortcut-foreground-color);
     .shortcut-key {
-      @include bodySmallTypography;
-      @include flexCenter;
-      height: $s-20;
-      padding: $s-2 $s-6;
-      border-radius: $br-6;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-20;
+      padding: deprecated.$s-2 deprecated.$s-6;
+      border-radius: deprecated.$br-6;
       background-color: var(--menu-shortcut-background-color);
     }
   }
@@ -86,15 +86,15 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  height: $s-28;
-  padding: $s-6;
-  border-radius: $br-8;
+  height: deprecated.$s-28;
+  padding: deprecated.$s-6;
+  border-radius: deprecated.$br-8;
   &:hover {
     background-color: var(--menu-background-color-hover);
   }
 
   span.title {
-    margin-left: $s-6;
+    margin-left: deprecated.$s-6;
   }
 
   .selected-icon {
@@ -105,7 +105,7 @@
   }
 
   .shape-icon {
-    margin-left: $s-2;
+    margin-left: deprecated.$s-2;
     svg {
       @extend .button-icon-small;
       stroke: var(--menu-foreground-color);

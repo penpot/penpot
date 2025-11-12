@@ -7,26 +7,14 @@
 (ns app.main.ui.components.search-bar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(mf/defc search-bar
-  {::mf/wrap-props false}
-  [props]
-  (let [children    (unchecked-get props "children")
-        on-change   (unchecked-get props "on-change")
-        value       (unchecked-get props "value")
-        on-clear    (unchecked-get props "clear-action")
-        placeholder (unchecked-get props "placeholder")
-        icon        (unchecked-get props "icon")
-        autofocus   (unchecked-get props "auto-focus")
-        id          (unchecked-get props "id")
-        input-class (unchecked-get props "class")
-
-        handle-change
+(mf/defc search-bar*
+  [{:keys [id class value placeholder icon-id auto-focus on-change on-clear children]}]
+  (let [handle-change
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
@@ -52,15 +40,21 @@
     [:span {:class (stl/css-case :search-box true
                                  :has-children (some? children))}
      children
-     [:div {:class (dm/str input-class " " (stl/css :search-input-wrapper))}
-      icon
+     [:div {:class [class (stl/css :search-input-wrapper)]}
+      (when icon-id
+        [:> icon* {:icon-id icon-id
+                   :size "s"
+                   :class (stl/css :icon)}])
       [:input {:id id
+               :class (stl/css :search-input)
                :on-change handle-change
                :value value
-               :auto-focus autofocus
+               :auto-focus auto-focus
+               :auto-complete "off"
                :placeholder placeholder
                :on-key-down handle-key-down}]
       (when (not= "" value)
-        [:button {:class (stl/css :clear)
+        [:button {:class (stl/css :clear-icon)
                   :on-click handle-clear}
-         i/delete-text])]]))
+         [:> icon* {:icon-id i/delete-text
+                    :size "s"}]])]]))

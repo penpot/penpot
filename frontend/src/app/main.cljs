@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.types.objects-map]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -28,6 +29,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [debug]
    [features]
    [potok.v2.core :as ptk]
@@ -41,8 +43,7 @@
            :asserts *assert*
            :build-date cf/build-date
            :public-uri (dm/str cf/public-uri))
-  (doseq [flag cf/flags]
-    (log/dbg :hint "flag enabled" :flag (name flag))))
+  (log/inf :hint "enabled flags" :flags (str/join " " (map name cf/flags))))
 
 (declare reinit)
 
@@ -69,7 +70,7 @@
 
        ;; Watch for profile deletion events
        (->> stream
-            (rx/filter dp/profile-deleted?)
+            (rx/filter dp/profile-deleted-event?)
             (rx/map da/logged-out))
 
        ;; Once profile is fetched, initialize all penpot application

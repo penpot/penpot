@@ -7,7 +7,6 @@
 (ns app.common.files.shapes-builder
   "A SVG to Shapes builder."
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -21,6 +20,7 @@
    [app.common.math :as mth]
    [app.common.schema :as sm :refer [max-safe-int min-safe-int]]
    [app.common.svg :as csvg]
+   [app.common.types.color :as clr]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
@@ -269,6 +269,22 @@
    (d/parse-double width 1)
    (d/parse-double height 1)))
 
+(defn- parse-radius-attrs
+  [attrs]
+  (if (or (contains? attrs :rx) (contains? attrs :ry))
+    (let [rx-val (d/parse-double (:rx attrs) 0)
+          ry-val (d/parse-double (:ry attrs) 0)
+          radius (cond
+                   (and (contains? attrs :rx) (contains? attrs :ry))
+                   (min rx-val ry-val)
+                   (contains? attrs :rx)
+                   rx-val
+                   (contains? attrs :ry)
+                   ry-val
+                   :else 0)]
+      {:r1 radius :r2 radius :r3 radius :r4 radius})
+    {}))
+
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [transform (->> (csvg/parse-transform (:transform attrs))
                        (gmt/transform-in (gpt/point svg-data)))
@@ -280,7 +296,9 @@
                       (update :y - (:y origin)))
 
         props     (-> (dissoc attrs :x :y :width :height :rx :ry :transform)
-                      (csvg/attrs->props))]
+                      (csvg/attrs->props))
+
+        radius-attrs (parse-radius-attrs attrs)]
     (cts/setup-shape
      (-> (calculate-rect-metadata rect transform)
          (assoc :type :rect)
@@ -288,13 +306,10 @@
          (assoc :frame-id frame-id)
          (assoc :svg-viewbox vbox)
          (assoc :svg-attrs props)
-         ;; We need to ensure fills are empty on import process
-         ;; because setup-shape assings one by default.
+        ;; We need to ensure fills are empty on import process
+        ;; because setup-shape assings one by default.
          (assoc :fills [])
-         (cond-> (contains? attrs :rx)
-           (assoc :rx (d/parse-double (:rx attrs) 0)))
-         (cond-> (contains? attrs :ry)
-           (assoc :ry (d/parse-double (:ry attrs) 0)))))))
+         (merge radius-attrs)))))
 
 (defn- parse-circle-attrs
   [attrs]
@@ -507,6 +522,7 @@
                  (nil? tag) "node"
                  :else (dm/str tag))]
     (dm/str "svg-" suffix)))
+
 
 (defn parse-svg-element
   [frame-id svg-data {:keys [tag attrs hidden] :as element} unames]

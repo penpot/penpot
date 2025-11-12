@@ -7,16 +7,17 @@
 (ns app.srepl.cli
   "PREPL API for external usage (CLI or ADMIN)"
   (:require
-   [app.auth :as auth]
+   [app.auth :refer [derive-password]]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [cuerdas.core :as str]))
 
 (defn coercer
@@ -53,7 +54,7 @@
   (some-> (get-current-system)
           (db/tx-run!
            (fn [{:keys [::db/conn] :as system}]
-             (let [password (cmd.profile/derive-password system password)
+             (let [password (derive-password password)
                    params   {:id (uuid/next)
                              :email email
                              :fullname fullname
@@ -73,7 +74,7 @@
                             (assoc :fullname fullname)
 
                             (some? password)
-                            (assoc :password (auth/derive-password password))
+                            (assoc :password (derive-password password))
 
                             (some? is-active)
                             (assoc :is-active is-active))]
@@ -101,7 +102,7 @@
            (fn [{:keys [::db/conn] :as system}]
              (let [res (if soft
                          (db/update! conn :profile
-                                     {:deleted-at (dt/now)}
+                                     {:deleted-at (ct/now)}
                                      {:email email :deleted-at nil})
                          (db/delete! conn :profile
                                      {:email email}))]
@@ -123,13 +124,12 @@
 
 (defmethod exec-command "derive-password"
   [{:keys [password]}]
-  (auth/derive-password password))
+  (derive-password password))
 
 (defmethod exec-command "authenticate"
   [{:keys [token]}]
   (when-let [system (get-current-system)]
-    (let [props  (get system ::setup/props)]
-      (tokens/verify props {:token token :iss "authentication"}))))
+    (tokens/verify system {:token token :iss "authentication"})))
 
 (def ^:private schema:get-customer
   [:map [:id ::sm/uuid]])
@@ -173,6 +173,21 @@
        :num-editors (get-customer-slots system id)
        :subscription (get props :subscription)})))
 
+(def ^:private schema:timestamp
+  (sm/type-schema
+   {:type ::timestamp
+    :pred ct/inst?
+    :type-properties
+    {:title "inst"
+     :description "The same as :app.common.time/inst but encodes to epoch"
+     :error/message "should be an instant"
+     :gen/gen (->> (sg/small-int)
+                   (sg/fmap (fn [v] (ct/inst v))))
+     :decode/string ct/inst
+     :encode/string inst-ms
+     :decode/json ct/inst
+     :encode/json inst-ms}}))
+
 (def ^:private schema:customer-subscription
   [:map {:title "CustomerSubscription"}
    [:id ::sm/text]
@@ -186,7 +201,7 @@
              "canceled"
              "incomplete"
              "incomplete_expired"
-             "pass_due"
+             "past_due"
              "paused"
              "trialing"
              "unpaid"]]
@@ -198,16 +213,15 @@
                      "year"]]
    [:quantity :int]
    [:description [:maybe ::sm/text]]
-   [:created-at ::sm/timestamp]
-   [:start-date [:maybe ::sm/timestamp]]
-   [:ended-at [:maybe ::sm/timestamp]]
-   [:trial-end [:maybe ::sm/timestamp]]
-   [:trial-start [:maybe ::sm/timestamp]]
-   [:cancel-at [:maybe ::sm/timestamp]]
-   [:canceled-at [:maybe ::sm/timestamp]]
-
-   [:current-period-end ::sm/timestamp]
-   [:current-period-start ::sm/timestamp]
+   [:created-at schema:timestamp]
+   [:start-date [:maybe schema:timestamp]]
+   [:ended-at [:maybe schema:timestamp]]
+   [:trial-end [:maybe schema:timestamp]]
+   [:trial-start [:maybe schema:timestamp]]
+   [:cancel-at [:maybe schema:timestamp]]
+   [:canceled-at [:maybe schema:timestamp]]
+   [:current-period-end [:maybe schema:timestamp]]
+   [:current-period-start [:maybe schema:timestamp]]
    [:cancel-at-period-end :boolean]
 
    [:cancellation-details

@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.features :as features]
@@ -17,6 +16,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.render-wasm.api :as wasm.api]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -24,7 +24,7 @@
 (def layer-attrs
   [:opacity :blend-mode :blocked :hidden])
 
-(defn opacity->string
+(defn- opacity->string
   [opacity]
   (if (not= opacity :multiple)
     (dm/str (-> opacity
@@ -32,103 +32,119 @@
                 (* 100)))
     :multiple))
 
-(mf/defc layer-menu
-  {::mf/wrap-props false}
-  [props]
-  (let [ids                    (unchecked-get props "ids")
-        values                 (unchecked-get props "values")
+(defn- on-change
+  [ids prop value]
+  (st/emit! (dwsh/update-shapes ids #(assoc % prop value))))
 
-        hidden?                (:hidden values)
-        blocked?               (:blocked values)
+(defn- check-layer-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "class")
+                     (unchecked-get new-props "class"))
+         (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (get old-values :opacity)
+                     (get new-values :opacity))
+         (identical? (get old-values :blend-mode)
+                     (get new-values :blend-mode))
+         (identical? (get old-values :blocked)
+                     (get new-values :blocked))
+         (identical? (get old-values :hidden)
+                     (get new-values :hidden)))))
 
-        current-blend-mode     (or (:blend-mode values) :normal)
-        current-opacity        (opacity->string (:opacity values))
+(mf/defc layer-menu*
+  {::mf/wrap [#(mf/memo' % check-layer-menu-props)]}
+  [{:keys [ids values]}]
+  (let [hidden?             (get values :hidden)
+        blocked?            (get values :blocked)
 
-        state*                 (mf/use-state
-                                {:selected-blend-mode current-blend-mode
-                                 :option-highlighted? false
-                                 :preview-complete? true})
+        current-blend-mode  (or (get values :blend-mode) :normal)
+        current-opacity     (opacity->string (:opacity values))
 
-        state                  (deref state*)
-        selected-blend-mode    (get state :selected-blend-mode)
-        option-highlighted?    (get state :option-highlighted?)
-        preview-complete?      (get state :preview-complete?)
-        wasm-renderer-enabled? (features/use-feature "render-wasm/v1")
+        state*              (mf/use-state
+                             #(do {:selected-blend-mode current-blend-mode
+                                   :option-highlighted? false
+                                   :preview-complete? true}))
 
-        shapes (->
-                (dsh/lookup-page-objects @st/state)
-                (select-keys ids)
-                vals)
+        state               (deref state*)
+        selected-blend-mode (get state :selected-blend-mode)
+        option-highlighted? (get state :option-highlighted?)
+        preview-complete?   (get state :preview-complete?)
 
-        on-change
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [prop value]
-           (st/emit! (dwsh/update-shapes ids #(assoc % prop value)))))
+        wasm-renderer-enabled?
+        (features/use-feature "render-wasm/v1")
 
         handle-change-blend-mode
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps ids)
          (fn [value]
            (swap! state* assoc
                   :selected-blend-mode value
                   :option-highlighted? false
                   :preview-complete? true)
            (st/emit! (dw/unset-preview-blend-mode ids))
-           (on-change :blend-mode value)))
+           (on-change ids :blend-mode value)))
 
         handle-blend-mode-enter
         (mf/use-fn
-         (mf/deps on-change current-blend-mode)
+         (mf/deps ids current-blend-mode)
          (fn [value]
            (swap! state* assoc
                   :preview-complete? false
                   :option-highlighted? true)
 
            (when wasm-renderer-enabled?
-             (doseq [shape shapes]
-               (wasm.api/use-shape (:id shape))
-               (wasm.api/set-shape-blend-mode value)))
+             (doseq [id ids]
+               (wasm.api/use-shape id)
+               (wasm.api/set-shape-blend-mode value)
+               (wasm.api/request-render "preview-blend-mode")))
 
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (st/emit! (dw/set-preview-blend-mode ids value))))
 
         handle-blend-mode-leave
         (mf/use-fn
-         (mf/deps on-change selected-blend-mode)
+         (mf/deps ids)
          (fn [_value]
            (swap! state* assoc :preview-complete? true)
            (st/emit! (dw/unset-preview-blend-mode ids))))
 
         handle-opacity-change
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps ids)
          (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (let [value (/ value 100)]
-             (on-change :opacity value))))
+             (on-change ids :opacity value))))
 
         handle-set-hidden
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps ids)
          (fn [_]
-           (on-change :hidden true)))
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
+           (on-change ids :hidden true)))
 
         handle-set-visible
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps ids)
          (fn [_]
-           (on-change :hidden false)))
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
+           (on-change ids :hidden false)))
 
         handle-set-blocked
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps ids)
          (fn [_]
-           (on-change :blocked true)))
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
+           (on-change ids :blocked true)))
 
         handle-set-unblocked
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps ids)
          (fn [_]
-           (on-change :blocked false)))
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
+           (on-change ids :blocked false)))
 
         options
         (mf/with-memo [current-blend-mode]
@@ -189,23 +205,23 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
                           :on-click handle-set-hidden
-                          :icon "shown"}]
+                          :icon i/shown}]
 
         :else
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
                           :on-click handle-set-visible
-                          :icon "hide"}])
+                          :icon i/hide}])
 
       (cond
         (or (= :multiple blocked?) (not blocked?))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.shape.menu.lock")
                           :on-click handle-set-blocked
-                          :icon "unlock"}]
+                          :icon i/unlock}]
 
         :else
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.shape.menu.unlock")
                           :on-click handle-set-unblocked
-                          :icon "lock"}])]]))
+                          :icon i/lock}])]]))

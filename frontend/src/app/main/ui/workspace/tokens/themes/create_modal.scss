@@ -1,0 +1,212 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+
+  width: 100%;
+  max-width: deprecated.$s-512;
+  max-height: unset;
+  user-select: none;
+}
+
+.empty-themes-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: deprecated.$s-12;
+  padding: deprecated.$s-72 0;
+}
+
+.themes-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-16;
+}
+
+.edit-theme-form {
+  display: flex;
+}
+
+.themes-modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.themes-modal-description {
+  color: var(--color-foreground-secondary);
+}
+
+.back-btn {
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-foreground-secondary);
+  width: fit-content;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: deprecated.$s-4;
+  align-items: center;
+  padding: 0;
+  &:hover {
+    color: var(--color-accent-primary);
+  }
+}
+
+.button-footer {
+  display: flex;
+  margin-left: auto;
+  justify-content: flex-end;
+  gap: deprecated.$s-6;
+}
+
+.edit-theme-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.empty-themes-wrapper {
+  display: flex;
+  flex-direction: column;
+  color: var(--color-foreground-secondary);
+}
+
+.empty-theme-subtitle {
+  color: var(--color-foreground-secondary);
+}
+
+.empty-theme-title {
+  color: var(--color-foreground-primary);
+}
+
+.select-sets-message {
+  color: var(--color-foreground-secondary);
+}
+
+.create-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-24;
+}
+
+.close-btn {
+  position: absolute;
+  top: deprecated.$s-8;
+  right: deprecated.$s-6;
+}
+
+.theme-group-label {
+  color: var(--color-foreground-secondary);
+  margin: 0 0 deprecated.$s-12 0;
+  padding: 0;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: deprecated.$s-4;
+}
+
+.group-title-icon {
+  flex-shrink: 0;
+}
+
+.group-title-name {
+  flex-grow: 1;
+  @include deprecated.textEllipsis;
+}
+
+.theme-group-rows-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-6;
+  margin: 0;
+}
+
+.theme-group-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-block-start: deprecated.$s-6;
+  overflow-y: auto;
+  gap: deprecated.$s-32;
+}
+
+.theme-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: deprecated.$s-16;
+}
+
+.theme-name-row {
+  @include deprecated.textEllipsis;
+  flex-grow: 1;
+}
+
+.theme-name {
+  color: var(--color-foreground-primary);
+}
+
+.theme-actions-row {
+  align-items: center;
+  display: flex;
+  gap: deprecated.$s-6;
+  flex-shrink: 0;
+}
+
+.sets-count-button {
+  padding: deprecated.$s-6;
+  padding-left: deprecated.$s-12;
+}
+
+.label-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: lowercase;
+}
+
+.edit-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-24;
+  inline-size: 100%;
+}
+
+.sets-list-wrapper {
+  border: deprecated.$s-1 solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border-radius: deprecated.$s-8;
+  overflow-y: auto;
+  max-height: deprecated.$s-452;
+}
+
+.sets-count-empty-button {
+  text-transform: lowercase;
+  padding: deprecated.$s-6;
+  padding-left: deprecated.$s-12;
+}
+
+.group-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+}
+
+.edit-theme-inputs-wrapper {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr;
+  gap: deprecated.$s-12;
+}

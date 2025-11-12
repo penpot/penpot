@@ -18,17 +18,34 @@
 
 (log/set-level! :warn)
 
+;; NOTE: this operation is necessary because some versions of safari/webkit,
+;; returns something like "data:image/png, image/png;base64,iVBOR" (repeated
+;; mimetype). The regex replacement strips the repeated mimetype.
+(def webkit-datauri-fix-re
+  #"^(data:image/\w+)(,\s*image/\w+)?(;base64.*)$")
+
+(defn- fix-webkit-data-uri
+  [duri]
+  (cond-> duri
+    (string? duri)
+    (str/replace webkit-datauri-fix-re "$1$3")))
+
 (defn- file-reader
   [f]
   (rx/create
    (fn [subs]
      (let [reader (js/FileReader.)]
-       (obj/set! reader "onload" #(do (rx/push! subs (.-result ^js reader))
-                                      (rx/end! subs)))
-       (obj/set! reader "onerror" #(rx/error! subs %))
-       (obj/set! reader "onabort" #(rx/error! subs (ex/error :type :internal
-                                                             :code :abort
-                                                             :hint "operation aborted")))
+       (obj/set! reader "onload"
+                 #(let [result (.-result ^js reader)
+                        result (fix-webkit-data-uri result)]
+                    (rx/push! subs result)
+                    (rx/end! subs)))
+       (obj/set! reader "onerror"
+                 #(rx/error! subs %))
+       (obj/set! reader "onabort"
+                 #(rx/error! subs (ex/error :type :internal
+                                            :code :abort
+                                            :hint "operation aborted")))
        (f reader)
        (fn []
          (.abort ^js reader))))))

@@ -96,6 +96,10 @@ services:
       - ./files/postgresql.conf:/etc/postgresql.conf:z
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql:z
       - postgres_data_pg16:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - postgres
 
   redis:
     image: valkey/valkey:8.1

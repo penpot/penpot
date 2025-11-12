@@ -6,7 +6,10 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { mapContentFragmentFromHTML, mapContentFragmentFromString } from "../content/dom/Content.js";
+import {
+  mapContentFragmentFromHTML,
+  mapContentFragmentFromString,
+} from "../content/dom/Content.js";
 
 /**
  * When the user pastes some HTML, what we do is generate
@@ -27,10 +30,16 @@ export function paste(event, editor, selectionController) {
   let fragment = null;
   if (event.clipboardData.types.includes("text/html")) {
     const html = event.clipboardData.getData("text/html");
-    fragment = mapContentFragmentFromHTML(html, selectionController.currentStyle);
+    fragment = mapContentFragmentFromHTML(
+      html,
+      selectionController.currentStyle,
+    );
   } else if (event.clipboardData.types.includes("text/plain")) {
     const plain = event.clipboardData.getData("text/plain");
-    fragment = mapContentFragmentFromString(plain, selectionController.currentStyle);
+    fragment = mapContentFragmentFromString(
+      plain,
+      selectionController.currentStyle,
+    );
   }
 
   if (!fragment) {

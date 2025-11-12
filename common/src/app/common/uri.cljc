@@ -8,16 +8,32 @@
   (:refer-clojure :exclude [uri?])
   (:require
    [app.common.data.macros :as dm]
+   [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [lambdaisland.uri.normalize :as un])
   #?(:clj
      (:import lambdaisland.uri.URI)))
 
-(dm/export u/uri)
 (dm/export u/join)
+(dm/export u/parse)
 (dm/export u/query-encode)
 (dm/export un/percent-encode)
 (dm/export u/uri?)
+
+(defn uri
+  [o]
+  (cond
+    (u/uri? o)
+    o
+
+    (map? o)
+    (u/map->URI o)
+
+    (nil? o)
+    o
+
+    :else
+    (u/parse o)))
 
 (defn query-string->map
   [s]
@@ -42,6 +58,14 @@
                   (remove #(nil? (second %)))
                   (map (fn [[k v]] [(key-fn k) (value-fn v)]))))
         (u/map->query-string))))
+
+(defn ensure-path-slash
+  [u]
+  (update (uri u) :path
+          (fn [path]
+            (if (str/ends-with? path "/")
+              path
+              (str path "/")))))
 
 #?(:clj
    (defmethod print-method lambdaisland.uri.URI [^URI this ^java.io.Writer writer]

@@ -6,17 +6,18 @@
 
 (ns app.common.test-helpers.shapes
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as clr]
    [app.common.types.container :as ctn]
+   [app.common.types.library :as ctl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.text :as txt]
    [app.common.types.typographies-list :as cttl]
    [app.common.types.typography :as ctt]))
 
@@ -81,6 +82,21 @@
                                 (:id page)
                                 #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
 
+(defn update-shape-text
+  [file shape-label attr val & {:keys [page-label]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ctst/get-shape page (thi/id shape-label))]
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/set-shape % (txt/update-text-content shape
+                                                                            txt/is-content-node?
+                                                                            d/txt-merge
+                                                                            {attr val})))))))
+
 (defn sample-library-color
   [label & {:keys [name path color opacity gradient image]}]
   (-> {:id (thi/new-id! label)
@@ -109,7 +125,7 @@
 (defn add-sample-library-color
   [file label & {:keys [] :as params}]
   (let [color (sample-library-color label params)]
-    (update file :data ctc/add-color color)))
+    (update file :data ctl/add-color color)))
 
 (defn sample-typography
   [label & {:keys [] :as params}]

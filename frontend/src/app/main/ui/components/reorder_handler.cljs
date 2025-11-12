@@ -7,16 +7,15 @@
 (ns app.main.ui.components.reorder-handler
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [rumext.v2 :as mf]))
 
-(mf/defc reorder-handler
-  {::mf/forward-ref true}
-  [_ ref]
+(mf/defc reorder-handler*
+  [{:keys [ref]}]
   [:*
    [:div {:ref ref :class (stl/css :reorder)}
     [:> icon*
-     {:icon-id ic/reorder
+     {:icon-id i/reorder
       :class (stl/css :reorder-icon)
       :aria-hidden true}]]
    [:hr {:class (stl/css :reorder-separator-top)}]

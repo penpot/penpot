@@ -4,14 +4,14 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "./grid.scss" as g;
-@use "../ds/typography.scss" as t;
+@use "ds/typography.scss" as t;
 
 .grid-empty-placeholder {
-  border-radius: $br-12;
+  border-radius: deprecated.$br-12;
   display: grid;
-  padding: $s-12 0;
+  padding: deprecated.$s-12 0;
 
   &.libs {
     background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
@@ -20,13 +20,13 @@
       85% top;
     background-repeat: no-repeat;
     align-items: center;
-    border: $s-1 solid var(--color-background-quaternary);
-    border-radius: $br-4;
+    border: deprecated.$s-1 solid var(--color-background-quaternary);
+    border-radius: deprecated.$br-4;
     display: flex;
     flex-direction: column;
-    height: $s-200;
-    margin: $s-16;
-    padding: $s-48;
+    height: deprecated.$s-200;
+    margin: deprecated.$s-16;
+    padding: deprecated.$s-48;
     justify-content: center;
 
     .text {
@@ -35,32 +35,32 @@
       }
 
       p {
-        max-width: $s-360;
+        max-width: deprecated.$s-360;
         text-align: center;
-        font-size: $fs-16;
+        font-size: deprecated.$fs-16;
       }
     }
   }
 
   .create-new {
     background-color: var(--color-background-tertiary);
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
     color: var(--color-foreground-primary);
     cursor: pointer;
-    height: $s-160;
-    margin: $s-8;
-    border: $s-2 solid transparent;
+    height: deprecated.$s-160;
+    margin: deprecated.$s-8;
+    border: deprecated.$s-2 solid transparent;
     width: var(--th-width, #{g.$thumbnail-default-width});
     height: var(--th-height, #{g.$thumbnail-default-height});
 
     svg {
-      width: $s-32;
-      height: $s-32;
+      width: deprecated.$s-32;
+      height: deprecated.$s-32;
       stroke: var(--color-foreground-secondary);
     }
 
     &:hover {
-      border: $s-2 solid var(--color-accent-tertiary);
+      border: deprecated.$s-2 solid var(--color-accent-tertiary);
       background-color: var(--color-background-quaternary);
       color: var(--color-accent-primary);
 
@@ -71,9 +71,9 @@
   }
 
   .text {
-    margin-top: $s-12;
+    margin-top: deprecated.$s-12;
     color: var(--color-foreground-secondary);
-    font-size: $fs-16;
+    font-size: deprecated.$fs-16;
   }
 }
 
@@ -87,7 +87,7 @@
 
 .placeholder-text {
   color: var(--color-foreground-secondary);
-  font-size: $fs-16;
+  font-size: deprecated.$fs-16;
   text-align: center;
 }
 
@@ -100,15 +100,15 @@
 }
 
 .empty-placeholder-libraries {
-  margin: $s-16;
+  margin: deprecated.$s-16;
 }
 
 .empty-project-container {
   width: 100%;
   display: grid;
-  gap: $s-16;
+  gap: deprecated.$s-16;
   grid-template-columns: 1fr 1fr 1fr;
-  margin-top: $s-12;
+  margin-top: deprecated.$s-12;
 }
 
 .empty-project-card {
@@ -121,8 +121,8 @@
   justify-content: center;
   align-items: center;
   background-color: var(--color-card-background);
-  border: $s-2 solid var(--color-background-quaternary);
-  border-radius: $br-8;
+  border: deprecated.$s-2 solid var(--color-background-quaternary);
+  border-radius: deprecated.$br-8;
   padding: var(--sp-m) 0;
 
   &:hover {
@@ -132,7 +132,7 @@
     cursor: pointer;
 
     .empty-project-card-title {
-      font-weight: $fw500;
+      font-weight: deprecated.$fw500;
     }
   }
 

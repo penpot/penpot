@@ -4,34 +4,34 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
 }
 
 .modal-container {
-  max-width: $s-960;
+  max-width: deprecated.$s-960;
   max-height: fit-content;
   width: fit-content;
-  padding-inline: $s-100;
-  padding-block-start: $s-40;
-  padding-block-end: $s-72;
-  border-radius: $br-8;
-  border: $s-2 solid var(--modal-border-color);
+  padding-inline: deprecated.$s-100;
+  padding-block-start: deprecated.$s-40;
+  padding-block-end: deprecated.$s-72;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-2 solid var(--modal-border-color);
   background-color: var(--modal-background-color);
 }
 
 .form-wrapper {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 // STEP CONTAINER
 .paginator {
-  @include smallTitleTipography;
-  height: $s-20;
+  @include deprecated.smallTitleTipography;
+  height: deprecated.$s-20;
   text-align: right;
   color: var(--modal-text-foreground-color);
 }
@@ -49,33 +49,33 @@
 
 .radio-btns label,
 .select-class span {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
 }
 
 // STEP 1
 
 .header-image {
-  height: $s-60;
+  height: deprecated.$s-60;
   width: auto;
   margin-inline-start: auto;
 }
 
 .modal-title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--modal-title-foreground-color);
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   margin-block: auto;
 }
 
 .modal-subtitle {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-title-foreground-color);
   margin: 0;
   padding: 0;
 }
 
 .modal-text {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
@@ -85,60 +85,60 @@
 .step-2,
 .step-3,
 .step-5 {
-  max-width: $s-540;
-  width: $s-540;
+  max-width: deprecated.$s-540;
+  width: deprecated.$s-540;
 }
 .step-2 {
-  grid-template-rows: $s-20 auto auto $s-32;
+  grid-template-rows: deprecated.$s-20 auto auto deprecated.$s-32;
 }
 
 .modal-question {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: $s-16 $s-32;
-  gap: $s-16;
+  grid-template-rows: deprecated.$s-16 deprecated.$s-32;
+  gap: deprecated.$s-16;
   height: fit-content;
 }
 
 .question-centered {
-  width: $s-424;
-  grid-template-rows: auto $s-32;
+  width: deprecated.$s-424;
+  grid-template-rows: auto deprecated.$s-32;
   margin: 0 auto;
 }
 
 .radio-wrapper {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $s-16;
+  gap: deprecated.$s-16;
 }
 
 // STEP-3
 .step-3 {
-  grid-template-rows: $s-20 auto auto auto auto $s-32;
+  grid-template-rows: deprecated.$s-20 auto auto auto auto deprecated.$s-32;
 }
 
 .image-radio {
   display: grid;
   grid-template-rows: 1fr 1fr;
-  grid-template-columns: $s-92 $s-92 $s-92;
-  row-gap: $s-16;
-  column-gap: $s-24;
+  grid-template-columns: deprecated.$s-92 deprecated.$s-92 deprecated.$s-92;
+  row-gap: deprecated.$s-16;
+  column-gap: deprecated.$s-24;
   justify-content: center;
 }
 
 .input-spacing {
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  margin-block-end: $s-8;
+  margin-block-end: deprecated.$s-8;
 }
 
 .input-spacing input {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
 }
 
 // STEP-4
 
 .step-4 {
-  grid-template-rows: $s-20 auto auto $s-32;
-  row-gap: $s-16;
+  grid-template-rows: deprecated.$s-20 auto auto deprecated.$s-32;
+  row-gap: deprecated.$s-16;
 }

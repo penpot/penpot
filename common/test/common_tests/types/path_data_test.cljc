@@ -14,6 +14,7 @@
    [app.common.pprint :as pp]
    [app.common.transit :as trans]
    [app.common.types.path :as path]
+   [app.common.types.path.bool :as path.bool]
    [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.impl :as path.impl]
    [app.common.types.path.segment :as path.segment]
@@ -114,6 +115,27 @@
                  :clj  (.array (.-buffer pdata))))))
     (t/is (= sample-content
              (vec pdata)))))
+
+
+;; Test the specific case where cuve-to commands comes without the
+;; optional attrs
+(t/deftest path-data-plain-to-binary-2
+  (let [plain-content
+        [{:command :move-to :params {:x 480.0 :y 839.0}}
+         {:command :line-to :params {:x 439.0 :y 802.0}}
+         {:command :curve-to :params {:x 264.0 :y 634.0}}
+         {:command :curve-to :params {:x 154.0 :y 508.0}}]
+
+        binary-content
+        (path/content plain-content)]
+
+    #?(:clj
+       (t/is (= "M480.0,839.0L439.0,802.0C264.0,634.0,264.0,634.0,264.0,634.0C154.0,508.0,154.0,508.0,154.0,508.0"
+                (str binary-content)))
+
+       :cljs
+       (t/is (= "M480,839L439,802C264,634,264,634,264,634C154,508,154,508,154,508"
+                (str binary-content))))))
 
 (t/deftest path-data-from-binary
   (let [barray #?(:clj (byte-array sample-bytes)
@@ -414,3 +436,89 @@
         result1 (get-handlers sample-content-large)
         result2 (path.segment/get-handlers content)]
     (t/is (= result1 result2))))
+
+
+(def contents-for-bool
+  [[{:command :move-to, :params {:x 1682.9000244140625, :y 48.0}}
+    {:command :line-to, :params {:x 1682.9000244140625, :y 44.0}}
+    {:command :curve-to, :params {:x 1683.9000244140625, :y 43.0, :c1x 1682.9000244140625, :c1y 43.400001525878906, :c2x 1683.300048828125, :c2y 43.0}}
+    {:command :line-to, :params {:x 1687.9000244140625, :y 43.0}}
+    {:command :curve-to, :params {:x 1688.9000244140625, :y 44.0, :c1x 1688.5, :c1y 43.0, :c2x 1688.9000244140625, :c2y 43.400001525878906}}
+    {:command :line-to, :params {:x 1688.9000244140625, :y 48.0}}
+    {:command :curve-to, :params {:x 1687.9000244140625, :y 49.0, :c1x 1688.9000244140625, :c1y 48.599998474121094, :c2x 1688.5, :c2y 49.0}}
+    {:command :line-to, :params {:x 1683.9000244140625, :y 49.0}}
+    {:command :curve-to, :params {:x 1682.9000244140625, :y 48.0, :c1x 1683.300048828125, :c1y 49.0, :c2x 1682.9000244140625, :c2y 48.599998474121094}}
+    {:command :close-path, :params {}}
+    {:command :close-path, :params {}}
+    {:command :move-to, :params {:x 1684.9000244140625, :y 45.0}}
+    {:command :line-to, :params {:x 1684.9000244140625, :y 47.0}}
+    {:command :line-to, :params {:x 1686.9000244140625, :y 47.0}}
+    {:command :line-to, :params {:x 1686.9000244140625, :y 45.0}}
+    {:command :line-to, :params {:x 1684.9000244140625, :y 45.0}}
+    {:command :close-path, :params {}}
+    {:command :close-path, :params {}}]
+
+   [{:command :move-to, :params {:x 1672.9000244140625, :y 48.0}}
+    {:command :line-to, :params {:x 1672.9000244140625, :y 44.0}}
+    {:command :curve-to, :params {:x 1673.9000244140625, :y 43.0, :c1x 1672.9000244140625, :c1y 43.400001525878906, :c2x 1673.300048828125, :c2y 43.0}}
+    {:command :line-to, :params {:x 1677.9000244140625, :y 43.0}}
+    {:command :curve-to, :params {:x 1678.9000244140625, :y 44.0, :c1x 1678.5, :c1y 43.0, :c2x 1678.9000244140625, :c2y 43.400001525878906}}
+    {:command :line-to, :params {:x 1678.9000244140625, :y 48.0}}
+    {:command :curve-to, :params {:x 1677.9000244140625, :y 49.0, :c1x 1678.9000244140625, :c1y 48.599998474121094, :c2x 1678.5, :c2y 49.0}}
+    {:command :line-to, :params {:x 1673.9000244140625, :y 49.0}}
+    {:command :curve-to, :params {:x 1672.9000244140625, :y 48.0, :c1x 1673.300048828125, :c1y 49.0, :c2x 1672.9000244140625, :c2y 48.599998474121094}}
+    {:command :close-path, :params {}}
+    {:command :close-path, :params {}}
+    {:command :move-to, :params {:x 1674.9000244140625, :y 45.0}}
+    {:command :line-to, :params {:x 1674.9000244140625, :y 47.0}}
+    {:command :line-to, :params {:x 1676.9000244140625, :y 47.0}}
+    {:command :line-to, :params {:x 1676.9000244140625, :y 45.0}}
+    {:command :line-to, :params {:x 1674.9000244140625, :y 45.0}}
+    {:command :close-path, :params {}}
+    {:command :close-path, :params {}}]])
+
+(def bool-result
+  [{:command :move-to, :params {:x 1682.9000244140625, :y 48.0}}
+   {:command :line-to, :params {:x 1682.9000244140625, :y 44.0}}
+   {:command :curve-to,
+    :params
+    {:x 1683.9000244140625, :y 43.0, :c1x 1682.9000244140625, :c1y 43.400001525878906, :c2x 1683.300048828125, :c2y 43.0}}
+   {:command :line-to, :params {:x 1687.9000244140625, :y 43.0}}
+   {:command :curve-to,
+    :params {:x 1688.9000244140625, :y 44.0, :c1x 1688.5, :c1y 43.0, :c2x 1688.9000244140625, :c2y 43.400001525878906}}
+   {:command :line-to, :params {:x 1688.9000244140625, :y 48.0}}
+   {:command :curve-to,
+    :params {:x 1687.9000244140625, :y 49.0, :c1x 1688.9000244140625, :c1y 48.599998474121094, :c2x 1688.5, :c2y 49.0}}
+   {:command :line-to, :params {:x 1683.9000244140625, :y 49.0}}
+   {:command :curve-to,
+    :params
+    {:x 1682.9000244140625, :y 48.0, :c1x 1683.300048828125, :c1y 49.0, :c2x 1682.9000244140625, :c2y 48.599998474121094}}
+   {:command :move-to, :params {:x 1684.9000244140625, :y 45.0}}
+   {:command :line-to, :params {:x 1684.9000244140625, :y 47.0}}
+   {:command :line-to, :params {:x 1686.9000244140625, :y 47.0}}
+   {:command :line-to, :params {:x 1686.9000244140625, :y 45.0}}
+   {:command :line-to, :params {:x 1684.9000244140625, :y 45.0}}
+   {:command :move-to, :params {:x 1672.9000244140625, :y 48.0}}
+   {:command :line-to, :params {:x 1672.9000244140625, :y 44.0}}
+   {:command :curve-to,
+    :params
+    {:x 1673.9000244140625, :y 43.0, :c1x 1672.9000244140625, :c1y 43.400001525878906, :c2x 1673.300048828125, :c2y 43.0}}
+   {:command :line-to, :params {:x 1677.9000244140625, :y 43.0}}
+   {:command :curve-to,
+    :params {:x 1678.9000244140625, :y 44.0, :c1x 1678.5, :c1y 43.0, :c2x 1678.9000244140625, :c2y 43.400001525878906}}
+   {:command :line-to, :params {:x 1678.9000244140625, :y 48.0}}
+   {:command :curve-to,
+    :params {:x 1677.9000244140625, :y 49.0, :c1x 1678.9000244140625, :c1y 48.599998474121094, :c2x 1678.5, :c2y 49.0}}
+   {:command :line-to, :params {:x 1673.9000244140625, :y 49.0}}
+   {:command :curve-to,
+    :params
+    {:x 1672.9000244140625, :y 48.0, :c1x 1673.300048828125, :c1y 49.0, :c2x 1672.9000244140625, :c2y 48.599998474121094}}
+   {:command :move-to, :params {:x 1674.9000244140625, :y 45.0}}
+   {:command :line-to, :params {:x 1674.9000244140625, :y 47.0}}
+   {:command :line-to, :params {:x 1676.9000244140625, :y 47.0}}
+   {:command :line-to, :params {:x 1676.9000244140625, :y 45.0}}
+   {:command :line-to, :params {:x 1674.9000244140625, :y 45.0}}])
+
+(t/deftest calculate-bool-content
+  (let [result (path.bool/calculate-content :union contents-for-bool)]
+    (t/is (= result bool-result))))

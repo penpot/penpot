@@ -132,7 +132,7 @@
        [:> team-members-page* {:team team :profile profile}]
 
        :dashboard-invitations
-       [:> team-invitations-page* {:team team}]
+       [:> team-invitations-page* {:team team :profile profile}]
 
        :dashboard-webhooks
        [:> webhooks-page* {:team team}]
@@ -267,7 +267,7 @@
                (filter :is-default)
                (first)))]
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-dashboard)
 
     (mf/with-effect [team-id]
       (st/emit! (dd/initialize team-id))

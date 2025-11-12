@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
@@ -22,7 +21,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
@@ -109,7 +108,7 @@
                           (map-indexed (fn [index color]
                                          (let [color (if (map? color) color {:color color})]
                                            (vary-meta color assoc ::id (dm/str index)))))
-                          (sort c/sort-colors))
+                          (sort ctc/sort-colors))
                      (->> (dm/get-in libraries [file-id :data :colors])
                           (vals)
                           (filter valid-color?)
@@ -133,11 +132,11 @@
       (when (= selected :file)
         [:button {:class (stl/css :add-color-btn)
                   :on-click on-add-library-color}
-         i/add])
+         deprecated-icon/add])
 
       [:button {:class (stl/css :palette-btn)
                 :on-click toggle-palette}
-       i/swatches]
+       deprecated-icon/swatches]
 
       (for [color current-colors]
         [:& cb/color-bullet

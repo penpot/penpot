@@ -16,21 +16,24 @@
    [app.common.geom.shapes.tree-seq :as gsts]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.text :as ct]
+   [app.common.time :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.library :as ctlb]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.plugins :as ctpg]
+   [app.common.types.plugins :refer [schema:plugin-data]]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.tokens-lib :as ctl]
+   [app.common.types.text :as txt]
+   [app.common.types.tokens-lib :refer [schema:tokens-lib]]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTANTS
@@ -46,8 +49,8 @@
   "A schema that represents the file media object"
   [:map {:title "FileMedia"}
    [:id ::sm/uuid]
-   [:created-at {:optional true} ::sm/inst]
-   [:deleted-at {:optional true} ::sm/inst]
+   [:created-at {:optional true} ::ct/inst]
+   [:deleted-at {:optional true} ::ct/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
@@ -61,13 +64,13 @@
   [:map-of {:gen/max 5} ::sm/uuid ctc/schema:library-color])
 
 (def schema:components
-  [:map-of {:gen/max 5} ::sm/uuid ::ctn/container])
+  [:map-of {:gen/max 5} ::sm/uuid ctn/schema:container])
 
 (def schema:typographies
-  [:map-of {:gen/max 2} ::sm/uuid ::cty/typography])
+  [:map-of {:gen/max 2} ::sm/uuid cty/schema:typography])
 
 (def schema:pages-index
-  [:map-of {:gen/max 5} ::sm/uuid ::ctp/page])
+  [:map-of {:gen/max 5} ::sm/uuid ctp/schema:page])
 
 (def schema:options
   [:map {:title "FileOptions"}
@@ -82,8 +85,8 @@
    [:colors {:optional true} schema:colors]
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]
-   [:tokens-lib {:optional true} ::ctl/tokens-lib]])
+   [:plugin-data {:optional true} schema:plugin-data]
+   [:tokens-lib {:optional true} schema:tokens-lib]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional
@@ -91,30 +94,31 @@
   [:map {:title "file"}
    [:id ::sm/uuid]
    [:name :string]
-   [:revn {:optional true} :int]
+   [:revn :int]
    [:vern {:optional true} :int]
-   [:created-at {:optional true} ::sm/inst]
-   [:modified-at {:optional true} ::sm/inst]
-   [:deleted-at {:optional true} ::sm/inst]
+   [:created-at ::ct/inst]
+   [:modified-at ::ct/inst]
+   [:deleted-at {:optional true} ::ct/inst]
    [:project-id {:optional true} ::sm/uuid]
+   [:team-id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
+   [:has-media-trimmed {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
    [:version :int]
    [:features ::cfeat/features]
    [:migrations {:optional true}
-    [::sm/set :string]]])
+    [::sm/set {:ordered true} :string]]])
 
 (sm/register! ::data schema:data)
 (sm/register! ::file schema:file)
-(sm/register! ::media schema:media)
 (sm/register! ::colors schema:colors)
 (sm/register! ::typographies schema:typographies)
 
 (def check-file
-  (sm/check-fn schema:file :hint "check error on validating file"))
+  (sm/check-fn schema:file :hint "invalid file"))
 
 (def check-file-data
-  (sm/check-fn schema:data))
+  (sm/check-fn schema:data :hint "invalid file data"))
 
 (def check-file-media
   (sm/check-fn schema:media))
@@ -143,35 +147,52 @@
        (update :options merge {:components-v2 true
                                :base-font-size BASE-FONT-SIZE})))))
 
+;; FIXME: we can't handle the "default" migrations for avoid providing
+;; them all the time the file is created because we can't import file
+;; migrations because of circular import issue; We need to split the
+;; list of migrations and impl of migrations in separate namespaces
+
+;; FIXME: refactor
+
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
-           ignore-sync-until modified-at deleted-at]
-    :or {is-shared false revn 0}}
+           metadata backend ignore-sync-until created-at modified-at deleted-at]
+    :as params}
 
-   & {:keys [create-page page-id]
-      :or {create-page true}}]
+   & {:keys [create-page with-data page-id]
+      :or {create-page true with-data true}}]
 
-  (let [id       (or id (uuid/next))
-        data     (if create-page
-                   (if page-id
-                     (make-file-data id page-id)
-                     (make-file-data id))
-                   (make-file-data id nil))
+  (let [id          (or id (uuid/next))
+        created-at  (or created-at (ct/now))
+        modified-at (or modified-at created-at)
+        features    (d/nilv features #{})
 
-        file     (d/without-nils
-                  {:id id
-                   :project-id project-id
-                   :name name
-                   :revn revn
-                   :vern 0
-                   :is-shared is-shared
-                   :version version
-                   :data data
-                   :features features
-                   :migrations migrations
-                   :ignore-sync-until ignore-sync-until
-                   :modified-at modified-at
-                   :deleted-at deleted-at})]
+        data
+        (when with-data
+          (if create-page
+            (if page-id
+              (make-file-data id page-id)
+              (make-file-data id))
+            (make-file-data id nil)))
+
+        file
+        (d/without-nils
+         {:id id
+          :project-id project-id
+          :name name
+          :revn (d/nilv revn 0)
+          :vern 0
+          :is-shared (d/nilv is-shared false)
+          :version (:version params version)
+          :data data
+          :features features
+          :migrations migrations
+          :metadata metadata
+          :backend backend
+          :ignore-sync-until ignore-sync-until
+          :created-at created-at
+          :modified-at modified-at
+          :deleted-at deleted-at})]
 
     (check-file file)))
 
@@ -242,6 +263,13 @@
       (cfh/make-container component-page :page))
     (cfh/make-container component :component)))
 
+(defn get-component-container-from-head
+  [instance-head libraries & {:keys [include-deleted?] :or {include-deleted? true}}]
+  (let [library-data   (-> (get-component-library libraries instance-head)
+                           :data)
+        component (ctkl/get-component library-data (:component-id instance-head) include-deleted?)]
+    (get-component-container library-data component)))
+
 (defn get-component-root
   "Retrieve the root shape of the component."
   [file-data component]
@@ -249,7 +277,7 @@
     (-> file-data
         (get-component-page component)
         (ctn/get-shape (:main-instance-id component)))
-    (ctk/get-component-root component)))
+    (ctk/get-deleted-component-root component)))
 
 (defn get-component-shape
   "Retrieve one shape in the component by id. If with-context? is true, add the
@@ -328,7 +356,7 @@
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
-  [container libraries shape]
+  [container libraries shape & {:keys [with-context?] :or {with-context? false}}]
   (let [top-instance        (ctn/get-component-shape (:objects container) shape)
         component-file      (get-in libraries [(:component-file top-instance) :data])
         component           (ctkl/get-component component-file (:component-id top-instance) true)
@@ -348,8 +376,12 @@
     (if (nil? remote-shape)
       nil
       (if (nil? (:shape-ref remote-shape))
-        remote-shape
-        (find-remote-shape component-container libraries remote-shape)))))
+        (cond-> remote-shape
+          (and remote-shape with-context?)
+          (with-meta {:file {:id (:id file-data)
+                             :data file-data}
+                      :container component-container}))
+        (find-remote-shape component-container libraries remote-shape :with-context? with-context?)))))
 
 (defn direct-copy?
   "Check if the shape is in a direct copy of the component (i.e. the shape-ref points to shapes inside
@@ -389,6 +421,47 @@
     (when (some? slot-inst)
       (or (= slot-main slot-inst)
           (= (:id shape-main) slot-inst)))))
+
+(defn- find-next-related-swap-shape-id
+  "Go up from the chain of references shapes that will eventually lead to the shape
+   with swap-slot-id as id. Returns the next shape on the chain"
+  [parent swap-slot-id libraries]
+  (let [container         (get-component-container-from-head parent libraries)
+        objects           (:objects container)
+
+        children          (cfh/get-children objects (:id parent))
+        original-shape-id (->> children
+                               (filter #(= swap-slot-id (:id %)))
+                               first
+                               :id)]
+    (if original-shape-id
+      ;; Return the children which id is the swap-slot-id
+      original-shape-id
+      ;; No children with swap-slot-id as id, go up
+      (let [referenced-shape (find-ref-shape nil container libraries parent)
+            ;; Recursive call that will get the id of the next shape on
+            ;; the chain that ends on a shape with swap-slot-id as id
+            next-shape-id    (when referenced-shape
+                               (find-next-related-swap-shape-id referenced-shape swap-slot-id libraries))]
+        ;; Return the children which shape-ref points to the next-shape-id
+        (->> children
+             (filter #(= next-shape-id (:shape-ref %)))
+             first
+             :id)))))
+
+(defn find-ref-id-for-swapped
+  "When a shape has been swapped, find the original ref-id that the shape had
+   before the swap"
+  [shape container libraries]
+  (let [swap-slot   (ctk/get-swap-slot shape)
+        objects     (:objects container)
+
+        parent      (get objects (:parent-id shape))
+        parent-head (ctn/get-head-shape objects parent)
+        parent-ref  (find-ref-shape nil container libraries parent-head)]
+
+    (when (and swap-slot parent-ref)
+      (find-next-related-swap-shape-id parent-ref swap-slot libraries))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"
@@ -473,7 +546,7 @@
 
 (defmethod uses-asset? :color
   [_ shape library-id color]
-  (ctc/uses-library-color? shape library-id (:id color)))
+  (cts/uses-library-color? shape library-id (:id color)))
 
 (defmethod uses-asset? :typography
   [_ shape library-id typography]
@@ -485,10 +558,10 @@
 
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
-  (let [assets-seq (case asset-type
-                     :component  (ctkl/components-seq library-data)
-                     :color      (ctc/colors-seq library-data)
-                     :typography (ctyl/typographies-seq library-data))
+  (let [assets (case asset-type
+                 :component  (ctkl/components-seq library-data)
+                 :color      (vals (ctlb/get-colors library-data))
+                 :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
         (fn [container asset]
@@ -505,7 +578,7 @@
               (let [instances (find-asset-usages file-data asset)]
                 (when (d/not-empty? instances)
                   [[asset instances]])))
-            assets-seq)))
+            assets)))
 
 (defn used-in?
   "Checks if a specific asset is used in a given file (by any shape in its pages or in
@@ -526,7 +599,7 @@
   (letfn [(used-assets-shape [shape]
             (concat
              (ctkl/used-components-changed-since shape library since-date)
-             (ctc/used-colors-changed-since shape library since-date)
+             (ctlb/used-colors-changed-since shape library since-date)
              (ctyl/used-typographies-changed-since shape library since-date)))
 
           (used-assets-container [container]
@@ -645,11 +718,12 @@
 
     (add-component-grid file-data (sort-by #(:name (first %)) used-components))))
 
+;: FIXME: this can be moved to library
 (defn- absorb-colors
   [file-data used-colors]
   (let [absorb-color
         (fn [file-data [color usages]]
-          (let [remap-shape #(ctc/remap-colors % (:id file-data) color)
+          (let [remap-shape #(cts/remap-colors % (:id file-data) color)
 
                 remap-shapes
                 (fn [file-data [container shapes]]
@@ -662,7 +736,7 @@
                                              %
                                              shapes)))]
             (as-> file-data $
-              (ctc/add-color $ color)
+              (ctlb/add-color $ color)
               (reduce remap-shapes $ usages))))]
 
     (reduce absorb-color
@@ -832,7 +906,7 @@
     (println))
 
   (when (seq (:objects component))
-    (let [root (ctk/get-component-root component)]
+    (let [root (ctk/get-deleted-component-root component)]
       (dump-shape (:id root)
                   1
                   (:objects component)
@@ -998,7 +1072,7 @@
   (let [detach-text
         (fn [content]
           (->> content
-               (ct/transform-nodes
+               (txt/transform-nodes
                 #(cond-> %
                    (not= file-id (:fill-color-ref-file %))
                    (dissoc :fill-color-ref-id :fill-color-ref-file)
@@ -1046,3 +1120,29 @@
 (defn set-base-font-size
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
+
+
+;; Ref Chains
+(defn get-ref-chain-until-target-ref
+  "Returns a vector with the shape ref chain until target-ref, including itself"
+  [container libraries shape target-ref]
+  (loop [chain [shape]
+         current shape]
+    (if (= current target-ref)
+      chain
+      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+        (recur (conj chain ref) ref)
+        chain))))
+
+(defn get-touched-from-ref-chain-until-target-ref
+  "Returns a set with the :touched of all the items on the shape
+   ref chain until target-ref, including itself"
+  [container libraries shape target-ref]
+  (let [chain (get-ref-chain-until-target-ref container libraries shape target-ref)
+        more-touched (->> chain
+                          (map :touched)
+                          (remove nil?)
+                          (apply set/union)
+                          (remove ctk/swap-slot?)
+                          set)]
+    (set/union (or (:touched shape) #{}) more-touched)))

@@ -125,6 +125,7 @@
 (def ^:icon-id document "document")
 (def ^:icon-id download "download")
 (def ^:icon-id drop "drop")
+(def ^:icon-id drop-shadow "drop-shadow")
 (def ^:icon-id easing-ease "easing-ease")
 (def ^:icon-id easing-ease-in "easing-ease-in")
 (def ^:icon-id easing-ease-in-out "easing-ease-in-out")
@@ -169,6 +170,7 @@
 (def ^:icon-id hug-content "hug-content")
 (def ^:icon-id icon "icon")
 (def ^:icon-id img "img")
+(def ^:icon-id inner-shadow "inner-shadow")
 (def ^:icon-id info "info")
 (def ^:icon-id import-export "import-export")
 (def ^:icon-id interaction "interaction")
@@ -260,6 +262,9 @@
 (def ^:icon-id text-auto-width "text-auto-width")
 (def ^:icon-id text-bottom "text-bottom")
 (def ^:icon-id text-fixed "text-fixed")
+(def ^:icon-id text-font-family "text-font-family")
+(def ^:icon-id text-font-size "text-font-size")
+(def ^:icon-id text-font-weight "text-font-weight")
 (def ^:icon-id text-justify "text-justify")
 (def ^:icon-id text-letterspacing "text-letterspacing")
 (def ^:icon-id text-lineheight "text-lineheight")
@@ -272,15 +277,18 @@
 (def ^:icon-id text-rtl "text-rtl")
 (def ^:icon-id text-stroked "text-stroked")
 (def ^:icon-id text-top "text-top")
+(def ^:icon-id text-typography "text-typography")
 (def ^:icon-id text-underlined "text-underlined")
 (def ^:icon-id text-uppercase "text-uppercase")
 (def ^:icon-id thumbnail "thumbnail")
 (def ^:icon-id tick "tick")
+(def ^:icon-id tokens "tokens")
 (def ^:icon-id to-corner "to-corner")
 (def ^:icon-id to-curve "to-curve")
 (def ^:icon-id tree "tree")
 (def ^:icon-id unlock "unlock")
 (def ^:icon-id user "user")
+(def ^:icon-id variant "variant")
 (def ^:icon-id vertical-align-items-center "vertical-align-items-center")
 (def ^:icon-id vertical-align-items-end "vertical-align-items-end")
 (def ^:icon-id vertical-align-items-start "vertical-align-items-start")
@@ -288,10 +296,12 @@
 (def ^:icon-id view-as-list "view-as-list")
 (def ^:icon-id wrap "wrap")
 
-(def icon-list "A collection of all icons" (collect-icons))
+(def icon-list
+  "A collection of all icons"
+  (collect-icons))
 
-(def ^:private icon-size-m 16)
-(def ^:private icon-size-s 12)
+(def ^:private ^:const icon-size-m 16)
+(def ^:private ^:const icon-size-s 12)
 
 (def ^:private schema:icon
   [:map
@@ -303,9 +313,18 @@
 (mf/defc icon*
   {::mf/schema schema:icon}
   [{:keys [icon-id size class] :rest props}]
-  (let [class (dm/str (or class "") " " (stl/css :icon))
-        props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
-        size-px (cond (= size "s") icon-size-s :else icon-size-m)
-        offset (/ (- icon-size-m size-px) 2)]
-    [:> "svg" props
-     [:use {:href (dm/str "#icon-" icon-id) :width size-px :height size-px :x offset :y offset}]]))
+  (let [props   (mf/spread-props props
+                                 {:class [class (stl/css :icon)]
+                                  :width icon-size-m
+                                  :height icon-size-m})
+        size-px (if (= size "s")
+                  icon-size-s
+                  icon-size-m)
+        offset  (/ (- icon-size-m size-px) 2)]
+
+    [:> :svg props
+     [:use {:href (dm/str "#icon-" icon-id)
+            :width size-px
+            :height size-px
+            :x offset
+            :y offset}]]))

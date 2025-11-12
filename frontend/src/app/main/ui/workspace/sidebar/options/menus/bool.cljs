@@ -8,54 +8,77 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.shortcuts :as sc]
-   [app.main.refs :as refs]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private flatten-icon
-  (i/icon-xref :boolean-flatten (stl/css :flatten-icon)))
+  (deprecated-icon/icon-xref :boolean-flatten (stl/css :flatten-icon)))
 
-(mf/defc bool-options
-  []
-  (let [selected               (mf/deref refs/selected-objects)
-        head                   (first selected)
-        selected-with-children (mf/deref refs/selected-shapes-with-children)
-        has-invalid-shapes?    (->> selected-with-children
-                                    (some (comp #{:frame :text} :type)))
-        is-group? (and (some? head) (= :group (:type head)))
-        is-bool?  (and (some? head) (= :bool (:type head)))
-        head-bool-type (and (some? head) is-bool? (:bool-type head))
+(mf/defc bool-options*
+  [{:keys [total-selected shapes shapes-with-children]}]
+  (let [head      (first shapes)
+        head-id   (dm/get-prop head :id)
 
-        first-not-group-like?
-        (and (= (count selected) 1)
-             (not (contains? #{:group :bool} (:type (first selected)))))
+        is-group? (cfh/group-shape? head)
+        is-bool?  (cfh/bool-shape? head)
 
-        disabled-bool-btns (or (empty? selected) has-invalid-shapes? first-not-group-like?)
-        disabled-flatten   (or (empty? selected) has-invalid-shapes?)
+        head-bool-type
+        (and is-bool? (get head :bool-type))
 
-        set-bool
+        render-wasm-enabled?
+        (features/use-feature "render-wasm/v1")
+
+        has-invalid-shapes?
+        (if render-wasm-enabled?
+          false
+          (some (fn [shape]
+                  (or (cfh/frame-shape? shape)
+                      (cfh/text-shape? shape)))
+                shapes-with-children))
+
+        head-not-group-like?
+        (and (= 1 total-selected)
+             (not is-group?)
+             (not is-bool?))
+
+        disabled-bool-btns
+        (if render-wasm-enabled?
+          false
+          (or (zero? total-selected)
+              has-invalid-shapes?
+              head-not-group-like?))
+
+        disabled-flatten
+        (if render-wasm-enabled?
+          false
+          (or (zero? total-selected)
+              has-invalid-shapes?))
+
+        on-change
         (mf/use-fn
-         (mf/deps  selected is-group?  is-bool?)
+         (mf/deps total-selected is-group? is-bool? head-id head-bool-type)
          (fn [bool-type]
            (let [bool-type (keyword bool-type)]
-
              (cond
-               (> (count selected) 1)
+               (> total-selected 1)
                (st/emit! (dwb/create-bool bool-type))
 
-               (and (= (count selected) 1) is-group?)
-               (st/emit! (dwb/group-to-bool (:id head) bool-type))
+               (and (= total-selected 1) is-group?)
+               (st/emit! (dwb/group-to-bool head-id bool-type))
 
-               (and (= (count selected) 1) is-bool?)
+               (and (= total-selected 1) is-bool?)
                (if (= head-bool-type bool-type)
-                 (st/emit! (dwb/bool-to-group (:id head)))
-                 (st/emit! (dwb/change-bool-type (:id head) bool-type)))))))
+                 (st/emit! (dwb/bool-to-group head-id))
+                 (st/emit! (dwb/change-bool-type head-id bool-type)))))))
 
         flatten-objects
         (mf/use-fn  #(st/emit! (dwps/convert-selected-to-path)))]
@@ -65,24 +88,24 @@
        [:div {:class (stl/css :bool-group)}
         [:& radio-buttons {:selected (d/name head-bool-type)
                            :class (stl/css :boolean-radio-btn)
-                           :on-change set-bool
+                           :on-change on-change
                            :name "bool-options"}
-         [:& radio-button {:icon i/boolean-union
+         [:& radio-button {:icon deprecated-icon/boolean-union
                            :value "union"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
                            :id "bool-opt-union"}]
-         [:& radio-button {:icon i/boolean-difference
+         [:& radio-button {:icon deprecated-icon/boolean-difference
                            :value "difference"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
                            :id "bool-opt-differente"}]
-         [:& radio-button {:icon i/boolean-intersection
+         [:& radio-button {:icon deprecated-icon/boolean-intersection
                            :value "intersection"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
                            :id "bool-opt-intersection"}]
-         [:& radio-button {:icon i/boolean-exclude
+         [:& radio-button {:icon deprecated-icon/boolean-exclude
                            :value "exclude"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")

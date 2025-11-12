@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
@@ -31,14 +32,13 @@
    [app.main.ui.dashboard.placeholder :refer [empty-grid-placeholder* loading-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.worker :as mw]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.time :as dt]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -117,7 +117,7 @@
 ;; --- Grid Item Library
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc grid-item-library*
   {::mf/props :obj}
@@ -229,9 +229,7 @@
 
 (mf/defc grid-item-metadata
   [{:keys [modified-at]}]
-
-  (let [locale (mf/deref i18n/locale)
-        time   (dt/timeago modified-at {:locale locale})]
+  (let [time (ct/timeago modified-at)]
     [:span {:class (stl/css :date)} time]))
 
 (defn create-counter-element
@@ -408,13 +406,14 @@
         [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
 
       (when (and (:is-shared file) (not is-library-view?))
-        [:div {:class (stl/css :item-badge)} i/library])
+        [:div {:class (stl/css :item-badge)} deprecated-icon/library])
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}
         (if (and (= file-id (:file-id state)) (:edition state))
           [:& inline-edition {:content (:name file)
-                              :on-end edit}]
+                              :on-end edit
+                              :max-length 250}]
           [:h3 (:name file)])
         [:& grid-item-metadata {:modified-at (:modified-at file)}]]
 
@@ -440,7 +439,7 @@
                             :can-edit can-edit
                             :navigate true
                             :on-edit on-edit
-                            :on-menu-close on-menu-close
+                            :on-close on-menu-close
                             :origin origin
                             :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
 

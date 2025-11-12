@@ -16,6 +16,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
@@ -23,6 +24,7 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
@@ -130,6 +132,8 @@
   ([id toggle?]
    (dm/assert! (uuid? id))
    (ptk/reify ::select-shape
+     ev/PerformanceEvent
+
      ptk/UpdateEvent
      (update [_ state]
        (-> state
@@ -247,6 +251,8 @@
         (d/ordered-set? ids)))
 
   (ptk/reify ::select-shapes
+    ev/PerformanceEvent
+
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (dsh/lookup-page-objects state)
@@ -266,6 +272,8 @@
 (defn select-all
   []
   (ptk/reify ::select-all
+    ev/PerformanceEvent
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [;; Make the select-all aware of the focus mode; in this
@@ -343,7 +351,7 @@
 
          (if (some? selrect)
            (->> (ask-worker
-                 {:cmd :selection/query
+                 {:cmd :index/query-selection
                   :page-id page-id
                   :rect selrect
                   :include-frames? true
@@ -456,7 +464,7 @@
                 library-data    (dsh/lookup-file-data state file-id)
 
                 changes         (-> (pcb/empty-changes it)
-                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id)
+                                    (cll/generate-duplicate-changes objects page ids delta libraries library-data file-id {:alt-duplication? alt-duplication?})
                                     (cll/generate-duplicate-changes-update-indices objects ids))
 
                 tags            (or (:tags changes) #{})
@@ -479,15 +487,35 @@
                                       ids)
                 undo-id         (js/Symbol)]
             (rx/concat
-             (->> (map (d/getf objects) ids)
-                  (filter ctk/instance-head?)
-                  (map (fn [{:keys [component-file]}]
-                         (ptk/event ::ev/event
-                                    {::ev/name "use-library-component"
-                                     ::ev/origin "duplicate"
-                                     :external-library (not= file-id component-file)})))
-                  (rx/from))
-            ;; Warning: This order is important for the focus mode.
+             (->> (rx/from ids)
+                  (rx/map (fn [shape-id]
+                            (let [shape       (get objects shape-id)
+                                  parent-type (cfh/get-shape-type objects (:parent-id shape))
+                                  external-lib? (not= file-id (:component-file shape))
+                                  component     (ctn/get-component-from-shape shape libraries)
+                                  origin        "workspace:duplicate-shapes"]
+
+                              ;; NOTE: we don't emit the create-shape event all the time for
+                              ;; avoid send a lot of events (that are not necessary); this
+                              ;; decision is made explicitly by the responsible team.
+                              (if (ctk/instance-head? shape)
+                                (ev/event {::ev/name "use-library-component"
+                                           ::ev/origin origin
+                                           :is-external-library external-lib?
+                                           :type (get shape :type)
+                                           :parent-type parent-type
+                                           :is-variant (ctk/is-variant? component)})
+                                (if (cfh/has-layout? objects (:parent-id shape))
+                                  (ev/event {::ev/name "layout-add-element"
+                                             ::ev/origin origin
+                                             :type (get shape :type)
+                                             :parent-type parent-type})
+                                  (ev/event {::ev/name "create-shape"
+                                             ::ev/origin origin
+                                             :type (get shape :type)
+                                             :parent-type parent-type})))))))
+
+             ;; Warning: This order is important for the focus mode.
              (->> (rx/of
                    (dwu/start-undo-transaction undo-id)
                    (dch/commit-changes changes)
@@ -537,6 +565,11 @@
             (assoc :workspace-focus-selected focus))))))
 
 (defn toggle-focus-mode
+  "Zoom in on and center viewport on selection;
+   hide all other layers in viewport and layer panel.
+
+   When in focus mode, exit restoring previous viewport and selection.
+  "
   []
   (ptk/reify ::toggle-focus-mode
     ev/Event
@@ -544,32 +577,41 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (dsh/lookup-selected state)]
-        (cond-> state
-          (and (empty? (:workspace-focus-selected state))
-               (d/not-empty? selected))
-          (assoc :workspace-focus-selected selected)
+      (let [selected (dsh/lookup-selected state)
+            have-selection? (d/not-empty? selected)
+            in-mode? (d/not-empty? (:workspace-focus-selected state))]
 
-          (d/not-empty? (:workspace-focus-selected state))
-          (dissoc :workspace-focus-selected))))
+        (if in-mode?
+          ;; Exit focus, restoring previous viewport, selection, etc
+          (-> state
+              (assoc :workspace-local (:workspace-pre-focus state))
+              (dissoc :workspace-focus-selected)
+              (dissoc :workspace-pre-focus))
+          (if have-selection?
+            ;; Enter focus and save viewport, selection, etc
+            (-> state
+                (assoc :workspace-focus-selected selected)
+                (assoc :workspace-pre-focus (:workspace-local state)))
+            state))))
 
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (rx/filter #(or (= ::toggle-focus-mode (ptk/type %))
-                                    (= :app.main.data.workspace/finalize-page (ptk/type %))) stream)]
+                                    (= ::dwpg/finalize-page (ptk/type %))) stream)]
         (when (d/not-empty? (:workspace-focus-selected state))
-          (rx/merge
-           (rx/of dwz/zoom-to-selected-shape
-                  (deselect-all))
-           (->> (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
-                (rx/take-until stopper)
-                (rx/map (comp set keys))
-                (rx/buffer 2 1)
-                (rx/merge-map
-                 (fn [[old-keys new-keys]]
-                   (let [removed (set/difference old-keys new-keys)
-                         added (set/difference new-keys old-keys)]
+          (->> (rx/merge
+                (rx/of dwz/zoom-to-selected-shape
+                       (deselect-all))
+                (->> (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+                     (rx/map (comp set keys))
+                     (rx/buffer 2 1)
+                     (rx/merge-map
+                      ;; While focus is active, update it with any new and deleted shapes
+                      (fn [[old-keys new-keys]]
+                        (let [removed (set/difference old-keys new-keys)
+                              added (set/difference new-keys old-keys)]
 
-                     (if (or (d/not-empty? added) (d/not-empty? removed))
-                       (rx/of (update-focus-shapes added removed))
-                       (rx/empty))))))))))))
+                          (if (or (d/not-empty? added) (d/not-empty? removed))
+                            (rx/of (update-focus-shapes added removed))
+                            (rx/empty)))))))
+               (rx/take-until stopper)))))))

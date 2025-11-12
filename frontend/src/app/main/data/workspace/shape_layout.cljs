@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.shape-layout
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
@@ -16,6 +15,7 @@
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
    [app.common.logic.libraries :as cll]
+   [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
@@ -108,11 +108,14 @@
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
             (if (features/active-feature? state "render-wasm/v1")
-              (rx/of (dwm/apply-wasm-modifiers modif-tree :stack-undo? true :undo-group undo-group))
-
+              (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                               :stack-undo? true
+                                               :undo-group undo-group
+                                               :ignore-touched true))
               (rx/of (dwm/apply-modifiers {:page-id page-id
                                            :modifiers modif-tree
                                            :stack-undo? true
+                                           :ignore-touched true
                                            :undo-group undo-group}))))
           (rx/empty))))))
 
@@ -131,11 +134,12 @@
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
-             (rx/map
+             (rx/mapcat
               (fn [data]
-                (let [page-id (->> data (keep :page-id) first)
-                      ids (reduce #(into %1 (:ids %2)) #{} data)]
-                  (update-layout-positions {:page-id page-id :ids ids}))))
+                (->> (group-by :page-id data)
+                     (map (fn [[page-id items]]
+                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
+                              (update-layout-positions {:page-id page-id :ids ids})))))))
              (rx/take-until stopper))))))
 
 (defn finalize-shape-layout
@@ -181,6 +185,8 @@
             is-component?   (and single? has-component?)
             has-variant?    (some ctc/is-variant? selected-shapes)
 
+            has-layout?     (and single? (ctl/any-layout? (first selected-shapes)))
+
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
 
@@ -188,7 +194,8 @@
           (rx/empty)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
-           (if (and is-group? (not is-component?) (not is-mask?))
+           (cond
+             (and is-group? (not is-component?) (not is-mask?))
              ;; Create layout from a group:
              ;;  When creating a layout from a group we remove the group and create the layout with its children
              (let [parent-id    (:parent-id (first selected-shapes))
@@ -206,7 +213,14 @@
                 (ptk/data-event :layout/update {:ids [new-shape-id]})
                 (dwu/commit-undo-transaction undo-id)))
 
+             has-layout?
+             (rx/of
+              (create-layout-from-id (first selected) type)
+              (ptk/data-event :layout/update {:ids selected})
+              (dwu/commit-undo-transaction undo-id))
+
              ;; Create Layout from selection
+             :else
              (rx/of
               (dwsh/create-artboard-from-selection new-shape-id)
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
@@ -221,13 +235,8 @@
   [ids]
   (ptk/reify ::remove-shape-layout
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            ids     (->> ids
-                         (remove #(->> %
-                                       (get objects)
-                                       (ctc/is-variant?))))
-            undo-id (js/Symbol)]
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwsh/update-shapes ids #(apply dissoc % layout-keys))
@@ -294,7 +303,13 @@
                                       (seq padding-attrs)
                                       (assoc :changed-sub-attr padding-attrs)))
                 (ptk/data-event :layout/update {:ids ids})
-                (dwu/commit-undo-transaction undo-id)))))))
+                (dwu/commit-undo-transaction undo-id)
+                (when (or (:layout-align-content changes) (:layout-justify-content changes))
+                  (ptk/event ::ev/event
+                             {::ev/name "layout-change-alignment"}))
+                (when (or (:layout-padding changes) (:layout-gap changes))
+                  (ptk/event ::ev/event
+                             {::ev/name "layout-change-margin"}))))))))
 
 (defn add-layout-track
   ([ids type value]
@@ -322,32 +337,32 @@
   (ptk/reify ::remove-layout-track
     ptk/WatchEvent
     (watch [_ state _]
-      (let [undo-id (js/Symbol)]
-        (let [objects (dsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
+            undo-id (js/Symbol)
 
-              shapes-to-delete
-              (when with-shapes?
-                (->> ids
-                     (mapcat
-                      (fn [id]
-                        (let [shape (get objects id)]
-                          (if (= type :column)
-                            (ctl/shapes-by-column shape index)
-                            (ctl/shapes-by-row shape index)))))
-                     (into #{})))]
-          (rx/of (dwu/start-undo-transaction undo-id)
-                 (if shapes-to-delete
-                   (dwsh/delete-shapes shapes-to-delete)
-                   (rx/empty))
-                 (dwsh/update-shapes
-                  ids
-                  (fn [shape objects]
-                    (case type
-                      :row    (ctl/remove-grid-row shape index objects)
-                      :column (ctl/remove-grid-column shape index objects)))
-                  {:with-objects? true})
-                 (ptk/data-event :layout/update {:ids ids})
-                 (dwu/commit-undo-transaction undo-id)))))))
+            shapes-to-delete
+            (when with-shapes?
+              (->> ids
+                   (mapcat
+                    (fn [id]
+                      (let [shape (get objects id)]
+                        (if (= type :column)
+                          (ctl/shapes-by-column shape index)
+                          (ctl/shapes-by-row shape index)))))
+                   (into #{})))]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (if shapes-to-delete
+                 (dwsh/delete-shapes shapes-to-delete)
+                 (rx/empty))
+               (dwsh/update-shapes
+                ids
+                (fn [shape objects]
+                  (case type
+                    :row    (ctl/remove-grid-row shape index objects)
+                    :column (ctl/remove-grid-column shape index objects)))
+                {:with-objects? true})
+               (ptk/data-event :layout/update {:ids ids})
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn duplicate-layout-track
   [ids type index]

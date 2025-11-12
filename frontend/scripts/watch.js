@@ -5,6 +5,8 @@ import log from "fancy-log";
 import * as h from "./_helpers.js";
 import ppt from "pretty-time";
 
+const isDebug = process.env.NODE_ENV !== "production";
+
 const worker = h.startWorker();
 let sass = null;
 
@@ -15,6 +17,11 @@ async function compileSassAll() {
   sass = await h.compileSassAll(worker);
   let output = await h.concatSass(sass);
   await fs.writeFile("./resources/public/css/main.css", output);
+
+  if (isDebug) {
+    let debugCSS = await h.compileSassDebug(worker);
+    await fs.writeFile("./resources/public/css/debug.css", debugCSS);
+  }
 
   const end = process.hrtime(start);
   log.info("done: compile styles", `(${ppt(end)})`);
@@ -78,16 +85,12 @@ h.watch("translations", null, async function (path) {
 });
 
 log.info("watch: assets (~)");
-h.watch(
-  ["resources/images", "resources/fonts", "resources/plugins-runtime"],
-  null,
-  async function (path) {
-    log.info("changed:", path);
-    await h.compileSvgSprites();
-    await h.copyAssets();
-    await h.compileTemplates();
-  },
-);
+h.watch(["resources/images", "resources/fonts"], null, async function (path) {
+  log.info("changed:", path);
+  await h.compileSvgSprites();
+  await h.copyAssets();
+  await h.compileTemplates();
+});
 
 log.info("watch: wasm playground (~)");
 h.watch(["resources/wasm-playground"], null, async function (path) {

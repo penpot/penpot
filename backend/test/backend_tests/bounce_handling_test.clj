@@ -6,11 +6,11 @@
 
 (ns backend-tests.bounce-handling-test
   (:require
+   [app.common.time :as ct]
    [app.db :as db]
    [app.email :as email]
    [app.http.awsns :as awsns]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
@@ -101,12 +101,10 @@
 
 (t/deftest test-parse-bounce-report
   (let [profile (th/create-profile* 1)
-        props   (:app.setup/props th/*system*)
-        cfg     {:app.setup/props props}
-        report  (bounce-report {:token (tokens/generate props
+        report  (bounce-report {:token (tokens/generate th/*system*
                                                         {:iss :profile-identity
                                                          :profile-id (:id profile)})})
-        result  (#'awsns/parse-notification cfg report)]
+        result  (#'awsns/parse-notification th/*system* report)]
     ;; (pprint result)
 
     (t/is (= "bounce" (:type result)))
@@ -117,12 +115,10 @@
 
 (t/deftest test-parse-complaint-report
   (let [profile (th/create-profile* 1)
-        props   (:app.setup/props th/*system*)
-        cfg     {:app.setup/props props}
-        report  (complaint-report {:token (tokens/generate props
+        report  (complaint-report {:token (tokens/generate th/*system*
                                                            {:iss :profile-identity
                                                             :profile-id (:id profile)})})
-        result  (#'awsns/parse-notification cfg report)]
+        result  (#'awsns/parse-notification th/*system* report)]
     ;; (pprint result)
     (t/is (= "complaint" (:type result)))
     (t/is (= "abuse" (:kind result)))
@@ -143,15 +139,13 @@
 
 (t/deftest test-process-bounce-report
   (let [profile (th/create-profile* 1)
-        props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props :app.db/pool pool}
-        report  (bounce-report {:token (tokens/generate props
+        report  (bounce-report {:token (tokens/generate th/*system*
                                                         {:iss :profile-identity
                                                          :profile-id (:id profile)})})
-        report  (#'awsns/parse-notification cfg report)]
+        report  (#'awsns/parse-notification th/*system* report)]
 
-    (#'awsns/process-report cfg report)
+    (#'awsns/process-report th/*system* report)
 
     (let [rows (->> (db/query pool :profile-complaint-report {:profile-id (:id profile)})
                     (mapv decode-row))]
@@ -170,16 +164,13 @@
 
 (t/deftest test-process-complaint-report
   (let [profile (th/create-profile* 1)
-        props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props
-                 :app.db/pool pool}
-        report  (complaint-report {:token (tokens/generate props
+        report  (complaint-report {:token (tokens/generate th/*system*
                                                            {:iss :profile-identity
                                                             :profile-id (:id profile)})})
-        report  (#'awsns/parse-notification cfg report)]
+        report  (#'awsns/parse-notification th/*system* report)]
 
-    (#'awsns/process-report cfg report)
+    (#'awsns/process-report th/*system* report)
 
     (let [rows (->> (db/query pool :profile-complaint-report {:profile-id (:id profile)})
                     (mapv decode-row))]
@@ -200,16 +191,14 @@
 
 (t/deftest test-process-bounce-report-to-self
   (let [profile (th/create-profile* 1)
-        props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props :app.db/pool pool}
         report  (bounce-report {:email (:email profile)
-                                :token (tokens/generate props
+                                :token (tokens/generate th/*system*
                                                         {:iss :profile-identity
                                                          :profile-id (:id profile)})})
-        report  (#'awsns/parse-notification cfg report)]
+        report  (#'awsns/parse-notification th/*system* report)]
 
-    (#'awsns/process-report cfg report)
+    (#'awsns/process-report th/*system* report)
 
     (let [rows (db/query pool :profile-complaint-report {:profile-id (:id profile)})]
       (t/is (= 1 (count rows))))
@@ -222,16 +211,14 @@
 
 (t/deftest test-process-complaint-report-to-self
   (let [profile (th/create-profile* 1)
-        props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props :app.db/pool pool}
         report  (complaint-report {:email (:email profile)
-                                   :token (tokens/generate props
+                                   :token (tokens/generate th/*system*
                                                            {:iss :profile-identity
                                                             :profile-id (:id profile)})})
-        report  (#'awsns/parse-notification cfg report)]
+        report  (#'awsns/parse-notification th/*system* report)]
 
-    (#'awsns/process-report cfg report)
+    (#'awsns/process-report th/*system* report)
 
     (let [rows (db/query pool :profile-complaint-report {:profile-id (:id profile)})]
       (t/is (= 1 (count rows))))
@@ -250,7 +237,7 @@
 
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (ct/in-past {:days 8})})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
 
@@ -268,8 +255,8 @@
                                :profile-complaint-threshold 2})}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (ct/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (ct/in-past {:days 8})})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :complaint :id (:id profile)})

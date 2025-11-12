@@ -12,13 +12,13 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig])
@@ -27,7 +27,9 @@
 
 (defn get-legacy-backend
   []
-  (let [name (cf/get :assets-storage-backend)]
+  (when-let [name (cf/get :assets-storage-backend)]
+    (l/wrn :hint "using deprecated configuration, please read 2.11 release notes"
+           :href "https://github.com/penpot/penpot/releases/tag/2.11.0")
     (case name
       :assets-fs :fs
       :assets-s3 :s3
@@ -113,16 +115,13 @@
 
 (defn- create-database-object
   [{:keys [::backend ::db/connectable]} {:keys [::content ::expired-at ::touched-at ::touch] :as params}]
-  (let [id     (or (:id params) (uuid/random))
+  (let [id     (or (::id params) (uuid/random))
         mdata  (cond-> (get-metadata params)
                  (satisfies? impl/IContentHash content)
-                 (assoc :hash (impl/get-hash content))
-
-                 :always
-                 (dissoc :id))
+                 (assoc :hash (impl/get-hash content)))
 
         touched-at (if touch
-                     (or touched-at (dt/now))
+                     (or touched-at (ct/now))
                      touched-at)
 
         ;; NOTE: for now we don't reuse the deleted objects, but in
@@ -224,7 +223,7 @@
   (assert (valid-storage? storage))
   (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)]
     (-> (db/update! connectable :storage-object
-                    {:touched-at (dt/now)}
+                    {:touched-at (ct/now)}
                     {:id id})
         (db/get-update-count)
         (pos?))))
@@ -235,7 +234,7 @@
   [storage object]
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
-            (dt/is-after? (:expired-at object) (dt/now)))
+            (ct/is-after? (:expired-at object) (ct/now)))
     (-> (impl/resolve-backend storage (:backend object))
         (impl/get-object-data object))))
 
@@ -244,7 +243,7 @@
   [storage object]
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
-            (dt/is-after? (:expired-at object) (dt/now)))
+            (ct/is-after? (:expired-at object) (ct/now)))
     (-> (impl/resolve-backend storage (:backend object))
         (impl/get-object-bytes object))))
 
@@ -254,7 +253,7 @@
   ([storage object options]
    (assert (valid-storage? storage))
    (when (or (nil? (:expired-at object))
-             (dt/is-after? (:expired-at object) (dt/now)))
+             (ct/is-after? (:expired-at object) (ct/now)))
      (-> (impl/resolve-backend storage (:backend object))
          (impl/get-object-url object options)))))
 
@@ -266,7 +265,7 @@
   (let [backend (impl/resolve-backend storage (:backend object))]
     (when (and (= :fs (::type backend))
                (or (nil? (:expired-at object))
-                   (dt/is-after? (:expired-at object) (dt/now))))
+                   (ct/is-after? (:expired-at object) (ct/now))))
       (-> (impl/get-object-url backend object nil) file-url->path))))
 
 (defn del-object!
@@ -274,7 +273,7 @@
   (assert (valid-storage? storage))
   (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
         res (db/update! connectable :storage-object
-                        {:deleted-at (dt/now)}
+                        {:deleted-at (ct/now)}
                         {:id id})]
     (pos? (db/get-update-count res))))
 

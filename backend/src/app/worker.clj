@@ -10,11 +10,11 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.metrics :as mtx]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -31,7 +31,7 @@
   [f metrics tname]
   (let [labels (into-array String [tname])]
     (fn [params]
-      (let [tp (dt/tpoint)]
+      (let [tp (ct/tpoint)]
         (try
           (f params)
           (finally
@@ -77,8 +77,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private sql:insert-new-task
-  "insert into task (id, name, props, queue, label, priority, max_retries, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, now() + ?)
+  "insert into task (id, name, props, queue, label, priority, max_retries, created_at, modified_at, scheduled_at)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    returning id")
 
 (def ^:private
@@ -88,14 +88,14 @@
       AND queue=?
       AND label=?
       AND status = 'new'
-      AND scheduled_at > now()")
+      AND scheduled_at > ?")
 
 (def ^:private schema:options
   [:map {:title "submit-options"}
    [::task [:or ::sm/text :keyword]]
    [::label {:optional true} ::sm/text]
    [::delay {:optional true}
-    [:or ::sm/int ::dt/duration]]
+    [:or ::sm/int ::ct/duration]]
    [::queue {:optional true} [:or ::sm/text :keyword]]
    [::priority {:optional true} ::sm/int]
    [::max-retries {:optional true} ::sm/int]
@@ -111,17 +111,19 @@
 
   (check-options! options)
 
-  (let [duration  (dt/duration delay)
-        interval  (db/interval duration)
-        props     (db/tjson params)
-        id        (uuid/next)
-        tenant    (cf/get :tenant)
-        task      (d/name task)
-        queue     (str/ffmt "%:%" tenant (d/name queue))
-        conn      (db/get-connectable options)
-        deleted   (when dedupe
-                    (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label])
-                        :next.jdbc/update-count))]
+  (let [delay        (ct/duration delay)
+        now          (ct/now)
+        scheduled-at (-> (ct/plus now delay)
+                         (ct/truncate :millisecond))
+        props        (db/tjson params)
+        id           (uuid/next)
+        tenant       (cf/get :tenant)
+        task         (d/name task)
+        queue        (str/ffmt "%:%" tenant (d/name queue))
+        conn         (db/get-connectable options)
+        deleted      (when dedupe
+                       (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label now])
+                           (db/get-update-count)))]
 
     (l/trc :hint "submit task"
            :name task
@@ -129,11 +131,13 @@
            :queue queue
            :label label
            :dedupe (boolean dedupe)
-           :delay (dt/format-duration duration)
+           :delay (ct/format-duration delay)
            :replace (or deleted 0))
 
     (db/exec-one! conn [sql:insert-new-task id task props queue
-                        label priority max-retries interval])
+                        label priority max-retries
+                        now now scheduled-at])
+
     id))
 
 (defn invoke!

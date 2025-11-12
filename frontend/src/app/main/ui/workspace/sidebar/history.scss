@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .history-toolbox {
   display: flex;
@@ -13,59 +13,59 @@
 }
 
 .history-toolbox-title {
-  @include flexCenter;
-  @include uppercaseTitleTipography;
+  @include deprecated.flexCenter;
+  @include deprecated.uppercaseTitleTipography;
   position: relative;
-  height: $s-32;
-  min-height: $s-32;
-  margin: $s-8 $s-8 0 $s-8;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-8 deprecated.$s-8 0 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--panel-title-background-color);
 
   span {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     flex-grow: 1;
     color: var(--title-foreground-color-hover);
   }
 }
 
 .history-entry-empty {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   flex-direction: column;
-  gap: $s-16;
-  padding: $s-28 $s-16;
+  gap: deprecated.$s-16;
+  padding: deprecated.$s-28 deprecated.$s-16;
   text-align: center;
 }
 
 .history-entry-empty-icon {
   @extend .empty-icon;
   svg {
-    margin-left: calc(-1 * $s-2);
+    margin-left: calc(-1 * deprecated.$s-2);
   }
 }
 
 .history-entry-empty-msg {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--empty-message-foreground-color);
 }
 
 .history-entries {
-  height: calc(100vh - $s-100);
-  padding: $s-12;
+  height: calc(100vh - deprecated.$s-100);
+  padding: deprecated.$s-12;
   overflow-x: hidden;
   overflow-y: auto;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
 }
 
 .history-entry {
   display: flex;
   justify-content: center;
   flex-direction: column;
-  min-height: $s-32;
-  margin: $s-4;
-  padding: $s-4 $s-8;
-  border: $s-2 solid transparent;
-  border-radius: $s-8;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-4;
+  padding: deprecated.$s-4 deprecated.$s-8;
+  border: deprecated.$s-2 solid transparent;
+  border-radius: deprecated.$s-8;
   background-color: var(--entry-background-color);
   cursor: pointer;
   transition: border 0.2s;
@@ -80,11 +80,11 @@
       }
     }
     .history-entry-summary-text {
-      margin: 0 $s-8;
+      margin: 0 deprecated.$s-8;
       color: var(--color-foreground-primary);
     }
     .history-entry-summary-button {
-      opacity: $op-0;
+      opacity: deprecated.$op-0;
       margin-left: auto;
       &.button-opened {
         svg {
@@ -100,7 +100,7 @@
 
   .history-entry-detail {
     display: block;
-    padding-top: $s-16;
+    padding-top: deprecated.$s-16;
     color: var(--modal-text-foreground-color);
     .history-entry-details-list {
       margin: 0;
@@ -123,7 +123,7 @@
         }
       }
       .history-entry-summary-button {
-        opacity: $op-10;
+        opacity: deprecated.$op-10;
         &.button-opened {
           svg {
             transform: rotate(90deg);

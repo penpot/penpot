@@ -84,6 +84,9 @@
   (l/derived :shared-files st/state))
 
 (defn select-libraries
+  "Find between all the given files, those who are libraries of the file-id.
+   Also include the file-id file itself.
+   Return a map of id -> library."
   [files file-id]
   (persistent!
    (reduce-kv (fn [result id file]
@@ -151,8 +154,8 @@
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
 
-;; TODO: rename to workspace-selected (?)
-;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
+;; WARNING: Don't use directly from components, this is a proxy to
+;; improve performance of selected-shapes and
 (def ^:private selected-shapes-data
   (l/derived
    (fn [state]
@@ -295,10 +298,8 @@
   [page-id shape-id]
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
-;; TODO: Looks like using the `=` comparator can be pretty expensive
-;; on large pages, we are using this for some reason?
 (def workspace-page-objects
-  (l/derived dsh/lookup-page-objects st/state =))
+  (l/derived dsh/lookup-page-objects st/state))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
@@ -366,71 +367,55 @@
   (l/derived :workspace-v2-editor-state st/state))
 
 (def workspace-modifiers
-  (l/derived :workspace-modifiers st/state =))
+  (l/derived :workspace-modifiers st/state))
 
-(def workspace-modifiers-with-objects
+(def ^:private workspace-modifiers-with-objects
   (l/derived
    (fn [state]
-     {:modifiers (:workspace-modifiers state)
+     {:modifiers (get state :workspace-modifiers)
       :objects   (dsh/lookup-page-objects state)})
    st/state
    (fn [a b]
-     (and (= (:modifiers a) (:modifiers b))
+     (and (identical? (:modifiers a) (:modifiers b))
           (identical? (:objects a) (:objects b))))))
 
 (def workspace-frame-modifiers
   (l/derived
    (fn [{:keys [modifiers objects]}]
-     (->> modifiers
-          (reduce
-           (fn [result [id modifiers]]
-             (let [shape (get objects id)
-                   frame-id (:frame-id shape)]
-               (cond
-                 (cph/frame-shape? shape)
-                 (assoc-in result [id id] modifiers)
+     (reduce (fn [result [id modifiers]]
+               (let [shape (get objects id)
+                     frame-id (:frame-id shape)]
+                 (cond
+                   (cph/frame-shape? shape)
+                   (assoc-in result [id id] modifiers)
 
-                 (some? frame-id)
-                 (assoc-in result [frame-id id] modifiers)
+                   (some? frame-id)
+                   (assoc-in result [frame-id id] modifiers)
 
-                 :else
-                 result)))
-           {})))
+                   :else
+                   result)))
+             {}
+             modifiers))
    workspace-modifiers-with-objects))
 
 (defn workspace-modifiers-by-frame-id
   [frame-id]
   (l/derived #(get % frame-id) workspace-frame-modifiers =))
 
+(def workspace-clipboard-style
+  (l/derived :clipboard-style workspace-global))
+
 (defn select-bool-children [id]
   (l/derived #(dsh/select-bool-children % id) st/state =))
 
-(def selected-data
-  (l/derived #(let [selected (dsh/lookup-selected %)
-                    objects (dsh/lookup-page-objects %)]
-                (hash-map :selected selected
-                          :objects objects))
-             st/state =))
-
 (defn is-child-selected?
   [id]
-  (letfn [(selector [{:keys [selected objects]}]
-            (let [children (cph/get-children-ids objects id)]
-              (some #(contains? selected %) children)))]
-    (l/derived selector selected-data =)))
-
-(def selected-objects
-  (letfn [(selector [{:keys [selected objects]}]
-            (into [] (keep (d/getf objects)) selected))]
-    (l/derived selector selected-data =)))
-
-(def selected-shapes-with-children
-  (letfn [(selector [{:keys [selected objects]}]
-            (let [xform (comp (remove nil?)
-                              (mapcat #(cph/get-children-ids objects %)))
-                  shapes (into selected xform selected)]
-              (mapv (d/getf objects) shapes)))]
-    (l/derived selector selected-data =)))
+  (l/derived
+   (fn [{:keys [selected objects]}]
+     (let [children (cph/get-children-ids objects id)]
+       (some #(contains? selected %) children)))
+   selected-shapes-data
+   =))
 
 (def workspace-focus-selected
   (l/derived :workspace-focus-selected st/state))
@@ -455,18 +440,18 @@
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
 
 (defn workspace-token-theme
-  [group name]
+  [id]
   (l/derived
    (fn [lib]
      (when lib
-       (ctob/get-theme lib group name)))
+       (ctob/get-theme lib id)))
    tokens-lib))
 
 (def workspace-token-theme-tree-no-hidden
   (l/derived (fn [lib]
                (or
                 (some-> lib
-                        (ctob/delete-theme ctob/hidden-theme-group ctob/hidden-theme-name)
+                        (ctob/delete-theme ctob/hidden-theme-id)
                         (ctob/get-theme-tree))
                 []))
              tokens-lib))
@@ -477,8 +462,8 @@
 (def workspace-token-themes-no-hidden
   (l/derived #(remove ctob/hidden-theme? %) workspace-token-themes))
 
-(def selected-token-set-name
-  (l/derived (l/key :selected-token-set-name) workspace-tokens))
+(def selected-token-set-id
+  (l/derived (l/key :selected-token-set-id) workspace-tokens))
 
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
@@ -505,9 +490,9 @@
   (l/derived #(or (some-> % ctob/get-tokens-in-active-sets) {}) tokens-lib))
 
 (def workspace-token-in-selected-set
-  (fn [token-name]
+  (fn [token-id]
     (l/derived
-     #(dwts/get-token-in-selected-set % token-name)
+     #(dwts/get-token-in-selected-set % token-id)
      st/state)))
 
 (def workspace-all-tokens-in-selected-set

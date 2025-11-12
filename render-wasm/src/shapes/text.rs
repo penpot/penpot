@@ -1,35 +1,172 @@
 use crate::{
-    math::Rect,
+    math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
+    utils::Browser,
 };
+
+use core::f32;
+use macros::ToJs;
 use skia_safe::{
     self as skia,
-    paint::Paint,
-    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle},
+    paint::{self, Paint},
+    textlayout::ParagraphBuilder,
+    textlayout::ParagraphStyle,
+    textlayout::PositionWithAffinity,
 };
 use std::collections::HashSet;
 
 use super::FontFamily;
-use crate::shapes::{self, merge_fills, set_paint_fill, Stroke, StrokeKind};
-use crate::utils::{get_fallback_fonts, uuid_from_u32};
-use crate::wasm::fills::parse_fills_from_bytes;
+use crate::math::Point;
+use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
+use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
+use crate::STATE;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+// TODO: maybe move this to the wasm module?
+pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
+
+#[repr(u8)]
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 pub enum GrowType {
-    Fixed,
-    AutoWidth,
-    AutoHeight,
+    Fixed = 0,
+    AutoWidth = 1,
+    AutoHeight = 2,
 }
 
-impl GrowType {
-    pub fn from(grow_type: u8) -> Self {
-        match grow_type {
-            0 => Self::Fixed,
-            1 => Self::AutoWidth,
-            2 => Self::AutoHeight,
-            _ => unreachable!(),
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub struct TextContentSize {
+    pub width: f32,
+    pub height: f32,
+    pub max_width: f32,
+}
+
+const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
+
+impl TextContentSize {
+    pub fn default() -> Self {
+        Self {
+            width: DEFAULT_TEXT_CONTENT_SIZE,
+            height: DEFAULT_TEXT_CONTENT_SIZE,
+            max_width: DEFAULT_TEXT_CONTENT_SIZE,
         }
+    }
+
+    pub fn new(width: f32, height: f32, max_width: f32) -> Self {
+        Self {
+            width,
+            height,
+            max_width,
+        }
+    }
+
+    pub fn new_with_size(width: f32, height: f32) -> Self {
+        Self {
+            width,
+            height,
+            max_width: DEFAULT_TEXT_CONTENT_SIZE,
+        }
+    }
+
+    pub fn set_size(&mut self, width: f32, height: f32) {
+        self.width = width;
+        self.height = height;
+    }
+
+    pub fn copy_finite_size(
+        &mut self,
+        size: TextContentSize,
+        default_height: f32,
+        default_width: f32,
+    ) {
+        if f32::is_finite(size.width) {
+            self.width = size.width;
+        } else {
+            self.width = default_width;
+        }
+        if f32::is_finite(size.max_width) {
+            self.max_width = size.max_width;
+        } else {
+            self.max_width = default_width
+        }
+        if f32::is_finite(size.height) {
+            self.height = size.height;
+        } else {
+            self.height = default_height;
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TextPositionWithAffinity {
+    pub position_with_affinity: PositionWithAffinity,
+    pub paragraph: i32,
+    pub span: i32,
+    pub offset: i32,
+}
+
+impl TextPositionWithAffinity {
+    pub fn new(
+        position_with_affinity: PositionWithAffinity,
+        paragraph: i32,
+        span: i32,
+        offset: i32,
+    ) -> Self {
+        Self {
+            position_with_affinity,
+            paragraph,
+            span,
+            offset,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TextContentLayoutResult(
+    Vec<ParagraphBuilderGroup>,
+    Vec<Vec<skia::textlayout::Paragraph>>,
+    TextContentSize,
+);
+
+#[derive(Debug)]
+pub struct TextContentLayout {
+    pub paragraph_builders: Vec<ParagraphBuilderGroup>,
+    pub paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+}
+
+impl Clone for TextContentLayout {
+    fn clone(&self) -> Self {
+        Self {
+            paragraph_builders: vec![],
+            paragraphs: vec![],
+        }
+    }
+}
+
+impl PartialEq for TextContentLayout {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl TextContentLayout {
+    pub fn new() -> Self {
+        Self {
+            paragraph_builders: vec![],
+            paragraphs: vec![],
+        }
+    }
+
+    pub fn set(
+        &mut self,
+        paragraph_builders: Vec<ParagraphBuilderGroup>,
+        paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+    ) {
+        self.paragraph_builders = paragraph_builders;
+        self.paragraphs = paragraphs;
+    }
+
+    pub fn needs_update(&self) -> bool {
+        self.paragraph_builders.is_empty() || self.paragraphs.is_empty()
     }
 }
 
@@ -38,18 +175,8 @@ pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
     pub bounds: Rect,
     pub grow_type: GrowType,
-}
-
-pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayout::Paragraph>>) {
-    for group in paragraphs {
-        for paragraph in group {
-            // We first set max so we can get the min_intrinsic_width (this is the min word size)
-            // then after we set either the real with or the min.
-            // This is done this way so the words are not break into lines.
-            paragraph.layout(f32::MAX);
-            paragraph.layout(f32::max(width, paragraph.min_intrinsic_width().ceil()));
-        }
-    }
+    pub size: TextContentSize,
+    pub layout: TextContentLayout,
 }
 
 impl TextContent {
@@ -58,6 +185,8 @@ impl TextContent {
             paragraphs: Vec::new(),
             bounds,
             grow_type,
+            size: TextContentSize::default(),
+            layout: TextContentLayout::new(),
         }
     }
 
@@ -68,16 +197,17 @@ impl TextContent {
             paragraphs,
             bounds,
             grow_type,
+            size: TextContentSize::new_with_size(bounds.width(), bounds.height()),
+            layout: TextContentLayout::new(),
         }
+    }
+
+    pub fn bounds(&self) -> Rect {
+        self.bounds
     }
 
     pub fn set_xywh(&mut self, x: f32, y: f32, w: f32, h: f32) {
         self.bounds = Rect::from_xywh(x, y, w, h);
-    }
-
-    #[allow(dead_code)]
-    pub fn width(&self) -> f32 {
-        self.bounds.width()
     }
 
     #[allow(dead_code)]
@@ -94,88 +224,12 @@ impl TextContent {
         self.paragraphs.push(paragraph);
     }
 
-    pub fn to_paragraphs(&self, fonts: &FontCollection) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        let fallback_fonts = get_fallback_fonts();
-        let mut paragraph_group = Vec::new();
-        let paragraphs = self
-            .paragraphs
-            .iter()
-            .map(|p| {
-                let paragraph_style = p.paragraph_to_style();
-                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-                for leaf in &p.children {
-                    let text_style = leaf.to_style(p, &self.bounds, fallback_fonts); // FIXME
-                    let text = leaf.apply_text_transform();
-                    builder.push_style(&text_style);
-                    builder.add_text(&text);
-                    builder.pop();
-                }
-                builder.build()
-            })
-            .collect();
-        paragraph_group.push(paragraphs);
-        paragraph_group
+    pub fn paragraphs(&self) -> &[Paragraph] {
+        &self.paragraphs
     }
 
-    pub fn to_stroke_paragraphs(
-        &self,
-        stroke: &Stroke,
-        bounds: &Rect,
-        fonts: &FontCollection,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        let fallback_fonts = get_fallback_fonts();
-        let mut paragraph_group = Vec::new();
-        let stroke_paints = get_text_stroke_paints(stroke, bounds);
-
-        for stroke_paint in stroke_paints {
-            let mut stroke_paragraphs = Vec::new();
-            for paragraph in &self.paragraphs {
-                let paragraph_style = paragraph.paragraph_to_style();
-                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-                for leaf in &paragraph.children {
-                    let stroke_style =
-                        leaf.to_stroke_style(paragraph, &stroke_paint, fallback_fonts);
-                    let text: String = leaf.apply_text_transform();
-                    builder.push_style(&stroke_style);
-                    builder.add_text(&text);
-                    builder.pop();
-                }
-                let p = builder.build();
-                stroke_paragraphs.push(p);
-            }
-            paragraph_group.push(stroke_paragraphs);
-        }
-        paragraph_group
-    }
-
-    pub fn collect_paragraphs(
-        &self,
-        mut paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        if self.grow_type() == GrowType::AutoWidth {
-            set_paragraphs_width(f32::MAX, &mut paragraphs);
-            let max_width = auto_width(&paragraphs).ceil();
-            set_paragraphs_width(max_width, &mut paragraphs);
-        } else {
-            set_paragraphs_width(self.width(), &mut paragraphs);
-        }
-        paragraphs
-    }
-
-    pub fn get_skia_paragraphs(
-        &self,
-        fonts: &FontCollection,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.collect_paragraphs(self.to_paragraphs(fonts))
-    }
-
-    pub fn get_skia_stroke_paragraphs(
-        &self,
-        stroke: &Stroke,
-        bounds: &Rect,
-        fonts: &FontCollection,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds, fonts))
+    pub fn width(&self) -> f32 {
+        self.size.width
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -185,6 +239,277 @@ impl TextContent {
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
         self.grow_type = grow_type;
     }
+
+    pub fn calculate_bounds(&self, shape: &Shape) -> Bounds {
+        let (x, mut y, transform, center) = (
+            shape.selrect.x(),
+            shape.selrect.y(),
+            &shape.transform,
+            &shape.center(),
+        );
+
+        let width = if self.grow_type() == GrowType::AutoWidth {
+            self.size.width
+        } else {
+            shape.selrect().width()
+        };
+
+        let height = if self.size.width.round() != width.round() {
+            self.get_height(width)
+        } else {
+            self.size.height
+        };
+
+        let offset_y = match shape.vertical_align() {
+            VerticalAlign::Center => (shape.selrect().height() - height) / 2.0,
+            VerticalAlign::Bottom => shape.selrect().height() - height,
+            _ => 0.0,
+        };
+        y += offset_y;
+
+        let text_rect = Rect::from_xywh(x, y, width, height);
+        let mut bounds = Bounds::new(
+            Point::new(text_rect.x(), text_rect.y()),
+            Point::new(text_rect.x() + text_rect.width(), text_rect.y()),
+            Point::new(
+                text_rect.x() + text_rect.width(),
+                text_rect.y() + text_rect.height(),
+            ),
+            Point::new(text_rect.x(), text_rect.y() + text_rect.height()),
+        );
+
+        if !transform.is_identity() {
+            let mut matrix = *transform;
+            matrix.post_translate(*center);
+            matrix.pre_translate(-*center);
+            bounds.transform_mut(&matrix);
+        }
+
+        bounds
+    }
+
+    pub fn transform(&mut self, transform: &Matrix) {
+        let left = self.bounds.left();
+        let right = self.bounds.right();
+        let top = self.bounds.top();
+        let bottom = self.bounds.bottom();
+        let p1 = transform.map_point(skia::Point::new(left, top));
+        let p2 = transform.map_point(skia::Point::new(right, bottom));
+        self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
+    }
+
+    pub fn get_caret_position_at(&self, point: &Point) -> Option<TextPositionWithAffinity> {
+        let mut offset_y = 0.0;
+        let layout_paragraphs = self.layout.paragraphs.iter().flatten();
+
+        let mut paragraph_index: i32 = -1;
+        let mut span_index: i32 = -1;
+        for layout_paragraph in layout_paragraphs {
+            paragraph_index += 1;
+            let start_y = offset_y;
+            let end_y = offset_y + layout_paragraph.height();
+
+            // We only test against paragraphs that can contain the current y
+            // coordinate.
+            if point.y > start_y && point.y < end_y {
+                let position_with_affinity =
+                    layout_paragraph.get_glyph_position_at_coordinate(*point);
+                if let Some(paragraph) = self.paragraphs().get(paragraph_index as usize) {
+                    // Computed position keeps the current position in terms
+                    // of number of characters of text. This is used to know
+                    // in which span we are.
+                    let mut computed_position = 0;
+                    let mut span_offset = 0;
+                    for span in paragraph.children() {
+                        span_index += 1;
+                        let length = span.text.len();
+                        let start_position = computed_position;
+                        let end_position = computed_position + length;
+                        let current_position = position_with_affinity.position as usize;
+                        if start_position <= current_position && end_position >= current_position {
+                            span_offset = position_with_affinity.position - start_position as i32;
+                            break;
+                        }
+                        computed_position += length;
+                    }
+                    return Some(TextPositionWithAffinity::new(
+                        position_with_affinity,
+                        paragraph_index,
+                        span_index,
+                        span_offset,
+                    ));
+                }
+            }
+            offset_y += layout_paragraph.height();
+        }
+        None
+    }
+
+    /// Builds the ParagraphBuilders necessary to render
+    /// this text.
+    pub fn paragraph_builder_group_from_text(
+        &self,
+        use_shadow: Option<bool>,
+    ) -> Vec<ParagraphBuilderGroup> {
+        let fonts = get_font_collection();
+        let fallback_fonts = get_fallback_fonts();
+        let mut paragraph_group = Vec::new();
+
+        for paragraph in self.paragraphs() {
+            let paragraph_style = paragraph.paragraph_to_style();
+            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            for span in paragraph.children() {
+                let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
+                let text_style = span.to_style(
+                    &self.bounds(),
+                    fallback_fonts,
+                    remove_alpha,
+                    paragraph.line_height(),
+                );
+                let text: String = span.apply_text_transform();
+                builder.push_style(&text_style);
+                builder.add_text(&text);
+            }
+            paragraph_group.push(vec![builder]);
+        }
+
+        paragraph_group
+    }
+
+    /// Performs a text auto layout without width limits.
+    /// This should be the same as text_auto_layout.
+    fn build_paragraphs_from_paragraph_builders(
+        &self,
+        paragraph_builders: &mut [ParagraphBuilderGroup],
+        width: f32,
+    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+        let paragraphs = paragraph_builders
+            .iter_mut()
+            .map(|builders| {
+                builders
+                    .iter_mut()
+                    .map(|builder| {
+                        let mut paragraph = builder.build();
+                        // For auto-width, always layout with infinite width first to get intrinsic width
+                        paragraph.layout(width);
+                        paragraph
+                    })
+                    .collect()
+            })
+            .collect();
+        paragraphs
+    }
+
+    /// Performs an Auto Width text layout.
+    fn text_layout_auto_width(&self) -> TextContentLayoutResult {
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+
+        let (width, height) =
+            paragraphs
+                .iter()
+                .flatten()
+                .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
+                    (
+                        f32::max(paragraph.longest_line(), auto_width),
+                        auto_height + paragraph.height(),
+                    )
+                });
+
+        let size = TextContentSize::new(width.ceil(), height.ceil(), width.ceil());
+        TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    /// Private function that performs
+    /// Performs an Auto Height text layout.
+    fn text_layout_auto_height(&self) -> TextContentLayoutResult {
+        let width = self.width();
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
+        let size = TextContentSize::new_with_size(width.ceil(), height.ceil());
+        TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    /// Performs a Fixed text layout.
+    fn text_layout_fixed(&self) -> TextContentLayoutResult {
+        let width = self.width();
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraph_height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
+
+        let size = TextContentSize::new_with_size(width.ceil(), paragraph_height.ceil());
+        TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    pub fn get_width(&self, width: f32) -> f32 {
+        if self.grow_type() == GrowType::AutoWidth {
+            self.size.width
+        } else {
+            width
+        }
+    }
+
+    pub fn get_height(&self, width: f32) -> f32 {
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraph_height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
+        paragraph_height
+    }
+
+    pub fn needs_update_layout(&self) -> bool {
+        self.layout.needs_update()
+    }
+
+    pub fn set_layout_from_result(
+        &mut self,
+        result: TextContentLayoutResult,
+        default_height: f32,
+        default_width: f32,
+    ) {
+        self.layout.set(result.0, result.1);
+        self.size
+            .copy_finite_size(result.2, default_height, default_width);
+    }
+
+    pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        self.size.set_size(selrect.width(), selrect.height());
+
+        match self.grow_type() {
+            GrowType::AutoHeight => {
+                let result = self.text_layout_auto_height();
+                self.set_layout_from_result(result, selrect.width(), selrect.height());
+            }
+            GrowType::AutoWidth => {
+                let result = self.text_layout_auto_width();
+                self.set_layout_from_result(result, selrect.width(), selrect.height());
+            }
+            GrowType::Fixed => {
+                let result = self.text_layout_fixed();
+                self.set_layout_from_result(result, selrect.width(), selrect.height());
+            }
+        }
+        self.size
+    }
 }
 
 impl Default for TextContent {
@@ -193,36 +518,45 @@ impl Default for TextContent {
             paragraphs: vec![],
             bounds: Rect::default(),
             grow_type: GrowType::Fixed,
+            size: TextContentSize::default(),
+            layout: TextContentLayout::new(),
         }
     }
 }
 
+pub type TextAlign = skia::textlayout::TextAlign;
+pub type TextDirection = skia::textlayout::TextDirection;
+pub type TextDecoration = skia::textlayout::TextDecoration;
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum TextTransform {
+    Lowercase,
+    Uppercase,
+    Capitalize,
+}
+
+// FIXME: Rethink this type. We'll probably need to move the serialization to the
+// wasm module and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
-    num_leaves: u32,
-    text_align: u8,
-    text_direction: u8,
-    text_decoration: u8,
-    text_transform: u8,
+    text_align: TextAlign,
+    text_direction: TextDirection,
+    text_decoration: Option<TextDecoration>,
+    text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
-    typography_ref_file: Uuid,
-    typography_ref_id: Uuid,
-    children: Vec<TextLeaf>,
+    children: Vec<TextSpan>,
 }
 
 impl Default for Paragraph {
     fn default() -> Self {
         Self {
-            num_leaves: 0,
-            text_align: 0,
-            text_direction: 0,
-            text_decoration: 0,
-            text_transform: 0,
+            text_align: TextAlign::default(),
+            text_direction: TextDirection::LTR,
+            text_decoration: None,
+            text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
-            typography_ref_file: Uuid::nil(),
-            typography_ref_id: Uuid::nil(),
             children: vec![],
         }
     }
@@ -231,61 +565,52 @@ impl Default for Paragraph {
 impl Paragraph {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        num_leaves: u32,
-        text_align: u8,
-        text_direction: u8,
-        text_decoration: u8,
-        text_transform: u8,
+        text_align: TextAlign,
+        text_direction: TextDirection,
+        text_decoration: Option<TextDecoration>,
+        text_transform: Option<TextTransform>,
         line_height: f32,
         letter_spacing: f32,
-        typography_ref_file: Uuid,
-        typography_ref_id: Uuid,
-        children: Vec<TextLeaf>,
+        children: Vec<TextSpan>,
     ) -> Self {
         Self {
-            num_leaves,
             text_align,
             text_direction,
             text_decoration,
             text_transform,
             line_height,
             letter_spacing,
-            typography_ref_file,
-            typography_ref_id,
             children,
         }
     }
 
     #[allow(dead_code)]
-    fn set_children(&mut self, children: Vec<TextLeaf>) {
+    fn set_children(&mut self, children: Vec<TextSpan>) {
         self.children = children;
     }
 
-    #[allow(dead_code)]
-    pub fn get_children(&self) -> &Vec<TextLeaf> {
+    pub fn children(&self) -> &[TextSpan] {
         &self.children
     }
 
     #[allow(dead_code)]
-    fn add_leaf(&mut self, leaf: TextLeaf) {
-        self.children.push(leaf);
+    fn add_span(&mut self, span: TextSpan) {
+        self.children.push(span);
+    }
+
+    pub fn line_height(&self) -> f32 {
+        self.line_height
     }
 
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
-        style.set_text_align(match self.text_align {
-            0 => skia::textlayout::TextAlign::Left,
-            1 => skia::textlayout::TextAlign::Center,
-            2 => skia::textlayout::TextAlign::Right,
-            3 => skia::textlayout::TextAlign::Justify,
-            _ => skia::textlayout::TextAlign::Left,
-        });
+
         style.set_height(self.line_height);
-        style.set_text_direction(match self.text_direction {
-            0 => skia::textlayout::TextDirection::LTR,
-            1 => skia::textlayout::TextDirection::RTL,
-            _ => skia::textlayout::TextDirection::LTR,
-        });
+        style.set_text_align(self.text_align);
+        style.set_text_direction(self.text_direction);
+        style.set_replace_tab_characters(true);
+        style.set_apply_rounding_hack(true);
+        style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
     }
 
@@ -298,27 +623,31 @@ impl Paragraph {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct TextLeaf {
+pub struct TextSpan {
     text: String,
     font_family: FontFamily,
     font_size: f32,
-    font_style: u8,
+    line_height: f32,
+    letter_spacing: f32,
     font_weight: i32,
     font_variant_id: Uuid,
-    text_decoration: u8,
-    text_transform: u8,
+    text_decoration: Option<TextDecoration>,
+    text_transform: Option<TextTransform>,
+    text_direction: TextDirection,
     fills: Vec<shapes::Fill>,
 }
 
-impl TextLeaf {
+impl TextSpan {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         text: String,
         font_family: FontFamily,
         font_size: f32,
-        font_style: u8,
-        text_decoration: u8,
-        text_transform: u8,
+        line_height: f32,
+        letter_spacing: f32,
+        text_decoration: Option<TextDecoration>,
+        text_transform: Option<TextTransform>,
+        text_direction: TextDirection,
         font_weight: i32,
         font_variant_id: Uuid,
         fills: Vec<shapes::Fill>,
@@ -327,46 +656,53 @@ impl TextLeaf {
             text,
             font_family,
             font_size,
-            font_style,
+            line_height,
+            letter_spacing,
             text_decoration,
             text_transform,
+            text_direction,
             font_weight,
             font_variant_id,
             fills,
         }
     }
 
+    pub fn set_text(&mut self, text: String) {
+        self.text = text;
+    }
+
+    pub fn fills(&self) -> &[shapes::Fill] {
+        &self.fills
+    }
+
     pub fn to_style(
         &self,
-        paragraph: &Paragraph,
         content_bounds: &Rect,
         fallback_fonts: &HashSet<String>,
+        remove_alpha: bool,
+        paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
+        let mut paint = paint::Paint::default();
 
-        let bounding_box = Rect::from_xywh(
-            content_bounds.x(),
-            content_bounds.y(),
-            self.font_size * self.text.len() as f32,
-            self.font_size,
-        );
+        if remove_alpha {
+            paint.set_color(skia::Color::BLACK);
+            paint.set_alpha(255);
+        } else {
+            paint = merge_fills(&self.fills, *content_bounds);
+        }
 
-        let paint = merge_fills(&self.fills, bounding_box);
-        style.set_foreground_paint(&paint);
-        style.set_font_size(self.font_size);
-        style.set_letter_spacing(paragraph.letter_spacing);
-        style.set_height(paragraph.line_height);
+        let max_line_height = f32::max(paragraph_line_height, self.line_height);
+        style.set_height(max_line_height);
         style.set_height_override(true);
+        style.set_foreground_paint(&paint);
         style.set_decoration_type(match self.text_decoration {
-            0 => skia::textlayout::TextDecoration::NO_DECORATION,
-            1 => skia::textlayout::TextDecoration::UNDERLINE,
-            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
-            3 => skia::textlayout::TextDecoration::OVERLINE,
-            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+            Some(text_decoration) => text_decoration,
+            None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
 
-        // FIXME fix decoration styles
-        style.set_decoration_color(paint.color());
+        // Trick to avoid showing the text decoration
+        style.set_decoration_thickness_multiplier(0.0);
 
         let mut font_families = vec![
             self.serialized_font_family(),
@@ -376,26 +712,42 @@ impl TextLeaf {
 
         font_families.extend(fallback_fonts.iter().cloned());
         style.set_font_families(&font_families);
+        style.set_font_size(self.font_size);
+        style.set_letter_spacing(self.letter_spacing);
+        style.set_half_leading(true);
 
         style
     }
 
     pub fn to_stroke_style(
         &self,
-        paragraph: &Paragraph,
         stroke_paint: &Paint,
         fallback_fonts: &HashSet<String>,
+        remove_alpha: bool,
+        paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(paragraph, &Rect::default(), fallback_fonts);
-        style.set_foreground_paint(stroke_paint);
+        let mut style = self.to_style(
+            &Rect::default(),
+            fallback_fonts,
+            remove_alpha,
+            paragraph_line_height,
+        );
+        if remove_alpha {
+            let mut paint = skia::Paint::default();
+            paint.set_style(stroke_paint.style());
+            paint.set_stroke_width(stroke_paint.stroke_width());
+            paint.set_color(skia::Color::BLACK);
+            paint.set_alpha(255);
+            style.set_foreground_paint(&paint);
+        } else {
+            style.set_foreground_paint(stroke_paint);
+        }
+
         style.set_font_size(self.font_size);
-        style.set_letter_spacing(paragraph.letter_spacing);
+        style.set_letter_spacing(self.letter_spacing);
         style.set_decoration_type(match self.text_decoration {
-            0 => skia::textlayout::TextDecoration::NO_DECORATION,
-            1 => skia::textlayout::TextDecoration::UNDERLINE,
-            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
-            3 => skia::textlayout::TextDecoration::OVERLINE,
-            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+            Some(text_decoration) => text_decoration,
+            None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
         style
     }
@@ -404,12 +756,29 @@ impl TextLeaf {
         format!("{}", self.font_family)
     }
 
+    fn process_ignored_chars(text: &str, browser: u8) -> String {
+        text.chars()
+            .filter_map(|c| {
+                if c < '\u{0020}' || c == '\u{2028}' || c == '\u{2029}' {
+                    if browser == Browser::Firefox as u8 {
+                        None
+                    } else {
+                        Some(' ')
+                    }
+                } else {
+                    Some(c)
+                }
+            })
+            .collect()
+    }
+
     pub fn apply_text_transform(&self) -> String {
-        match self.text_transform {
-            1 => self.text.to_uppercase(),
-            2 => self.text.to_lowercase(),
-            3 => self
-                .text
+        let browser = crate::with_state!(state, { state.current_browser });
+        let text = Self::process_ignored_chars(&self.text, browser);
+        let transformed_text = match self.text_transform {
+            Some(TextTransform::Uppercase) => text.to_uppercase(),
+            Some(TextTransform::Lowercase) => text.to_lowercase(),
+            Some(TextTransform::Capitalize) => text
                 .split_whitespace()
                 .map(|word| {
                     let mut chars = word.chars();
@@ -420,286 +789,20 @@ impl TextLeaf {
                 })
                 .collect::<Vec<_>>()
                 .join(" "),
-            _ => self.text.clone(),
-        }
+            None => text,
+        };
+
+        transformed_text.replace("/", "/\u{200B}")
     }
 
     pub fn scale_content(&mut self, value: f32) {
         self.font_size *= value;
     }
-}
 
-const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
-const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
-pub const RAW_LEAF_FILLS_SIZE: usize = 160;
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct RawTextLeaf {
-    font_style: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    font_size: f32,
-    font_weight: i32,
-    font_id: [u32; 4],
-    font_family: [u8; 4],
-    font_variant_id: [u32; 4],
-    text_length: u32,
-    total_fills: u32,
-}
-
-impl From<[u8; RAW_LEAF_DATA_SIZE]> for RawTextLeaf {
-    fn from(bytes: [u8; RAW_LEAF_DATA_SIZE]) -> Self {
-        unsafe { std::mem::transmute(bytes) }
+    pub fn is_transparent(&self) -> bool {
+        self.fills.iter().all(|fill| match fill {
+            shapes::Fill::Solid(shapes::SolidColor(color)) => color.a() == 0,
+            _ => false,
+        })
     }
-}
-
-impl TryFrom<&[u8]> for RawTextLeaf {
-    type Error = String;
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let data: [u8; RAW_LEAF_DATA_SIZE] = bytes
-            .get(0..RAW_LEAF_DATA_SIZE)
-            .and_then(|slice| slice.try_into().ok())
-            .ok_or("Invalid text leaf data".to_string())?;
-        Ok(RawTextLeaf::from(data))
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct RawTextLeafData {
-    font_style: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    font_size: f32,
-    font_weight: i32,
-    font_id: [u32; 4],
-    font_family: [u8; 4],
-    font_variant_id: [u32; 4],
-    text_length: u32,
-    total_fills: u32,
-    fills: Vec<shapes::Fill>,
-}
-
-impl From<&[u8]> for RawTextLeafData {
-    fn from(bytes: &[u8]) -> Self {
-        let text_leaf: RawTextLeaf = RawTextLeaf::try_from(bytes).unwrap();
-        let total_fills = text_leaf.total_fills as usize;
-
-        // Use checked_mul to prevent overflow
-        let fills_size = total_fills
-            .checked_mul(RAW_LEAF_FILLS_SIZE)
-            .expect("Overflow occurred while calculating fills size");
-
-        let fills_start = RAW_LEAF_DATA_SIZE;
-        let fills_end = fills_start + fills_size;
-        let buffer = &bytes[fills_start..fills_end];
-        let fills = parse_fills_from_bytes(buffer, total_fills);
-
-        Self {
-            font_style: text_leaf.font_style,
-            text_decoration: text_leaf.text_decoration,
-            text_transform: text_leaf.text_transform,
-            font_size: text_leaf.font_size,
-            font_weight: text_leaf.font_weight,
-            font_id: text_leaf.font_id,
-            font_family: text_leaf.font_family,
-            font_variant_id: text_leaf.font_variant_id,
-            text_length: text_leaf.text_length,
-            total_fills: text_leaf.total_fills,
-            fills,
-        }
-    }
-}
-
-#[repr(C)]
-#[repr(align(4))]
-#[derive(Debug, Clone, Copy)]
-pub struct RawParagraphData {
-    num_leaves: u32,
-    text_align: u8,
-    text_direction: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    line_height: f32,
-    letter_spacing: f32,
-    typography_ref_file: [u32; 4],
-    typography_ref_id: [u32; 4],
-}
-
-impl From<[u8; RAW_PARAGRAPH_DATA_SIZE]> for RawParagraphData {
-    fn from(bytes: [u8; RAW_PARAGRAPH_DATA_SIZE]) -> Self {
-        unsafe { std::mem::transmute(bytes) }
-    }
-}
-
-impl TryFrom<&[u8]> for RawParagraphData {
-    type Error = String;
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let data: [u8; RAW_PARAGRAPH_DATA_SIZE] = bytes
-            .get(0..RAW_PARAGRAPH_DATA_SIZE)
-            .and_then(|slice| slice.try_into().ok())
-            .ok_or("Invalid paragraph data".to_string())?;
-        Ok(RawParagraphData::from(data))
-    }
-}
-
-impl RawTextData {
-    fn text_from_bytes(buffer: &[u8], offset: usize, text_length: u32) -> (String, usize) {
-        let text_length = text_length as usize;
-        let text_end = offset + text_length;
-
-        if text_end > buffer.len() {
-            panic!(
-                "Invalid text range: offset={}, text_end={}, buffer_len={}",
-                offset,
-                text_end,
-                buffer.len()
-            );
-        }
-
-        let text_utf8 = buffer[offset..text_end].to_vec();
-        if text_utf8.is_empty() {
-            return (String::new(), text_end);
-        }
-
-        let text = String::from_utf8_lossy(&text_utf8).to_string();
-        (text, text_end)
-    }
-}
-
-pub struct RawTextData {
-    pub paragraph: Paragraph,
-}
-
-impl From<&Vec<u8>> for RawTextData {
-    fn from(bytes: &Vec<u8>) -> Self {
-        let paragraph = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE]).unwrap();
-        let mut offset = RAW_PARAGRAPH_DATA_SIZE;
-        let mut raw_text_leaves: Vec<RawTextLeafData> = Vec::new();
-        let mut text_leaves: Vec<TextLeaf> = Vec::new();
-
-        for _ in 0..paragraph.num_leaves {
-            let text_leaf = RawTextLeafData::from(&bytes[offset..]);
-            raw_text_leaves.push(text_leaf.clone());
-            offset += RAW_LEAF_DATA_SIZE + (text_leaf.total_fills as usize * RAW_LEAF_FILLS_SIZE);
-        }
-
-        for text_leaf in raw_text_leaves.iter() {
-            let (text, new_offset) =
-                RawTextData::text_from_bytes(bytes, offset, text_leaf.text_length);
-            offset = new_offset;
-
-            let font_id = uuid_from_u32(text_leaf.font_id);
-            let font_variant_id = uuid_from_u32(text_leaf.font_variant_id);
-
-            let font_family = FontFamily::new(
-                font_id,
-                text_leaf.font_weight as u32,
-                text_leaf.font_style.into(),
-            );
-
-            let new_text_leaf = TextLeaf::new(
-                text,
-                font_family,
-                text_leaf.font_size,
-                text_leaf.font_style,
-                text_leaf.text_decoration,
-                text_leaf.text_transform,
-                text_leaf.font_weight,
-                font_variant_id,
-                text_leaf.fills.clone(),
-            );
-            text_leaves.push(new_text_leaf);
-        }
-
-        let typography_ref_file = uuid_from_u32(paragraph.typography_ref_file);
-        let typography_ref_id = uuid_from_u32(paragraph.typography_ref_id);
-
-        let paragraph = Paragraph::new(
-            paragraph.num_leaves,
-            paragraph.text_align,
-            paragraph.text_direction,
-            paragraph.text_decoration,
-            paragraph.text_transform,
-            paragraph.line_height,
-            paragraph.letter_spacing,
-            typography_ref_file,
-            typography_ref_id,
-            text_leaves.clone(),
-        );
-
-        Self { paragraph }
-    }
-}
-
-pub fn auto_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
-    paragraphs.iter().flatten().fold(0.0, |auto_width, p| {
-        f32::max(p.max_intrinsic_width(), auto_width)
-    })
-}
-
-pub fn max_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
-    paragraphs
-        .iter()
-        .flatten()
-        .fold(0.0, |max_width, p| f32::max(p.max_width(), max_width))
-}
-
-pub fn auto_height(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
-    paragraphs
-        .iter()
-        .flatten()
-        .fold(0.0, |auto_height, p| auto_height + p.height())
-}
-
-fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect) -> Vec<Paint> {
-    let mut paints = Vec::new();
-
-    match stroke.kind {
-        StrokeKind::Inner => {
-            let mut paint = skia::Paint::default();
-            paint.set_blend_mode(skia::BlendMode::DstOver);
-            paint.set_anti_alias(true);
-            paints.push(paint);
-
-            let mut paint = skia::Paint::default();
-            paint.set_style(skia::PaintStyle::Stroke);
-            paint.set_blend_mode(skia::BlendMode::SrcATop);
-            paint.set_anti_alias(true);
-            paint.set_stroke_width(stroke.width * 2.0);
-
-            set_paint_fill(&mut paint, &stroke.fill, bounds);
-
-            paints.push(paint);
-        }
-        StrokeKind::Center => {
-            let mut paint = skia::Paint::default();
-            paint.set_style(skia::PaintStyle::Stroke);
-            paint.set_anti_alias(true);
-            paint.set_stroke_width(stroke.width);
-
-            set_paint_fill(&mut paint, &stroke.fill, bounds);
-
-            paints.push(paint);
-        }
-        StrokeKind::Outer => {
-            let mut paint = skia::Paint::default();
-            paint.set_style(skia::PaintStyle::Stroke);
-            paint.set_blend_mode(skia::BlendMode::DstOver);
-            paint.set_anti_alias(true);
-            paint.set_stroke_width(stroke.width * 2.0);
-
-            set_paint_fill(&mut paint, &stroke.fill, bounds);
-
-            paints.push(paint);
-
-            let mut paint = skia::Paint::default();
-            paint.set_blend_mode(skia::BlendMode::Clear);
-            paint.set_anti_alias(true);
-            paints.push(paint);
-        }
-    }
-
-    paints
 }

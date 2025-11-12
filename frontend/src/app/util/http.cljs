@@ -13,7 +13,7 @@
    [app.config :as cfg]
    [app.util.cache :as c]
    [app.util.globals :as globals]
-   [app.util.time :as dt]
+   [app.util.perf :as perf]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -52,7 +52,12 @@
 
 (defn default-headers
   []
-  {"x-frontend-version" (:full cfg/version)})
+  {"x-frontend-version" (:full cfg/version)
+   "x-client" (str "penpot-frontend/" (:full cfg/version))})
+
+;; Storage to save the average time of the requests
+(defonce network-averages
+  (atom {}))
 
 (defn fetch
   [{:keys [method uri query headers body mode omit-default-headers credentials]
@@ -88,17 +93,29 @@
                               :redirect "follow"
                               :credentials credentials
                               :referrerPolicy "no-referrer"
-                              :signal signal}]
+                              :signal signal}
+
+           start (perf/timestamp)]
 
        (-> (js/fetch (str uri) params)
-           (p/then (fn [response]
-                     (vreset! abortable? false)
-                     (.next ^js subscriber response)
-                     (.complete ^js subscriber)))
-           (p/catch (fn [err]
-                      (vreset! abortable? false)
-                      (when-not @unsubscribed?
-                        (.error ^js subscriber err)))))
+           (p/then
+            (fn [response]
+              (vreset! abortable? false)
+              (.next ^js subscriber response)
+              (.complete ^js subscriber)))
+           (p/catch
+            (fn [err]
+              (vreset! abortable? false)
+              (when-not @unsubscribed?
+                (.error ^js subscriber err))))
+           (p/finally
+             (fn []
+               (let [{:keys [count average] :or {count 0 average 0}} (get @network-averages (:path uri))
+                     current-time (- (perf/timestamp) start)
+                     average (+ (* average (/ count (inc count)))
+                                (/ current-time (inc count)))
+                     count (inc count)]
+                 (swap! network-averages assoc (:path uri) {:count count :average average})))))
        (fn []
          (vreset! unsubscribed? true)
          (when @abortable?
@@ -198,7 +215,7 @@
               (rx/map :body)
               (rx/mapcat wapi/read-file-as-data-url)
               (rx/map #(hash-map uri %))
-              (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}))]
+              (c/with-cache {:key uri :max-age (* 1000 60 60 4)}))]
 
      ;; We need to check `throw-err?` after the cache is resolved otherwise we cannot cache request
      ;; with different values of throw-err. By default we throw always the exception and then we just
@@ -215,4 +232,4 @@
          :uri url
          :response-type :text})
        (rx/map :body)
-       (c/with-cache {:key url :max-age (dt/duration {:hours 4})})))
+       (c/with-cache {:key url :max-age (* 1000 60 60 4)})))

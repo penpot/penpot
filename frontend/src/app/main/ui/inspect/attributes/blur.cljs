@@ -14,7 +14,7 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(defn has-blur? [shape]
+(defn- has-blur? [shape]
   (:blur shape))
 
 (mf/defc blur-panel

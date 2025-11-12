@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
@@ -45,7 +45,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.nudge-title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} i/close]]
+                 :on-click modal/hide!} deprecated-icon/close]]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :input-wrapper)}
         [:label {:class (stl/css :modal-msg)

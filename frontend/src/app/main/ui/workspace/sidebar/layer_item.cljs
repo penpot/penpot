@@ -17,33 +17,31 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.shape-icon :as usi]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (mf/defc layer-item-inner
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [{:keys [item depth parent-size name-ref children
+  {::mf/wrap-props false}
+  [{:keys [item depth parent-size name-ref children ref
            ;; Flags
            read-only? highlighted? selected? component-tree?
            filtered? expanded? dnd-over? dnd-over-top? dnd-over-bot? hide-toggle?
            ;; Callbacks
            on-select-shape on-context-menu on-pointer-enter on-pointer-leave on-zoom-to-selected
-           on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}
-   dref]
+           on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}]
 
   (let [id                    (:id item)
         name                  (:name item)
@@ -54,21 +52,20 @@
         parent-board?         (and (cfh/frame-shape? item)
                                    (= uuid/zero (:parent-id item)))
         absolute?             (ctl/item-absolute? item)
-        main-instance?        (:main-instance item)
-
-        variants?             (features/use-feature "variants/v1")
-        is-variant?           (when variants? (ctk/is-variant? item))
-        is-variant-container? (when variants? (ctk/is-variant-container? item))
+        is-variant?           (ctk/is-variant? item)
+        is-variant-container? (ctk/is-variant-container? item)
         variant-id            (when is-variant? (:variant-id item))
         variant-name          (when is-variant? (:variant-name item))
         variant-error         (when is-variant? (:variant-error item))
 
         data                  (deref refs/workspace-data)
         component             (ctkl/get-component data (:component-id item))
-        variant-properties    (:variant-properties component)]
+        variant-properties    (:variant-properties component)
+        icon-shape            (usi/get-shape-icon item)]
+
     [:*
      [:div {:id id
-            :ref dref
+            :ref ref
             :on-click on-select-shape
             :on-context-menu on-context-menu
             :data-testid "layer-row"
@@ -107,16 +104,13 @@
                               :toggle-content true
                               :inverse expanded?)
                       :on-click on-toggle-collapse}
-             i/arrow])
+             deprecated-icon/arrow])
 
           [:div {:class (stl/css :icon-shape)
                  :on-double-click on-zoom-to-selected}
            (when absolute?
              [:div {:class (stl/css :absolute)}])
-
-           [:& sic/element-icon
-            {:shape item
-             :main-instance? main-instance?}]]]
+           [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]]
 
          [:div {:class (stl/css :button-content)}
           (when (not ^boolean filtered?)
@@ -125,9 +119,7 @@
                  :on-double-click on-zoom-to-selected}
            (when ^boolean absolute?
              [:div {:class (stl/css :absolute)}])
-           [:& sic/element-icon
-            {:shape item
-             :main-instance? main-instance?}]]])
+           [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]])
 
        [:> layer-name* {:ref name-ref
                         :shape-id id
@@ -162,7 +154,7 @@
                              (tr "workspace.shape.menu.show")
                              (tr "workspace.shape.menu.hide"))
                     :on-click on-toggle-visibility}
-           (if ^boolean hidden? i/hide i/shown)]
+           (if ^boolean hidden? deprecated-icon/hide deprecated-icon/shown)]
           [:button {:class (stl/css-case
                             :block-element true
                             :selected blocked?)
@@ -170,7 +162,7 @@
                              (tr "workspace.shape.menu.unlock")
                              (tr "workspace.shape.menu.lock"))
                     :on-click on-toggle-blocking}
-           (if ^boolean blocked? i/lock i/unlock)]])]]
+           (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]])]]
 
      children]))
 
@@ -200,6 +192,7 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         parent-board?     (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
+
         toggle-collapse
         (mf/use-fn
          (mf/deps expanded?)
@@ -285,7 +278,8 @@
            (let [single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
              (when-not same?
-               (let [shape (get objects id)
+               (let [files (deref refs/files)
+                     shape (get objects id)
 
                      parent-id
                      (cond
@@ -298,7 +292,7 @@
                        :else
                        (cfh/get-parent-id objects id))
 
-                     [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected))
+                     [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected) false files)
 
                      parent    (get objects parent-id)
 

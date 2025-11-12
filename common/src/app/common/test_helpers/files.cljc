@@ -108,7 +108,8 @@
         page      (if (some? page-label)
                     (:id (get-page file page-label))
                     (current-page-id file))
-        libraries (or libraries {})]
+        libraries (or libraries
+                      {(:id file) file})]
 
     (ctf/dump-tree file page libraries params)))
 

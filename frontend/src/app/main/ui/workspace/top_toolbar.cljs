@@ -7,21 +7,19 @@
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.media :as dwm]
-   [app.main.data.workspace.path.state :as pst]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -60,7 +58,7 @@
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :on-click on-click
        :class (stl/css :main-toolbar-options-button)}
-      i/img
+      deprecated-icon/img
       [:& file-uploader
        {:input-id "image-upload"
         :accept dwm/accept-image-types
@@ -68,26 +66,31 @@
         :ref ref
         :on-selected on-selected}]]]))
 
-(def toolbar-hidden
-  (l/derived
-   (fn [state]
-     (let [visibility (dm/get-in state [:workspace-local :hide-toolbar])
-           editing?   (pst/path-editing? state)
-           hidden?    (if editing? true visibility)]
-       hidden?))
-   st/state))
+(def ^:private toolbar-hidden-ref
+  (l/derived (fn [state]
+               (let [visibility      (get state :hide-toolbar)
+                     path-edit-state (get state :edit-path)
 
-(mf/defc top-toolbar
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+                     selected        (get state :selected)
+                     edition         (get state :edition)
+                     single?         (= (count selected) 1)
+
+                     path-editing?   (and single? (some? (get path-edit-state edition)))]
+                 (if path-editing? true visibility)))
+             refs/workspace-local))
+
+(mf/defc top-toolbar*
+  {::mf/memo true}
   [{:keys [layout]}]
-  (let [selected-drawtool    (mf/deref refs/selected-drawing-tool)
-        edition              (mf/deref refs/selected-edition)
+  (let [drawtool      (mf/deref refs/selected-drawing-tool)
+        edition       (mf/deref refs/selected-edition)
 
-        read-only?           (mf/use-ctx ctx/workspace-read-only?)
+        profile       (mf/deref refs/profile)
+        props         (get profile :props)
 
-        rulers?              (mf/deref refs/rulers?)
-        hide-toolbar?        (mf/deref toolbar-hidden)
+        read-only?    (mf/use-ctx ctx/workspace-read-only?)
+        rulers?       (mf/deref refs/rulers?)
+        hide-toolbar? (mf/deref toolbar-hidden-ref)
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt (dw/clear-edition-mode)))
@@ -121,8 +124,6 @@
            (dom/blur! (dom/get-target event))
            (st/emit! (dwc/toggle-toolbar-visibility))))
 
-        profile (mf/deref refs/profile)
-        props   (get profile :props)
         test-tooltip-board-text
         (if (not (:workspace-visited props))
           (tr "workspace.toolbar.frame-first-time" (sc/get-tooltip :draw-frame))
@@ -139,46 +140,46 @@
           {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
            :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
            :class (stl/css-case :main-toolbar-options-button true
-                                :selected (and (nil? selected-drawtool)
+                                :selected (and (nil? drawtool)
                                                (not edition)))
            :on-click interrupt}
-          i/move]]
+          deprecated-icon/move]]
         [:*
          [:li
           [:button
            {:title test-tooltip-board-text
             :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
-            :class  (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :frame))
+            :class  (stl/css-case :main-toolbar-options-button true :selected (= drawtool :frame))
             :on-click select-drawtool
             :data-tool "frame"
             :data-testid "artboard-btn"}
-           i/board]]
+           deprecated-icon/board]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
             :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
-            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :rect))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :rect))
             :on-click select-drawtool
             :data-tool "rect"
             :data-testid "rect-btn"}
-           i/rectangle]]
+           deprecated-icon/rectangle]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
             :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :circle))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :circle))
             :on-click select-drawtool
             :data-tool "circle"
             :data-testid "ellipse-btn"}
-           i/elipse]]
+           deprecated-icon/elipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
             :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
-            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :text))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :text))
             :on-click select-drawtool
             :data-tool "text"}
-           i/text]]
+           deprecated-icon/text]]
 
          [:& image-upload]
 
@@ -186,20 +187,20 @@
           [:button
            {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
             :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
-            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :curve))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :curve))
             :on-click select-drawtool
             :data-tool "curve"
             :data-testid "curve-btn"}
-           i/curve]]
+           deprecated-icon/curve]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
             :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
-            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :path))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :path))
             :on-click select-drawtool
             :data-tool "path"
             :data-testid "path-btn"}
-           i/path]]
+           deprecated-icon/path]]
 
          (when (features/active-feature? @st/state "plugins/runtime")
            [:li
@@ -213,7 +214,7 @@
                           (modal/show :plugin-management {}))
               :data-tool "plugins"
               :data-testid "plugins-btn"}
-             i/puzzle]])
+             deprecated-icon/puzzle]])
 
          (when *assert*
            [:li
@@ -221,7 +222,7 @@
              {:title "Debugging tool"
               :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
-             i/bug]])]]
+             deprecated-icon/bug]])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")

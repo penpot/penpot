@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
@@ -23,11 +24,11 @@
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.router :as rt]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :as rxs]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
@@ -38,6 +39,7 @@
 (declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-file-change)
+(declare handle-file-deleted)
 (declare handle-file-restore)
 (declare handle-library-change)
 (declare handle-pointer-send)
@@ -129,6 +131,7 @@
     :disconnect             (handle-presence msg)
     :pointer-update         (handle-pointer-update msg)
     :file-change            (handle-file-change msg)
+    :file-deleted           (handle-file-deleted msg)
     :file-restore           (handle-file-restore msg)
     :library-change         (handle-library-change msg)
     :notification           (dc/handle-notification msg)
@@ -194,7 +197,7 @@
             (-> session
                 (assoc :id session-id)
                 (assoc :profile-id profile-id)
-                (assoc :updated-at (dt/now))
+                (assoc :updated-at (ct/now))
                 (assoc :version version)
                 (update :color update-color presence)
                 (assoc :text-color "#000000")))
@@ -224,7 +227,7 @@
                           :vbox vbox
                           :vport vport
                           :point position
-                          :updated-at (dt/now)
+                          :updated-at (ct/now)
                           :page-id page-id))))))
 
 (def ^:private
@@ -236,7 +239,7 @@
    [:session-id ::sm/uuid]
    [:revn :int]
    [:vern :int]
-   [:changes ::cpc/changes]])
+   [:changes cpc/schema:changes]])
 
 (def ^:private check-file-change-params!
   (sm/check-fn schema:handle-file-change))
@@ -266,6 +269,18 @@
                           :redo-changes (vec changes)
                           :undo-changes []})))))
 
+(defn handle-file-deleted
+  [{:keys [file-id] :as msg}]
+  (ptk/reify ::handle-file-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [curr-file-id (:current-file-id state)
+            team-id      (:current-team-id state)]
+        ;; If the deleted file is the currently open one
+        (when (= file-id curr-file-id)
+          (rx/of
+           (rt/nav :dashboard-recent {:team-id team-id})))))))
+
 (def ^:private
   schema:handle-file-restore
   [:map {:title "handle-file-restore"}
@@ -279,9 +294,8 @@
 (defn handle-file-restore
   [{:keys [file-id vern] :as msg}]
 
-  (dm/assert!
-   "expected valid parameters"
-   (check-file-restore-params msg))
+  (assert (check-file-restore-params msg)
+          "expected valid parameters")
 
   (ptk/reify ::handle-file-restore
     ptk/WatchEvent
@@ -301,21 +315,20 @@
    [:file-id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn :int]
-   [:modified-at ::sm/inst]
-   [:changes ::cpc/changes]])
+   [:modified-at ::ct/inst]
+   [:changes cpc/schema:changes]])
 
-(def ^:private check-library-change-params!
+(def ^:private check-library-change-params
   (sm/check-fn schema:handle-library-change))
 
 (defn handle-library-change
   [{:keys [file-id modified-at changes revn] :as msg}]
-  (dm/assert!
-   "expected valid arguments"
-   (check-library-change-params! msg))
+  (assert (check-library-change-params msg)
+          "expected valid arguments")
 
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state _]
       (when (contains? (:files state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
-               (dwl/notify-sync-file file-id))))))
+               (dwl/notify-sync-file))))))

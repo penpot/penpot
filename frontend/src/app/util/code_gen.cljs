@@ -6,6 +6,7 @@
 
 (ns app.util.code-gen
   (:require
+   [app.util.code-beautify :as cb]
    [app.util.code-gen.markup-html :as html]
    [app.util.code-gen.markup-svg :as svg]
    [app.util.code-gen.style-css :as css]))
@@ -18,6 +19,11 @@
           "svg"  svg/generate-markup)]
     (generate-markup objects shapes)))
 
+(defn generate-formatted-markup-code
+  [objects type shapes]
+  (let [markup (generate-markup-code objects type shapes)]
+    (cb/format-code markup type)))
+
 (defn generate-style-code
   ([objects type root-shapes all-shapes]
    (generate-style-code objects type root-shapes all-shapes nil))
@@ -26,3 +32,8 @@
          (case type
            "css" css/generate-style)]
      (generate-style objects root-shapes all-shapes options))))
+
+(defn prelude
+  [type]
+  (case type
+    "css" css/prelude))

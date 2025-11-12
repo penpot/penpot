@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "./common.scss";
 
 .accept-terms-and-privacy-wrapper {
   :global(a) {
     color: var(--color-foreground-secondary);
-    font-weight: $fw700;
+    font-weight: deprecated.$fw700;
   }
 }
 
@@ -20,13 +20,13 @@
 }
 
 .register-form {
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 .register-success {
-  gap: $s-24;
+  gap: deprecated.$s-24;
   .auth-title {
-    @include medTitleTipography;
+    @include deprecated.medTitleTipography;
   }
 }
 
@@ -34,30 +34,30 @@
   fill: var(--main-icon-foreground);
   display: flex;
   justify-content: center;
-  margin-bottom: $s-32;
+  margin-bottom: deprecated.$s-32;
   svg {
-    width: $s-92;
-    height: $s-92;
+    width: deprecated.$s-92;
+    height: deprecated.$s-92;
   }
 }
 
 .notification-text {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   color: var(--title-foreground-color);
 }
 
 .notification-text-email {
-  @include medTitleTipography;
-  font-size: $fs-20;
+  @include deprecated.medTitleTipography;
+  font-size: deprecated.$fs-20;
   color: var(--register-confirmation-color);
-  margin-inline: $s-36;
+  margin-inline: deprecated.$s-36;
 }
 
 .logo-btn {
-  height: $s-40;
+  height: deprecated.$s-40;
   svg {
-    width: $s-120;
-    height: $s-40;
+    width: deprecated.$s-120;
+    height: deprecated.$s-40;
     fill: var(--main-icon-foreground);
   }
 }
@@ -65,20 +65,20 @@
 .logo-container {
   display: flex;
   justify-content: flex-start;
-  width: $s-120;
-  margin-block-end: $s-24;
+  width: deprecated.$s-120;
+  margin-block-end: deprecated.$s-24;
 }
 
 .terms-register {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   justify-content: center;
   width: 100%;
 }
 
 .and-text {
-  border-bottom: $s-1 solid transparent;
+  border-bottom: deprecated.$s-1 solid transparent;
   color: var(--title-foreground-color);
 }
 

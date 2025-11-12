@@ -170,6 +170,23 @@ similar to a webmail client. Simply navigate to:
 
 [http://localhost:1080](http://localhost:1080)
 
+## Create user
+
+You can register a new user manually, or create new users automatically with this script. From your tmux instance, run:
+
+
+```sh
+cd penpot/backend/scripts
+python3 manage.py create-profile
+```
+
+You can also skip tutorial and walkthrough steps:
+
+```sh
+python3 manage.py create-profile --skip-tutorial --skip-walkthrough
+python3 manage.py create-profile -n "Jane Doe" -e jane@example.com -p secretpassword --skip-tutorial --skip-walkthrough
+```
+
 ## Team Feature Flags
 
 To test a Feature Flag, you can enable or disable them by team through the `dbg` page:

@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
@@ -38,6 +39,8 @@
    (increase-zoom ::auto))
   ([center]
    (ptk/reify ::increase-zoom
+     ev/PerformanceEvent
+
      ptk/UpdateEvent
      (update [_ state]
        (let [center (if (= center ::auto) @ms/mouse-position center)]
@@ -49,6 +52,8 @@
    (decrease-zoom ::auto))
   ([center]
    (ptk/reify ::decrease-zoom
+     ev/PerformanceEvent
+
      ptk/UpdateEvent
      (update [_ state]
        (let [center (if (= center ::auto) @ms/mouse-position center)]
@@ -60,6 +65,8 @@
    (set-zoom nil scale))
   ([center scale]
    (ptk/reify ::set-zoom
+     ev/PerformanceEvent
+
      ptk/UpdateEvent
      (update [_ state]
        (let [vp (dm/get-in state [:workspace-local :vbox])

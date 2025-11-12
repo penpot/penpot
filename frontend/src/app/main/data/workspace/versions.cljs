@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dwp]
@@ -16,7 +17,6 @@
    [app.main.data.workspace.thumbnails :as th]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -27,9 +27,9 @@
 
 (declare fetch-versions)
 
-(defn init-version-state
+(defn init-versions-state
   []
-  (ptk/reify ::init-version-state
+  (ptk/reify ::init-versions-state
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-versions default-state))
@@ -38,9 +38,9 @@
     (watch [_ _ _]
       (rx/of (fetch-versions)))))
 
-(defn update-version-state
+(defn update-versions-state
   [version-state]
-  (ptk/reify ::update-version-state
+  (ptk/reify ::update-versions-state
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-versions merge version-state))))
@@ -52,14 +52,14 @@
     (watch [_ state _]
       (when-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-file-snapshots {:file-id file-id})
-             (rx/map #(update-version-state {:status :loaded :data %})))))))
+             (rx/map #(update-versions-state {:status :loaded :data %})))))))
 
 (defn create-version
   []
   (ptk/reify ::create-version
     ptk/WatchEvent
     (watch [_ state _]
-      (let [label   (dt/format (dt/now) :date-full)
+      (let [label   (ct/format-inst (ct/now) :localized-date)
             file-id (:current-file-id state)]
 
         ;; Force persist before creating snapshot, otherwise we could loss changes
@@ -73,7 +73,7 @@
               (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
               (rx/mapcat
                (fn [{:keys [id]}]
-                 (rx/of (update-version-state {:editing id})
+                 (rx/of (update-versions-state {:editing id})
                         (fetch-versions))))))))))
 
 (defn rename-version
@@ -86,7 +86,7 @@
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
         (rx/merge
-         (rx/of (update-version-state {:editing false})
+         (rx/of (update-versions-state {:editing nil})
                 (ptk/event ::ev/event {::ev/name "rename-version"
                                        :file-id file-id}))
          (->> (rp/cmd! :update-file-snapshot {:id id :label label})
@@ -140,14 +140,31 @@
       (let [version (->> (dm/get-in state [:workspace-versions :data])
                          (d/seek #(= (:id %) id)))
             params  {:id id
-                     :label (dt/format (:created-at version) :date-full)}]
+                     :label (ct/format-inst (:created-at version) :localized-date)}]
 
         (->> (rp/cmd! :update-file-snapshot params)
              (rx/mapcat (fn [_]
-                          (rx/of (update-version-state {:editing id})
+                          (rx/of (update-versions-state {:editing id})
                                  (fetch-versions)
                                  (ptk/event ::ev/event {::ev/name "pin-version"})))))))))
 
+(defn lock-version
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::lock-version
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :lock-file-snapshot {:id id})
+           (rx/map fetch-versions)))))
+
+(defn unlock-version
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::unlock-version
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :unlock-file-snapshot {:id id})
+           (rx/map fetch-versions)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS

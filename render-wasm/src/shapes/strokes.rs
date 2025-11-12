@@ -1,10 +1,12 @@
 use crate::shapes::fills::{Fill, SolidColor};
 use skia_safe::{self as skia, Rect};
-use std::collections::HashMap;
 
 use super::Corners;
+use super::StrokeLineCap;
+use super::StrokeLineJoin;
+use super::SvgAttrs;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum StrokeStyle {
     Solid,
     Dotted,
@@ -12,42 +14,15 @@ pub enum StrokeStyle {
     Mixed,
 }
 
-impl From<u8> for StrokeStyle {
-    fn from(value: u8) -> Self {
-        match value {
-            1 => StrokeStyle::Dotted,
-            2 => StrokeStyle::Dashed,
-            3 => StrokeStyle::Mixed,
-            _ => StrokeStyle::Solid,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StrokeCap {
-    None,
-    Line,
-    Triangle,
-    Rectangle,
-    Circle,
-    Diamond,
+    LineArrow,
+    TriangleArrow,
+    SquareMarker,
+    CircleMarker,
+    DiamondMarker,
     Round,
     Square,
-}
-
-impl From<u8> for StrokeCap {
-    fn from(value: u8) -> Self {
-        match value {
-            1 => StrokeCap::Line,
-            2 => StrokeCap::Triangle,
-            3 => StrokeCap::Rectangle,
-            4 => StrokeCap::Circle,
-            5 => StrokeCap::Diamond,
-            6 => StrokeCap::Round,
-            7 => StrokeCap::Square,
-            _ => StrokeCap::None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -62,8 +37,8 @@ pub struct Stroke {
     pub fill: Fill,
     pub width: f32,
     pub style: StrokeStyle,
-    pub cap_end: StrokeCap,
-    pub cap_start: StrokeCap,
+    pub cap_end: Option<StrokeCap>,
+    pub cap_start: Option<StrokeCap>,
     pub kind: StrokeKind,
 }
 
@@ -77,35 +52,64 @@ impl Stroke {
         }
     }
 
-    pub fn new_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
+    pub fn bounds_width(&self, is_open: bool) -> f32 {
+        match self.render_kind(is_open) {
+            StrokeKind::Inner => 0.,
+            StrokeKind::Center => self.width / 2.,
+            StrokeKind::Outer => self.width,
+        }
+    }
+
+    pub fn max_bounds_width<'a>(strokes: impl Iterator<Item = &'a Stroke>, is_open: bool) -> f32 {
+        strokes
+            .map(|stroke| stroke.bounds_width(is_open))
+            .fold(0.0, f32::max)
+    }
+
+    pub fn new_center_stroke(
+        width: f32,
+        style: StrokeStyle,
+        cap_start: Option<StrokeCap>,
+        cap_end: Option<StrokeCap>,
+    ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
             width,
-            style: StrokeStyle::from(style),
-            cap_end: StrokeCap::from(cap_end),
-            cap_start: StrokeCap::from(cap_start),
+            style,
+            cap_end,
+            cap_start,
             kind: StrokeKind::Center,
         }
     }
 
-    pub fn new_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
+    pub fn new_inner_stroke(
+        width: f32,
+        style: StrokeStyle,
+        cap_start: Option<StrokeCap>,
+        cap_end: Option<StrokeCap>,
+    ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
             width,
-            style: StrokeStyle::from(style),
-            cap_end: StrokeCap::from(cap_end),
-            cap_start: StrokeCap::from(cap_start),
+            style,
+            cap_end,
+            cap_start,
             kind: StrokeKind::Inner,
         }
     }
 
-    pub fn new_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
+    pub fn new_outer_stroke(
+        width: f32,
+        style: StrokeStyle,
+        cap_start: Option<StrokeCap>,
+        cap_end: Option<StrokeCap>,
+    ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
             width,
-            style: StrokeStyle::from(style),
-            cap_end: StrokeCap::from(cap_end),
-            cap_start: StrokeCap::from(cap_start),
+            style,
+            cap_end,
+            cap_start,
             kind: StrokeKind::Outer,
         }
     }
@@ -157,7 +161,7 @@ impl Stroke {
     pub fn to_paint(
         &self,
         rect: &Rect,
-        svg_attrs: &HashMap<String, String>,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -173,12 +177,14 @@ impl Stroke {
         paint.set_stroke_width(width);
         paint.set_anti_alias(antialias);
 
-        if let Some("round") = svg_attrs.get("stroke-linecap").map(String::as_str) {
-            paint.set_stroke_cap(skia::paint::Cap::Round);
-        }
+        if let Some(svg_attrs) = svg_attrs {
+            if svg_attrs.stroke_linecap == StrokeLineCap::Round {
+                paint.set_stroke_cap(skia::paint::Cap::Round);
+            }
 
-        if let Some("round") = svg_attrs.get("stroke-linejoin").map(String::as_str) {
-            paint.set_stroke_join(skia::paint::Join::Round);
+            if svg_attrs.stroke_linejoin == StrokeLineJoin::Round {
+                paint.set_stroke_join(skia::paint::Join::Round);
+            }
         }
 
         if self.style != StrokeStyle::Solid {
@@ -223,7 +229,7 @@ impl Stroke {
         &self,
         is_open: bool,
         rect: &Rect,
-        svg_attrs: &HashMap<String, String>,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -247,7 +253,7 @@ impl Stroke {
         &self,
         is_open: bool,
         rect: &Rect,
-        svg_attrs: &HashMap<String, String>,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -263,5 +269,12 @@ impl Stroke {
         }
 
         paint
+    }
+
+    pub fn is_transparent(&self) -> bool {
+        match &self.fill {
+            Fill::Solid(SolidColor(color)) => color.a() == 0,
+            _ => false,
+        }
     }
 }

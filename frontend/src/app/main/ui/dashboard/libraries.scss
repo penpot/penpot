@@ -4,21 +4,21 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 
 .dashboard-container {
   flex: 1 0 0;
-  margin-right: $s-16;
+  margin-right: deprecated.$s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid var(--color-background-quaternary);
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
 
   &.dashboard-projects {
     user-select: none;
   }
 
   &.search {
-    margin-top: $s-12;
+    margin-top: deprecated.$s-12;
   }
 }

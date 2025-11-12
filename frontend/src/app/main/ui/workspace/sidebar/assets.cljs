@@ -15,10 +15,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
    [app.util.dom :as dom]
@@ -71,9 +71,8 @@
   [v [a b]]
   (if (= v a) b a))
 
-(mf/defc assets-toolbox
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc assets-toolbox*
+  {::mf/wrap [mf/memo]}
   [{:keys [size file-id]}]
   (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
@@ -130,8 +129,7 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn []
-           (modal/show! :libraries-dialog {:file-id file-id})
-           (modal/allow-click-outside!)))
+           (modal/show! :libraries-dialog {:file-id file-id})))
 
         on-open-menu
         (mf/use-fn  #(swap! filters* update :open-menu not))
@@ -139,21 +137,30 @@
         on-menu-close
         (mf/use-fn #(swap! filters* assoc :open-menu false))
 
+        ;; Memoize options to prevent infinite re-render loops when dev-tools are open.
+        ;;
+        ;; Problem: When dev-tools are open, they constantly monitor the application state,
+        ;; triggering frequent updates to okulary refs. This causes the parent component to
+        ;; re-render constantly, recreating the options array on every render.
+        ;;
+        ;; The context-menu* component has a mf/with-effect that depends on [options].
+        ;; When options are recreated (even with identical content), the effect runs,
+        ;; updating the internal state, which triggers another re-render, creating
+        ;; an infinite loop: render -> new options -> effect -> state update -> render...
         options
-        [{:name    (tr "workspace.assets.box-filter-all")
-          :id      "all"
-          :handler on-section-filter-change}
-         {:name    (tr "workspace.assets.components")
-          :id      "components"
-          :handler on-section-filter-change}
-
-         {:name    (tr "workspace.assets.colors")
-          :id      "colors"
-          :handler on-section-filter-change}
-
-         {:name    (tr "workspace.assets.typography")
-          :id      "typographies"
-          :handler on-section-filter-change}]]
+        (mf/with-memo [on-section-filter-change]
+          [{:name    (tr "workspace.assets.box-filter-all")
+            :id      "all"
+            :handler on-section-filter-change}
+           {:name    (tr "workspace.assets.components")
+            :id      "components"
+            :handler on-section-filter-change}
+           {:name    (tr "workspace.assets.colors")
+            :id      "colors"
+            :handler on-section-filter-change}
+           {:name    (tr "workspace.assets.typography")
+            :id      "typographies"
+            :handler on-section-filter-change}])]
 
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
@@ -171,15 +178,16 @@
 
 
       [:div {:class (stl/css :search-wrapper)}
-       [:& search-bar {:on-change on-search-term-change
-                       :value term
-                       :placeholder (tr "workspace.assets.search")}
+       [:> search-bar* {:on-change on-search-term-change
+                        :value term
+                        :placeholder (tr "workspace.assets.search")}
         [:button
          {:on-click on-open-menu
           :title (tr "workspace.assets.filter")
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
-         i/filter-icon]]
+         deprecated-icon/filter-icon]]
+
        [:> context-menu*
         {:on-close on-menu-close
          :selectable true
@@ -191,6 +199,7 @@
          :top 158
          :left 18
          :options options}]
+
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.assets.sort")
                          :on-click toggle-ordering

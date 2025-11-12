@@ -6,24 +6,74 @@
 
 @use "common/refactor/common-refactor" as *;
 @use "./profile";
+@use "../ds/typography.scss" as t;
+@use "../ds/_borders.scss" as b;
+@use "../ds/_sizes.scss" as *;
+@use "../ds/_utils.scss" as *;
+@use "../ds/spacing.scss" as *;
 
 .feedback-form {
-  textarea {
-    border-radius: $br-8;
-    padding: $br-12;
+  .fields-row {
+    margin-block-end: $sz-32;
+  }
+
+  .feedback-description {
+    @include t.use-typography("body-medium");
+    border-radius: b.$br-8;
+    padding: var(--sp-m);
     background-color: var(--color-background-tertiary);
     color: var(--color-foreground-primary);
     border: none;
 
     ::placeholder {
-      color: var(--color-background-disabled);
+      color: var(--input-placeholder-color);
     }
     &:focus {
-      outline: $s-1 solid var(--color-accent-primary);
+      outline: b.$b-1 solid var(--color-accent-primary);
     }
   }
-}
 
-.feedback-button-link {
-  @extend .button-primary;
+  .field-label {
+    @include t.use-typography("headline-small");
+    block-size: $sz-32;
+    color: var(--color-foreground-primary);
+    margin-block-end: var(--sp-l);
+  }
+
+  .feedback-button-link {
+    @extend .button-primary;
+    margin-block-end: px2rem(72);
+  }
+
+  .feedback-title {
+    margin-block-end: var(--sp-xxxl);
+  }
+
+  .field-text {
+    @include t.use-typography("body-medium");
+  }
+
+  .bottom-margin {
+    margin-block-end: var(--sp-xxxl);
+  }
+
+  .link {
+    @include t.use-typography("headline-small");
+    color: var(--color-accent-tertiary);
+    margin-block-end: var(--sp-s);
+  }
+
+  .download-button {
+    @include t.use-typography("body-small");
+    color: var(--color-foreground-primary);
+    text-transform: lowercase;
+    border: b.$b-1 solid var(--color-background-quaternary);
+    margin-block-start: var(--sp-s);
+    padding: var(--sp-s);
+    border-radius: b.$br-8;
+    block-size: $sz-32;
+    display: inline-block;
+    min-inline-size: $sz-160;
+    text-align: center;
+  }
 }

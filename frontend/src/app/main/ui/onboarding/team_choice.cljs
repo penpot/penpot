@@ -14,7 +14,7 @@
    [app.main.data.team :as dtm]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
@@ -31,23 +31,23 @@
     (tr "onboarding.team-modal.create-team-desc")]
    [:ul {:class (stl/css :team-features)}
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)} i/document]
+     [:span {:class (stl/css :icon)} deprecated-icon/document]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-1")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/move]
+     [:span {:class (stl/css :icon)}  deprecated-icon/move]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-2")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/tree]
+     [:span {:class (stl/css :icon)}  deprecated-icon/tree]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-3")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/user]
+     [:span {:class (stl/css :icon)}  deprecated-icon/user]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-4")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/tick]
+     [:span {:class (stl/css :icon)}  deprecated-icon/tick]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-5")]]]])
 
@@ -102,7 +102,7 @@
 
                (and (= :restriction type)
                     (= :max-quote-reached code))
-               (swap! error* (tr "errors.max-quote-reached" (:target error)))
+               (swap! error* (tr "errors.max-quota-reached" (:target error)))
 
                (or (= :member-is-muted code)
                    (= :email-has-permanent-bounces code)

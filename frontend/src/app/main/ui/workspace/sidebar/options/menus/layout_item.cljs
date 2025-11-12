@@ -13,10 +13,10 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -81,28 +81,28 @@
      [:div {:class (stl/css :vertical-margin)
             :title "Vertical margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-top-bottom]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder m1-placeholder
-                          :data-name "m1"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m1}]]
+       deprecated-icon/margin-top-bottom]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder m1-placeholder
+                                           :data-name "m1"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m1}]]
 
      [:div {:class (stl/css :horizontal-margin)
             :title "Horizontal margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-left-right]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder m2-placeholder
-                          :data-name "m2"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m2}]]]))
+       deprecated-icon/margin-left-right]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder m2-placeholder
+                                           :data-name "m2"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m2}]]]))
 
 (mf/defc margin-multiple*
   [{:keys [value on-change on-blur]}]
@@ -133,53 +133,53 @@
      [:div {:class (stl/css :top-margin)
             :title "Top margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-top]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m1"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m1}]]
+       deprecated-icon/margin-top]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m1"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m1}]]
      [:div {:class (stl/css :right-margin)
             :title "Right margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-right]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m2"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m2}]]
+       deprecated-icon/margin-right]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m2"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m2}]]
 
      [:div {:class (stl/css :bottom-margin)
             :title "Bottom margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-bottom]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m3"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m3}]]
+       deprecated-icon/margin-bottom]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m3"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m3}]]
 
      [:div {:class (stl/css :left-margin)
             :title "Left margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-left]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m4"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m4}]]]))
+       deprecated-icon/margin-left]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m4"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m4}]]]))
 
 
 (mf/defc margin-section*
@@ -215,7 +215,7 @@
                        :selected (= type :multiple))
                :title "Margin - multiple"
                :on-click on-type-change'}
-      i/margin]]))
+      deprecated-icon/margin]]))
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
@@ -234,20 +234,20 @@
 
     [:& radio-button
      {:value "fix"
-      :icon  i/fixed-width
+      :icon  deprecated-icon/fixed-width
       :title "Fix width"
       :id    "behaviour-h-fix"}]
 
     (when has-fill
       [:& radio-button
        {:value "fill"
-        :icon  i/fill-content
+        :icon  deprecated-icon/fill-content
         :title "Width 100%"
         :id    "behaviour-h-fill"}])
     (when is-auto
       [:& radio-button
        {:value "auto"
-        :icon  i/hug-content
+        :icon  deprecated-icon/hug-content
         :title "Fit content (Horizontal)"
         :id    "behaviour-h-auto"}])]])
 
@@ -268,7 +268,7 @@
 
     [:& radio-button
      {:value      "fix"
-      :icon       i/fixed-width
+      :icon       deprecated-icon/fixed-width
       :icon-class (stl/css :rotated)
       :title      "Fix height"
       :id         "behaviour-v-fix"}]
@@ -276,14 +276,14 @@
     (when has-fill
       [:& radio-button
        {:value      "fill"
-        :icon       i/fill-content
+        :icon       deprecated-icon/fill-content
         :icon-class (stl/css :rotated)
         :title      "Height 100%"
         :id         "behaviour-v-fill"}])
     (when is-auto
       [:& radio-button
        {:value      "auto"
-        :icon       i/hug-content
+        :icon       deprecated-icon/hug-content
         :icon-class (stl/css :rotated)
         :title      "Fit content (Vertical)"
         :id         "behaviour-v-auto"}])]])
@@ -309,8 +309,9 @@
                      :title "Align self end"
                      :id    "align-self-end"}]])
 
+
 (mf/defc layout-item-menu
-  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent?}
+  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent? :is-grid-layout? :is-flex-layout?}
    ::mf/props :obj}
   [{:keys [ids values
            ^boolean is-layout-child?
@@ -440,12 +441,12 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-content?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        title
-                     :class        (stl/css-case :title-spacing-layout-element true
-                                                 :title-spacing-empty (not has-content?))}]]
+      [:> title-bar* {:collapsable  has-content?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        title
+                      :class        (stl/css-case :title-spacing-layout-element true
+                                                  :title-spacing-empty (not has-content?))}]]
      (when open?
        [:div {:class (stl/css :flex-element-menu)}
         (when (or is-layout-child? is-absolute?)
@@ -465,7 +466,7 @@
                   :title "z-index"}
 
             [:span {:class (stl/css :icon-text)} "Z"]
-            [:> numeric-input*
+            [:> deprecated-input/numeric-input*
              {:class (stl/css :numeric-input)
               :placeholder "--"
               :on-focus #(dom/select-target %)
@@ -510,7 +511,7 @@
                      :title (tr "workspace.options.layout-item.layout-item-min-w")}
 
                [:span {:class (stl/css :icon-text)} "MIN W"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0
@@ -525,7 +526,7 @@
               [:div {:class (stl/css :layout-item-max-w)
                      :title (tr "workspace.options.layout-item.layout-item-max-w")}
                [:span {:class (stl/css :icon-text)} "MAX W"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0
@@ -543,7 +544,7 @@
                      :title (tr "workspace.options.layout-item.layout-item-min-h")}
 
                [:span {:class (stl/css :icon-text)} "MIN H"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0
@@ -559,7 +560,7 @@
                      :title (tr "workspace.options.layout-item.layout-item-max-h")}
 
                [:span {:class (stl/css :icon-text)} "MAX H"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0

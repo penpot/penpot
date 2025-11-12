@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
-
 .advanced-options-wrapper {
-  @include flexColumn;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }

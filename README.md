@@ -77,17 +77,14 @@ Provide your team or organization with a completely owned collaborative design t
 ### Integrations ###
 Penpot offers integration into the development toolchain, thanks to its support for webhooks and an API accessible through access tokens.
 
-### What’s great for design ###
-With Penpot you can design libraries to share and reuse; turn design elements into components and tokens to allow reusability and scalability; and build realistic user flows and interactions.
-
-### Design Tokens ###
-With Penpot’s standardized [design tokens](https://penpot.dev/collaboration/design-tokens) format, you can easily reuse and sync tokens across different platforms, workflows, and disciplines.
+###  Building Design Systems: design tokens, components and variants  ###
+Penpot brings design systems to code-minded teams: a single source of truth with native Design Tokens, Components, and Variants for scalable, reusable, and consistent UI across projects and platforms.
 
 
 <br />
 
 <p align="center">
-  <img src="https://img.plasmic.app/img-optimizer/v1/img?src=https%3A%2F%2Fimg.plasmic.app%2Fimg-optimizer%2Fv1%2Fimg%2F9dd677c36afb477e9666ccd1d3f009ad.png" alt="Open Source" style="width: 65%;">
+ <img src="https://github.com/user-attachments/assets/cce75ad6-f783-473f-8803-da9eb8255fef">
 </p>
 
 <br />

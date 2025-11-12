@@ -38,9 +38,11 @@
   (true? (.-editing event)))
 
 (defn is-key?
-  [^string key]
-  (fn [^KeyboardEvent e]
-    (= (.-key e) key)))
+  ([^string key]
+   (fn [^KeyboardEvent event]
+     (= (.-key event) key)))
+  ([^KeyboardEvent event ^string key]
+   (= (.-key event) key)))
 
 (defn is-key-ignore-case?
   [^string key]

@@ -15,10 +15,11 @@
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -150,7 +151,7 @@
        [:button {:class (stl/css-case :show-options true
                                       :selected open?)
                  :on-click toggle-advanced-options}
-        i/menu]
+        deprecated-icon/menu]
        [:div {:class (stl/css :type-select-wrapper)}
         [:& select
          {:class (stl/css :grid-type-select)
@@ -186,12 +187,12 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.guides.remove-guide")
                          :on-click on-remove
-                         :icon "remove"}]]]
+                         :icon i/remove}]]]
 
      (when (:display grid)
-       [:& advanced-options {:class (stl/css :grid-advanced-options)
-                             :visible? open?
-                             :on-close toggle-advanced-options}
+       [:> advanced-options* {:class (stl/css :grid-advanced-options)
+                              :is-visible open?
+                              :on-close toggle-advanced-options}
         ;; square
         (when (= :square type)
           [:div {:class (stl/css :square-row)}
@@ -200,12 +201,13 @@
                             :title (tr "workspace.options.grid.params.color")
                             :disable-gradient true
                             :disable-image true
+                            :origin :guides
                             :on-change handle-change-color
                             :on-detach handle-detach-color}]
             [:button {:class (stl/css-case :show-more-options true
                                            :selected show-more-options?)
                       :on-click toggle-more-options}
-             i/menu]]
+             deprecated-icon/menu]]
            (when show-more-options?
              [:div {:class (stl/css :second-row)}
               [:button {:class (stl/css-case :btn-options true
@@ -241,6 +243,7 @@
                              :title (tr "workspace.options.grid.params.color")
                              :disable-gradient true
                              :disable-image true
+                             :origin :guides
                              :on-change handle-change-color
                              :on-detach handle-detach-color}]]]
 
@@ -263,7 +266,7 @@
                    :title (tr "workspace.options.grid.params.gutter")}
              [:span {:class (stl/css-case :icon true
                                           :rotated (= type :row))}
-              i/gap-horizontal]
+              deprecated-icon/gap-horizontal]
              [:> numeric-input* {:placeholder "0"
                                  :on-change (handle-change :params :gutter)
                                  :nillable true
@@ -274,7 +277,7 @@
                    :title (tr "workspace.options.grid.params.margin")}
              [:span {:class (stl/css-case :icon true
                                           :rotated (= type :column))}
-              i/grid-margin]
+              deprecated-icon/grid-margin]
              [:> numeric-input* {:placeholder "0"
                                  :on-change (handle-change :params :margin)
                                  :nillable true
@@ -285,7 +288,7 @@
                                            :selected show-more-options?)
                       :on-click toggle-more-options
                       :disabled is-default}
-             i/menu]
+             deprecated-icon/menu]
             (when show-more-options?
               [:div {:class (stl/css :more-options)}
                [:button {:class (stl/css :option-btn)
@@ -313,16 +316,17 @@
          #(st/emit! (dw/add-frame-grid id)))]
 
     [:div {:class (stl/css :element-set)}
-     [:& title-bar {:collapsable  has-frame-grids?
-                    :collapsed    (not open?)
-                    :on-collapsed toggle-content
-                    :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
-                    :title        (tr "workspace.options.guides.title")}
+     [:div {:class (stl/css :element-title)}
+      [:> title-bar* {:collapsable  has-frame-grids?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
+                      :title        (tr "workspace.options.guides.title")}
 
-      [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "workspace.options.guides.add-guide")
-                        :on-click handle-create-grid
-                        :icon "add"}]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.options.guides.add-guide")
+                         :on-click handle-create-grid
+                         :icon i/add}]]]
 
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}

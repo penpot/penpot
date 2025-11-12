@@ -16,15 +16,15 @@
   [variant files]
   (cond
     (= "regular" variant)
-    {:id "regular" :name "regular" :weight "400" :style "normal" :ttf-url (get files "regular")}
+    {:id "regular" :name "400" :weight "400" :style "normal" :ttf-url (get files "regular")}
 
     (= "italic" variant)
-    {:id "italic" :name "italic" :weight "400" :style "italic" :ttf-url (get files "italic")}
+    {:id "italic" :name "400 Italic" :weight "400" :style "italic" :ttf-url (get files "italic")}
 
     :else
     (when-let [[id weight style] (re-find #"^(\d+)(.*)$" variant)]
       {:id id
-       :name variant
+       :name (str/trim (str weight " " (str/capital style)))
        :weight weight
        :style (if (str/empty? style) "normal" style)
        :ttf-url (get files id)})))

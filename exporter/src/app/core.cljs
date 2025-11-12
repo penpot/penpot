@@ -6,7 +6,7 @@
 
 (ns app.core
   (:require
-   ["process" :as proc]
+   ["node:process" :as proc]
    [app.browser :as bwr]
    [app.common.logging :as l]
    [app.config :as cf]
@@ -41,9 +41,9 @@
    (http/stop)
    (done)))
 
-(proc/on "uncaughtException"
-         (fn [cause]
-           (js/console.error cause)))
+(.on proc/default "uncaughtException"
+     (fn [cause]
+       (js/console.error cause)))
 
-(proc/on "SIGTERM" (fn [] (proc/exit 0)))
-(proc/on "SIGINT" (fn [] (proc/exit 0)))
+(.on proc/default "SIGTERM" (fn [] (proc/exit 0)))
+(.on proc/default "SIGINT" (fn [] (proc/exit 0)))

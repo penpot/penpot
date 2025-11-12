@@ -47,6 +47,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as uri]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -58,20 +59,12 @@
    [app.rpc.rlimit.result :as-alias lresult]
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.edn :as edn]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.exec :as px]))
-
-(def ^:private default-timeout
-  (dt/duration 400))
-
-(def ^:private default-options
-  {:codec rds/string-codec
-   :timeout default-timeout})
 
 (def ^:private bucket-rate-limit-script
   {::rscript/name ::bucket-rate-limit
@@ -94,6 +87,10 @@
 (defmulti parse-limit   (fn [[_ strategy _]] strategy))
 (defmulti process-limit (fn [_ _ _ o] (::strategy o)))
 
+(defn- ->seconds
+  [d]
+  (-> d inst-ms (/ 1000) int))
+
 (sm/register!
  {:type ::rpc/rlimit
   :pred #(instance? clojure.lang.Agent %)})
@@ -115,7 +112,7 @@
     [:map
      [::capacity ::sm/int]
      [::rate ::sm/int]
-     [::internal ::dt/duration]
+     [::internal ::ct/duration]
      [::params [::sm/vec :any]]]
     [:map
      [::nreq ::sm/int]
@@ -157,7 +154,7 @@
   (assert (valid-limit-tuple? vlimit) "expected valid limit tuple")
 
   (if-let [[_ capacity rate interval] (re-find bucket-opts-re opts)]
-    (let [interval (dt/duration interval)
+    (let [interval (ct/duration interval)
           rate     (parse-long rate)
           capacity (parse-long capacity)]
       {::name name
@@ -166,18 +163,18 @@
        ::rate     rate
        ::interval interval
        ::opts     opts
-       ::params   [(dt/->seconds interval) rate capacity]
+       ::params   [(->seconds interval) rate capacity]
        ::key      (str "ratelimit.bucket." (d/name name))})
     (ex/raise :type :validation
               :code :invalid-bucket-limit-opts
               :hint (str/ffmt "looks like '%' does not have a valid format" opts))))
 
 (defmethod process-limit :bucket
-  [redis user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
+  [rconn user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
   (let [script    (-> bucket-rate-limit-script
                       (assoc ::rscript/keys [(str key "." service "." user-id)])
-                      (assoc ::rscript/vals (conj params (dt/->seconds now))))
-        result    (rds/eval redis script)
+                      (assoc ::rscript/vals (conj params (->seconds now))))
+        result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)
         reset     (* (/ (inst-ms interval) rate)
@@ -191,17 +188,17 @@
              :remaining remaining)
     (-> limit
         (assoc ::lresult/allowed allowed?)
-        (assoc ::lresult/reset (dt/plus now reset))
+        (assoc ::lresult/reset (ct/plus now reset))
         (assoc ::lresult/remaining remaining))))
 
 (defmethod process-limit :window
-  [redis user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
-  (let [ts        (dt/truncate now unit)
-        ttl       (dt/diff now (dt/plus ts {unit 1}))
+  [rconn user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
+  (let [ts        (ct/truncate now unit)
+        ttl       (ct/diff now (ct/plus ts {unit 1}))
         script    (-> window-rate-limit-script
-                      (assoc ::rscript/keys [(str key "." service "." user-id "." (dt/format-instant ts))])
-                      (assoc ::rscript/vals [nreq (dt/->seconds ttl)]))
-        result    (rds/eval redis script)
+                      (assoc ::rscript/keys [(str key "." service "." user-id "." (ct/format-inst ts))])
+                      (assoc ::rscript/vals [nreq (->seconds ttl)]))
+        result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)]
     (l/trace :hint "limit processed"
@@ -214,16 +211,16 @@
     (-> limit
         (assoc ::lresult/allowed allowed?)
         (assoc ::lresult/remaining remaining)
-        (assoc ::lresult/reset (dt/plus ts {unit 1})))))
+        (assoc ::lresult/reset (ct/plus ts {unit 1})))))
 
-(defn- process-limits!
-  [redis user-id limits now]
-  (let [results   (into [] (map (partial process-limit redis user-id now)) limits)
+(defn- process-limits
+  [rconn user-id limits now]
+  (let [results   (into [] (map (partial process-limit rconn user-id now)) limits)
         remaining (->> results
                        (d/index-by ::name ::lresult/remaining)
                        (uri/map->query-string))
         reset     (->> results
-                       (d/index-by ::name (comp dt/->seconds ::lresult/reset))
+                       (d/index-by ::name (comp ->seconds ::lresult/reset))
                        (uri/map->query-string))
 
         rejected  (d/seek (complement ::lresult/allowed) results)]
@@ -255,34 +252,25 @@
         (some-> request inet/parse-request)
         uuid/zero)))
 
-(defn process-request!
-  [{:keys [::rpc/rlimit ::rds/redis ::skey ::sname] :as cfg} params]
-  (when-let [limits (get-limits rlimit skey sname)]
-    (let [redis  (rds/get-or-connect redis ::rpc/rlimit default-options)
-          uid    (get-uid params)
-          ;; FIXME: why not clasic try/catch?
-          result (ex/try! (process-limits! redis uid limits (dt/now)))]
-
-      (l/trc :hint "process-limits"
-             :service sname
-             :remaining (::remaingin result)
-             :reset (::reset result))
-
-      (cond
-        (ex/exception? result)
-        (do
-          (l/error :hint "error on processing rate-limit" :cause result)
-          {::enabled false})
-
-        (contains? cf/flags :soft-rpc-rlimit)
+(defn- process-request'
+  [{:keys [::rds/conn] :as cfg} limits params]
+  (try
+    (let [uid    (get-uid params)
+          result (process-limits conn uid limits (ct/now))]
+      (if (contains? cf/flags :soft-rpc-rlimit)
         {::enabled false}
+        result))
+    (catch Throwable cause
+      (l/error :hint "error on processing rate-limit" :cause cause)
+      {::enabled false})))
 
-        :else
-        result))))
+(defn- process-request
+  [{:keys [::rpc/rlimit ::skey ::sname] :as cfg} params]
+  (when-let [limits (get-limits rlimit skey sname)]
+    (rds/run! cfg process-request' limits params)))
 
 (defn wrap
-  [{:keys [::rpc/rlimit ::rds/redis] :as cfg} f mdata]
-  (assert (rds/redis? redis) "expected a valid redis instance")
+  [{:keys [::rpc/rlimit] :as cfg} f mdata]
   (assert (or (nil? rlimit) (valid-rlimit-instance? rlimit)) "expected a valid rlimit instance")
 
   (if rlimit
@@ -294,7 +282,7 @@
 
       (fn [hcfg params]
         (if @enabled
-          (let [result (process-request! cfg params)]
+          (let [result (process-request cfg params)]
             (if (::enabled result)
               (if (::allowed result)
                 (-> (f hcfg params)
@@ -321,7 +309,7 @@
   (sm/check-fn schema:config))
 
 (def ^:private check-refresh
-  (sm/check-fn ::dt/duration))
+  (sm/check-fn ::ct/duration))
 
 (def ^:private check-limits
   (sm/check-fn schema:limits))
@@ -351,7 +339,7 @@
                          config)))]
 
     (when-let [config (some->> path slurp edn/read-string check-config)]
-      (let [refresh (->> config meta :refresh dt/duration check-refresh)
+      (let [refresh (->> config meta :refresh ct/duration check-refresh)
             limits  (->> config compile-pass-1 compile-pass-2 check-limits)]
 
         {::refresh refresh
@@ -395,7 +383,7 @@
   (when-let [path (cf/get :rpc-rlimit-config)]
     (and (fs/exists? path) (fs/regular-file? path) path)))
 
-(defmethod ig/assert-key :app.rpc/rlimit
+(defmethod ig/assert-key ::rpc/rlimit
   [_ {:keys [::wrk/executor]}]
   (assert (sm/valid? ::wrk/executor executor) "expect valid executor"))
 
@@ -410,7 +398,7 @@
         (l/info :hint "initializing rlimit config reader" :path (str path))
 
         ;; Initialize the state with initial refresh value
-        (send-via executor state (constantly {::refresh (dt/duration "5s")}))
+        (send-via executor state (constantly {::refresh (ct/duration "5s")}))
 
         ;; Force a refresh
         (refresh-config (assoc cfg ::path path ::state state)))

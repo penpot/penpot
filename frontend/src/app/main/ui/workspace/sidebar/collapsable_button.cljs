@@ -9,12 +9,12 @@
   (:require
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc collapsed-button
-  {::mf/wrap-props false}
+(mf/defc collapsed-button*
+  {::mf/memo true}
   []
   (let [on-click (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))]
     [:div {:id "left-sidebar-aside"
@@ -24,6 +24,6 @@
       [:button {:class (stl/css :collapsed-button)
                 :title (tr "workspace.sidebar.expand")
                 :on-click on-click}
-       [:> icon* {:icon-id "arrow"
+       [:> icon* {:icon-id i/arrow
                   :size "s"
                   :aria-label (tr "workspace.sidebar.expand")}]]]]))

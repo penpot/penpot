@@ -9,33 +9,51 @@ import Components from "@target/components";
 
 const { Select } = Components;
 
+const variants = [
+  "default",
+  "ghost",
+];
+
+const options = [
+  { id: "option-code", label: "Code" },
+  { id: "option-design", label: "Design" },
+  { id: "", label: "(Empty)" },
+  { id: "option-menu", label: "Menu" },
+];
+
+const optionsWithIcons = [
+  { id: "option-code", label: "Code", icon: "fill-content" },
+  { id: "option-design", label: "Design", icon: "pentool" },
+  { id: "", label: "(Empty)" },
+  { id: "option-menu", label: "Menu" },
+];
+
 export default {
   title: "Controls/Select",
   component: Select,
   argTypes: {
     disabled: { control: "boolean" },
+    emptyToEnd: { control: "boolean" },
+    variant: {
+      control: { type: "select" },
+      options: variants,
+    },
   },
   args: {
     disabled: false,
-    options: [
-      {
-        label: "Code",
-        id: "option-code",
-      },
-      {
-        label: "Design",
-        id: "option-design",
-      },
-      {
-        label: "Menu",
-        id: "opeion-menu",
-      },
-    ],
+    options: options,
+    emptyToEnd: false,
     defaultSelected: "option-code",
+    variant: variants[0],
   },
   parameters: {
     controls: {
       exclude: ["options", "defaultSelected"],
+    },
+    docs: {
+      story: {
+        height: "200px",
+      },
     },
   },
   render: ({ ...args }) => <Select {...args} />,
@@ -43,23 +61,20 @@ export default {
 
 export const Default = {};
 
+export const Ghost = {
+  args: {
+    variant: "ghost",
+  },
+};
+
 export const WithIcons = {
   args: {
-    options: [
-      {
-        label: "Code",
-        id: "option-code",
-        icon: "fill-content",
-      },
-      {
-        label: "Design",
-        id: "option-design",
-        icon: "pentool",
-      },
-      {
-        label: "Menu",
-        id: "option-menu",
-      },
-    ],
+    options: optionsWithIcons,
+  },
+};
+
+export const EmptyToEnd = {
+  args: {
+    emptyToEnd: true,
   },
 };

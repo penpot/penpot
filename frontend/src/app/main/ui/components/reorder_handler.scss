@@ -8,16 +8,16 @@
   cursor: grab;
   display: flex;
   flex-direction: column;
-  height: calc(100% + var(--sp-m));
+  block-size: calc(100% + var(--sp-m));
   justify-content: center;
-  left: var(--reorder-left-position, calc(-1 * var(--sp-l)));
+  inset-inline-start: var(--reorder-left-position, -11px);
   position: absolute;
-  top: calc(-1 * (var(--sp-m) / 2));
+  inset-block-start: calc(-1 * (var(--sp-m) / 2));
   z-index: var(--z-index-panels);
 }
 
 .reorder-icon {
-  height: var(--sp-l);
+  block-size: var(--sp-l);
   pointer-events: none;
   visibility: var(--reorder-icon-visibility, hidden);
   --icon-stroke-color: var(--color-foreground-secondary);
@@ -28,15 +28,15 @@
   border-color: var(--color-accent-primary);
   margin: 0;
   position: absolute;
-  width: 100%;
+  inline-size: 100%;
 }
 
 .reorder-separator-top {
   display: var(--reorder-top-display, none);
-  top: calc(-1 * var(--sp-xxs));
+  inset-block-start: calc(-1 * var(--sp-xxs));
 }
 
 .reorder-separator-bottom {
   display: var(--reorder-bottom-display, none);
-  bottom: calc(-1 * var(--sp-xxs));
+  inset-block-end: calc(-1 * var(--sp-xxs));
 }

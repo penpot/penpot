@@ -89,6 +89,13 @@ For instance, if  the registration is disabled, the only way to create a new use
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
 ```
 
+or
+
+```bash
+docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile --skip-tutorial --skip-walkthrough
+```
+
+
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
 You can check the correct name executing <code class="language-bash">docker ps</code>.

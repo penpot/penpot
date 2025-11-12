@@ -4,17 +4,17 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 $width-settings-bar: 256px;
 
 .container {
   background-color: var(--color-background-primary);
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   bottom: 0px;
-  padding: $s-2 $s-8;
+  padding: deprecated.$s-2 deprecated.$s-8;
   position: fixed;
-  right: calc(#{$width-settings-bar} + #{$s-24});
+  right: calc(#{$width-settings-bar} + #{deprecated.$s-24});
   text-align: center;
   white-space: nowrap;
   transition: bottom 0.5s;
@@ -24,10 +24,10 @@ $width-settings-bar: 256px;
 }
 
 .container-color-palette-open {
-  bottom: $s-64;
+  bottom: deprecated.$s-64;
 }
 
 .coordinate {
   color: var(--color-foreground-primary);
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
 }

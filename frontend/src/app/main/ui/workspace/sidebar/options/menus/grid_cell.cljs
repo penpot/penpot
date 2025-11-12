@@ -17,9 +17,9 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -52,29 +52,29 @@
                         :name (dm/str "flex-align-items-" type)}
       [:& radio-button {:value "start"
                         :icon  (if is-col?
-                                 i/align-self-row-left
-                                 i/align-self-column-top)
+                                 deprecated-icon/align-self-row-left
+                                 deprecated-icon/align-self-column-top)
                         :title "Align self start"
                         :id     (dm/str "align-self-start-" type)}]
 
       [:& radio-button {:value "center"
                         :icon  (if is-col?
-                                 i/align-self-row-center
-                                 i/align-self-column-center)
+                                 deprecated-icon/align-self-row-center
+                                 deprecated-icon/align-self-column-center)
                         :title "Align self center"
                         :id     (dm/str "align-self-center-" type)}]
 
       [:& radio-button {:value "end"
                         :icon  (if is-col?
-                                 i/align-self-row-right
-                                 i/align-self-column-bottom)
+                                 deprecated-icon/align-self-row-right
+                                 deprecated-icon/align-self-column-bottom)
                         :title "Align self end"
                         :id     (dm/str "align-self-end-" type)}]
 
       [:& radio-button {:value "stretch"
                         :icon  (if is-col?
-                                 i/align-self-row-stretch
-                                 i/align-self-column-stretch)
+                                 deprecated-icon/align-self-row-stretch
+                                 deprecated-icon/align-self-column-stretch)
                         :title "Align self stretch"
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 
@@ -174,10 +174,10 @@
 
     [:div {:class (stl/css :grid-cell-menu)}
      [:div {:class (stl/css :grid-cell-menu-title)}
-      [:& title-bar {:collapsable  true
-                     :collapsed    (not open?)
-                     :on-collapsed #(swap! state* update :open not)
-                     :title        "Grid cell"}]]
+      [:> title-bar* {:collapsable  true
+                      :collapsed    (not open?)
+                      :on-collapsed #(swap! state* update :open not)
+                      :title        "Grid cell"}]]
 
      (when open?
        [:div {:class (stl/css :grid-cell-menu-container)}
@@ -208,7 +208,7 @@
         (when (and (not multiple?) (= :auto cell-mode))
           [:div {:class (stl/css :row)}
            [:div {:class (stl/css :grid-coord-group)}
-            [:span {:class (stl/css :icon)} i/flex-vertical]
+            [:span {:class (stl/css :icon)} deprecated-icon/flex-vertical]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
@@ -218,7 +218,7 @@
                :value column}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
-            [:span {:class (stl/css :icon)} i/flex-horizontal]
+            [:span {:class (stl/css :icon)} deprecated-icon/flex-horizontal]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
@@ -230,7 +230,7 @@
         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
           [:div {:class (stl/css :row)}
            [:div {:class (stl/css :grid-coord-group)}
-            [:span {:class (stl/css :icon)} i/flex-vertical]
+            [:span {:class (stl/css :icon)} deprecated-icon/flex-vertical]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
@@ -245,7 +245,7 @@
                :value column-end}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
-            [:span {:class (stl/css :icon)} i/flex-horizontal]
+            [:span {:class (stl/css :icon)} deprecated-icon/flex-horizontal]
             [:div {:class (stl/css :coord-input :double)}
              [:> numeric-input*
               {:placeholder "--"

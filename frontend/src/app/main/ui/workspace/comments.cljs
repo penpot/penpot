@@ -17,7 +17,8 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -53,25 +54,25 @@
            :on-click update-mode}
 
       [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
-      [:span {:class (stl/css :icon)} i/tick]]
+      [:span {:class (stl/css :icon)} deprecated-icon/tick]]
      [:li {:class  (stl/css-case :dropdown-item true
                                  :selected (= :yours cmode))
            :data-value "yours"
            :on-click update-mode}
       [:span {:class (stl/css :label)}  (tr "labels.show-your-comments")]
-      [:span {:class (stl/css :icon)} i/tick]]
+      [:span {:class (stl/css :icon)} deprecated-icon/tick]]
      [:li {:class (stl/css-case :dropdown-item true
                                 :selected (= :mentions cmode))
            :data-value "mentions"
            :on-click update-mode}
       [:span {:class (stl/css :label)} (tr "labels.show-mentions")]
-      [:span {:class (stl/css :icon)} i/tick]]
+      [:span {:class (stl/css :icon)} deprecated-icon/tick]]
      [:li {:class (stl/css :separator)}]
      [:li {:class (stl/css-case :dropdown-item true
                                 :selected (= :pending cshow))
            :on-click update-show}
       [:span {:class (stl/css :label)}  (tr "labels.hide-resolved-comments")]
-      [:span {:class (stl/css :icon)} i/tick]]]))
+      [:span {:class (stl/css :icon)} deprecated-icon/tick]]]))
 
 (mf/defc comments-sidebar*
   [{:keys [profiles threads page-id from-viewer]}]
@@ -127,7 +128,7 @@
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "labels.close")
                         :on-click close-section
-                        :icon "close"}]]
+                        :icon i/close}]]
 
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}
@@ -137,7 +138,7 @@
          (nil :all) (tr "labels.show-all-comments")
          :yours     (tr "labels.show-your-comments")
          :mentions     (tr "labels.show-mentions"))]
-      [:div {:class (stl/css :arrow-icon)} i/arrow]]
+      [:div {:class (stl/css :arrow-icon)} deprecated-icon/arrow]]
 
      [:& dropdown {:show options?
                    :on-close #(reset! state* false)}
@@ -159,6 +160,6 @@
              :key (:page-id tgroup)}])]
 
         [:div {:class (stl/css :thread-group-placeholder)}
-         [:span {:class (stl/css :placeholder-icon)} i/comments]
+         [:span {:class (stl/css :placeholder-icon)} deprecated-icon/comments]
          [:span {:class (stl/css :placeholder-label)}
           (tr "labels.no-comments-available")]])]]))

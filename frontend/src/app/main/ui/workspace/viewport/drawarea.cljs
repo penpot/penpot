@@ -7,12 +7,18 @@
 (ns app.main.ui.workspace.viewport.drawarea
   "Drawing components."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.math :as mth]
-   [app.common.types.shape :as cts]
+   [app.main.refs :as refs]
    [app.main.ui.shapes.path :refer [path-shape]]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor*]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(defn- make-edit-path-ref [id]
+  (let [get-fn #(dm/get-in % [:edit-path id])]
+    (l/derived get-fn refs/workspace-local)))
 
 (mf/defc generic-draw-area*
   {::mf/private true}
@@ -29,17 +35,32 @@
                            :fill "none"
                            :stroke-width (/ 1 zoom)}}])))
 
+(mf/defc path-draw-area*
+  {::mf/private true}
+  [{:keys [shape] :as props}]
+  (let [shape-id
+        (dm/get-prop shape :id)
+
+        edit-path-ref
+        (mf/with-memo [shape-id]
+          (make-edit-path-ref shape-id))
+
+        edit-path-state
+        (mf/deref edit-path-ref)
+
+        props
+        (mf/spread-props props {:state edit-path-state})]
+
+    [:> path-editor* props]))
+
 (mf/defc draw-area*
   [{:keys [shape zoom tool] :as props}]
+  [:g.draw-area
+   [:g {:style {:pointer-events "none"}}
+    [:& shapes/shape-wrapper {:shape shape}]]
 
-  ;; Prevent rendering something that it's not a shape.
-  (when (cts/shape? shape)
-    [:g.draw-area
-     [:g {:style {:pointer-events "none"}}
-      [:& shapes/shape-wrapper {:shape shape}]]
-
-     (case tool
-       :path      [:> path-editor* props]
-       :curve     [:& path-shape {:shape shape :zoom zoom}]
-       #_:default [:> generic-draw-area* props])]))
+   (case tool
+     :path      [:> path-draw-area* props]
+     :curve     [:& path-shape {:shape shape :zoom zoom}]
+     #_:default [:> generic-draw-area* props])])
 

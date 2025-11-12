@@ -37,7 +37,8 @@
 (defn- hide-popover
   [node]
   (dom/unset-css-property! node "block-size")
-  (dom/unset-css-property! node "display")
+  (dom/unset-css-property! node "inset-block-start")
+  (dom/unset-css-property! node "inset-inline-start")
   (.hidePopover ^js node))
 
 (defn- calculate-placement-bounding-rect
@@ -157,13 +158,10 @@
   [tooltip placement origin-brect offset]
   (show-popover tooltip)
   (let [tooltip-brect (dom/get-bounding-rect tooltip)
+        tooltip-brect (assoc tooltip-brect :height (:height tooltip-brect) :width (:width tooltip-brect))
         window-size   (dom/get-window-size)]
     (when-let [[placement placement-rect] (find-matching-placement placement tooltip-brect origin-brect window-size offset)]
-
-      (let [height (if (or (= placement "right") (= placement "left"))
-                     (- (:height placement-rect) arrow-height)
-                     (:height placement-rect))]
-        (dom/set-css-property! tooltip "display" "grid")
+      (let [height (:height placement-rect)]
         (dom/set-css-property! tooltip "block-size" (dm/str height "px"))
         (dom/set-css-property! tooltip "inset-block-start" (dm/str (:top placement-rect) "px"))
         (dom/set-css-property! tooltip "inset-inline-start" (dm/str (:left placement-rect) "px")))
@@ -175,7 +173,7 @@
    [:id {:optional true} :string]
    [:offset {:optional true} :int]
    [:delay {:optional true} :int]
-   [:content [:or fn? :string [:fn mf/element?]]]
+   [:content [:or fn? :string]]
    [:placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 
@@ -212,8 +210,9 @@
 
                    update-position
                    (fn []
-                     (let [placement (update-tooltip-position tooltip placement origin-brect offset)]
-                       (reset! placement* placement)))]
+                     (let [new-placement (update-tooltip-position tooltip placement origin-brect offset)]
+                       (when (not= new-placement placement)
+                         (reset! placement* new-placement))))]
 
                (add-schedule schedule-ref delay update-position)))))
 
@@ -234,7 +233,7 @@
 
         tooltip-class
         (stl/css-case
-         :tooltip true
+         :tooltip-content-wrapper true
          :tooltip-top (identical? placement "top")
          :tooltip-bottom (identical? placement "bottom")
          :tooltip-left (identical? placement "left")
@@ -251,7 +250,7 @@
                           :on-focus on-show
                           :on-blur on-hide
                           :on-key-down handle-key-down
-                          :class (stl/css :tooltip-trigger)
+                          :class [class (stl/css :tooltip-trigger)]
                           :aria-describedby id})
         content
         (if (fn? content)
@@ -260,10 +259,11 @@
 
     [:> :div props
      children
-     [:div {:class [class tooltip-class]
+     [:div {:class (stl/css :tooltip)
             :id id
             :popover "auto"
             :role "tooltip"}
-      [:div {:class (stl/css :tooltip-content)} content]
-      [:div {:class (stl/css :tooltip-arrow)
-             :id "tooltip-arrow"}]]]))
+      [:div {:class tooltip-class}
+       [:div {:class (stl/css :tooltip-content)} content]
+       [:div {:class (stl/css :tooltip-arrow)
+              :id "tooltip-arrow"}]]]]))

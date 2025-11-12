@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -16,6 +18,8 @@
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
+
+(log/set-level! :info)
 
 (defn handle-response
   [{:keys [status body headers uri] :as response}]
@@ -111,7 +115,7 @@
 
         request
         {:method method
-         :uri (u/join cf/public-uri "api/rpc/command/" nid)
+         :uri (u/join cf/public-uri "api/main/methods/" nid)
          :credentials "include"
          :headers {"accept" "application/transit+json,text/event-stream,*/*"
                    "x-external-session-id" (cf/external-session-id)
@@ -126,13 +130,21 @@
                     (select-keys params query-params)
                     nil))
          :response-type
-         (if stream? nil response-type)}]
+         (if stream? nil response-type)}
+
+        tpoint
+        (ct/tpoint-ms)]
+
+    (log/trc :hint "make request" :id id)
 
     (->> (http/fetch request)
          (rx/map http/response->map)
          (rx/mapcat (fn [{:keys [headers body] :as response}]
+                      (log/trc :hint "response received" :id id :elapsed (tpoint))
+
                       (let [ctype (get headers "content-type")
-                            response-stream? (str/starts-with? ctype "text/event-stream")]
+                            response-stream? (str/starts-with? ctype "text/event-stream")
+                            tpoint (ct/tpoint-ms)]
 
                         (when (and response-stream? (not stream?))
                           (ex/raise :type :internal
@@ -148,6 +160,8 @@
                           (->> response
                                (http/process-response-type response-type)
                                (rx/map decode-fn)
+                               (rx/tap (fn [_]
+                                         (log/trc :hint "response decoded" :id id :elapsed (tpoint))))
                                (rx/mapcat handle-response)))))))))
 
 (defmulti cmd! (fn [id _] id))
@@ -193,7 +207,7 @@
 (defmethod cmd! ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
-                    :uri  (u/join cf/public-uri "api/rpc/command/" (name id))
+                    :uri  (u/join cf/public-uri "api/main/methods/" (name id))
                     :credentials "include"
                     :headers {"x-external-session-id" (cf/external-session-id)
                               "x-event-origin" (::ev/origin (meta params))}

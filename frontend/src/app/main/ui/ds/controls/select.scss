@@ -4,20 +4,21 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_borders.scss" as *;
-@use "../_sizes.scss" as *;
-@use "../typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 .select-wrapper {
-  --select-icon-fg-color: var(--color-foreground-secondary);
-  --select-fg-color: var(--color-foreground-primary);
-  --select-fg-color-dimmed: var(--color-foreground-secondary);
-  --select-bg-color: var(--color-background-tertiary);
+  --select-icon-color: var(--color-icon-default);
+  --select-text-color: var(--color-foreground-primary);
+  --select-text-color-dimmed: var(--color-foreground-secondary);
+  --select-background-color: var(--color-background-tertiary);
   --select-outline-color: none;
   --select-border-color: none;
 
   &:hover {
-    --select-bg-color: var(--color-background-quaternary);
+    --select-background-color: var(--color-background-quaternary);
+    --select-icon-color: var(--color-foreground-primary);
   }
 
   @include use-typography("body-small");
@@ -30,37 +31,56 @@
 
 .select {
   &:focus-visible {
+    --select-background-color: var(--color-background-quaternary);
     --select-outline-color: var(--color-accent-primary);
   }
 
   &:disabled {
-    --select-bg-color: var(--color-background-primary);
+    --select-background-color: var(--color-background-primary);
     --select-border-color: var(--color-background-quaternary);
-    --select-fg-color: var(--color-foreground-secondary);
+    --select-text-color: var(--color-foreground-secondary);
   }
 
   display: grid;
   grid-template-columns: 1fr auto;
   gap: var(--sp-xs);
-  height: $sz-32;
-  width: 100%;
+  block-size: $sz-32;
+  inline-size: 100%;
   padding: var(--sp-s);
   border: none;
   border-radius: $br-8;
   outline: $b-1 solid var(--select-outline-color);
   border: $b-1 solid var(--select-border-color);
-  background: var(--select-bg-color);
-  color: var(--select-fg-color);
+  background: var(--select-background-color);
+  color: var(--select-text-color);
   appearance: none;
 }
 
-.focused {
-  --select-outline-color: var(--color-accent-primary);
+.variant-ghost {
+  --select-background-color: transparent;
+  --select-text-color: var(--color-foreground-secondary);
+
+  inline-size: fit-content;
+  padding-inline: var(--sp-xxs);
+
+  & .arrow {
+    margin-inline-start: var(--sp-xs);
+  }
+
+  &:is(:hover, [aria-expanded="true"]) {
+    --select-text-color: var(--color-foreground-primary);
+    --select-icon-color: var(--color-foreground-primary);
+  }
+
+  &:is(:focus-visible, :disabled) {
+    --select-background-color: transparent;
+    --select-text-color: var(--color-foreground-primary);
+    --select-icon-color: var(--color-foreground-primary);
+  }
 }
 
 .arrow {
-  color: var(--select-icon-fg-color);
-  transform: rotate(90deg);
+  color: var(--select-icon-color);
 }
 
 .select-header {
@@ -78,14 +98,14 @@
   min-width: 0;
   padding-inline-start: var(--sp-xxs);
   text-align: left;
-  color: var(--select-fg-color);
+  color: var(--select-text-color);
 }
 
 .header-label-dimmed {
-  color: var(--select-fg-color-dimmed);
+  color: var(--select-text-color-dimmed);
 }
 
 .header-icon {
   grid-template-columns: auto 1fr;
-  color: var(--select-icon-fg-color);
+  color: var(--select-icon-color);
 }

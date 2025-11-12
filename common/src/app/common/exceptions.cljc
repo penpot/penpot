@@ -47,10 +47,26 @@
     `(try ~@exprs (catch Throwable e# nil))))
 
 (defmacro try!
-  [& exprs]
-  (if (:ns &env)
-    `(try ~@exprs (catch :default e# e#))
-    `(try ~@exprs (catch Throwable e# e#))))
+  [expr & {:keys [reraise-with on-exception]}]
+  (let [ex-sym
+        (gensym "exc")
+
+        generate-catch
+        (fn []
+          (cond
+            (map? reraise-with)
+            `(ex/raise ~@(mapcat identity reraise-with) :cause ~ex-sym)
+
+            on-exception
+            `(let [handler# ~on-exception]
+               (handler# ~ex-sym))
+
+            :else
+            ex-sym))]
+
+    (if (:ns &env)
+      `(try ~expr (catch :default ~ex-sym ~(generate-catch)))
+      `(try ~expr (catch Throwable ~ex-sym ~(generate-catch))))))
 
 (defn ex-info?
   [v]

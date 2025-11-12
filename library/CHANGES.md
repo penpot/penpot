@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 1.0.11
+
+- Set correct path if it is not provided on addComponent
+
+
+## 1.0.10
+
+- Enable variant/v1 feature by default
+- Add variant attrs handling to addComponent method
+
+
+## 1.0.9
+
+- Fix dependencies declaration on package.json
+
+
+## 1.0.8
+
+- Update penpot runtime
+
+
+## 1.0.7
+
+- Add the ability to provide refereron creating build context
+
+```js
+const context = penpot.createBuildContext({referer:"my-referer"});
+```
+
+The referer will be added as an additional field on the manifest.json
+
+
 ## 1.0.6
 
 - Fix unexpected issue on library color decoding

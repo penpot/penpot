@@ -56,7 +56,7 @@ export const All = {
   },
   parameters: {
     controls: { exclude: ["iconId", "size"] },
-    backgrounds: { disable: true },
+    backgrounds: { disabled: true },
   },
 };
 

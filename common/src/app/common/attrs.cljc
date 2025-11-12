@@ -8,7 +8,7 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.text :as txt]))
+   [app.common.types.text :as txt]))
 
 (defn- get-attr
   [obj attr]

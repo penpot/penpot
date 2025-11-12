@@ -4,39 +4,39 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 
 .dashboard-container {
   flex: 1 0 0;
   width: 100%;
-  margin-right: $s-16;
-  border-top: $s-1 solid var(--panel-border-color);
+  margin-right: deprecated.$s-16;
+  border-top: deprecated.$s-1 solid var(--panel-border-color);
   overflow-y: auto;
-  padding-bottom: $s-32;
+  padding-bottom: deprecated.$s-32;
 }
 
 .dashboard-projects {
   user-select: none;
-  height: calc(100vh - $s-64);
+  height: calc(100vh - deprecated.$s-64);
 }
 
 .with-team-hero {
-  height: calc(100vh - $s-280);
+  height: calc(100vh - deprecated.$s-280);
 }
 
 .dashboard-shared {
-  width: calc(100vw - $s-320);
-  margin-right: $s-52;
+  width: calc(100vw - deprecated.$s-320);
+  margin-right: deprecated.$s-52;
 }
 
 .search {
-  margin-top: $s-12;
+  margin-top: deprecated.$s-12;
 }
 
 .dashboard-project-row {
   --actions-opacity: 0;
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
   position: relative;
 
   &:hover,
@@ -60,12 +60,12 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   width: 99%;
-  max-height: $s-40;
-  padding: $s-8 $s-8 $s-8 $s-16;
-  margin-top: $s-16;
-  border-radius: $br-4;
+  max-height: deprecated.$s-40;
+  padding: deprecated.$s-8 deprecated.$s-8 deprecated.$s-8 deprecated.$s-16;
+  margin-top: deprecated.$s-16;
+  border-radius: deprecated.$br-4;
 }
 
 .project-name-wrapper {
@@ -73,30 +73,30 @@
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  min-height: $s-32;
-  margin-left: $s-8;
+  min-height: deprecated.$s-32;
+  margin-left: deprecated.$s-8;
 }
 
 .project-name {
-  @include bodyLargeTypography;
-  @include textEllipsis;
+  @include deprecated.bodyLargeTypography;
+  @include deprecated.textEllipsis;
   width: fit-content;
-  margin-right: $s-12;
+  margin-right: deprecated.$s-12;
   line-height: 0.8;
   color: var(--title-foreground-color-hover);
   cursor: pointer;
-  height: $s-16;
+  height: deprecated.$s-16;
 }
 
 .info-wrapper {
   display: flex;
   align-items: center;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .info,
 .recent-files-row-title-info {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   color: var(--title-foreground-color);
   @media (max-width: 760px) {
     display: none;
@@ -106,16 +106,16 @@
 .project-actions {
   display: flex;
   opacity: var(--actions-opacity);
-  margin-left: $s-32;
+  margin-left: deprecated.$s-32;
 }
 
 .add-file-btn,
 .options-btn {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-32;
-  margin: 0 $s-8;
-  padding: $s-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  margin: 0 deprecated.$s-8;
+  padding: deprecated.$s-8;
 }
 
 .add-icon,
@@ -126,24 +126,24 @@
 
 .grid-container {
   width: 100%;
-  padding: 0 $s-4;
+  padding: 0 deprecated.$s-4;
 }
 
 .placeholder-placement {
-  margin: $s-16 $s-32;
+  margin: deprecated.$s-16 deprecated.$s-32;
 }
 
 .show-more {
   --show-more-color: var(--button-secondary-foreground-color-rest);
-  @include buttonStyle;
-  @include bodyMediumTypography;
+  @include deprecated.buttonStyle;
+  @include deprecated.bodyMediumTypography;
   position: absolute;
-  top: $s-8;
-  right: $s-52;
+  top: deprecated.$s-8;
+  right: deprecated.$s-52;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  column-gap: $s-12;
+  column-gap: deprecated.$s-12;
   color: var(--show-more-color);
 
   &:hover {
@@ -152,8 +152,8 @@
 }
 
 .show-more-icon {
-  height: $s-16;
-  width: $s-16;
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
   fill: none;
   stroke: var(--show-more-color);
 }
@@ -161,16 +161,16 @@
 // Team hero
 .team-hero {
   background-color: var(--color-background-tertiary);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   border: none;
   display: flex;
-  margin: $s-16;
-  padding: $s-8;
+  margin: deprecated.$s-16;
+  padding: deprecated.$s-8;
   position: relative;
 
   img {
-    border-radius: $br-4;
-    height: $s-200;
+    border-radius: deprecated.$br-4;
+    height: deprecated.$s-200;
     width: auto;
 
     @media (max-width: 1200px) {
@@ -185,18 +185,18 @@
   flex-direction: column;
   align-items: flex-start;
   flex-grow: 1;
-  padding: $s-20 $s-20;
+  padding: deprecated.$s-20 deprecated.$s-20;
 }
 
 .title {
-  font-size: $fs-24;
+  font-size: deprecated.$fs-24;
   color: var(--color-foreground-primary);
-  font-weight: $fw400;
+  font-weight: deprecated.$fw400;
 }
 
 .info {
   flex: 1;
-  font-size: $fs-16;
+  font-size: deprecated.$fs-16;
   span {
     color: var(--color-foreground-secondary);
     display: block;
@@ -204,15 +204,15 @@
   a {
     color: var(--color-accent-primary);
   }
-  padding: $s-8 0;
+  padding: deprecated.$s-8 0;
 }
 
 .close {
   --close-icon-foreground-color: var(--icon-foreground);
   position: absolute;
-  top: $s-20;
-  right: $s-24;
-  width: $s-24;
+  top: deprecated.$s-20;
+  right: deprecated.$s-24;
+  width: deprecated.$s-24;
   background-color: transparent;
   border: none;
   cursor: pointer;
@@ -227,18 +227,18 @@
 }
 
 .invite {
-  height: $s-32;
-  width: $s-180;
+  height: deprecated.$s-32;
+  width: deprecated.$s-180;
 }
 
 .img-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: $s-200;
-  height: $s-200;
+  width: deprecated.$s-200;
+  height: deprecated.$s-200;
   overflow: hidden;
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   @media (max-width: 1200px) {
     display: none;
     width: 0;

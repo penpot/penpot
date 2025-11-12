@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -50,7 +50,7 @@
         [:div  {:class (stl/css :attr-actions)}
          [:button {:class (stl/css :attr-action-btn)
                    :on-click handle-delete}
-          i/remove-icon]]]
+          deprecated-icon/remove-icon]]]
        [:div {:class (stl/css :attr-nested-content)}
         [:div  {:class (stl/css :attr-title)}
          (str (d/name (last attr)))]
@@ -95,11 +95,11 @@
     (when-not (empty? attrs)
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-set-title)}
-        [:& title-bar {:collapsable  has-attributes?
-                       :collapsed    (not open?)
-                       :on-collapsed toggle-content
-                       :title        (tr "workspace.sidebar.options.svg-attrs.title")
-                       :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
+        [:> title-bar* {:collapsable  has-attributes?
+                        :collapsed    (not open?)
+                        :on-collapsed toggle-content
+                        :title        (tr "workspace.sidebar.options.svg-attrs.title")
+                        :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
        (when open?
          [:div {:class (stl/css :element-set-content)}
           (for [[attr-key attr-value] attrs]

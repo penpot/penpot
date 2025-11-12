@@ -7,21 +7,33 @@ export DEVENV_PNAME="penpotdev";
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
+export IMAGEMAGICK_VERSION=7.1.2-0
+
+# Safe directory to avoid ownership errors with Git
+git config --global --add safe.directory /home/penpot/penpot || true
+
 # Set default java options
 export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms50m"};
 
 set -e
 
+ARCH=$(uname -m)
+
+if [[ "$ARCH" == "x86_64" || "$ARCH" == "i386" || "$ARCH" == "i686" ]]; then
+    ARCH="amd64"
+elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+    ARCH="arm64"
+else
+    echo "Unknown architecture $ARCH"
+    exit -1
+fi
+
+
 function print-current-version {
     echo -n "$(git describe --tags --match "*.*.*")";
 }
 
-function build-devenv {
-    set +e;
-    echo "Building development image $DEVENV_IMGNAME:latest..."
-
-    pushd docker/devenv;
-
+function setup-buildx {
     docker run --privileged --rm tonistiigi/binfmt --install all
     docker buildx inspect penpot > /dev/null 2>&1;
 
@@ -32,19 +44,28 @@ function build-devenv {
         docker buildx use penpot;
         docker buildx inspect --bootstrap  > /dev/null 2>&1;
     fi
-
-    # docker build -t $DEVENV_IMGNAME:latest .
-    docker buildx build --platform linux/amd64 --push -t $DEVENV_IMGNAME:latest .;
-    docker pull $DEVENV_IMGNAME:latest;
-
-    popd;
 }
 
-function build-devenv-local {
-    echo "Building local only development image $DEVENV_IMGNAME:latest..."
+function build-devenv {
+    set +e;
 
     pushd docker/devenv;
-    docker build -t $DEVENV_IMGNAME:latest .;
+
+    if [ "$1" = "--local" ]; then
+        echo "Build local only $DEVENV_IMGNAME:latest image";
+        docker build -t $DEVENV_IMGNAME:latest .;
+    else
+        echo "Build and push $DEVENV_IMGNAME:latest image";
+        setup-buildx;
+
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --output type=registry \
+          -t $DEVENV_IMGNAME:latest .;
+
+        docker pull $DEVENV_IMGNAME:latest;
+    fi
+
     popd;
 }
 
@@ -120,9 +141,36 @@ function run-devenv-isolated-shell {
            $DEVENV_IMGNAME:latest sudo -EH -u penpot bash
 }
 
+function build-imagemagick-docker-image {
+    set +e;
+    echo "Building image penpotapp/imagemagick:$IMAGEMAGICK_VERSION"
+
+    pushd docker/imagemagick;
+
+    output_option="type=registry";
+    platform="linux/amd64,linux/arm64";
+
+    if [ "$1" = "--local" ]; then
+        output_option="type=docker";
+        platform="linux/$ARCH"
+    fi
+
+    setup-buildx;
+
+    docker buildx build \
+      --build-arg IMAGEMAGICK_VERSION=$IMAGEMAGICK_VERSION \
+      --platform $platform \
+      --output $output_option \
+      -t penpotapp/imagemagick:latest \
+      -t penpotapp/imagemagick:$IMAGEMAGICK_VERSION .;
+
+    popd;
+}
+
 function build {
     echo ">> build start: $1"
     local version=$(print-current-version);
+    local script=${2:-build}
 
     pull-devenv-if-not-exists;
     docker volume create ${DEVENV_PNAME}_user_data;
@@ -135,7 +183,7 @@ function build {
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build $version
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/$script $version
 
     echo ">> build end: $1"
 }
@@ -199,6 +247,22 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
+function build-storybook-bundle {
+    echo ">> bundle storybook start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/storybook";
+
+    build "frontend" "build-storybook";
+
+    rm -rf $bundle_dir;
+    mv ./frontend/storybook-static $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle storybook end";
+}
+
 function build-docs-bundle {
     echo ">> bundle docs start";
 
@@ -215,24 +279,43 @@ function build-docs-bundle {
     echo ">> bundle docs end";
 }
 
-function build-frontend-docker-images {
+function build-frontend-docker-image {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
     pushd ./docker/images;
-    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
+    docker build \
+        -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest \
+        --build-arg BUNDLE_PATH="./bundle-frontend/" \
+        -f Dockerfile.frontend .;
     popd;
 }
 
-function build-backend-docker-images {
+function build-backend-docker-image {
     rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
     pushd ./docker/images;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
+    docker build \
+        -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest \
+        --build-arg BUNDLE_PATH="./bundle-backend/" \
+        -f Dockerfile.backend .;
     popd;
 }
 
-function build-exporter-docker-images {
+function build-exporter-docker-image {
     rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
     pushd ./docker/images;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
+    docker build \
+        -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest \
+        --build-arg BUNDLE_PATH="./bundle-exporter/" \
+        -f Dockerfile.exporter .;
+    popd;
+}
+
+function build-storybook-docker-image {
+    rsync -avr --delete ./bundles/storybook/ ./docker/images/bundle-storybook/;
+    pushd ./docker/images;
+    docker build \
+        -t penpotapp/storybook:$CURRENT_BRANCH -t penpotapp/storybook:latest \
+        --build-arg BUNDLE_PATH="./bundle-storybook/" \
+        -f Dockerfile.storybook .;
     popd;
 }
 
@@ -242,7 +325,7 @@ function usage {
     echo "Options:"
     echo "- pull-devenv                      Pulls docker development oriented image"
     echo "- build-devenv                     Build docker development oriented image"
-    echo "- build-devenv-local               Build a local docker development oriented image"
+    echo "- build-devenv --local             Build a local docker development oriented image"
     echo "- create-devenv                    Create the development oriented docker compose service."
     echo "- start-devenv                     Start the development oriented docker compose service."
     echo "- stop-devenv                      Stops the development oriented docker compose service."
@@ -256,12 +339,14 @@ function usage {
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
+    echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
-    echo "- build-frontend-docker-images     Build frontend docker images."
-    echo "- build-backend-docker-images      Build backend docker images."
-    echo "- build-exporter-docker-images     Build exporter docker images."
+    echo "- build-frontend-docker-image      Build frontend docker images."
+    echo "- build-backend-docker-image       Build backend docker images."
+    echo "- build-exporter-docker-image      Build exporter docker images."
+    echo "- build-storybook-docker-image     Build storybook docker images."
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -277,11 +362,8 @@ case $1 in
         ;;
 
     build-devenv)
-        build-devenv ${@:2}
-        ;;
-
-    build-devenv-local)
-        build-devenv-local ${@:2}
+        shift;
+        build-devenv $@;
         ;;
 
     create-devenv)
@@ -317,6 +399,7 @@ case $1 in
         build-frontend-bundle;
         build-backend-bundle;
         build-exporter-bundle;
+        build-storybook-bundle;
         ;;
 
     build-frontend-bundle)
@@ -330,27 +413,41 @@ case $1 in
     build-exporter-bundle)
         build-exporter-bundle;
         ;;
+    
+    build-storybook-bundle)
+        build-storybook-bundle;
+        ;;
 
     build-docs-bundle)
         build-docs-bundle;
         ;;
 
+    build-imagemagick-docker-image)
+        shift;
+        build-imagemagick-docker-image $@;
+        ;;
+
     build-docker-images)
-        build-frontend-docker-images
-        build-backend-docker-images
-        build-exporter-docker-images
+        build-frontend-docker-image
+        build-backend-docker-image
+        build-exporter-docker-image
+        build-storybook-docker-image
         ;;
 
-    build-frontend-docker-images)
-        build-frontend-docker-images
+    build-frontend-docker-image)
+        build-frontend-docker-image
         ;;
 
-    build-backend-docker-images)
-        build-backend-docker-images
+    build-backend-docker-image)
+        build-backend-docker-image
         ;;
 
-    build-exporter-docker-images)
-        build-exporter-docker-images
+    build-exporter-docker-image)
+        build-exporter-docker-image
+        ;;
+ 
+    build-storybook-docker-image)
+        build-storybook-docker-image
         ;;
 
     *)

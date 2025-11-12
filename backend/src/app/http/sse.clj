@@ -33,7 +33,7 @@
                  (println "event:" (d/name name))
                  (println "data:" (t/encode-str data {:type :json-verbose}))
                  (println))]
-      (.getBytes data "UTF-8"))
+      (.getBytes ^String data "UTF-8"))
     (catch Throwable cause
       (l/err :hint "unexpected error on encoding value on sse stream"
              :cause cause)
@@ -44,7 +44,8 @@
 (def default-headers
   {"Content-Type" "text/event-stream;charset=UTF-8"
    "Cache-Control" "no-cache, no-store, max-age=0, must-revalidate"
-   "Pragma" "no-cache"})
+   "Pragma" "no-cache"
+   "X-Accel-Buffering" "no"})
 
 (defn response
   [handler & {:keys [buf] :or {buf 32} :as opts}]
@@ -54,7 +55,7 @@
      ::yres/body (yres/stream-body
                   (fn [_ output]
                     (let [channel  (sp/chan :buf buf :xf (keep encode))
-                          listener (events/start-listener
+                          listener (events/spawn-listener
                                     channel
                                     (partial write! output)
                                     (partial pu/close! output))]

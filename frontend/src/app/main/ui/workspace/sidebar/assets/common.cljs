@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
@@ -17,24 +18,24 @@
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
    [app.config :as cf]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [tr c]]
+   [app.util.i18n :as i18n :refer [c tr]]
    [app.util.strings :refer [matches-search]]
    [app.util.timers :as ts]
    [cljs.spec.alpha :as s]
@@ -62,7 +63,7 @@
                  (let [path (if (str/empty? path)
                               (if reverse? "z" "a")
                               path)]
-                   (str/lower (cfh/merge-path-item path name))))
+                   (str/lower (cpn/merge-path-item path name))))
                (if ^boolean reverse? > <))
 
       :always
@@ -71,30 +72,30 @@
 (defn add-group
   [asset group-name]
   (-> (:path asset)
-      (cfh/merge-path-item group-name)
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item group-name)
+      (cpn/merge-path-item (:name asset))))
 
 (defn rename-group
   [asset path last-path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cfh/split-path)
+      (cpn/split-path)
       butlast
       (vec)
       (conj last-path)
-      (cfh/join-path)
+      (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item (:name asset))))
 
 (defn ungroup
   [asset path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cfh/split-path)
+      (cpn/split-path)
       butlast
-      (cfh/join-path)
+      (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item (:name asset))))
 
 (s/def ::asset-name ::us/not-empty-string)
 (s/def ::name-group-form
@@ -116,8 +117,7 @@
   [state]
   (assoc state :open? false))
 
-(mf/defc assets-context-menu
-  {::mf/wrap-props false}
+(mf/defc assets-context-menu*
   [{:keys [options state on-close]}]
   [:> context-menu*
    {:show (:open? state)
@@ -139,9 +139,8 @@
   [section assets-count]
   (or (not (= section :tokens)) (and (< 0 assets-count) (= section :tokens))))
 
-(mf/defc asset-section
-  {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count icon open? on-click]}]
+(mf/defc asset-section*
+  [{:keys [children file-id title section assets-count icon is-open on-click]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
@@ -153,10 +152,10 @@
 
         on-collapsed
         (mf/use-fn
-         (mf/deps file-id section open? assets-count)
+         (mf/deps file-id section is-open assets-count)
          (fn [_]
            (when (< 0 assets-count)
-             (st/emit! (dw/set-assets-section-open file-id section (not open?))))))
+             (st/emit! (dw/set-assets-section-open file-id section (not is-open))))))
 
         title
         (mf/html
@@ -174,23 +173,22 @@
 
     [:div {:class (stl/css-case :asset-section true
                                 :opened (and (< 0 assets-count)
-                                             open?))
+                                             is-open))
            :on-click on-click}
-     [:& title-bar
+     [:> title-bar*
       {:collapsable   (< 0 assets-count)
-       :collapsed     (not open?)
+       :collapsed     (not is-open)
        :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
        :title         title}
       buttons]
      (when ^boolean (and (< 0 assets-count)
-                         open?)
-       [:div {:class (stl/css-case :title-spacing open?)}
+                         is-open)
+       [:div {:class (stl/css-case :title-spacing is-open)}
         content])]))
 
-(mf/defc asset-section-block
-  {::mf/wrap-props false}
+(mf/defc asset-section-block*
   [{:keys [children]}]
   [:* children])
 
@@ -282,7 +280,7 @@
         (st/emit!
          (rename
           (:id target-asset)
-          (cfh/merge-path-item prefix (:name target-asset))))))))
+          (cpn/merge-path-item prefix (:name target-asset))))))))
 
 (mf/defc component-item-thumbnail*
   "Component that renders the thumbnail image or the original SVG."
@@ -324,7 +322,7 @@
         :is-hidden is-hidden}])))
 
 (defn generate-components-menu-entries
-  [shapes]
+  [shapes & {:keys [for-design-tab?]}]
   (let [multi               (> (count shapes) 1)
         copies              (filter ctk/in-component-copy? shapes)
 
@@ -356,11 +354,16 @@
 
 
         ;; For when it's only one shape
+
+
         shape               (first shapes)
-        id                  (:id shape)
+        shape-id            (:id shape)
+
         main-instance?      (ctk/main-instance? shape)
+        variant-container?  (ctk/is-variant-container? shape)
 
         component-id        (:component-id shape)
+        variant-id          (:variant-id shape)
         library-id          (:component-file shape)
 
         local-component?    (= library-id current-file-id)
@@ -381,8 +384,6 @@
         can-detach? (and (seq copies)
                          (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
 
-        variants? (features/use-feature "variants/v1")
-
         same-variant? (ctv/same-variant? shapes)
 
         is-restorable-variant?
@@ -390,7 +391,7 @@
         ;; and the variant-container in which it will be restored still exists
         (fn [shape]
           (let [component (find-component shape true)
-                main      (ctk/get-component-root component)
+                main      (ctk/get-deleted-component-root component)
                 objects   (dm/get-in libraries [(:component-file shape)
                                                 :data
                                                 :pages-index
@@ -400,8 +401,7 @@
                 parent    (get objects (:parent-id main))]
             (and (:deleted component) (ctk/is-variant? component) parent)))
 
-        restorable-variants? (and variants?
-                                  (every? is-restorable-variant? restorable-copies))
+        restorable-variants? (every? is-restorable-variant? restorable-copies)
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -410,7 +410,7 @@
         #(st/emit! (dwl/reset-components (map :id touched-not-dangling)))
 
         do-update-component-sync
-        #(st/emit! (dwl/update-component-sync id library-id))
+        #(st/emit! (dwl/update-component-sync shape-id library-id))
 
         do-update-remote-component
         (fn []
@@ -430,44 +430,60 @@
            (do-update-remote-component))
 
         do-show-in-assets
-        #(st/emit! (dw/show-component-in-assets component-id))
+        (let [component-id (if variant-container?
+                             (->> (:shapes shape) (mapv #(get objects %)) first :component-id)
+                             component-id)]
+          #(st/emit! (dw/show-component-in-assets component-id)))
 
         do-create-annotation
-        #(st/emit! (dw/set-annotations-id-for-create id))
+        #(st/emit! (dw/set-annotations-id-for-create shape-id))
 
         do-add-variant
-        #(when variants?
-           (if (ctk/is-variant? shape)
-             (st/emit! (dwv/add-new-variant id))
-             (st/emit! (dwv/transform-in-variant id))))
+        #(if (ctk/is-variant? shape)
+           (st/emit!
+            (ev/event {::ev/name "add-new-variant"
+                       ::ev/origin (if for-design-tab? "workspace:design-tab-menu-variant" "workspace:context-menu-variant")})
+            (dwv/add-new-variant shape-id))
+           (st/emit!
+            (ev/event {::ev/name "transform-in-variant"
+                       ::ev/origin (if for-design-tab? "workspace:design-tab-menu" "workspace:context-menu")})
+            (dwv/transform-in-variant shape-id)))
+
+        do-add-new-property
+        #(st/emit!
+          (ev/event {::ev/name "add-new-property" ::ev/origin "workspace:design-tab-menu-variant"})
+          (dwv/add-new-property variant-id {:property-value "Value 1" :editing? true}))
 
         do-show-local-component
         #(st/emit! (dwl/go-to-local-component :id component-id))
 
         ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
-        #(when-let [comp (find-component shape true)]
-           (st/emit! (dwl/go-to-component-file library-id comp)))
+        (fn [update-layout?]
+          (when-let [comp (find-component shape true)]
+            (st/emit! (dwl/go-to-component-file library-id comp update-layout?))))
 
         do-show-component
-        (fn []
+        (fn [_ update-layout?]
           (st/emit! dw/hide-context-menu)
           (if local-component?
             (do-show-local-component)
-            (do-show-remote-component)))
+            (do-show-remote-component update-layout?)))
 
         do-restore-component
-        #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
-               comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
-                                          (assoc id-file-map component-id component-file))
-                                        {}
-                                        restorable-copies)]
+        (fn []
+          (let [;; Extract a map of component-id -> component-file in order to avoid duplicates
+                comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
+                                           (assoc id-file-map component-id component-file))
+                                         {}
+                                         restorable-copies)]
 
-           (st/emit! (dwl/restore-components comps-to-restore))
-           (when (= 1 (count comps-to-restore))
-             (ts/schedule 1000 do-show-component)))
+            (st/emit! (dwl/restore-components comps-to-restore))
+            (when (= 1 (count comps-to-restore))
+              (ts/schedule 1000 #(do-show-component nil true)))))
 
-        menu-entries [(when (and (or (not multi) same-variant?) main-instance?)
+        menu-entries [(when (or (and (not multi) (or variant-container? main-instance?))
+                                (and multi same-variant?))
                         {:title (tr "workspace.shape.menu.show-in-assets")
                          :action do-show-in-assets})
                       (when (and (not multi) main-instance? local-component? lacks-annotation?)
@@ -494,8 +510,11 @@
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
                          :action do-update-component})
-                      (when (and variants? (or (not multi) same-variant?) main-instance?)
+                      (when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
-                         :shortcut :create-component
-                         :action do-add-variant})]]
+                         :shortcut :create-component-variant
+                         :action do-add-variant})
+                      (when (and same-variant? main-instance? variant-id for-design-tab?)
+                        {:title (tr "workspace.shape.menu.add-variant-property")
+                         :action do-add-new-property})]]
     (filter (complement nil?) menu-entries)))

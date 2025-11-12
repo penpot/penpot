@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .workspace {
   @extend .new-scrollbar;
@@ -33,18 +33,18 @@
 
 .history-debug-overlay {
   bottom: 0;
-  max-height: $s-500;
-  width: $s-500;
+  max-height: deprecated.$s-500;
+  width: deprecated.$s-500;
   overflow-y: auto;
   position: absolute;
-  z-index: $z-index-modal;
+  z-index: deprecated.$z-index-modal;
 }
 
 .workspace-viewport {
   overflow: hidden;
   transition: none;
   display: grid;
-  grid-template-rows: $s-20 1fr;
-  grid-template-columns: $s-20 1fr;
+  grid-template-rows: deprecated.$s-20 1fr;
+  grid-template-columns: deprecated.$s-20 1fr;
   flex: 1;
 }

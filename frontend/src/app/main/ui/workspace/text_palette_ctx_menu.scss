@@ -4,17 +4,17 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .text-context-menu {
   position: absolute;
   left: auto;
   bottom: var(--height);
-  max-width: $s-480;
-  padding: $s-4;
-  margin: 0 0 $s-4 0;
-  z-index: $z-index-4;
-  border-radius: $br-10;
+  max-width: deprecated.$s-480;
+  padding: deprecated.$s-4;
+  margin: 0 0 deprecated.$s-4 0;
+  z-index: deprecated.$z-index-4;
+  border-radius: deprecated.$br-10;
   background-color: var(--context-menu-background-color);
 
   .palette-library,
@@ -23,33 +23,33 @@
     display: flex;
     justify-content: space-between;
     width: 100%;
-    gap: $s-8;
-    padding: $s-8;
-    margin-bottom: $s-4;
-    border-radius: $br-8;
+    gap: deprecated.$s-8;
+    padding: deprecated.$s-8;
+    margin-bottom: deprecated.$s-4;
+    border-radius: deprecated.$br-8;
 
     &:last-child {
       margin-bottom: 0;
     }
     .library-name {
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
       color: var(--context-menu-foreground-color);
       display: grid;
-      grid-template-columns: 1fr $s-24;
-      max-width: $s-400;
+      grid-template-columns: 1fr deprecated.$s-24;
+      max-width: deprecated.$s-400;
       .lib-name {
-        @include textEllipsis;
-        max-width: $s-380;
+        @include deprecated.textEllipsis;
+        max-width: deprecated.$s-380;
       }
       .lib-num {
-        margin-left: $s-4;
+        margin-left: deprecated.$s-4;
       }
     }
     .icon-wrapper {
-      margin-left: $s-4;
-      @include flexCenter;
+      margin-left: deprecated.$s-4;
+      @include deprecated.flexCenter;
       svg {
-        @include flexCenter;
+        @include deprecated.flexCenter;
         @extend .button-icon-small;
         stroke: var(--icon-foreground);
       }
@@ -57,9 +57,9 @@
     &.selected,
     &:hover {
       .icon-wrapper {
-        @include flexCenter;
+        @include deprecated.flexCenter;
         svg {
-          @include flexCenter;
+          @include deprecated.flexCenter;
           @extend .button-icon-small;
           stroke: var(--context-menu-foreground-color-selected);
         }

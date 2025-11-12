@@ -10,14 +10,14 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.time :as ct]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.util.time :as dt]
    [rumext.v2 :as mf]))
 
 (defn valid-date?
   [date]
-  (or (dt/datetime? date) (number? date)))
+  (or (ct/inst? date) (number? date)))
 
 (def ^:private schema:date
   [:map
@@ -31,11 +31,14 @@
   {::mf/schema schema:date}
   [{:keys [class date selected typography] :rest props}]
   (let [class (d/append-class class (stl/css-case :date true :is-selected selected))
-        date (cond-> date (not (dt/datetime? date)) dt/datetime)
+        date  (cond-> date (not (ct/inst? date)) ct/inst)
         typography (or typography t/body-medium)]
-    [:> text* {:as "time" :typography typography :class class :dateTime (dt/format date :iso)}
+    [:> text* {:as "time"
+               :typography typography
+               :class class
+               :date-time (ct/format-inst date :iso)}
      (dm/str
-      (dt/format date :date-full)
+      (ct/format-inst date :localized-date)
       " . "
-      (dt/format date :time-24-simple)
+      (ct/format-inst date :localized-time)
       "h")]))

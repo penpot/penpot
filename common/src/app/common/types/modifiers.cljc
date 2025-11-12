@@ -17,8 +17,8 @@
    [app.common.geom.shapes.effects :as gse]
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
-   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [clojure.core :as c]))
 
 ;; --- Modifiers
@@ -466,7 +466,12 @@
    (dm/assert! (#{:width :height} attr))
    (dm/assert! (number? value))
 
-   (let [{:keys [proportion proportion-lock]} shape
+   (let [;; Avoid havig shapes with zero size
+         value (if (< (mth/abs value) 0.01)
+                 0.01
+                 value)
+
+         {:keys [proportion proportion-lock]} shape
          size (select-keys (:selrect shape) [:width :height])
          new-size (if-not (and (not ignore-lock?) proportion-lock)
                     (assoc size attr value)

@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -19,15 +19,20 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry text-options]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options
+                                                                   typography-entry]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.text.ui :as txu]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc text-align-options
@@ -47,20 +52,20 @@
                         :name "align-text-options"}
       [:& radio-button {:value "left"
                         :id "text-align-left"
-                        :title (tr "workspace.options.text-options.text-align-left" (sc/get-tooltip :text-align-left))
-                        :icon i/text-align-left}]
+                        :title (tr "workspace.options.text-options.text-align-left")
+                        :icon deprecated-icon/text-align-left}]
       [:& radio-button {:value "center"
                         :id "text-align-center"
-                        :title (tr "workspace.options.text-options.text-align-center" (sc/get-tooltip :text-align-center))
-                        :icon i/text-align-center}]
+                        :title (tr "workspace.options.text-options.text-align-center")
+                        :icon deprecated-icon/text-align-center}]
       [:& radio-button {:value "right"
                         :id "text-align-right"
-                        :title (tr "workspace.options.text-options.text-align-right" (sc/get-tooltip :text-align-right))
-                        :icon i/text-align-right}]
+                        :title (tr "workspace.options.text-options.text-align-right")
+                        :icon deprecated-icon/text-align-right}]
       [:& radio-button {:value "justify"
                         :id "text-align-justify"
-                        :title (tr "workspace.options.text-options.text-align-justify" (sc/get-tooltip :text-align-justify))
-                        :icon i/text-justify}]]]))
+                        :title (tr "workspace.options.text-options.text-align-justify")
+                        :icon deprecated-icon/text-justify}]]]))
 
 (mf/defc text-direction-options
   [{:keys [values on-change on-blur] :as props}]
@@ -83,12 +88,12 @@
                         :type "checkbox"
                         :id "ltr-text-direction"
                         :title (tr "workspace.options.text-options.direction-ltr")
-                        :icon i/text-ltr}]
+                        :icon deprecated-icon/text-ltr}]
       [:& radio-button {:value "rtl"
                         :type "checkbox"
                         :id "rtl-text-direction"
                         :title (tr "workspace.options.text-options.direction-rtl")
-                        :icon i/text-rtl}]]]))
+                        :icon deprecated-icon/text-rtl}]]]))
 
 (mf/defc vertical-align
   [{:keys [values on-change on-blur] :as props}]
@@ -108,15 +113,15 @@
       [:& radio-button {:value "top"
                         :id "vertical-text-align-top"
                         :title (tr "workspace.options.text-options.align-top")
-                        :icon i/text-top}]
+                        :icon deprecated-icon/text-top}]
       [:& radio-button {:value "center"
                         :id "vertical-text-align-center"
                         :title (tr "workspace.options.text-options.align-middle")
-                        :icon i/text-middle}]
+                        :icon deprecated-icon/text-middle}]
       [:& radio-button {:value "bottom"
                         :id "vertical-text-align-bottom"
                         :title (tr "workspace.options.text-options.align-bottom")
-                        :icon i/text-bottom}]]]))
+                        :icon deprecated-icon/text-bottom}]]]))
 
 (mf/defc grow-options
   [{:keys [ids values on-blur] :as props}]
@@ -145,15 +150,15 @@
       [:& radio-button {:value "fixed"
                         :id "text-fixed-grow"
                         :title (tr "workspace.options.text-options.grow-fixed")
-                        :icon i/text-fixed}]
+                        :icon deprecated-icon/text-fixed}]
       [:& radio-button {:value "auto-width"
                         :id "text-auto-width-grow"
                         :title (tr "workspace.options.text-options.grow-auto-width")
-                        :icon i/text-auto-width}]
+                        :icon deprecated-icon/text-auto-width}]
       [:& radio-button {:value "auto-height"
                         :id "text-auto-height-grow"
                         :title (tr "workspace.options.text-options.grow-auto-height")
-                        :icon i/text-auto-height}]]]))
+                        :icon deprecated-icon/text-auto-height}]]]))
 
 (mf/defc text-decoration-options
   [{:keys [values on-change on-blur] :as props}]
@@ -175,12 +180,12 @@
                         :type "checkbox"
                         :id "underline-text-decoration"
                         :title (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
-                        :icon i/text-underlined}]
+                        :icon deprecated-icon/text-underlined}]
       [:& radio-button {:value "line-through"
                         :type "checkbox"
                         :id "line-through-text-decoration"
                         :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
-                        :icon i/text-stroked}]]]))
+                        :icon deprecated-icon/text-stroked}]]]))
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
@@ -217,7 +222,7 @@
         (mf/use-fn
          (mf/deps values)
          (fn [ids attrs]
-           (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
+           (st/emit! (dwt/save-font (-> (merge (txt/get-default-text-attrs) values attrs)
                                         (select-keys txt/text-node-attrs)))
                      (dwt/update-all-attrs ids attrs))))
 
@@ -270,6 +275,11 @@
          (fn [changes]
            (st/emit! (dwl/update-typography (merge typography changes) file-id))))
 
+        expand-stream
+        (mf/with-memo []
+          (->> st/stream
+               (rx/filter (ptk/type? :expand-text-more-options))))
+
         multiple? (->> values vals (d/seek #(= % :multiple)))
 
         opts #js {:ids ids
@@ -284,19 +294,22 @@
                        (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
                          (let [node (txu/get-text-editor-content)]
                            (dom/focus! node))))))}]
+    (hooks/use-stream
+     expand-stream
+     #(swap! state* assoc-in [:more-options] true))
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  true
-                     :collapsed    (not main-menu-open?)
-                     :on-collapsed toggle-main-menu
-                     :title        label
-                     :class        (stl/css :title-spacing-text)}
+      [:> title-bar* {:collapsable  true
+                      :collapsed    (not main-menu-open?)
+                      :on-collapsed toggle-main-menu
+                      :title        label
+                      :class        (stl/css :title-spacing-text)}
        (when (and (not typography) (not multiple?))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
                            :on-click on-convert-to-typography
-                           :icon "add"}])]]
+                           :icon i/add}])]]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
@@ -314,7 +327,7 @@
            [:div  {:class (stl/css :multiple-typography-button)
                    :on-click handle-detach-typography
                    :title (tr "workspace.libraries.text.multiple-typography-tooltip")}
-            i/detach]]
+            deprecated-icon/detach]]
 
           :else
           [:> text-options opts])
@@ -324,8 +337,9 @@
          [:> grow-options opts]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
+                           :data-testid "text-align-options-button"
                            :on-click toggle-more-options
-                           :icon "menu"}]]
+                           :icon i/menu}]]
 
         (when more-options-open?
           [:div  {:class (stl/css :text-decoration-options)}

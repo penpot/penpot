@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -12,15 +12,15 @@
 
 .modal-container {
   @extend .modal-container-base;
-  min-width: $s-408;
+  min-width: deprecated.$s-408;
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -29,18 +29,18 @@
 }
 
 .modal-content {
-  @include flexColumn;
-  @include bodySmallTypography;
-  gap: $s-24;
-  margin-bottom: $s-24;
+  @include deprecated.flexColumn;
+  @include deprecated.bodySmallTypography;
+  gap: deprecated.$s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .fields-row {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .select-title {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
 

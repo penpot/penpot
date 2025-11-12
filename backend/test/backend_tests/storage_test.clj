@@ -7,11 +7,11 @@
 (ns backend-tests.storage-test
   (:require
    [app.common.exceptions :as ex]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -53,12 +53,12 @@
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          ::sto/expired-at (dt/in-future {:seconds 1})
+                                          ::sto/expired-at (ct/in-future {:seconds 1})
                                           :content-type "text/plain"})]
 
     (t/is (sto/object? object))
-    (t/is (dt/instant? (:expired-at object)))
-    (t/is (dt/is-after? (:expired-at object) (dt/now)))
+    (t/is (ct/inst? (:expired-at object)))
+    (t/is (ct/is-after? (:expired-at object) (ct/now)))
     (t/is (= object (sto/get-object storage (:id object))))
 
     (th/sleep 1000)
@@ -73,7 +73,7 @@
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
                                           :content-type "text/plain"
-                                          :expired-at (dt/in-future {:seconds 1})})]
+                                          :expired-at (ct/in-future {:seconds 1})})]
     (t/is (sto/object? object))
     (t/is (true? (sto/del-object! storage object)))
 
@@ -95,13 +95,13 @@
         content3 (sto/content "content3")
 
         object1  (sto/put-object! storage {::sto/content content1
-                                           ::sto/expired-at (dt/now)
+                                           ::sto/expired-at (ct/now)
                                            :content-type "text/plain"})
         object2  (sto/put-object! storage {::sto/content content2
-                                           ::sto/expired-at (dt/in-past {:hours 2})
+                                           ::sto/expired-at (ct/in-past {:hours 2})
                                            :content-type "text/plain"})
         object3  (sto/put-object! storage {::sto/content content3
-                                           ::sto/expired-at (dt/in-past {:hours 1})
+                                           ::sto/expired-at (ct/in-past {:hours 1})
                                            :content-type "text/plain"})]
 
 
@@ -154,7 +154,7 @@
       (t/is (= (:media-id result-1) (:media-id result-2)))
 
       (th/db-update! :file-media-object
-                     {:deleted-at (dt/now)}
+                     {:deleted-at (ct/now)}
                      {:id (:id result-1)})
 
       ;; run the objects gc task for permanent deletion
@@ -239,7 +239,7 @@
             result-2 (:result out2)]
 
         (th/db-update! :team-font-variant
-                       {:deleted-at (dt/now)}
+                       {:deleted-at (ct/now)}
                        {:id (:id result-2)})
 
         ;; run the objects gc task for permanent deletion

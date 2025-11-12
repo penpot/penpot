@@ -1,8 +1,14 @@
-@use "common/refactor/common-refactor.scss" as *;
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
-@use "../ds/typography.scss" as t;
-@use "../ds/_borders.scss" as *;
-@use "../ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
 
 .cta-power-up {
   display: flex;
@@ -13,8 +19,14 @@
   padding: var(--sp-m);
 }
 
+.cta-power-up.highlighted {
+  background: var(--color-background-quaternary);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  padding: var(--sp-l);
+}
+
 .cta-top-section {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: grid;
   color: var(--color-foreground-secondary);
   grid-template-columns: 1fr auto;
@@ -31,7 +43,7 @@
 }
 
 .icon-dropdown {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
   width: var(--sp-l);
 }
@@ -48,12 +60,25 @@
   margin-block-start: var(--sp-m);
   padding-block-start: var(--sp-m);
 }
+
+.highlighted .cta-bottom-section {
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+}
+
 .cta-bottom-section .content {
-  @include t.use-typography("body-small");
-  @include buttonStyle;
+  @include t.use-typography("body-medium");
+  @include deprecated.buttonStyle;
   color: var(--color-foreground-secondary);
   display: inline-block;
   text-align: left;
+}
+
+.cta-bottom-button {
+  margin-block-start: var(--sp-s);
+}
+
+.highlighted .cta-bottom-button {
+  margin-block-start: var(--sp-m);
 }
 
 .cta-text,
@@ -62,22 +87,31 @@
 }
 
 .cta-title {
-  @include t.use-typography("title-small");
+  @include t.use-typography("body-small");
   margin-block-end: var(--sp-xs);
 }
 
+.highlighted .cta-title {
+  @include t.use-typography("body-medium");
+}
+
 .cta-text {
-  @include t.use-typography("body-small");
+  @include t.use-typography("title-small");
+}
+
+.highlighted .cta-text {
+  @include t.use-typography("body-large");
+  color: var(--color-foreground-primary);
 }
 
 .cta-bottom-section .content a {
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   margin-inline-start: var(--sp-xs);
 }
 
 .cta-link {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   align-self: end;
   margin-inline-start: var(--sp-xs);
 }
@@ -86,7 +120,7 @@
   display: grid;
   grid-auto-rows: min-content;
   gap: var(--sp-s);
-  max-width: $s-1000;
+  max-width: deprecated.$s-1000;
   width: 100%;
 }
 
@@ -96,15 +130,16 @@
 }
 
 .team-text {
-  @include t.use-typography("body-large");
+  @include t.use-typography("title-medium");
   color: var(--color-foreground-primary);
 }
 
 .manage-subscription-link {
-  @include buttonStyle;
-  @include t.use-typography("body-small");
+  @include deprecated.buttonStyle;
+  @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   display: flex;
+  margin-block-start: -8px;
   padding: 0;
 }
 
@@ -112,8 +147,16 @@
   @extend .button-icon;
   background: var(--color-background-primary);
   stroke: var(--color-foreground-secondary);
-  border-radius: var(--sp-xs);
-  border: $b-1 solid var(--color-foreground-secondary);
+  border-radius: 6px;
+  border: 1.75px solid var(--color-foreground-secondary);
+  stroke-width: 2.25px;
+  width: var(--sp-xl);
+  height: var(--sp-xl);
+
+  svg {
+    block-size: var(--sp-m);
+    inline-size: var(--sp-m);
+  }
 }
 
 .menu-item {
@@ -134,19 +177,30 @@
 .members-cta {
   height: fit-content;
   margin-block-start: var(--sp-s);
-  margin-inline-start: $s-68;
-  max-width: $s-200;
+  margin-inline-start: deprecated.$s-52;
+  max-width: deprecated.$s-220;
+
+  .cta-title {
+    line-height: 1.2;
+  }
 }
 
-.members-cta-full-width {
-  max-width: $s-1000;
+.dashboard-cta {
+  height: fit-content;
+  margin: var(--sp-l);
+
+  .cta-title {
+    line-height: 1.2;
+  }
 }
 
 .cta-message {
   @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
+  line-height: 1;
 
   a {
     color: var(--color-accent-primary);
+    overflow-wrap: break-word;
   }
 }

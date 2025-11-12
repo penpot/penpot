@@ -11,7 +11,7 @@
    [app.main.store :as st]
    [app.main.ui.components.link :as lk]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
@@ -57,7 +57,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click accept-fn} i/close]]
+                 :on-click accept-fn} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
        (when (and (string? message) (not= message ""))

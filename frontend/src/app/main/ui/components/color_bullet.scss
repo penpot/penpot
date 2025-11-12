@@ -4,38 +4,38 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .color-bullet {
   position: relative;
   display: flex;
   flex-direction: row;
-  width: var(--bullet-size, $s-24);
-  height: var(--bullet-size, $s-24);
-  min-width: var(--bullet-size, $s-24);
-  min-height: var(--bullet-size, $s-24);
-  border: $s-2 solid var(--color-bullet-border-color);
-  border-radius: $br-circle;
+  width: var(--bullet-size, deprecated.$s-24);
+  height: var(--bullet-size, deprecated.$s-24);
+  min-width: var(--bullet-size, deprecated.$s-24);
+  min-height: var(--bullet-size, deprecated.$s-24);
+  border: deprecated.$s-2 solid var(--color-bullet-border-color);
+  border-radius: deprecated.$br-circle;
   &.grid-area {
     grid-area: color;
   }
   &.mini {
-    width: var(--bullet-size, $s-16);
-    height: var(--bullet-size, $s-16);
-    min-width: var(--bullet-size, $s-16);
-    min-height: var(--bullet-size, $s-16);
+    width: var(--bullet-size, deprecated.$s-16);
+    height: var(--bullet-size, deprecated.$s-16);
+    min-width: var(--bullet-size, deprecated.$s-16);
+    min-height: var(--bullet-size, deprecated.$s-16);
     margin-top: 0;
     border: 1px solid var(--color-bullet-border-color);
   }
 
   &.is-not-library-color {
     overflow: hidden;
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
     & .color-bullet-wrapper {
       clip-path: none;
     }
     &.mini {
-      border-radius: $br-4;
+      border-radius: deprecated.$br-4;
     }
   }
   &.is-gradient {
@@ -65,27 +65,27 @@
     background-color: var(--color-bullet-background-color);
   }
   &:hover:not(.read-only) {
-    border: $s-2 solid var(--color-bullet-border-color-selected);
+    border: deprecated.$s-2 solid var(--color-bullet-border-color-selected);
   }
 }
 
 .color-text {
-  @include twoLineTextEllipsis;
-  @include bodySmallTypography;
-  width: $s-80;
+  @include deprecated.twoLineTextEllipsis;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-80;
   text-align: center;
-  margin-top: $s-2;
-  max-height: $s-28;
+  margin-top: deprecated.$s-2;
+  max-height: deprecated.$s-28;
   color: var(--palette-text-color);
   &.small-text {
-    @include textEllipsis;
-    max-height: $s-16;
+    @include deprecated.textEllipsis;
+    max-height: deprecated.$s-16;
   }
 }
 
 .big-text {
-  @include inspectValue;
-  @include twoLineTextEllipsis;
+  @include deprecated.inspectValue;
+  @include deprecated.twoLineTextEllipsis;
   line-height: 1;
   color: var(--palette-text-color);
   text-align: center;

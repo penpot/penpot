@@ -7,16 +7,15 @@
 (ns app.main.ui.dashboard.pin-button
   (:require-macros
    [app.common.data.macros :as dm]
-   [app.main.style :as stl]
-   [app.main.ui.icons :refer [icon-xref]])
+   [app.main.style :as stl])
   (:require
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (def ^:private pin-icon
-  (icon-xref :pin (stl/css :icon)))
+  (deprecated-icon/icon-xref :pin (stl/css :icon)))
 
 (mf/defc pin-button*
   {::mf/props :obj}

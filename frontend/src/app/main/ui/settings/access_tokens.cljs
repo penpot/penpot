@@ -8,29 +8,29 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.time :as dt]
    [app.util.webapi :as wapi]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def ^:private clipboard-icon
-  (i/icon-xref :clipboard (stl/css :clipboard-icon)))
+  (deprecated-icon/icon-xref :clipboard (stl/css :clipboard-icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (def tokens-ref
   (l/derived :access-tokens st/state))
@@ -56,7 +56,6 @@
 
         created  (mf/deref token-created-ref)
         created? (mf/use-state false)
-        locale   (mf/deref i18n/locale)
 
         on-success
         (mf/use-fn
@@ -140,7 +139,7 @@
          (when @created?
            [:span {:class (stl/css :token-created-info)}
             (if (:expires-at created)
-              (tr "dashboard.access-tokens.token-will-expire" (dt/format-date-locale (:expires-at created) {:locale locale}))
+              (tr "dashboard.access-tokens.token-will-expire" (ct/format-inst (:expires-at created) "PPP"))
               (tr "dashboard.access-tokens.token-will-not-expire"))])]
 
         [:div {:class (stl/css :fields-row)}
@@ -235,10 +234,9 @@
 (mf/defc access-token-item
   {::mf/wrap [mf/memo]}
   [{:keys [token] :as props}]
-  (let [locale      (mf/deref i18n/locale)
-        expires-at  (:expires-at token)
-        expires-txt (some-> expires-at (dt/format-date-locale {:locale locale}))
-        expired?    (and (some? expires-at) (> (dt/now) expires-at))
+  (let [expires-at  (:expires-at token)
+        expires-txt (some-> expires-at (ct/format-inst "PPP"))
+        expired?    (and (some? expires-at) (> (ct/now) expires-at))
 
         delete-fn
         (mf/use-fn

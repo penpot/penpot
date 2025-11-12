@@ -3,11 +3,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 // Copyright (c) KALEIDOS INC
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .tab-container {
   display: grid;
-  grid-template-rows: $s-32 1fr;
+  grid-template-rows: deprecated.$s-32 1fr;
   height: 100%;
 }
 
@@ -15,11 +15,11 @@
   display: flex;
   align-items: center;
   flex-direction: row;
-  gap: $s-2;
-  border-radius: $br-8;
+  gap: deprecated.$s-2;
+  border-radius: deprecated.$br-8;
   background: var(--tabs-background-color);
   cursor: pointer;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   height: 100%;
 }
 
@@ -31,15 +31,15 @@
 }
 
 .tab-container-tab-title {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
   width: 100%;
-  padding: 0 $s-8;
+  padding: 0 deprecated.$s-8;
   margin: 0;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   background-color: transparent;
   color: var(--tab-foreground-color);
-  border: $s-2 solid var(--tab-border-color);
+  border: deprecated.$s-2 solid var(--tab-border-color);
   min-width: 0;
 
   svg {
@@ -48,7 +48,7 @@
   }
 
   .content {
-    @include headlineSmallTypography;
+    @include deprecated.headlineSmallTypography;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -76,18 +76,18 @@
 }
 
 .collapse-sidebar {
-  @include flexCenter;
-  @include buttonStyle;
+  @include deprecated.flexCenter;
+  @include deprecated.buttonStyle;
   height: 100%;
-  width: $s-24;
-  min-width: $s-24;
-  padding: 0 $s-6;
-  border-radius: $br-5;
+  width: deprecated.$s-24;
+  min-width: deprecated.$s-24;
+  padding: 0 deprecated.$s-6;
+  border-radius: deprecated.$br-5;
 
   svg {
-    @include flexCenter;
-    height: $s-16;
-    width: $s-16;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
     stroke: var(--icon-foreground);
     transform: rotate(180deg);
     fill: none;
@@ -103,7 +103,7 @@
   &.collapsed {
     svg {
       transform: rotate(0deg);
-      padding: 0 0 0 $s-6;
+      padding: 0 0 0 deprecated.$s-6;
     }
   }
 }
@@ -118,6 +118,6 @@
 //Firefox doesn't respect scrollbar-gutter
 @supports (-moz-appearance: none) {
   .tab-container-content {
-    padding-right: $s-8;
+    padding-right: deprecated.$s-8;
   }
 }

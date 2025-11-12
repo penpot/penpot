@@ -10,16 +10,23 @@
    [app.common.types.components-list :as ctcl]
    [app.common.types.variant :as ctv]))
 
-
 (defn find-variant-components
   "Find a list of the components thet belongs to this variant-id"
-  [data objects variant-id]
-  ;; We can't simply filter components, because we need to maintain the order
-  (->> (dm/get-in objects [variant-id :shapes])
-       (map #(dm/get-in objects [% :component-id]))
-       (map #(ctcl/get-component data % true))
-       reverse))
-
+  ([data variant-id]
+   (let [page-id (->> data
+                      :components
+                      vals
+                      (filter #(= (:variant-id %) variant-id))
+                      first
+                      :main-instance-page)
+         objects (dm/get-in data [:pages-index page-id :objects])]
+     (find-variant-components data objects variant-id)))
+  ([data objects variant-id]
+   ;; We can't simply filter components, because we need to maintain the order
+   (->> (dm/get-in objects [variant-id :shapes])
+        (map #(dm/get-in objects [% :component-id]))
+        (map #(ctcl/get-component data % true))
+        reverse)))
 
 (defn extract-properties-names
   [shape data]
@@ -28,15 +35,17 @@
        :variant-properties
        (map :name)))
 
-
 (defn extract-properties-values
+  "Get a map of properties associated to their possible values"
   [data objects variant-id]
   (->> (find-variant-components data objects variant-id)
        (mapcat :variant-properties)
        (group-by :name)
-       (map (fn [[k v]]
-              {:name k
-               :value (->> v (map :value) distinct)}))))
+       (mapv (fn [[k v]]
+               (let [mdata (reduce merge {} (map meta v))]
+                 (with-meta {:name k
+                             :value (->> v (map :value) distinct)}
+                   mdata))))))
 
 (defn get-variant-mains
   [component data]
@@ -46,7 +55,6 @@
           objects (-> (dm/get-in data [:pages-index page-id])
                       (get :objects))]
       (dm/get-in objects [variant-id :shapes]))))
-
 
 (defn is-secondary-variant?
   [component data]

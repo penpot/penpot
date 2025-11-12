@@ -21,7 +21,6 @@
                      :config {:public-uri cf/public-uri
                               :build-data cf/build-date
                               :version cf/version}})
-
     (set! instance worker)))
 
 (defn ask!
@@ -32,6 +31,16 @@
   ([message transfer]
    (if instance
      (uw/ask! instance message transfer)
+     (rx/empty))))
+
+(defn emit!
+  ([message]
+   (if instance
+     (uw/emit! instance message)
+     (rx/empty)))
+  ([message transfer]
+   (if instance
+     (uw/emit! instance message transfer)
      (rx/empty))))
 
 (defn ask-buffered!

@@ -17,11 +17,12 @@
    [app.main.ui.dashboard.import :as udi]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc project-menu*
-  {::mf/props :obj}
-  [{:keys [project show on-edit on-menu-close top left on-import]}]
+  [{:keys [project show on-edit on-close top left on-import]}]
   (let [top  (or top 0)
         left (or left 0)
 
@@ -42,7 +43,8 @@
                      (with-meta project {:on-success on-duplicate-success}))))
 
         toggle-pin
-        #(st/emit! (dd/toggle-project-pin project))
+        (fn []
+          (st/emit! (dd/toggle-project-pin project)))
 
         on-move-success
         (fn [team-id]
@@ -63,25 +65,23 @@
                       (dcm/go-to-dashboard-recent :team-id team-id))))
 
         on-delete
-        #(st/emit!
-          (modal/show
-           {:type :confirm
-            :title (tr "modals.delete-project-confirm.title")
-            :message (tr "modals.delete-project-confirm.message")
-            :accept-label (tr "modals.delete-project-confirm.accept")
-            :on-accept delete-fn}))
+        (fn []
+          (st/emit!
+           (modal/show {:type :confirm
+                        :title (tr "modals.delete-project-confirm.title")
+                        :message (tr "modals.delete-project-confirm.message")
+                        :accept-label (tr "modals.delete-project-confirm.accept")
+                        :on-accept delete-fn})))
 
-        file-input (mf/use-ref nil)
+        file-input
+        (mf/use-ref nil)
 
         on-import-files
-        (mf/use-callback
-         (fn []
-           (dom/click (mf/ref-val file-input))))
+        (fn [] (dom/click! (mf/ref-val file-input)))
 
         on-finish-import
-        (mf/use-callback
-         (fn []
-           (when (fn? on-import) (on-import))))
+        (mf/use-fn
+         (fn [] (when (fn? on-import) (on-import))))
 
         options
         [(when-not (:is-default project)
@@ -116,9 +116,21 @@
             :id      "project-delete"
             :handler on-delete})]]
 
+    (mf/with-effect [show on-close]
+      (when ^boolean show
+        (st/emit! (ptk/data-event :dropdown/open {:id "project-menu"}))
+        (let [stream (->> st/stream
+                          (rx/filter (ptk/type? :dropdown/open))
+                          (rx/map deref)
+                          (rx/filter #(not= "project-menu" (:id %)))
+                          (rx/take 1))
+              subs   (rx/subs! nil nil on-close stream)]
+          (fn []
+            (rx/dispose! subs)))))
+
     [:*
      [:> context-menu*
-      {:on-close on-menu-close
+      {:on-close on-close
        :show show
        :fixed (or (not= top 0) (not= left 0))
        :min-width true

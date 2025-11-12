@@ -226,14 +226,29 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
 
+      # Build frontend
       - run:
-          name: "integration tests"
+          name: "frontend build"
           working_directory: "./frontend"
           command: |
             yarn install
             yarn run build:app:assets
             yarn run build:app
             yarn run build:app:libs
+
+          # Build the wasm bundle
+      - run:
+          name: "wasm build"
+          working_directory: "./render-wasm"
+          command: |
+            EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
+            ./build release
+
+      # Run integration tests
+      - run:
+          name: "integration tests"
+          working_directory: "./frontend"
+          command: |
             yarn run playwright install chromium
             yarn run test:e2e -x --workers=4
 
@@ -311,24 +326,16 @@ jobs:
 workflows:
   penpot:
     jobs:
-      - lint
       - test-frontend:
           requires:
             - lint: success
 
       - test-library:
           requires:
-            - test-frontend: success
             - lint: success
 
       - test-components:
           requires:
-            - test-frontend: success
-            - lint: success
-
-      - test-integration:
-          requires:
-            - test-frontend: success
             - lint: success
 
       - test-backend:
@@ -339,4 +346,6 @@ workflows:
           requires:
             - lint: success
 
+      - lint
+      - test-integration
       - test-render-wasm

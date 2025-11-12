@@ -142,23 +142,23 @@
   [key cb]
   (fn [event]
     (log/debug :msg (str "Shortcut" key))
-    (when (aget event "preventDefault")
+    (when (unchecked-get event "preventDefault")
       (.preventDefault event))
     (cb event)))
 
 (defn- bind!
   [shortcuts]
-  (let [msbind (fn [command callback type]
+  (->> shortcuts
+       (remove #(:disabled (second %)))
+       (run! (fn [[key {:keys [command fn type overwrite]}]]
+               (let [callback  (wrap-cb key fn)
+                     undefined (js* "(void 0)")
+                     commands  (if (vector? command)
+                                 (into-array command)
+                                 #js [command])]
                  (if type
-                   (mousetrap/bind command callback type)
-                   (mousetrap/bind command callback)))]
-    (->> shortcuts
-         (remove #(:disabled (second %)))
-         (run! (fn [[key {:keys [command fn type]}]]
-                 (let [callback (wrap-cb key fn)]
-                   (if (vector? command)
-                     (run! #(msbind % callback type) command)
-                     (msbind command callback type))))))))
+                   (mousetrap/bind commands callback type overwrite)
+                   (mousetrap/bind commands callback undefined overwrite)))))))
 
 (defn- reset!
   ([]

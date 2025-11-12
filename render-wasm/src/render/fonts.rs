@@ -47,6 +47,11 @@ impl FontStore {
         }
     }
 
+    pub fn set_scale_debug_font(&mut self, dpr: f32) {
+        let debug_font = skia::Font::new(self.debug_font.typeface(), 10.0 * dpr);
+        self.debug_font = debug_font;
+    }
+
     pub fn font_provider(&self) -> &textlayout::TypefaceFontProvider {
         &self.font_provider
     }
@@ -104,6 +109,10 @@ impl FontStore {
 
     pub fn get_fallback(&self) -> &HashSet<String> {
         &self.fallback_fonts
+    }
+
+    pub fn get_emoji_font(&self, _size: f32) -> Option<Font> {
+        None
     }
 }
 

@@ -15,13 +15,14 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private comments-icon-svg
-  (i/icon-xref :comments (stl/css :comments-icon)))
+  (deprecated-icon/icon-xref :comments (stl/css :comments-icon)))
 
 (mf/defc comments-icon*
   {::mf/props :obj}
@@ -43,7 +44,7 @@
                        :data-testid "open-comments"
                        :aria-label (tr "dashboard.notifications.view")
                        :on-click on-show-comments
-                       :icon "comments"}
+                       :icon i/comments}
       (when (seq tgroups)
         [:div {:class (stl/css :unread)}])]]))
 
@@ -84,7 +85,7 @@
                                           ::ev/origin "dashboard"})))))
 
     [:div {:class (stl/css :dashboard-comments-section)}
-     [:& dropdown {:show show? :on-close on-hide-comments}
+     [:& dropdown {:show show? :on-close on-hide-comments :dropdown-id "dashboard-comments"}
       [:div {:class (stl/css :dropdown :comments-section :comment-threads-section)}
        [:div {:class (stl/css :header)}
         [:h3 {:class (stl/css :header-title)} (tr "dashboard.notifications")]
@@ -94,14 +95,14 @@
                             :tab-index (if show? "0" "-1")
                             :aria-label (tr "label.mark-all-as-read")
                             :on-click on-read-all
-                            :icon "tick"}])
+                            :icon i/tick}])
 
         [:> icon-button* {:class (stl/css :notifications-button)
                           :variant "action"
                           :tab-index (if show? "0" "-1")
                           :aria-label (tr "labels.close")
                           :on-click on-hide-comments
-                          :icon "close"}]]
+                          :icon i/close}]]
 
        (if (seq tgroups)
          [:div {:class (stl/css :thread-groups)}

@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .attributes-block {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .title-spacing-svg {
@@ -23,12 +23,12 @@
 }
 
 .attributes-subtitle {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   justify-content: space-between;
-  height: $s-32;
+  height: deprecated.$s-32;
   span {
-    height: $s-32;
+    height: deprecated.$s-32;
     display: flex;
     align-items: center;
   }

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import TextNodeIterator from "./TextNodeIterator.js";
-import { createInline } from "./Inline.js";
+import { createTextSpan } from "./TextSpan.js";
 import { createParagraph } from "./Paragraph.js";
 import { createRoot } from "./Root.js";
 import { createLineBreak } from "./LineBreak.js";
@@ -21,16 +21,16 @@ describe("TextNodeIterator", () => {
   test("Create a new TextNodeIterator and iterate only over text nodes", () => {
     const rootNode = createRoot([
       createParagraph([
-        createInline(new Text("Hello, ")),
-        createInline(new Text("World!")),
-        createInline(new Text("Whatever")),
+        createTextSpan(new Text("Hello, ")),
+        createTextSpan(new Text("World!")),
+        createTextSpan(new Text("Whatever")),
       ]),
-      createParagraph([createInline(createLineBreak())]),
+      createParagraph([createTextSpan(createLineBreak())]),
       createParagraph([
-        createInline(new Text("This is a ")),
-        createInline(new Text("test")),
+        createTextSpan(new Text("This is a ")),
+        createTextSpan(new Text("test")),
       ]),
-      createParagraph([createInline(new Text("Hi!"))]),
+      createParagraph([createTextSpan(new Text("Hi!"))]),
     ]);
 
     const textNodeIterator = new TextNodeIterator(rootNode);

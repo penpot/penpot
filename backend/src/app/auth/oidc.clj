@@ -13,6 +13,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
@@ -20,6 +21,8 @@
    [app.email.whitelist :as email.whitelist]
    [app.http.client :as http]
    [app.http.errors :as errors]
+   [app.http.middleware :as mw]
+   [app.http.security :as sec]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as rpc]
@@ -28,7 +31,6 @@
    [app.tokens :as tokens]
    [app.util.inet :as inet]
    [app.util.json :as json]
-   [app.util.time :as dt]
    [buddy.sign.jwk :as jwk]
    [buddy.sign.jwt :as jwt]
    [clojure.set :as set]
@@ -434,10 +436,10 @@
   (sm/validator schema:info))
 
 (defn- get-info
-  [{:keys [::provider ::setup/props] :as cfg} {:keys [params] :as request}]
+  [{:keys [::provider] :as cfg} {:keys [params] :as request}]
   (let [state  (get params :state)
         code   (get params :code)
-        state  (tokens/verify props {:token state :iss :oauth})
+        state  (tokens/verify cfg {:token state :iss :oauth})
         tdata  (fetch-access-token cfg code)
         info   (case (cf/get :oidc-user-info-source)
                  :token (get-user-info cfg tdata)
@@ -514,9 +516,9 @@
   [cfg info request]
   (let [info   (assoc info
                       :iss :prepared-register
-                      :exp (dt/in-future {:hours 48}))
+                      :exp (ct/in-future {:hours 48}))
 
-        params {:token (tokens/generate (::setup/props cfg) info)
+        params {:token (tokens/generate cfg info)
                 :provider (:provider (:path-params request))
                 :fullname (:fullname info)}
         params (d/without-nils params)]
@@ -569,9 +571,9 @@
       :else
       (let [sxf     (session/create-fn cfg (:id profile))
             token   (or (:invitation-token info)
-                        (tokens/generate (::setup/props cfg)
+                        (tokens/generate cfg
                                          {:iss :auth
-                                          :exp (dt/in-future "15m")
+                                          :exp (ct/in-future "15m")
                                           :profile-id (:id profile)}))
             props   (audit/profile->props profile)
             context (d/without-nils {:external-session-id (:external-session-id info)})]
@@ -619,9 +621,8 @@
                 :invitation-token (:invitation-token params)
                 :external-session-id esid
                 :props props
-                :exp (dt/in-future "4h")}
-        state  (tokens/generate (::setup/props cfg)
-                                (d/without-nils params))
+                :exp (ct/in-future "4h")}
+        state  (tokens/generate cfg (d/without-nils params))
         uri    (build-auth-uri cfg state)]
     {::yres/status 200
      ::yres/body {:redirect-uri uri}}))
@@ -691,8 +692,9 @@
 (defmethod ig/init-key ::routes
   [_ cfg]
   (let [cfg (update cfg :providers d/without-nils)]
-    ["" {:middleware [[session/authz cfg]
-                      [provider-lookup cfg]]}
+    ["/api" {:middleware [[mw/cors]
+                          [sec/client-header-check]
+                          [provider-lookup cfg]]}
      ["/auth/oauth"
       ["/:provider"
        {:handler auth-handler

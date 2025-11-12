@@ -1,0 +1,20 @@
+FROM nginxinc/nginx-unprivileged:1.29.1
+LABEL maintainer="Penpot <docker@penpot.app>"
+
+USER root
+
+RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot;
+
+ARG BUNDLE_PATH="./bundle-storybook/"
+COPY $BUNDLE_PATH /var/www/
+COPY ./files/nginx.storybook.conf /etc/nginx/conf.d/default.conf
+
+RUN chown -R 1001:0 /var/cache/nginx; \
+    chmod -R g+w /var/cache/nginx; \
+    chown -R 1001:0 /etc/nginx; \
+    chmod -R g+w /etc/nginx; \
+    chown -R 1001:0 /var/www; \
+    chmod -R g+w /var/www;
+
+USER penpot:penpot

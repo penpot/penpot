@@ -5,17 +5,46 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.data.workspace.undo
+  "Undo management for the workspace.
+
+   There are **undo entries**, **undo transactions** and **undo groups**.
+   The undo stack has a maximum size of `MAX-UNDO-SIZE` (50) entries.
+
+   Undo entries:
+     - Consist of `:undo-changes`, `:redo-changes`, `:undo-group`, `:tags`
+     - Can be:
+       - `added`: pushes a new entry on top of the undo stack
+       - `stacked`: appends undo/redo changes to the last undo item under
+         `:workspace-undo :items`
+       - `accumulated`: extends the current transaction with new changes
+
+   Undo transactions:
+    - Are a way to incrementally merge incoming changes into a single
+      undo entry.
+    - Are identified by a unique id, typically a `(js/Symbol)`
+    - There is at most one current undo transaction.
+    - Have a timeout, defaulting to 20s
+    - Are _accumulated_ into the current transaction via
+      `accumulate-undo-entry`
+
+   Undo groups:
+    - Can contain multiple undo entries
+    - Undo entries in a groups must be consecutive
+
+   Undo tags:
+    - Known values: `:alt-duplication` (copy-and-move with mouse+alt)
+   "
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -28,8 +57,10 @@
 (def ^:private
   schema:undo-entry
   [:map {:title "undo-entry"}
-   [:undo-changes [:vector ::cpc/change]]
-   [:redo-changes [:vector ::cpc/change]]])
+   [:undo-changes [:vector cpc/schema:change]]
+   [:redo-changes [:vector cpc/schema:change]]
+   [:undo-group ::sm/uuid]
+   [:tags [:set :keyword]]])
 
 (def check-undo-entry
   (sm/check-fn schema:undo-entry))
@@ -45,6 +76,9 @@
       undo)))
 
 (defn materialize-undo
+  "Updates the state to point to a specific index in the undo stack.
+   Used to materialize the undo stack when the user selects an entry
+   in the undo history."
   [_changes index]
   (ptk/reify ::materialize-undo
     ptk/UpdateEvent
@@ -67,6 +101,8 @@
     state))
 
 (defn- stack-undo-entry
+  "Extends the current undo entry in the workspace with new changes if it
+   exists, or creates a new entry if it doesn't."
   [state {:keys [undo-changes redo-changes] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
@@ -78,6 +114,7 @@
       (add-undo-entry state entry))))
 
 (defn- accumulate-undo-entry
+  "Extends the current undo transaction with new changes."
   [state {:keys [undo-changes redo-changes undo-group tags]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
@@ -87,6 +124,11 @@
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
+  "UpdateEvent to add an entry to the undo stack, or extend the current undo transaction
+   or last undo entry.
+   - If `stack?` is true, it will stack the entry on top of the current undo entry.
+   - If `stack?` is false, it will add a new entry to the undo stack.
+   - If there is an open transaction, it will accumulate the changes in that transaction."
   [entry stack?]
 
   (assert (check-undo-entry entry))
@@ -114,51 +156,64 @@
 (declare check-open-transactions)
 
 (defn start-undo-transaction
-  "Start a transaction, so that every changes inside are added together in a single undo entry."
+  "Start a transaction, so that changes in it are added together into a single undo entry."
   [id & {:keys [timeout] :or {timeout discard-transaction-time-millis}}]
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (log/info :hint "start-undo-transaction")
-      ;; We commit the old transaction before starting the new one
-      (let [current-tx    (get-in state [:workspace-undo :transaction])
-            pending-tx    (get-in state [:workspace-undo :transactions-pending])]
-        (cond-> state
-          (nil? current-tx)  (assoc-in [:workspace-undo :transaction] empty-tx)
-          (nil? pending-tx)  (assoc-in [:workspace-undo :transactions-pending] #{id})
-          (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id)
-          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (dt/now)))))
+
+      (update state :workspace-undo
+              (fn [undo-state]
+                (-> undo-state
+                    (update :transaction #(d/nilv % empty-tx))
+                    (update :transactions-pending assoc id (ct/now))))))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ _ stream]
       (when (and timeout (pos? timeout))
-        (->> (rx/of (check-open-transactions timeout))
-             ;; Wait the configured time
-             (rx/delay timeout))))))
+        (let [stoper (rx/filter (ptk/type? ::start-undo-transaction) stream)]
+          (->> (rx/of (check-open-transactions timeout))
+               ;; Wait the configured time
+               (rx/delay timeout)
+               (rx/take-until stoper)))))))
 
-
-(defn discard-undo-transaction []
+(defn discard-undo-transaction
+  "Updates the state to discard any current and pending undo transaction."
+  []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (log/info :hint "discard-undo-transaction")
-      (update state :workspace-undo dissoc :transaction :transactions-pending :transactions-pending-ts))))
+      (update state :workspace-undo dissoc :transaction :transactions-pending))))
 
-(defn commit-undo-transaction [id]
+(defn- add-transaction-undo-entry
+  "Conditionally add an undo entry from the current transaction. That
+  only happens when no pending transactions are available and the
+  current transaction exists."
+  [state]
+  (let [undo-state (get state :workspace-undo)
+        current-tx (get undo-state :transaction)
+        pending-tx (get undo-state :transactions-pending)]
+    (if (and (some? current-tx)
+             (empty? pending-tx))
+      (-> state
+          (add-undo-entry current-tx)
+          (update :workspace-undo dissoc :transaction))
+      state)))
+
+(defn commit-undo-transaction
+  [id]
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (log/info :hint "commit-undo-transaction")
-      (let [state (-> state
-                      (update-in [:workspace-undo :transactions-pending] disj id)
-                      (update-in [:workspace-undo :transactions-pending-ts] dissoc id))]
-        (if (empty? (get-in state [:workspace-undo :transactions-pending]))
-          (-> state
-              (add-undo-entry (get-in state [:workspace-undo :transaction]))
-              (update :workspace-undo dissoc :transaction))
-          state)))))
+      (-> state
+          (update-in [:workspace-undo :transactions-pending] dissoc id)
+          (add-transaction-undo-entry)))))
 
 (def reinitialize-undo
+  "Clears the undo stack, removing all entries and transactions."
   (ptk/reify ::reset-undo
     ptk/UpdateEvent
     (update [_ state]
@@ -170,8 +225,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (log/info :hint "check-open-transactions" :timeout timeout)
-      (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending-ts])
-                           (update-vals #(inst-ms (dt/diff (dt/now) %))))]
+      (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending])
+                           (update-vals #(ct/diff-ms % (ct/now))))]
         (->> pending-ts
              (filter (fn [[_ ts]] (>= ts timeout)))
              (rx/from)
@@ -215,6 +270,9 @@
 (declare ^:private assure-valid-current-page)
 
 (def undo
+  "Undo the last action, or the last action in a group.
+   If there is an open transaction, it will undo to the last transaction
+   index."
   (ptk/reify ::undo
     ptk/WatchEvent
     (watch [it state _]

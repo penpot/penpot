@@ -10,19 +10,20 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
-   [app.util.json :as json]
-   [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt]
+   [next.jdbc.prepare :as jdbc.prepare]
    [next.jdbc.transaction])
   (:import
    com.zaxxer.hikari.HikariConfig
@@ -33,6 +34,7 @@
    java.io.InputStream
    java.io.OutputStream
    java.sql.Connection
+   java.sql.PreparedStatement
    java.sql.Savepoint
    org.postgresql.PGConnection
    org.postgresql.geometric.PGpoint
@@ -296,7 +298,7 @@
 (defn insert!
   "A helper that builds an insert sql statement and executes it. By
   default returns the inserted row with all the field; you can delimit
-  the returned columns with the `::columns` option."
+  the returned columns with the `::sql/columns` option."
   [ds table params & {:as opts}]
   (let [conn (get-connectable ds)
         sql  (sql/insert table params opts)
@@ -377,9 +379,7 @@
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
-  (and (dt/instant? deleted-at)
-       (< (inst-ms deleted-at)
-          (inst-ms (dt/now)))))
+  (some? deleted-at))
 
 (defn get*
   "Retrieve a single row from database that matches a simple filters. Do
@@ -403,6 +403,23 @@
                 :params params
                 :hint "database object not found"))
     row))
+
+(defn get-with-sql
+  [ds sql & {:as opts}]
+  (let [rows
+        (cond->> (exec! ds sql opts)
+          (::remove-deleted opts true)
+          (remove is-row-deleted?)
+
+          :always
+          (not-empty))]
+
+    (when (and (not rows) (::throw-if-not-exists opts true))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "database object not found"))
+
+    (first rows)))
 
 (def ^:private default-plan-opts
   (-> default-opts
@@ -558,10 +575,10 @@
   [system f & params]
   (cond
     (connection? system)
-    (run! {::conn system} f)
+    (apply run! {::conn system} f params)
 
     (pool? system)
-    (run! {::pool system} f)
+    (apply run! {::pool system} f params)
 
     (::conn system)
     (apply f system params)
@@ -585,7 +602,7 @@
     (string? o)
     (pginterval o)
 
-    (dt/duration? o)
+    (ct/duration? o)
     (interval (inst-ms o))
 
     :else
@@ -599,7 +616,7 @@
           val (.getValue o)]
       (if (or (= typ "json")
               (= typ "jsonb"))
-        (json/decode val)
+        (json/decode val :key-fn keyword)
         val))))
 
 (defn decode-transit-pgobject
@@ -640,7 +657,7 @@
   (when data
     (doto (org.postgresql.util.PGobject.)
       (.setType "jsonb")
-      (.setValue (json/encode-str data)))))
+      (.setValue (json/encode data)))))
 
 ;; --- Locks
 
@@ -686,3 +703,14 @@
   [cause]
   (and (sql-exception? cause)
        (= "40001" (.getSQLState ^java.sql.SQLException cause))))
+
+(defn duplicate-key-error?
+  [cause]
+  (and (sql-exception? cause)
+       (= "23505" (.getSQLState ^java.sql.SQLException cause))))
+
+
+(extend-protocol jdbc.prepare/SettableParameter
+  clojure.lang.Keyword
+  (set-parameter [^clojure.lang.Keyword v ^PreparedStatement s ^long i]
+    (.setObject s i ^String (d/name v))))

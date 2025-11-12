@@ -8,8 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.time :as ct]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.project :as dpj]
@@ -21,28 +23,27 @@
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
-  (i/icon-xref :arrow (stl/css :show-more-icon)))
+  (deprecated-icon/icon-xref :arrow (stl/css :show-more-icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private add-icon
-  (i/icon-xref :add (stl/css :add-icon)))
+  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
   {::mf/wrap [mf/memo]
@@ -103,9 +104,7 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [project is-first team files can-edit]}]
-  (let [locale     (mf/deref i18n/locale)
-
-        project-id (get project :id)
+  (let [project-id (get project :id)
         team-id    (get team :id)
 
         file-count (or (:count project) 0)
@@ -220,7 +219,8 @@
       [:div {:class (stl/css :project-name-wrapper)}
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
-                             :on-end on-edit}]
+                             :on-end on-edit
+                             :max-length 250}]
          [:h2 {:on-click on-nav
                :style {:max-width (str title-width "%")}
                :class (stl/css :project-name)
@@ -239,13 +239,16 @@
          [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
 
          (let [time (-> (:modified-at project)
-                        (dt/timeago {:locale locale}))]
+                        (ct/timeago))]
            [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])]
 
         [:div {:class (stl/css-case :project-actions true
                                     :pinned-project (:is-pinned project))}
          (when-not (:is-default project)
-           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+           [:> pin-button* {:class (stl/css :pin-button)
+                            :is-pinned (:is-pinned project)
+                            :on-click toggle-pin
+                            :tab-index 0}])
 
          (when ^boolean can-edit
            [:button {:class (stl/css :add-file-btn)
@@ -272,7 +275,7 @@
             :left (+ 24 (:x (:menu-pos @local)))
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open
-            :on-menu-close on-menu-close
+            :on-close on-menu-close
             :on-import on-import}])]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
@@ -315,6 +318,7 @@
   (let [projects
         (mf/with-memo [projects]
           (->> projects
+               (remove :deleted-at)
                (sort-by :modified-at)
                (reverse)))
 
@@ -352,6 +356,8 @@
     (mf/with-effect [team-id]
       (st/emit! (dd/fetch-recent-files team-id)
                 (dd/clear-selected-files)))
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-projects)
 
     (when (seq projects)
       [:*

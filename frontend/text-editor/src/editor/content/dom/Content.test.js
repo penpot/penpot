@@ -24,7 +24,7 @@ describe("Content", () => {
     expect(contentFragment.textContent).toBe("Hello, World!");
   });
 
-  test("mapContentFragmentFromHTML should return a valid content for the editor (multiple inlines)", () => {
+  test("mapContentFragmentFromHTML should return a valid content for the editor (multiple text spans)", () => {
     const inertElement = document.createElement("div");
     const contentFragment = mapContentFragmentFromHTML(
       "<div>Hello,<br/><span> World!</span><br/></div>",

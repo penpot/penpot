@@ -13,9 +13,6 @@ export default {
     url: {
       control: { type: "text" },
     },
-    color: {
-      control: { type: "color" },
-    },
     variant: {
       options: ["S", "M", "L"],
       control: { type: "select" },
@@ -27,11 +24,20 @@ export default {
   args: {
     name: "Ada Lovelace",
     url: "/images/avatar-blue.jpg",
-    color: "#79d4ff",
     variant: "S",
     selected: false,
   },
-  render: ({ ...args }) => <Avatar profile={{ fullname: "TEST" }} {...args} />,
+  render: ({ name, url, ...args }) => {
+    const profile = {
+      id: "00000000-0000-0000-0000-000000000000",
+      fullname: name,
+    };
+    if (url) {
+      profile.photoUrl = url;
+    }
+
+    return <Avatar profile={profile} {...args} />;
+  },
 };
 
 export const Default = {};

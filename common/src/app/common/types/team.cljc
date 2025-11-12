@@ -17,4 +17,5 @@
    :admin  {:can-edit true :is-admin true :is-owner false}
    :owner  {:can-edit true :is-admin true :is-owner true}})
 
-(sm/register! ::role [::sm/one-of valid-roles])
+(def schema:role
+  [::sm/one-of {:title "TeamRole"} valid-roles])

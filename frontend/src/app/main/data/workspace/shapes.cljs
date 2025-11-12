@@ -21,6 +21,7 @@
    [app.main.data.comments :as dc]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
@@ -129,7 +130,10 @@
                (pcb/set-undo-group (:id shape)))
 
              undo-id
-             (js/Symbol)]
+             (js/Symbol)
+
+             parent-type
+             (cfh/get-shape-type objects (:parent-id shape))]
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)
@@ -142,8 +146,17 @@
           (when (cfh/text-shape? shape)
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
                  (rx/observe-on :async)))
-          (when (cfh/frame-shape? shape)
-            (rx/of (ptk/event ::ev/event {::ev/name "add-frame"})))))))))
+
+          (rx/of (ev/event {::ev/name "create-shape"
+                            ::ev/origin "workspace:add-shape"
+                            :type (get shape :type)
+                            :parent-type parent-type}))
+
+          (when (cfh/has-layout? objects (:parent-id shape))
+            (rx/of (ev/event {::ev/name "layout-add-element"
+                              ::ev/origin "workspace:add-shape"
+                              :type (get shape :type)
+                              :parent-type parent-type})))))))))
 
 (defn move-shapes-into-frame
   [frame-id shapes]
@@ -186,7 +199,7 @@
              undo-id (or (:undo-id options) (js/Symbol))
              [all-parents changes] (-> (pcb/empty-changes it (:id page))
                                        (cls/generate-delete-shapes fdata page objects ids
-                                                                   {:ignore-touched (:component-swap options)
+                                                                   {:ignore-touched (:allow-altering-copies options)
                                                                     :undo-group (:undo-group options)
                                                                     :undo-id undo-id}))]
 
@@ -219,9 +232,8 @@
                         (:parent-id base))
 
             ;; If the parent-id or the frame-id are component-copies, we need to get the first not copy parent
-            parent-id (:id (ctn/get-first-not-copy-parent objects parent-id))   ;; We don't want to change the structure of component copies
-            frame-id  (:id (ctn/get-first-not-copy-parent objects frame-id))
-
+            parent-id (:id (ctn/get-first-valid-parent objects parent-id))   ;; We don't want to change the structure of component copies
+            frame-id  (:id (ctn/get-first-valid-parent objects frame-id))
 
             shape     (cts/setup-shape
                        (-> attrs
@@ -237,6 +249,44 @@
 ;; Artboard
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn create-artboard-from-shapes
+  ([shapes id parent-id index name delta]
+   (create-artboard-from-shapes shapes id parent-id index name delta true))
+  ([shapes id parent-id index name delta layout-update?]
+   (ptk/reify ::create-artboard-from-shapes
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id      (:current-page-id state)
+             objects      (dsh/lookup-page-objects state page-id)
+
+             changes      (-> (pcb/empty-changes it page-id)
+                              (pcb/with-objects objects))
+
+             [frame-shape changes]
+             (cfsh/prepare-create-artboard-from-selection changes
+                                                          id
+                                                          parent-id
+                                                          objects
+                                                          shapes
+                                                          index
+                                                          name
+                                                          false
+                                                          nil
+                                                          delta)
+
+             undo-id  (js/Symbol)]
+
+         (when changes
+           (rx/of
+            (dwu/start-undo-transaction undo-id)
+            (dch/commit-changes changes)
+            (dws/select-shapes (d/ordered-set (:id frame-shape)))
+            (when layout-update? (ptk/data-event :layout/update {:ids [(:id frame-shape)]}))
+            (ev/event {::ev/name "create-board"
+                       :converted-from (cfh/get-selected-type objects shapes)
+                       :parent-type (cfh/get-shape-type objects (:parent-id frame-shape))})
+            (dwu/commit-undo-transaction undo-id))))))))
+
 (defn create-artboard-from-selection
   ([]
    (create-artboard-from-selection nil))
@@ -251,7 +301,7 @@
   ([id parent-id index name delta]
    (ptk/reify ::create-artboard-from-selection
      ptk/WatchEvent
-     (watch [it state _]
+     (watch [_ state _]
        (let [page-id      (:current-page-id state)
              objects      (dsh/lookup-page-objects state page-id)
              selected     (->> (dsh/lookup-selected state)
@@ -259,32 +309,9 @@
                                (remove #(ctn/has-any-copy-parent? objects (get objects %)))
                                (remove #(->> %
                                              (get objects)
-                                             (ctc/is-variant?))))
+                                             (ctc/is-variant?))))]
 
-             changes      (-> (pcb/empty-changes it page-id)
-                              (pcb/with-objects objects))
-
-             [frame-shape changes]
-             (cfsh/prepare-create-artboard-from-selection changes
-                                                          id
-                                                          parent-id
-                                                          objects
-                                                          selected
-                                                          index
-                                                          name
-                                                          false
-                                                          nil
-                                                          delta)
-
-             undo-id  (js/Symbol)]
-
-         (when changes
-           (rx/of
-            (dwu/start-undo-transaction undo-id)
-            (dch/commit-changes changes)
-            (dws/select-shapes (d/ordered-set (:id frame-shape)))
-            (ptk/data-event :layout/update {:ids [(:id frame-shape)]})
-            (dwu/commit-undo-transaction undo-id))))))))
+         (rx/of (create-artboard-from-shapes selected id parent-id index name delta)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape Flags
@@ -333,6 +360,7 @@
 
 ;; FIXME: this need to be refactored
 
+
 (defn toggle-file-thumbnail-selected
   []
   (ptk/reify ::toggle-file-thumbnail-selected
@@ -364,3 +392,64 @@
          ;; And finally: toggle the flag value on all the selected shapes
          (rx/of (update-shapes selected #(update % :use-for-thumbnail not))
                 (dwu/commit-undo-transaction undo-id)))))))
+
+
+;; --- Change Shape Order (D&D Ordering)
+
+
+(defn relocate-shapes
+  [ids parent-id to-index & [ignore-parents?]]
+  (dm/assert! (every? uuid? ids))
+  (dm/assert! (set? ids))
+  (dm/assert! (uuid? parent-id))
+  (dm/assert! (number? to-index))
+
+  (ptk/reify ::relocate-shapes
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id  (:current-page-id state)
+            objects  (dsh/lookup-page-objects state page-id)
+            data     (dsh/lookup-file-data state)
+
+            ;; Ignore any shape whose parent is also intended to be moved
+            ids      (cfh/clean-loops objects ids)
+
+            ;; If we try to move a parent into a child we remove it
+            ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
+
+            all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
+
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-page-id page-id)
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data)
+                        (cls/generate-relocate
+                         parent-id
+                         to-index
+                         ids
+                         :ignore-parents? ignore-parents?))
+
+            add-component-to-variant? (and
+                                       ;; Any of the shapes is a head
+                                       (some (comp ctc/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects parent-id)
+                                            (some ctc/is-variant?)))
+
+            add-new-variant? (and
+                              ;; The parent is a variant container
+                              (-> parent-id objects ctc/is-variant-container?)
+                               ;; Any of the shapes is a main instance
+                              (some (comp ctc/main-instance? objects) ids))
+
+            undo-id (js/Symbol)]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (dwco/expand-collapse parent-id)
+               (ptk/data-event :layout/update {:ids (concat all-parents ids)})
+               (dwu/commit-undo-transaction undo-id)
+               (when add-component-to-variant?
+                 (ev/event {::ev/name "add-component-to-variant"}))
+               (when add-new-variant?
+                 (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-in-layers-tab"})))))))

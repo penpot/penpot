@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .hsva-selector {
-  @include flexColumn;
-  padding: $s-4;
-  grid-row-gap: $s-8;
-  margin-bottom: $s-8;
+  @include deprecated.flexColumn;
+  padding: deprecated.$s-4;
+  grid-row-gap: deprecated.$s-8;
+  margin-bottom: deprecated.$s-8;
 }
 
 .hsva-row {
@@ -19,13 +19,13 @@
 }
 
 .hsva-selector-label {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: $s-32;
+  width: deprecated.$s-32;
 }
 
 .hsva-bar {
-  width: $s-228;
+  width: deprecated.$s-228;
 }

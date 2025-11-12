@@ -21,10 +21,11 @@
    [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.datafy :refer [datafy]]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
-
+;; TODO: this is a duplicate schema
 (def schema:changes
   (sm/register!
    ^{::sm/type ::changes}
@@ -36,7 +37,7 @@
     [:stack-undo? {:optional true} boolean?]
     [:undo-group {:optional true} ::sm/any]]))
 
-(def check-changes!
+(def check-changes
   (sm/check-fn schema:changes))
 
 (defn empty-changes
@@ -161,7 +162,6 @@
    (contains? (meta changes) ::file-data)
    "Call (with-file-data) before using this function"))
 
-
 (defn- lookup-objects
   [changes]
   (let [data (::file-data (meta changes))]
@@ -169,9 +169,8 @@
 
 (defn apply-changes-local
   [changes & {:keys [apply-to-library?]}]
-  (assert
-   (check-changes! changes)
-   "expected valid changes")
+  (assert (check-changes changes)
+          "expected valid changes")
 
   (if-let [file-data (::file-data (meta changes))]
     (let [library-data  (::library-data (meta changes))
@@ -465,8 +464,8 @@
 
            (some? index)
            (assoc :index index)
-           (:component-swap options)
-           (assoc :component-swap true)
+           (:allow-altering-copies options)
+           (assoc :allow-altering-copies true)
            (:ignore-touched options)
            (assoc :ignore-touched true))
 
@@ -474,12 +473,14 @@
          (fn [undo-changes shape]
            (let [prev-sibling (cfh/get-prev-sibling objects (:id shape))]
              (conj undo-changes
-                   {:type :mov-objects
-                    :page-id (::page-id (meta changes))
-                    :parent-id (:parent-id shape)
-                    :shapes [(:id shape)]
-                    :after-shape prev-sibling
-                    :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
+                   (cond-> {:type :mov-objects
+                            :page-id (::page-id (meta changes))
+                            :parent-id (:parent-id shape)
+                            :shapes [(:id shape)]
+                            :after-shape prev-sibling
+                            :index 0} ; index is used in case there is no after-shape (moving bottom shapes)
+                     (:allow-altering-copies options)
+                     (assoc :allow-altering-copies true)))))
 
          restore-touched-change
          {:type :mod-obj
@@ -637,6 +638,7 @@
                                   (reduce add-undo-change-shape $ ids)))
          (apply-changes-local)))))
 
+;; FIXME: PERFORMANCE
 (defn resize-parents
   [changes ids]
   (assert-page-id! changes)
@@ -717,6 +719,7 @@
     (reduce resize-parent changes all-parents)))
 
 ;; Library changes
+
 (defn add-color
   [changes color]
   (-> changes
@@ -796,160 +799,6 @@
     (-> changes
         (update :redo-changes conj {:type :del-typography :id typography-id})
         (update :undo-changes conj {:type :add-typography :typography prev-typography})
-        (apply-changes-local))))
-
-(defn update-active-token-themes
-  [changes active-theme-paths prev-active-theme-paths]
-  (-> changes
-      (update :redo-changes conj {:type :update-active-token-themes :theme-paths active-theme-paths})
-      (update :undo-changes conj {:type :update-active-token-themes :theme-paths prev-active-theme-paths})
-      (apply-changes-local)))
-
-(defn set-token-theme [changes group theme-name theme]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-theme (some-> (get library-data :tokens-lib)
-                           (ctob/get-theme group theme-name))]
-    (-> changes
-        (update :redo-changes conj {:type :set-token-theme
-                                    :theme-name theme-name
-                                    :group group
-                                    :theme theme})
-        (update :undo-changes conj (if prev-theme
-                                     {:type :set-token-theme
-                                      :group group
-                                      :theme-name (or
-                                                   ;; Undo of edit
-                                                   (:name theme)
-                                                   ;; Undo of delete
-                                                   theme-name)
-                                      :theme prev-theme}
-                                     ;; Undo of create
-                                     {:type :set-token-theme
-                                      :group group
-                                      :theme-name theme-name
-                                      :theme nil}))
-        (apply-changes-local))))
-
-(defn rename-token-set-group
-  [changes set-group-path set-group-fname]
-  (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)
-        undo-fname (last set-group-path)]
-    (-> changes
-        (update :redo-changes conj {:type :rename-token-set-group :set-group-path set-group-path :set-group-fname set-group-fname})
-        (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
-        (apply-changes-local))))
-
-(defn move-token-set
-  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?] :as opts}]
-  (-> changes
-      (update :redo-changes conj {:type :move-token-set
-                                  :from-path from-path
-                                  :to-path to-path
-                                  :before-path before-path
-                                  :before-group before-group?})
-      (update :undo-changes conj {:type :move-token-set
-                                  :from-path to-path
-                                  :to-path from-path
-                                  :before-path prev-before-path
-                                  :before-group prev-before-group?})
-      (apply-changes-local)))
-
-(defn move-token-set-group
-  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]}]
-  (-> changes
-      (update :redo-changes conj {:type :move-token-set-group
-                                  :from-path from-path
-                                  :to-path to-path
-                                  :before-path before-path
-                                  :before-group before-group?})
-      (update :undo-changes conj {:type :move-token-set-group
-                                  :from-path to-path
-                                  :to-path from-path
-                                  :before-path prev-before-path
-                                  :before-group prev-before-group?})
-      (apply-changes-local)))
-
-(defn set-tokens-lib
-  [changes tokens-lib]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-tokens-lib (get library-data :tokens-lib)]
-    (-> changes
-        (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
-        (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
-        (apply-changes-local))))
-
-(defn set-token [changes set-name token-name token]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-token (some-> (get library-data :tokens-lib)
-                           (ctob/get-set set-name)
-                           (ctob/get-token token-name))]
-    (-> changes
-        (update :redo-changes conj {:type :set-token
-                                    :set-name set-name
-                                    :token-name token-name
-                                    :token token})
-        (update :undo-changes conj (if prev-token
-                                     {:type :set-token
-                                      :set-name set-name
-                                      :token-name (or
-                                                   ;; Undo of edit
-                                                   (:name token)
-                                                   ;; Undo of delete
-                                                   token-name)
-                                      :token prev-token}
-                                     ;; Undo of create token
-                                     {:type :set-token
-                                      :set-name set-name
-                                      :token-name token-name
-                                      :token nil}))
-        (apply-changes-local))))
-
-(defn rename-token-set
-  [changes name new-name]
-
-  (assert-library! changes)
-  (let [library-data   (::library-data (meta changes))
-        prev-token-set (some-> (get library-data :tokens-lib)
-                               (ctob/get-set name))]
-    (-> changes
-        (update :redo-changes conj {:type :set-token-set
-                                    :set-name name
-                                    :token-set (assoc prev-token-set :name new-name)
-                                    :group? false})
-        (update :undo-changes conj {:type :set-token-set
-                                    :set-name new-name
-                                    :token-set prev-token-set
-                                    :group? false})
-        (apply-changes-local))))
-
-(defn set-token-set
-  [changes set-name group? token-set]
-  (assert-library! changes)
-  (let [library-data   (::library-data (meta changes))
-        prev-token-set (some-> (get library-data :tokens-lib)
-                               (ctob/get-set set-name))]
-    (-> changes
-        (update :redo-changes conj {:type :set-token-set
-                                    :set-name set-name
-                                    :token-set token-set
-                                    :group? group?})
-        (update :undo-changes conj (if prev-token-set
-                                     {:type :set-token-set
-                                      :set-name (or
-                                                 ;; Undo of edit
-                                                 (:name token-set)
-                                                 ;; Undo of delete
-                                                 set-name)
-                                      :token-set prev-token-set
-                                      :group? group?}
-                                     ;; Undo of create
-                                     {:type :set-token-set
-                                      :set-name set-name
-                                      :token-set nil
-                                      :group? group?}))
         (apply-changes-local))))
 
 (defn add-component
@@ -1081,6 +930,144 @@
                                   :id id
                                   :delta delta})))
 
+;; Design Tokens changes
+
+(defn set-tokens-lib
+  [changes tokens-lib]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-tokens-lib (get library-data :tokens-lib)]
+    (-> changes
+        (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
+        (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
+        (apply-changes-local))))
+
+(defn set-token [changes set-id token-id token]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token (some-> (get library-data :tokens-lib)
+                           (ctob/get-token set-id token-id))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token
+                                    :set-id set-id
+                                    :token-id token-id
+                                    :attrs (datafy token)})
+        (update :undo-changes conj {:type :set-token
+                                    :set-id set-id
+                                    :token-id token-id
+                                    :attrs (datafy prev-token)})
+        (apply-changes-local))))
+
+(defn set-token-set
+  [changes id token-set]
+  (assert-library! changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set id))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :id id
+                                    :attrs (datafy token-set)})
+        (update :undo-changes conj {:type :set-token-set
+                                    :id id
+                                    :attrs (datafy prev-token-set)})
+        (apply-changes-local))))
+
+(defn rename-token-set
+  [changes id new-name]
+  (assert-library! changes)
+  (let [library-data   (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set id))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :id id
+                                    :attrs (datafy (ctob/rename prev-token-set new-name))})
+        (update :undo-changes conj {:type :set-token-set
+                                    :id id
+                                    :attrs (datafy prev-token-set)})
+        (apply-changes-local))))
+
+(defn set-token-theme [changes id theme]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-theme (some-> (get library-data :tokens-lib)
+                           (ctob/get-theme id))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-theme
+                                    :id id
+                                    :attrs (datafy theme)})
+        (update :undo-changes conj {:type :set-token-theme
+                                    :id id
+                                    :attrs (datafy prev-theme)})
+        (apply-changes-local))))
+
+(defn set-active-token-themes
+  [changes active-theme-paths]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-active-theme-paths (d/nilv (some-> (get library-data :tokens-lib)
+                                                (ctob/get-active-theme-paths))
+                                        #{})]
+    (-> changes
+        (update :redo-changes conj {:type :set-active-token-themes :theme-paths active-theme-paths})
+        (update :undo-changes conj {:type :set-active-token-themes :theme-paths prev-active-theme-paths})
+        (apply-changes-local))))
+
+(defn rename-token-set-group
+  [changes set-group-path set-group-fname]
+  (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)
+        undo-fname (last set-group-path)]
+    (-> changes
+        (update :redo-changes conj {:type :rename-token-set-group :set-group-path set-group-path :set-group-fname set-group-fname})
+        (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
+        (apply-changes-local))))
+
+(defn move-token-set
+  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?] :as opts}]
+  (-> changes
+      (update :redo-changes conj {:type :move-token-set
+                                  :from-path from-path
+                                  :to-path to-path
+                                  :before-path before-path
+                                  :before-group before-group?})
+      (update :undo-changes conj {:type :move-token-set
+                                  :from-path to-path
+                                  :to-path from-path
+                                  :before-path prev-before-path
+                                  :before-group prev-before-group?})
+      (apply-changes-local)))
+
+(defn move-token-set-group
+  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]}]
+  (-> changes
+      (update :redo-changes conj {:type :move-token-set-group
+                                  :from-path from-path
+                                  :to-path to-path
+                                  :before-path before-path
+                                  :before-group before-group?})
+      (update :undo-changes conj {:type :move-token-set-group
+                                  :from-path to-path
+                                  :to-path from-path
+                                  :before-path prev-before-path
+                                  :before-group prev-before-group?})
+      (apply-changes-local)))
+
+(defn set-base-font-size
+  [changes new-base-font-size]
+  (assert-file-data! changes)
+  (let [file-data  (::file-data (meta changes))
+        previous-font-size (ctf/get-base-font-size file-data)]
+    (-> changes
+        (update :redo-changes conj {:type :set-base-font-size
+                                    :base-font-size new-base-font-size})
+
+        (update :undo-changes conj {:type :set-base-font-size
+                                    :base-font-size previous-font-size})
+        (apply-changes-local))))
+
+;; Misc changes
+
 (defn reorder-children
   [changes id children]
   (assert-page-id! changes)
@@ -1163,15 +1150,3 @@
   [changes]
   (::page-id (meta changes)))
 
-(defn set-base-font-size
-  [changes new-base-font-size]
-  (assert-file-data! changes)
-  (let [file-data  (::file-data (meta changes))
-        previous-font-size (ctf/get-base-font-size file-data)]
-    (-> changes
-        (update :redo-changes conj {:type :set-base-font-size
-                                    :base-font-size new-base-font-size})
-
-        (update :undo-changes conj {:type :set-base-font-size
-                                    :base-font-size previous-font-size})
-        (apply-changes-local))))

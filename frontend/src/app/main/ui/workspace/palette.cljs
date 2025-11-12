@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
+   [app.main.constants :refer [left-sidebar-default-width]]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -19,7 +20,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
    [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
    [app.main.ui.workspace.text-palette :refer [text-palette]]
@@ -37,10 +38,10 @@
 
 (defn calculate-palette-padding [rulers?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
-        left-sidebar-size      (-> (dom/get-data left-sidebar "size")
+        left-sidebar-size      (-> (dom/get-data left-sidebar "left-sidebar-width")
                                    (d/parse-integer))
         rulers-width           (if rulers? 22 0)
-        min-left-sidebar-width 318
+        min-left-sidebar-width left-sidebar-default-width
         left-padding           4
         calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)]
 
@@ -169,7 +170,7 @@
                     :class (stl/css-case :palette-btn true
                                          :selected color-palette?)
                     :on-click on-select-color-palette}
-           i/drop-icon]]
+           deprecated-icon/drop-icon]]
 
          [:li {:class (stl/css :palette-item)}
           [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
@@ -177,14 +178,14 @@
                     :class (stl/css-case :palette-btn true
                                          :selected text-palette?)
                     :on-click on-select-text-palette}
-           i/text-palette]]]
+           deprecated-icon/text-palette]]]
 
 
         (if any-palette?
           [:*
            [:button {:class (stl/css :palette-actions)
                      :on-click #(swap! state* update :show-menu not)}
-            i/menu]
+            deprecated-icon/menu]
            [:div {:class (stl/css :palette)
                   :ref container}
             (when text-palette?

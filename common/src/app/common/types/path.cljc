@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cpf]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -24,10 +25,16 @@
 
 (def ^:cosnt bool-group-style-properties bool/group-style-properties)
 (def ^:const bool-style-properties bool/style-properties)
-(def ^:const default-bool-fills bool/default-fills)
+
+(defn get-default-bool-fills
+  []
+  (bool/get-default-fills))
+
+(def schema:content impl/schema:content)
+(def schema:segments impl/schema:segments)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TRANSFORMATIONS
+;; CONSTRUCTORS & TYPE METHODS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn content?
@@ -48,9 +55,13 @@
   [data]
   (impl/from-string data))
 
-(defn check-path-content
+(defn from-plain
+  [data]
+  (impl/from-plain data))
+
+(defn check-content
   [content]
-  (impl/check-content-like content))
+  (impl/check-content content))
 
 (defn get-byte-size
   "Get byte size of a path content"
@@ -76,7 +87,7 @@
 (defn apply-content-modifiers
   "Apply delta modifiers over the path content"
   [content modifiers]
-  (assert (impl/check-content-like content))
+  (assert (impl/check-content content))
 
   (letfn [(apply-to-index [content [index params]]
             (if (contains? content index)
@@ -182,6 +193,12 @@
   [content]
   (some-> content segment/get-points))
 
+(defn calc-selrect
+  "Calculate selrect from a content. The content can be in a PathData
+  instance or plain vector of segments."
+  [content]
+  (segment/content->selrect content))
+
 (defn- calc-bool-content*
   "Calculate the boolean content from shape and objects. Returns plain
   vector of segments"
@@ -196,14 +213,32 @@
         contents
         (sequence extract-content-xf (:shapes shape))]
 
-    (bool/calculate-content (:bool-type shape) contents)))
+    (ex/try!
+     (bool/calculate-content (:bool-type shape) contents)
+
+     :on-exception
+     (fn [cause]
+       (ex/raise :type :internal
+                 :code :invalid-path-content
+                 :hint (str "unable to calculate bool content for shape " (:id shape))
+                 :shapes (:shapes shape)
+                 :type (:bool-type shape)
+                 :content (vec contents)
+                 :cause cause)))))
+
+(def wasm:calc-bool-content
+  "A overwrite point for setup a WASM version of the `calc-bool-content*` function"
+  nil)
 
 (defn calc-bool-content
   "Calculate the boolean content from shape and objects. Returns a
   packed PathData instance"
   [shape objects]
-  (-> (calc-bool-content* shape objects)
-      (impl/path-data)))
+  (let [content (if (fn? wasm:calc-bool-content)
+                  (wasm:calc-bool-content (get shape :bool-type)
+                                          (get shape :shapes))
+                  (calc-bool-content* shape objects))]
+    (impl/path-data content)))
 
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"

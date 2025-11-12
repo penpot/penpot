@@ -11,8 +11,12 @@
    [app.common.data :as d]
    [app.common.pprint :as pp]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -21,12 +25,14 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -48,8 +54,8 @@
       [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
       (when profile-id
         [:div {:class (stl/css :go-back-wrapper)}
-         [:> icon* {:icon-id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
-     [:div {:class (stl/css :deco-before)} i/logo-error-screen]
+         [:> icon* {:icon-id i/arrow :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
+     [:div {:class (stl/css :deco-before)} deprecated-icon/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
                  :on-click on-nav-root}
@@ -59,8 +65,8 @@
       [:div {:class (stl/css :container)} children]]
 
      [:div {:class (stl/css :deco-after2)}
-      [:span (tr "labels.copyright")]
-      i/logo-error-screen
+      [:span (tr "labels.copyright-period")]
+      deprecated-icon/logo-error-screen
       [:span (tr "not-found.made-with-love")]]]))
 
 (mf/defc invalid-token
@@ -69,9 +75,8 @@
    [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
    [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
 
-(mf/defc login-dialog
-  {::mf/props :obj}
-  [{:keys [show-dialog]}]
+(mf/defc login-dialog*
+  []
   (let [current-section  (mf/use-state :login)
         user-email       (mf/use-state "")
         register-token   (mf/use-state "")
@@ -94,9 +99,7 @@
 
         success-login
         (mf/use-fn
-         (fn []
-           (reset! show-dialog false)
-           (st/emit! (rt/reload true))))
+         #(st/emit! (rt/reload true)))
 
         success-register
         (mf/use-fn
@@ -117,16 +120,16 @@
            (reset! current-section :recovery-email-sent)))
 
         on-nav-root
-        (mf/use-fn #(st/emit! (rt/nav-root)))]
+        (mf/use-fn #(st/emit! (rt/nav :auth-login {})))]
 
     [:div {:class (stl/css :overlay)}
      [:div {:class (stl/css :dialog-login)}
       [:div {:class (stl/css :modal-close)}
        [:button {:class (stl/css :modal-close-button)
                  :on-click on-nav-root}
-        i/close]]
+        deprecated-icon/close]]
       [:div {:class (stl/css :login)}
-       [:div {:class (stl/css :logo)} i/logo]
+       [:div {:class (stl/css :logo)} deprecated-icon/logo]
 
        (case @current-section
          :login
@@ -183,7 +186,7 @@
          [:div {:class (stl/css :form-container)}
           [:& recovery-sent-page {:email @user-email}]])]]]))
 
-(mf/defc request-dialog
+(mf/defc request-dialog*
   {::mf/props :obj}
   [{:keys [title content button-text on-button-click cancel-text on-close]}]
   (let [on-click (or on-button-click on-close)]
@@ -191,7 +194,7 @@
      [:div {:class (stl/css :dialog)}
       [:div {:class (stl/css :modal-close)}
        [:button {:class (stl/css :modal-close-button) :on-click on-close}
-        i/close]]
+        deprecated-icon/close]]
       [:div {:class (stl/css :dialog-title)} title]
       (for [[index content] (d/enumerate content)]
         [:div {:key index} content])
@@ -203,11 +206,9 @@
        [:button {:on-click on-click} button-text]]]]))
 
 (mf/defc request-access*
-  [{:keys [file-id team-id is-default is-workspace]}]
-  (let [profile     (mf/deref refs/profile)
-        requested*  (mf/use-state {:sent false :already-requested false})
+  [{:keys [file-id team-id is-default is-workspace profile]}]
+  (let [requested*  (mf/use-state {:sent false :already-requested false})
         requested   (deref requested*)
-        show-dialog (mf/use-state true)
 
         on-close
         (mf/use-fn
@@ -237,90 +238,47 @@
              (st/emit! (dcm/create-team-access-request
                         (with-meta params mdata))))))]
 
-    [:*
-     (if (some? file-id)
-       (if is-workspace
-         [:div {:class (stl/css :workspace)}
-          [:div {:class (stl/css :workspace-left)}
-           i/logo-icon
-           [:div
-            [:div {:class (stl/css :project-name)} (tr "not-found.no-permission.project-name")]
-            [:div {:class (stl/css :file-name)} (tr "not-found.no-permission.penpot-file")]]]
-          [:div {:class (stl/css :workspace-right)}]]
+    (cond
+      is-default
+      [:> request-dialog* {:title (tr "not-found.no-permission.project")
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
-         [:div {:class (stl/css :viewer)}
-          ;; FIXME: the viewer header was never designed to be reused
-          ;; from other parts of the application, and this code looks
-          ;; like a fast workaround reusing it as-is without a proper
-          ;; component adaptation for be able to use it easily it on
-          ;; viewer context or static error page context
-          [:& viewer.header/header {:project
-                                    {:name (tr "not-found.no-permission.project-name")}
-                                    :index 0
-                                    :file {:name (tr "not-found.no-permission.penpot-file")}
-                                    :page nil
-                                    :frame nil
-                                    :permissions {:is-logged true}
-                                    :zoom 1
-                                    :section :interactions
-                                    :shown-thumbnails false
-                                    :interactions-mode nil}]])
+      (and (some? file-id) (:already-requested requested))
+      [:> request-dialog* {:title (tr "not-found.no-permission.already-requested.file")
+                           :content [(tr "not-found.no-permission.already-requested.or-others.file")]
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
-       [:div {:class (stl/css :dashboard)}
-        [:div {:class (stl/css :dashboard-sidebar)}
-         [:> sidebar*
-          {:team nil
-           :projects []
-           :project (:default-project-id profile)
-           :profile profile
-           :section :dashboard-projects
-           :search-term ""}]]])
+      (:already-requested requested)
+      [:> request-dialog* {:title (tr "not-found.no-permission.already-requested.project")
+                           :content [(tr "not-found.no-permission.already-requested.or-others.project")]
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
-     (when @show-dialog
-       (cond
-         (nil? profile)
-         [:& login-dialog {:show-dialog show-dialog}]
+      (:sent requested)
+      [:> request-dialog* {:title (tr "not-found.no-permission.done.success")
+                           :content [(tr "not-found.no-permission.done.remember")]
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
-         is-default
-         [:& request-dialog {:title (tr "not-found.no-permission.project")
-                             :button-text (tr "not-found.no-permission.go-dashboard")
-                             :on-close on-close}]
+      (some? file-id)
+      [:> request-dialog* {:title (tr "not-found.no-permission.file")
+                           :content [(tr "not-found.no-permission.you-can-ask.file")
+                                     (tr "not-found.no-permission.if-approves")]
+                           :button-text (tr "not-found.no-permission.ask")
+                           :on-button-click on-request-access
+                           :cancel-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
-         (and (some? file-id) (:already-requested requested))
-         [:& request-dialog {:title (tr "not-found.no-permission.already-requested.file")
-                             :content [(tr "not-found.no-permission.already-requested.or-others.file")]
-                             :button-text (tr "not-found.no-permission.go-dashboard")
-                             :on-close on-close}]
-
-         (:already-requested requested)
-         [:& request-dialog {:title (tr "not-found.no-permission.already-requested.project")
-                             :content [(tr "not-found.no-permission.already-requested.or-others.project")]
-                             :button-text (tr "not-found.no-permission.go-dashboard")
-                             :on-close on-close}]
-
-         (:sent requested)
-         [:& request-dialog {:title (tr "not-found.no-permission.done.success")
-                             :content [(tr "not-found.no-permission.done.remember")]
-                             :button-text (tr "not-found.no-permission.go-dashboard")
-                             :on-close on-close}]
-
-         (some? file-id)
-         [:& request-dialog {:title (tr "not-found.no-permission.file")
-                             :content [(tr "not-found.no-permission.you-can-ask.file")
-                                       (tr "not-found.no-permission.if-approves")]
-                             :button-text (tr "not-found.no-permission.ask")
-                             :on-button-click on-request-access
-                             :cancel-text (tr "not-found.no-permission.go-dashboard")
-                             :on-close on-close}]
-
-         (some? team-id)
-         [:& request-dialog {:title (tr "not-found.no-permission.project")
-                             :content [(tr "not-found.no-permission.you-can-ask.project")
-                                       (tr "not-found.no-permission.if-approves")]
-                             :button-text (tr "not-found.no-permission.ask")
-                             :on-button-click on-request-access
-                             :cancel-text (tr "not-found.no-permission.go-dashboard")
-                             :on-close on-close}]))]))
+      (some? team-id)
+      [:> request-dialog* {:title (tr "not-found.no-permission.project")
+                           :content [(tr "not-found.no-permission.you-can-ask.project")
+                                     (tr "not-found.no-permission.if-approves")]
+                           :button-text (tr "not-found.no-permission.ask")
+                           :on-button-click on-request-access
+                           :cancel-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}])))
 
 (mf/defc not-found*
   []
@@ -358,9 +316,10 @@
           trace      (:app.main.errors/trace data)
           instance   (:app.main.errors/instance data)]
       (with-out-str
-        (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
-        (println "Prof ID:" (str (or profile-id "--")))
-        (println "Team ID:" (str (or team-id "--")))
+        (println "Hint:    " (or (:hint data) (ex-message instance) "--"))
+        (println "Prof ID: " (str (or profile-id "--")))
+        (println "Team ID: " (str (or team-id "--")))
+        (println "URI:     " cf/public-uri)
 
         (when-let [file-id (:file-id data)]
           (println "File ID:" (str file-id)))
@@ -400,6 +359,19 @@
   (let [report-uri (mf/use-ref nil)
         on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
 
+        support-contact-click
+        (mf/use-fn
+         (mf/deps on-reset report)
+         (fn []
+           (tm/schedule on-reset)
+           (let [error-report-id (uuid/next)
+                 error-href (rt/get-current-href)]
+             (set! errors/last-report {:id error-report-id :content report})
+             (st/emit!
+              (rt/nav :settings-feedback {:type "issue"
+                                          :error-report-id error-report-id
+                                          :error-href error-href})))))
+
         on-download
         (mf/use-fn
          (fn [event]
@@ -409,6 +381,7 @@
 
     (mf/with-effect [report]
       (when (some? report)
+        (set! errors/last-report report)
         (let [report (wapi/create-blob report "text/plain")
               uri    (wapi/create-uri report)]
           (mf/set-ref-val! report-uri uri)
@@ -417,11 +390,23 @@
 
     [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
-     [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
+
+     [:div {:class (stl/css :desc-message)}
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-first")]
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
+
      (when (some? report)
-       [:a {:on-click on-download} "Download report.txt"])
-     [:div {:class (stl/css :sign-info)}
-      [:button {:on-click on-reset} (tr "labels.retry")]]]))
+       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+
+     [:div {:class (stl/css :buttons-container)}
+      [:> button* {:variant "secondary"
+                   :type "button"
+                   :class (stl/css :support-btn)
+                   :on-click support-contact-click} (tr "labels.contact-support")]
+      [:> button* {:variant "primary"
+                   :type "button"
+                   :class (stl/css :retry-btn)
+                   :on-click on-reset} (tr "labels.retry")]]]))
 
 (defn- load-info
   "Load exception page info"
@@ -469,6 +454,7 @@
                                    :path (get route :path)
                                    :report report
                                    :params params}))))
+
     (case type
       :not-found
       [:> not-found* {}]
@@ -484,32 +470,80 @@
 
       [:> internal-error* props])))
 
+(mf/defc context-wrapper*
+  [{:keys [is-workspace is-dashboard is-viewer profile children]}]
+  [:*
+   (cond
+     is-workspace
+     [:div {:class (stl/css :workspace)}
+      [:div {:class (stl/css :workspace-left)}
+       deprecated-icon/logo-icon
+       [:div
+        [:div {:class (stl/css :project-name)} (tr "not-found.no-permission.project-name")]
+        [:div {:class (stl/css :file-name)} (tr "not-found.no-permission.penpot-file")]]]
+      [:div {:class (stl/css :workspace-right)}]]
+
+     is-viewer
+     [:div {:class (stl/css :viewer)}
+      ;; FIXME: the viewer header was never designed to be reused
+      ;; from other parts of the application, and this code looks
+      ;; like a fast workaround reusing it as-is without a proper
+      ;; component adaptation for be able to use it easily it on
+      ;; viewer context or static error page context
+      [:& viewer.header/header {:project
+                                {:name (tr "not-found.no-permission.project-name")}
+                                :index 0
+                                :file {:name (tr "not-found.no-permission.penpot-file")}
+                                :page nil
+                                :frame nil
+                                :permissions {:is-logged true}
+                                :zoom 1
+                                :section :interactions
+                                :shown-thumbnails false
+                                :interactions-mode nil}]]
+
+     is-dashboard
+     [:div {:class (stl/css :dashboard)}
+      [:div {:class (stl/css :dashboard-sidebar)}
+       [:> sidebar*
+        {:team nil
+         :projects []
+         :project (:default-project-id profile)
+         :profile profile
+         :section :dashboard-projects
+         :search-term ""}]]])
+
+   children])
+
 (mf/defc exception-page*
   {::mf/props :obj}
   [{:keys [data route] :as props}]
 
-  (let [type       (:type data)
-        path       (:path route)
+  (let [type        (:type data)
+        path        (:path route)
+        params      (:query-params route)
 
-        params     (:query-params route)
-
-        workspace? (str/includes? path "workspace")
-        dashboard? (str/includes? path "dashboard")
-        view?      (str/includes? path "view")
+        workspace?  (str/includes? path "workspace")
+        dashboard?  (str/includes? path "dashboard")
+        view?       (str/includes? path "view")
 
         ;; We store the request access info int this state
-        info*      (mf/use-state nil)
-        info       (deref info*)
+        info*       (mf/use-state nil)
+        info        (deref info*)
 
-        loaded?    (get info :loaded false)
+        profile     (mf/deref refs/profile)
+
+        auth-error? (= type :authentication)
+        not-found?  (= type :not-found)
+
+        authenticated?
+        (is-authenticated? profile)
 
         request-access?
         (and
-         (or (= type :not-found)
-             (= type :authentication))
          (or workspace? dashboard? view?)
-         (or (:file-id info)
-             (:team-id info)))]
+         (or (some? (:file-id info))
+             (some? (:team-id info))))]
 
     (mf/with-effect [params info]
       (when-not (:loaded info)
@@ -517,11 +551,26 @@
              (rx/subs! (partial reset! info*)
                        (partial reset! info* {:loaded true})))))
 
-    (when loaded?
-      (if request-access?
-        [:> request-access* {:file-id (:file-id info)
-                             :team-id  (:team-id info)
-                             :is-default (:team-default info)
-                             :is-workspace workspace?}]
-        [:> exception-section* props]))))
 
+    (if (or auth-error? not-found?)
+      (if (not authenticated?)
+        [:> context-wrapper*
+         {:is-workspace workspace?
+          :is-dashboard dashboard?
+          :is-viewer view?
+          :profile profile}
+         [:> login-dialog* {}]]
+        (when (get info :loaded false)
+          (if request-access?
+            [:> context-wrapper* {:is-workspace workspace?
+                                  :is-dashboard dashboard?
+                                  :is-viewer view?
+                                  :profile profile}
+             [:> request-access* {:file-id (:file-id info)
+                                  :team-id  (:team-id info)
+                                  :is-default (:team-default info)
+                                  :profile profile
+                                  :is-workspace workspace?}]]
+            [:> exception-section* props])))
+
+      [:> exception-section* props])))

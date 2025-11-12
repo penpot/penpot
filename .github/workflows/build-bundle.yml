@@ -1,0 +1,93 @@
+name: Bundles Builder
+
+on:
+  # Create bundle from manual action
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+      build_wasm:
+        description: 'BUILD_WASM. Valid values: yes, no'
+        type: string
+        required: false
+        default: 'yes'
+      build_storybook:
+        description: 'BUILD_STORYBOOK. Valid values: yes, no'
+        type: string
+        required: false
+        default: 'yes'
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+      build_wasm:
+        description: 'BUILD_WASM. Valid values: yes, no'
+        type: string
+        required: false
+        default: 'yes'
+      build_storybook:
+        description: 'BUILD_STORYBOOK. Valid values: yes, no'
+        type: string
+        required: false
+        default: 'yes'
+
+jobs:
+  build-bundle:
+    name: Build and Upload Penpot Bundle
+    runs-on: ubuntu-24.04
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+
+      - name: Build bundle
+        env:
+          BUILD_WASM: ${{ inputs.build_wasm }}
+          BUILD_STORYBOOK: ${{ inputs.build_storybook }}
+        run: ./manage.sh build-bundle
+
+      - name: Prepare directories for zipping
+        run: |
+          mkdir zips
+          mv bundles penpot
+
+      - name: Create zip bundle
+        run: |
+          echo "📦 Packaging Penpot bundle..."
+          zip -r zips/penpot.zip penpot
+
+      - name: Upload Penpot bundle to S3
+        run: |
+          aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip --metadata bundle-version=${{ steps.vars.outputs.bundle_version }}
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 📦 *[PENPOT] Error building penpot bundles.*
+            📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
+               Bundle version: `${{ steps.vars.outputs.bundle_version }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra

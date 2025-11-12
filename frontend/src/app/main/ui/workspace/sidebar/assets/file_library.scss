@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as t;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
 .tool-window {
-  padding: 0 0 $s-24 $s-12;
+  padding: 0 0 deprecated.$s-24 deprecated.$s-12;
   display: grid;
   grid-auto-rows: max-content;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   height: 100%;
 }
 
@@ -28,23 +28,23 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  height: $s-32;
-  padding-left: calc($s-12 + $s-2);
+  height: deprecated.$s-32;
+  padding-left: calc(deprecated.$s-12 + deprecated.$s-2);
   color: var(--color-foreground-secondary);
 }
 
 .special-title {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   color: var(--title-foreground-color-hover);
-  margin-left: $s-2;
+  margin-left: deprecated.$s-2;
   text-align: left;
 }
 
 .file-link {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+  border-radius: deprecated.$br-8;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -56,32 +56,32 @@
   width: 100%;
   display: grid;
   grid-auto-rows: max-content;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .asset-title {
-  margin-left: $s-28;
+  margin-left: deprecated.$s-28;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .no-found-icon {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   background-color: var(--not-found-background-color);
-  border-radius: $br-circle;
-  height: $s-48;
-  width: $s-48;
+  border-radius: deprecated.$br-circle;
+  height: deprecated.$s-48;
+  width: deprecated.$s-48;
   svg {
     @extend .button-icon;
-    height: $s-24;
-    width: $s-24;
+    height: deprecated.$s-24;
+    width: deprecated.$s-24;
     stroke: var(--not-found-foreground-color);
   }
 }
 
 .no-found-text {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--not-found-foreground-color);
 }

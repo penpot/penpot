@@ -14,22 +14,22 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]))
 
-;; :layout                 ;; :flex, :grid in the future
-;; :layout-flex-dir        ;; :row, :row-reverse, :column, :column-reverse
-;; :layout-gap-type        ;; :simple, :multiple
-;; :layout-gap             ;; {:row-gap number , :column-gap number}
+;; :layout                  ;; :flex, :grid in the future
+;; :layout-flex-dir         ;; :row, :row-reverse, :column, :column-reverse
+;; :layout-gap-type         ;; :simple, :multiple
+;; :layout-gap              ;; {:row-gap number , :column-gap number}
 
-;; :layout-align-items     ;; :start :end :center :stretch
-;; :layout-align-content   ;; :start :center :end :space-between :space-around :space-evenly :stretch (by default)
+;; :layout-align-items      ;; :start :end :center :stretch
+;; :layout-align-content    ;; :start :center :end :space-between :space-around :space-evenly :stretch (by default)
 ;; :layout-justify-items    ;; :start :center :end :space-between :space-around :space-evenly
-;; :layout-justify-content ;; :start :center :end :space-between :space-around :space-evenly
-;; :layout-wrap-type       ;; :wrap, :nowrap
-;; :layout-padding-type    ;; :simple, :multiple
-;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
+;; :layout-justify-content  ;; :start :center :end :space-between :space-around :space-evenly
+;; :layout-wrap-type        ;; :wrap, :nowrap
+;; :layout-padding-type     ;; :simple, :multiple
+;; :layout-padding          ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
 
-;; layout-grid-rows        ;; vector of grid-track
-;; layout-grid-columns     ;; vector of grid-track
-;; layout-grid-cells       ;; map of id->grid-cell
+;; layout-grid-rows         ;; vector of grid-track
+;; layout-grid-columns      ;; vector of grid-track
+;; layout-grid-cells        ;; map of id->grid-cell
 
 ;; ITEMS
 ;; :layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
@@ -517,7 +517,7 @@
   ([objects id]
    (item-absolute? (get objects id)))
   ([shape]
-   (true? (:layout-item-absolute shape))))
+   (true? (get shape :layout-item-absolute))))
 
 (defn position-absolute?
   ([objects id]

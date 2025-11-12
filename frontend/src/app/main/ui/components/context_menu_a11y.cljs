@@ -12,7 +12,7 @@
    [app.common.schema :as sm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown-content*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -42,6 +42,8 @@
                [:map
                 [:name :string]
                 [:id :string]
+                [:title {:optional true} [:maybe :string]]
+                [:disabled {:optional true} [:maybe :boolean]]
                 [:handler {:optional true} fn?]
                 [:options {:optional true}
                  [:sequential [:ref ::option]]]]
@@ -249,7 +251,7 @@
                [:button {:class (stl/css :context-menu-action :submenu-back)
                          :data-no-close true
                          :on-click on-submenu-exit}
-                [:span {:class (stl/css :submenu-icon-back)} i/arrow]
+                [:span {:class (stl/css :submenu-icon-back)} deprecated-icon/arrow]
                 parent]]
 
               [:li {:class (stl/css :separator)}]])
@@ -258,7 +260,9 @@
              (let [name        (:name option)
                    id          (:id option)
                    sub-options (:options option)
-                   handler     (:handler option)]
+                   handler     (:handler option)
+                   title       (:title option)
+                   disabled    (:disabled option)]
                (when name
                  (if (= name :separator)
                    [:li {:key (dm/str "context-item-" index)
@@ -273,21 +277,23 @@
                          :role "menuitem"
                          :on-key-down dom/prevent-default}
                     (if-not sub-options
-                      [:a {:class (stl/css :context-menu-action)
+                      [:a {:class (stl/css-case :context-menu-action true :context-menu-action-disabled disabled)
+                           :title title
                            :on-click #(do (dom/stop-propagation %)
-                                          (on-close %)
-                                          (handler %))
+                                          (when-not disabled
+                                            (on-close %)
+                                            (handler %)))
                            :data-testid id}
                        (if (and in-dashboard? (= name "Default"))
                          (tr "dashboard.default-team-name")
                          name)
 
                        (when (and selected (= id selected))
-                         [:span {:class (stl/css :selected-icon)} i/tick])]
+                         [:span {:class (stl/css :selected-icon)} deprecated-icon/tick])]
 
                       [:a {:class (stl/css :context-menu-action :submenu)
                            :data-no-close true
                            :on-click (enter-submenu name sub-options)
                            :data-testid id}
                        name
-                       [:span {:class (stl/css :submenu-icon)} i/arrow]])]))))]])])))
+                       [:span {:class (stl/css :submenu-icon)} deprecated-icon/arrow]])]))))]])])))

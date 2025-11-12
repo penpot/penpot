@@ -11,17 +11,16 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.util.cache :as cache]
    [app.util.services :as-alias sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.edn :as edn]
    [clojure.set :as set]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
-   [promesa.exec :as px]
    [promesa.exec.bulkhead :as pbh])
   (:import
    clojure.lang.ExceptionInfo
@@ -154,7 +153,7 @@
            :id limit-id
            :label limit-label
            :queue queue
-           :elapsed (some-> elapsed dt/format-duration)
+           :elapsed (some-> elapsed ct/format-duration)
            :params @limit-params)))
 
 (def ^:private idseq (AtomicLong. 0))
@@ -171,19 +170,19 @@
         mlabels     (into-array String [(id->str limit-id)])
         limit-id    (id->str limit-id limit-key)
         limiter     (cache/get cache limit-id (partial create-limiter config))
-        tpoint      (dt/tpoint)
+        tpoint      (ct/tpoint)
         req-id      (.incrementAndGet ^AtomicLong idseq)]
     (try
       (let [stats (pbh/get-stats limiter)]
         (measure metrics mlabels stats nil)
         (log "enqueued" req-id stats limit-id limit-label limit-params nil))
 
-      (px/invoke! limiter (fn []
-                            (let [elapsed (tpoint)
-                                  stats   (pbh/get-stats limiter)]
-                              (measure metrics mlabels stats elapsed)
-                              (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
-                              (handler))))
+      (pbh/invoke! limiter (fn []
+                             (let [elapsed (tpoint)
+                                   stats   (pbh/get-stats limiter)]
+                               (measure metrics mlabels stats elapsed)
+                               (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
+                               (handler))))
 
       (catch ExceptionInfo cause
         (let [{:keys [type code]} (ex-data cause)]
@@ -289,13 +288,9 @@
           (get-limits cfg)))
 
 (defn invoke!
-  "Run a function in context of climit.
-  Intended to be used in virtual threads."
-  [{:keys [::executor ::rpc/climit] :as cfg} f params]
+  "Run a function in context of climit."
+  [{:keys [::rpc/climit] :as cfg} f params]
   (let [f (if climit
-            (let [f (if (some? executor)
-                      (fn [cfg params] (px/await! (px/submit! executor (fn [] (f cfg params)))))
-                      f)]
-              (build-exec-chain cfg f))
+            (build-exec-chain cfg f)
             f)]
     (f cfg params)))

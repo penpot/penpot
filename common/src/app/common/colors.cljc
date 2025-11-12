@@ -349,7 +349,7 @@
         rounded-s (d/format-number (* 100 s) precision)
         rounded-l (d/format-number (* 100 l) precision)
         rounded-a (d/format-number a precision)]
-    (str/concat "" rounded-h ", " rounded-s "%, " rounded-l "%, " rounded-a)))
+    (str/concat "" rounded-h " " rounded-s "% " rounded-l "% / " rounded-a)))
 
 (defn format-rgba
   [[r g b a]]

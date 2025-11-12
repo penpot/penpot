@@ -4,51 +4,51 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .viewport-actions,
 .viewport-actions-path {
   pointer-events: none;
   position: absolute;
-  --actions-toolbar-position-y: #{$s-28};
-  --actions-toolbar-offset-y: #{$s-6};
+  --actions-toolbar-position-y: #{deprecated.$s-28};
+  --actions-toolbar-offset-y: #{deprecated.$s-6};
 
   top: calc(var(--actions-toolbar-position-y) + var(--actions-toolbar-offset-y));
   left: 50%;
-  z-index: $z-index-20;
+  z-index: deprecated.$z-index-20;
 }
 
 .viewport-actions-path {
-  z-index: $z-index-3;
+  z-index: deprecated.$z-index-3;
 }
 
 .viewport-actions-container {
-  @include flexRow;
+  @include deprecated.flexRow;
   background: var(--panel-background-color);
-  border-radius: $br-12;
-  box-shadow: 0 0 $s-12 0 var(--menu-shadow-color);
-  gap: $s-8;
-  height: $s-48;
+  border-radius: deprecated.$br-12;
+  box-shadow: 0 0 deprecated.$s-12 0 var(--menu-shadow-color);
+  gap: deprecated.$s-8;
+  height: deprecated.$s-48;
   margin-left: -50%;
-  padding: $s-8;
+  padding: deprecated.$s-8;
   cursor: initial;
   pointer-events: initial;
-  width: $s-400;
-  border: $s-2 solid var(--panel-border-color);
+  width: deprecated.$s-400;
+  border: deprecated.$s-2 solid var(--panel-border-color);
 }
 
 .viewport-actions-title {
   flex: 1;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
-  padding-left: $s-8;
+  padding-left: deprecated.$s-8;
 }
 
 .done-btn {
   @extend .button-primary;
   text-transform: uppercase;
-  padding: $s-8 $s-20;
-  font-size: $fs-11;
+  padding: deprecated.$s-8 deprecated.$s-20;
+  font-size: deprecated.$fs-11;
 }
 
 .viewport-actions-no-rulers {

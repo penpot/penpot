@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
@@ -75,34 +76,56 @@
     (let [variant (font-db-data font-id font-variant-id)]
       (:ttf-url variant))))
 
+(defn update-text-layout
+  [id]
+  (let [shape-id-buffer (uuid/get-u32 id)]
+    (h/call wasm/internal-module "_update_shape_text_layout_for"
+            (aget shape-id-buffer 0)
+            (aget shape-id-buffer 1)
+            (aget shape-id-buffer 2)
+            (aget shape-id-buffer 3))))
+
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
 (defn- store-font-buffer
-  [font-data font-array-buffer emoji? fallback?]
-  (let [id-buffer (:family-id-buffer font-data)
+  [shape-id font-data font-array-buffer emoji? fallback?]
+  (let [font-id-buffer  (:family-id-buffer font-data)
+        shape-id-buffer (uuid/get-u32 shape-id)
         size (.-byteLength font-array-buffer)
         ptr  (h/call wasm/internal-module "_alloc_bytes" size)
         heap (gobj/get ^js wasm/internal-module "HEAPU8")
         mem  (js/Uint8Array. (.-buffer heap) ptr size)]
     (.set mem (js/Uint8Array. font-array-buffer))
     (h/call wasm/internal-module "_store_font"
-            (aget id-buffer 0)
-            (aget id-buffer 1)
-            (aget id-buffer 2)
-            (aget id-buffer 3)
+            (aget shape-id-buffer 0)
+            (aget shape-id-buffer 1)
+            (aget shape-id-buffer 2)
+            (aget shape-id-buffer 3)
+            (aget font-id-buffer 0)
+            (aget font-id-buffer 1)
+            (aget font-id-buffer 2)
+            (aget font-id-buffer 3)
             (:weight font-data)
             (:style font-data)
             emoji?
             fallback?)
+
+    (update-text-layout shape-id)
+
     true))
 
 (defn- fetch-font
-  [font-data font-url emoji? fallback?]
+  [shape-id font-data font-url emoji? fallback?]
   {:key font-url
    :callback #(->> (http/send! {:method :get
                                 :uri font-url
                                 :response-type :buffer})
                    (rx/map (fn [{:keys [body]}]
-                             (store-font-buffer font-data body emoji? fallback?))))})
+                             (store-font-buffer shape-id font-data body emoji? fallback?)))
+                   (rx/catch (fn [cause]
+                               (log/error :hint "Could not fetch font"
+                                          :font-url font-url
+                                          :cause cause)
+                               (rx/empty))))})
 
 (defn- google-font-ttf-url
   [font-id font-variant-id]
@@ -122,7 +145,7 @@
     (dm/str (u/join cf/public-uri "fonts/" asset-id))))
 
 (defn- store-font-id
-  [font-data asset-id emoji? fallback?]
+  [shape-id font-data asset-id emoji? fallback?]
   (when asset-id
     (let [uri (font-id->ttf-url (:font-id font-data) asset-id (:font-variant-id font-data))
           id-buffer (uuid/get-u32 (:wasm-id font-data))
@@ -136,7 +159,7 @@
                                        (:style font-data)
                                        emoji?))]
       (when-not font-stored?
-        (fetch-font font-data uri emoji? fallback?)))))
+        (fetch-font shape-id font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style
   [font-style]
@@ -146,28 +169,48 @@
     "italic" 1
     0))
 
-(defn serialize-font-id
+(defn normalize-font-id
   [font-id]
   (try
-    (if (nil? font-id)
-      (do
-        [uuid/zero])
-      (let [google-font? (str/starts-with? font-id "gfont-")]
-        (if google-font?
-          (uuid/get-u32 (google-font-id->uuid font-id))
-          (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
-            (if (or (nil? no-prefix) (not (string? no-prefix)) (str/blank? no-prefix))
-              [uuid/zero]
-              (uuid/get-u32 (uuid/uuid no-prefix)))))))
+    (if ^boolean (str/starts-with? font-id "gfont-")
+      (google-font-id->uuid font-id)
+      (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
+        (if (or (nil? no-prefix) (not (string? no-prefix)) (str/blank? no-prefix))
+          uuid/zero
+          (uuid/parse no-prefix))))
     (catch :default _e
-      [uuid/zero])))
+      uuid/zero)))
 
 (defn serialize-font-weight
   [font-weight]
-  (js/Number font-weight))
+  (if (number? font-weight)
+    font-weight
+    (let [font-weight-str (str font-weight)]
+      (cond
+        (re-matches #"\d+" font-weight-str)
+        (js/Number font-weight-str)
+
+        (str/includes? font-weight-str "bold")
+        700
+        (str/includes? font-weight-str "black")
+        900
+        (str/includes? font-weight-str "extrabold")
+        800
+        (str/includes? font-weight-str "extralight")
+        200
+        (str/includes? font-weight-str "light")
+        300
+        (str/includes? font-weight-str "medium")
+        500
+        (str/includes? font-weight-str "semibold")
+        600
+        (str/includes? font-weight-str "thin")
+        100
+        :else
+        400))))
 
 (defn store-font
-  [font]
+  [shape-id font]
   (let [font-id (get font :font-id)
         font-variant-id (get font :font-variant-id)
         emoji? (get font :is-emoji false)
@@ -177,6 +220,7 @@
         weight (serialize-font-weight raw-weight)
         style (serialize-font-style (cond
                                       (str/includes? font-variant-id "italic") "italic"
+                                      (str/includes? raw-weight "italic") "italic"
                                       :else "normal"))
         asset-id (font-id->asset-id font-id font-variant-id)
         font-data {:wasm-id wasm-id
@@ -184,12 +228,12 @@
                    :font-variant-id font-variant-id
                    :style style
                    :weight weight}]
-    (store-font-id font-data asset-id emoji? fallback?)))
+
+    (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
 (defn store-fonts
-  [fonts]
-  (keep (fn [font] (store-font font)) fonts))
-
+  [shape-id fonts]
+  (keep (fn [font] (store-font shape-id font)) fonts))
 
 (defn add-emoji-font
   [fonts]
@@ -226,25 +270,27 @@
    :sinhala     {:font-id "gfont-noto-sans-sinhala" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :telugu      {:font-id "gfont-noto-sans-telugu"  :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :tibetan     {:font-id "gfont-noto-sans-tibetan" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :javanese    {:font-id "noto-sans-javanese"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :kannada     {:font-id "noto-sans-kannada"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :oriya       {:font-id "noto-sans-oriya"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :mongolian   {:font-id "noto-sans-mongolian"     :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :syriac      {:font-id "noto-sans-syriac"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :tifinagh    {:font-id "noto-sans-tifinagh"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :coptic      {:font-id "noto-sans-coptic"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :ol-chiki    {:font-id "noto-sans-ol-chiki"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :vai         {:font-id "noto-sans-vai"           :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :shavian     {:font-id "noto-sans-shavian"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :osmanya     {:font-id "noto-sans-osmanya"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :runic       {:font-id "noto-sans-runic"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :old-italic  {:font-id "noto-sans-old-italic"    :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :brahmi      {:font-id "noto-sans-brahmi"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :modi        {:font-id "noto-sans-modi"          :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :sora-sompeng {:font-id "noto-sans-sora-sompeng" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :bamum       {:font-id "noto-sans-bamum"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :meroitic    {:font-id "noto-sans-meroitic"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
-
+   :javanese    {:font-id "gfont-noto-sans-javanese"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :kannada     {:font-id "gfont-noto-sans-kannada"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :oriya       {:font-id "gfont-noto-sans-oriya"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :mongolian   {:font-id "gfont-noto-sans-mongolian"     :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :syriac      {:font-id "gfont-noto-sans-syriac"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :tifinagh    {:font-id "gfont-noto-sans-tifinagh"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :coptic      {:font-id "gfont-noto-sans-coptic"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :ol-chiki    {:font-id "gfont-noto-sans-ol-chiki"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :vai         {:font-id "gfont-noto-sans-vai"           :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :shavian     {:font-id "gfont-noto-sans-shavian"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :osmanya     {:font-id "gfont-noto-sans-osmanya"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :runic       {:font-id "gfont-noto-sans-runic"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :old-italic  {:font-id "gfont-noto-sans-old-italic"    :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :brahmi      {:font-id "gfont-noto-sans-brahmi"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :modi        {:font-id "gfont-noto-sans-modi"          :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :sora-sompeng {:font-id "gfont-noto-sans-sora-sompeng" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :bamum       {:font-id "gfont-noto-sans-bamum"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :meroitic    {:font-id "gfont-noto-sans-meroitic"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :symbols     {:font-id "gfont-noto-sans-symbols"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :symbols-2   {:font-id "gfont-noto-sans-symbols-2" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :music       {:font-id "gfont-noto-music" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
 
 (defn add-noto-fonts [fonts languages]
   (reduce (fn [acc lang]

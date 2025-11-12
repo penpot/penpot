@@ -8,16 +8,6 @@ pub enum FontStyle {
     Italic,
 }
 
-impl From<u8> for FontStyle {
-    fn from(value: u8) -> Self {
-        match value {
-            0 => Self::Normal,
-            1 => Self::Italic,
-            _ => Self::Normal,
-        }
-    }
-}
-
 impl fmt::Display for FontStyle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let txt = match self {

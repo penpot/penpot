@@ -4,14 +4,14 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 
 .dashboard {
   background-color: var(--app-background);
   display: grid;
-  grid-template-rows: $s-48 1fr;
-  grid-template-columns: $s-40 $s-256 1fr;
+  grid-template-rows: deprecated.$s-48 1fr;
+  grid-template-columns: deprecated.$s-40 deprecated.$s-256 1fr;
   height: 100vh;
 }
 
@@ -20,26 +20,26 @@
   flex-direction: column;
   position: relative;
   grid-row: 1 / span 2;
-  padding: $s-16 $s-16 0 0;
+  padding: deprecated.$s-16 deprecated.$s-16 0 0;
 }
 
 .dashboard-container {
   flex: 1 0 0;
-  margin-right: $s-16;
+  margin-right: deprecated.$s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid var(--color-background-quaternary);
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
 
   &.dashboard-projects {
     user-select: none;
   }
   &.dashboard-shared {
-    width: calc(100vw - $s-320);
-    margin-right: $s-52;
+    width: calc(100vw - deprecated.$s-320);
+    margin-right: deprecated.$s-52;
   }
 
   &.search {
-    margin-top: $s-12;
+    margin-top: deprecated.$s-12;
   }
 }
 
@@ -54,24 +54,24 @@
 }
 
 .form-container {
-  width: $s-800;
-  margin: $s-48 auto $s-32 $s-120;
+  width: deprecated.$s-800;
+  margin: deprecated.$s-48 auto deprecated.$s-32 deprecated.$s-120;
   display: flex;
-  max-width: $s-368;
+  max-width: deprecated.$s-368;
   width: 100%;
 
   &.two-columns {
-    max-width: $s-520;
+    max-width: deprecated.$s-520;
     justify-content: space-between;
     flex-direction: row;
   }
 
   h2 {
-    margin-bottom: $s-16;
+    margin-bottom: deprecated.$s-16;
   }
 
   form {
-    width: $s-468;
+    width: deprecated.$s-468;
 
     .custom-input,
     .custom-select {
@@ -80,26 +80,26 @@
         position: relative;
         text-transform: uppercase;
         color: var(--color-foreground-primary);
-        font-size: $fs-11;
-        margin-bottom: $s-12;
-        margin-left: calc(-1 * $s-4);
+        font-size: deprecated.$fs-11;
+        margin-bottom: deprecated.$s-12;
+        margin-left: calc(-1 * deprecated.$s-4);
       }
       input,
       select {
         background-color: var(--color-background-tertiary);
-        border-radius: $s-8;
+        border-radius: deprecated.$s-8;
         border-color: transparent;
         color: var(--color-foreground-primary);
-        padding: 0 $s-16;
+        padding: 0 deprecated.$s-16;
         &:focus {
-          outline: $s-1 solid var(--color-accent-primary);
+          outline: deprecated.$s-1 solid var(--color-accent-primary);
         }
         ::placeholder {
           color: var(--color-foreground-secondary);
         }
       }
       .help-icon {
-        bottom: $s-12;
+        bottom: deprecated.$s-12;
         top: auto;
         svg {
           fill: var(--color-foreground-secondary);
@@ -114,30 +114,30 @@
       }
       .input-container {
         background-color: var(--color-background-tertiary);
-        border-radius: $s-8;
+        border-radius: deprecated.$s-8;
         border-color: transparent;
-        margin-top: $s-24;
+        margin-top: deprecated.$s-24;
         .main-content {
           label {
             position: absolute;
-            top: calc(-1 * $s-24);
+            top: calc(-1 * deprecated.$s-24);
           }
           span {
             color: var(--color-foreground-primary);
           }
         }
         &:focus {
-          border: $s-1 solid var(--color-accent-primary);
+          border: deprecated.$s-1 solid var(--color-accent-primary);
         }
       }
       textarea {
-        border-radius: $s-8;
-        padding: $s-12 $s-16;
+        border-radius: deprecated.$s-8;
+        padding: deprecated.$s-12 deprecated.$s-16;
         background-color: var(--color-background-tertiary);
         color: var(--color-foreground-primary);
         border: none;
         &:focus {
-          outline: $s-1 solid var(--color-accent-primary);
+          outline: deprecated.$s-1 solid var(--color-accent-primary);
         }
       }
     }
@@ -146,7 +146,7 @@
       color: var(--color-foreground-primary);
     }
     .field-title:not(:first-child) {
-      margin-top: $s-64;
+      margin-top: deprecated.$s-64;
     }
 
     .field-text {
@@ -155,7 +155,7 @@
     button,
     .btn-secondary {
       width: 100%;
-      font-size: $fs-11;
+      font-size: deprecated.$fs-11;
       text-transform: uppercase;
       background-color: var(--color-background-tertiary);
       color: var(--color-foreground-primary);
@@ -169,41 +169,41 @@
     }
   }
   .links {
-    margin-top: $s-12;
+    margin-top: deprecated.$s-12;
   }
 }
 
 .profile-form {
   display: flex;
   flex-direction: column;
-  max-width: $s-368;
+  max-width: deprecated.$s-368;
   width: 100%;
 
   .newsletter-subs {
-    border-bottom: $s-1 solid var(--color-foreground-secondary);
-    border-top: $s-1 solid var(--color-foreground-secondary);
-    padding: $s-32 0;
-    margin-bottom: $s-32;
+    border-bottom: deprecated.$s-1 solid var(--color-foreground-secondary);
+    border-top: deprecated.$s-1 solid var(--color-foreground-secondary);
+    padding: deprecated.$s-32 0;
+    margin-bottom: deprecated.$s-32;
 
     .newsletter-title {
       font-family: "worksans", "vazirmatn", sans-serif;
       color: var(--color-foreground-secondary);
-      font-size: $fs-14;
+      font-size: deprecated.$fs-14;
     }
 
     label {
       font-family: "worksans", "vazirmatn", sans-serif;
       color: var(--color-background-primary);
-      font-size: $fs-12;
-      margin-right: calc(-1 * $s-16);
-      margin-bottom: $s-12;
+      font-size: deprecated.$fs-12;
+      margin-right: calc(-1 * deprecated.$s-16);
+      margin-bottom: deprecated.$s-12;
     }
 
     .info {
       font-family: "worksans", "vazirmatn", sans-serif;
       color: var(--color-foreground-secondary);
-      font-size: $fs-12;
-      margin-bottom: $s-8;
+      font-size: deprecated.$fs-12;
+      margin-bottom: deprecated.$s-8;
     }
 
     .input-checkbox label {
@@ -215,30 +215,30 @@
 .avatar-form {
   display: flex;
   flex-direction: column;
-  width: $s-120;
-  min-width: $s-120;
+  width: deprecated.$s-120;
+  min-width: deprecated.$s-120;
 
   img {
     border-radius: 50%;
     flex-shrink: 0;
-    height: $s-120;
-    margin-right: $s-16;
-    width: $s-120;
+    height: deprecated.$s-120;
+    margin-right: deprecated.$s-16;
+    width: deprecated.$s-120;
   }
 
   .image-change-field {
     position: relative;
-    width: $s-120;
-    height: $s-120;
+    width: deprecated.$s-120;
+    height: deprecated.$s-120;
 
     .update-overlay {
       opacity: 0;
       cursor: pointer;
       position: absolute;
-      width: $s-120;
-      height: $s-120;
+      width: deprecated.$s-120;
+      height: deprecated.$s-120;
       border-radius: 50%;
-      font-size: $fs-24;
+      font-size: deprecated.$fs-24;
       color: var(--color-foreground-primary);
       line-height: 5;
       text-align: center;
@@ -247,8 +247,8 @@
     }
 
     input[type="file"] {
-      width: $s-120;
-      height: $s-120;
+      width: deprecated.$s-120;
+      height: deprecated.$s-120;
       position: absolute;
       opacity: 0;
       cursor: pointer;
@@ -267,7 +267,7 @@
 .options-form,
 .password-form {
   h2 {
-    font-size: $fs-14;
-    margin-bottom: $s-20;
+    font-size: deprecated.$fs-14;
+    margin-bottom: deprecated.$s-20;
   }
 }

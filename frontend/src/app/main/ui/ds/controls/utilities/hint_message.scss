@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../typography.scss" as *;
-@use "../../colors.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/colors.scss" as *;
 
 .hint-message {
   --hint-color: var(--color-foreground-secondary);

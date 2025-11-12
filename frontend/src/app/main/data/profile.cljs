@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.types.profile :refer [schema:profile]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -18,25 +19,15 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.plugins.register :as plugins.register]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
-   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (declare update-profile-props)
 
 ;; --- SCHEMAS
-
-(def ^:private
-  schema:profile
-  [:map {:title "Profile"}
-   [:id ::sm/uuid]
-   [:created-at {:optional true} :any]
-   [:fullname {:optional true} :string]
-   [:email {:optional true} :string]
-   [:lang {:optional true} :string]
-   [:theme {:optional true} :string]])
 
 (def check-profile
   (sm/check-fn schema:profile))
@@ -92,6 +83,16 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :get-profile)
+           (rx/mapcat (fn [profile]
+                        (if (and (contains? cf/flags :subscriptions)
+                                 (is-authenticated? profile))
+                          (->> (rp/cmd! :get-subscription-usage {})
+                               (rx/map (fn [{:keys [editors]}]
+                                         (update-in profile [:props :subscription] assoc :editors editors)))
+                               (rx/catch (fn [cause]
+                                           (js/console.error "unexpected error on obtaining subscription usage" cause)
+                                           (rx/of profile))))
+                          (rx/of profile))))
            (rx/map (partial ptk/data-event ::profile-fetched))
            (rx/catch on-fetch-profile-exception)))))
 
@@ -159,9 +160,6 @@
       (update-in state [:profile :theme]
                  (fn [current]
                    (let [current (cond
-                                   (= current "system")
-                                   (theme/get-system-theme)
-
                                    ;; NOTE: this is a workaround for
                                    ;; the old data on the database
                                    ;; where whe have `default` value
@@ -172,7 +170,10 @@
                                    current)]
                      (case current
                        "dark"   "light"
-                       "light"  "dark")))))
+                       "light"  "system"
+                       "system" "dark"
+                       ; Failsafe for missing data
+                       "dark")))))
 
     ptk/WatchEvent
     (watch [it state _]
@@ -356,8 +357,18 @@
 
 ;; --- EVENT: request-account-deletion
 
-(def profile-deleted?
+(def profile-deleted-event?
   (ptk/type? ::profile-deleted))
+
+(defn- delete-subscription
+  []
+  (if (contains? cf/flags :subscriptions)
+    (->> (http/fetch {:uri "/payments/subscriptions/delete"
+                      :credentials "include"
+                      :method :get})
+         (rx/map (constantly nil))
+         (rx/catch #(rx/empty)))
+    (rx/empty)))
 
 (defn request-account-deletion
   [params]
@@ -366,13 +377,17 @@
     (watch [_ _ _]
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
-                  on-success identity}} (meta params)]
-        (->> (rp/cmd! :delete-profile {})
-             (rx/tap on-success)
-             (rx/map (fn [_]
-                       (ptk/data-event ::profile-deleted params)))
-             (rx/catch on-error)
-             (rx/delay-at-least 300))))))
+                  on-success identity}}
+            (meta params)]
+
+        (rx/concat
+         (delete-subscription)
+         (->> (rp/cmd! :delete-profile {})
+              (rx/tap on-success)
+              (rx/map (fn [_]
+                        (ptk/data-event ::profile-deleted params)))
+              (rx/catch on-error)
+              (rx/delay-at-least 300)))))))
 
 ;; --- EVENT: request-profile-recovery
 
@@ -392,7 +407,8 @@
       (watch [_ _ _]
         (let [{:keys [on-error on-success]
                :or {on-error rx/throw
-                    on-success identity}} (meta data)]
+                    on-success identity}}
+              (meta data)]
 
           (->> (rp/cmd! :request-profile-recovery data)
                (rx/tap on-success)

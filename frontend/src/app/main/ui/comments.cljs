@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
@@ -24,14 +25,13 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.time :as dt]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [clojure.math :refer [floor]]
@@ -583,7 +583,7 @@
       :on-key-down handle-key-down
       :icon-class (stl/css-case :open-mentions-button true
                                 :is-toggled @display-mentions*)
-      :icon "at"}]))
+      :icon i/at}]))
 
 (def ^:private schema:comment-avatar
   [:map
@@ -622,7 +622,8 @@
                                         :else "read")}]
     [:div {:class (stl/css :author-identity)}
      [:div {:class (stl/css :author-fullname)} (:fullname profile)]
-     [:div {:class (stl/css :author-timeago)} (dt/timeago (:modified-at item))]]]
+     [:div {:class (stl/css :author-timeago)}
+      (ct/timeago (:modified-at item))]]]
 
    [:div {:class (stl/css :item)}
     [:> comment-content* {:content (:content item)}]]
@@ -631,7 +632,9 @@
     (let [total-comments  (:count-comments item)
           unread-comments (:count-unread-comments item)
           total-replies   (dec total-comments)
-          unread-replies  (if (= unread-comments total-comments) (dec unread-comments) unread-comments)]
+          unread-replies  (if (= unread-comments total-comments)
+                            (dec unread-comments)
+                            unread-comments)]
       [:*
        (when (> total-replies 0)
          (if (= total-replies 1)
@@ -663,11 +666,12 @@
 
     [:div {:class (stl/css :form-buttons-wrapper)}
      [:> mentions-button*]
-     [:> button* {:variant "ghost"
-                  :type "button"
-                  :on-key-down handle-cancel
-                  :on-click on-cancel}
-      (tr "ds.confirm-cancel")]
+     (when (some? on-cancel)
+       [:> button* {:variant "ghost"
+                    :type "button"
+                    :on-key-down handle-cancel
+                    :on-click on-cancel}
+        (tr "ds.confirm-cancel")])
      [:> button* {:variant "primary"
                   :type "button"
                   :on-key-down handle-submit
@@ -683,52 +687,39 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [on-submit]}]
-  (let [show-buttons? (mf/use-state false)
-        content       (mf/use-state "")
+  (let [content       (mf/use-state "")
 
         disabled? (or (blank-content? @content)
                       (exceeds-length? @content))
 
-        on-focus
+        on-cancel
         (mf/use-fn
-         #(reset! show-buttons? true))
-
-        on-blur
-        (mf/use-fn
-         #(reset! show-buttons? false))
+         #(st/emit! :interrupt))
 
         on-change
         (mf/use-fn
          #(reset! content %))
-
-        on-cancel
-        (mf/use-fn
-         #(do (reset! content "")
-              (reset! show-buttons? false)))
 
         on-submit*
         (mf/use-fn
          (mf/deps @content)
          (fn []
            (on-submit @content)
-           (on-cancel)))]
+           (reset! content "")))]
 
     [:div {:class (stl/css :form)}
      [:> comment-input*
       {:value @content
        :placeholder (tr "labels.reply.thread")
        :autofocus true
-       :on-blur on-blur
-       :on-focus on-focus
        :on-ctrl-enter on-submit*
        :on-change on-change}]
      (when (exceeds-length? @content)
        [:div {:class (stl/css :error-text)}
         (tr "errors.character-limit-exceeded")])
-     (when (or @show-buttons? (seq @content))
-       [:> comment-form-buttons* {:on-submit on-submit*
-                                  :on-cancel on-cancel
-                                  :is-disabled disabled?}])]))
+     [:> comment-form-buttons* {:on-submit on-submit*
+                                :on-cancel on-cancel
+                                :is-disabled disabled?}]]))
 
 (mf/defc comment-edit-form*
   {::mf/private true}
@@ -914,12 +905,12 @@
                :title (tr "labels.comment.mark-as-solved")
                :on-click toggle-resolved}
          [:span {:class (stl/css-case :checkbox true
-                                      :global/checked (:is-resolved thread))} i/tick]])
+                                      :global/checked (:is-resolved thread))} deprecated-icon/tick]])
       (when (= (:id profile) (:id owner))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")
                           :on-click on-toggle-options
-                          :icon "menu"}])]
+                          :icon i/menu}])]
      [:& dropdown {:show (= options uuid/zero)
                    :on-close on-hide-options}
       [:ul {:class (stl/css :dropdown-menu)}
@@ -977,13 +968,14 @@
        [:> comment-avatar* {:image (cfg/resolve-profile-photo-url owner)}]
        [:div {:class (stl/css :author-identity)}
         [:div {:class (stl/css :author-fullname)} (:fullname owner)]
-        [:div {:class (stl/css :author-timeago)} (dt/timeago (:modified-at comment))]]
+        [:div {:class (stl/css :author-timeago)}
+         (ct/timeago (:modified-at comment))]]
 
        (when (= (:id profile) (:id owner))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
                            :on-click on-toggle-options
-                           :icon "menu"}])]
+                           :icon i/menu}])]
 
       [:div {:class (stl/css :item)}
        (if @edition?
@@ -1364,7 +1356,7 @@
            :on-click on-click*}
      [:div {:class (stl/css :location)}
       [:div {:class (stl/css :location-icon)}
-       [:> icon* {:icon-id "comments"}]]
+       [:> icon* {:icon-id i/comments}]]
       [:div {:class (stl/css :location-text)}
        (str "#" (:seqn item))
        (str " " (:file-name item))

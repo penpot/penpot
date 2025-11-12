@@ -7,151 +7,202 @@
 (ns app.main.ui.workspace.sidebar.options.menus.fill
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
-   [app.common.data :as d]
-   [app.common.types.color :as ctc]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.color :as clr]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape.attrs :refer [default-color]]
-   [app.config :as cfg]
+   [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as feat]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-;; FIXME:revisit this
 (def fill-attrs
-  [:fills
-   :fill-color
-   :fill-opacity
-   :fill-color-ref-id
-   :fill-color-ref-file
-   :fill-color-gradient
-   :hide-fill-on-export])
+  #{:fills :hide-fill-on-export})
 
-(def fill-attrs-shape
-  (conj fill-attrs :hide-fill-on-export))
+(def ^:private
+  xf:process-fills
+  (map-indexed
+   (fn [index item]
+     (let [color (types.fills/fill->color item)]
+       (with-meta item {:index index :color color})))))
 
-(defn color-values
-  [color]
-  {:color (:fill-color color)
-   :opacity (:fill-opacity color)
-   :id (:fill-color-ref-id color)
-   :file-id (:fill-color-ref-file color)
-   :gradient (:fill-color-gradient color)})
+(defn- prepare-fills
+  "Internal helper hook that prepares fills"
+  [fills]
+  (if (= :multiple fills)
+    fills
+    (->> fills
+         (into [] xf:process-fills)
+         (not-empty))))
 
-(mf/defc fill-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
-  [{:keys [ids type values] :as props}]
-  (let [label (case type
-                :multiple (tr "workspace.options.selection-fill")
-                :group (tr "workspace.options.group-fill")
-                (tr "workspace.options.fill"))
+(defn- check-props
+  "A fills-menu specific memoize check function that only checks if
+  specific values are changed on provided props. This allows pass the
+  whole shape as values without adding additional rerenders when other
+  shape properties changes."
+  [n-props o-props]
+  (and (identical? (unchecked-get n-props "ids")
+                   (unchecked-get o-props "ids"))
+       (let [o-vals  (unchecked-get o-props "values")
+             n-vals  (unchecked-get n-props "values")
+             o-fills (get o-vals :fills)
+             n-fills (get n-vals :fills)
+             o-applied-tokens (get o-vals :applied-tokens)
+             n-applied-tokens (get n-vals :applied-tokens)
+             o-hide  (get o-vals :hide-fill-on-export)
+             n-hide  (get n-vals :hide-fill-on-export)]
+         (and (identical? o-hide n-hide)
+              (identical? o-applied-tokens n-applied-tokens)
+              (identical? o-fills n-fills)))))
 
-        ;; Excluding nil values
-        values               (d/without-nils values)
-        fills                (if (contains? cfg/flags :frontend-binary-fills)
-                               (take types.fill/MAX-FILLS (d/nilv (:fills values) []))
-                               (:fills values))
-        has-fills?           (or (= :multiple fills) (some? (seq fills)))
-        can-add-fills?       (if (contains? cfg/flags :frontend-binary-fills)
-                               (and (not (= :multiple fills))
-                                    (< (count fills) types.fill/MAX-FILLS))
-                               (not (= :multiple fills)))
+(mf/defc fill-menu*
+  {::mf/wrap [#(mf/memo' % check-props)]}
+  [{:keys [ids type values applied-tokens]}]
 
-        state*               (mf/use-state has-fills?)
-        open?                (deref state*)
+  (let [fills          (get values :fills)
+        hide-on-export (get values :hide-fill-on-export false)
+        fill-token-applied (:fill applied-tokens)
 
-        toggle-content       (mf/use-fn #(swap! state* not))
+        render-wasm?   (feat/use-feature "render-wasm/v1")
 
-        open-content         (mf/use-fn #(reset! state* true))
 
-        close-content        (mf/use-fn #(reset! state* false))
+        ^boolean
+        multiple?      (= :multiple fills)
 
-        hide-fill-on-export? (:hide-fill-on-export values false)
+        fills          (mf/with-memo [fills]
+                         (prepare-fills fills))
 
-        checkbox-ref         (mf/use-ref)
+        has-fills?     (or multiple? (some? fills))
+
+        empty-fills?   (and (not multiple?)
+                            (= 0 (count fills)))
+
+        open*          (mf/use-state has-fills?)
+        open?          (deref open*)
+
+        toggle-content (mf/use-fn #(swap! open* not))
+        open-content   (mf/use-fn #(reset! open* true))
+        close-content  (mf/use-fn #(reset! open* false))
+
+        checkbox-ref   (mf/use-ref)
+
+        can-add-fills?
+        (if render-wasm?
+          (and (not multiple?)
+               (< (count fills) types.fills/MAX-FILLS))
+          (not ^boolean multiple?))
+
+        label
+        (case type
+          :multiple (tr "workspace.options.selection-fill")
+          :group (tr "workspace.options.group-fill")
+          (tr "workspace.options.fill"))
 
         on-add
         (mf/use-fn
-         (mf/deps ids fills)
+         (mf/deps ids multiple? empty-fills?)
          (fn [_]
            (when can-add-fills?
+             (st/emit! (udw/trigger-bounding-box-cloaking ids))
              (st/emit! (dc/add-fill ids {:color default-color
                                          :opacity 1}))
-             (when (or (= :multiple fills)
-                       (not (some? (seq fills))))
+             (when (or multiple? empty-fills?)
                (open-content)))))
 
         on-change
-        (fn [index]
-          (fn [color]
-            (st/emit! (dc/change-fill ids color index))))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [color index]
+           (let [color (select-keys color clr/color-attrs)]
+             (st/emit! (dc/change-fill ids color index)))))
 
         on-reorder
-        (fn [new-index]
-          (fn [index]
-            (st/emit! (dc/reorder-fills ids index new-index))))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dc/reorder-fills ids from-pos to-space-between-pos))))
 
         on-remove
-        (fn [index]
-          (fn []
-            (st/emit! (dc/remove-fill ids {:color default-color
-                                           :opacity 1} index))
-            (when (or (= :multiple fills)
-                      (= 0 (count (seq fills))))
-              (close-content))))
+        (mf/use-fn
+         (mf/deps ids multiple? empty-fills?)
+         (fn [index _event]
+           (st/emit! (dc/remove-fill ids index))
+           (when (or multiple? empty-fills?)
+             (close-content))))
 
         on-remove-all
-        (fn [_]
-          (st/emit! (dc/remove-all-fills ids {:color clr/black
-                                              :opacity 1})))
+        (mf/use-fn
+         (mf/deps ids)
+         #(st/emit! (dc/remove-all-fills ids)))
 
         on-detach
         (mf/use-fn
          (mf/deps ids)
-         (fn [index]
-           (fn [color]
-             (let [color (dissoc color :ref-id :ref-file)]
-               (st/emit! (dc/change-fill ids color index))))))
+         (fn [index _event]
+           (st/emit! (dc/detach-fill ids index))))
 
-        on-change-show-fill-on-export
+        on-change-show-on-export
         (mf/use-fn
          (mf/deps ids)
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)]
              (st/emit! (dc/change-hide-fill-on-export ids (not value))))))
 
-        disable-drag    (mf/use-state false)
+        disable-drag*
+        (mf/use-state false)
 
-        on-focus (fn [_]
-                   (reset! disable-drag true))
+        disable-drag?
+        (deref disable-drag*)
 
-        on-blur (fn [_]
-                  (reset! disable-drag false))]
+        on-focus
+        (mf/use-fn
+         #(reset! disable-drag* true))
 
-    (mf/use-layout-effect
-     (mf/deps hide-fill-on-export?)
-     #(let [checkbox (mf/ref-val checkbox-ref)]
-        (when checkbox
-           ;; Note that the "indeterminate" attribute only may be set by code, not as a static attribute.
-           ;; See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#attr-indeterminate
-          (if (= hide-fill-on-export? :multiple)
-            (dom/set-attribute! checkbox "indeterminate" true)
-            (dom/remove-attribute! checkbox "indeterminate")))))
+        on-blur
+        (mf/use-fn #(reset! disable-drag* false))
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-fills?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        label
-                     :class        (stl/css-case :title-spacing-fill (not has-fills?))}
+        on-token-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [_ token]
+           (st/emit!
+            (dwta/toggle-token {:token token
+                                :attrs #{:fill}
+                                :shape-ids ids
+                                :expand-with-children true}))))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token]
+           (st/emit! (dwta/unapply-token {:attributes #{:fill}
+                                          :token token
+                                          :shape-ids ids}))))]
+
+    (mf/with-layout-effect [hide-on-export]
+      (when-let [checkbox (mf/ref-val checkbox-ref)]
+        ;; Note that the "indeterminate" attribute only may be set by code, not as a static attribute.
+        ;; See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#attr-indeterminate
+        (if (= hide-on-export :multiple)
+          (dom/set-attribute! checkbox "indeterminate" true)
+          (dom/remove-attribute! checkbox "indeterminate"))))
+
+    [:div {:class (stl/css :fill-section)}
+     [:div {:class (stl/css :fill-title)}
+      [:> title-bar* {:collapsable  has-fills?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        label
+                      :class        (stl/css-case :fill-title-bar (not has-fills?))}
 
        (when (not (= :multiple fills))
          [:> icon-button* {:variant "ghost"
@@ -159,48 +210,58 @@
                            :on-click on-add
                            :data-testid "add-fill"
                            :disabled (not can-add-fills?)
-                           :icon "add"}])]]
+                           :icon i/add}])]]
 
      (when open?
-       [:div {:class (stl/css :element-content)}
+       [:div {:class (stl/css :fill-content)}
         (cond
           (= :multiple fills)
-          [:div {:class (stl/css :element-set-options-group)}
-           [:div {:class (stl/css :group-label)}
+          [:div {:class (stl/css :fill-multiple)}
+           [:div {:class (stl/css :fill-multiple-label)}
             (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.fill.remove-fill")
                              :on-click on-remove-all
-                             :icon "remove"}]]
+                             :icon i/remove}]]
 
-          (seq fills)
-          [:& h/sortable-container {}
-           (for [[index value] (d/enumerate fills)]
-             [:> color-row* {:color (ctc/fill->color value)
-                             :key index
-                             :index index
-                             :title (tr "workspace.options.fill")
-                             :on-change (on-change index)
-                             :on-reorder (on-reorder index)
-                             :on-detach (on-detach index)
-                             :on-remove (on-remove index)
-                             :disable-drag disable-drag
-                             :on-focus on-focus
-                             :select-on-focus (not @disable-drag)
-                             :on-blur on-blur}])])
+          (some? fills)
+          [:> h/sortable-container* {}
+           (for [value fills]
+             (let [mdata (meta value)
+                   index (get mdata :index)
+                   color (get mdata :color)]
+               [:> color-row* {:color color
+                               :key index
+                               :index index
+                               :title (tr "workspace.options.fill")
+                               :on-change on-change
+                               :on-reorder on-reorder
+                               :on-detach on-detach
+                               :on-detach-token on-detach-token
+                               :on-remove on-remove
+                               :disable-drag disable-drag?
+                               :on-focus on-focus
+                               :applied-token (if (= index 0)
+                                                fill-token-applied
+                                                nil)
+                               :on-token-change on-token-change
+                               :origin :fill
+                               :select-on-focus (not disable-drag?)
+                               :on-blur on-blur}]))])
 
         (when (or (= type :frame)
-                  (and (= type :multiple) (some? (:hide-fill-on-export values))))
-          [:div {:class (stl/css :checkbox)}
+                  (and (= type :multiple)
+                       (some? hide-on-export)))
+          [:div {:class (stl/css :fill-checkbox)}
            [:label {:for "show-fill-on-export"
-                    :class (stl/css-case :global/checked (not hide-fill-on-export?))}
+                    :class (stl/css-case :global/checked (not hide-on-export))}
             [:span {:class (stl/css-case :check-mark true
-                                         :checked (not hide-fill-on-export?))}
-             (when (not hide-fill-on-export?)
-               i/status-tick)]
+                                         :checked (not hide-on-export))}
+             (when (not hide-on-export)
+               deprecated-icon/status-tick)]
             (tr "workspace.options.show-fill-on-export")
             [:input {:type "checkbox"
                      :id "show-fill-on-export"
                      :ref checkbox-ref
-                     :checked (not hide-fill-on-export?)
-                     :on-change on-change-show-fill-on-export}]]])])]))
+                     :checked (not hide-on-export)
+                     :on-change on-change-show-on-export}]]])])]))

@@ -11,63 +11,64 @@
    [app.main.data.workspace.path :as drp]
    [app.main.data.workspace.path.shortcuts :as sc]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private pentool-icon
-  (i/icon-xref :pentool (stl/css :pentool-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :pentool (stl/css :pentool-icon :pathbar-icon)))
 
 (def ^:private move-icon
-  (i/icon-xref :move (stl/css :move-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :move (stl/css :move-icon :pathbar-icon)))
 
 (def ^:private add-icon
-  (i/icon-xref :add (stl/css :add-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :add (stl/css :add-icon :pathbar-icon)))
 
 (def ^:private remove-icon
-  (i/icon-xref :remove (stl/css :remove :pathbar-icon)))
+  (deprecated-icon/icon-xref :remove (stl/css :remove :pathbar-icon)))
 
 (def ^:private merge-nodes-icon
-  (i/icon-xref :merge-nodes (stl/css :merge-nodes-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :merge-nodes (stl/css :merge-nodes-icon :pathbar-icon)))
 
 (def ^:private join-nodes-icon
-  (i/icon-xref :join-nodes (stl/css :join-nodes-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :join-nodes (stl/css :join-nodes-icon :pathbar-icon)))
 
 (def ^:private separate-nodes-icon
-  (i/icon-xref :separate-nodes (stl/css :separate-nodes-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :separate-nodes (stl/css :separate-nodes-icon :pathbar-icon)))
 
 (def ^:private to-corner-icon
-  (i/icon-xref :to-corner (stl/css :to-corner-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :to-corner (stl/css :to-corner-icon :pathbar-icon)))
 
 (def ^:private to-curve-icon
-  (i/icon-xref :to-curve (stl/css :to-curve-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :to-curve (stl/css :to-curve-icon :pathbar-icon)))
 
 (def ^:private snap-nodes-icon
-  (i/icon-xref :snap-nodes (stl/css :snap-nodes-icon :pathbar-icon)))
+  (deprecated-icon/icon-xref :snap-nodes (stl/css :snap-nodes-icon :pathbar-icon)))
 
 (defn check-enabled [content selected-points]
-  (let [segments (path.segm/get-segments-with-points content selected-points)
-        num-segments (count segments)
-        num-points (count selected-points)
-        points-selected? (seq selected-points)
-        segments-selected? (seq segments)
-        ;; max segments for n points is (n × (n -1)) / 2
-        max-segments (-> num-points
-                         (* (- num-points 1))
-                         (/ 2))
-        is-curve? (some #(path.segm/is-curve? content %) selected-points)]
+  (when content
+    (let [segments (path.segm/get-segments-with-points content selected-points)
+          num-segments (count segments)
+          num-points (count selected-points)
+          points-selected? (seq selected-points)
+          segments-selected? (seq segments)
+          ;; max segments for n points is (n × (n -1)) / 2
+          max-segments (-> num-points
+                           (* (- num-points 1))
+                           (/ 2))
+          is-curve? (some #(path.segm/is-curve? content %) selected-points)]
 
-    {:make-corner (and points-selected? is-curve?)
-     :make-curve (and points-selected? (not is-curve?))
-     :add-node segments-selected?
-     :remove-node points-selected?
-     :merge-nodes segments-selected?
-     :join-nodes (and points-selected? (>= num-points 2) (< num-segments max-segments))
-     :separate-nodes segments-selected?}))
+      {:make-corner (and points-selected? is-curve?)
+       :make-curve (and points-selected? (not is-curve?))
+       :add-node segments-selected?
+       :remove-node points-selected?
+       :merge-nodes segments-selected?
+       :join-nodes (and points-selected? (>= num-points 2) (< num-segments max-segments))
+       :separate-nodes segments-selected?})))
 
 (mf/defc path-actions*
-  [{:keys [shape edit-path]}]
-  (let [{:keys [edit-mode selected-points snap-toggled]} edit-path
+  [{:keys [shape state]}]
+  (let [{:keys [edit-mode selected-points snap-toggled]} state
 
         content (:content shape)
 

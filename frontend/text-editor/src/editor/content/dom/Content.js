@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { createInline, isLikeInline } from "./Inline.js";
+import { createTextSpan, isLikeTextSpan } from "./TextSpan.js";
 import {
   createEmptyParagraph,
   createParagraph,
@@ -14,13 +14,18 @@ import {
 } from "./Paragraph.js";
 import { isDisplayBlock, normalizeStyles } from "./Style.js";
 
+const DEFAULT_FONT_SIZE = "14px";
+const DEFAULT_FONT_WEIGHT = 400;
+const DEFAULT_FONT_FAMILY = "sourcesanspro";
+const DEFAULT_FILLS = '[["^ ","~:fill-color", "#000000","~:fill-opacity", 1]]';
+
 /**
  * Returns if the content fragment should be treated as
- * inline content and not a paragraphed one.
+ * text span content and not a paragraphed one.
  *
  * @returns {boolean}
  */
-function isContentFragmentFromDocumentInline(document) {
+function isContentFragmentFromDocumentTextSpan(document) {
   const nodeIterator = document.createNodeIterator(
     document.documentElement,
     NodeFilter.SHOW_ELEMENT,
@@ -32,7 +37,7 @@ function isContentFragmentFromDocumentInline(document) {
       continue;
     }
 
-    if (!isLikeInline(currentNode)) return false;
+    if (!isLikeTextSpan(currentNode)) return false;
 
     currentNode = nodeIterator.nextNode();
   }
@@ -48,10 +53,7 @@ function isContentFragmentFromDocumentInline(document) {
  * @returns {DocumentFragment}
  */
 export function mapContentFragmentFromDocument(document, root, styleDefaults) {
-  const nodeIterator = document.createNodeIterator(
-    root,
-    NodeFilter.SHOW_TEXT
-  );
+  const nodeIterator = document.createNodeIterator(root, NodeFilter.SHOW_TEXT);
   const fragment = document.createDocumentFragment();
 
   let currentParagraph = null;
@@ -73,12 +75,29 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
         currentParagraph = createParagraph(undefined, currentStyle);
       }
     }
-    const inline = createInline(new Text(currentNode.nodeValue), currentStyle);
-    const fontSize = inline.style.getPropertyValue("font-size");
-    if (!fontSize) console.warn("font-size", fontSize);
-    const fontFamily = inline.style.getPropertyValue("font-family");
-    if (!fontFamily) console.warn("font-family", fontFamily);
-    currentParagraph.appendChild(inline);
+    const textSpan = createTextSpan(new Text(currentNode.nodeValue), currentStyle);
+    const fontSize = textSpan.style.getPropertyValue("font-size");
+    if (!fontSize) {
+      console.warn("font-size", fontSize);
+      textSpan.style.setProperty("font-size", styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE);
+    }
+    const fontFamily = textSpan.style.getPropertyValue("font-family");
+    if (!fontFamily) {
+      console.warn("font-family", fontFamily);
+      textSpan.style.setProperty("font-family", styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY);
+    }
+    const fontWeight = textSpan.style.getPropertyValue("font-weight");
+    if (!fontWeight) {
+      console.warn("font-weight", fontWeight);
+      textSpan.style.setProperty("font-weight", styleDefaults?.getPropertyValue("font-weight") ?? DEFAULT_FONT_WEIGHT)
+    }
+    const fills = textSpan.style.getPropertyValue('--fills');
+    if (!fills) {
+      console.warn("fills", fills);
+      textSpan.style.setProperty("--fills", styleDefaults?.getPropertyValue("--fills") ?? DEFAULT_FILLS);
+    }
+
+    currentParagraph.appendChild(textSpan);
 
     currentNode = nodeIterator.nextNode();
   }
@@ -88,9 +107,9 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
   }
 
   if (fragment.children.length === 1) {
-    const isContentInline = isContentFragmentFromDocumentInline(document);
-    if (isContentInline) {
-      currentParagraph.dataset.inline = "force";
+    const isContentTextSpan = isContentFragmentFromDocumentTextSpan(document);
+    if (isContentTextSpan) {
+      currentParagraph.dataset.textSpan = "force";
     }
   }
 
@@ -110,7 +129,7 @@ export function mapContentFragmentFromHTML(html, styleDefaults) {
   return mapContentFragmentFromDocument(
     htmlDocument,
     htmlDocument.documentElement,
-    styleDefaults
+    styleDefaults,
   );
 }
 
@@ -129,9 +148,10 @@ export function mapContentFragmentFromString(string, styleDefaults) {
       fragment.appendChild(createEmptyParagraph(styleDefaults));
     } else {
       fragment.appendChild(
-        createParagraph([
-          createInline(new Text(line), styleDefaults)
-        ], styleDefaults)
+        createParagraph(
+          [createTextSpan(new Text(line), styleDefaults)],
+          styleDefaults,
+        ),
       );
     }
   }

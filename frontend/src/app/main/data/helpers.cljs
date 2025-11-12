@@ -69,14 +69,35 @@
    (process-selected objects selected nil))
 
   ([objects selected {:keys [omit-blocked?] :or {omit-blocked? false}}]
-   (letfn [(selectable? [id]
-             (and (contains? objects id)
-                  (or (not omit-blocked?)
-                      (not (dm/get-in objects [id :blocked] false)))))]
-     (let [selected (->> selected (cfh/clean-loops objects))]
-       (into (d/ordered-set)
-             (filter selectable?)
-             selected)))))
+   (let [selectable?
+         (fn [id]
+           (and (contains? objects id)
+                (or (not omit-blocked?)
+                    (not (dm/get-in objects [id :blocked] false)))))
+
+         selected
+         (cfh/clean-loops objects selected)]
+
+     (into (d/ordered-set)
+           (filter selectable?)
+           selected))))
+
+(defn split-text-shapes
+  "Split text shapes from non-text shapes"
+  [objects ids]
+  (loop [ids (seq ids)
+         text-ids []
+         shape-ids []]
+    (if-let [id (first ids)]
+      (let [shape (get objects id)]
+        (if (cfh/text-shape? shape)
+          (recur (rest ids)
+                 (conj text-ids id)
+                 shape-ids)
+          (recur (rest ids)
+                 text-ids
+                 (conj shape-ids id))))
+      [text-ids shape-ids])))
 
 ;; DEPRECATED
 (defn lookup-selected-raw

@@ -13,7 +13,7 @@
 
 (def ^:private schema::hint-message
   [:map
-   [:message :string]
+   [:message [:or fn? :string]]
    [:id :string]
    [:type {:optional true} [:enum "hint" "error" "warning"]]
    [:class {:optional true} :string]])

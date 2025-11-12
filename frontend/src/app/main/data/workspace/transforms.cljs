@@ -28,6 +28,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
@@ -35,7 +36,9 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.snap :as snap]
+   [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.render-wasm.api :as wasm.api]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -143,7 +146,7 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout objects [point lock? center? point-snap]]
             (let [selrect  (dm/get-prop shape :selrect)
                   width    (dm/get-prop selrect :width)
                   height   (dm/get-prop selrect :height)
@@ -215,16 +218,18 @@
                                   (gpt/add resize-origin displacement)
                                   resize-origin)
 
+                  ;; Calculate new grow-type for text layers
+                  new-grow-type
+                  (when (cfh/text-shape? shape)
+                    (dwm/next-grow-type (dm/get-prop shape :grow-type) scalev))
+
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
                   change-width?
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   change-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))
-
-                  auto-width-text?  (and (cfh/text-shape? shape) (= :auto-width (dm/get-prop shape :grow-type)))
-                  auto-height-text? (and (cfh/text-shape? shape) (= :auto-height (dm/get-prop shape :grow-type)))]
+                  (not (mth/close? (dm/get-prop scalev :y) 1))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -233,17 +238,19 @@
                 :always
                 (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
-                ^boolean change-width?
+                (and (ctl/any-layout-immediate-child? objects shape)
+                     (not= (:layout-item-h-sizing shape) :fix)
+                     ^boolean change-width?)
                 (ctm/change-property :layout-item-h-sizing :fix)
 
-                ^boolean change-height?
+                (and (ctl/any-layout-immediate-child? objects shape)
+                     (not= (:layout-item-v-sizing shape) :fix)
+                     ^boolean change-height?)
                 (ctm/change-property :layout-item-v-sizing :fix)
 
-                (and auto-width-text? (or change-width? change-height?))
-                (ctm/change-property :grow-type :fixed)
-
-                (and auto-height-text? change-height?)
-                (ctm/change-property :grow-type :fixed)
+                ;; Set grow-type if it should change
+                (and new-grow-type (not= new-grow-type (dm/get-prop shape :grow-type)))
+                (ctm/change-property :grow-type new-grow-type)
 
                 ^boolean scale-text
                 (ctm/scale-content (dm/get-prop scalev :x)))))
@@ -265,77 +272,82 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [initial-position @ms/mouse-position
+        (if (:blocked shape)
+          (rx/empty)
+          (let [initial-position @ms/mouse-position
 
-              stopper (mse/drag-stopper stream)
-              layout  (:workspace-layout state)
-              page-id (:current-page-id state)
-              focus   (:workspace-focus-selected state)
-              zoom    (dm/get-in state [:workspace-local :zoom] 1)
-              objects (dsh/lookup-page-objects state page-id)
-              shapes  (map (d/getf objects) ids)
+                stopper (mse/drag-stopper stream)
+                layout  (:workspace-layout state)
+                page-id (:current-page-id state)
+                focus   (:workspace-focus-selected state)
+                zoom    (dm/get-in state [:workspace-local :zoom] 1)
+                objects (dsh/lookup-page-objects state page-id)
+                shape-ids (filterv (comp not :blocked (d/getf objects)) ids)]
 
-              resize-events-stream
-              (->> ms/mouse-position
-                   (rx/filter some?)
-                   (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
-                   (rx/map normalize-proportion-lock)
-                   (rx/switch-map
-                    (fn [[point _ _ :as current]]
-                      (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
-                           (rx/map #(conj current %)))))
-                   (rx/map #(resize shape initial-position layout %))
-                   (rx/share))
+            (if (empty? shape-ids)
+              (rx/empty)
+              (let [shapes (map (d/getf objects) shape-ids)
 
+                    resize-events-stream
+                    (->> ms/mouse-position
+                         (rx/filter some?)
+                         (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                         (rx/map normalize-proportion-lock)
+                         (rx/switch-map
+                          (fn [[point _ _ :as current]]
+                            (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
+                                 (rx/map #(conj current %)))))
+                         (rx/map #(resize shape initial-position layout objects %))
+                         (rx/share))
 
-              modifiers-stream
-              (if (features/active-feature? state "render-wasm/v1")
-                (rx/merge
-                 (->> resize-events-stream
-                      (rx/mapcat
-                       (fn [modifiers]
-                         (let [modif-tree (dwm/create-modif-tree ids modifiers)]
-                           (rx/of
-                            (dwm/set-wasm-modifiers
-                             modif-tree
-                             :ignore-constraints (contains? layout :scale-text))))))
-                      (rx/take-until stopper))
+                    modifiers-stream
+                    (if (features/active-feature? state "render-wasm/v1")
+                      (rx/merge
+                       (->> resize-events-stream
+                            (rx/mapcat
+                             (fn [modifiers]
+                               (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
+                                 (rx/of
+                                  (dwm/set-wasm-modifiers
+                                   modif-tree
+                                   :ignore-constraints (contains? layout :scale-text))))))
+                            (rx/take-until stopper))
 
-                 ;; The last event we need to use the old method so the elements are correctly positioned until
-                 ;; all the logic is implemented in wasm
-                 (->> resize-events-stream
+                       ;; The last event we need to use the old method so the elements are correctly
+                       ;; positioned until all the logic is implemented in wasm
+                       (->> resize-events-stream
+                            (rx/take-until stopper)
+                            (rx/last)
+                            (rx/map
+                             #(dwm/apply-wasm-modifiers
+                               (dwm/create-modif-tree shape-ids %)
+                               :ignore-constraints (contains? layout :scale-text)))))
+
+                      (->> resize-events-stream
+                           (rx/mapcat
+                            (fn [modifiers]
+                              (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
+                                (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text))))))
+                           (rx/take-until stopper)))]
+
+                (rx/concat
+                 ;; This initial stream waits for some pixels to be move before making the resize
+                 ;; if you make a click in the border will not make a resize
+                 (->> ms/mouse-position
+                      (rx/map #(gpt/to-vec initial-position %))
+                      (rx/map #(gpt/length %))
+                      (rx/filter #(> % (/ 10 zoom)))
+                      (rx/take 1)
                       (rx/take-until stopper)
-                      (rx/last)
-                      (rx/map
-                       #(dwm/apply-wasm-modifiers
-                         (dwm/create-modif-tree ids %)
-                         :ignore-constraints (contains? layout :scale-text)))))
+                      (rx/mapcat (fn [] modifiers-stream)))
 
-                (->> resize-events-stream
-                     (rx/mapcat
-                      (fn [modifiers]
-                        (let [modif-tree (dwm/create-modif-tree ids modifiers)]
-                          (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text))))))
-                     (rx/take-until stopper)))]
+                 (if (features/active-feature? state "render-wasm/v1")
+                   (rx/of
+                    (finish-transform))
 
-          (rx/concat
-           ;; This initial stream waits for some pixels to be move before making the resize
-           ;; if you make a click in the border will not make a resize
-           (->> ms/mouse-position
-                (rx/map #(gpt/to-vec initial-position %))
-                (rx/map #(gpt/length %))
-                (rx/filter #(> % (/ 10 zoom)))
-                (rx/take 1)
-                (rx/take-until stopper)
-                (rx/mapcat (fn [] modifiers-stream)))
-
-           (if (features/active-feature? state "render-wasm/v1")
-             (rx/of
-              (finish-transform))
-
-             (rx/of
-              (dwm/apply-modifiers)
-              (finish-transform)))))))))
+                   (rx/of
+                    (dwm/apply-modifiers)
+                    (finish-transform))))))))))))
 
 (defn trigger-bounding-box-cloaking
   "Trigger the bounding box cloaking (with default timer of 1sec)
@@ -380,14 +392,26 @@
 
              get-modifier
              (fn [shape]
-               (ctm/change-dimensions-modifiers shape attr value))
+               (let [modifiers (ctm/change-dimensions-modifiers shape attr value)]
+                 ;; For text shapes, also update grow-type based on the resize
+                 (if (cfh/text-shape? shape)
+                   (let [{sr-width :width sr-height :height} (:selrect shape)
+                         new-width (if (= attr :width) value sr-width)
+                         new-height (if (= attr :height) value sr-height)
+                         scalev (gpt/point (/ new-width sr-width) (/ new-height sr-height))
+                         current-grow-type (dm/get-prop shape :grow-type)
+                         new-grow-type (dwm/next-grow-type current-grow-type scalev)]
+                     (cond-> modifiers
+                       (not= new-grow-type current-grow-type)
+                       (ctm/change-property :grow-type new-grow-type)))
+                   modifiers)))
 
              modif-tree
              (-> (dwm/build-modif-tree ids objects get-modifier)
                  (gm/set-objects-modifiers objects))]
 
          (if (features/active-feature? state "render-wasm/v1")
-           (rx/of (dwm/apply-wasm-modifiers modif-tree))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
            (rx/of (dwm/apply-modifiers* objects modif-tree nil options))))))))
 
 (defn change-orientation
@@ -543,9 +567,7 @@
 
 (defn start-move-selected
   "Enter mouse move mode, until mouse button is released."
-  ([]
-   (start-move-selected nil false))
-
+  ([] (start-move-selected nil false))
   ([id shift?]
    (ptk/reify ::start-move-selected
      ptk/WatchEvent
@@ -601,6 +623,15 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
+(defn get-drop-cell
+  [target-frame objects position]
+  (if (features/active-feature? @st/state "render-wasm/v1")
+    (do
+      (wasm.api/use-shape target-frame)
+      (let [cell (wasm.api/get-grid-coords position)]
+        (when (not= cell [-1 -1]) cell)))
+    (gslg/get-drop-cell target-frame objects position)))
+
 (defn set-ghost-displacement
   [move-vector]
   (ptk/reify ::set-ghost-displacement
@@ -620,16 +651,18 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [page-id (:current-page-id state)
-             objects (dsh/lookup-page-objects state page-id)
-             selected (dsh/lookup-selected state {:omit-blocked? true})
-             ids     (if (nil? ids) selected ids)
-             shapes  (into []
-                           (comp (map (d/getf objects))
-                                 (remove #(let [parent (get objects (:parent-id %))]
-                                            (and (ctk/in-component-copy? parent)
-                                                 (ctl/any-layout? parent)))))
-                           ids)
+       (let [prev-cell-data (volatile! nil)
+             page-id   (:current-page-id state)
+             libraries (dsh/lookup-libraries state)
+             objects   (dsh/lookup-page-objects state page-id)
+             selected  (dsh/lookup-selected state {:omit-blocked? true})
+             ids       (if (nil? ids) selected ids)
+             shapes    (into []
+                             (comp (map (d/getf objects))
+                                   (remove #(let [parent (get objects (:parent-id %))]
+                                              (and (ctk/in-component-copy? parent)
+                                                   (ctl/any-layout? parent)))))
+                             ids)
 
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
 
@@ -680,11 +713,11 @@
                          (let [position         (gpt/add from-position move-vector)
                                exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
                                target-frame     (ctst/top-nested-frame objects position exclude-frames)
-                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes)
+                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries)
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
-                               cell-data        (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
+                               cell-data        (when (and grid-layout? (not mod?)) (get-drop-cell target-frame objects position))]
                            (array move-vector target-frame drop-index cell-data))))
 
                       (rx/take-until stopper))
@@ -692,9 +725,15 @@
                  modifiers-stream
                  (->> move-stream
                       (rx/with-latest-from array/conj ms/mouse-position-shift)
+                      (rx/tap
+                       (fn [[_ _ _ cell-data _]]
+                         (when (some? cell-data)
+                           (vreset! prev-cell-data cell-data))))
+
                       (rx/map
                        (fn [[move-vector target-frame drop-index cell-data shift?]]
-                         (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
+                         (let [cell-data (or cell-data @prev-cell-data)
+                               x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
                                [move-vector snap-ignore-axis]
                                (cond
                                  (and shift? x-disp?)
@@ -717,12 +756,6 @@
                       (fn [[modifiers snap-ignore-axis]]
                         (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
 
-                (->> modifiers-stream
-                     (rx/last)
-                     (rx/map
-                      (fn [[modifiers snap-ignore-axis]]
-                        (dwm/apply-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
-
                 (->> move-stream
                      (rx/with-latest-from ms/mouse-position-alt)
                      (rx/filter (fn [[_ alt?]] alt?))
@@ -737,14 +770,18 @@
                 ;; Last event will write the modifiers creating the changes
                 (->> move-stream
                      (rx/last)
+                     (rx/with-latest-from modifiers-stream)
                      (rx/mapcat
-                      (fn [[_ target-frame drop-index drop-cell]]
+                      (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
                         (let [undo-id (js/Symbol)]
-                          (rx/of (dwu/start-undo-transaction undo-id)
-                                 ;; (dwm/apply-modifiers {:undo-transation? false})
-                                 (move-shapes-to-frame ids target-frame drop-index drop-cell)
-                                 (finish-transform)
-                                 (dwu/commit-undo-transaction undo-id)))))))
+                          (rx/of
+                           (dwu/start-undo-transaction undo-id)
+                           (dwm/apply-wasm-modifiers modifiers
+                                                     :snap-ignore-axis snap-ignore-axis
+                                                     :undo-transation? false)
+                           (move-shapes-to-frame ids target-frame drop-index drop-cell)
+                           (finish-transform)
+                           (dwu/commit-undo-transaction undo-id)))))))
 
                (rx/merge
                 (->> modifiers-stream
@@ -923,13 +960,13 @@
                          (rx/take-until stopper))]
                 (rx/concat
                  (rx/merge
-                  (rx/of (nudge-selected-shapes direction shift?))
                   (->> modif-stream
                        (rx/map #(dwm/set-wasm-modifiers % {:ignore-snap-pixel true})))
 
                   (->> modif-stream
                        (rx/last)
-                       (rx/map #(dwm/apply-wasm-modifiers % {:ignore-snap-pixel true}))))
+                       (rx/map #(dwm/apply-wasm-modifiers % {:ignore-snap-pixel true})))
+                  (rx/of (nudge-selected-shapes direction shift?)))
                  (rx/of (finish-transform))))
 
               (rx/concat
@@ -948,8 +985,9 @@
 (defn move-selected
   "Move shapes a fixed increment in one direction, from a keyboard action."
   [direction shift?]
-  (dm/assert! (contains? valid-directions direction))
-  (dm/assert! (boolean? shift?))
+
+  (assert (contains? valid-directions direction))
+  (assert (boolean? shift?))
 
   (ptk/reify ::move-selected
     ptk/WatchEvent
@@ -999,7 +1037,6 @@
 
              delta     (calculate-delta position bbox frame)
              modifiers (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
-
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers
@@ -1081,11 +1118,38 @@
                          frame-id
                          drop-index
                          ids
-                         :cell cell))]
+                         :cell cell))
 
-        (when (and (some? frame-id) (d/not-empty? changes))
-          (rx/of (dch/commit-changes changes)
-                 (dwc/expand-collapse frame-id)))))))
+            add-component-to-variant? (and
+                                        ;; Any of the shapes is a head
+                                       (some (comp ctk/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects frame-id)
+                                            (some ctk/is-variant?)))
+            add-new-variant? (and
+                             ;; The parent is a variant container
+                              (-> frame-id objects ctk/is-variant-container?)
+                             ;; Any of the shapes is a main instance
+                              (some (comp ctk/main-instance? objects) ids))]
+
+        (rx/concat
+         (let [shapes  (mapv #(get objects %) ids)
+               moved-count (count (filter #(not= (:parent-id %) frame-id) shapes))
+               emit-layout-event? (and (cfh/has-layout? objects frame-id)
+                                       (pos? moved-count))]
+           (when emit-layout-event?
+             (rx/of (ev/event {::ev/name "layout-add-element"
+                               ::ev/origin "workspace:move-shapes-to-frame"
+                               :element-type (cfh/get-selected-type objects ids)
+                               :moved moved-count}))))
+
+         (when (and (some? frame-id) (d/not-empty? changes))
+           (rx/of (dch/commit-changes changes)
+                  (dwc/expand-collapse frame-id)))
+         (when add-component-to-variant?
+           (rx/of (ev/event {::ev/name "add-component-to-variant"})))
+         (when add-new-variant?
+           (rx/of (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-to-frame"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
@@ -1099,6 +1163,7 @@
 
 
 ;; -- Flip ----------------------------------------------------------
+
 
 (defn flip-horizontal-selected
   ([]
@@ -1116,7 +1181,6 @@
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
-
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers {:ignore-snap-pixel true}))

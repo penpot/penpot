@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.colorpicker.ramp
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.math :as mth]
+   [app.common.types.color :as cc]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.dom :as dom]

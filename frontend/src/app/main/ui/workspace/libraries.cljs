@@ -9,9 +9,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.color :as ctc]
+   [app.common.files.variant :as cfv]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.library :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
@@ -26,31 +27,30 @@
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.link-button :as lb]
-   [app.main.ui.components.search-bar :refer [search-bar]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [c tr]]
    [app.util.strings :refer [matches-search]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private add-icon
-  (i/icon-xref :add (stl/css :add-icon)))
-
-(def ^:private detach-icon
-  (i/icon-xref :detach (stl/css :detach-icon)))
+  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (def ^:private library-icon
-  (i/icon-xref :library (stl/css :library-icon)))
+  (deprecated-icon/icon-xref :library (stl/css :library-icon)))
 
 (defn- get-library-summary
   "Given a library data return a summary representation of this library"
@@ -58,7 +58,8 @@
   (let [colors       (count (:colors data))
         graphics     0
         typographies (count (:typographies data))
-        components   (count (ctkl/components-seq data))
+        components   (count (->> (ctkl/components-seq data)
+                                 (remove #(cfv/is-secondary-variant? % data))))
         empty?       (and (zero? components)
                           (zero? graphics)
                           (zero? colors)
@@ -97,16 +98,16 @@
      (str/join " · "
                (cond-> []
                  (or all-zero? (pos? components-count))
-                 (conj (tr "workspace.libraries.components" components-count))
+                 (conj (tr "workspace.libraries.components" (c components-count)))
 
                  (or all-zero? (pos? graphics-count))
-                 (conj (tr "workspace.libraries.graphics" graphics-count))
+                 (conj (tr "workspace.libraries.graphics" (c graphics-count)))
 
                  (or all-zero? (pos? colors-count))
-                 (conj (tr "workspace.libraries.colors" colors-count))
+                 (conj (tr "workspace.libraries.colors" (c colors-count)))
 
                  (or all-zero? (pos? typography-count))
-                 (conj (tr "workspace.libraries.typography" typography-count))))
+                 (conj (tr "workspace.libraries.typography" (c typography-count)))))
      "\u00A0")))
 
 (mf/defc library-description*
@@ -121,19 +122,19 @@
     [:*
      (when (pos? components-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.components" components-count)])
+        (tr "workspace.libraries.components" (c components-count))])
 
      (when (pos? graphics-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.graphics" graphics-count)])
+        (tr "workspace.libraries.graphics" (c graphics-count))])
 
      (when (pos? colors-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.colors" colors-count)])
+        (tr "workspace.libraries.colors" (c colors-count))])
 
      (when (pos? typography-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.typography" typography-count)])]))
+        (tr "workspace.libraries.typography" (c typography-count))])]))
 
 (mf/defc sample-library-entry*
   {::mf/props :obj
@@ -196,7 +197,20 @@
         empty-library? (empty-library? summary)
 
         selected       (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
+        dependencies   (mf/with-memo [shared-libraries]
+                         (into {} (map (juxt :id :library-file-ids) (vals shared-libraries))))
 
+        library-names  (mf/with-memo [shared-libraries]
+                         (into {} (map (fn [{:keys [id name]}]
+                                         [id name])
+                                       (vals shared-libraries))))
+
+        find-connected-to
+        (mf/use-fn
+         (mf/deps dependencies)
+         (fn [library-id]
+           (->> dependencies
+                (keep (fn [[k v]] (when (contains? v library-id) k))))))
 
         shared-libraries
         (mf/with-memo [shared-libraries linked-libraries file-id search-term]
@@ -205,17 +219,28 @@
                  (remove #(= (:id %) file-id))
                  (remove #(contains? linked-libraries (:id %)))
                  (filter #(matches-search (:name %) search-term))
+                 (map #(assoc % :connected-to (find-connected-to (:id %))))
+                 (map #(assoc % :connected-to-names (->> (:connected-to %)
+                                                         (keep library-names))))
                  (sort-by (comp str/lower :name)))))
 
         linked-libraries
-        (mf/with-memo [linked-libraries]
+        (mf/with-memo [linked-libraries find-connected-to library-names]
           (->> (vals linked-libraries)
+               (map #(assoc % :connected-to (find-connected-to (:id %))))
+               (map #(assoc % :connected-to-names (->> (:connected-to %)
+                                                       (keep library-names))))
                (sort-by (comp str/lower :name))))
+
+        linked-libraries-ids (mf/with-memo [linked-libraries]
+                               (into #{} (map :id) linked-libraries))
+
 
         importing*       (mf/use-state nil)
         sample-libraries [{:id "penpot-design-system", :name "Design system example"}
                           {:id "wireframing-kit", :name "Wireframe library"}
                           {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
+
 
         change-search-term
         (mf/use-fn
@@ -287,9 +312,9 @@
 
     [:div {:class (stl/css :libraries-content)}
      [:div {:class (stl/css :lib-section)}
-      [:& title-bar {:collapsable false
-                     :title       (tr "workspace.libraries.in-this-file")
-                     :class       (stl/css :title-spacing-lib)}]
+      [:> title-bar* {:collapsable false
+                      :title       (tr "workspace.libraries.in-this-file")
+                      :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :section-list)}
 
        [:div {:class (stl/css :section-list-item)}
@@ -308,31 +333,39 @@
                    :value (tr "common.publish")
                    :on-click publish}])]
 
-       (for [{:keys [id name data] :as library} linked-libraries]
-         [:div {:class (stl/css :section-list-item)
-                :key (dm/str id)
-                :data-testid "library-item"}
-          [:div {:class (stl/css :item-content)}
-           [:div {:class (stl/css :item-name)} name]
-           [:ul {:class (stl/css :item-contents)}
-            (let [summary (get-library-summary data)]
-              [:> library-description* {:summary summary}])]]
+       (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
+         (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)]
+           [:div {:class (stl/css :section-list-item)
+                  :key (dm/str id)
+                  :data-testid "library-item"}
+            [:div {:class (stl/css :item-content)}
+             [:div {:class (stl/css :item-name)} name]
+             [:ul {:class (stl/css :item-contents)}
+              (let [summary (get-library-summary data)]
+                [:*
+                 [:> library-description* {:summary summary}]
+                 (when (seq connected-to)
+                   [:div {:class (stl/css :connected-to-wrapper)}
+                    [:span "(" (tr "workspace.libraries.connected-to") " "]
+                    [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
+                    [:span ")"]])])]]
 
-          [:button {:class (stl/css :item-button)
-                    :type "button"
-                    :title (tr "workspace.libraries.unlink-library-btn")
-                    :data-library-id (dm/str id)
-                    :on-click unlink-library}
-           detach-icon]])]]
+            [:> icon-button* {:type "button"
+                              :aria-label (tr "workspace.libraries.unlink-library-btn")
+                              :icon i/detach
+                              :data-library-id (dm/str id)
+                              :variant "secondary"
+                              :disabled disabled?
+                              :on-click unlink-library}]]))]]
 
      [:div {:class (stl/css :shared-section)}
-      [:& title-bar {:collapsable false
-                     :title       (tr "workspace.libraries.shared-libraries")
-                     :class       (stl/css :title-spacing-lib)}]
-      [:& search-bar {:on-change change-search-term
-                      :value search-term
-                      :placeholder (tr "workspace.libraries.search-shared-libraries")
-                      :icon (mf/html [:span {:class (stl/css :search-icon)} i/search])}]
+      [:> title-bar* {:collapsable false
+                      :title       (tr "workspace.libraries.shared-libraries")
+                      :class       (stl/css :title-spacing-lib)}]
+      [:> search-bar* {:on-change change-search-term
+                       :value search-term
+                       :placeholder (tr "workspace.libraries.search-shared-libraries")
+                       :icon-id i/search}]
 
       (if (seq shared-libraries)
         [:div {:class (stl/css :section-list-shared)}
@@ -407,7 +440,7 @@
                           (sort-by #(str/lower (:name %)))
                           (truncate :components))
         colors       (->> color-ids
-                          (map #(ctc/get-color (:data library) %))
+                          (map #(ctl/get-color (:data library) %))
                           (sort-by #(str/lower (:name %)))
                           (truncate :colors))
         typographies (->> typography-ids
@@ -565,7 +598,7 @@
 (mf/defc libraries-dialog
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
-  [{:keys [starting-tab file-id] :as props :or {starting-tab :libraries}}]
+  [{:keys [starting-tab file-id]}]
   (let [files   (mf/deref refs/files)
         file    (get files file-id)
         shared? (:is-shared file)
@@ -577,8 +610,7 @@
         linked-libraries
         (mf/with-memo [linked-libraries file-id]
           (d/removem (fn [[_ lib]]
-                       (or (:is-indirect lib)
-                           (= (:id lib) file-id)))
+                       (= (:id lib) file-id))
                      linked-libraries))
 
         shared-libraries
@@ -593,27 +625,23 @@
         close-dialog
         (mf/use-fn
          (fn [_]
-           (modal/hide!)
-           (modal/disallow-click-outside!)))
+           (modal/hide!)))
 
-        libraries-tab
-        (mf/html [:> libraries-tab*
-                  {:is-shared shared?
-                   :linked-libraries linked-libraries
-                   :shared-libraries shared-libraries}])
+        selected-tab*
+        (mf/use-state #(d/nilv starting-tab "libraries"))
 
-        updates-tab
-        (mf/html [:> updates-tab*
-                  {:file-id file-id
-                   :libraries linked-libraries}])
+        selected-tab
+        (deref selected-tab*)
+
+        on-change-tab
+        (mf/use-fn #(reset! selected-tab* %))
 
         tabs
-        #js [#js {:label (tr "workspace.libraries.libraries")
-                  :id "libraries"
-                  :content libraries-tab}
-             #js {:label (tr "workspace.libraries.updates")
-                  :id "updates"
-                  :content updates-tab}]]
+        (mf/with-memo []
+          [{:label (tr "workspace.libraries.libraries")
+            :id "libraries"}
+           {:label (tr "workspace.libraries.updates")
+            :id "updates"}])]
 
     (mf/with-effect []
       (st/emit! (dtm/fetch-shared-files)))
@@ -631,7 +659,19 @@
        (tr "workspace.libraries.libraries")]
 
       [:> tab-switcher* {:tabs tabs
-                         :default-selected (dm/str starting-tab)}]]]))
+                         :selected selected-tab
+                         :on-change on-change-tab}
+       (case selected-tab
+         "libraries"
+         [:> libraries-tab*
+          {:is-shared shared?
+           :linked-libraries linked-libraries
+           :shared-libraries shared-libraries}]
+
+         "updates"
+         [:> updates-tab*
+          {:file-id file-id
+           :libraries linked-libraries}])]]]))
 
 (mf/defc v2-info-dialog
   {::mf/register modal/components
@@ -650,7 +690,7 @@
       [:div  {:class (stl/css :modal-content)}
        [:div {:class (stl/css :info-content)}
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-1]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-1]
          [:div {:class (stl/css :info-block-title)}
           "One physical source of truth"]
          [:div {:class (stl/css :info-block-content)}
@@ -659,7 +699,7 @@
           "allows better control and synchronization."]]
 
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-2]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-2]
          [:div {:class (stl/css :info-block-title)}
           "Swap components"]
          [:div {:class (stl/css :info-block-content)}
@@ -668,7 +708,7 @@
           "variations, or updating elements without extensive manual adjustments."]]
 
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-3]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-3]
          [:div {:class (stl/css :info-block-title)}
           "Graphic assets no longer exist"]
          [:div {:class (stl/css :info-block-content)}
@@ -677,7 +717,7 @@
           "what should go in each typology."]]
 
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-4]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-4]
          [:div {:class (stl/css :info-block-title)}
           "Main components page"]
          [:div {:class (stl/css :info-block-content)}

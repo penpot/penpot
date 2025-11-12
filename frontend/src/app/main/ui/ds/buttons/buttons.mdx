@@ -4,7 +4,7 @@
 
   Copyright (c) KALEIDOS INC */ }
 
-import { Canvas, Meta } from '@storybook/blocks';
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from "./button.stories";
 import * as IconButtonStories from "./icon_button.stories";
 
@@ -68,6 +68,11 @@ Action buttons are a variant of `icon-button*` (`"action"`) but smaller.
 ```
 
 <Canvas of={IconButtonStories.Action} />
+
+### Semantics
+
+In some cases, a button needs to be semantically an 'a' tag, but visually maintain the button style.
+In that case, the button accepts a 'to' property with the expected 'href'. It will then be rendered as an anchor element.
 
 ### Accessibility
 

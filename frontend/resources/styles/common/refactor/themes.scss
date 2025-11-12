@@ -4,5 +4,5 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "./themes/default-theme.scss";
-@import "./themes/light-theme.scss";
+@forward "./themes/default-theme.scss";
+@forward "./themes/light-theme.scss";

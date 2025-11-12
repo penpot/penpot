@@ -61,24 +61,28 @@ test("Create a LINEAR gradient", async ({ page }) => {
 
   const removeBtn = workspacePage.colorpicker
     .getByRole("button", { name: "Remove color" })
-    .nth(2);
+    .last();
   await removeBtn.click();
   await removeBtn.click();
 
   const inputColor1 = workspacePage.colorpicker
-    .getByPlaceholder("Mixed")
-    .nth(1);
-  await inputColor1.fill("fabada");
+    .getByRole("textbox", { name: "Color" })
+    .first();
+  await inputColor1.fill("#fabada");
 
-  const inputOpacity1 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
+  const inputOpacity1 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .first();
   await inputOpacity1.fill("100");
 
   const inputColor2 = workspacePage.colorpicker
-    .getByPlaceholder("Mixed")
-    .nth(2);
-  await inputColor2.fill("red");
+    .getByRole("textbox", { name: "Color" })
+    .last();
+  await inputColor2.fill("#ff0000");
 
-  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(2);
+  const inputOpacity2 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .last();
   await inputOpacity2.fill("40");
 
   const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
@@ -89,7 +93,9 @@ test("Create a LINEAR gradient", async ({ page }) => {
   await expect(inputOpacityGlobal).toHaveValue("50");
   await expect(inputOpacityGlobal).toBeVisible();
 
-  await expect(workspacePage.page.getByText("Linear gradient")).toBeVisible();
+  await expect(
+    workspacePage.page.getByText("Linear gradient").nth(1),
+  ).toBeVisible();
 });
 
 test("Create a RADIAL gradient", async ({ page }) => {
@@ -139,20 +145,28 @@ test("Create a RADIAL gradient", async ({ page }) => {
 
   const removeBtn = workspacePage.colorpicker
     .getByRole("button", { name: "Remove color" })
-    .nth(2);
+    .last();
   await removeBtn.click();
   await removeBtn.click();
 
-  const inputColor1 = workspacePage.page.getByPlaceholder("Mixed").nth(1);
-  await inputColor1.fill("fabada");
+  const inputColor1 = workspacePage.page
+    .getByRole("textbox", { name: "Color" })
+    .first();
+  await inputColor1.fill("#fabada");
 
-  const inputOpacity1 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
+  const inputOpacity1 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .first();
   await inputOpacity1.fill("100");
 
-  const inputColor2 = workspacePage.page.getByPlaceholder("Mixed").nth(2);
-  await inputColor2.fill("red");
+  const inputColor2 = workspacePage.page
+    .getByRole("textbox", { name: "Color" })
+    .last();
+  await inputColor2.fill("#ff0000");
 
-  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(2);
+  const inputOpacity2 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .last();
   await inputOpacity2.fill("100");
 
   const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
@@ -163,19 +177,26 @@ test("Create a RADIAL gradient", async ({ page }) => {
   await expect(inputOpacityGlobal).toHaveValue("50");
   await expect(inputOpacityGlobal).toBeVisible();
 
-  await expect(workspacePage.page.getByText("Radial gradient")).toBeVisible();
+  await expect(
+    workspacePage.page.getByText("Radial gradient").nth(1),
+  ).toBeVisible();
 });
 
 test("Gradient stops limit", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
-  await workspacePage.mockConfigFlags(["enable-frontend-binary-fills"]);
+  await workspacePage.mockConfigFlags(["enable-feature-render-wasm"]);
   await workspacePage.setupEmptyFile(page);
+
   await workspacePage.mockRPC(
     "get-file-fragment?file-id=*&fragment-id=*",
     "workspace/get-file-fragment-gradient-limits.json",
   );
 
-  await workspacePage.goToWorkspace();
+  await workspacePage.goToWorkspace({
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
+  });
+
   await workspacePage.clickLeafLayer("Rectangle");
 
   const swatch = workspacePage.page.getByRole("button", {

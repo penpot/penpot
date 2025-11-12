@@ -6,9 +6,9 @@
 
 (ns frontend-tests.helpers-shapes-test
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.types.color :as clr]
    [app.main.data.workspace.libraries :as dwl]
    [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]

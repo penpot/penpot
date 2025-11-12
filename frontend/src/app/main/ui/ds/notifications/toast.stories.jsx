@@ -6,7 +6,7 @@
 
 import * as React from "react";
 import Components from "@target/components";
-import { action } from "@storybook/addon-actions";
+import { action } from "storybook/actions";
 
 const { Toast } = Components;
 

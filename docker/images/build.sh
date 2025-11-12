@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -x
 
-DOCKER_CLI_EXPERIMENTAL=enabled
+IMAGE=${1:-backend}
+
+OUTPUT="type=registry"
+
+if [ "--local" = "$2" ]; then
+    OUTPUT="type=docker"
+fi
+
 ORG=${PENPOT_DOCKER_NAMESPACE:-penpotapp};
-PLATFORM=${PENPOT_BUILD_PLATFORM:-linux/amd64};
-
-IMAGE=${PENPOT_BUILD_IMAGE:-backend}
-PLATFORM=${PENPOT_BUILD_PLATFORM:-linux/amd64};
+PLATFORM=${PENPOT_BUILD_PLATFORM:-linux/amd64,linux/arm64};
 VERSION=${PENPOT_BUILD_VERSION:-latest}
-
 DOCKER_IMAGE="$ORG/$IMAGE";
 OPTIONS="-t $DOCKER_IMAGE:$VERSION";
 
@@ -20,7 +23,7 @@ for element in "${TAGS[@]}"; do
 done
 
 docker buildx inspect penpot > /dev/null 2>&1;
-docker run --privileged --rm tonistiigi/binfmt --install all
+docker run --privileged --rm tonistiigi/binfmt --install all > /dev/null;
 
 if [ $? -eq 1 ]; then
     docker buildx create --name=penpot --use
@@ -32,4 +35,5 @@ fi
 
 unset IFS;
 
-docker buildx build --platform ${PLATFORM// /,} $OPTIONS -f Dockerfile.$IMAGE "$@" .;
+shift;
+docker buildx build --output $OUTPUT --platform ${PLATFORM// /,} $OPTIONS -f Dockerfile.$IMAGE .;

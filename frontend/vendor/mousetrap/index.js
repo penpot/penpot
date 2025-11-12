@@ -821,7 +821,7 @@ function Mousetrap(targetElement) {
    * @param {number=} level - what part of the sequence the command is
    * @returns void
    */
-  function _bindSingle(combination, callback, action, sequenceName, level) {
+  function _bindSingle(combination, callback, action, sequenceName, level, overwrite) {
 
     // store a direct mapped reference for use with Mousetrap.trigger
     self._directMap[combination + ':' + action] = callback;
@@ -846,7 +846,9 @@ function Mousetrap(targetElement) {
     self._callbacks[info.key] = self._callbacks[info.key] || [];
 
     // remove an existing match if there is one
-    _getMatches(info.key, info.modifiers, {type: info.action}, sequenceName, combination, level);
+    if (overwrite) {
+      _getMatches(info.key, info.modifiers, {type: info.action}, sequenceName, combination, level);
+    }
 
     // add this call back to the array
     // if it is a sequence put it at the beginning
@@ -872,9 +874,9 @@ function Mousetrap(targetElement) {
    * @param {string|undefined} action
    * @returns void
    */
-  self._bindMultiple = function(combinations, callback, action) {
+  self._bindMultiple = function(combinations, callback, action, overwrite) {
     for (var i = 0; i < combinations.length; ++i) {
-      _bindSingle(combinations[i], callback, action);
+      _bindSingle(combinations[i], callback, action, undefined, undefined, overwrite);
     }
   };
 
@@ -899,10 +901,10 @@ function Mousetrap(targetElement) {
  * @param {string=} action - 'keypress', 'keydown', or 'keyup'
  * @returns void
  */
-Mousetrap.prototype.bind = function(keys, callback, action) {
+Mousetrap.prototype.bind = function(keys, callback, action, overwrite) {
   var self = this;
   keys = keys instanceof Array ? keys : [keys];
-  self._bindMultiple.call(self, keys, callback, action);
+  self._bindMultiple.call(self, keys, callback, action, overwrite);
   return self;
 };
 

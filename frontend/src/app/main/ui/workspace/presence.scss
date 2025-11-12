@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .active-users,
 .active-users-opened {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   flex-direction: row-reverse;
   justify-content: flex-end;
   align-items: center;
   margin: 0;
-  padding: 0 $s-4;
-  border-radius: $br-8;
+  padding: 0 deprecated.$s-4;
+  border-radius: deprecated.$br-8;
   .active-users-list {
     display: flex;
     flex-direction: row-reverse;
@@ -26,8 +26,8 @@
       @extend .user-icon;
       background-color: var(--user-count-background-color);
       color: var(--user-count-foreground-color);
-      z-index: $z-index-2;
-      border: $s-2 solid var(--user-count-foreground-color);
+      z-index: deprecated.$z-index-2;
+      border: deprecated.$s-2 solid var(--user-count-foreground-color);
     }
     .session-icon {
       @extend .user-icon;
@@ -37,14 +37,14 @@
 
 .active-users-opened {
   position: absolute;
-  right: calc(-1 * $s-2);
-  top: calc(-1 * $s-2);
-  padding: $s-8;
-  margin: calc(-1 * $s-2) calc(-1 * $s-4) 0 0;
+  right: calc(-1 * deprecated.$s-2);
+  top: calc(-1 * deprecated.$s-2);
+  padding: deprecated.$s-8;
+  margin: calc(-1 * deprecated.$s-2) calc(-1 * deprecated.$s-4) 0 0;
   background-color: var(--menu-background-color);
-  z-index: $z-index-4;
+  z-index: deprecated.$z-index-4;
   .active-users-list {
-    gap: $s-4;
+    gap: deprecated.$s-4;
     .users-num,
     .session-icon {
       margin-left: 0;

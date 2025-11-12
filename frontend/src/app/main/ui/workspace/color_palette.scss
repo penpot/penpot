@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .color-palette {
   height: 100%;
@@ -13,13 +13,13 @@
 
 .left-arrow,
 .right-arrow {
-  @include buttonStyle;
-  @include flexCenter;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
   position: relative;
   height: 100%;
-  width: $s-24;
+  width: deprecated.$s-24;
   padding: 0;
-  z-index: $z-index-5;
+  z-index: deprecated.$z-index-5;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -27,11 +27,11 @@
   &::after {
     content: "";
     position: absolute;
-    z-index: $z-index-1;
+    z-index: deprecated.$z-index-1;
     bottom: 0;
-    left: calc(-1 * $s-80);
+    left: calc(-1 * deprecated.$s-80);
     height: 100%;
-    width: $s-80;
+    width: deprecated.$s-80;
     background-image: linear-gradient(
       to left,
       var(--palette-button-shadow-initial) 0%,
@@ -55,7 +55,7 @@
 }
 .left-arrow {
   &::after {
-    left: $s-24;
+    left: deprecated.$s-24;
     background-image: linear-gradient(
       to right,
       var(--palette-button-shadow-initial) 0%,
@@ -82,7 +82,7 @@
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: var(--color-cell-width);
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .color-cell {
@@ -98,12 +98,12 @@
   height: 100%;
 
   &.no-text {
-    @include flexCenter;
-    width: $s-32;
+    @include deprecated.flexCenter;
+    width: deprecated.$s-32;
   }
 }
 
 .color-palette-empty {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--palette-text-color);
 }

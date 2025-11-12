@@ -21,9 +21,10 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -83,12 +84,12 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "shortcuts.decrease-zoom")
                            :on-click on-decrease
-                           :icon "remove"}]
+                           :icon i/remove}]
          [:p {:class (stl/css :zoom-text)} zoom]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "shortcuts.increase-zoom")
                            :on-click on-increase
-                           :icon "add"}]]
+                           :icon i/add}]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -113,6 +114,8 @@
   [{:keys [file layout page-id]}]
   (let [file-id           (:id file)
 
+        threads-map       (mf/deref refs/comment-threads)
+
         zoom              (mf/deref refs/selected-zoom)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
@@ -130,6 +133,13 @@
 
         team              (mf/deref refs/team)
         permissions       (get team :permissions)
+
+        has-unread-comments?
+        (mf/with-memo [threads-map file-id]
+          (->> (vals threads-map)
+               (some #(and (= (:file-id %) file-id)
+                           (pos? (:count-unread-comments %))))
+               (boolean)))
 
         display-share-button?
         (and (not (:is-default team))
@@ -209,8 +219,11 @@
                 :class (stl/css-case :comments-btn true
                                      :selected (= selected-drawtool :comments))
                 :on-click toggle-comments
-                :data-tool "comments"}
-       i/comments]]
+                :data-tool "comments"
+                :style {:position "relative"}}
+       deprecated-icon/comments
+       (when ^boolean has-unread-comments?
+         [:div {:class (stl/css :unread)}])]]
 
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
@@ -220,16 +233,16 @@
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}
-         i/history]])
+         deprecated-icon/history]])
 
      (when display-share-button?
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}
-        i/share])
+        deprecated-icon/share])
 
      [:a {:class (stl/css :viewer-btn)
           :title (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
           :on-click nav-to-viewer}
-      i/play]]))
+      deprecated-icon/play]]))
 

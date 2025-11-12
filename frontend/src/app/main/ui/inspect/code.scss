@@ -4,42 +4,42 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-options {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - #{$s-160}); // TODO: Fix this hardcoded value
+  height: calc(100vh - #{deprecated.$s-160}); // TODO: Fix this hardcoded value
   overflow: hidden;
-  padding-bottom: $s-16;
+  padding-bottom: deprecated.$s-16;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
 }
 
 .viewer-code-block {
-  height: calc(100vh - #{$s-108}); // TODO: Fix this hardcoded value
+  height: calc(100vh - #{deprecated.$s-108}); // TODO: Fix this hardcoded value
 }
 
 .download-button {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  height: $s-32;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
   width: 100%;
-  margin: $s-8 0;
+  margin: deprecated.$s-8 0;
 }
 
 .code-block {
-  @include codeTypography;
+  @include deprecated.codeTypography;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  padding: 0 $s-4 $s-8 0;
+  padding: 0 deprecated.$s-4 deprecated.$s-8 0;
 
   pre {
-    border-radius: $br-8;
-    padding: $s-16;
+    border-radius: deprecated.$br-8;
+    padding: deprecated.$s-16;
     overflow: auto;
     height: 100%;
   }
@@ -56,13 +56,13 @@
 
 .code-row-lang {
   display: grid;
-  grid-template-columns: $s-12 1fr $s-60;
-  gap: $s-4;
+  grid-template-columns: deprecated.$s-12 1fr deprecated.$s-60;
+  gap: deprecated.$s-4;
   width: 100%;
 }
 
 .code-lang {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   align-items: center;
 }
@@ -70,15 +70,15 @@
 .action-btns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .expand-button,
 .css-copy-btn,
 .html-copy-btn {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -86,20 +86,20 @@
 }
 
 .code-lang-options {
-  max-width: $s-108;
+  max-width: deprecated.$s-108;
 }
 .code-lang-select {
-  @include uppercaseTitleTipography;
-  width: $s-72;
-  border: $s-1 solid transparent;
+  @include deprecated.uppercaseTitleTipography;
+  width: deprecated.$s-72;
+  border: deprecated.$s-1 solid transparent;
   background-color: transparent;
   color: var(--menu-foreground-color-disabled);
 }
 .code-lang-option {
-  @include uppercaseTitleTipography;
-  width: $s-72;
-  height: $s-32;
-  padding: $s-8;
+  @include deprecated.uppercaseTitleTipography;
+  width: deprecated.$s-72;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
   color: var(--menu-foreground-color-disabled);
 }
 
@@ -107,20 +107,20 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  padding-bottom: $s-8;
+  padding-bottom: deprecated.$s-8;
 }
 
 .toggle-btn {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   align-items: center;
   padding: 0;
   color: var(--title-foreground-color);
   stroke: var(--title-foreground-color);
   .collapsabled-icon {
-    @include flexCenter;
-    height: $s-24;
-    border-radius: $br-8;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-24;
+    border-radius: deprecated.$br-8;
     svg {
       @extend .button-icon-small;
       transform: rotate(90deg);

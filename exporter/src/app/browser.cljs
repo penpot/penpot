@@ -7,7 +7,7 @@
 (ns app.browser
   (:require
    ["generic-pool" :as gp]
-   ["generic-pool/lib/errors" :as gpe]
+   ["generic-pool/lib/errors.js" :as gpe]
    ["playwright" :as pw]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]

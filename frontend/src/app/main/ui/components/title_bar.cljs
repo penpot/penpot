@@ -7,51 +7,52 @@
 (ns app.main.ui.components.title-bar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [rumext.v2 :as mf]))
 
-(def ^:private chevron-icon
-  (i/icon-xref :arrow (stl/css :chevron-icon)))
-
-(mf/defc title-bar
-  {::mf/props :obj}
+(mf/defc title-bar*
   [{:keys [class collapsable collapsed title children
-           btn-children all-clickable add-icon-gap
-           on-collapsed on-btn-click]}]
-  (let [klass     (stl/css-case :title-bar true
-                                :all-clickable all-clickable)
-        klass     (dm/str klass " " class)]
-    [:div {:class klass}
-     (if ^boolean collapsable
-       [:div {:class (stl/css :title-wrapper)}
+           btn-icon btn-title all-clickable add-icon-gap
+           title-class on-collapsed on-btn-click]}]
+  [:div {:class [(stl/css-case :title-bar true
+                               :all-clickable all-clickable)
+                 class]}
+
+   (if ^boolean collapsable
+     [:div {:class [(stl/css :title-wrapper) title-class]}
+
+      (let [icon-id (if collapsed "arrow-right" "arrow-down")]
         (if ^boolean all-clickable
-          [:button {:class (stl/css :toggle-btn)
+          [:button {:class (stl/css :icon-text-btn)
                     :on-click on-collapsed}
-           [:span {:class (stl/css-case
-                           :collapsabled-icon true
-                           :collapsed collapsed)}
-            chevron-icon]
+           [:> icon* {:icon-id icon-id
+                      :size "s"
+                      :class (stl/css :icon)}]
            [:div {:class (stl/css :title)} title]]
           [:*
-           [:button {:class (stl/css-case
-                             :collapsabled-icon true
-                             :collapsed collapsed)
+           [:button {:class (stl/css :icon-btn)
                      :on-click on-collapsed}
-            chevron-icon]
-           [:div {:class (stl/css :title)}
-            title]])]
-       [:div {:class (stl/css-case
-                      :title-only true
-                      :title-only-icon-gap add-icon-gap)}
-        title])
-     children
-     (when (some? on-btn-click)
-       [:button {:class (stl/css :title-button)
-                 :on-click on-btn-click}
-        btn-children])]))
+            [:> icon* {:icon-id icon-id
+                       :size "s"
+                       :class (stl/css :icon)}]]
+           [:div {:class (stl/css :title)} title]]))]
+
+     [:div {:class [(stl/css-case :title-only true
+                                  :title-only-icon-gap add-icon-gap)
+                    title-class]}
+      title])
+
+   children
+
+   (when (some? on-btn-click)
+     [:> icon-button* {:variant "ghost"
+                       :aria-label btn-title
+                       :on-click on-btn-click
+                       :icon btn-icon}])])
+
 
 (mf/defc inspect-title-bar*
   [{:keys [class title]}]
-  [:div {:class (dm/str (stl/css :title-bar) " " class)}
+  [:div {:class [(stl/css :title-bar) class]}
    [:div {:class (stl/css :title-only :inspect-title)} title]])

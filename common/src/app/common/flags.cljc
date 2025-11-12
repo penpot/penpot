@@ -10,6 +10,8 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
+(def ^:dynamic *current* #{})
+
 (def login
   "Flags related to login features"
   #{;; Allows registration with login / password
@@ -117,6 +119,11 @@
     ;; Only for developtment.
     :tiered-file-data-storage
     :token-units
+    :token-base-font-size
+    :token-color
+    :token-typography-types
+    :token-typography-composite
+    :token-shadow
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
@@ -128,7 +135,19 @@
     :hide-release-modal
     :subscriptions
     :subscriptions-old
-    :frontend-binary-fills})
+    :inspect-styles
+
+    ;; Security layer middleware that filters request by fetch
+    ;; metadata headers
+    :sec-fetch-metadata-middleware
+
+    ;; Security layer middleware that check the precense of x-client
+    ;; http headers and enables an addtional csrf protection
+    :client-header-check-middleware
+
+    ;; A temporal flag, enables backend code use more extensivelly
+    ;; redis for caching data
+    :redis-cache})
 
 (def all-flags
   (set/union email login varia))
@@ -149,7 +168,12 @@
    :enable-onboarding
    :enable-dashboard-templates-section
    :enable-google-fonts-provider
-   :enable-component-thumbnails])
+   :enable-component-thumbnails
+   :enable-render-wasm-dpr
+   :enable-token-units
+   :enable-token-typography-types
+   :enable-token-typography-composite
+   :enable-feature-fdata-objects-map])
 
 (defn parse
   [& flags]

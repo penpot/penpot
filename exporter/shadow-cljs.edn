@@ -3,12 +3,21 @@
 
  :builds
  {:main
-  {:target :node-script
-   :main app.core/main
-   :output-to "target/app.js"
-   :output-dir "target/app/"
+  {:target :esm
+   :runtime :node
+   :output-dir "target/"
    :devtools {:before-load-async app.core/stop
               :after-load app.core/start}
+
+   :modules
+   {:app
+    {:entries []
+     :init-fn app.core/main}}
+
+   :js-options
+   {:entry-keys ["module" "browser" "main"]
+    :export-conditions ["module" "import", "browser" "require" "default"]
+    :js-provider :import}
 
    :compiler-options
    {:output-feature-set :es2020

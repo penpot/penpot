@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_sizes.scss" as *;
-@use "../_borders.scss" as *;
-@use "../typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
 
 $arrow-side: 12px;
 
@@ -15,6 +15,12 @@ $arrow-side: 12px;
   max-inline-size: $sz-352;
   background-color: transparent;
   overflow: hidden;
+  inline-size: fit-content;
+  block-size: fit-content;
+}
+
+.tooltip-content-wrapper {
+  display: grid;
   inline-size: fit-content;
   block-size: fit-content;
 }

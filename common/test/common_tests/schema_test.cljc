@@ -6,6 +6,7 @@
 
 (ns common-tests.schema-test
   (:require
+   [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [clojure.test :as t]))
@@ -34,6 +35,77 @@
       (t/is (true? (sm/validate schema candidate)))
       (t/is (true? (sm/validate schema #{})))
       (t/is (false? (sm/validate schema #{"a"})))))
+
+  (t/testing "validate 2"
+    (let [candidate-1 ["a@b.com" "a@c.net"]
+          candidate-2 (into #{} candidate-1)
+          candidate-3 (into (d/ordered-set) candidate-1)
+          candidate-4 #{"a@b.com"}
+          candidate-5 (d/ordered-set "a@b.com")
+          schema-1    [::sm/set ::sm/email]
+          schema-2    [::sm/set {:ordered true} ::sm/email]
+          schema-3    [::sm/set {:ordered true :min 1} ::sm/email]
+          schema-4    [::sm/set {:min 1} ::sm/email]
+          schema-5    [::sm/set {:ordered true :max 1} ::sm/email]
+          schema-6    [::sm/set {:ordered true :min 1 :max 2} ::sm/email]
+          schema-7    [::sm/set {:min 1 :max 2} ::sm/email]]
+
+      (t/is (false? (sm/validate schema-1 [])))
+      (t/is (false? (sm/validate schema-1 candidate-1)))
+      (t/is (true?  (sm/validate schema-1 candidate-2)))
+      (t/is (true?  (sm/validate schema-1 candidate-3)))
+
+      (t/is (false? (sm/validate schema-2 [])))
+      (t/is (false? (sm/validate schema-2 candidate-1)))
+      (t/is (false? (sm/validate schema-2 candidate-2)))
+      (t/is (true?  (sm/validate schema-2 candidate-3)))
+
+      (t/is (false? (sm/validate schema-3 [])))
+      (t/is (false? (sm/validate schema-3 candidate-1)))
+      (t/is (false? (sm/validate schema-3 candidate-2)))
+      (t/is (true?  (sm/validate schema-3 candidate-3)))
+      (t/is (false? (sm/validate schema-3 candidate-4)))
+      (t/is (true?  (sm/validate schema-3 candidate-5)))
+      (t/is (false? (sm/validate schema-3 (d/ordered-set))))
+
+      (t/is (false? (sm/validate schema-4 [])))
+      (t/is (false? (sm/validate schema-4 candidate-1)))
+      (t/is (true?  (sm/validate schema-4 candidate-2)))
+      (t/is (true?  (sm/validate schema-4 candidate-3)))
+      (t/is (true?  (sm/validate schema-4 candidate-4)))
+      (t/is (true?  (sm/validate schema-4 candidate-5)))
+      (t/is (false? (sm/validate schema-4 (d/ordered-set))))
+      (t/is (false? (sm/validate schema-4 #{})))
+
+      (t/is (false? (sm/validate schema-5 [])))
+      (t/is (false? (sm/validate schema-5 candidate-1)))
+      (t/is (false? (sm/validate schema-5 candidate-2)))
+      (t/is (false? (sm/validate schema-5 candidate-3)))
+      (t/is (false? (sm/validate schema-5 candidate-4)))
+      (t/is (true?  (sm/validate schema-5 candidate-5)))
+      (t/is (true?  (sm/validate schema-5 (d/ordered-set))))
+      (t/is (false? (sm/validate schema-5 #{})))
+
+      (t/is (false? (sm/validate schema-6 [])))
+      (t/is (false? (sm/validate schema-6 candidate-1)))
+      (t/is (false? (sm/validate schema-6 candidate-2)))
+      (t/is (true?  (sm/validate schema-6 candidate-3)))
+      (t/is (false? (sm/validate schema-6 candidate-4)))
+      (t/is (true?  (sm/validate schema-6 candidate-5)))
+      (t/is (false? (sm/validate schema-6 (d/ordered-set))))
+      (t/is (false? (sm/validate schema-6 #{})))
+      (t/is (false? (sm/validate schema-6 (conj candidate-3 "r@r.com"))))
+
+      (t/is (false? (sm/validate schema-7 [])))
+      (t/is (false? (sm/validate schema-7 candidate-1)))
+      (t/is (true?  (sm/validate schema-7 candidate-2)))
+      (t/is (true?  (sm/validate schema-7 candidate-3)))
+      (t/is (true?  (sm/validate schema-7 candidate-4)))
+      (t/is (true?  (sm/validate schema-7 candidate-5)))
+      (t/is (false? (sm/validate schema-7 (d/ordered-set))))
+      (t/is (false? (sm/validate schema-7 #{})))
+      (t/is (false? (sm/validate schema-7 (conj candidate-2 "r@r.com"))))
+      (t/is (false? (sm/validate schema-7 (conj candidate-3 "r@r.com"))))))
 
   (t/testing "generate"
     (let [schema    [::sm/set ::sm/email]

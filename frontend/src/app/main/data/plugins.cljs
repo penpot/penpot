@@ -8,7 +8,9 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.time :as ct]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
@@ -16,7 +18,6 @@
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -144,8 +145,13 @@
     (watch [_ state _]
       (let [user-can-edit? (dm/get-in state [:permissions :can-edit])]
         (when-let [pid (::open-plugin state)]
-          (open-plugin! (preg/get-plugin pid) user-can-edit?)
-          (rx/of #(dissoc % ::open-plugin)))))))
+          (let [plugin (preg/get-plugin pid)]
+            (open-plugin! plugin user-can-edit?)
+            (rx/of (ev/event {::ev/name "start-plugin"
+                              ::ev/origin "workspace"
+                              :name (:name plugin)
+                              :host (:host plugin)})
+                   #(dissoc % ::open-plugin))))))))
 
 (defn- update-plugin-permissions-peek
   [{:keys [plugin-id url]}]
@@ -167,8 +173,8 @@
   (ptk/reify ::update-plugins-permissions-peek
     ptk/UpdateEvent
     (update [_ state]
-      (let [now        (dt/now)
-            expiration (dt/minus now (dt/duration {:days 1}))
+      (let [now        (ct/now)
+            expiration (ct/in-past {:days 1})
             updated-at (dm/get-in state [:plugins-permissions-peek :updated-at] 0)
             expired?   (> expiration updated-at)]
 

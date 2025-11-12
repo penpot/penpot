@@ -41,7 +41,7 @@
                       (update :lang #(or % ""))
                       (update :theme #(if (= % "default")
                                         "dark"
-                                        %))))
+                                        (or % "dark")))))
 
         form    (fm/use-form :schema schema:options-form
                              :initial initial)]

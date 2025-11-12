@@ -10,21 +10,23 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.variant :as cfv]
+   [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section]]
+   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section*]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.sidebar.assets.components :refer [components-section]]
-   [app.main.ui.workspace.sidebar.assets.typographies :refer [typographies-section]]
+   [app.main.ui.workspace.sidebar.assets.components :refer [components-section*]]
+   [app.main.ui.workspace.sidebar.assets.typographies :refer [typographies-section*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -97,23 +99,23 @@
     [:div {:class (stl/css-case
                    :library-title true
                    :open is-open)}
-     [:& title-bar {:collapsable    true
-                    :collapsed      (not is-open)
-                    :all-clickable  true
-                    :on-collapsed   toggle-open
-                    :title          (if is-local
-                                      (mf/html [:div {:class (stl/css :special-title)}
-                                                (tr "workspace.assets.local-library")])
+     [:> title-bar* {:collapsable    true
+                     :collapsed      (not is-open)
+                     :all-clickable  true
+                     :on-collapsed   toggle-open
+                     :title          (if is-local
+                                       (mf/html [:div {:class (stl/css :special-title)}
+                                                 (tr "workspace.assets.local-library")])
                                       ;; Do we need to add shared info here?
-                                      (mf/html [:div {:class (stl/css :special-title)}
-                                                file-name]))}
+                                       (mf/html [:div {:class (stl/css :special-title)}
+                                                 file-name]))}
       (when-not ^boolean is-local
         [:span {:title (tr "workspace.assets.open-library")}
          [:a {:class (stl/css :file-link)
               :href (str "#" url)
               :target "_blank"
               :on-click on-click}
-          i/open-link]])]]))
+          deprecated-icon/open-link]])]]))
 
 (defn- extend-selected
   [selected type asset-groups asset-id file-id]
@@ -210,13 +212,23 @@
         on-typography-click
         (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :typographies))
 
+        delete-component
+        (mf/use-fn
+         (mf/deps components)
+         (fn [component-id]
+           (let [component (some #(when (= (:id %) component-id) %) components)]
+             (if (ctc/is-variant? component)
+               ;; If the component is a variant, delete its variant container
+               (dwsh/delete-shapes (:main-instance-page component) #{(:variant-id component)})
+               (dwl/delete-component {:id component-id})))))
+
         on-assets-delete
         (mf/use-fn
          (mf/deps selected file-id)
          (fn []
            (let [undo-id (js/Symbol)]
              (st/emit! (dwu/start-undo-transaction undo-id))
-             (run! st/emit! (map #(dwl/delete-component {:id %})
+             (run! st/emit! (map delete-component
                                  (:components selected)))
              (run! st/emit! (map #(dwl/delete-media {:id %})
                                  (:graphics selected)))
@@ -237,48 +249,49 @@
        [:span {:class (stl/css :loading)} (tr "labels.loading")]
        [:*
         (when ^boolean show-components?
-          [:& components-section
+          [:> components-section*
            {:file-id file-id
             :is-local is-local
             :components components
-            :listing-thumbs? listing-thumbs?
-            :open? (or ^boolean force-open-components?
-                       ^boolean (get open-status :components false))
-            :force-open? force-open-components?
+            :is-listing-thumbs listing-thumbs?
+            :is-open (or ^boolean force-open-components?
+                         ^boolean (get open-status :components false))
+            :is-force-open force-open-components?
             :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
+            :is-reverse-sort reverse-sort?
             :selected selected
             :on-asset-click on-component-click
             :on-assets-delete on-assets-delete
             :on-clear-selection on-clear-selection
+            :delete-component delete-component
             :count-variants count-variants}])
 
         (when ^boolean show-colors?
-          [:& colors-section
+          [:> colors-section*
            {:file-id file-id
-            :local? is-local
+            :is-local is-local
             :colors colors
-            :open? (or ^boolean force-open-colors?
-                       ^boolean (get open-status :colors false))
-            :force-open? force-open-colors?
+            :is-open (or ^boolean force-open-colors?
+                         ^boolean (get open-status :colors false))
+            :is-force-open force-open-colors?
             :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
+            :is-reverse-sort reverse-sort?
             :selected selected
             :on-asset-click on-colors-click
             :on-assets-delete on-assets-delete
             :on-clear-selection on-clear-selection}])
 
         (when ^boolean show-typography?
-          [:& typographies-section
+          [:> typographies-section*
            {:file file
             :file-id (:id file)
-            :local? is-local
+            :is-local is-local
             :typographies typographies
-            :open? (or ^boolean force-open-typographies?
-                       ^boolean (get open-status :typographies false))
-            :force-open? force-open-typographies?
+            :is-open (or ^boolean force-open-typographies?
+                         ^boolean (get open-status :typographies false))
+            :is-force-open force-open-typographies?
             :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
+            :is-reverse-sort reverse-sort?
             :selected selected
             :on-asset-click on-typography-click
             :on-assets-delete on-assets-delete
@@ -289,7 +302,7 @@
                    (not ^boolean show-typography?))
           [:div  {:class (stl/css :asset-title)}
            [:span {:class (stl/css :no-found-icon)}
-            i/search]
+            deprecated-icon/search]
            [:span {:class (stl/css :no-found-text)}
             (tr "workspace.assets.not-found")]])])]))
 
@@ -350,13 +363,16 @@
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))
 
+        variants-counter
+        (mf/with-memo [library]
+          (-> (group-by :variant-id (ctkl/components-seq library))
+              (update-vals count)))
+
         count-variants
         (mf/use-fn
-         (mf/deps library)
+         (mf/deps variants-counter)
          (fn [variant-id]
-           (->> (ctkl/components-seq library)
-                (filterv #(= variant-id (:variant-id %)))
-                count)))]
+           (get variants-counter variant-id)))]
 
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default

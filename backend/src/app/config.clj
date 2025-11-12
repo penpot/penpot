@@ -12,10 +12,10 @@
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.overrides]
-   [app.util.time :as dt]
    [clojure.core :as c]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
@@ -47,22 +47,27 @@
    :auto-file-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"
+
    :host "localhost"
    :tenant "default"
 
    :redis-uri "redis://redis/0"
 
+   :file-data-backend "legacy-db"
+
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
+
+   :auth-token-cookie-name "auth-token"
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
 
-   :profile-complaint-max-age (dt/duration {:days 7})
+   :profile-complaint-max-age (ct/duration {:days 7})
    :profile-complaint-threshold 2
 
-   :profile-bounce-max-age (dt/duration {:days 7})
+   :profile-bounce-max-age (ct/duration {:days 7})
    :profile-bounce-threshold 10
 
    :telemetry-uri "https://telemetry.penpot.app/"
@@ -88,7 +93,7 @@
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} :string]
-    [:public-uri {:optional false} :string]
+    [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 
     [:http-server-port {:optional true} ::sm/int]
@@ -96,16 +101,19 @@
     [:http-server-max-body-size {:optional true} ::sm/int]
     [:http-server-max-multipart-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
-    [:http-server-worker-threads {:optional true} ::sm/int]
+    [:http-server-max-worker-threads {:optional true} ::sm/int]
+
+    [:management-api-shared-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
 
     [:auto-file-snapshot-every {:optional true} ::sm/int]
-    [:auto-file-snapshot-timeout {:optional true} ::dt/duration]
+    [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
-    [:deletion-delay {:optional true} ::dt/duration] ;; REVIEW
+    [:deletion-delay {:optional true} ::ct/duration]
+    [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -146,12 +154,11 @@
     [:quotes-team-access-requests-per-team {:optional true} ::sm/int]
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
 
-    [:auth-data-cookie-domain {:optional true} :string]
     [:auth-token-cookie-name {:optional true} :string]
-    [:auth-token-cookie-max-age {:optional true} ::dt/duration]
+    [:auth-token-cookie-max-age {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
-    [:email-verify-threshold {:optional true} ::dt/duration]
+    [:email-verify-threshold {:optional true} ::ct/duration]
 
     [:github-client-id {:optional true} :string]
     [:github-client-secret {:optional true} :string]
@@ -186,9 +193,9 @@
     [:ldap-starttls {:optional true} ::sm/boolean]
     [:ldap-user-query {:optional true} :string]
 
-    [:profile-bounce-max-age {:optional true} ::dt/duration]
+    [:profile-bounce-max-age {:optional true} ::ct/duration]
     [:profile-bounce-threshold {:optional true} ::sm/int]
-    [:profile-complaint-max-age {:optional true} ::dt/duration]
+    [:profile-complaint-max-age {:optional true} ::ct/duration]
     [:profile-complaint-threshold {:optional true} ::sm/int]
 
     [:redis-uri {:optional true} ::sm/uri]
@@ -210,24 +217,27 @@
     [:prepl-host {:optional true} :string]
     [:prepl-port {:optional true} ::sm/int]
 
+    [:file-data-backend {:optional true} [:enum "db" "legacy-db" "storage"]]
+
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
     [:assets-path {:optional true} :string]
 
-    ;; Legacy, will be removed in 2.5
+    [:netty-io-threads {:optional true} ::sm/int]
+    [:executor-threads {:optional true} ::sm/int]
+
+    ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]
     [:storage-assets-fs-directory {:optional true} :string]
     [:storage-assets-s3-bucket {:optional true} :string]
     [:storage-assets-s3-region {:optional true} :keyword]
     [:storage-assets-s3-endpoint {:optional true} ::sm/uri]
-    [:storage-assets-s3-io-threads {:optional true} ::sm/int]
 
     [:objects-storage-backend {:optional true} :keyword]
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
-    [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]]))
 
 (defn- parse-flags
   [config]
@@ -298,7 +308,12 @@
 (defn get-deletion-delay
   []
   (or (c/get config :deletion-delay)
-      (dt/duration {:days 7})))
+      (ct/duration {:days 7})))
+
+(defn get-file-clean-delay
+  []
+  (or (c/get config :file-clean-delay)
+      (ct/duration {:days 2})))
 
 (defn get
   "A configuration getter. Helps code be more testable."
@@ -306,6 +321,10 @@
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+(defn logging-context
+  []
+  {:version/backend (:full version)})
 
 ;; Set value for all new threads bindings.
 (alter-var-root #'*assert* (constantly (contains? flags :backend-asserts)))

@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -22,7 +23,6 @@
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -438,8 +438,14 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [params {:id id :is-shared is-shared}]
-        (->> (rp/cmd! :set-file-shared params)
-             (rx/ignore))))))
+        (rx/concat
+         (->> (rp/cmd! :set-file-shared params)
+              (rx/ignore))
+         (when is-shared
+           (->> (rp/cmd! :get-file-summary {:id id})
+                (rx/map (fn [summary]
+                          (when (-> summary :variants :count pos?)
+                            (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -549,7 +555,7 @@
             update-project (fn [project delta op]
                              (-> project
                                  (update :count #(op % (count ids)))
-                                 (assoc :modified-at (dt/plus (dt/now) {:milliseconds delta}))))]
+                                 (assoc :modified-at (ct/in-future {:milliseconds delta}))))]
         (-> state
             (d/update-in-when [:projects origin-project] update-project 0 -)
             (d/update-in-when [:projects project-id] update-project 10 +))))

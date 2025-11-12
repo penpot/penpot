@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -12,55 +12,55 @@
 
 .modal-container {
   display: grid;
-  grid-template-columns: $s-324 1fr;
-  height: $s-480;
-  width: $s-888;
-  border-radius: $br-8;
+  grid-template-columns: deprecated.$s-324 1fr;
+  height: deprecated.$s-480;
+  width: deprecated.$s-888;
+  border-radius: deprecated.$br-8;
   background-color: var(--modal-background-color);
-  border: $s-2 solid var(--modal-border-color);
+  border: deprecated.$s-2 solid var(--modal-border-color);
 }
 
 .start-image {
-  width: $s-324;
-  border-radius: $br-8 0 0 $br-8;
+  width: deprecated.$s-324;
+  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
 }
 
 .modal-content {
-  padding: $s-40;
+  padding: deprecated.$s-40;
   display: grid;
-  grid-template-rows: auto 1fr $s-32;
-  gap: $s-24;
+  grid-template-rows: auto 1fr deprecated.$s-32;
+  gap: deprecated.$s-24;
 }
 
 .modal-header {
   display: grid;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .version-tag {
-  @include flexCenter;
-  @include headlineSmallTypography;
-  height: $s-32;
-  width: $s-96;
+  @include deprecated.flexCenter;
+  @include deprecated.headlineSmallTypography;
+  height: deprecated.$s-32;
+  width: deprecated.$s-96;
   background-color: var(--communication-tag-background-color);
   color: var(--communication-tag-foreground-color);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 }
 
 .modal-title {
-  @include headlineLargeTypography;
+  @include deprecated.headlineLargeTypography;
   color: var(--modal-title-foreground-color);
 }
 
 .features-block {
   display: flex;
   flex-direction: column;
-  gap: $s-16;
-  width: $s-440;
+  gap: deprecated.$s-16;
+  width: deprecated.$s-440;
 }
 
 .feature-content {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   margin: 0;
   color: var(--modal-text-foreground-color);
 }
@@ -73,7 +73,7 @@
 
 .next-btn {
   @extend .button-primary;
-  width: $s-100;
+  width: deprecated.$s-100;
   justify-self: flex-end;
   grid-area: button;
 }

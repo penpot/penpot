@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .dashboard-sidebar {
   grid-column: 1 / span 2;
@@ -12,9 +12,9 @@
   display: grid;
   grid-template-rows: 1fr auto;
   height: 100%;
-  padding-block-start: $s-16;
-  border-right: $s-1 solid var(--panel-border-color);
-  z-index: $z-index-1;
+  padding-block-start: deprecated.$s-16;
+  border-right: deprecated.$s-1 solid var(--panel-border-color);
+  z-index: deprecated.$z-index-1;
   background-color: var(--panel-background-color);
 }
 
@@ -28,7 +28,7 @@
 
 .sidebar-separator {
   border-color: transparent;
-  margin: $s-12 $s-16;
+  margin: deprecated.$s-12 deprecated.$s-16;
 }
 
 .sidebar-nav-settings {
@@ -44,7 +44,7 @@
   --settings-background-color: transparent;
   display: flex;
   align-items: center;
-  padding: $s-8 $s-8 $s-8 $s-24;
+  padding: deprecated.$s-8 deprecated.$s-8 deprecated.$s-8 deprecated.$s-24;
   color: var(--settings-foreground-color);
   background-color: var(--settings-background-color);
   cursor: pointer;
@@ -63,20 +63,20 @@
 .feedback-icon {
   @extend .button-icon-small;
   stroke: var(--settings-foreground-color);
-  margin-right: $s-8;
+  margin-right: deprecated.$s-8;
 }
 
 .element-title {
-  @include textEllipsis;
-  @include bodyMediumTypography;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodyMediumTypography;
 }
 
 .back-to-dashboard {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   align-items: center;
-  padding: $s-12 $s-16;
-  font-size: $fs-14;
+  padding: deprecated.$s-12 deprecated.$s-16;
+  font-size: deprecated.$fs-14;
 }
 
 .back-text {
@@ -87,5 +87,5 @@
   @extend .button-icon;
   stroke: var(--icon-foreground);
   transform: rotate(180deg);
-  margin-right: $s-12;
+  margin-right: deprecated.$s-12;
 }

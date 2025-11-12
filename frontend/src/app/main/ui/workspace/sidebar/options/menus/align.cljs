@@ -9,21 +9,19 @@
   (:require
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
-   [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc align-options
-  []
-  (let [selected            (mf/deref refs/selected-shapes)
-        ;; don't need to watch objects, only read the value
-        objects             (deref refs/workspace-page-objects)
+(mf/defc align-options*
+  [{:keys [shapes objects]}]
+  (let [disabled-align
+        (not (dw/can-align? shapes objects))
 
-        disabled-align      (not (dw/can-align? selected objects))
-        disabled-distribute (not (dw/can-distribute? selected))
+        disabled-distribute
+        (not (dw/can-distribute? shapes))
 
         align-objects
         (mf/use-fn
@@ -41,7 +39,7 @@
                            (keyword))]
              (st/emit! (dw/distribute-objects value)))))]
 
-    (when (not  (and disabled-align disabled-distribute))
+    (when-not (and disabled-align disabled-distribute)
       [:div {:class (stl/css :align-options)}
        [:div {:class (stl/css :align-group-horizontal)}
         [:button {:class (stl/css-case :align-button true
@@ -50,7 +48,7 @@
                   :title (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
                   :data-value "hleft"
                   :on-click align-objects}
-         i/align-left]
+         deprecated-icon/align-left]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -58,7 +56,7 @@
                   :title (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
                   :data-value "hcenter"
                   :on-click align-objects}
-         i/align-horizontal-center]
+         deprecated-icon/align-horizontal-center]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -66,7 +64,7 @@
                   :title (tr "workspace.align.hright" (sc/get-tooltip :align-right))
                   :data-value "hright"
                   :on-click align-objects}
-         i/align-right]
+         deprecated-icon/align-right]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-distribute)
@@ -74,7 +72,7 @@
                   :title (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
                   :data-value "horizontal"
                   :on-click distribute-objects}
-         i/distribute-horizontally]]
+         deprecated-icon/distribute-horizontally]]
 
        [:div {:class (stl/css :align-group-vertical)}
         [:button {:class (stl/css-case :align-button true
@@ -83,7 +81,7 @@
                   :title (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
                   :data-value "vtop"
                   :on-click  align-objects}
-         i/align-top]
+         deprecated-icon/align-top]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -91,7 +89,7 @@
                   :title (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
                   :data-value "vcenter"
                   :on-click  align-objects}
-         i/align-vertical-center]
+         deprecated-icon/align-vertical-center]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -99,7 +97,7 @@
                   :title (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
                   :data-value "vbottom"
                   :on-click  align-objects}
-         i/align-bottom]
+         deprecated-icon/align-bottom]
 
         [:button {:title (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
                   :class (stl/css-case :align-button true
@@ -107,5 +105,5 @@
                   :disabled disabled-distribute
                   :data-value "vertical"
                   :on-click distribute-objects}
-         i/distribute-vertical-spacing]]])))
+         deprecated-icon/distribute-vertical-spacing]]])))
 

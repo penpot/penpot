@@ -10,7 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
@@ -69,7 +69,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click cancel-fn} i/close]]
+                 :on-click cancel-fn} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
        (when (and (string? message) (not= message ""))
@@ -88,7 +88,7 @@
            (for [item items]
              [:li {:class (stl/css :modal-item-element)}
               [:span {:class (stl/css :modal-component-icon)}
-               i/component]
+               deprecated-icon/component]
               [:span {:class (stl/css :modal-component-name)}
                (:name item)]])]])]
 

@@ -24,5 +24,6 @@
    {:delete-stop  {:tooltip (ds/supr)
                    :command ["del" "backspace"]
                    :subsections [:edit]
+                   :overwrite true
                    :fn #(st/emit! (dwc/remove-gradient-stop))}}))
 

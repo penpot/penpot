@@ -10,17 +10,19 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.schema.openapi :as-alias oapi]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
-   [app.util.time :as dt]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.java.shell :as sh]
+   [clojure.string]
    [clojure.xml :as xml]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
@@ -36,15 +38,13 @@
    org.im4java.core.Info))
 
 (def schema:upload
-  (sm/register!
-   ^{::sm/type ::upload}
-   [:map {:title "Upload"}
-    [:filename :string]
-    [:size ::sm/int]
-    [:path ::fs/path]
-    [:mtype {:optional true} :string]
-    [:headers {:optional true}
-     [:map-of :string :string]]]))
+  [:map {:title "Upload"}
+   [:filename :string]
+   [:size ::sm/int]
+   [:path ::fs/path]
+   [:mtype {:optional true} :string]
+   [:headers {:optional true}
+    [:map-of :string :string]]])
 
 (def ^:private schema:input
   [:map {:title "Input"}
@@ -116,7 +116,7 @@
 (defn- parse-svg
   [text]
   (let [text (strip-doctype text)]
-    (dm/with-open [istream (IOUtils/toInputStream text "UTF-8")]
+    (dm/with-open [istream (IOUtils/toInputStream ^String text "UTF-8")]
       (xml/parse istream secure-parser-factory))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -215,6 +215,23 @@
                  {:width (int width)
                   :height (int height)})))]))
 
+(defn- get-dimensions-with-orientation [^String path]
+  ;; Image magick doesn't give info about exif rotation so we use the identify command
+  ;; If we are processing an animated gif we use the first frame with -scene 0
+  (let [dim-result (sh/sh "identify" "-format" "%w %h\n" path)
+        orient-result (sh/sh "identify" "-format" "%[EXIF:Orientation]\n" path)]
+    (if (and (= 0 (:exit dim-result))
+             (= 0 (:exit orient-result)))
+      (let [[w h] (-> (:out dim-result)
+                      str/trim
+                      (clojure.string/split #"\s+")
+                      (->> (mapv #(Integer/parseInt %))))
+            orientation (-> orient-result :out str/trim)]
+        (case orientation
+          ("6" "8") {:width h :height w} ; Rotated 90 or 270 degrees
+          {:width w :height h}))         ; Normal or unknown orientation
+      nil)))
+
 (defmethod process :info
   [{:keys [input] :as params}]
   (let [{:keys [path mtype] :as input} (check-input input)]
@@ -224,7 +241,7 @@
           (ex/raise :type :validation
                     :code :invalid-svg-file
                     :hint "uploaded svg does not provides dimensions"))
-        (merge input info {:ts (dt/now)}))
+        (merge input info {:ts (ct/now)}))
 
       (let [instance (Info. (str path))
             mtype'   (.getProperty instance "Mime type")]
@@ -234,13 +251,17 @@
                     :code :media-type-mismatch
                     :hint (str "Seems like you are uploading a file whose content does not match the extension."
                                "Expected: " mtype ". Got: " mtype')))
-        ;; For an animated GIF, getImageWidth/Height returns the delta size of one frame (if no frame given
-        ;; it returns size of the last one), whereas getPageWidth/Height always return the full size of
-        ;; any frame.
-        (assoc input
-               :width  (.getPageWidth instance)
-               :height (.getPageHeight instance)
-               :ts (dt/now))))))
+        (let [{:keys [width height]}
+              (or (get-dimensions-with-orientation (str path))
+                  (do
+                    (l/warn "Failed to read image dimensions with orientation; falling back to im4java"
+                            {:path path})
+                    {:width  (.getPageWidth instance)
+                     :height (.getPageHeight instance)}))]
+          (assoc input
+                 :width  width
+                 :height height
+                 :ts (ct/now)))))))
 
 (defmethod process-error org.im4java.core.InfoException
   [error]

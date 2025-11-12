@@ -7,8 +7,8 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctcl]
    [app.common.types.variant :as ctv]
@@ -18,11 +18,17 @@
   [changes variant-id pos new-name]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)]
+        related-components (cfv/find-variant-components data objects variant-id)
+
+        props              (-> related-components last :variant-properties)
+        prop-names         (mapv :name props)
+        prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
+        new-name           (ctv/update-number-in-repeated-item prop-names new-name)]
     (reduce (fn [changes component]
               (pcb/update-component
                changes (:id component)
-               #(assoc-in % [:variant-properties pos :name] new-name)
+               (fn [component]
+                 (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
                {:apply-changes-local-library? true}))
             changes
             related-components)))
@@ -32,18 +38,21 @@
   [changes variant-id pos]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)]
-    (reduce (fn [changes component]
-              (let [props   (:variant-properties component)
-                    props   (d/remove-at-index props pos)
-                    main-id (:main-instance-id component)
-                    name    (ctv/properties-to-name props)]
-                (-> changes
-                    (pcb/update-component (:id component) #(assoc % :variant-properties props)
-                                          {:apply-changes-local-library? true})
-                    (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-            changes
-            related-components)))
+        related-components (cfv/find-variant-components data objects variant-id)
+        props              (-> related-components first :variant-properties)]
+    (if (and (seq props) (<= 0 pos) (< pos (count props)))
+      (reduce (fn [changes component]
+                (let [props   (:variant-properties component)
+                      props   (d/remove-at-index props pos)
+                      main-id (:main-instance-id component)
+                      name    (ctv/properties-to-name props)]
+                  (-> changes
+                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
+                                            {:apply-changes-local-library? true})
+                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
+              changes
+              related-components)
+      changes)))
 
 
 (defn generate-update-property-value
@@ -66,13 +75,33 @@
         component (ctcl/get-component data component-id true)
         main-id   (:main-instance-id component)]
     (-> changes
-        (pcb/update-shapes [main-id] (if (str/blank? value)
+        (pcb/update-shapes [main-id] (if (nil? value)
                                        #(dissoc % :variant-error)
                                        #(assoc % :variant-error value))))))
 
 
+(defn generate-reorder-variant-poperties
+  [changes variant-id from-pos to-space-between-pos]
+  (let [data               (pcb/get-library-data changes)
+        objects            (pcb/get-objects changes)
+        related-components (cfv/find-variant-components data objects variant-id)]
+    (reduce (fn [changes component]
+              (let [props   (:variant-properties component)
+                    props   (d/reorder props from-pos to-space-between-pos)
+                    main-id (:main-instance-id component)
+                    name    (ctv/properties-to-name props)]
+                (-> changes
+                    (pcb/update-component (:id component)
+                                          #(assoc % :variant-properties props)
+                                          {:apply-changes-local-library? true})
+                    (pcb/update-shapes [main-id]
+                                       #(assoc % :variant-name name)))))
+            changes
+            related-components)))
+
+
 (defn generate-add-new-property
-  [changes variant-id & {:keys [fill-values? property-name]}]
+  [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
@@ -81,19 +110,29 @@
         next-prop-num      (ctv/next-property-number props)
         property-name      (or property-name (str ctv/property-prefix next-prop-num))
 
+        prop-names         (mapv :name props)
+        property-name      (ctv/update-number-in-repeated-item prop-names property-name)
+
+        mdata              (if editing? {:editing? true} nil)
+
         [_ changes]
         (reduce (fn [[num changes] component]
                   (let [main-id      (:main-instance-id component)
 
                         update-props #(-> (d/nilv % [])
-                                          (conj {:name property-name
-                                                 :value (if fill-values? (str ctv/value-prefix num) "")}))
+                                          (conj (with-meta {:name property-name
+                                                            :value (cond fill-values?   (str ctv/value-prefix num)
+                                                                         property-value property-value
+                                                                         :else          "")}
+                                                  mdata)))
 
-                        update-name #(if fill-values?
-                                       (if (str/empty? %)
-                                         (str ctv/value-prefix num)
-                                         (str % ", " ctv/value-prefix num))
-                                       %)]
+                        update-name #(cond fill-values?   (if (str/empty? %)
+                                                            (str ctv/value-prefix num)
+                                                            (str % ", " ctv/value-prefix num))
+                                           property-value (if (str/empty? %)
+                                                            property-value
+                                                            (str % ", " property-value))
+                                           :else %)]
                     [(inc num)
                      (-> changes
                          (pcb/update-component (:id component)
@@ -107,7 +146,7 @@
 (defn- generate-make-shape-no-variant
   [changes shape]
   (let [new-name      (ctv/variant-name-to-name shape)
-        [cpath cname] (cfh/parse-path-name new-name)]
+        [cpath cname] (cpn/split-group-name new-name)]
     (-> changes
         (pcb/update-component (:component-id shape)
                               #(-> (dissoc % :variant-id :variant-properties)
@@ -126,8 +165,8 @@
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
   (let [component (ctcl/get-component data (:component-id shape) true)
-
-        add-name? (not= (:name component) container-name)
+        component-full-name (cpn/merge-path-item (:path component) (:name component))
+        add-name? (not= component-full-name container-name)
         props     (ctv/merge-properties base-properties
                                         (:variant-properties component))
         new-props (- min-props
@@ -152,6 +191,10 @@
         objects        (pcb/get-objects changes)
         variant-id     (:id variant-container)
 
+        num-shapes     (->> variant-container
+                            :shapes
+                            count)
+
         ;; If we are cut-pasting a variant-container, this will be null
         ;; because it hasn't any shapes yet
         first-comp-id  (->> variant-container
@@ -164,7 +207,7 @@
                             (map #(assoc % :value "")))
         num-base-props (count base-props)
 
-        [cpath cname]  (cfh/parse-path-name (:name variant-container))
+        [cpath cname]  (cpn/split-group-name (:name variant-container))
         container-name (:name variant-container)
 
         create-new-properties
@@ -178,7 +221,7 @@
                                0
                                shapes)
 
-        num-new-props  (if (or (zero? num-base-props)
+        num-new-props  (if (or (zero? num-shapes)
                                (< total-props num-base-props))
                          0
                          (- total-props num-base-props))
@@ -193,7 +236,7 @@
     (reduce
      (fn [changes shape]
        (let [component (ctcl/get-component data (:component-id shape) true)]
-         (if (or (zero? num-base-props)                  ;; do nothing if there are no base props
+         (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
                  (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
                       (not (:deleted component))))       ;; the same parent and the component isn't deleted)
            changes

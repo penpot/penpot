@@ -4,40 +4,54 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .title-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  min-height: $s-32;
-  background-color: var(--title-background-color);
-  color: var(--title-foreground-color);
+  min-height: deprecated.$s-32;
+  --arrow-icon-color: var(--icon-foreground);
+  --title-color: var(--title-foreground-color);
 }
 
 .title,
 .title-only,
 .inspect-title {
-  @include headlineSmallTypography;
   display: grid;
   align-items: center;
   justify-content: flex-start;
   grid-auto-flow: column;
   height: 100%;
-  min-height: $s-32;
-
+  min-height: deprecated.$s-32;
   overflow: hidden;
 }
 
+.title {
+  @include t.use-typography("headline-small");
+  color: var(--title-color);
+}
+
 .title-only {
-  --title-bar-title-margin: #{$s-8};
+  @include t.use-typography("headline-small");
+  --title-bar-title-margin: #{deprecated.$s-8};
+  color: var(--title-color);
   margin-inline-start: var(--title-bar-title-margin);
+}
+
+.title-only-icon-gap {
+  --title-bar-title-margin: #{deprecated.$s-12};
 }
 
 .inspect-title {
   color: var(--title-foreground-color-hover);
+}
+
+.icon {
+  color: var(--arrow-icon-color);
 }
 
 .title-wrapper {
@@ -45,76 +59,28 @@
   align-items: center;
   flex-grow: 1;
   padding: 0;
-  color: var(--title-foreground-color);
-  stroke: var(--title-foreground-color);
   overflow: hidden;
-
-  &:hover {
-    color: var(--title-foreground-color-hover);
-    .title {
-      stroke: var(--title-foreground-color-hover);
-    }
-  }
 }
 
-.title-button {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: calc($s-24 + $s-4);
-  padding: 0;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
-.title-only-icon-gap {
-  --title-bar-title-margin: #{$s-12};
-}
-
-.toggle-btn {
-  @include buttonStyle;
+.icon-text-btn {
+  @include deprecated.buttonStyle;
   display: flex;
   align-items: center;
   flex-grow: 1;
   padding: 0;
-  color: var(--title-foreground-color);
-  stroke: var(--title-foreground-color);
   overflow: hidden;
 
-  --chevron-icon-color: var(--icon-foreground);
-
   &:hover {
-    --chevron-icon-color: var(--title-foreground-color-hover);
-
-    color: var(--title-foreground-color-hover);
-    .title {
-      color: var(--title-foreground-color-hover);
-      stroke: var(--title-foreground-color-hover);
-    }
+    --arrow-icon-color: var(--icon-foreground-hover);
+    --title-color: var(--title-foreground-color-hover);
   }
 }
 
-.collapsabled-icon {
-  @include buttonStyle;
-  @include flexCenter;
-  height: $s-24;
-  border-radius: $br-8;
-
-  --chevron-icon-rotation: 90deg;
-
-  &.collapsed {
-    --chevron-icon-rotation: 0deg;
-  }
+.icon-btn {
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
 
   &:hover {
-    --chevron-icon-color: var(--title-foreground-color-hover);
+    --arrow-icon-color: var(--icon-foreground-hover);
   }
-}
-
-.chevron-icon {
-  @extend .button-icon-small;
-  transform: rotate(var(--chevron-icon-rotation));
-  stroke: var(--chevron-icon-color);
 }

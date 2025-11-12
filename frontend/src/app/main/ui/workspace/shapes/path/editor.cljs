@@ -8,13 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
-   [app.main.refs :as refs]
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -24,7 +22,6 @@
    [app.util.keyboard :as kbd]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def point-radius 5)
@@ -261,18 +258,9 @@
           angle (gpt/angle-with-other v1 v2)]
       (<= (- 180 angle) 0.1))))
 
-(defn- make-edit-path-ref [id]
-  (let [get-fn #(dm/get-in % [:edit-path id])]
-    (l/derived get-fn refs/workspace-local)))
-
 (mf/defc path-editor*
-  [{:keys [shape zoom]}]
-
-  (let [shape-id      (dm/get-prop shape :id)
-        edit-path-ref (mf/with-memo [shape-id]
-                        (make-edit-path-ref shape-id))
-
-        hover-point   (mf/use-state nil)
+  [{:keys [shape zoom state]}]
+  (let [hover-point   (mf/use-state nil)
         editor-ref    (mf/use-ref nil)
 
         {:keys [edit-mode
@@ -286,18 +274,11 @@
                 moving-handler
                 hover-handlers
                 hover-points
-                snap-toggled]
-         :as edit-path}
-        (mf/deref edit-path-ref)
+                snap-toggled]}
+        state
 
         selected-points
         (or selected-points #{})
-
-        shape
-        (mf/with-memo [shape]
-          (cond-> shape
-            (not (cfh/path-shape? shape))
-            (path/convert-to-path)))
 
         base-content
         (get shape :content)

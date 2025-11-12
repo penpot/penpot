@@ -15,21 +15,24 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.file-migrations :as feat.fmig]
    [app.http.session :as session]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.setup :as-alias setup]
+   [app.setup.clock :as clock]
    [app.srepl.main :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [emoji.core :as emj]
@@ -47,29 +50,35 @@
 
 (defn index-handler
   [_cfg _request]
-  {::yres/status  200
-   ::yres/headers {"content-type" "text/html"}
-   ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
-                      (tmpl/render {:version (:full cf/version)}))})
+  (let [{:keys [clock offset]} @clock/current]
+    {::yres/status  200
+     ::yres/headers {"content-type" "text/html"}
+     ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
+                        (tmpl/render {:version (:full cf/version)
+                                      :current-clock  (str clock)
+                                      :current-offset (if offset
+                                                        (ct/format-duration offset)
+                                                        "NO OFFSET")
+                                      :current-time  (ct/format-inst (ct/now) :http)
+                                      :supported-features cfeat/supported-features}))}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn prepare-response
-  [body]
-  (let [headers {"content-type" "application/transit+json"}]
-    {::yres/status 200
-     ::yres/body body
-     ::yres/headers headers}))
+(defn- get-resolved-file
+  [cfg file-id]
+  (some-> (bfc/get-file cfg file-id :migrate? false)
+          (update :data blob/encode)))
 
-(defn prepare-download-response
-  [body filename]
-  (let [headers {"content-disposition" (str "attachment; filename=" filename)
-                 "content-type" "application/octet-stream"}]
-    {::yres/status 200
-     ::yres/body body
-     ::yres/headers headers}))
+(defn prepare-download
+  [file filename]
+  {::yres/status 200
+   ::yres/headers
+   {"content-disposition" (str "attachment; filename=" filename ".json")
+    "content-type" "application/octet-stream"}
+   ::yres/body
+   (t/encode file {:type :json-verbose})})
 
 (def sql:retrieve-range-of-changes
   "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
@@ -77,45 +86,51 @@
 (def sql:retrieve-single-change
   "select revn, changes, data from file_change where file_id=? and revn = ?")
 
-(defn- retrieve-file-data
-  [{:keys [::db/pool]} {:keys [params ::session/profile-id] :as request}]
+(defn- download-file-data
+  [cfg {:keys [params ::session/profile-id] :as request}]
   (let [file-id  (some-> params :file-id parse-uuid)
-        revn     (some-> params :revn parse-long)
         filename (str file-id)]
 
     (when-not file-id
       (ex/raise :type :validation
                 :code :missing-arguments))
 
-    (let [data (if (integer? revn)
-                 (some-> (db/exec-one! pool [sql:retrieve-single-change file-id revn]) :data)
-                 (some-> (db/get-by-id pool :file file-id) :data))]
-
-      (when-not data
-        (ex/raise :type :not-found
-                  :code :enpty-data
-                  :hint "empty response"))
+    (if-let [file (get-resolved-file cfg file-id)]
       (cond
         (contains? params :download)
-        (prepare-download-response data filename)
+        (prepare-download file filename)
 
         (contains? params :clone)
-        (let [profile    (profile/get-profile pool profile-id)
-              project-id (:default-project-id profile)]
+        (db/tx-run! cfg
+                    (fn [{:keys [::db/conn] :as cfg}]
+                      (let [profile    (profile/get-profile conn profile-id)
+                            project-id (:default-project-id profile)
+                            file       (-> (create-file cfg {:id (uuid/next)
+                                                             :name (str "Cloned: " (:name file))
+                                                             :features (:features file)
+                                                             :project-id project-id
+                                                             :profile-id profile-id})
+                                           (assoc :data (:data file))
+                                           (assoc :migrations (:migrations file)))]
 
-          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
-                          (create-file cfg {:id file-id
-                                            :name (str "Cloned file: " filename)
-                                            :project-id project-id
-                                            :profile-id profile-id})
-                          (db/update! conn :file
-                                      {:data data}
-                                      {:id file-id})
-                          {::yres/status 201
-                           ::yres/body "OK CREATED"})))
+                        (feat.fmig/reset-migrations! conn file)
+                        (db/update! conn :file
+                                    {:data (:data file)}
+                                    {:id (:id file)}
+                                    {::db/return-keys false})
+
+
+                        {::yres/status 201
+                         ::yres/body "OK CLONED"})))
 
         :else
-        (prepare-response (blob/decode data))))))
+        (ex/raise :type :validation
+                  :code :invalid-params
+                  :hint "invalid button"))
+
+      (ex/raise :type :not-found
+                :code :enpty-data
+                :hint "empty response"))))
 
 (defn- is-file-exists?
   [pool id]
@@ -123,80 +138,60 @@
     (-> (db/exec-one! pool [sql id]) :exists)))
 
 (defn- upload-file-data
-  [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
+  [{:keys [::db/pool] :as cfg} {:keys [::session/profile-id params] :as request}]
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
-        data       (some-> params :file :path io/read*)]
+        file       (some-> params :file :path io/read* t/decode)]
 
-    (if (and data project-id)
-      (let [fname     (str "Imported file *: " (dt/now))
+    (if (and file project-id)
+      (let [fname     (str "Imported: " (:name file) "(" (ct/now) ")")
             reuse-id? (contains? params :reuseid)
             file-id   (or (and reuse-id? (ex/ignoring (-> params :file :filename parse-uuid)))
                           (uuid/next))]
 
         (if (and reuse-id? file-id
                  (is-file-exists? pool file-id))
-          (do
-            (db/update! pool :file
-                        {:data data
-                         :deleted-at nil}
-                        {:id file-id})
-            {::yres/status 200
-             ::yres/body "OK UPDATED"})
+          (db/tx-run! cfg
+                      (fn [{:keys [::db/conn] :as cfg}]
+                        (db/update! conn :file
+                                    {:data (:data file)
+                                     :features (into-array (:features file))
+                                     :deleted-at nil}
+                                    {:id file-id}
+                                    {::db/return-keys false})
+                        (feat.fmig/reset-migrations! conn file)
+                        {::yres/status 200
+                         ::yres/body "OK UPDATED"}))
 
-          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
-                          (create-file cfg {:id file-id
-                                            :name fname
-                                            :project-id project-id
-                                            :profile-id profile-id})
+          (db/tx-run! cfg
+                      (fn [{:keys [::db/conn] :as cfg}]
+                        (let [file (-> (create-file cfg {:id file-id
+                                                         :name fname
+                                                         :features (:features file)
+                                                         :project-id project-id
+                                                         :profile-id profile-id})
+                                       (assoc :data (:data file))
+                                       (assoc :migrations (:migrations file)))]
+
                           (db/update! conn :file
-                                      {:data data}
-                                      {:id file-id})
+                                      {:data (:data file)}
+                                      {:id file-id}
+                                      {::db/return-keys false})
+                          (feat.fmig/reset-migrations! conn file)
                           {::yres/status 201
-                           ::yres/body "OK CREATED"}))))
+                           ::yres/body "OK CREATED"})))))
 
-      {::yres/status 500
-       ::yres/body "ERROR"})))
+      (ex/raise :type :validation
+                :code :invalid-params
+                :hint "invalid file uploaded"))))
 
-(defn file-data-handler
+(defn raw-export-import-handler
   [cfg request]
   (case (yreq/method request)
-    :get (retrieve-file-data cfg request)
+    :get (download-file-data cfg request)
     :post (upload-file-data cfg request)
     (ex/raise :type :http
               :code :method-not-found)))
-
-(defn file-changes-handler
-  [{:keys [::db/pool]} {:keys [params] :as request}]
-  (letfn [(retrieve-changes [file-id revn]
-            (if (str/includes? revn ":")
-              (let [[start end] (->> (str/split revn #":")
-                                     (map str/trim)
-                                     (map parse-long))]
-                (some->> (db/exec! pool [sql:retrieve-range-of-changes file-id start end])
-                         (map :changes)
-                         (map blob/decode)
-                         (mapcat identity)
-                         (vec)))
-
-              (if-let [revn (parse-long revn)]
-                (let [item (db/exec-one! pool [sql:retrieve-single-change file-id revn])]
-                  (some-> item :changes blob/decode vec))
-                (ex/raise :type :validation :code :invalid-arguments))))]
-
-    (let [file-id  (some-> params :id parse-uuid)
-          revn     (or (some-> params :revn parse-long) "latest")
-          filename (str file-id)]
-
-      (when (or (not file-id) (not revn))
-        (ex/raise :type :validation
-                  :code :invalid-arguments
-                  :hint "missing arguments"))
-
-      (let [data (retrieve-changes file-id revn)]
-        (if (contains? params :download)
-          (prepare-download-response data filename)
-          (prepare-response data))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERROR BROWSER
@@ -234,7 +229,7 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))]
+                                 (assoc :created-at (ct/format-inst created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
       (let [result (case (:version report)
@@ -258,7 +253,7 @@
 (defn error-list-handler
   [{:keys [::db/pool]} _request]
   (let [items (->> (db/exec! pool [sql:error-reports])
-                   (map #(update % :created-at dt/format-instant :rfc1123)))]
+                   (map #(update % :created-at ct/format-inst :rfc1123)))]
     {::yres/status 200
      ::yres/body (-> (io/resource "app/templates/error-list.tmpl")
                      (tmpl/render {:items items}))
@@ -402,77 +397,67 @@
                            ::yres/headers {"content-type" "text/plain"}
                            ::yres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))))
 
-
-(defn- reset-file-version
+(defn- handle-team-features
   [cfg {:keys [params] :as request}]
-  (let [file-id (some-> params :file-id d/parse-uuid)
-        version (some-> params :version d/parse-integer)]
-
-    (when-not (contains? params :force)
-      (ex/raise :type :validation
-                :code :missing-force
-                :hint "missing force checkbox"))
-
-    (when (nil? file-id)
-      (ex/raise :type :validation
-                :code :invalid-file-id
-                :hint "provided invalid file id"))
-
-    (when (nil? version)
-      (ex/raise :type :validation
-                :code :invalid-version
-                :hint "provided invalid version"))
-
-    (db/tx-run! cfg srepl/process-file! file-id #(assoc % :version version))
-
-    {::yres/status  200
-     ::yres/headers {"content-type" "text/plain"}
-     ::yres/body    "OK"}))
-
-
-(defn- add-team-feature
-  [{:keys [params] :as request}]
-  (let [team-id (some-> params :team-id d/parse-uuid)
-        feature (some-> params :feature str)
+  (let [team-id    (some-> params :team-id d/parse-uuid)
+        feature    (some-> params :feature str)
+        action     (some-> params :action)
         skip-check (contains? params :skip-check)]
-
-    (when-not (contains? params :force)
-      (ex/raise :type :validation
-                :code :missing-force
-                :hint "missing force checkbox"))
 
     (when (nil? team-id)
       (ex/raise :type :validation
                 :code :invalid-team-id
                 :hint "provided invalid team id"))
 
-    (srepl/enable-team-feature! team-id feature :skip-check skip-check)
+    (if (= action "show")
+      (let [team (db/run! cfg teams/get-team-info {:id team-id})]
+        {::yres/status 200
+         ::yres/headers {"content-type" "text/plain"}
+         ::yres/body (apply str "Team features:\n"
+                            (->> (:features team)
+                                 (map (fn [feature]
+                                        (str "- " feature "\n")))))})
 
-    {::yres/status  200
-     ::yres/headers {"content-type" "text/plain"}
-     ::yres/body    "OK"}))
+      (do
+        (when-not (contains? params :force)
+          (ex/raise :type :validation
+                    :code :missing-force
+                    :hint "missing force checkbox"))
 
-(defn- remove-team-feature
-  [{:keys [params] :as request}]
-  (let [team-id   (some-> params :team-id d/parse-uuid)
-        feature   (some-> params :feature str)
-        skip-check (contains? params :skip-check)]
+        (cond
+          (= action "enable")
+          (srepl/enable-team-feature! team-id feature :skip-check skip-check)
 
-    (when-not (contains? params :force)
-      (ex/raise :type :validation
-                :code :missing-force
-                :hint "missing force checkbox"))
+          (= action "disable")
+          (srepl/disable-team-feature! team-id feature :skip-check skip-check)
 
-    (when (nil? team-id)
-      (ex/raise :type :validation
-                :code :invalid-team-id
-                :hint "provided invalid team id"))
+          :else
+          (ex/raise :type :validation
+                    :code :invalid-action
+                    :hint (str "invalid action: " action)))
 
-    (srepl/disable-team-feature! team-id feature :skip-check skip-check)
 
-    {::yres/status  200
-     ::yres/headers {"content-type" "text/plain"}
-     ::yres/body    "OK"}))
+        {::yres/status  200
+         ::yres/headers {"content-type" "text/plain"}
+         ::yres/body    "OK"}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; VIRTUAL CLOCK
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- set-virtual-clock
+  [_ {:keys [params] :as request}]
+  (let [offset (some-> params :offset str/trim not-empty ct/duration)
+        reset? (contains? params :reset)]
+    (if (= "production" (cf/get :tenant))
+      {::yres/status 501
+       ::yres/body "OPERATION NOT ALLOWED"}
+      (do
+        (if (or reset? (zero? (inst-ms offset)))
+          (clock/set-offset! nil)
+          (clock/set-offset! offset))
+        {::yres/status 302
+         ::yres/headers {"location" "/dbg"}}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
@@ -525,6 +510,25 @@
            (ex/raise :type :authentication
                      :code :only-admins-allowed)))))})
 
+(def errors
+  (letfn [(handle-error [cause]
+            (when-let [data (ex-data cause)]
+              (when (= :validation (:type data))
+                (str "Error: " (or (:hint data) (ex-message cause)) "\n"))))]
+    {:name ::errors
+     :compile
+     (fn [& _params]
+       (fn [handler]
+         (fn [request]
+           (try
+             (handler request)
+             (catch Throwable cause
+               (let [body (or (handle-error cause)
+                              (ex/format-throwable cause))]
+                 {::yres/status 400
+                  ::yres/headers {"content-type" "text/plain"}
+                  ::yres/body body}))))))}))
+
 (defmethod ig/assert-key ::routes
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
@@ -540,15 +544,14 @@
     ["/changelog" {:handler (partial changelog-handler cfg)}]
     ["/error/:id" {:handler (partial error-handler cfg)}]
     ["/error" {:handler (partial error-list-handler cfg)}]
-    ["/actions/resend-email-verification"
-     {:handler (partial resend-email-notification cfg)}]
-    ["/actions/reset-file-version"
-     {:handler (partial reset-file-version cfg)}]
-    ["/actions/add-team-feature"
-     {:handler (partial add-team-feature)}]
-    ["/actions/remove-team-feature"
-     {:handler (partial remove-team-feature)}]
-    ["/file/export" {:handler (partial export-handler cfg)}]
-    ["/file/import" {:handler (partial import-handler cfg)}]
-    ["/file/data" {:handler (partial file-data-handler cfg)}]
-    ["/file/changes" {:handler (partial file-changes-handler cfg)}]]])
+    ["/actions" {:middleware [[errors]]}
+     ["/set-virtual-clock"
+      {:handler (partial set-virtual-clock cfg)}]
+     ["/resend-email-verification"
+      {:handler (partial resend-email-notification cfg)}]
+     ["/handle-team-features"
+      {:handler (partial handle-team-features cfg)}]
+     ["/file-export" {:handler (partial export-handler cfg)}]
+     ["/file-import" {:handler (partial import-handler cfg)}]
+     ["/file-raw-export-import" {:handler (partial raw-export-import-handler cfg)}]]]])
+

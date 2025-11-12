@@ -22,4 +22,4 @@
     (t/is (contains? result :body))
     (t/is (contains? result :to))
     #_(t/is (contains? result :reply-to))
-    (t/is (vector? (:body result)))))
+    (t/is (map? (:body result)))))

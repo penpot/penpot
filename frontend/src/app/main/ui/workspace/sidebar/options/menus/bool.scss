@@ -4,12 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .boolean-options {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
   height: var(--sp-xxxl);
 }
 
@@ -21,9 +20,9 @@
 
 .flatten-button {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-32;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  border-radius: deprecated.$br-8;
   grid-column: 5 / span 1;
   --flatten-icon-foreground-color: var(--icon-foreground);
 

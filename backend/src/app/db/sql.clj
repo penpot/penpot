@@ -53,8 +53,15 @@
          opts (cond-> opts
                 (::order-by opts)   (assoc :order-by (::order-by opts))
                 (::columns opts)    (assoc :columns (::columns opts))
-                (::for-update opts) (assoc :suffix "FOR UPDATE")
-                (::for-share opts)  (assoc :suffix "FOR SHARE"))]
+
+                (or (::db/for-update opts)
+                    (::for-update opts))
+                (assoc :suffix "FOR UPDATE")
+
+                (or (::db/for-share opts)
+                    (::for-share opts))
+                (assoc :suffix "FOR SHARE"))]
+
      (sql/for-query table where-params opts))))
 
 (defn update

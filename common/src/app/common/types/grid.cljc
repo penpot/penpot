@@ -6,21 +6,20 @@
 
 (ns app.common.types.grid
   (:require
-   [app.common.colors :as clr]
    [app.common.schema :as sm]
-   [app.common.types.color :refer [schema:hex-color]]))
+   [app.common.types.color :as clr]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:grid-color
-  [:map {:title "PageGridColor"}
-   [:color schema:hex-color]
+  [:map {:title "GridColor"}
+   [:color clr/schema:hex-color]
    [:opacity ::sm/safe-number]])
 
 (def schema:column-params
-  [:map
+  [:map {:title "ColumnGridParams"}
    [:color schema:grid-color]
    [:type {:optional true} [::sm/one-of #{:stretch :left :center :right}]]
    [:size {:optional true} [:maybe ::sm/safe-number]]
@@ -29,7 +28,7 @@
    [:gutter {:optional true} [:maybe ::sm/safe-number]]])
 
 (def schema:square-params
-  [:map
+  [:map {:title "SquareGridParams"}
    [:size {:optional true} [:maybe ::sm/safe-number]]
    [:color schema:grid-color]])
 
@@ -38,33 +37,28 @@
            :dispatch :type
            :decode/json #(update % :type keyword)}
    [:column
-    [:map
+    [:map {:title "ColumnGridAttrs"}
      [:type [:= :column]]
      [:display :boolean]
      [:params schema:column-params]]]
 
    [:row
-    [:map
+    [:map {:title "RowGridAttrs"}
      [:type [:= :row]]
      [:display :boolean]
      [:params schema:column-params]]]
 
    [:square
-    [:map
+    [:map {:title "SquareGridAttrs"}
      [:type [:= :square]]
      [:display :boolean]
      [:params schema:square-params]]]])
 
 (def schema:default-grids
   [:map {:title "PageGrid"}
-   [:square {:optional true} ::square-params]
-   [:row {:optional true} ::column-params]
-   [:column {:optional true} ::column-params]])
-
-(sm/register! ::square-params schema:square-params)
-(sm/register! ::column-params schema:column-params)
-(sm/register! ::grid schema:grid)
-(sm/register! ::default-grids schema:default-grids)
+   [:square {:optional true} schema:square-params]
+   [:row {:optional true} schema:column-params]
+   [:column {:optional true} schema:column-params]])
 
 (def ^:private default-square-params
   {:size 16

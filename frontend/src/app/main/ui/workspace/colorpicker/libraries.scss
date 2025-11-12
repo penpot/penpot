@@ -4,30 +4,29 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .libraries {
-  margin-top: $s-8;
+  margin-top: deprecated.$s-8;
   width: 100%;
-  padding: 0 var(--sp-m);
 }
 
 .selected-colors {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: $s-4;
+  gap: deprecated.$s-4;
   justify-content: space-between;
   overflow: auto;
-  margin-top: $s-8;
-  max-height: $s-168;
+  margin-top: deprecated.$s-8;
+  max-height: deprecated.$s-168;
 }
 
 .add-color-btn,
 .palette-btn {
   @extend .button-secondary;
-  height: $s-24;
-  width: $s-24;
-  border-radius: $br-circle;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
+  border-radius: deprecated.$br-circle;
   padding: 0;
   svg {
     @extend .button-icon;

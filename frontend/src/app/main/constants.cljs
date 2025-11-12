@@ -15,6 +15,15 @@
 (def grid-x-axis 10)
 (def grid-y-axis 10)
 
+;; Before changing these values also check:
+;; frontend/src/app/main/ui/workspace/sidebar/common/sidebar.scss
+
+(def right-sidebar-default-width 318)
+(def right-sidebar-default-max-width 768)
+
+(def left-sidebar-default-width 318)
+(def left-sidebar-default-max-width 500)
+
 (def page-metadata
   "Default data for page metadata."
   {:grid-x-axis grid-x-axis

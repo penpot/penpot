@@ -62,7 +62,7 @@ test("User goes to the Viewer Comments", async ({ page }) => {
   await viewerPage.showComments();
   await viewerPage.showCommentsThread(1);
   await expect(
-    viewerPage.page.getByRole("textbox", { name: "Reply" }),
+    viewerPage.page.getByRole("button", { name: "Post" }),
   ).toBeVisible();
 
   await expect(viewerPage.page).toHaveScreenshot();
@@ -101,7 +101,11 @@ test("User goes to the Viewer Inspect code", async ({ page }) => {
 
   await viewerPage.showCode();
 
-  await expect(viewerPage.page.getByText("Size and position")).toBeVisible();
+  await expect(
+    viewerPage.page.getByRole("button", {
+      name: "Toggle panel Size & Position",
+    }),
+  ).toBeVisible();
 
   await expect(viewerPage.page).toHaveScreenshot();
 });
@@ -117,7 +121,11 @@ test("User goes to the Viewer Inspect code, code tab", async ({ page }) => {
   });
 
   await viewerPage.showCode();
-  await viewerPage.page.getByRole("tab", { name: "code" }).click();
+  await viewerPage.page
+    .getByRole("combobox")
+    .filter({ hasText: "Styles" })
+    .click();
+  await viewerPage.page.getByRole("option", { name: "Code" }).click();
 
   await expect(
     viewerPage.page.getByRole("button", { name: "Copy all code" }),

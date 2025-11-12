@@ -4,20 +4,20 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../ds/typography.scss" as *;
-@use "../../ds/spacing.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .sidebar-wrapper {
   display: grid;
   grid-template-rows: auto 1fr auto;
   // Overflow on the bottom section can't be done without hardcoded values for the height
   // This has to be changed from the wrapping sidebar styles
-  height: calc(100vh - #{$s-92});
+  height: calc(100vh - #{deprecated.$s-92});
   overflow: hidden;
 }
 
-.sets-section-wrapper {
+.token-management-section-wrapper {
   position: relative;
   display: flex;
   flex: 1;
@@ -25,6 +25,8 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  position: relative;
+  padding-block-end: var(--sp-l);
 }
 
 .tokens-section-wrapper {
@@ -32,53 +34,6 @@
   padding-left: var(--sp-m);
   overflow-y: auto;
   scrollbar-gutter: stable;
-}
-
-.sets-sidebar {
-  position: relative;
-  padding-block-end: var(--sp-l);
-}
-
-.themes-header,
-.sets-header-container {
-  @include use-typography("headline-small");
-  padding: var(--sp-s);
-  color: var(--title-foreground-color);
-  word-break: break-word;
-}
-
-.sets-header-container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-xs);
-  margin-block-start: var(--sp-s);
-}
-
-.sets-header {
-  flex: 1;
-}
-
-.sets-header-status {
-  @include use-typography("body-small");
-  text-transform: none;
-  color: var(--color-foreground-secondary);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.sets-header-status-text {
-  font-style: italic;
-}
-
-.themes-wrapper {
-  padding: var(--sp-m) 0 0 var(--sp-m);
-}
-
-.empty-theme-wrapper {
-  padding: var(--sp-m);
-  color: var(--color-foreground-secondary);
 }
 
 .sidebar-header {
@@ -90,18 +45,8 @@
   color: var(--layer-row-foreground-color);
 }
 
-.empty-state-message {
-  color: var(--color-foreground-secondary);
-}
-
-.token-pills-wrapper {
-  display: flex;
-  gap: var(--sp-xs);
-  flex-wrap: wrap;
-}
-
 .section-text-icon {
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   width: var(--sp-l);
   height: var(--sp-l);
   display: flex;
@@ -131,7 +76,7 @@
   display: flex;
   align-items: center;
   justify-content: end;
-  padding: $s-6 var(--sp-s);
+  padding: deprecated.$s-6 var(--sp-s);
   text-transform: uppercase;
   gap: var(--sp-s);
   background-color: var(--color-background-primary);
@@ -141,10 +86,10 @@
 
 .import-export-menu {
   @extend .menu-dropdown;
-  top: -#{$s-6};
+  top: -#{deprecated.$s-6};
   right: 0;
   translate: 0 -100%;
-  width: $s-192;
+  width: deprecated.$s-192;
   margin: 0;
 }
 
@@ -169,42 +114,18 @@
   flex: 1;
 }
 
-.theme-select-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 0.28fr;
-  gap: $s-6;
-}
-
-.themes-button {
-  @extend .button-secondary;
-  width: auto;
-}
-
-.create-theme-button {
-  @include use-typography("body-small");
-  background-color: transparent;
-  border: none;
-  appearance: none;
-  color: var(--color-accent-primary);
-  cursor: pointer;
-}
-
-.edit-theme-button {
-  justify-content: center;
-}
-
 .resize-area-horiz {
   background-color: var(--panel-background-color);
   position: absolute;
   left: 0;
   width: 100%;
-  padding: $s-3 0 $s-1 0;
-  height: $s-6;
+  padding: deprecated.$s-3 0 deprecated.$s-1 0;
+  height: deprecated.$s-6;
   cursor: ns-resize;
   z-index: 1;
 }
 
 .resize-handle-horiz {
-  border-bottom: $s-2 solid var(--resize-area-border-color);
+  border-bottom: deprecated.$s-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }

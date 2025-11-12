@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
@@ -25,7 +26,6 @@
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]))
 
 (defn file-version-proxy?
@@ -107,7 +107,7 @@
 
              :else
              (let [params  {:id (:id @data)
-                            :label (dt/format (:created-at @data) :date-full)}]
+                            :label (ct/format-inst (:created-at @data) :localized-date)}]
                (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
                             (rp/cmd! :update-file-snapshot params))
                     (rx/subs! (fn [[users data]]

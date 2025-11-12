@@ -9,7 +9,9 @@
 import { getFills } from "./Color.js";
 
 const DEFAULT_FONT_SIZE = "16px";
+const DEFAULT_FONT_SIZE_VALUE = parseFloat(DEFAULT_FONT_SIZE);
 const DEFAULT_LINE_HEIGHT = "1.2";
+const DEFAULT_FONT_WEIGHT = "400";
 
 /**
  * Merges two style declarations. `source` -> `target`.
@@ -26,7 +28,7 @@ export function mergeStyleDeclarations(target, source) {
     const styleValue = source.getPropertyValue(styleName);
     target.setProperty(styleName, styleValue);
   }
-  return target
+  return target;
 }
 
 /**
@@ -40,7 +42,7 @@ function resetStyleDeclaration(styleDeclaration) {
     const styleName = styleDeclaration.item(index);
     styleDeclaration.removeProperty(styleName);
   }
-  return styleDeclaration
+  return styleDeclaration;
 }
 
 /**
@@ -49,14 +51,14 @@ function resetStyleDeclaration(styleDeclaration) {
  *
  * @type {HTMLDivElement|null}
  */
-let inertElement = null
+let inertElement = null;
 
 /**
  * Resets the style declaration of the inert
  * element.
  */
-function resetInertElement() {
-  if (!inertElement) throw new Error('Invalid inert element');
+export function resetInertElement() {
+  if (!inertElement) throw new Error("Invalid inert element");
   resetStyleDeclaration(inertElement.style);
   return inertElement;
 }
@@ -94,11 +96,21 @@ function getStyleDefaultsDeclaration() {
  * @returns {CSSStyleDeclaration}
  */
 export function getComputedStyle(element) {
+  if (typeof window !== "undefined" && window.getComputedStyle) {
+    const inertElement = getInertElement();
+    const computedStyle = window.getComputedStyle(element);
+    inertElement.style = computedStyle;
+
+    return inertElement.style;
+  }
+  return getComputedStylePolyfill(element);
+}
+
+export function getComputedStylePolyfill(element) {
   const inertElement = getInertElement();
+
   let currentElement = element;
   while (currentElement) {
-    // This is better but it doesn't work in JSDOM.
-    // for (const styleName of currentElement.style) {
     for (let index = 0; index < currentElement.style.length; index++) {
       const styleName = currentElement.style.item(index);
       const currentValue = inertElement.style.getPropertyValue(styleName);
@@ -110,10 +122,7 @@ export function getComputedStyle(element) {
         }
       } else {
         const newValue = currentElement.style.getPropertyValue(styleName);
-        inertElement.style.setProperty(
-          styleName,
-          newValue
-        );
+        inertElement.style.setProperty(styleName, newValue);
       }
     }
     currentElement = currentElement.parentElement;
@@ -131,12 +140,12 @@ export function getComputedStyle(element) {
  * @param {CSSStyleDeclaration} [styleDefaults]
  * @returns {CSSStyleDeclaration}
  */
-export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaration()) {
+export function normalizeStyles(
+  node,
+  styleDefaults = getStyleDefaultsDeclaration(),
+) {
   const computedStyle = getComputedStyle(node.parentElement);
-  const styleDeclaration = mergeStyleDeclarations(
-    styleDefaults,
-    computedStyle
-  );
+  const styleDeclaration = mergeStyleDeclarations(styleDefaults, computedStyle);
 
   // If there's a color property, we should convert it to
   // a --fills CSS variable property.
@@ -162,6 +171,11 @@ export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaratio
     styleDeclaration.setProperty("font-size", DEFAULT_FONT_SIZE);
   }
 
+  const fontWeight = styleDeclaration.getPropertyValue("font-weight");
+  if (!fontWeight || fontWeight === "0") {
+    styleDeclaration.setProperty("font-weight", DEFAULT_FONT_WEIGHT);
+  }
+
   const lineHeight = styleDeclaration.getPropertyValue("line-height");
   if (!lineHeight || lineHeight === "" || !lineHeight.endsWith("px")) {
     // TODO: Podríamos convertir unidades en decimales.
@@ -173,7 +187,7 @@ export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaratio
       parseFloat(lineHeight) / parseFloat(fontSize),
     );
   }
-  return styleDeclaration
+  return styleDeclaration;
 }
 
 /**
@@ -208,10 +222,13 @@ export function setStyle(element, styleName, styleValue, styleUnit) {
  */
 function getStyleFontSize(styleValueAsNumber, styleValue) {
   if (styleValue.endsWith("pt")) {
-    return (styleValueAsNumber * 1.3333).toFixed();
+    const baseSize = 1.3333;
+    return (styleValueAsNumber * baseSize).toFixed();
   } else if (styleValue.endsWith("em")) {
+    const baseSize = DEFAULT_FONT_SIZE_VALUE;
     return (styleValueAsNumber * baseSize).toFixed();
   } else if (styleValue.endsWith("%")) {
+    const baseSize = DEFAULT_FONT_SIZE_VALUE;
     return ((styleValueAsNumber / 100) * baseSize).toFixed();
   }
   return styleValueAsNumber.toFixed();
@@ -237,7 +254,7 @@ export function getStyleFromDeclaration(style, styleName, styleUnit) {
   if (styleName === "font-size") {
     return getStyleFontSize(styleValueAsNumber, styleValue);
   } else if (styleName === "line-height") {
-    return styleValue
+    return styleValue;
   }
   if (Number.isNaN(styleValueAsNumber)) {
     return styleValue;
@@ -291,10 +308,14 @@ export function setStylesFromObject(element, allowedStyles, styleObject) {
 export function setStylesFromDeclaration(
   element,
   allowedStyles,
-  styleDeclaration
+  styleDeclaration,
 ) {
   for (const [styleName, styleUnit] of allowedStyles) {
-    const styleValue = getStyleFromDeclaration(styleDeclaration, styleName, styleUnit);
+    const styleValue = getStyleFromDeclaration(
+      styleDeclaration,
+      styleName,
+      styleUnit,
+    );
     if (styleValue) {
       setStyle(element, styleName, styleValue, styleUnit);
     }
@@ -316,7 +337,7 @@ export function setStyles(element, allowedStyles, styleObjectOrDeclaration) {
     return setStylesFromDeclaration(
       element,
       allowedStyles,
-      styleObjectOrDeclaration
+      styleObjectOrDeclaration,
     );
   }
   return setStylesFromObject(element, allowedStyles, styleObjectOrDeclaration);
@@ -354,7 +375,11 @@ export function mergeStyles(allowedStyles, styleDeclaration, newStyles) {
     if (styleName in newStyles) {
       mergedStyles[styleName] = newStyles[styleName];
     } else {
-      mergedStyles[styleName] = getStyleFromDeclaration(styleDeclaration, styleName, styleUnit);
+      mergedStyles[styleName] = getStyleFromDeclaration(
+        styleDeclaration,
+        styleName,
+        styleUnit,
+      );
     }
   }
   return mergedStyles;

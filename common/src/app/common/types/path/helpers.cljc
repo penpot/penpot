@@ -27,13 +27,11 @@
 
 (defn make-move-to [to]
   {:command :move-to
-   :relative false
    :params {:x (:x to)
             :y (:y to)}})
 
 (defn make-line-to [to]
   {:command :line-to
-   :relative false
    :params {:x (:x to)
             :y (:y to)}})
 
@@ -65,7 +63,6 @@
 (defn make-curve-to
   [to h1 h2]
   {:command :curve-to
-   :relative false
    :params (make-curve-params to h1 h2)})
 
 (defn prefix->coords [prefix]
@@ -98,7 +95,7 @@
 (defn segment->point
   ([segment] (segment->point segment :x))
   ([segment coord]
-   (let [params (get segment :params)]
+   (when-let [params (not-empty (get segment :params))]
      (case coord
        :c1 (gpt/point (get params :c1x)
                       (get params :c1y))
@@ -396,17 +393,15 @@
   defined by the constant num-segments"
   [start end h1 h2]
   (let [offset (/ 1 num-segments)
-        tp (fn [t] (curve-values start end h1 h2 t))]
-    (loop [from 0
+        tp     (fn [t] (curve-values start end h1 h2 t))]
+    (loop [from   0.0
            result []]
-
-      (let [to (min 1 (+ from offset))
-            line [(tp from) (tp to)]
+      (let [to     (mth/min 1.0 (+ from offset))
+            line   [(tp from) (tp to)]
             result (conj result line)]
-
-        (if (>= to 1)
+        (if (>= to 1.0)
           result
-          (recur to result))))))
+          (recur (double to) result))))))
 
 (defn curve-split
   "Splits a curve into two at the given parametric value `t`.

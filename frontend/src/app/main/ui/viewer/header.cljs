@@ -16,7 +16,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.comments :refer [comments-menu]]
    [app.main.ui.viewer.interactions :refer [flows-menu* interactions-menu*]]
    [app.util.dom :as dom]
@@ -86,13 +86,13 @@
          [:button {:class (stl/css :zoom-btn)
                    :on-click on-decrease}
           [:span {:class (stl/css :zoom-icon)}
-           i/remove-icon]]
+           deprecated-icon/remove-icon]]
          [:p  {:class (stl/css :zoom-text)}
           (fmt/format-percent zoom)]
          [:button {:class (stl/css :zoom-btn)
                    :on-click on-increase}
           [:span {:class (stl/css :zoom-icon)}
-           i/add]]]
+           deprecated-icon/add]]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -190,13 +190,13 @@
      (when (:in-team permissions)
        [:span {:on-click go-to-workspace
                :class (stl/css :edit-btn)}
-        i/curve])
+        deprecated-icon/curve])
 
      [:span {:title (tr "viewer.header.fullscreen")
              :class (stl/css-case :fullscreen-btn true
                                   :selected fullscreen?)
              :on-click toggle-fullscreen}
-      i/expand]
+      deprecated-icon/expand]
 
      (when (:in-team permissions)
        [:button {:on-click open-share-dialog
@@ -240,7 +240,7 @@
              :on-click open-dropdown}
        [:span  {:class (stl/css :breadcrumb-text)}
         (dm/str file-name " / " page-name)]
-       [:span {:class (stl/css :icon)} i/arrow]
+       [:span {:class (stl/css :icon)} deprecated-icon/arrow]
        [:span "/"]
        [:& dropdown {:show @show-dropdown?
                      :on-close close-dropdown}
@@ -254,15 +254,15 @@
             [:span {:class (stl/css :label)}
              (get-in file [:data :pages-index id :name])]
             (when (= page-id id)
-              [:span {:class (stl/css :icon-check)} i/tick])])]]]
+              [:span {:class (stl/css :icon-check)} deprecated-icon/tick])])]]]
       [:div {:class (stl/css :current-frame)
              :id "current-frame"
              :on-click toggle-thumbnails}
        [:span {:class (stl/css :frame-name)} frame-name]
-       [:span {:class (stl/css :icon)} i/arrow]]]]))
+       [:span {:class (stl/css :icon)} deprecated-icon/arrow]]]]))
 
 (def ^:private penpot-logo-icon
-  (i/icon-xref :penpot-logo-icon (stl/css :logo-icon)))
+  (deprecated-icon/icon-xref :penpot-logo-icon (stl/css :logo-icon)))
 
 
 (mf/defc header
@@ -330,7 +330,7 @@
                 :class (stl/css-case :mode-zone-btn true
                                      :selected (= section :interactions))
                 :title (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
-       i/play]
+       deprecated-icon/play]
 
       (when (or (:in-team permissions)
                 (= (:who-comment permissions) "all"))
@@ -339,7 +339,7 @@
                   :class (stl/css-case :mode-zone-btn true
                                        :selected (= section :comments))
                   :title (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
-         i/comments])
+         deprecated-icon/comments])
 
       (when (or (:in-team permissions)
                 (and (= (:type permissions) :share-link)
@@ -348,7 +348,7 @@
                   :class (stl/css-case :mode-zone-btn true
                                        :selected (= section :inspect))
                   :title (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))}
-         i/code])]
+         deprecated-icon/code])]
 
      [:& header-options {:section section
                          :permissions permissions

@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-thumbnails
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
@@ -13,6 +14,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
@@ -30,13 +32,12 @@
    [app.storage :as sto]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
 
 (def long-cache-duration
-  (dt/duration {:days 7}))
+  (ct/duration {:days 7}))
 
 ;; --- COMMAND QUERY: get-file-object-thumbnails
 
@@ -185,7 +186,7 @@
   [:map {:title "PartialFile"}
    [:id ::sm/uuid]
    [:revn {:min 0} ::sm/int]
-   [:page :any]])
+   [:page [:map-of :keyword ::sm/any]]])
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
@@ -202,9 +203,9 @@
                                             :profile-id profile-id
                                             :file-id file-id)
 
-                       file (files/get-file cfg file-id
-                                            :preload-pointers? true
-                                            :read-only? true)]
+                       file (bfc/get-file cfg file-id
+                                          :realize? true
+                                          :read-only? true)]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-file-features! (:features file)))
@@ -247,7 +248,7 @@
 (defn- create-file-object-thumbnail!
   [{:keys [::sto/storage] :as cfg} file object-id media tag]
   (let [file-id   (:id file)
-        timestamp (dt/now)
+        timestamp (ct/now)
         media     (persist-thumbnail! storage media timestamp)
         [th1 th2] (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                                     (let [th1 (db/exec-one! conn [sql:get-file-object-thumbnail file-id object-id tag])
@@ -271,7 +272,7 @@
   [:map {:title "create-file-object-thumbnail"}
    [:file-id ::sm/uuid]
    [:object-id [:string {:max 250}]]
-   [:media ::media/upload]
+   [:media media/schema:upload]
    [:tag {:optional true} [:string {:max 50}]]])
 
 (sv/defmethod ::create-file-object-thumbnail
@@ -302,7 +303,7 @@
                                              {::sql/for-update true})]
     (sto/touch-object! storage media-id)
     (db/update! conn :file-tagged-object-thumbnail
-                {:deleted-at (dt/now)}
+                {:deleted-at (ct/now)}
                 {:file-id file-id
                  :object-id object-id
                  :tag tag})))
@@ -338,7 +339,8 @@
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))
-        tnow  (dt/now)
+        tnow  (ct/now)
+
         media (sto/put-object! storage
                                {::sto/content data
                                 ::sto/deduplicate? true
@@ -381,7 +383,7 @@
   [:map {:title "create-file-thumbnail"}
    [:file-id ::sm/uuid]
    [:revn ::sm/int]
-   [:media ::media/upload]])
+   [:media media/schema:upload]])
 
 (sv/defmethod ::create-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the

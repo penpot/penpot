@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
@@ -24,12 +25,10 @@
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.tasks.file-gc]
    [app.util.services :as sv]
-   [app.util.time :as dt]
-   [app.worker :as-alias wrk]
-   [promesa.exec :as px]
-   [yetti.response :as yres]))
+   [app.worker :as-alias wrk]))
 
 (set! *warn-on-reflection* true)
 
@@ -45,7 +44,7 @@
 
 (defn stream-export-v1
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (yres/stream-body
+  (rph/stream
    (fn [_ output-stream]
      (try
        (-> cfg
@@ -60,7 +59,7 @@
 
 (defn stream-export-v3
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (yres/stream-body
+  (rph/stream
    (fn [_ output-stream]
      (try
        (-> cfg
@@ -80,21 +79,16 @@
    ::sm/params schema:export-binfile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id version file-id] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
-  (fn [_]
-    (let [version (or version 1)
-          body    (case (int version)
-                    1 (stream-export-v1 cfg params)
-                    2 (throw (ex-info "not-implemented" {}))
-                    3 (stream-export-v3 cfg params))]
-
-      {::yres/status 200
-       ::yres/headers {"content-type" "application/octet-stream"}
-       ::yres/body body})))
+  (let [version (or version 1)]
+    (case (int version)
+      1 (stream-export-v1 cfg params)
+      2 (throw (ex-info "not-implemented" {}))
+      3 (stream-export-v3 cfg params))))
 
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id project-id version name file]}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file]}]
   (let [team   (teams/get-team pool
                                :profile-id profile-id
                                :project-id project-id)
@@ -105,16 +99,12 @@
                    (assoc ::bfc/name name)
                    (assoc ::bfc/input (:path file)))
 
-        ;; NOTE: the importation process performs some operations that are
-        ;; not very friendly with virtual threads, and for avoid
-        ;; unexpected blocking of other concurrent operations we dispatch
-        ;; that operation to a dedicated executor.
         result (case (int version)
-                 1 (px/invoke! executor (partial bf.v1/import-files! cfg))
-                 3 (px/invoke! executor (partial bf.v3/import-files! cfg)))]
+                 1 (bf.v1/import-files! cfg)
+                 3 (bf.v3/import-files! cfg))]
 
     (db/update! pool :project
-                {:modified-at (dt/now)}
+                {:modified-at (ct/now)}
                 {:id project-id}
                 {::db/return-keys false})
 
@@ -125,20 +115,42 @@
    [:name [:or [:string {:max 250}]
            [:map-of ::sm/uuid [:string {:max 250}]]]]
    [:project-id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
    [:version {:optional true} ::sm/int]
-   [:file ::media/upload]])
+   [:file media/schema:upload]])
 
 (sv/defmethod ::import-binfile
-  "Import a penpot file in a binary format."
+  "Import a penpot file in a binary format. If `file-id` is provided,
+  an in-place import will be performed instead of creating a new file.
+
+  The in-place imports are only supported for binfile-v3 and when a
+  .penpot file only contains one penpot file.
+  "
   {::doc/added "1.15"
+   ::doc/changes ["1.20" "Add file-id param for in-place import"
+                  "1.20" "Set default version to 3"]
+
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file-id file] :as params}]
   (projects/check-edition-permissions! pool profile-id project-id)
-  (let [params (-> params
-                   (assoc :profile-id profile-id)
-                   (assoc :version (or version 1)))]
+  (let [version  (or version 3)
+        params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :version version))
+
+        cfg      (cond-> cfg
+                   (uuid? file-id)
+                   (assoc ::bfc/file-id file-id))
+
+        manifest (case (int version)
+                   1 nil
+                   3 (bf.v3/get-manifest (:path file)))]
+
     (with-meta
       (sse/response (partial import-binfile cfg params))
-      {::audit/props {:file nil}})))
+      {::audit/props {:file nil
+                      :file-id file-id
+                      :generated-by (:generated-by manifest)
+                      :referer (:referer manifest)}})))

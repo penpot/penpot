@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .debug-panel {
   display: flex;
@@ -13,17 +13,17 @@
 }
 
 .panel-title {
-  @include flexCenter;
-  @include uppercaseTitleTipography;
+  @include deprecated.flexCenter;
+  @include deprecated.uppercaseTitleTipography;
   position: relative;
-  height: $s-32;
-  min-height: $s-32;
-  margin: $s-8 $s-8 0 $s-8;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-8 deprecated.$s-8 0 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--panel-title-background-color);
 
   span {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     flex-grow: 1;
     color: var(--title-foreground-color-hover);
   }
@@ -31,7 +31,7 @@
 
 .checkbox-wrapper {
   @extend .input-checkbox;
-  height: $s-32;
+  height: deprecated.$s-32;
   padding: 0;
 }
 
@@ -41,5 +41,5 @@
 }
 
 .debug-panel-inner {
-  padding: $s-16 $s-8;
+  padding: deprecated.$s-16 deprecated.$s-8;
 }

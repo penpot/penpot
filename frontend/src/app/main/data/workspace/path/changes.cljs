@@ -19,8 +19,8 @@
   "Generates changes to update the new content of the shape"
   [it objects page-id shape old-content new-content]
 
-  (assert (path/check-path-content old-content))
-  (assert (path/check-path-content new-content))
+  (assert (path/content? old-content))
+  (assert (path/content? new-content))
 
   (let [shape-id (:id shape)
 

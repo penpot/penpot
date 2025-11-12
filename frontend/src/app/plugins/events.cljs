@@ -14,6 +14,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
    [app.util.object :as obj]
+   [app.util.theme :as theme]
    [goog.functions :as gf]))
 
 (defmulti handle-state-change (fn [type _] type))
@@ -50,10 +51,23 @@
       ::not-changed
       (apply array (map str new-selection)))))
 
+(defn- get-theme
+  [state]
+  (let [theme (get-in state [:profile :theme])]
+    (cond
+      (or (not theme) (= theme "system"))
+      (theme/get-system-theme)
+
+      (= theme "default")
+      "dark"
+
+      :else
+      theme)))
+
 (defmethod handle-state-change "themechange"
   [_ _ old-val new-val _]
-  (let [old-theme (get-in old-val [:profile :theme])
-        new-theme (get-in new-val [:profile :theme])]
+  (let [old-theme (get-theme old-val)
+        new-theme (get-theme new-val)]
     (if (identical? old-theme new-theme)
       ::not-changed
       (if (= new-theme "default")

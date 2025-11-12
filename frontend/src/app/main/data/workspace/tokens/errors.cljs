@@ -14,12 +14,16 @@
    {:error/code :error.import/json-parse-error
     :error/fn #(tr "workspace.tokens.error-parse")}
 
+   :error.import/no-token-files-found
+   {:error/code :error.import/no-token-files-found
+    :error/fn #(tr "workspace.tokens.no-token-files-found")}
+
    :error.import/invalid-json-data
    {:error/code :error.import/invalid-json-data
     :error/fn #(tr "workspace.tokens.invalid-json")}
 
    :error.import/invalid-token-name
-   {:error/code :error.import/invalid-json-data
+   {:error/code :error.import/invalid-token-name
     :error/fn #(tr "workspace.tokens.invalid-json-token-name")
     :error/detail #(tr "workspace.tokens.invalid-json-token-name-detail" %)}
 
@@ -60,6 +64,10 @@
    {:error/code :error.style-dictionary/value-with-units
     :error/fn #(str (tr "workspace.tokens.value-with-units"))}
 
+   :error.style-dictionary/value-with-percent
+   {:error/code :error.style-dictionary/value-with-percent
+    :error/fn #(str (tr "workspace.tokens.value-with-percent"))}
+
    :error.style-dictionary/invalid-token-value-opacity
    {:error/code :error.style-dictionary/invalid-token-value-opacity
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.opacity-range")])}
@@ -67,6 +75,38 @@
    :error.style-dictionary/invalid-token-value-stroke-width
    {:error/code :error.style-dictionary/invalid-token-value-stroke-width
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.stroke-width-range")])}
+
+   :error.style-dictionary/invalid-token-value-text-case
+   {:error/code :error.style-dictionary/invalid-token-value-text-case
+    :error/fn #(tr "workspace.tokens.invalid-text-case-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-text-decoration
+   {:error/code :error.style-dictionary/invalid-token-value-text-decoration
+    :error/fn #(tr "workspace.tokens.invalid-text-decoration-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-font-weight
+   {:error/code :error.style-dictionary/invalid-token-value-font-weight
+    :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-typography
+   {:error/code :error.style-dictionary/invalid-token-value-typography
+    :error/fn #(tr "workspace.tokens.invalid-token-value-typography" %)}
+
+   :error.style-dictionary/composite-line-height-needs-font-size
+   {:error/code :error.style-dictionary/composite-line-height-needs-font-size
+    :error/fn #(tr "workspace.tokens.composite-line-height-needs-font-size" %)}
+
+   :error.style-dictionary/invalid-token-value-shadow-type
+   {:error/code :error.style-dictionary/invalid-token-value-shadow-type
+    :error/fn #(tr "workspace.tokens.invalid-shadow-type-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-shadow-blur
+   {:error/code :error.style-dictionary/invalid-token-value-shadow-blur
+    :error/fn #(tr "workspace.tokens.shadow-blur-range")}
+
+   :error.style-dictionary/invalid-token-value-shadow-spread
+   {:error/code :error.style-dictionary/invalid-token-value-shadow-spread
+    :error/fn #(tr "workspace.tokens.shadow-spread-range")}
 
    :error/unknown
    {:error/code :error/unknown

@@ -39,6 +39,43 @@
 (def ^:private xf:without-uuid-zero
   (remove #(= % uuid/zero)))
 
+(def ^:private transform-attrs
+  #{:selrect
+    :points
+    :x
+    :y
+    :r1
+    :r2
+    :r3
+    :r4
+    :shadow
+    :blur
+    :strokes
+    :width
+    :height
+    :content
+    :transform
+    :transform-inverse
+    :rotation
+    :flip-x
+    :flip-y
+    :grow-type
+    :position-data
+    :layout-gap
+    :layout-padding
+    :layout-item-h-sizing
+    :layout-item-max-h
+    :layout-item-max-w
+    :layout-item-min-h
+    :layout-item-min-w
+    :layout-item-v-sizing
+    :layout-padding-type
+    :layout-item-margin
+    :layout-item-margin-type
+    :layout-grid-cells
+    :layout-grid-columns
+    :layout-grid-rows})
+
 ;; -- temporary modifiers -------------------------------------------
 
 ;; During an interactive transformation of shapes (e.g. when resizing or rotating
@@ -154,20 +191,6 @@
       (d/not-empty? position-data)
       (assoc :position-data position-data))))
 
-(defn update-grow-type
-  [shape old-shape]
-  (let [auto-width? (= :auto-width (:grow-type shape))
-        auto-height? (= :auto-height (:grow-type shape))
-
-        changed-width? (> (mth/abs (- (:width shape) (:width old-shape))) 0.1)
-        changed-height? (> (mth/abs (- (:height shape) (:height old-shape))) 0.1)
-
-        change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
-                             (and auto-height? changed-height?))]
-    (cond-> shape
-      change-to-fixed?
-      (assoc :grow-type :fixed))))
-
 (defn- set-wasm-props!
   [objects prev-wasm-props wasm-props]
   (let [;; Set old value for previous properties
@@ -180,21 +203,26 @@
         wasm-props
         (concat clean-props wasm-props)
 
-        wasm-props
+        ;; Stores a map shape -> set of properties changed
+        ;; this is the standard format used by process-shape-changes
+        shape-changes
         (-> (group-by first wasm-props)
-            (update-vals #(map second %)))]
+            (update-vals #(into #{} (map (comp :property second)) %)))
 
-    ;; Props are grouped by id and then assoc to the shape the new value
-    (doseq [[id properties] wasm-props]
-      (let [shape
-            (->> properties
-                 (reduce
-                  (fn [shape {:keys [property value]}]
-                    (assoc shape property value))
-                  (get objects id)))]
-
-        ;; With the new values to the shape change multi props
-        (wasm.shape/set-wasm-multi-attrs! shape (->> properties (map :property)))))))
+        ;; Create a new objects only with the temporary modifications
+        objects-changed
+        (->> wasm-props
+             (reduce
+              (fn [objects [id properties]]
+                (let [shape
+                      (->> properties
+                           (reduce
+                            (fn [shape {:keys [property value]}]
+                              (assoc shape property value))
+                            (get objects id)))]
+                  (assoc objects id shape)))
+              objects))]
+    (wasm.shape/process-shape-changes! objects-changed shape-changes)))
 
 (defn clear-local-transform []
   (ptk/reify ::clear-local-transform
@@ -492,25 +520,24 @@
                   nil)))))))
    modif-tree))
 
+
+(def ^:private xf:parse-geometry-modifier
+  (let [default-transform (gmt/matrix)]
+    (keep (fn [[id data]]
+            (cond
+              (= id uuid/zero)
+              nil
+
+              (ctm/has-geometry? (:modifiers data))
+              (d/vec2 id (ctm/modifiers->transform (:modifiers data)))
+
+              ;; Unit matrix is used for reflowing
+              :else
+              (d/vec2 id default-transform))))))
+
 (defn- parse-geometry-modifiers
   [modif-tree]
-  (into
-   []
-   (keep
-    (fn [[id data]]
-      (cond
-        (= id uuid/zero)
-        nil
-
-        (ctm/has-geometry? (:modifiers data))
-        {:id id
-         :transform (ctm/modifiers->transform (:modifiers data))}
-
-        ;; Unit matrix is used for reflowing
-        :else
-        {:id id
-         :transform (gmt/matrix)})))
-   modif-tree))
+  (into [] xf:parse-geometry-modifier modif-tree))
 
 (defn- extract-property-changes
   [modif-tree]
@@ -535,6 +562,8 @@
     (update [_ state]
       (assoc state :workspace-wasm-modifiers modifiers))))
 
+(def ^:private xf:map-key (map key))
+
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel]
@@ -553,16 +582,17 @@
     (watch [_ state _]
       (wasm.api/clean-modifiers)
       (let [prev-wasm-props (:prev-wasm-props state)
-            wasm-props (:wasm-props state)
-            objects (dsh/lookup-page-objects state)
+            wasm-props      (:wasm-props state)
+            objects         (dsh/lookup-page-objects state)
             pixel-precision false]
         (set-wasm-props! objects prev-wasm-props wasm-props)
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
           (let [geometry-entries (parse-geometry-modifiers modif-tree)
-                modifiers (wasm.api/propagate-modifiers geometry-entries pixel-precision)]
+                modifiers        (wasm.api/propagate-modifiers geometry-entries pixel-precision)]
             (wasm.api/set-modifiers modifiers)
-            (let [selrect (wasm.api/get-selection-rect (->> geometry-entries (map :id)))]
+            (let [ids     (into [] xf:map-key geometry-entries)
+                  selrect (wasm.api/get-selection-rect ids)]
               (rx/of (set-temporary-selrect selrect)
                      (set-temporary-modifiers modifiers)))))))))
 
@@ -591,23 +621,37 @@
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
-                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-group nil}
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?]
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-transation? true}
                  :as params}]
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
     (watch [_ state _]
+      (wasm.api/clean-modifiers)
+      (let [structure-entries (parse-structure-modifiers modif-tree)]
+        (wasm.api/set-structure-modifiers structure-entries))
+
       (let [objects          (dsh/lookup-page-objects state)
-            geometry-entries (parse-geometry-modifiers modif-tree)
+
+            ignore-tree
+            (calculate-ignore-tree modif-tree objects)
+
+            options
+            (-> params
+                (assoc :reg-objects? true)
+                (assoc :ignore-tree ignore-tree)
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
+                (assoc :attrs transform-attrs))
+
+            geometry-entries
+            (parse-geometry-modifiers modif-tree)
 
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
             transforms
-            (into
-             {}
-             (map (fn [{:keys [id transform]}] [id transform]))
-             (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
+            (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
 
             modif-tree
             (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
@@ -622,12 +666,34 @@
                     modifiers   (dm/get-in modif-tree [shape-id :modifiers])]
                 (-> shape
                     (gsh/apply-transform transform)
-                    (ctm/apply-structure-modifiers modifiers))))]
-        (rx/of
-         (clear-local-transform)
-         (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
-         (ptk/event ::dwcm/move-frame-comment-threads transforms)
-         (dwsh/update-shapes ids update-shape))))))
+                    (ctm/apply-structure-modifiers modifiers))))
+
+            bool-ids
+            (into #{}
+                  (comp
+                   (mapcat (partial cfh/get-parents-with-self objects))
+                   (filter cfh/bool-shape?)
+                   (map :id))
+                  ids)
+
+            undo-id (js/Symbol)]
+        (rx/concat
+         (if undo-transation?
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/empty))
+         (rx/of
+          (clear-local-transform)
+          (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+          (ptk/event ::dwcm/move-frame-comment-threads transforms)
+          (dwsh/update-shapes ids update-shape options)
+
+          ;; The update to the bool path needs to be in a different operation because it
+          ;; needs to have the updated children info
+          (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
+
+         (if undo-transation?
+           (rx/of (dwu/commit-undo-transaction undo-id))
+           (rx/empty)))))))
 
 (def ^:private
   xf-rotation-shape
@@ -658,10 +724,9 @@
                  (gm/set-objects-modifiers objects))
 
              modifiers
-             (->> modif-tree
-                  (map (fn [[id {:keys [modifiers]}]]
-                         {:id id
-                          :transform (ctm/modifiers->transform modifiers)})))]
+             (mapv (fn [[id {:keys [modifiers]}]]
+                     (d/vec2 id (ctm/modifiers->transform modifiers)))
+                   modif-tree)]
 
          (wasm.api/set-modifiers modifiers))))))
 
@@ -714,43 +779,6 @@
 
         (assoc state :workspace-modifiers modif-tree)))))
 
-(def ^:private transform-attrs
-  #{:selrect
-    :points
-    :x
-    :y
-    :r1
-    :r2
-    :r3
-    :r4
-    :shadow
-    :blur
-    :strokes
-    :width
-    :height
-    :content
-    :transform
-    :transform-inverse
-    :rotation
-    :flip-x
-    :flip-y
-    :grow-type
-    :position-data
-    :layout-gap
-    :layout-padding
-    :layout-item-h-sizing
-    :layout-item-max-h
-    :layout-item-max-w
-    :layout-item-min-h
-    :layout-item-min-w
-    :layout-item-v-sizing
-    :layout-padding-type
-    :layout-item-margin
-    :layout-item-margin-type
-    :layout-grid-cells
-    :layout-grid-columns
-    :layout-grid-rows})
-
 (defn apply-modifiers*
   "A lower-level version of apply-modifiers, that expects receive ready
   to use objects, object-modifiers and text-modifiers."
@@ -784,15 +812,11 @@
                     text-shape? (cfh/text-shape? shape)
                     pos-data    (when ^boolean text-shape?
                                   (dm/get-in text-modifiers [shape-id :position-data]))]
+
                 (-> shape
                     (gsh/transform-shape modifiers)
                     (cond-> (d/not-empty? pos-data)
-                      (assoc-position-data pos-data shape))
-                    (cond-> (or (cfh/path-shape? shape)
-                                (cfh/bool-shape? shape))
-                      (update :content path/content))
-                    (cond-> text-shape?
-                      (update-grow-type shape)))))]
+                      (assoc-position-data pos-data shape)))))]
 
         (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
                (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
@@ -835,3 +859,22 @@
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
+
+;; Pure function to determine next grow-type for text layers
+(defn next-grow-type
+  [current-grow-type scalev]
+  (cond
+    (= current-grow-type :fixed)
+    :fixed
+
+    (and (not (mth/close? (:y scalev) 1.0))
+         (or (= current-grow-type :auto-width)
+             (= current-grow-type :auto-height)))
+    :fixed
+
+    (and (not (mth/close? (:x scalev) 1.0))
+         (= current-grow-type :auto-width))
+    :auto-height
+
+    :else
+    current-grow-type))

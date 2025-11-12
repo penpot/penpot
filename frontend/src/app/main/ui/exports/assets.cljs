@@ -9,14 +9,14 @@
   "Assets exportation common components."
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as clr]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr c]]
@@ -26,13 +26,13 @@
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
-  (i/icon-xref :msg-neutral (stl/css :icon)))
+  (deprecated-icon/icon-xref :msg-neutral (stl/css :icon)))
 
 (def ^:private error-icon
-  (i/icon-xref :delete-text (stl/css :icon)))
+  (deprecated-icon/icon-xref :delete-text (stl/css :icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc export-multiple-dialog
   [{:keys [exports title cmd no-selection origin]}]
@@ -84,7 +84,7 @@
        [:h2 {:class (stl/css :modal-title)} title]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click cancel-fn}
-        i/close]]
+        deprecated-icon/close]]
 
       [:*
        [:div {:class (stl/css :modal-content)}
@@ -97,12 +97,12 @@
               (cond
                 all-checked? [:span {:class (stl/css-case :checkobox-tick true
                                                           :global/checked true)}
-                              i/tick]
+                              deprecated-icon/tick]
                 all-unchecked? [:span {:class (stl/css-case :checkobox-tick true
                                                             :global/uncheked true)}]
                 :else [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/intermediate true)}
-                       i/remove-icon])]]
+                       deprecated-icon/remove-icon])]]
             [:div {:class (stl/css :selection-title)}
              (tr "dashboard.export-multiple.selected"
                  (c (count enabled-exports))
@@ -121,7 +121,7 @@
                     (if (:enabled export)
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/checked true)}
-                       i/tick]
+                       deprecated-icon/tick]
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/uncheked true)}])]
 

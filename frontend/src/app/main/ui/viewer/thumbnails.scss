@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .viewer-thumbnails {
   background-color: var(--viewer-background-color);
@@ -13,7 +13,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  z-index: $z-index-10;
+  z-index: deprecated.$z-index-10;
 }
 
 .expanded {
@@ -28,25 +28,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: $s-32;
-  margin: $s-24 $s-24 0 $s-24;
+  height: deprecated.$s-32;
+  margin: deprecated.$s-24 deprecated.$s-24 0 deprecated.$s-24;
 }
 
 .counter {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--viewer-thumbnails-control-foreground-color);
 }
 
 .actions {
-  @include flexRow;
-  width: $s-60;
+  @include deprecated.flexRow;
+  width: deprecated.$s-60;
 }
 
 .expand-btn,
 .close-btn {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   svg {
     @extend .button-icon;
   }
@@ -58,7 +58,7 @@
 
 .thumbnails-content {
   display: grid;
-  grid-template-columns: $s-40 auto $s-40;
+  grid-template-columns: deprecated.$s-40 auto deprecated.$s-40;
   grid-template-rows: auto;
 }
 
@@ -73,13 +73,13 @@
 .right-scroll-handler,
 .left-scroll-handler {
   @extend .button-tertiary;
-  @include flexCenter;
+  @include deprecated.flexCenter;
   grid-column: 3 / span 1;
   grid-row: 1 / span 1;
-  width: $s-32;
-  height: $s-60;
+  width: deprecated.$s-32;
+  height: deprecated.$s-60;
   margin: auto 0;
-  z-index: $z-index-10;
+  z-index: deprecated.$z-index-10;
   opacity: 0;
   &:hover {
     opacity: 1;
@@ -112,18 +112,18 @@
 }
 
 .thumbnail-item {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   flex-direction: column;
-  padding: $s-16;
+  padding: deprecated.$s-16;
 }
 
 .thumbnail-preview {
-  @include flexCenter;
-  width: $s-132;
-  min-height: $s-132;
-  height: $s-132;
-  padding: $s-4;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-132;
+  min-height: deprecated.$s-132;
+  height: deprecated.$s-132;
+  padding: deprecated.$s-4;
 
   svg {
     width: 100%;
@@ -132,21 +132,21 @@
 
   &.selected {
     background-color: var(--viewer-thumbnail-background-color-selected);
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
   }
 
   &:hover {
-    border: $s-1 solid var(--viewer-thumbnail-border-color);
-    border-radius: $br-8;
+    border: deprecated.$s-1 solid var(--viewer-thumbnail-border-color);
+    border-radius: deprecated.$br-8;
   }
 }
 
 .thumbnail-info {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   text-align: center;
   color: var(--viewer-thumbnails-control-foreground-color);
-  padding: $s-8 0;
+  padding: deprecated.$s-8 0;
   width: 100%;
-  max-width: $s-132;
+  max-width: deprecated.$s-132;
 }

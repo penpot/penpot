@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.config :as cfg]
    [app.util.globals :as globals]
    [app.util.storage :as storage]
@@ -77,8 +78,12 @@
         cfg/default-language))))
 
 (defonce translations #js {})
-(defonce locale (l/atom (or (get storage/global ::locale)
-                            (autodetect))))
+(defonce locale (l/atom nil))
+
+(add-watch locale "common.time"
+           (fn [_ _ pv cv]
+             (when (not= pv cv)
+               (ct/set-default-locale! cv))))
 
 (defn init!
   "Initialize the i18n module with translations.
@@ -87,6 +92,7 @@
   is executed in the critical part (application bootstrap) and used in
   many parts of the application."
   [data]
+  (reset! locale (or (get storage/global ::locale) (autodetect)))
   (set! translations data))
 
 (defn set-locale!
@@ -96,7 +102,7 @@
     (let [lname (autodetect)]
       (swap! storage/global dissoc ::locale)
       (reset! locale lname))
-    (let [supported (into #{} (map :value supported-locales))
+    (let [supported (into #{} (map :value) supported-locales)
           lname     (loop [locales (seq (parse-locale lname))]
                       (if-let [locale (first locales)]
                         (if (contains? supported locale)

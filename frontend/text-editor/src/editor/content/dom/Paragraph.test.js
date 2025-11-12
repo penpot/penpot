@@ -13,7 +13,7 @@ import {
   splitParagraphAtNode,
   isEmptyParagraph,
 } from "./Paragraph.js";
-import { createInline, isInline } from "./Inline.js";
+import { createTextSpan, isTextSpan } from "./TextSpan.js";
 
 /* @vitest-environment jsdom */
 describe("Paragraph", () => {
@@ -28,7 +28,7 @@ describe("Paragraph", () => {
     expect(emptyParagraph).toBeInstanceOf(HTMLDivElement);
     expect(emptyParagraph.nodeName).toBe(TAG);
     expect(emptyParagraph.dataset.itype).toBe(TYPE);
-    expect(isInline(emptyParagraph.firstChild)).toBe(true);
+    expect(isTextSpan(emptyParagraph.firstChild)).toBe(true);
   });
 
   test("isParagraph should return true when the passed node is a paragraph", () => {
@@ -37,7 +37,7 @@ describe("Paragraph", () => {
     expect(isParagraph(document.createElement("h1"))).toBe(false);
     expect(isParagraph(createEmptyParagraph())).toBe(true);
     expect(
-      isParagraph(createParagraph([createInline(new Text("Hello, World!"))])),
+      isParagraph(createParagraph([createTextSpan(new Text("Hello, World!"))])),
     ).toBe(true);
   });
 
@@ -62,8 +62,8 @@ describe("Paragraph", () => {
 
   test("getParagraph should return the closest paragraph of the passed node", () => {
     const text = new Text("Hello, World!");
-    const inline = createInline(text);
-    const paragraph = createParagraph([inline]);
+    const textSpan = createTextSpan(text);
+    const paragraph = createParagraph([textSpan]);
     expect(getParagraph(text)).toBe(paragraph);
   });
 
@@ -81,7 +81,7 @@ describe("Paragraph", () => {
 
   test("isParagraphStart should return true on a paragraph", () => {
     const paragraph = createParagraph([
-      createInline(new Text("Hello, World!")),
+      createTextSpan(new Text("Hello, World!")),
     ]);
     expect(isParagraphStart(paragraph.firstChild.firstChild, 0)).toBe(true);
   });
@@ -93,15 +93,15 @@ describe("Paragraph", () => {
 
   test("isParagraphEnd should return true on a paragraph", () => {
     const paragraph = createParagraph([
-      createInline(new Text("Hello, World!")),
+      createTextSpan(new Text("Hello, World!")),
     ]);
     expect(isParagraphEnd(paragraph.firstChild.firstChild, 13)).toBe(true);
   });
 
   test("splitParagraph should split a paragraph", () => {
-    const inline = createInline(new Text("Hello, World!"));
-    const paragraph = createParagraph([inline]);
-    const newParagraph = splitParagraph(paragraph, inline, 6);
+    const textSpan = createTextSpan(new Text("Hello, World!"));
+    const paragraph = createParagraph([textSpan]);
+    const newParagraph = splitParagraph(paragraph, textSpan, 6);
     expect(newParagraph).toBeInstanceOf(HTMLDivElement);
     expect(newParagraph.nodeName).toBe(TAG);
     expect(newParagraph.dataset.itype).toBe(TYPE);
@@ -109,10 +109,10 @@ describe("Paragraph", () => {
   });
 
   test("splitParagraphAtNode should split a paragraph at a specified node", () => {
-    const helloInline = createInline(new Text("Hello, "));
-    const worldInline = createInline(new Text("World"));
-    const exclInline = createInline(new Text("!"));
-    const paragraph = createParagraph([helloInline, worldInline, exclInline]);
+    const helloTextSpan = createTextSpan(new Text("Hello, "));
+    const worldTextSpan = createTextSpan(new Text("World"));
+    const exclTextSpan = createTextSpan(new Text("!"));
+    const paragraph = createParagraph([helloTextSpan, worldTextSpan, exclTextSpan]);
     const newParagraph = splitParagraphAtNode(paragraph, 1);
     expect(newParagraph).toBeInstanceOf(HTMLDivElement);
     expect(newParagraph.nodeName).toBe(TAG);
@@ -121,7 +121,7 @@ describe("Paragraph", () => {
     expect(newParagraph.textContent).toBe("World!");
   });
 
-  test("isLikeParagraph should return true if the element it's not an inline element", () => {
+  test("isLikeParagraph should return true if the element it's not an text span element", () => {
     const span = document.createElement("span");
     const a = document.createElement("a");
     const br = document.createElement("br");
@@ -149,23 +149,23 @@ describe("Paragraph", () => {
       paragraph.dataset.itype = "paragraph";
       paragraph.appendChild(document.createElement("svg"));
       isEmptyParagraph(paragraph);
-    }).toThrowError("Invalid inline");
+    }).toThrowError("Invalid text span");
 
     const lineBreak = document.createElement("br");
-    const emptyInline = document.createElement("span");
-    emptyInline.dataset.itype = "inline";
-    emptyInline.appendChild(lineBreak);
+    const emptyTextSpan = document.createElement("span");
+    emptyTextSpan.dataset.itype = "span";
+    emptyTextSpan.appendChild(lineBreak);
     const emptyParagraph = document.createElement("div");
     emptyParagraph.dataset.itype = "paragraph";
-    emptyParagraph.appendChild(emptyInline);
+    emptyParagraph.appendChild(emptyTextSpan);
     expect(isEmptyParagraph(emptyParagraph)).toBe(true);
 
-    const nonEmptyInline = document.createElement("span");
-    nonEmptyInline.dataset.itype = "inline";
-    nonEmptyInline.appendChild(new Text("Not empty!"));
+    const nonEmptyTextSpan = document.createElement("span");
+    nonEmptyTextSpan.dataset.itype = "span";
+    nonEmptyTextSpan.appendChild(new Text("Not empty!"));
     const nonEmptyParagraph = document.createElement("div");
     nonEmptyParagraph.dataset.itype = "paragraph";
-    nonEmptyParagraph.appendChild(nonEmptyInline);
+    nonEmptyParagraph.appendChild(nonEmptyTextSpan);
     expect(isEmptyParagraph(nonEmptyParagraph)).toBe(false);
   });
 });

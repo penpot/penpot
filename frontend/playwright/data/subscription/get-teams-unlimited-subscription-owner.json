@@ -33,6 +33,7 @@
         "fdata/shape-data-type"
       ]
     },
+    "~:unique-editors": 1,
     "~:permissions": {
       "~:type": "~:owner",
       "~:is-owner": true,
@@ -41,7 +42,8 @@
     },
     "~:subscription": {
       "~:type": "unlimited",
-      "~:status": "trialing"
+      "~:status": "trialing",
+      "~:seats": 2
     },
     "~:name": "Second team",
     "~:modified-at": "~m1701164272671",

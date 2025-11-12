@@ -8,13 +8,14 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as cb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
    [app.common.types.color :as ctc]
    [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
    [app.main.data.common :as dcm]
@@ -44,6 +45,7 @@
    [app.plugins.viewport :as viewport]
    [app.util.code-gen :as cg]
    [app.util.object :as obj]
+   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -173,7 +175,7 @@
               file-id (:current-file-id @st/state)
               shared-libs (:files @st/state)]
 
-          (->> (ctc/extract-all-colors shapes file-id shared-libs)
+          (->> (dwc/extract-all-colors shapes file-id shared-libs)
                (group-by :attrs)
                (format/format-array format/format-color-result)))))
 
@@ -201,7 +203,7 @@
                      (mapcat #(cfh/get-children-with-self objects %)))
 
                 shapes-by-color
-                (->> (ctc/extract-all-colors shapes file-id shared-libs)
+                (->> (dwc/extract-all-colors shapes file-id shared-libs)
                      (group-by :attrs))]
 
             (when-let [operations (get shapes-by-color old-color)]
@@ -216,9 +218,15 @@
     :getTheme
     (fn []
       (let [theme (get-in @st/state [:profile :theme])]
-        (if (or (not theme) (= theme "default"))
+        (cond
+          (or (not theme) (= theme "system"))
+          (theme/get-system-theme)
+
+          (= theme "default")
           "dark"
-          (get-in @st/state [:profile :theme]))))
+
+          :else
+          theme)))
 
     :getCurrentUser
     (fn []
@@ -331,8 +339,9 @@
         :else
         (let [page  (dsh/lookup-page @st/state)
               shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                        (txt/change-text text)
+                        (update :content txt/change-text text)
                         (assoc :position-data nil))
+
               changes
               (-> (cb/empty-changes)
                   (cb/with-page page)
@@ -401,9 +410,27 @@
           (u/display-not-valid :generateMarkup-type type)
 
           :else
-          (let [objects (u/locate-objects)
-                shapes (into [] (map u/proxy->shape) shapes)]
-            (cg/generate-markup-code objects type shapes)))))
+          (let [resolved-code
+                (->> shapes
+                     (into
+                      #{}
+                      (map (fn [s]
+                             (-> (u/proxy->shape s)
+                                 (assoc :page-id (obj/get s "$page"))
+                                 (assoc :file-id (obj/get s "$file"))))))
+                     (group-by :page-id)
+
+                     (reduce-kv
+                      (fn [acc _ shapes]
+                        (let [shape (first shapes)
+                              objects (u/locate-objects (:file-id shape) (:page-id shape))
+                              resolved-shapes
+                              (->> (cfh/clean-loops objects shapes)
+                                   (mapcat #(cfh/get-children-with-self objects (:id %))))]
+                          (conj acc (cg/generate-formatted-markup-code objects type resolved-shapes))))
+                      []))]
+
+            (->> resolved-code (str/join "\n"))))))
 
     :generateStyle
     (fn [shapes options]
@@ -424,18 +451,35 @@
           (u/display-not-valid :generateStyle-includeChildren children?)
 
           :else
-          (let [objects (u/locate-objects)
-                shapes
-                (->> (into #{} (map u/proxy->shape) shapes)
-                     (cfh/clean-loops objects))
+          (let [resolved-styles
+                (->> shapes
+                     (into
+                      #{}
+                      (map (fn [s]
+                             (-> (u/proxy->shape s)
+                                 (assoc :page-id (obj/get s "$page"))
+                                 (assoc :file-id (obj/get s "$file"))))))
+                     (group-by :page-id)
 
-                shapes-with-children
-                (if children?
-                  (->> shapes
-                       (mapcat #(cfh/get-children-with-self objects (:id %))))
-                  shapes)]
-            (cg/generate-style-code
-             objects type shapes shapes-with-children {:with-prelude? prelude?})))))
+                     (reduce-kv
+                      (fn [acc _ shapes]
+                        (let [shape (first shapes)
+                              objects (u/locate-objects (:file-id shape) (:page-id shape))
+
+                              resolved-shapes
+                              (cond->> (cfh/clean-loops objects shapes)
+                                children?
+                                (mapcat #(cfh/get-children-with-self objects (:id %))))]
+
+                          (conj
+                           acc
+                           (cg/generate-style-code
+                            objects type shapes resolved-shapes {:with-prelude? prelude?}))))
+                      []))]
+            (dm/str
+             (if prelude? (cg/prelude type) "")
+             (->> resolved-styles
+                  (str/join "\n\n")))))))
 
     :generateFontFaces
     (fn [shapes]

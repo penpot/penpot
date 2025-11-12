@@ -4,32 +4,32 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .dashboard-comments-section {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   position: relative;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 }
 
 .thread-groups {
-  height: calc(100% - $s-32);
-  max-height: $s-440;
+  height: calc(100% - deprecated.$s-32);
+  max-height: deprecated.$s-440;
   overflow: auto;
 }
 
 .thread-group {
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
 }
 
 .thread-groups-placeholder {
   align-items: center;
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
-  padding: $s-24;
+  font-size: deprecated.$fs-12;
+  padding: deprecated.$s-24;
   text-align: center;
   color: var(--color-foreground-secondary);
 }
@@ -37,22 +37,22 @@
 .comments-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);
-  height: $s-24;
-  width: $s-24;
-  margin-bottom: $s-24;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .comment-button {
   position: relative;
   .unread {
     position: absolute;
-    width: $s-8;
-    height: $s-8;
-    border: $s-2 solid var(--color-background-tertiary);
+    width: deprecated.$s-8;
+    height: deprecated.$s-8;
+    border: deprecated.$s-2 solid var(--color-background-tertiary);
     border-radius: 50%;
     background: red;
-    top: $s-6;
-    right: $s-6;
+    top: deprecated.$s-6;
+    right: deprecated.$s-6;
   }
 }
 
@@ -62,18 +62,18 @@
 }
 
 .dropdown {
-  @include menuShadow;
+  @include deprecated.menuShadow;
   background-color: var(--color-background-tertiary);
-  border-radius: $br-8;
-  border: $s-1 solid transparent;
-  bottom: $s-4;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-1 solid transparent;
+  bottom: deprecated.$s-4;
   height: 40vh;
-  max-height: $s-480;
-  min-height: $s-200;
+  max-height: deprecated.$s-480;
+  min-height: deprecated.$s-200;
   position: absolute;
   overflow: hidden;
   width: 100%;
-  z-index: $z-index-4;
+  z-index: deprecated.$z-index-4;
 
   hr {
     margin: 0;
@@ -83,15 +83,15 @@
 
 .header {
   display: flex;
-  height: $s-40;
+  height: deprecated.$s-40;
   align-items: center;
-  padding: 0 $s-12;
-  gap: $s-4;
+  padding: 0 deprecated.$s-12;
+  gap: deprecated.$s-4;
 }
 
 .header-title {
   color: var(--color-foreground-secondary);
-  font-size: $fs-11;
+  font-size: deprecated.$fs-11;
   line-height: 1.28;
   flex-grow: 1;
   text-transform: uppercase;
@@ -102,7 +102,7 @@
     cursor: pointer;
   }
   &.mark-all-as-read-button {
-    border-radius: $s-8;
-    border: $s-1 solid;
+    border-radius: deprecated.$s-8;
+    border: deprecated.$s-1 solid;
   }
 }

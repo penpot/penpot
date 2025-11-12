@@ -10,11 +10,15 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.logging :as log]
+   [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.features :as features]
    [app.main.worker :as mw]
-   [app.util.time :as dt]
+   [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -53,7 +57,7 @@
         (->> (rx/from changes)
              (rx/merge-map (fn [[page-id changes]]
                              (log/debug :hint "update-indexes" :page-id page-id :changes (count changes))
-                             (mw/ask! {:cmd :index/update-page-index
+                             (mw/ask! {:cmd :index/update
                                        :page-id page-id
                                        :changes changes})))
              (rx/catch (fn [cause]
@@ -99,26 +103,38 @@
                     pids (into #{} xf:map-page-id redo-changes)]
                 (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
-        (update-in state [:files file-id :data] apply-changes)))))
+        (if (features/active-feature? state "render-wasm/v1")
+          ;; Update the wasm model
+          (let [shape-changes (volatile! {})
+
+                state
+                (binding [cts/*shape-changes* shape-changes]
+                  (update-in state [:files file-id :data] apply-changes))]
+
+            (let [objects (dm/get-in state [:files file-id :data :pages-index (:current-page-id state) :objects])]
+              (wasm.shape/process-shape-changes! objects @shape-changes))
+
+            state)
+
+          ;; wasm renderer deactivated
+          (update-in state [:files file-id :data] apply-changes))))))
 
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source]}]
 
-  (dm/assert!
-   "expect valid vector of changes for redo-changes"
-   (cpc/check-changes! redo-changes))
+  (assert (cpc/check-changes redo-changes)
+          "expect valid vector of changes for redo-changes")
 
-  (dm/assert!
-   "expect valid vector of changes for undo-changes"
-   (cpc/check-changes! undo-changes))
+  (assert (cpc/check-changes undo-changes)
+          "expect valid vector of changes for undo-changes")
 
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)
         local?    (= source :local)
         commit    {:id commit-id
-                   :created-at (dt/now)
+                   :created-at (ct/now)
                    :source source
                    :origin (ptk/type origin)
                    :features features
@@ -176,6 +192,8 @@
          tags #{}}
     :as params}]
   (ptk/reify ::commit-changes
+    ev/PerformanceEvent
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id     (or file-id (:current-file-id state))

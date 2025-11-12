@@ -8,8 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [clojure.data :as data]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    [malli.util :as mu]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,32 +26,80 @@
        (mu/keys)
        (into #{})))
 
+(defn find-token-value-references
+  "Returns set of token references found in `token-value`.
+
+  Used for checking if a token has a reference in the value.
+  Token references are strings delimited by curly braces.
+  E.g.: {foo.bar.baz} -> foo.bar.baz"
+  [token-value]
+  (if (string? token-value)
+    (some->> (re-seq #"\{([^}]*)\}" token-value)
+             (map second)
+             (into #{}))
+    #{}))
+
+(defn token-value-self-reference?
+  "Check if the token is self referencing with its `token-name` in `token-value`.
+  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
+  [token-name token-value]
+  (let [token-references (find-token-value-references token-value)
+        self-reference? (get token-references token-name)]
+    self-reference?))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean       "boolean"
-   :border-radius "borderRadius"
-   :color         "color"
-   :dimensions    "dimension"
-   :number        "number"
-   :opacity       "opacity"
-   :other         "other"
-   :rotation      "rotation"
-   :sizing        "sizing"
-   :spacing       "spacing"
-   :string        "string"
-   :stroke-width  "strokeWidth"})
+  {:boolean         "boolean"
+   :border-radius   "borderRadius"
+   :shadow          "shadow"
+   :color           "color"
+   :dimensions      "dimension"
+   :font-family     "fontFamilies"
+   :font-size       "fontSizes"
+   :letter-spacing  "letterSpacing"
+   :number          "number"
+   :opacity         "opacity"
+   :other           "other"
+   :rotation        "rotation"
+   :sizing          "sizing"
+   :spacing         "spacing"
+   :string          "string"
+   :stroke-width    "borderWidth"
+   :text-case       "textCase"
+   :text-decoration "textDecoration"
+   :font-weight     "fontWeights"
+   :typography      "typography"})
 
 (def dtcg-token-type->token-type
-  (set/map-invert token-type->dtcg-token-type))
+  (-> (set/map-invert token-type->dtcg-token-type)
+      ;; Allow these properties to be imported with singular key names for backwards compability
+      (assoc "fontWeight" :font-weight
+             "fontSize" :font-size
+             "fontFamily" :font-family
+             "boxShadow" :shadow)))
+
+(def composite-token-type->dtcg-token-type
+  "Custom set of conversion keys for composite typography token with `:line-height` available.
+  (Penpot doesn't support `:line-height` token)"
+  (assoc token-type->dtcg-token-type
+         :line-height "lineHeights"))
+
+(def composite-dtcg-token-type->token-type
+  "Custom set of conversion keys for composite typography token with `:line-height` available.
+  (Penpot doesn't support `:line-height` token)"
+  (assoc dtcg-token-type->token-type
+         "lineHeights" :line-height
+         "lineHeight"  :line-height))
 
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
 
 (def token-name-ref
-  [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"]])
+  [:re {:title "TokenNameRef" :gen/gen sg/text}
+   #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"])
 
 (def ^:private schema:color
   [:map
@@ -59,7 +109,7 @@
 (def color-keys (schema-keys schema:color))
 
 (def ^:private schema:border-radius
-  [:map
+  [:map {:title "BorderRadiusTokenAttrs"}
    [:r1 {:optional true} token-name-ref]
    [:r2 {:optional true} token-name-ref]
    [:r3 {:optional true} token-name-ref]
@@ -67,89 +117,197 @@
 
 (def border-radius-keys (schema-keys schema:border-radius))
 
+(def ^:private schema:shadow
+  [:map {:title "ShadowTokenAttrs"}
+   [:shadow {:optional true} token-name-ref]])
+
+(def shadow-keys (schema-keys schema:shadow))
+
 (def ^:private schema:stroke-width
   [:map
    [:stroke-width {:optional true} token-name-ref]])
 
 (def stroke-width-keys (schema-keys schema:stroke-width))
 
-(def ^:private schema:sizing
-  [:map
+(def ^:private schema:sizing-base
+  [:map {:title "SizingBaseTokenAttrs"}
    [:width {:optional true} token-name-ref]
-   [:height {:optional true} token-name-ref]
+   [:height {:optional true} token-name-ref]])
+
+(def ^:private schema:sizing-layout-item
+  [:map {:title "SizingLayoutItemTokenAttrs"}
    [:layout-item-min-w {:optional true} token-name-ref]
    [:layout-item-max-w {:optional true} token-name-ref]
    [:layout-item-min-h {:optional true} token-name-ref]
    [:layout-item-max-h {:optional true} token-name-ref]])
 
+(def ^:private schema:sizing
+  (-> (reduce mu/union [schema:sizing-base
+                        schema:sizing-layout-item])
+      (mu/update-properties assoc :title "SizingTokenAttrs")))
+
+(def sizing-layout-item-keys (schema-keys schema:sizing-layout-item))
+
 (def sizing-keys (schema-keys schema:sizing))
 
 (def ^:private schema:opacity
-  [:map
+  [:map {:title "OpacityTokenAttrs"}
    [:opacity {:optional true} token-name-ref]])
 
 (def opacity-keys (schema-keys schema:opacity))
 
-(def ^:private schema:spacing
-  [:map
+(def ^:private schema:spacing-gap
+  [:map {:title "SpacingGapTokenAttrs"}
    [:row-gap {:optional true} token-name-ref]
-   [:column-gap {:optional true} token-name-ref]
+   [:column-gap {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing-padding
+  [:map {:title "SpacingPaddingTokenAttrs"}
    [:p1 {:optional true} token-name-ref]
    [:p2 {:optional true} token-name-ref]
    [:p3 {:optional true} token-name-ref]
-   [:p4 {:optional true} token-name-ref]
+   [:p4 {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing-margin
+  [:map {:title "SpacingMarginTokenAttrs"}
    [:m1 {:optional true} token-name-ref]
    [:m2 {:optional true} token-name-ref]
    [:m3 {:optional true} token-name-ref]
-   [:m4 {:optional true} token-name-ref]
-   [:x {:optional true} token-name-ref]
-   [:y {:optional true} token-name-ref]])
+   [:m4 {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing
+  (-> (reduce mu/union [schema:spacing-gap
+                        schema:spacing-padding
+                        schema:spacing-margin])
+      (mu/update-properties assoc :title "SpacingTokenAttrs")))
+
+(def spacing-margin-keys (schema-keys schema:spacing-margin))
 
 (def spacing-keys (schema-keys schema:spacing))
 
+(def ^:private schema:spacing-gap-padding
+  (-> (reduce mu/union [schema:spacing-gap
+                        schema:spacing-padding])
+      (mu/update-properties assoc :title "SpacingGapPaddingTokenAttrs")))
+
+(def spacing-gap-padding-keys (schema-keys schema:spacing-gap-padding))
+
 (def ^:private schema:dimensions
-  [:merge
-   schema:sizing
-   schema:spacing
-   schema:stroke-width
-   schema:border-radius])
+  (-> (reduce mu/union [schema:sizing
+                        schema:spacing
+                        schema:stroke-width
+                        schema:border-radius])
+      (mu/update-properties assoc :title "DimensionsTokenAttrs")))
 
 (def dimensions-keys (schema-keys schema:dimensions))
 
-(def ^:private schema:rotation
+(def ^:private schema:axis
   [:map
+   [:x {:optional true} token-name-ref]
+   [:y {:optional true} token-name-ref]])
+
+(def axis-keys (schema-keys schema:axis))
+
+(def ^:private schema:rotation
+  [:map {:title "RotationTokenAttrs"}
    [:rotation {:optional true} token-name-ref]])
 
 (def rotation-keys (schema-keys schema:rotation))
 
-(def ^:private schema:number
+(def ^:private schema:font-size
+  [:map {:title "FontSizeTokenAttrs"}
+   [:font-size {:optional true} token-name-ref]])
+
+(def font-size-keys (schema-keys schema:font-size))
+
+(def ^:private schema:letter-spacing
+  [:map {:title "LetterSpacingTokenAttrs"}
+   [:letter-spacing {:optional true} token-name-ref]])
+
+(def letter-spacing-keys (schema-keys schema:letter-spacing))
+
+(def ^:private schema:font-family
   [:map
-   [:rotation {:optional true} token-name-ref]
-   [:line-height {:optional true} token-name-ref]])
+   [:font-family {:optional true} token-name-ref]])
+
+(def font-family-keys (schema-keys schema:font-family))
+
+(def ^:private schema:text-case
+  [:map
+   [:text-case {:optional true} token-name-ref]])
+
+(def text-case-keys (schema-keys schema:text-case))
+
+(def ^:private schema:font-weight
+  [:map
+   [:font-weight {:optional true} token-name-ref]])
+
+(def font-weight-keys (schema-keys schema:font-weight))
+
+(def ^:private schema:typography
+  [:map
+   [:typography {:optional true} token-name-ref]])
+
+(def typography-token-keys (schema-keys schema:typography))
+
+(def ^:private schema:text-decoration
+  [:map
+   [:text-decoration {:optional true} token-name-ref]])
+
+(def text-decoration-keys (schema-keys schema:text-decoration))
+
+(def typography-keys (set/union font-size-keys
+                                letter-spacing-keys
+                                font-family-keys
+                                font-weight-keys
+                                text-case-keys
+                                text-decoration-keys
+                                font-weight-keys
+                                typography-token-keys
+                                #{:line-height}))
+
+;; TODO: Created to extract the font-size feature from the typography feature flag.
+;; Delete this once the typography feature flag is removed.
+(def ff-typography-keys (set/difference typography-keys font-size-keys))
+
+(def ^:private schema:number
+  (-> (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
+                        schema:rotation])
+      (mu/update-properties assoc :title "NumberTokenAttrs")))
 
 (def number-keys (schema-keys schema:number))
 
 (def all-keys (set/union color-keys
                          border-radius-keys
+                         shadow-keys
                          stroke-width-keys
                          sizing-keys
                          opacity-keys
                          spacing-keys
                          dimensions-keys
+                         axis-keys
                          rotation-keys
+                         typography-keys
+                         typography-token-keys
                          number-keys))
 
 (def ^:private schema:tokens
-  [:map {:title "Applied Tokens"}])
+  [:map {:title "GenericTokenAttrs"}])
 
 (def schema:applied-tokens
-  [:merge
+  [:merge {:title "AppliedTokens"}
    schema:tokens
    schema:border-radius
+   schema:shadow
    schema:sizing
    schema:spacing
    schema:rotation
    schema:number
+   schema:font-size
+   schema:letter-spacing
+   schema:font-family
+   schema:text-case
+   schema:text-decoration
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -177,12 +335,22 @@
        changed-sub-attr
        #{:m1 :m2 :m3 :m4})
 
+     (font-size-keys shape-attr)       #{shape-attr :typography}
+     (letter-spacing-keys shape-attr)  #{shape-attr :typography}
+     (font-family-keys shape-attr)     #{shape-attr :typography}
+     (= :line-height shape-attr)       #{:line-height :typography}
+     (= :text-transform shape-attr)    #{:text-case :typography}
+     (text-decoration-keys shape-attr) #{shape-attr :typography}
+     (font-weight-keys shape-attr)     #{shape-attr :typography}
+
      (border-radius-keys shape-attr) #{shape-attr}
+     (shadow-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
      (rotation-keys shape-attr) #{shape-attr}
-     (number-keys shape-attr) #{shape-attr})))
+     (number-keys shape-attr) #{shape-attr}
+     (axis-keys shape-attr) #{shape-attr})))
 
 (defn token-attr->shape-attr
   [token-attr]
@@ -191,6 +359,66 @@
     :stroke-color :strokes
     :stroke-width :strokes
     token-attr))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN SHAPE ATTRIBUTES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def position-attributes #{:x :y})
+
+(def generic-attributes
+  (set/union color-keys
+             stroke-width-keys
+             rotation-keys
+             sizing-keys
+             opacity-keys
+             shadow-keys
+             position-attributes))
+
+(def rect-attributes
+  (set/union generic-attributes
+             border-radius-keys))
+
+(def frame-with-layout-attributes
+  (set/union rect-attributes
+             spacing-gap-padding-keys))
+
+(def text-attributes
+  (set/union generic-attributes
+             typography-keys
+             number-keys))
+
+(defn shape-type->attributes
+  [type is-layout]
+  (case type
+    :bool    generic-attributes
+    :circle  generic-attributes
+    :rect    rect-attributes
+    :frame   (if is-layout
+               frame-with-layout-attributes
+               rect-attributes)
+    :image   rect-attributes
+    :path    generic-attributes
+    :svg-raw generic-attributes
+    :text    text-attributes
+    nil))
+
+(defn appliable-attrs
+  "Returns intersection of shape `attributes` for `shape-type`."
+  [attributes shape-type is-layout]
+  (set/intersection attributes (shape-type->attributes shape-type is-layout)))
+
+(defn any-appliable-attr?
+  "Checks if `token-type` supports given shape `attributes`."
+  [attributes token-type is-layout]
+  (seq (appliable-attrs attributes token-type is-layout)))
+
+;; Token attrs that are set inside content blocks of text shapes, instead
+;; at the shape level.
+(def attrs-in-text-content
+  (set/union
+   typography-keys
+   #{:fill}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS IN SHAPES
@@ -218,13 +446,115 @@
                                                    :attributes attributes})]
     (update shape :applied-tokens #(merge % applied-tokens))))
 
-(defn maybe-apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token _attributes] :as props}]
-  (if token
-    (apply-token-to-shape props)
-    shape))
-
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
 
+(defn unapply-layout-item-tokens
+  "Unapplies all layout item related tokens from shape."
+  [shape]
+  (let [layout-item-attrs (set/union sizing-layout-item-keys
+                                     spacing-margin-keys)]
+    (unapply-token-id shape layout-item-attrs)))
+
+(def tokens-by-input
+  "A map from input name to applicable token for that input."
+  {:width #{:sizing :dimensions}
+   :height #{:sizing :dimensions}
+   :max-width #{:sizing :dimensions}
+   :max-height #{:sizing :dimensions}
+   :x #{:spacing :dimensions}
+   :y #{:spacing :dimensions}
+   :rotation #{:number :rotation}
+   :border-radius #{:border-radius :dimensions}
+   :row-gap #{:spacing :dimensions}
+   :column-gap #{:spacing :dimensions}
+   :horizontal-padding #{:spacing :dimensions}
+   :vertical-padding #{:spacing :dimensions}
+   :sided-paddings #{:spacing :dimensions}
+   :horizontal-margin #{:spacing :dimensions}
+   :vertical-margin #{:spacing :dimensions}
+   :sided-margins #{:spacing :dimensions}
+   :line-height #{:line-height :number}
+   :font-size #{:font-size}
+   :letter-spacing #{:letter-spacing}
+   :fill #{:color}
+   :stroke-color #{:color}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPOGRAPHY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn split-font-family
+  "Splits font family `value` string from into vector of font families.
+
+  Doesn't handle possible edge-case of font-families with `,` in their font family name."
+  [font-value]
+  (let [families (str/split font-value ",")
+        xform (comp
+               (map str/trim)
+               (remove str/empty?))]
+    (into [] xform families)))
+
+(defn join-font-family
+  "Joins font family `value` into a string to be edited with a single input."
+  [font-families]
+  (str/join ", " font-families))
+
+(def text-decoration-values #{"none" "underline" "strike-through"})
+
+(defn valid-text-decoration [value]
+  (let [normalized-value (str/lower (str/trim value))]
+    (when (contains? text-decoration-values normalized-value)
+      normalized-value)))
+
+(def font-weight-aliases
+  {"100" #{"thin" "hairline"},
+   "200" #{"ultra light" "extralight" "extraleicht" "extra-light" "ultra-light" "ultralight" "extra light"},
+   "300" #{"light" "leicht"},
+   "400" #{"book" "normal" "buch" "regular"},
+   "500" #{"kräftig" "medium" "kraeftig"},
+   "600" #{"demi-bold" "halbfett" "demibold" "demi bold" "semibold" "semi bold" "semi-bold"},
+   "700" #{"dreiviertelfett" "bold"},
+   "800" #{"extrabold" "fett" "extra-bold" "ultrabold" "ultra-bold" "extra bold" "ultra bold"},
+   "900" #{"heavy" "black" "extrafett"},
+   "950" #{"extra-black" "extra black" "ultra-black" "ultra black"}})
+
+(def font-weight-values (into #{} (keys font-weight-aliases)))
+
+(def font-weight-map
+  "A map of font-weight aliases that map to their number equivalent used by penpot fonts per `:weight`."
+  (->> font-weight-aliases
+       (reduce (fn [acc [k vs]]
+                 (into acc (zipmap vs (repeat k)))) {})))
+
+(defn parse-font-weight [font-weight]
+  (let [[_ variant italic] (->> (str font-weight)
+                                (str/lower)
+                                (re-find #"^(.+?)\s*(italic)?$"))]
+    {:variant variant
+     :italic? (some? italic)}))
+
+(defn valid-font-weight-variant
+  "Converts font-weight token value to a map like `{:weight \"100\" :style \"italic\"}`.
+  Converts a weight alias like `regular` to a number, needs to be a regular number.
+  Adds `italic` style when found in the `value` string."
+  [value]
+  (let [{:keys [variant italic?]} (parse-font-weight value)
+        weight (get font-weight-map variant variant)]
+    (when (font-weight-values weight)
+      (cond-> {:weight weight}
+        italic? (assoc :style "italic")))))
+
+(defn typography-composite-token-reference?
+  "Predicate if a typography composite token is a reference value - a string pointing to another reference token."
+  [token-value]
+  (string? token-value))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SHADOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn shadow-composite-token-reference?
+  "Predicate if a shadow composite token is a reference value - a string pointing to another reference token."
+  [token-value]
+  (string? token-value))

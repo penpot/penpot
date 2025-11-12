@@ -13,8 +13,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
-   [app.common.text :as txt]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.text :as txt]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
@@ -24,7 +24,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar*]]
    [app.main.ui.viewer.header :as header]
@@ -103,19 +103,19 @@
                                       :left-bar left-bar)
                  :on-click go-prev-frame
                  :aria-label (tr "labels.previous")}
-        i/arrow])
+        deprecated-icon/arrow])
      (when (< (+ index 1) num-frames)
        [:button {:class (stl/css-case :viewer-go-next  true
                                       :comment-sidebar comment-sidebar
                                       :right-bar right-bar)
                  :on-click go-next-frame
                  :aria-label (tr "labels.next")}
-        i/arrow])
+        deprecated-icon/arrow])
      [:div {:class (stl/css-case :viewer-bottom true
                                  :left-bar left-bar)}
       [:button {:on-click go-first-frame
                 :class (stl/css :reset-button)}
-       i/reload]
+       deprecated-icon/reload]
       [:span {:class (stl/css :counter)}
        (str/join " / " [(+ index 1) num-frames])]
       [:span]]]))

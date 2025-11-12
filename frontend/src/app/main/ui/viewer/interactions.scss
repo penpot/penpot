@@ -4,22 +4,22 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .view-options {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   align-items: center;
   position: relative;
-  gap: $s-4;
-  height: $s-32;
-  border-radius: $br-8;
+  gap: deprecated.$s-4;
+  height: deprecated.$s-32;
+  border-radius: deprecated.$br-8;
   background-color: var(--input-background-color);
-  padding: $s-8;
+  padding: deprecated.$s-8;
   cursor: pointer;
 }
 .dropdown-title {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
@@ -31,21 +31,21 @@
 
 .dropdown {
   @extend .menu-dropdown;
-  right: $s-2;
-  top: calc($s-2 + $s-48);
-  width: $s-272;
-  padding: $s-6;
-  max-height: calc(100vh - 3 * ($s-2 + $s-48));
+  right: deprecated.$s-2;
+  top: calc(deprecated.$s-2 + deprecated.$s-48);
+  width: deprecated.$s-272;
+  padding: deprecated.$s-6;
+  max-height: calc(100vh - 3 * (deprecated.$s-2 + deprecated.$s-48));
   overflow: auto;
 }
 
 .dropdown-element {
   @extend .dropdown-element-base;
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   .icon {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     height: 100%;
-    width: $s-16;
+    width: deprecated.$s-16;
     svg {
       @extend .button-icon-small;
       stroke: var(--icon-foreground);
@@ -67,9 +67,9 @@
 
 .icon,
 .icon-dropdown {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
-  width: $s-16;
+  width: deprecated.$s-16;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);

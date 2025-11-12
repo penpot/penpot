@@ -19,11 +19,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -140,7 +141,7 @@
        [:button {:class (stl/css :start-flow-btn)
                  :on-click start-flow}
         [:span {:class (stl/css :button-icon)}
-         i/play]]
+         deprecated-icon/play]]
        [:span {:class (stl/css :flow-input-wrapper)}
         [:input
          {:class (stl/css :flow-input)
@@ -153,16 +154,16 @@
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "workspace.options.flows.remove-flow")
                        :on-click remove-flow
-                       :icon "remove"}]]))
+                       :icon i/remove}]]))
 
 (mf/defc page-flows
   {::mf/props :obj}
   [{:keys [flows]}]
   (when flows
     [:div {:class (stl/css :interaction-options)}
-     [:& title-bar {:collapsable false
-                    :title       (tr "workspace.options.flows.flow-starts")
-                    :class       (stl/css :title-spacing-layout-flow)}]
+     [:> title-bar* {:collapsable false
+                     :title       (tr "workspace.options.flows.flow-starts")
+                     :class       (stl/css :title-spacing-layout-flow)}]
      (for [[id flow] flows]
        [:& flow-item {:flow flow :key (dm/str id)}])]))
 
@@ -174,32 +175,32 @@
           add-flow (mf/use-fn #(st/emit! (dwi/add-flow-selected-frame)))]
 
       [:div {:class (stl/css :element-set)}
-       [:& title-bar {:collapsable false
-                      :title       (tr "workspace.options.flows.flow")
-                      :class       (stl/css :title-spacing-layout-flow)}
+       [:> title-bar* {:collapsable false
+                       :title       (tr "workspace.options.flows.flow")
+                       :class       (stl/css :title-spacing-layout-flow)}
         (when (nil? flow)
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.flows.add-flow-start")
                             :on-click add-flow
-                            :icon "add"}])]
+                            :icon i/add}])]
 
        (when (some? flow)
          [:& flow-item {:flow flow :key (dm/str (:id flow))}])])))
 
 (def ^:private corner-center-icon
-  (i/icon-xref :corner-center (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-center (stl/css :corner-icon)))
 (def ^:private corner-bottom-icon
-  (i/icon-xref :corner-bottom (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-bottom (stl/css :corner-icon)))
 (def ^:private corner-bottomleft-icon
-  (i/icon-xref :corner-bottom-left (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-bottom-left (stl/css :corner-icon)))
 (def ^:private corner-bottomright-icon
-  (i/icon-xref :corner-bottom-right (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-bottom-right (stl/css :corner-icon)))
 (def ^:private corner-top-icon
-  (i/icon-xref :corner-top (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-top (stl/css :corner-icon)))
 (def ^:private corner-topleft-icon
-  (i/icon-xref :corner-top-left (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-top-left (stl/css :corner-icon)))
 (def ^:private corner-topright-icon
-  (i/icon-xref :corner-top-right (stl/css :corner-icon)))
+  (deprecated-icon/icon-xref :corner-top-right (stl/css :corner-icon)))
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
@@ -432,7 +433,7 @@
       [:button {:class (stl/css-case :extend-btn true
                                      :extended extended-open?)
                 :on-click toggle-extended}
-       i/menu]
+       deprecated-icon/menu]
 
       [:div {:class (stl/css :interactions-info)
              :on-click toggle-extended}
@@ -441,7 +442,7 @@
       [:button {:class (stl/css :remove-btn)
                 :data-value index
                 :on-click #(remove-interaction index)}
-       i/remove-icon]]
+       deprecated-icon/remove-icon]]
 
      (when extended-open?
        [:div {:class (stl/css :extended-options)}
@@ -496,7 +497,7 @@
                      :class (stl/css-case  :global/checked preserve-scroll?)}
              [:span {:class (stl/css-case :global/checked preserve-scroll?)}
               (when preserve-scroll?
-                i/status-tick)]
+                deprecated-icon/status-tick)]
              (tr "workspace.options.interaction-preserve-scroll")
              [:input {:type "checkbox"
                       :id (str "preserve-" index)
@@ -592,7 +593,7 @@
                        :class (stl/css-case  :global/checked close-click-outside?)}
                [:span {:class (stl/css-case :global/checked close-click-outside?)}
                 (when close-click-outside?
-                  i/status-tick)]
+                  deprecated-icon/status-tick)]
                (tr "workspace.options.interaction-close-outside")
                [:input {:type "checkbox"
                         :id (str "close-" index)
@@ -606,7 +607,7 @@
                        :class (stl/css-case  :global/checked background-overlay?)}
                [:span {:class (stl/css-case :global/checked background-overlay?)}
                 (when background-overlay?
-                  i/status-tick)]
+                  deprecated-icon/status-tick)]
                (tr "workspace.options.interaction-background")
                [:input {:type "checkbox"
                         :id (str "background-" index)
@@ -644,19 +645,19 @@
                [:& radio-buttons {:selected (d/name direction)
                                   :on-change change-direction
                                   :name "animation-direction"}
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon deprecated-icon/column
                                   :icon-class (stl/css :right)
                                   :value "right"
                                   :id "animation-right"}]
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon deprecated-icon/column
                                   :icon-class (stl/css :left)
                                   :id "animation-left"
                                   :value "left"}]
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon deprecated-icon/column
                                   :icon-class (stl/css :down)
                                   :id "animation-down"
                                   :value "down"}]
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon deprecated-icon/column
                                   :icon-class (stl/css :up)
                                   :id "animation-up"
                                   :value "up"}]]]])
@@ -693,7 +694,7 @@
                         :class (stl/css-case  :global/checked (-> interaction :animation :offset-effect))}
                 [:span {:class (stl/css-case :global/checked (-> interaction :animation :offset-effect))}
                  (when (-> interaction :animation :offset-effect)
-                   i/status-tick)]
+                   deprecated-icon/status-tick)]
                 (tr "workspace.options.interaction-offset-effect")
                 [:input {:type "checkbox"
                          :id (str "offset-effect-" index)
@@ -727,28 +728,28 @@
      [:div {:class (stl/css :interaction-options)}
       (when (and shape (not (cfh/unframed-shape? shape)))
         [:div {:class (stl/css :element-title)}
-         [:& title-bar {:collapsable false
-                        :title       (tr "workspace.options.interactions")
-                        :class       (stl/css :title-spacing-layout-interactions)}
+         [:> title-bar* {:collapsable false
+                         :title       (tr "workspace.options.interactions")
+                         :class       (stl/css :title-spacing-layout-interactions)}
 
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.interactions.add-interaction")
                             :on-click add-interaction
-                            :icon "add"}]]])
+                            :icon i/add}]]])
 
       (when (= (count interactions) 0)
         [:div {:class (stl/css :help-content)}
          (when (and shape (not (cfh/unframed-shape? shape)))
            [:div {:class (stl/css :help-group)}
-            [:div {:class (stl/css :interactions-help-icon)} i/add]
+            [:div {:class (stl/css :interactions-help-icon)} deprecated-icon/add]
             [:div {:class (stl/css :interactions-help)}
              (tr "workspace.options.add-interaction")]])
          [:div {:class (stl/css :help-group)}
-          [:div {:class (stl/css :interactions-help-icon)} i/interaction]
+          [:div {:class (stl/css :interactions-help-icon)} deprecated-icon/interaction]
           [:div {:class (stl/css :interactions-help)}
            (tr "workspace.options.select-a-shape")]]
          [:div {:class (stl/css :help-group)}
-          [:div {:class (stl/css :interactions-help-icon)} i/play]
+          [:div {:class (stl/css :interactions-help-icon)} deprecated-icon/play]
           [:div {:class (stl/css :interactions-help)}
            (tr "workspace.options.use-play-button")]]])
       [:div {:class (stl/css :groups)}

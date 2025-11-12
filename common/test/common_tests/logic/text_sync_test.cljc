@@ -19,7 +19,7 @@
 (t/use-fixtures :each thi/test-fixture)
 
 
-(t/deftest test-sync-unchanged-copy-when-changed-attribute
+(t/deftest sync-unchanged-copy-when-changed-attribute
   (let [;; ==== Setup
         file       (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -55,7 +55,7 @@
     (t/is (= "32" (:font-size line)))
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-unchanged-copy-when-changed-text
+(t/deftest sync-unchanged-copy-when-changed-text
   (let [;; ==== Setup
         file       (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -91,7 +91,7 @@
     (t/is (= "14" (:font-size line)))
     (t/is (= "Bye" (:text line)))))
 
-(t/deftest test-sync-unchanged-copy-when-changed-both
+(t/deftest sync-unchanged-copy-when-changed-both
   (let [;; ==== Setup
         file       (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -129,7 +129,7 @@
     (t/is (= "32" (:font-size line)))
     (t/is (= "Bye" (:text line)))))
 
-(t/deftest test-sync-updated-attr-copy-when-changed-attribute
+(t/deftest sync-updated-attr-copy-when-changed-attribute
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -176,7 +176,7 @@
     (t/is (= "14" (:font-size line)))
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-updated-attr-copy-when-changed-text
+(t/deftest sync-updated-attr-copy-when-changed-text
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -223,7 +223,7 @@
     ;; The text is updated because only attrs were touched
     (t/is (= "Bye" (:text line)))))
 
-(t/deftest test-sync-updated-attr-copy-when-changed-both
+(t/deftest sync-updated-attr-copy-when-changed-both
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -273,7 +273,7 @@
     ;; The text is updated because only attrs were touched
     (t/is (= "Bye" (:text line)))))
 
-(t/deftest test-sync-updated-text-copy-when-changed-attribute
+(t/deftest sync-updated-text-copy-when-changed-attribute
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -320,7 +320,7 @@
     (t/is (= "32" (:font-size line)))
     (t/is (= "Hi" (:text line)))))
 
-(t/deftest test-sync-updated-text-copy-when-changed-text
+(t/deftest sync-updated-text-copy-when-changed-text
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -367,7 +367,7 @@
     ;; The text doesn't change, because it was touched
     (t/is (= "Hi" (:text line)))))
 
-(t/deftest test-sync-updated-text-copy-when-changed-both
+(t/deftest sync-updated-text-copy-when-changed-both
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -417,7 +417,7 @@
     ;; The text doesn't change, because it was touched
     (t/is (= "Hi" (:text line)))))
 
-(t/deftest test-sync-updated-both-copy-when-changed-attribute
+(t/deftest sync-updated-both-copy-when-changed-attribute
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -466,7 +466,7 @@
     (t/is (= "14" (:font-size line)))
     (t/is (= "Hi" (:text line)))))
 
-(t/deftest test-sync-updated-both-copy-when-changed-text
+(t/deftest sync-updated-both-copy-when-changed-text
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -515,7 +515,7 @@
     ;; The text doesn't change, because it was touched
     (t/is (= "Hi" (:text line)))))
 
-(t/deftest test-sync-updated-both-copy-when-changed-both
+(t/deftest sync-updated-both-copy-when-changed-both
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -567,7 +567,7 @@
     ;; The text doesn't change, because it was touched
     (t/is (= "Hi" (:text line)))))
 
-(t/deftest test-sync-updated-structure-same-attrs-copy-when-changed-attribute
+(t/deftest sync-updated-structure-same-attrs-copy-when-changed-attribute
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -619,7 +619,7 @@
     (t/is (= "32" (:font-size line)))
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-updated-structure-same-attrs-copy-when-changed-text
+(t/deftest sync-updated-structure-same-attrs-copy-when-changed-text
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -668,7 +668,7 @@
     ;; The text doesn't change, because the structure was touched
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-updated-structure-same-attrs-copy-when-changed-both
+(t/deftest sync-updated-structure-same-attrs-copy-when-changed-both
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -722,7 +722,7 @@
     ;; The text doesn't change, because the structure was touched
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-updated-structure-diff-attrs-copy-when-changed-attribute
+(t/deftest sync-updated-structure-diff-attrs-copy-when-changed-attribute
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -775,7 +775,7 @@
     (t/is (= "14" (:font-size line)))
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-updated-structure-diff-attrs-copy-when-changed-text
+(t/deftest sync-updated-structure-diff-attrs-copy-when-changed-text
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")
@@ -825,7 +825,7 @@
     ;; The text doesn't change, because the structure was touched
     (t/is (= "hello world" (:text line)))))
 
-(t/deftest test-sync-updated-structure-diff-attrs-copy-when-changed-both
+(t/deftest sync-updated-structure-diff-attrs-copy-when-changed-both
   (let [;; ==== Setup
         file0      (-> (thf/sample-file :file1)
                        (tho/add-frame-with-text :main-root :main-child "hello world")

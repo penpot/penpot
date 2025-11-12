@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.text :as txt]
+   [app.common.text :as legacy.txt]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -99,7 +99,7 @@
         code?     (obj/get props "code?")
         {:keys [id x y width height content]} shape
 
-        content (if code? (txt/index-content content) content)
+        content (if code? (legacy.txt/index-content content) content)
 
         style
         (when-not code?

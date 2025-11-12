@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -59,6 +60,8 @@
     (mf/with-effect [team-id]
       (st/emit! (dtm/fetch-shared-files team-id)
                 (dd/clear-selected-files)))
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries)
 
     [:*
      [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}

@@ -15,8 +15,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -157,10 +157,10 @@
     (when in-frame?
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable  true
-                       :collapsed    (not open?)
-                       :on-collapsed toggle-content
-                       :title        (tr "workspace.options.constraints")}]]
+        [:> title-bar* {:collapsable  true
+                        :collapsed    (not open?)
+                        :on-collapsed toggle-content
+                        :title        (tr "workspace.options.constraints")}]]
        (when open?
          [:div {:class (stl/css :element-set-content)}
           [:div {:class (stl/css :constraints-widget)}
@@ -225,7 +225,7 @@
                [:span {:class (stl/css-case :check-mark true
                                             :checked (:fixed-scroll values))}
                 (when (:fixed-scroll values)
-                  i/status-tick)]
+                  deprecated-icon/status-tick)]
                (tr "workspace.options.constraints.fix-when-scrolling")
                [:input {:type "checkbox"
                         :id "fixed-on-scroll"

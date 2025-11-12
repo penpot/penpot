@@ -1,5 +1,7 @@
 use skia_safe as skia;
 
+pub mod bools;
+
 pub type Rect = skia::Rect;
 pub type Matrix = skia::Matrix;
 pub type Vector = skia::Vector;
@@ -22,7 +24,25 @@ pub fn is_close_to(current: f32, value: f32) -> bool {
     (current - value).abs() <= THRESHOLD
 }
 
-pub fn identitish(m: Matrix) -> bool {
+#[allow(dead_code)]
+pub fn are_close_points(a: impl Into<(f32, f32)>, b: impl Into<(f32, f32)>) -> bool {
+    let (a_x, a_y) = a.into();
+    let (b_x, b_y) = b.into();
+
+    is_close_to(a_x, b_x) && is_close_to(a_y, b_y)
+}
+
+#[allow(dead_code)]
+pub fn is_close_matrix(m: &Matrix, other: &Matrix) -> bool {
+    is_close_to(m.scale_x(), other.scale_x())
+        && is_close_to(m.scale_y(), other.scale_y())
+        && is_close_to(m.translate_x(), other.translate_x())
+        && is_close_to(m.translate_y(), other.translate_y())
+        && is_close_to(m.skew_x(), other.skew_x())
+        && is_close_to(m.skew_y(), other.skew_y())
+}
+
+pub fn identitish(m: &Matrix) -> bool {
     is_close_to(m.scale_x(), 1.0)
         && is_close_to(m.scale_y(), 1.0)
         && is_close_to(m.translate_x(), 0.0)
@@ -328,6 +348,11 @@ impl Bounds {
         Rect::from_ltrb(self.min_x(), self.min_y(), self.max_x(), self.max_y())
     }
 
+    pub fn from_rect(r: &Rect) -> Self {
+        let [nw, ne, se, sw] = r.to_quad();
+        Self::new(nw, ne, se, sw)
+    }
+
     pub fn min_x(&self) -> f32 {
         self.nw.x.min(self.ne.x).min(self.sw.x).min(self.se.x)
     }
@@ -412,7 +437,7 @@ pub fn resize_matrix(
     parent_transform.post_translate(center);
     parent_transform.pre_translate(-center);
 
-    let parent_transform_inv = &parent_transform.invert().unwrap();
+    let parent_transform_inv = &parent_transform.invert().unwrap_or_default();
     let origin = parent_transform_inv.map_point(child_bounds.nw);
 
     let mut scale = Matrix::scale((scale_width, scale_height));

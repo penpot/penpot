@@ -340,3 +340,5 @@ $RECYCLE.BIN/
 /playwright/.cache/
 
 vite.config.js.timestamp*
+
+render_wasm.*

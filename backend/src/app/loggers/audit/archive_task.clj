@@ -16,7 +16,6 @@
    [app.http.client :as http]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
    [promesa.exec :as px]))
@@ -53,9 +52,8 @@
 
 (defn- send!
   [{:keys [::uri] :as cfg} events]
-  (let [token   (tokens/generate (::setup/props cfg)
+  (let [token   (tokens/generate cfg
                                  {:iss "authentication"
-                                  :iat (dt/now)
                                   :uid uuid/zero})
         body    (t/encode {:events events})
         headers {"content-type" "application/transit+json"
