@@ -5,7 +5,7 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     NODE_VERSION=v22.21.1 \
     DEBIAN_FRONTEND=noninteractive \
-    PATH=/opt/node/bin:$PATH
+    PATH=/opt/node/bin:/opt/imagick/bin:$PATH
 
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
@@ -62,6 +62,22 @@ RUN set -ex; \
       libxfixes3 \
       libxkbcommon0 \
       libxrandr2 \
+      \
+      libgomp1 \
+      libheif1 \
+      libjpeg-turbo8 \
+      liblcms2-2 \
+      libopenexr-3-1-30 \
+      libopenjp2-7 \
+      libpng16-16 \
+      librsvg2-2 \
+      libtiff6 \
+      libwebp7 \
+      libwebpdemux2 \
+      libwebpmux3 \
+      libxml2 \
+      libzip4t64 \
+      libzstd1 \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -90,7 +106,8 @@ RUN set -eux; \
     chown -R penpot:penpot /opt/penpot;
 
 ARG BUNDLE_PATH="./bundle-exporter/"
-ADD --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
+COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
+COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot
