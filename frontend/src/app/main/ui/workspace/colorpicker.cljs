@@ -94,7 +94,7 @@
       (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
 
 (mf/defc colorpicker
-  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab]}]
+  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab applied-token]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
 
@@ -542,6 +542,7 @@
 
         [:> token-section* {:combined-tokens combined-tokens
                             :on-token-change on-token-change
+                            :applied-token applied-token
                             :color-origin color-origin}])]
      (when (fn? on-accept)
        [:div {:class (stl/css :actions)}
@@ -728,6 +729,7 @@
            on-token-change
            on-close
            tab
+           applied-token
            on-accept]}]
   (let [vport       (mf/deref viewport)
         dirty?      (mf/use-var false)
@@ -790,6 +792,7 @@
                       :disable-opacity disable-opacity
                       :disable-image disable-image
                       :on-token-change on-token-change
+                      :applied-token applied-token
                       :on-change on-change'
                       :origin origin
                       :tab tab

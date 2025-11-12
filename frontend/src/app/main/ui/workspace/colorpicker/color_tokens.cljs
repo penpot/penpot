@@ -103,7 +103,7 @@
 
 (mf/defc set-section*
   {::mf/private true}
-  [{:keys [collapsed toggle-sets-open group-or-set name color-origin on-token-change] :rest props}]
+  [{:keys [collapsed toggle-sets-open group-or-set name color-origin on-token-change applied-token] :rest props}]
 
   (let [list-style* (mf/use-state :list)
         list-style  (deref list-style*)
@@ -207,8 +207,7 @@
           (let [selected? (case color-origin
                             :fill (= has-color-tokens? (:name token))
                             :stroke-color (= has-stroke-tokens? (:name token))
-                            :color-selection (or (= has-color-tokens? (:name token))
-                                                 (= has-stroke-tokens? (:name token)))
+                            :color-selection (= applied-token (:name token))
                             false)]
             (if (= :grid list-style)
               [:> grid-item* {:key (str "token-grid-" (:id token))
@@ -266,7 +265,7 @@
 
 (mf/defc token-section*
   {}
-  [{:keys [combined-tokens color-origin on-token-change] :rest props}]
+  [{:keys [combined-tokens color-origin on-token-change applied-token] :rest props}]
   (let [sets (set (mapv label-group-or-set combined-tokens))
         filter-term* (mf/use-state "")
         filter-term (deref filter-term*)
@@ -311,6 +310,7 @@
                 :color-origin color-origin
                 :on-token-change on-token-change
                 :name name
+                :applied-token applied-token
                 :group-or-set combined-sets}]))]
          [:> token-empty-state*])]
       [:> token-empty-state*])))

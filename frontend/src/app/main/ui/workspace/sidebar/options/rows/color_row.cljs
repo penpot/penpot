@@ -239,7 +239,7 @@
 
         open-modal
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index)
+         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index applied-token)
          (fn [color pos tab]
            (let [color (cond
                          ^boolean has-multiple-colors
@@ -263,6 +263,7 @@
                                     (when on-close
                                       (on-close value opacity id file-id)))
                         :active-tokens tokens
+                        :applied-token applied-token
                         :color-origin origin
                         :tab tab
                         :origin :sidebar
