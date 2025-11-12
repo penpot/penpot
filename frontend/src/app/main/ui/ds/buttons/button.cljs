@@ -34,6 +34,7 @@
                                      :button-ghost (= variant "ghost")
                                      :button-destructive (= variant "destructive"))
         props (mf/spread-props props {:class [class internal-class]
+                                      :type (when-not to "button")
                                       :href to
                                       :ref (fn [node]
                                              (when on-ref

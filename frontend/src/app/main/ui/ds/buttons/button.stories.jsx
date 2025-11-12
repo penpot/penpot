@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import { fn } from 'storybook/test';
 
 const { Button } = Components;
 const { icons } = Components.meta;
@@ -28,6 +29,7 @@ export default {
     children: "Lorem ipsum",
     disabled: false,
     variant: undefined,
+    onClick: fn(),
   },
   parameters: {
     controls: { exclude: ["children"] },
