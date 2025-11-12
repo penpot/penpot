@@ -149,6 +149,27 @@ test("create context with tokens lib as json", () => {
   assert.ok(file.data.tokensLib)
 });
 
+test("create context with tokens lib as json 2", () => {
+  const context = penpot.createBuildContext();
+
+  const fileId = context.addFile({name: "file 1"});
+  const pageId = context.addPage({name: "page 1"});
+
+
+  const tokensFilePath = path.join(__dirname, "_tokens-2.json");
+  const tokens = fs.readFileSync(tokensFilePath, "utf8");
+
+  context.addTokensLib(tokens);
+
+  const internalState = context.getInternalState();
+  const file = internalState.files[fileId];
+
+  assert.ok(file, "file should exist");
+
+  assert.ok(file.data);
+  assert.ok(file.data.tokensLib)
+});
+
 test("create context with tokens lib as obj", () => {
   const context = penpot.createBuildContext();
 

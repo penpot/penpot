@@ -1460,16 +1460,19 @@ Will return a value that matches this schema:
      ["type" :string]]]))
 
 (def ^:private schema:dtcg-node
-  [:or
+  [:schema {:registry
+            {::simple-value
+             [:or :string :int :double]
+             ::value
+             [:or
+              [:ref ::simple-value]
+              [:vector ::simple-value]
+              [:map-of :string [:or
+                                [:ref ::simple-value]
+                                [:vector ::simple-value]]]]}}
    [:map
-    ["$value" :string]
-    ["$type" :string]]
-   [:map
-    ["$value" [:sequential [:map ["$type" :string]]]]
-    ["$type" :string]]
-   [:map
-    ["$value" :map]
-    ["$type" :string]]])
+    ["$type" :string]
+    ["$value" [:ref ::value]]]])
 
 (def ^:private dtcg-node?
   (sm/validator schema:dtcg-node))
