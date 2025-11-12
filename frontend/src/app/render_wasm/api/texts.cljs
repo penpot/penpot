@@ -198,20 +198,20 @@
    :coptic      #"[\u2C80-\u2CFF]"
    :ol-chiki    #"[\u1C50-\u1C7F]"
    :vai         #"[\uA500-\uA63F]"
-   :shavian     #"[\u10450-\u1047F]"
-   :osmanya     #"[\u10480-\u104AF]"
+   :shavian     #"\uD801[\uDC50-\uDC7F]"
+   :osmanya     #"\uD801[\uDC80-\uDCAF]"
    :runic       #"[\u16A0-\u16FF]"
-   :old-italic  #"[\u10300-\u1032F]"
-   :brahmi      #"[\u11000-\u1107F]"
-   :modi        #"[\u11600-\u1165F]"
-   :sora-sompeng #"[\u110D0-\u110FF]"
+   :old-italic  #"\uD800[\uDF00-\uDF2F]"
+   :brahmi      #"\uD804[\uDC00-\uDC7F]"
+   :modi        #"\uD805[\uDE00-\uDE5F]"
+   :sora-sompeng #"\uD804[\uDCD0-\uDCFF]"
    :bamum       #"[\uA6A0-\uA6FF]"
-   :meroitic    #"[\u10980-\u1099F]"
+   :meroitic    #"\uD802[\uDD80-\uDD9F]"
    ;; Arrows, Mathematical Operators, Misc Technical, Geometric Shapes, Misc Symbols, Dingbats, Supplemental Arrows, etc.
    :symbols     #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]"
   ;; Additional arrows, math, technical, geometric, and symbol blocks
    :symbols-2     #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]"
-   :music     #"[\u2669-\u267B\u1D100-\u1D1FF]"})
+   :music     #"[\u2669-\u267B]|\uD834[\uDD00-\uDD1F]"})
 
 (defn contains-emoji? [text]
   (let [result (re-find emoji-pattern text)]

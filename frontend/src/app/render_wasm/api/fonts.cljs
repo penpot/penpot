@@ -66,9 +66,10 @@
     :custom
     (let [font-uuid (custom-font-id->uuid font-id)
           matching-font (d/seek (fn [[_ font]]
-                                  (and (= (:font-id font) font-uuid)
-                                       (or (nil? (:font-variant-id font))
-                                           (= (:font-variant-id font) font-variant-id))))
+                                  (let [variant-id (or (:font-variant-id font) (dm/str (:font-style font) "-" (:font-weight font)))]
+                                    (and (= (:font-id font) font-uuid)
+                                         (or (nil? font-variant-id)
+                                             (= variant-id font-variant-id)))))
                                 (seq @fonts))]
       (when matching-font
         (:ttf-file-id (second matching-font))))
@@ -85,7 +86,7 @@
             (aget shape-id-buffer 2)
             (aget shape-id-buffer 3))))
 
-;; IMPORTANT: It should be noted that only TTF fonts can be stored.
+;; IMPORTANT: Only TTF fonts can be stored.
 (defn- store-font-buffer
   [shape-id font-data font-array-buffer emoji? fallback?]
   (let [font-id-buffer  (:family-id-buffer font-data)
@@ -230,6 +231,7 @@
                    :weight weight}]
 
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
+
 
 (defn store-fonts
   [shape-id fonts]

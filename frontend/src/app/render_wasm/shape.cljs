@@ -187,8 +187,12 @@
           (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
           (= (:type shape) :text)
-          (do (api/set-shape-text-content id v)
-              (api/set-shape-text-images id v)))
+          (let [pending-thumbnails (into [] (concat (api/set-shape-text-content id v)))
+                pending-full (into [] (concat (api/set-shape-text-images id v)))]
+                ;; FIXME: this is a hack to process the pending tasks asynchronously
+                ;; we should probably modify set-wasm-attr! to return a list of callbacks to be executed in a second pass.
+            (api/process-pending! [shape] pending-thumbnails pending-full)
+            nil))
 
         :grow-type
         (api/set-shape-grow-type v)

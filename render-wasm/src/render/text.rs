@@ -229,7 +229,7 @@ fn draw_text(
             paragraph.paint(canvas, xy);
 
             if paragraph_index == group_len - 1 {
-                group_offset_y += paragraph.height();
+                group_offset_y += paragraph.ideographic_baseline();
             }
 
             for line_metrics in paragraph.get_line_metrics().iter() {
