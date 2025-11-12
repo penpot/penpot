@@ -47,7 +47,7 @@
             (if tokens-lib
               (let [theme (ctob/get-theme-by-name tokens-lib group name)]
                 (or (nil? theme)
-                    (= (ctob/get-id theme) theme-id)))
+                    (= (ctob/id theme) theme-id)))
               true))  ;; if still no library exists, cannot be duplicate
     :type-properties {:error/fn #(tr "workspace.tokens.theme-name-already-exists")}}))
 
@@ -215,7 +215,7 @@
          (mf/deps on-change-field tokens-lib current-group)
          (fn [event]
            (let [value  (-> event dom/get-target dom/get-value)
-                 errors (validate-theme-name tokens-lib current-group (ctob/get-id theme) value)]
+                 errors (validate-theme-name tokens-lib current-group (ctob/id theme) value)]
              (reset! name-errors* errors)
              (mf/set-ref-val! theme-name-ref value)
              (if (empty? errors)
@@ -276,7 +276,7 @@
   (let [tlib (-> (ctob/make-tokens-lib)
                  (ctob/add-theme theme))
         tlib (reduce ctob/add-set tlib sets)]
-    (ctob/activate-theme tlib (ctob/get-id theme))))
+    (ctob/activate-theme tlib (ctob/id theme))))
 
 (mf/defc edit-create-theme*
   [{:keys [change-view theme on-save is-editing has-prev-view]}]
@@ -323,7 +323,7 @@
         (mf/use-fn
          (mf/deps current-theme on-back)
          (fn []
-           (st/emit! (dwtl/delete-token-theme (ctob/get-id current-theme)))
+           (st/emit! (dwtl/delete-token-theme (ctob/id current-theme)))
            (on-back)))
 
         ;; Sets tree handlers
@@ -358,7 +358,7 @@
          (mf/deps on-toggle-token-set)
          (fn [set-id]
            (let [set (ctob/get-set lib set-id)]
-             (on-toggle-token-set (ctob/get-name set)))))]
+             (on-toggle-token-set (ctob/name set)))))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
@@ -417,7 +417,7 @@
         (mf/use-fn
          (mf/deps theme)
          (fn [theme']
-           (st/emit! (dwtl/update-token-theme (ctob/get-id theme) theme'))))]
+           (st/emit! (dwtl/update-token-theme (ctob/id theme) theme'))))]
 
     [:> edit-create-theme*
      {:change-view change-view

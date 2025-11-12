@@ -138,9 +138,9 @@
           undo-lib (tht/get-tokens-lib undo)
           undo-theme (ctob/get-theme undo-lib theme-id)]
       ;; Redo
-      (t/is (= new-theme-name (ctob/get-name redo-theme)))
+      (t/is (= new-theme-name (ctob/name redo-theme)))
       ;; Undo
-      (t/is (= prev-theme-name (ctob/get-name undo-theme)))))
+      (t/is (= prev-theme-name (ctob/name undo-theme)))))
 
   (t/testing "toggling token theme updates using changes history"
     (let [theme-id (uuid/next)
@@ -286,9 +286,9 @@
           undo-lib (tht/get-tokens-lib undo)
           undo-token-set (ctob/get-set undo-lib set-id)]
 
-      (t/is (= (ctob/get-name redo-token-set) new-set-name))
+      (t/is (= (ctob/name redo-token-set) new-set-name))
       ;; Undo
-      (t/is (= (ctob/get-name undo-token-set) set-name)))))
+      (t/is (= (ctob/name undo-token-set) set-name)))))
 
 (t/deftest generate-toggle-token-set-group-test
   (t/testing "toggling set group with no active sets inside will activate all child sets"

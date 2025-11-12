@@ -244,7 +244,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when (fn? on-toggle)
-             (on-toggle (ctob/get-name set)))))
+             (on-toggle (ctob/name set)))))
 
         on-edit-submit'
         (mf/use-fn
@@ -417,7 +417,7 @@
             :set token-set
             :label (peek path)
             :is-editing (= edition-id id)
-            :is-active (is-token-set-active (ctob/get-name token-set))
+            :is-active (is-token-set-active (ctob/name token-set))
             :is-selected (= selected id)
             :is-draggable is-draggable
             :is-new false

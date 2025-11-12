@@ -25,7 +25,7 @@
                           (update-theme-fn))]
     (-> changes
         (pcb/set-active-token-themes #{(ctob/get-theme-path hidden-theme')})
-        (pcb/set-token-theme (ctob/get-id hidden-theme)
+        (pcb/set-token-theme (ctob/id hidden-theme)
                              hidden-theme'))))
 
 (defn generate-toggle-token-set
@@ -39,7 +39,7 @@
   [group-path tokens-lib tokens-lib-theme]
   (let [deactivate? (contains? #{:all :partial} (ctob/sets-at-path-all-active? tokens-lib group-path))
         sets-names  (->> (ctob/get-sets-at-path tokens-lib group-path)
-                         (map ctob/get-name)
+                         (map ctob/name)
                          (into #{}))]
     (if deactivate?
       (ctob/disable-sets tokens-lib-theme sets-names)
@@ -143,6 +143,6 @@
   [changes tokens-lib path]
   (let [sets (ctob/get-sets-at-path tokens-lib path)]
     (reduce (fn [changes set]
-              (pcb/set-token-set changes (ctob/get-id set) nil))
+              (pcb/set-token-set changes (ctob/id set) nil))
             changes
             sets)))

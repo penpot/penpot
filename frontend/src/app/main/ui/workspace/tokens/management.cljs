@@ -125,18 +125,18 @@
         (let [match (->> (ctob/get-sets tokens-lib)
                          (first))]
           (when match
-            (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
+            (st/emit! (dwtl/set-selected-token-set-id (ctob/id match)))))))
 
     [:*
      [:& token-context-menu]
      [:div {:class (stl/css :sets-header-container)}
-      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
+      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" (ctob/name selected-token-set))]
       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
        ;; NOTE: when no set in tokens-lib, the selected-token-set-id
        ;; will be `nil`, so for properly hide the inactive message we
        ;; check that at least `selected-token-set-id` has a value
        (when (and (some? selected-token-set-id)
-                  (not (token-set-active? (ctob/get-name selected-token-set))))
+                  (not (token-set-active? (ctob/name selected-token-set))))
          [:*
           [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
           [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}

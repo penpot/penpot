@@ -693,8 +693,8 @@
      [{:set \"brand/light\" :tokens [{:name \"background\" ...} ...]}]"
   [sets]
   (map (fn [s]
-         {:set    (ctob/get-name s)
-          :id     (ctob/get-id s)
+         {:set    (ctob/name s)
+          :id     (ctob/id s)
           :tokens (vals (ctob/get-tokens- s))})  ;; TODO: this function should be moved to common.logic and refactored
        sets))
 

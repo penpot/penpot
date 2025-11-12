@@ -17,7 +17,7 @@
               (get :tokens-lib)
               (ctob/get-sets)
               (first)
-              (ctob/get-id))))
+              (ctob/id))))
 
 (defn get-selected-token-set [state]
   (when-let [set-id (get-selected-token-set-id state)]

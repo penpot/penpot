@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.tokens-lib
+  (:refer-clojure :exclude [name])    ;; clojure.core/name is replaced here with INamedItem/name
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
@@ -33,10 +34,10 @@
 
 (defprotocol INamedItem
   "Protocol for items that have an id, a name, a description and a modified date."
-  (get-id [_] "Get the id of the item.")
-  (get-name [_] "Get the name of the item.")
-  (get-description [_] "Get the description of the item.")
-  (get-modified-at [_] "Get the description of the item.")
+  (id [_] "Get the id of the item.")
+  (name [_] "Get the name of the item.")
+  (description [_] "Get the description of the item.")
+  (modified-at [_] "Get the description of the item.")
   (rename [_ new-name] "Change the name of the item.")
   (reid [_ new-id] "Change the id of the item.")
   (set-description [_ new-description] "Set the description of the item."))
@@ -45,10 +46,10 @@
 ;; called with nil as argument.
 (extend-type nil
   INamedItem
-  (get-id [_] nil)
-  (get-name [_] nil)
-  (get-description [_] nil)
-  (get-modified-at [_] nil)
+  (id [_] nil)
+  (name [_] nil)
+  (description [_] nil)
+  (modified-at [_] nil)
   (rename [_ _] nil)
   (reid [_ _] nil)
   (set-description [_ _] nil))
@@ -60,16 +61,16 @@
   (datafy [this] (into {} this))
 
   INamedItem
-  (get-id [_]
+  (id [_]
     id)
 
-  (get-name [_]
+  (name [_]
     name)
 
-  (get-description [_]
+  (description [_]
     description)
 
-  (get-modified-at [_]
+  (modified-at [_]
     modified-at)
 
   (rename [this new-name]
@@ -202,16 +203,16 @@
        (-write [this writter options] (json/-write (datafy this) writter options))])
 
   INamedItem
-  (get-id [_]
+  (id [_]
     id)
 
-  (get-name [_]
+  (name [_]
     name)
 
-  (get-description [_]
+  (description [_]
     description)
 
-  (get-modified-at [_]
+  (modified-at [_]
     modified-at)
 
   (rename [_ new-name]
@@ -382,7 +383,7 @@
 
 (defn get-set-path
   [token-set]
-  (cpn/split-path (get-name token-set) :separator set-separator))
+  (cpn/split-path (name token-set) :separator set-separator))
 
 (defn split-set-name
   [name]
@@ -456,7 +457,7 @@
       (set-full-path->set-prefixed-full-path)))
 
 (defn- get-set-prefixed-path [token-set]
-  (let [path (cpn/split-path (get-name token-set) :separator set-separator)]
+  (let [path (cpn/split-path (name token-set) :separator set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
 (defn tokens-tree
@@ -530,7 +531,7 @@
   ;; since we'll use a map of sets indexed by id. Thus, it should be removed.
   (let [ids  (->> (tree-seq d/ordered-map? vals sets)
                   (filter (partial instance? TokenSet))
-                  (map get-id))
+                  (map id))
         ids' (set ids)]
     (= (count ids) (count ids'))))
 
@@ -567,16 +568,16 @@
   (datafy [this] (into {} this))
 
   INamedItem
-  (get-id [_]
+  (id [_]
     id)
 
-  (get-name [_]
+  (name [_]
     name)
 
-  (get-description [_]
+  (description [_]
     description)
 
-  (get-modified-at [_]
+  (modified-at [_]
     modified-at)
 
   (rename [this new-name]
@@ -799,7 +800,7 @@
                       ;; Set
                       (and v (instance? TokenSet v))
                       [{:group? false
-                        :path (split-set-name (get-name v))
+                        :path (split-set-name (name v))
                         :parent-path parent
                         :depth depth
                         :set v}]
@@ -845,17 +846,17 @@
                                                           (join-set-path parent-path)))]
                     [{:is-new true
                       :is-group false
-                      :path (split-set-name (get-name token-set))
+                      :path (split-set-name (name token-set))
                       :depth depth
-                      :id (get-id token-set)
+                      :id (id token-set)
                       :token-set token-set}])
 
                   ;; Set
                   (and v (instance? TokenSet v))
                   [{:is-group false
-                    :path (split-set-name (get-name v))
+                    :path (split-set-name (name v))
                     :depth depth
-                    :id (get-id v)
+                    :id (id v)
                     :token-set v}]
 
                   ;; Set group
@@ -949,11 +950,11 @@ Will return a value that matches this schema:
   (update-set [this id f]
     (assert (uuid? id) "expected uuid for `id`")
     (let [set (get-set this id)
-          name (get-name set)
+          name (name set)
           prefixed-full-path (set-name->prefixed-full-path name)]
       (if set
         (let [set' (f set)
-              name' (get-name set')
+              name' (name set')
               prefixed-full-path' (get-set-prefixed-path set')]
           (if (= name name')
             (TokensLib. (d/oassoc-in sets prefixed-full-path set')
@@ -974,7 +975,7 @@ Will return a value that matches this schema:
   (delete-set [this id]
     (assert (uuid? id) "expected uuid for `id`")
     (let [set           (get-set this id)
-          set-name      (get-name set)
+          set-name      (name set)
           prefixed-path (set-name->prefixed-full-path set-name)]
       (TokensLib. (d/dissoc-in sets prefixed-path)
                   (walk/postwalk
@@ -1022,7 +1023,7 @@ Will return a value that matches this schema:
                         (walk/postwalk
                          (fn [form]
                            (if (instance? TokenTheme form)
-                             (update-set-name form (get-name prev-set) (get-name set))
+                             (update-set-name form (name prev-set) (name set))
                              form))
                          themes))
                       active-themes))
@@ -1055,14 +1056,14 @@ Will return a value that matches this schema:
                                                      (walk/prewalk
                                                       (fn [form]
                                                         (if (token-set? form)
-                                                          (rename form (str to-path-str (str/strip-prefix (get-name form) from-path-str)))
+                                                          (rename form (str to-path-str (str/strip-prefix (name form) from-path-str)))
                                                           form))
                                                       sets)))))
               themes' (if reorder?
                         themes
                         (let [rename-sets-map (->> (get-sets-at-path this from-path)
                                                    (map (fn [set]
-                                                          [(get-name set) (str to-path-str (str/strip-prefix (get-name set) from-path-str))]))
+                                                          [(name set) (str to-path-str (str/strip-prefix (name set) from-path-str))]))
                                                    (into {}))]
                           (walk/postwalk
                            (fn [form]
@@ -1095,19 +1096,19 @@ Will return a value that matches this schema:
           sets (get-sets-at-path this path)]
       (reduce
        (fn [lib set]
-         (update-set lib (get-id set) (fn [set']
-                                        (rename set' (str to-path-str (str/strip-prefix (get-name set') from-path-str))))))
+         (update-set lib (id set) (fn [set']
+                                    (rename set' (str to-path-str (str/strip-prefix (name set') from-path-str))))))
        this sets)))
 
   (get-set-names [this]
-    (map get-name (get-sets this)))
+    (map name (get-sets this)))
 
   (set-count [this]
     (count (get-sets this)))
 
   (get-set [this id]
     (assert (uuid? id) "expected uuid for `id`")
-    (some #(when (= (get-id %) id) %)  ;; TODO: this will be made in an efficient way when
+    (some #(when (= (id %) id) %)  ;; TODO: this will be made in an efficient way when
           (get-sets this)))            ;;       we refactor the tokens lib internal structure
 
   (get-set-by-name [_ name]
@@ -1219,7 +1220,7 @@ Will return a value that matches this schema:
      (list)
      (comp
       (filter (partial instance? TokenTheme))
-      (filter #(theme-active? this (get-id %))))
+      (filter #(theme-active? this (id %))))
      (tree-seq d/ordered-map? vals themes)))
 
   (get-hidden-theme [this]
@@ -1278,7 +1279,7 @@ Will return a value that matches this schema:
         (let [path-active-set-names (some->> (get-in sets (split-set-name prefixed-path-str))
                                              (tree-seq d/ordered-map? vals)
                                              (filter (partial instance? TokenSet))
-                                             (map get-name)
+                                             (map name)
                                              (into #{}))
               difference (set/difference path-active-set-names active-set-names)]
           (cond
@@ -1410,10 +1411,10 @@ Will return a value that matches this schema:
   "Make a new set with a unique name, copying data from the given set in the lib."
   [set-id lib & {:keys [suffix]}]
   (let [sets      (get-sets lib)
-        unames    (map get-name sets)
+        unames    (map name sets)
         set       (get-set lib set-id)
         copy-name (when set
-                    (cfh/generate-unique-name (get-name set) unames :suffix suffix))]
+                    (cfh/generate-unique-name (name set) unames :suffix suffix))]
     (when set
       (-> set
           (rename copy-name)
@@ -1726,7 +1727,7 @@ Will return a value that matches this schema:
         (reduce (fn [library theme-path]
                   (let [[group name] (split-theme-path theme-path)
                         theme        (get-theme-by-name library group name)]
-                    (activate-theme library (get-id theme))))
+                    (activate-theme library (id theme))))
                 library
                 active-theme-names)]
 
@@ -1844,7 +1845,7 @@ Will return a value that matches this schema:
   (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
         sets (->> (get-sets tokens-lib)
                   (map (fn [token-set]
-                         (let [name   (get-name token-set)
+                         (let [name   (name token-set)
                                tokens (get-tokens- token-set)]
                            [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
                   (into {}))]
@@ -1864,7 +1865,7 @@ Will return a value that matches this schema:
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))
              (map (fn [set]
-                    [(get-name set)
+                    [(name set)
                      (tokens-tree (get-tokens- set) :update-token-fn token->dtcg-token)])))
 
         ordered-set-names
@@ -1954,12 +1955,12 @@ Will return a value that matches this schema:
         migrate-set-node
         (fn recurse [node]
           (if (token-set? node)
-            (if (contains? @seen-ids (get-id node))
+            (if (contains? @seen-ids (id node))
               (-> (datafy node)
                   (assoc :id (uuid/next))
                   (map->token-set))
               (do
-                (vswap! seen-ids conj (get-id node))
+                (vswap! seen-ids conj (id node))
                 node))
             (d/update-vals node recurse)))]
 
