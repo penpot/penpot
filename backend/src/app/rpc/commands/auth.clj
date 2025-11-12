@@ -7,21 +7,24 @@
 (ns app.rpc.commands.auth
   (:require
    [app.auth :as auth]
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
+   [app.http :as-alias http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
@@ -30,6 +33,7 @@
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
    [app.setup.welcome-file :refer [create-welcome-file]]
+   [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.worker :as wrk]
@@ -109,7 +113,7 @@
                                (assoc profile :is-admin (let [admins (cf/get :admins)]
                                                           (contains? admins (:email profile)))))]
               (-> response
-                  (rph/with-transform (session/create-fn cfg (:id profile)))
+                  (rph/with-transform (session/create-fn cfg profile))
                   (rph/with-meta {::audit/props (audit/profile->props profile)
                                   ::audit/profile-id (:id profile)}))))]
 
@@ -145,7 +149,24 @@
   [cfg params]
   (if (= (:profile-id params)
          (::rpc/profile-id params))
-    (rph/with-transform {} (session/delete-fn cfg))
+    (let [{:keys [claims]}
+          (rph/get-auth-data params)
+
+          provider
+          (some->> (get claims :sso-provider-id)
+                   (oidc/get-provider cfg))
+
+          response
+          (if (and provider (:logout-uri provider))
+            (let [params {"logout_hint" (get claims :sso-session-id)
+                          "client_id" (get provider :client-id)
+                          "post_logout_redirect_uri" (str (cf/get :public-uri))}
+                  uri    (-> (u/uri (:logout-uri provider))
+                             (assoc :query (u/map->query-string params)))]
+              {:redirect-uri uri})
+            {})]
+
+      (rph/with-transform response (session/delete-fn cfg)))
     {}))
 
 ;; ---- COMMAND: Recover Profile
@@ -271,11 +292,29 @@
 
 ;; ---- COMMAND: Register Profile
 
-(defn create-profile!
+(defn import-profile-picture
+  [cfg uri]
+  (try
+    (let [storage (sto/resolve cfg)
+          input   (media/download-image cfg uri)
+          input   (media/run {:cmd :info :input input})
+          hash    (sto/calculate-hash (:path input))
+          content (-> (sto/content (:path input) (:size input))
+                      (sto/wrap-with-hash hash))
+          sobject (sto/put-object! storage {::sto/content content
+                                            ::sto/deduplicate? true
+                                            :bucket "profile"
+                                            :content-type (:mtype input)})]
+      (:id sobject))
+    (catch Throwable cause
+      (l/err :hint "unable to import profile picture"
+             :cause cause)
+      nil)))
+
+(defn create-profile
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
-  [conn {:keys [email] :as params}]
-  (dm/assert! ::sm/email email)
+  [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
   (let [id        (or (:id params) (uuid/next))
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
@@ -283,8 +322,7 @@
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
                               :v2-info-shown true
-                              :release-notes-viewed (:main cf/version)})
-                      (db/tjson))
+                              :release-notes-viewed (:main cf/version)}))
 
         password  (or (:password params) "!")
 
@@ -299,6 +337,12 @@
         theme     (:theme params nil)
         email     (str/lower email)
 
+        photo-id  (some->> (or (:oidc/picture props)
+                               (:google/picture props)
+                               (:github/picture props)
+                               (:gitlab/picture props))
+                           (import-profile-picture cfg))
+
         params    {:id id
                    :fullname (:fullname params)
                    :email email
@@ -306,11 +350,13 @@
                    :lang locale
                    :password password
                    :deleted-at (:deleted-at params)
-                   :props props
+                   :props (db/tjson props)
                    :theme theme
+                   :photo-id photo-id
                    :is-active is-active
                    :is-muted is-muted
                    :is-demo is-demo}]
+
     (try
       (-> (db/insert! conn :profile params)
           (profile/decode-row))
@@ -323,7 +369,7 @@
           (throw cause))))))
 
 
-(defn create-profile-rels!
+(defn create-profile-rels
   [conn {:keys [id] :as profile}]
   (let [features (cfeat/get-enabled-features cf/flags)
         team     (teams/create-team conn
@@ -373,12 +419,13 @@
                      ;; to detect if the profile is already registered
                      (or (profile/get-profile-by-email conn (:email claims))
                          (let [is-active (or (boolean (:is-active claims))
+                                             (boolean (:email-verified claims))
                                              (not (contains? cf/flags :email-verification)))
                                params    (-> params
                                              (assoc :is-active is-active)
                                              (update :password auth/derive-password))
-                               profile   (->> (create-profile! conn params)
-                                              (create-profile-rels! conn))]
+                               profile   (->> (create-profile cfg params)
+                                              (create-profile-rels conn))]
                            (vary-meta profile assoc :created true))))
 
         created?   (-> profile meta :created true?)
@@ -416,10 +463,10 @@
       (and (some? invitation)
            (= (:email profile)
               (:member-email invitation)))
-      (let [claims (assoc invitation :member-id  (:id profile))
-            token  (tokens/generate cfg claims)]
+      (let [invitation (assoc invitation :member-id  (:id profile))
+            token      (tokens/generate cfg invitation)]
         (-> {:invitation-token token}
-            (rph/with-transform (session/create-fn cfg (:id profile)))
+            (rph/with-transform (session/create-fn cfg profile claims))
             (rph/with-meta {::audit/replace-props props
                             ::audit/context {:action "accept-invitation"}
                             ::audit/profile-id (:id profile)})))
@@ -430,7 +477,7 @@
       created?
       (if (:is-active profile)
         (-> (profile/strip-private-attrs profile)
-            (rph/with-transform (session/create-fn cfg (:id profile)))
+            (rph/with-transform (session/create-fn cfg profile claims))
             (rph/with-defer create-welcome-file-when-needed)
             (rph/with-meta
               {::audit/replace-props props
@@ -559,4 +606,32 @@
   [cfg params]
   (db/tx-run! cfg request-profile-recovery params))
 
+;; --- COMMAND: get-sso-config
 
+(defn- extract-domain
+  "Extract the domain part from email"
+  [email]
+  (let [at (str/last-index-of email "@")]
+    (when (and (>= at 0)
+               (< at (dec (count email))))
+      (-> (subs email (inc at))
+          (str/trim)
+          (str/lower)))))
+
+(def ^:private schema:get-sso-provider
+  [:map {:title "get-sso-config"}
+   [:email ::sm/email]])
+
+(def ^:private schema:get-sso-provider-result
+  [:map {:title "SSOProvider"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::get-sso-provider
+  {::rpc/auth false
+   ::doc/added "2.12"
+   ::sm/params schema:get-sso-provider
+   ::sm/result schema:get-sso-provider-result}
+  [cfg {:keys [email]}]
+  (when-let [domain (extract-domain email)]
+    (when-let [config (db/get* cfg :sso-provider {:domain domain})]
+      (select-keys config [:id]))))

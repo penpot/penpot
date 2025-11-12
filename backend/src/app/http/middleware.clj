@@ -12,7 +12,7 @@
    [app.common.schema :as-alias sm]
    [app.common.transit :as t]
    [app.config :as cf]
-   [app.http.auth :as-alias auth]
+   [app.http :as-alias http]
    [app.http.errors :as errors]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
@@ -242,6 +242,7 @@
                (handler request)
                {::yres/status 405}))))))})
 
+
 (defn- wrap-auth
   [handler decoders]
   (let [token-re
@@ -252,30 +253,28 @@
           (when-let [[_ token-type token] (some->> (yreq/get-header request "authorization")
                                                    (re-matches token-re))]
             (if (= "token" (str/lower token-type))
-              [:token token]
-              [:bearer token])))
+              {:type :token
+               :token token}
+              {:type :bearer
+               :token token})))
 
         get-token-from-cookie
         (fn [request]
           (let [cname (cf/get :auth-token-cookie-name)
                 token (some-> (yreq/get-cookie request cname) :value)]
             (when-not (str/empty? token)
-              [:cookie token])))
+              {:type :cookie
+               :token token})))
 
         get-token
         (some-fn get-token-from-cookie get-token-from-authorization)
 
         process-request
         (fn [request]
-          (if-let [[token-type token] (get-token request)]
-            (let [request (-> request
-                              (assoc ::auth/token token)
-                              (assoc ::auth/token-type token-type))
-                  decoder (get decoders token-type)]
-
-              (if (fn? decoder)
-                (assoc request ::auth/claims (delay (decoder token)))
-                request))
+          (if-let [{:keys [type token] :as auth} (get-token request)]
+            (if-let [decode-fn (get decoders type)]
+              (assoc request ::http/auth-data (assoc auth :claims (decode-fn token)))
+              (assoc request ::http/auth-data auth))
             request))]
 
     (fn [request]

@@ -17,6 +17,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as-alias db]
+   [app.http.client :as http]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [buddy.core.bytes :as bb]
@@ -36,6 +37,9 @@
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
    org.im4java.core.Info))
+
+(def default-max-file-size
+  (* 1024 1024 10)) ; 10 MiB
 
 (def schema:upload
   [:map {:title "Upload"}
@@ -241,7 +245,7 @@
           (ex/raise :type :validation
                     :code :invalid-svg-file
                     :hint "uploaded svg does not provides dimensions"))
-        (merge input info {:ts (ct/now)}))
+        (merge input info {:ts (ct/now) :size (fs/size path)}))
 
       (let [instance (Info. (str path))
             mtype'   (.getProperty instance "Mime type")]
@@ -261,6 +265,7 @@
           (assoc input
                  :width  width
                  :height height
+                 :size (fs/size path)
                  :ts (ct/now)))))))
 
 (defmethod process-error org.im4java.core.InfoException
@@ -269,6 +274,54 @@
             :code :invalid-image
             :hint "invalid image"
             :cause error))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IMAGE HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn download-image
+  "Download an image from the provided URI and return the media input object"
+  [{:keys [::http/client]} uri]
+  (letfn [(parse-and-validate [{:keys [headers] :as response}]
+            (let [size     (some-> (get headers "content-length") d/parse-integer)
+                  mtype    (get headers "content-type")
+                  format   (cm/mtype->format mtype)
+                  max-size (cf/get :media-max-file-size default-max-file-size)]
+
+              (when-not size
+                (ex/raise :type :validation
+                          :code :unknown-size
+                          :hint "seems like the url points to resource with unknown size"))
+
+              (when (> size max-size)
+                (ex/raise :type :validation
+                          :code :file-too-large
+                          :hint (str/ffmt "the file size % is greater than the maximum %"
+                                          size
+                                          default-max-file-size)))
+
+              (when (nil? format)
+                (ex/raise :type :validation
+                          :code :media-type-not-allowed
+                          :hint "seems like the url points to an invalid media object"))
+
+              {:size size :mtype mtype :format format}))]
+
+    (let [{:keys [body] :as response} (http/req! client
+                                                 {:method :get :uri uri}
+                                                 {:response-type :input-stream})
+          {:keys [size mtype]} (parse-and-validate response)
+          path    (tmp/tempfile :prefix "penpot.media.download.")
+          written (io/write* path body :size size)]
+
+      (when (not= written size)
+        (ex/raise :type :internal
+                  :code :mismatch-write-size
+                  :hint "unexpected state: unable to write to file"))
+
+      {;; :size size
+       :path path
+       :mtype mtype})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FONTS

@@ -104,13 +104,8 @@
                      (assoc-in [:app.rpc/methods :app.setup/templates] templates)
                      (dissoc :app.srepl/server
                              :app.http/server
-                             :app.http/router
-                             :app.auth.oidc.providers/google
-                             :app.auth.oidc.providers/gitlab
-                             :app.auth.oidc.providers/github
-                             :app.auth.oidc.providers/generic
+                             :app.http/route
                              :app.setup/templates
-                             :app.auth.oidc/routes
                              :app.http.oauth/handler
                              :app.notifications/handler
                              :app.loggers.mattermost/reporter
@@ -182,10 +177,10 @@
                         :is-demo false}
                        params)]
      (db/run! system
-              (fn [{:keys [::db/conn]}]
+              (fn [{:keys [::db/conn] :as cfg}]
                 (->> params
-                     (cmd.auth/create-profile! conn)
-                     (cmd.auth/create-profile-rels! conn)))))))
+                     (cmd.auth/create-profile cfg)
+                     (cmd.auth/create-profile-rels conn)))))))
 
 (defn create-project*
   ([i params] (create-project* *system* i params))

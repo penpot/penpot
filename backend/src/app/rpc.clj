@@ -68,32 +68,20 @@
         response (if (fn? result)
                    (result request)
                    (let [result  (rph/unwrap result)
-                         status  (::http/status mdata 200)
+                         status  (or (::http/status mdata)
+                                     (if (nil? result)
+                                       204
+                                       200))
                          headers (cond-> (::http/headers mdata {})
                                    (yres/stream-body? result)
                                    (assoc "content-type" "application/octet-stream"))]
                      {::yres/status  status
                       ::yres/headers headers
                       ::yres/body    result}))]
+
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
-
-(defn get-external-session-id
-  [request]
-  (when-let [session-id (yreq/get-header request "x-external-session-id")]
-    (when-not (or (> (count session-id) 256)
-                  (= session-id "null")
-                  (str/blank? session-id))
-      session-id)))
-
-(defn- get-external-event-origin
-  [request]
-  (when-let [origin (yreq/get-header request "x-event-origin")]
-    (when-not (or (> (count origin) 256)
-                  (= origin "null")
-                  (str/blank? origin))
-      origin)))
 
 (defn- make-rpc-handler
   "Ring handler that dispatches cmd requests and convert between
@@ -105,23 +93,19 @@
             etag         (yreq/get-header request "if-none-match")
             profile-id   (or (::session/profile-id request)
                              (::actoken/profile-id request))
-
             ip-addr      (inet/parse-request request)
-            session-id   (get-external-session-id request)
-            event-origin (get-external-event-origin request)
 
             data         (-> params
                              (assoc ::handler-name handler-name)
                              (assoc ::ip-addr ip-addr)
                              (assoc ::request-at (ct/now))
-                             (assoc ::external-session-id session-id)
-                             (assoc ::external-event-origin event-origin)
-                             (assoc ::session/id (::session/id request))
                              (assoc ::cond/key etag)
                              (cond-> (uuid? profile-id)
                                (assoc ::profile-id profile-id)))
 
-            data         (vary-meta data assoc ::http/request request)
+            data         (with-meta data
+                           {::http/request request})
+
             handler-fn   (get methods (keyword handler-name) default-handler)]
 
         (when (and (or (= method :get)
@@ -366,7 +350,6 @@
 
   (let [public-uri (cf/get :public-uri)]
     ["/api"
-
 
      ["/management"
       ["/methods/:type"

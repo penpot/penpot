@@ -23,7 +23,7 @@
 (defn request->context
   "Extracts error report relevant context data from request."
   [request]
-  (let [claims (some-> (get request ::auth/claims) deref)]
+  (let [{:keys [claims] :as auth} (get request ::http/auth-data)]
     (-> (cf/logging-context)
         (assoc :request/path (:path request))
         (assoc :request/method (:method request))
@@ -31,6 +31,7 @@
         (assoc :request/user-agent (yreq/get-header request "user-agent"))
         (assoc :request/ip-addr (inet/parse-request request))
         (assoc :request/profile-id (get claims :uid))
+        (assoc :request/auth-data auth)
         (assoc :version/frontend (or (yreq/get-header request "x-frontend-version") "unknown")))))
 
 (defmulti handle-error
@@ -59,7 +60,6 @@
        ::yres/body data}
 
       (binding [l/*context* (request->context request)]
-        (l/wrn :hint "restriction error" :cause err)
         {::yres/status 400
          ::yres/body data}))))
 

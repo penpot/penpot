@@ -168,7 +168,7 @@
     [:google-client-id {:optional true} :string]
     [:google-client-secret {:optional true} :string]
     [:oidc-client-id {:optional true} :string]
-    [:oidc-user-info-source {:optional true} :keyword]
+    [:oidc-user-info-source {:optional true} [:enum "auto" "userinfo" "token"]]
     [:oidc-client-secret {:optional true} :string]
     [:oidc-base-uri {:optional true} :string]
     [:oidc-token-uri {:optional true} :string]

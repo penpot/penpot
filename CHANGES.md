@@ -4,11 +4,46 @@
 
 ### :boom: Breaking changes & Deprecations
 
-- The backend RPC API URLS are changed from `/api/rpc/command/<name>`
-  to `/api/main/methods/<name>` (the previou PATH is preserved for
-  backward compatibility; however, if you are a user of this API, it
-  is strongly recommended that you adapt your code to use the new
-  PATH.
+#### Backend RPC API changes
+
+The backend RPC API URLS are changed from `/api/rpc/command/<name>` to
+`/api/main/methods/<name>` (the previou PATH is preserved for backward
+compatibility; however, if you are a user of this API, it is strongly
+recommended that you adapt your code to use the new PATH.
+
+
+#### Updated SSO Callback URL
+
+The OAuth / Single Sign-On (SSO) callback endpoint has changed to
+align with the new OpenID Connect (OIDC) implementation.
+
+Old callback URL:
+
+```
+https://<your_domain>/api/auth/oauth/<oauth_provider>/callback
+```
+
+New callback URL:
+
+```
+https://<your_domain>/api/auth/oidc/callback
+```
+
+**Action required:**
+
+If you have SSO/Social-Auth configured on your on-premise instance,
+the following actions are required before update:
+
+Update your OAuth or SSO provider configuration (e.g., Okta, Google,
+Azure AD, etc.) to use the new callback URL.  Failure to update may
+result in authentication failures after upgrading.
+
+**Reason for change:**
+
+This update standardizes all authentication flows under the single URL
+and makis it more modular, enabling the ability to configure SSO auth
+provider dinamically.
+
 
 ### :rocket: Epics and highlights
 
