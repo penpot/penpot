@@ -1,6 +1,11 @@
 # CHANGELOG
 
-## 1.1.0-RC1
+## 1.1.0-RC2
+
+- Fix validation issue with several token nodes
+
+
+## 1.1.0-RC2
 
 - Add experimental addTokensLib method
 
