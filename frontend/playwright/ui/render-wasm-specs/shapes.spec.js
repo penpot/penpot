@@ -244,3 +244,19 @@ test("Renders a file with nested frames with inherited blur", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a clipped frame with a large blur drop shadow", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-large-blur-shadow.json");
+
+  await workspace.goToWorkspace({
+    id: "b4133204-a015-80ed-8007-192a65398b0c",
+    pageId: "b4133204-a015-80ed-8007-192a65398b0d",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

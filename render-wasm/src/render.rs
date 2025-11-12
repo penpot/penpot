@@ -1386,8 +1386,45 @@ impl RenderState {
                     }
                 }
 
-                self.surfaces
-                    .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+                if let Some((bounds, corners, transform)) = clip_bounds.as_ref() {
+                    let antialias = element.should_use_antialias(scale);
+                    let mut total_matrix = Matrix::new_identity();
+                    total_matrix.pre_scale((scale, scale), None);
+                    total_matrix.pre_translate((translation.0, translation.1));
+                    total_matrix.pre_concat(transform);
+
+                    self.surfaces.canvas(SurfaceId::Current).save();
+                    self.surfaces
+                        .canvas(SurfaceId::Current)
+                        .concat(&total_matrix);
+
+                    if let Some(corners) = corners {
+                        let rrect = RRect::new_rect_radii(*bounds, corners);
+                        self.surfaces.canvas(SurfaceId::Current).clip_rrect(
+                            rrect,
+                            skia::ClipOp::Intersect,
+                            antialias,
+                        );
+                    } else {
+                        self.surfaces.canvas(SurfaceId::Current).clip_rect(
+                            *bounds,
+                            skia::ClipOp::Intersect,
+                            antialias,
+                        );
+                    }
+
+                    self.surfaces
+                        .canvas(SurfaceId::Current)
+                        .concat(&total_matrix.invert().unwrap_or_default());
+
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+
+                    self.surfaces.canvas(SurfaceId::Current).restore();
+                } else {
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+                }
 
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)
