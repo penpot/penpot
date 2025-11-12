@@ -44,7 +44,6 @@
 
 .panel-title {
   @include use-typography("headline-small");
-  text-transform: capitalize;
   flex: 1;
   color: var(--title-color);
 }

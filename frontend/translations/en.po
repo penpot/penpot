@@ -1989,7 +1989,7 @@ msgstr "Active themes"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:20
 msgid "inspect.tabs.styles.panel.variant"
-msgstr "Variant properties"
+msgstr "Variant Properties"
 
 #: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
 msgid "inspect.tabs.styles.token.resolved-value"

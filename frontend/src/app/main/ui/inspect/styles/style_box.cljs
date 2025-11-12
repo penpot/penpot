@@ -26,8 +26,8 @@
     :blur       (tr "labels.blur")
     :shadow     (tr "labels.shadow")
     :layout     (tr "labels.layout")
-    :flex-element "Flex element"
-    :grid-element "Grid element"
+    :flex-element "Flex Element"
+    :grid-element "Grid Element"
     :layout-element "Layout Element"
     :visibility (tr "labels.visibility")
     :svg        (tr "labels.svg")
