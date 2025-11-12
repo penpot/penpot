@@ -508,7 +508,79 @@ impl TextContent {
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
         }
+
+        if self.is_empty() {
+            let (placeholder_width, placeholder_height) = self.placeholder_dimensions(selrect);
+            self.size.width = placeholder_width;
+            self.size.height = placeholder_height;
+            self.size.max_width = placeholder_width;
+        }
+
         self.size
+    }
+
+    /// Return true when the content represents a freshly created empty text.
+    /// We consider it empty only if there is exactly one paragraph with a single
+    /// span whose text buffer is empty. Any additional paragraphs or characters
+    /// mean the user has already entered content.
+    fn is_empty(&self) -> bool {
+        if self.paragraphs.len() != 1 {
+            return false;
+        }
+
+        let paragraph = match self.paragraphs.first() {
+            Some(paragraph) => paragraph,
+            None => return true,
+        };
+        if paragraph.children().len() != 1 {
+            return false;
+        }
+
+        let span = match paragraph.children().first() {
+            Some(span) => span,
+            None => return true,
+        };
+
+        span.text.is_empty()
+    }
+
+    /// Compute the placeholder size used while the text is still empty. We ask
+    /// Skia to measure a single glyph using the span's typography so the editor
+    /// shows a caret-sized box that reflects the selected font, size and spacing.
+    /// If that fails we fall back to the previous WASM size or the incoming
+    /// selrect dimensions.
+    fn placeholder_dimensions(&self, selrect: Rect) -> (f32, f32) {
+        if let Some(paragraph) = self.paragraphs.first() {
+            if let Some(span) = paragraph.children().first() {
+                let fonts = get_font_collection();
+                let fallback_fonts = get_fallback_fonts();
+                let paragraph_style = paragraph.paragraph_to_style();
+                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+
+                let text_style = span.to_style(
+                    &self.bounds(),
+                    fallback_fonts,
+                    false,
+                    paragraph.line_height(),
+                );
+
+                builder.push_style(&text_style);
+                builder.add_text("0");
+
+                let mut paragraph_layout = builder.build();
+                paragraph_layout.layout(f32::MAX);
+
+                let width = paragraph_layout.max_intrinsic_width();
+                let height = paragraph_layout.height();
+
+                return (width, height);
+            }
+        }
+
+        let fallback_width = selrect.width().max(self.size.width);
+        let fallback_height = selrect.height().max(self.size.height);
+
+        (fallback_width, fallback_height)
     }
 }
 

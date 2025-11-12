@@ -35,6 +35,7 @@
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
+   [app.util.text.content :as tc]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -105,6 +106,14 @@
      (fn [ts]
        (reset! pending-render false)
        (render ts)))))
+
+
+(defn- ensure-text-content
+  "Guarantee that the shape always sends a valid text tree to WASM. When the
+  content is nil (freshly created text) we fall back to
+  tc/default-text-content so the renderer receives typography information."
+  [content]
+  (or content (tc/v2-default-text-content)))
 
 (defn use-shape
   [id]
@@ -850,7 +859,10 @@
         blend-mode   (get shape :blend-mode)
         opacity      (get shape :opacity)
         hidden       (get shape :hidden)
-        content      (get shape :content)
+        content      (let [content (get shape :content)]
+                       (if (= type :text)
+                         (ensure-text-content content)
+                         content))
         bool-type    (get shape :bool-type)
         grow-type    (get shape :grow-type)
         blur         (get shape :blur)
