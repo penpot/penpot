@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.11.1 (Unreleased)
+## 2.11.1
 
 - Fix WEBP shape export on docker images [Taiga #3838](https://tree.taiga.io/project/penpot/issue/3838)
 
