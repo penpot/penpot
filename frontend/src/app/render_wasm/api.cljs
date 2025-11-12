@@ -912,11 +912,11 @@
     (->> (rx/concat
           (->> (rx/from pending-thumbnails)
                (rx/merge-map (fn [callback] (callback)))
-               (rx/reduce conj [])
-               (rx/tap #(.dispatchEvent ^js js/document event)))
+               (rx/reduce conj []))
           (->> (rx/from pending-full)
                (rx/mapcat (fn [callback] (callback)))
-               (rx/reduce conj [])))
+               (rx/reduce conj [])
+               (rx/tap #(.dispatchEvent ^js js/document event))))
          (rx/subs!
           (fn [_]
             (update-text-layouts shapes)
