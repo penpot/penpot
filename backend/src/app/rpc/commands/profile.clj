@@ -18,6 +18,7 @@
    [app.db.sql :as-alias sql]
    [app.email :as eml]
    [app.http.session :as session]
+   [app.nitrate :as nitrate]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
@@ -98,9 +99,14 @@
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
   (try
-    (-> (get-profile pool profile-id)
-        (strip-private-attrs)
-        (update :props filter-props))
+    (let [nitrate (get cfg ::nitrate/instance)
+
+          ;; org     ((get nitrate :get-organization) profile-id)
+          ;; org     (nitrate/call cfg :get-organization {:profile-id profile-id})
+
+      (-> (get-profile pool profile-id)
+          (strip-private-attrs)
+          (update :props filter-props)))
     (catch Throwable _
       {:id uuid/zero :fullname "Anonymous User"})))
 
