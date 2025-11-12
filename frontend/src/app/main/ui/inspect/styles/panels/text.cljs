@@ -204,10 +204,13 @@
                            :property shorthand})))
     [:div {:class (stl/css :text-panel)}
      (for [shape shapes]
-       [:> style-text-block* {:key (:id shape)
-                              :shape shape
-                              :style (:style shape)
-                              :text (txt/content->text (:content shape))
-                              :resolved-tokens resolved-tokens
-                              :color-space color-space}])]))
+       (let [style-text-blocks (get-style-text shape)]
+         [:div {:key (:id shape) :class (stl/css :text-shape)}
+          (for [[style text] style-text-blocks]
+            [:> style-text-block* {:key (:id shape)
+                                   :shape shape
+                                   :style style
+                                   :text text
+                                   :resolved-tokens resolved-tokens
+                                   :color-space color-space}])]))]))
 
