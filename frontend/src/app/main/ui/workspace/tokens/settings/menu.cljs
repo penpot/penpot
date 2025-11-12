@@ -100,9 +100,11 @@
 
         [:div {:class (stl/css :settings-modal-actions)}
          [:> button* {:on-click modal/hide!
+                      :type "button"
                       :variant "secondary"}
           (tr "labels.cancel")]
          [:> button* {:on-click on-set-font
+                      :type "button"
                       :disabled (not is-valid)
                       :variant "primary"}
           (tr "labels.save")]]]]]]))

@@ -70,6 +70,7 @@
             [:img {:class (stl/css :resolved-image) :src (cf/resolve-file-media image)}]]
 
            [:> button* {:class (stl/css :download-button)
+                        :type "button"
                         :variant "secondary"
                         :target "_blank"
                         :download name

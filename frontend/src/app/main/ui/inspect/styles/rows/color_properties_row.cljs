@@ -120,6 +120,7 @@
                 :alt (tr "inspect.attributes.image.preview")}]]
         [:> button* {:variant "secondary"
                      :to color-image-url
+                     :type "button"
                      :target "_blank"
                      :download color-image-name}
          (tr "inspect.attributes.image.download")]])]))
