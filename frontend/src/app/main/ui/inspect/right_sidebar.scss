@@ -130,13 +130,13 @@
 .inspect-tab-switcher-controls {
   display: flex;
   align-items: center;
-  gap: var(--sp-s);
   flex: 1;
   justify-content: flex-end;
 }
 
 .inspect-tab-switcher-controls-color-space {
-  flex: 0 0 fit-content;
+  // 65px is the minimum size of the switcher to avoid text ellipsis on the options
+  flex: 0 0 65px;
 }
 
 .inspect-tab-switcher-controls-tab {
