@@ -649,6 +649,59 @@
                (ptk/data-event :layout/update {:ids selected-ids})
                (dwu/commit-undo-transaction undo-id))))))
 
+(defn set-shape-index
+  [file-id page-id id new-index]
+  (ptk/reify ::set-shape-index
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id         (or file-id (:current-file-id state))
+            page-id         (or page-id (:current-page-id state))
+
+            objects         (dsh/lookup-page-objects state file-id page-id)
+
+            undo-id (js/Symbol)
+
+            shape (get objects id)
+            parent (get objects (:parent-id shape))
+
+            current-index (d/index-of (:shapes parent) id)
+
+            new-index
+            (if (> new-index current-index)
+              (inc new-index)
+              new-index)
+
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/change-parent (:id parent) [shape] new-index))]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update {:ids [id]})
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn reorder-children
+  [file-id page-id parent-id children]
+
+  (ptk/reify ::reorder-children
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id (or file-id (:current-file-id state))
+            page-id (or page-id (:current-page-id state))
+            objects (dsh/lookup-page-objects state file-id page-id)
+            undo-id (js/Symbol)
+
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/reorder-children parent-id children))]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update {:ids [parent-id]})
+               (dwu/commit-undo-transaction undo-id))))))
+
 ;; --- Change Shape Order (D&D Ordering)
 
 (defn relocate-selected-shapes

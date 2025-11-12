@@ -529,6 +529,19 @@
                        (let [parent-id (:parent-id shape)]
                          (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))))}
 
+           :parentIndex
+           {:this true
+            :get
+            (fn [self]
+              (let [shape (u/proxy->shape self)]
+                (if (cfh/root? shape)
+                  0
+                  (let [file-id (obj/get self "$file")
+                        page-id (obj/get self "$page")
+                        parent (u/locate-shape file-id page-id (:parent-id shape))
+                        index (d/index-of (:shapes parent) id)]
+                    index))))}
+
            :parentX
            {:this true
             :get (fn [self]
@@ -1057,6 +1070,35 @@
                  (let [typography (u/proxy->library-typography typography)]
                    (st/emit! (dwt/apply-typography #{id} typography file-id))))))
 
+           ;; Change index method
+           :setParentIndex
+           (fn [index]
+             (cond
+               (not (us/safe-int? index))
+               (u/display-not-valid :setParentIndex index)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/display-not-valid :setParentIndex "Plugin doesn't have 'content:write' permission")
+
+               :else
+               (st/emit! (dw/set-shape-index file-id page-id id index))))
+
+           :bringForward
+           (fn []
+             (st/emit! (dw/vertical-order-selected :up)))
+
+           :sendBackward
+           (fn []
+             (st/emit! (dw/vertical-order-selected :down)))
+
+           :bringToFront
+           (fn []
+             (st/emit! (dw/vertical-order-selected :top)))
+
+           :sendToBack
+           (fn []
+             (st/emit! (dw/vertical-order-selected :bottom)))
+
            ;; COMPONENTS
            :isComponentInstance
            (fn []
@@ -1265,9 +1307,34 @@
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
-            {:name "children"
+            {:this true
+             :name "children"
              :enumerable false
-             :get #(.getChildren ^js %)}))
+             :get
+             (fn [^js self]
+               (.getChildren self))
+
+             :set
+             (fn [^js self children]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/display-not-valid :children "Plugin doesn't have 'content:write' permission")
+
+                 (not (every? shape-proxy? children))
+                 (u/display-not-valid :children "Every children needs to be shape proxies")
+
+                 :else
+                 (let [shape (u/proxy->shape self)
+                       file-id (obj/get self "$file")
+                       page-id (obj/get self "$page")
+                       ids (->> children (map #(obj/get % "$id")))]
+
+                   (cond
+                     (not= (set ids) (set (:shapes shape)))
+                     (u/display-not-valid :children "Not all children are present in the input")
+
+                     :else
+                     (st/emit! (dw/reorder-children file-id page-id (:id shape) ids))))))}))
 
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!
