@@ -141,6 +141,7 @@ test("Renders a file with texts with images", async ({ page }) => {
       "4f89252d-ebbc-813e-8006-8699e4170e18",
     ],
     "render-wasm/assets/pattern.png",
+    "render-wasm/assets/pattern-thumbnail.png",
   );
   await mockGetEmojiFont(workspace);
   await mockGetJapaneseFont(workspace);
@@ -179,6 +180,7 @@ test("Renders a file with text decoration", async ({ page }) => {
   await workspace.mockFileMediaAsset(
     ["d6c33e7b-7b64-80f3-8006-78509a3a2d21"],
     "render-wasm/assets/pattern.png",
+    "render-wasm/assets/pattern-thumbnail.png",
   );
   await mockGetEmojiFont(workspace);
   await mockGetJapaneseFont(workspace);
@@ -281,14 +283,10 @@ test("Renders a file with different text shadows combinations", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with multiple text shadows in order", async ({
-  page,
-}) => {
+test("Renders a file with multiple text shadows in order", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
-  await workspace.mockGetFile(
-    "render-wasm/get-file-text-shadows-order.json",
-  );
+  await workspace.mockGetFile("render-wasm/get-file-text-shadows-order.json");
 
   await workspace.goToWorkspace({
     id: "48ffa82f-6950-81b5-8006-e49a2a39657f",
@@ -337,7 +335,9 @@ test("Renders a file with texts with with text spans of different sizes", async 
 }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
-  await workspace.mockGetFile("render-wasm/get-file-text-spans-different-sizes.json");
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-spans-different-sizes.json",
+  );
 
   await workspace.goToWorkspace({
     id: "a0b1a70e-0d02-8082-8006-ff6d160f15ce",
@@ -347,9 +347,8 @@ test("Renders a file with texts with with text spans of different sizes", async 
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with texts with tabs", async ({
-  page,
-}) => {
+// TODO: enable this test once we use the wasm renderer in the new editor
+test.skip("Renders a file with texts with tabs", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-text-tabs.json");
@@ -367,9 +366,8 @@ test("Renders a file with texts with tabs", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with texts with empty lines", async ({
-  page,
-}) => {
+// TODO: enable this test once we use the wasm renderer in the new editor
+test.skip("Renders a file with texts with empty lines", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-empty-lines.json");
@@ -387,9 +385,8 @@ test("Renders a file with texts with empty lines", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with texts with breaking words", async ({
-  page,
-}) => {
+// TODO: enable this test once we use the wasm renderer in the new editor
+test.skip("Renders a file with texts with breaking words", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-empty-lines.json");

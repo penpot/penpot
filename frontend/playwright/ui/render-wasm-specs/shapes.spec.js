@@ -36,6 +36,7 @@ test("Renders a file with solid, gradient and image fills", async ({
       "1ebcea38-f1bf-8101-8006-4c8f579da49c",
     ],
     "render-wasm/assets/penguins.jpg",
+    "render-wasm/assets/pattern-thumbnail.png", // FIXME: get real thumbnail
   );
   await workspace.mockGetFile("render-wasm/get-file-shapes-fills.json");
 
@@ -58,6 +59,7 @@ test("Renders a file with strokes", async ({ page }) => {
       "202c1104-9385-81d3-8006-507560ce29e3",
     ],
     "render-wasm/assets/penguins.jpg",
+    "render-wasm/assets/pattern-thumbnail.png", // FIXME: get real thumbnail
   );
   await workspace.mockGetFile("render-wasm/get-file-shapes-strokes.json");
 
@@ -88,6 +90,11 @@ test("Renders a file with shapes with multiple fills", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-multiple-fills.json");
+  await workspace.mockFileMediaAsset(
+    ["c0939f58-37bc-805d-8006-51cda84a405a"],
+    "render-wasm/assets/penguins.jpg",
+    "render-wasm/assets/pattern-thumbnail.png", // FIXME: get real thumbnail
+  );
 
   await workspace.goToWorkspace({
     id: "c0939f58-37bc-805d-8006-51cd3a51c255",
@@ -127,6 +134,7 @@ test("Renders shapes with exif rotated images fills and strokes", async ({
       "27270c45-35b4-80f3-8006-63a3ea82557f",
     ],
     "render-wasm/assets/landscape.jpg",
+    "render-wasm/assets/pattern-thumbnail.png", // FIXME: get real thumbnail
   );
   await workspace.mockGetFile(
     "render-wasm/get-file-shapes-exif-rotated-fills.json",
@@ -170,6 +178,15 @@ test("Renders a file with blurs applied to any kind of shape", async ({
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-blurs.json");
+  await workspace.mockFileMediaAsset(
+    [
+      "aa0a383a-7553-808a-8006-ae13a3c575eb",
+      "aa0a383a-7553-808a-8006-ae13c84d6e3a",
+      "aa0a383a-7553-808a-8006-ae131157fc26",
+    ],
+    "render-wasm/assets/pattern.png",
+    "render-wasm/assets/pattern-thumbnail.png", // FIXME: get real thumbnail
+  );
 
   await workspace.goToWorkspace({
     id: "aa0a383a-7553-808a-8006-ae1237b52cf9",
@@ -212,10 +229,7 @@ test("Renders a file with a closed path shape with multiple segments using strok
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-
-test("Renders a file with paths and svg attrs", async ({
-  page,
-}) => {
+test("Renders a file with paths and svg attrs", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-svg-attrs.json");
@@ -234,7 +248,9 @@ test("Renders a file with nested frames with inherited blur", async ({
 }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
-  await workspace.mockGetFile("render-wasm/get-file-frame-with-nested-blur.json");
+  await workspace.mockGetFile(
+    "render-wasm/get-file-frame-with-nested-blur.json",
+  );
 
   await workspace.goToWorkspace({
     id: "58c5cc60-d124-81bd-8007-0ee4e5030609",
