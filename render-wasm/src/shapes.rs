@@ -812,41 +812,23 @@ impl Shape {
         result
     }
 
-    fn apply_shadow_bounds(&self, mut rect: math::Rect, scale: f32) -> math::Rect {
+    fn apply_shadow_bounds(&self, mut rect: math::Rect) -> math::Rect {
         for shadow in self.shadows_visible() {
             if !shadow.hidden() {
-                let (x, y) = shadow.offset;
-                let mut shadow_rect = rect;
-
-                shadow_rect.left += x;
-                shadow_rect.right += x;
-                shadow_rect.top += y;
-                shadow_rect.bottom += y;
-
-                let safe_margin = 2.0 / scale.max(0.1);
-                let total_expansion = shadow.blur + shadow.spread + safe_margin;
-                shadow_rect.left -= total_expansion;
-                shadow_rect.top -= total_expansion;
-                shadow_rect.right += total_expansion;
-                shadow_rect.bottom += total_expansion;
-
-                rect.join(shadow_rect);
+                if let Some(filter) = shadow.get_drop_shadow_filter() {
+                    let shadow_bounds = filter.compute_fast_bounds(rect);
+                    rect.join(shadow_bounds);
+                }
             }
         }
         rect
     }
 
-    fn apply_blur_bounds(&self, mut rect: math::Rect, scale: f32) -> math::Rect {
-        let blur = self.blur.as_ref();
-        if let Some(blur) = blur {
-            if !blur.hidden {
-                let safe_margin = 1.0 / scale.max(0.1);
-                let scaled_blur = blur.value + safe_margin;
-                rect.left -= scaled_blur;
-                rect.top -= scaled_blur;
-                rect.right += scaled_blur;
-                rect.bottom += scaled_blur;
-            }
+    fn apply_blur_bounds(&self, mut rect: math::Rect) -> math::Rect {
+        let image_filter = self.image_filter(1.);
+        if let Some(image_filter) = image_filter {
+            let blur_bounds = image_filter.compute_fast_bounds(rect);
+            rect.join(blur_bounds);
         }
         rect
     }
@@ -875,12 +857,7 @@ impl Shape {
         rect
     }
 
-    pub fn apply_children_blur(
-        &self,
-        mut rect: math::Rect,
-        tree: ShapesPoolRef,
-        scale: f32,
-    ) -> math::Rect {
+    pub fn apply_children_blur(&self, mut rect: math::Rect, tree: ShapesPoolRef) -> math::Rect {
         let mut children_blur = 0.0;
         let mut current_parent_id = self.parent_id;
 
@@ -907,16 +884,11 @@ impl Shape {
             }
         }
 
-        let safe_margin = 1.0 / scale.max(0.1);
-        let blur = children_blur + safe_margin;
-
-        if blur > 0.0 {
-            rect.left -= blur;
-            rect.top -= blur;
-            rect.right += blur;
-            rect.bottom += blur;
+        let blur = skia::image_filters::blur((children_blur, children_blur), None, None, None);
+        if let Some(image_filter) = blur {
+            let blur_bounds = image_filter.compute_fast_bounds(rect);
+            rect.join(blur_bounds);
         }
-
         rect
     }
 
@@ -957,10 +929,10 @@ impl Shape {
         };
 
         rect = self.apply_stroke_bounds(rect, max_stroke);
-        rect = self.apply_shadow_bounds(rect, scale);
-        rect = self.apply_blur_bounds(rect, scale);
+        rect = self.apply_shadow_bounds(rect);
+        rect = self.apply_blur_bounds(rect);
         rect = self.apply_children_bounds(rect, shapes_pool, scale);
-        rect = self.apply_children_blur(rect, shapes_pool, scale);
+        rect = self.apply_children_blur(rect, shapes_pool);
 
         rect
     }
