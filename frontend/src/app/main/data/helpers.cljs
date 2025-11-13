@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.types.path :as path]))
@@ -207,3 +208,12 @@
         :projects
         (filter #(= team-id (:team-id (val %))))
         (into {}))))
+
+(defn get-selrect
+  [selrect-transform shape]
+  (if (some? selrect-transform)
+    (let [{:keys [center width height transform]} selrect-transform]
+      [(gsh/center->rect center width height)
+       (gmt/transform-in center transform)])
+    [(dm/get-prop shape :selrect)
+     (gsh/transform-matrix shape)]))

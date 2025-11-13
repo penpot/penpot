@@ -10,12 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
    [app.common.types.color :as color]
    [app.common.types.text :as txt]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -226,8 +228,8 @@
                      (stl/css :text-editor-container))
       :ref container-ref
       :data-testid "text-editor-container"
-      :style {:width (:width shape)
-              :height (:height shape)}
+      :style {:width "var(--editor-container-width)"
+              :height "var(--editor-container-height)"}
       ;; We hide the editor when is blurred because otherwise the
       ;; selection won't let us see the underlying text. Use opacity
       ;; because display or visibility won't allow to recover focus
@@ -303,12 +305,22 @@
                 (some? modifiers)
                 (gsh/transform-shape modifiers))
 
-        [x y width height]
-        (if (features/active-feature? @st/state "render-wasm/v1")
-          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
-                {:keys [x y]} (:selrect shape)]
+        render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 
-            [x y width height])
+        [{:keys [x y width height]} transform]
+        (if render-wasm?
+          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+                selrect-transform (mf/deref refs/workspace-selrect)
+                [selrect transform] (dsh/get-selrect selrect-transform shape)
+
+                valign (-> shape :content :vertical-align)
+
+                y (:y selrect)
+                y (case valign
+                    "bottom" (- y (- height (:height selrect)))
+                    "center" (- y (/ (- height (:height selrect)) 2))
+                    y)]
+            [(assoc selrect :y y :width width :height height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -319,12 +331,24 @@
                                 (dm/get-prop shape :width))
                 height (mth/max (dm/get-prop bounds :height)
                                 (dm/get-prop shape :height))]
-            [x y width height]))
+            [(grc/make-rect x y width height) (gsh/transform-matrix shape)]))
 
         style
         (cond-> #js {:pointerEvents "all"}
+          render-wasm?
+          (obj/merge!
+           #js {"--editor-container-width" (dm/str width "px")
+                "--editor-container-height" (dm/str height "px")})
 
-          (not (cf/check-browser? :safari))
+          (not render-wasm?)
+          (obj/merge!
+           #js {"--editor-container-width" (dm/str (:width shape) "px")
+                "--editor-container-height" (dm/str (:height shape) "px")})
+
+          ;; Transform is necessary when there is a text overflow and the vertical
+          ;; aligment is center or bottom.
+          (and (not render-wasm?)
+               (not (cf/check-browser? :safari)))
           (obj/merge!
            #js {:transform (dm/fmt "translate(%px, %px)" (- (dm/get-prop shape :x) x) (- (dm/get-prop shape :y) y))})
 
@@ -345,7 +369,7 @@
                              (dm/fmt "scale(%)" maybe-zoom))}))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
-                     :transform (dm/str (gsh/transform-matrix shape))}
+                     :transform (dm/str transform)}
      [:defs
       [:clipPath {:id clip-id}
        [:rect {:x x :y y :width width :height height}]]]
