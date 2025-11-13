@@ -7,25 +7,23 @@
 (ns app.main.ui.workspace.tokens.management.create.border-radius
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
-   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.forms :as forms]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
+   [app.main.ui.forms :as fc]
+   [app.main.ui.workspace.tokens.management.create.form-input-token :refer [form-input-token*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -33,150 +31,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(defn- resolve-value
-  [tokens prev-token value]
-  (let [token
-        {:value value
-         :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"}
-
-        tokens
-        (-> tokens
-            ;; Remove previous token when renaming a token
-            (dissoc (:name prev-token))
-            (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (->> tokens
-         (sd/resolve-tokens-interactive)
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
-
-;; Wrappers for DS components
-
-(mf/defc form-input*
-  [{:keys [name] :rest props}]
-
-  (let [form       (mf/use-ctx forms/form-ctx)
-        input-name name
-
-        touched?   (and (contains? (:data @form) input-name)
-                        (get-in @form [:touched input-name]))
-        error      (get-in @form [:errors input-name])
-
-        value      (get-in @form [:data input-name] "")
-
-        on-change
-        (mf/use-fn
-         (mf/deps input-name)
-         (fn [event]
-           (let [value (-> event dom/get-target dom/get-input-value)]
-             (swap! form assoc-in [:touched input-name] true)
-             (swap! form (fn [state]
-                           (-> state
-                               (assoc-in [:data input-name] value)
-                               (update :errors dissoc input-name))))
-             (fm/on-input-change form input-name value true))))
-
-
-        props
-        (mf/spread-props props {:on-change on-change
-                                :default-value value})
-
-        props
-        (if (and error touched?)
-          (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
-          props)]
-
-    [:> input* props]))
-
-(mf/defc form-input-token*
-  [{:keys [name tokens token] :rest props}]
-
-  (let [form       (mf/use-ctx forms/form-ctx)
-        input-name name
-
-        touched?   (and (contains? (:data @form) input-name)
-                        (get-in @form [:touched input-name]))
-
-        error      (get-in @form [:errors input-name])
-
-        value      (get-in @form [:data input-name] "")
-
-        resolve-stream
-        (mf/with-memo [token]
-          (let [subject (rx/behavior-subject (:value token))]
-            subject))
-
-        hint*
-        (mf/use-state {})
-
-        hint
-        (deref hint*)
-
-        on-change
-        (mf/use-fn
-         (mf/deps resolve-stream input-name)
-         (fn [event]
-           (let [value (-> event dom/get-target dom/get-input-value)]
-             (swap! form assoc-in [:touched input-name] true)
-             (fm/on-input-change form input-name value true)
-             (rx/push! resolve-stream value))))
-
-        props
-        (mf/spread-props props {:on-change on-change
-                                :default-value value
-                                :hint-message (:message hint)
-                                :hint-type (:type hint)})
-
-        props
-        (if (and error touched?)
-          (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
-          props)]
-
-    (mf/with-effect [resolve-stream tokens token input-name]
-      (let [subs (->> resolve-stream
-                      (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token))
-                      (rx/map (fn [result]
-                                (d/update-when result :error
-                                               (fn [error]
-                                                 ((:error/fn error) (:error/value error))))))
-                      (rx/subs! (fn [{:keys [error value]}]
-                                  (if error
-                                    (do
-                                      (swap! form assoc-in [:errors input-name] {:message error})
-                                      (swap! form assoc-in [:errors :resolved-value] {:message error})
-                                      (swap! form update :data dissoc :resolved-value)
-                                      (reset! hint* {}))
-                                    (let [message (tr "workspace.tokens.resolved-value" value)]
-                                      (swap! form update :errors dissoc input-name :resolved-value)
-                                      (swap! form update :data assoc :resolved-value value)
-                                      (reset! hint* {:message message :type "hint"}))))))]
-
-        (fn []
-          (rx/dispose! subs))))
-
-    [:> input* props]))
-
-(mf/defc form-submit*
-  [{:keys [disabled] :rest props}]
-
-  (let [form      (mf/use-ctx forms/form-ctx)
-        disabled? (or (and (some? form)
-                           (or (not (:valid @form))
-                               (seq (:external-errors @form))))
-                      (true? disabled))
-        props
-        (mf/spread-props props {:disabled disabled?
-                                :type "submit"})]
-
-    [:> button* props]))
 
 (defn- make-schema
   [tokens-tree]
@@ -219,12 +73,16 @@
         token-title (str/lower (:title token-properties))
 
         tokens
-        (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
+        (mf/deref refs/workspace-active-theme-sets-tokens)
+
+        tokens
+        (mf/with-memo [tokens]
           ;; Ensure that the resolved value uses the currently editing token
           ;; even if the name has been overriden by a token with the same name
           ;; in another set below.
-          (and (:name token) (:value token))
-          (assoc (:name token) token))
+          (cond-> tokens
+            (and (:name token) (:value token))
+            (assoc (:name token) token)))
 
         schema
         (mf/with-memo [tokens-tree-in-selected-set]
@@ -232,22 +90,16 @@
 
         initial
         (mf/with-memo [token]
-          (if token
-            {:name (:name token)
-             :value (:value token)
-             :resolved-value (:value token)
-             :description (:description token)}
-
-            {:name ""
-             :value ""
-             :description ""}))
+          {:name (:name token "")
+           :value (:value token "")
+           :description (:description token "")})
 
         form
         (fm/use-form :schema schema
                      :initial initial)
 
         warning-name-change?
-        (not= (get-in @form [:clean-data :name])
+        (not= (get-in @form [:data :name])
               (:name initial))
 
         on-cancel
@@ -294,10 +146,10 @@
                    (fn [valid-token]
                      (st/emit!
                       (if is-create
-                        (dwtl/create-token {:name name
-                                            :type token-type
-                                            :value (:value valid-token)
-                                            :description description})
+                        (dwtl/create-token (ctob/make-token {:name name
+                                                             :type token-type
+                                                             :value (:value valid-token)
+                                                             :description description}))
 
                         (dwtl/update-token (:id token)
                                            {:name name
@@ -314,22 +166,22 @@
              (dom/prevent-default e)
              (on-submit form e))))]
 
-    [:> forms/form* {:class (stl/css :form-wrapper)
-                     :form form
-                     :on-submit on-submit}
+    [:> fc/form* {:class (stl/css :form-wrapper)
+                  :form form
+                  :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
 
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (tr "workspace.tokens.create-token" token-type)]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input* {:id "token-name"
-                        :name :name
-                        :label (tr "workspace.tokens.token-name")
-                        :placeholder (tr "workspace.tokens.enter-token-name" token-title)
-                        :max-length max-input-length
-                        :variant "comfortable"
-                        :auto-focus true}]
+       [:> fc/form-input* {:id "token-name"
+                           :name :name
+                           :label (tr "workspace.tokens.token-name")
+                           :placeholder (tr "workspace.tokens.enter-token-name" token-title)
+                           :max-length max-input-length
+                           :variant "comfortable"
+                           :auto-focus true}]
 
        (when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
@@ -345,13 +197,13 @@
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input* {:id "token-name"
-                        :name :description
-                        :label (tr "workspace.tokens.token-description")
-                        :placeholder (tr "workspace.tokens.token-description")
-                        :max-length max-input-length
-                        :variant "comfortable"
-                        :is-optional true}]]
+       [:> fc/form-input* {:id "token-description"
+                           :name :description
+                           :label (tr "workspace.tokens.token-description")
+                           :placeholder (tr "workspace.tokens.token-description")
+                           :max-length max-input-length
+                           :variant "comfortable"
+                           :is-optional true}]]
 
       [:div {:class (stl/css-case :button-row true
                                   :with-delete (= action "edit"))}
@@ -371,6 +223,6 @@
                     :variant "secondary"}
         (tr "labels.cancel")]
 
-       [:> form-submit* {:variant "primary"
-                         :on-key-down handle-key-down-save}
+       [:> fc/form-submit* {:variant "primary"
+                            :on-key-down handle-key-down-save}
         (tr "labels.save")]]]]))

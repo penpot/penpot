@@ -429,17 +429,6 @@
     [:> (mf/provider form-ctx) {:value form}
      [:form {:class class :on-submit on-submit'} children]]))
 
-(mf/defc form*
-  [{:keys [on-submit form children class]}]
-  (let [on-submit' (mf/use-fn
-                    (mf/deps on-submit)
-                    (fn [event]
-                      (dom/prevent-default event)
-                      (when (fn? on-submit)
-                        (on-submit form event))))]
-    [:> (mf/provider form-ctx) {:value form}
-     [:form {:class class :on-submit on-submit'} children]]))
-
 (defn- conj-dedup
   "A helper that adds item into a vector and removes possible
   duplicates. This is not very efficient implementation but is ok for
