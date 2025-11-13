@@ -41,6 +41,7 @@
     "file-object-thumbnail"
     "file-thumbnail"
     "profile"
+    "tempfile"
     "file-data"
     "file-data-fragment"
     "file-change"})
