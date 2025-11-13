@@ -513,9 +513,10 @@
         (st/emit! (dw/create-page {:page-id id :file-id file-id}))
         (page/page-proxy plugin-id file-id id)))
     :openPage
-    (fn [page]
-      (let [id (obj/get page "$id")]
-        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))))
+    (fn [page new-window]
+      (let [id (obj/get page "$id")
+            new-window (if (boolean? new-window) new-window true)]
+        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window))))
 
     :alignHorizontal
     (fn [shapes direction]
