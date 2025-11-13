@@ -15,7 +15,7 @@
 (def ^:private schema:button
   [:map
    [:class {:optional true} :string]
-   [:type {:optional true} :enum "button" "submit" "reset"]
+   [:type {:optional true} [:maybe [:enum "button" "submit" "reset"]]]
    [:icon {:optional true}
     [:and :string [:fn #(contains? icon-list %)]]]
    [:on-ref {:optional true} fn?]
