@@ -93,6 +93,7 @@
 
 .highlighted .cta-title {
   @include t.use-typography("body-medium");
+  margin-block-end: 0;
 }
 
 .cta-text {
