@@ -1082,33 +1082,35 @@
 
         detach-shape
         (fn [objects shape]
-          (l/debug :hint "detach-shape"
-                   :file-id file-id
-                   :component-ref-file (get-component-ref-file objects shape)
-                   ::l/sync? true)
-          (cond-> shape
-            (not= file-id (:fill-color-ref-file shape))
-            (dissoc :fill-color-ref-id :fill-color-ref-file)
+          (let [shape' (cond-> shape
+                         (not= file-id (:fill-color-ref-file shape))
+                         (dissoc :fill-color-ref-id :fill-color-ref-file)
 
-            (not= file-id (:stroke-color-ref-file shape))
-            (dissoc :stroke-color-ref-id :stroke-color-ref-file)
+                         (not= file-id (:stroke-color-ref-file shape))
+                         (dissoc :stroke-color-ref-id :stroke-color-ref-file)
 
-            (not= file-id (get-component-ref-file objects shape))
-            (dissoc :component-id :component-file :shape-ref :component-root)
+                         (not= file-id (get-component-ref-file objects shape))
+                         (dissoc :component-id :component-file :shape-ref :component-root)
 
-            (= :text (:type shape))
-            (update :content detach-text)))
+                         (= :text (:type shape))
+                         (update :content detach-text))]
+
+            (when (not= shape shape')
+              (l/dbg :hint "detach shape"
+                     :file-id (str file-id)
+                     :shape-id (str (:id shape))))
+
+            shape'))
 
         detach-objects
         (fn [objects]
-          (update-vals objects #(detach-shape objects %)))
+          (d/update-vals objects #(detach-shape objects %)))
 
         detach-pages
         (fn [pages-index]
-          (update-vals pages-index #(update % :objects detach-objects)))]
+          (d/update-vals pages-index #(update % :objects detach-objects)))]
 
-    (-> file
-        (update-in [:data :pages-index] detach-pages))))
+    (update-in file [:data :pages-index] detach-pages)))
 
 ;; Base font size
 
