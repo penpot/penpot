@@ -6,6 +6,8 @@
 
 (ns app.main.ui.inspect.common.colors
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.types.color :as cc]
    [app.main.store :as st]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -25,3 +27,13 @@
   (let [library (mf/with-memo [ref-file]
                   (make-colors-library-ref :files ref-file))]
     (mf/deref library)))
+
+(defn color->color-space->css-format
+  [color opacity color-space]
+  (case color-space
+    "hex"  color
+    "rgba" (let [[r g b a] (cc/hex->rgba color opacity)]
+             (dm/str "rgba(" (cc/format-rgba [r g b a]) ")"))
+    "hsla" (let [[h s l a] (cc/hex->hsla color opacity)]
+             (dm/str "hsla(" (cc/format-hsla [h s l a]) ")"))
+    (:color color)))
