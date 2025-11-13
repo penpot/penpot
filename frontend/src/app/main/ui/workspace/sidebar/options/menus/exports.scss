@@ -22,6 +22,7 @@
 
 .element-set-content {
   @include sidebar.option-grid-structure;
+  gap: var(--sp-xs);
 }
 
 .multiple-exports {
