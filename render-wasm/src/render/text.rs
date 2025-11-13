@@ -217,6 +217,7 @@ fn draw_text(
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
+    let mut normalized_line_height = text_content.normalized_line_height();
 
     for paragraph_builder_group in paragraph_builder_groups {
         let mut group_offset_y = global_offset_y;
@@ -228,8 +229,14 @@ fn draw_text(
             let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
             paragraph.paint(canvas, xy);
 
+            let line_metrics = paragraph.get_line_metrics();
             if paragraph_index == group_len - 1 {
-                group_offset_y += paragraph.ideographic_baseline();
+                if line_metrics.is_empty() {
+                    group_offset_y += normalized_line_height;
+                } else {
+                    normalized_line_height = paragraph.ideographic_baseline();
+                    group_offset_y += paragraph.ideographic_baseline() * line_metrics.len() as f32;
+                }
             }
 
             for line_metrics in paragraph.get_line_metrics().iter() {

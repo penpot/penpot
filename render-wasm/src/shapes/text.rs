@@ -38,6 +38,7 @@ pub struct TextContentSize {
     pub width: f32,
     pub height: f32,
     pub max_width: f32,
+    pub normalized_line_height: f32,
 }
 
 const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
@@ -48,14 +49,7 @@ impl TextContentSize {
             width: DEFAULT_TEXT_CONTENT_SIZE,
             height: DEFAULT_TEXT_CONTENT_SIZE,
             max_width: DEFAULT_TEXT_CONTENT_SIZE,
-        }
-    }
-
-    pub fn new(width: f32, height: f32, max_width: f32) -> Self {
-        Self {
-            width,
-            height,
-            max_width,
+            normalized_line_height: 0.0,
         }
     }
 
@@ -64,6 +58,21 @@ impl TextContentSize {
             width,
             height,
             max_width: DEFAULT_TEXT_CONTENT_SIZE,
+            normalized_line_height: 0.0,
+        }
+    }
+
+    pub fn new_with_normalized_line_height(
+        width: f32,
+        height: f32,
+        max_width: f32,
+        normalized_line_height: f32,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            max_width,
+            normalized_line_height,
         }
     }
 
@@ -92,6 +101,9 @@ impl TextContentSize {
             self.height = size.height;
         } else {
             self.height = default_height;
+        }
+        if f32::is_finite(size.normalized_line_height) {
+            self.normalized_line_height = size.normalized_line_height;
         }
     }
 }
@@ -230,6 +242,10 @@ impl TextContent {
 
     pub fn width(&self) -> f32 {
         self.size.width
+    }
+
+    pub fn normalized_line_height(&self) -> f32 {
+        self.size.normalized_line_height
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -400,9 +416,33 @@ impl TextContent {
         paragraphs
     }
 
+    /// Calculate the normalized line height from paragraph builders
+    fn calculate_normalized_line_height(
+        &self,
+        paragraph_builders: &mut [ParagraphBuilderGroup],
+        width: f32,
+    ) -> f32 {
+        let mut normalized_line_height = 0.0;
+        for paragraph_builder_group in paragraph_builders.iter_mut() {
+            for paragraph_builder in paragraph_builder_group.iter_mut() {
+                let mut paragraph = paragraph_builder.build();
+                paragraph.layout(width);
+                let baseline = paragraph.ideographic_baseline();
+                if baseline > normalized_line_height {
+                    normalized_line_height = baseline;
+                }
+            }
+        }
+        normalized_line_height
+    }
+
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+
+        let normalized_line_height =
+            self.calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
+
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
 
@@ -417,7 +457,12 @@ impl TextContent {
                     )
                 });
 
-        let size = TextContentSize::new(width.ceil(), height.ceil(), width.ceil());
+        let size = TextContentSize::new_with_normalized_line_height(
+            width.ceil(),
+            height.ceil(),
+            width.ceil(),
+            normalized_line_height,
+        );
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
@@ -426,6 +471,10 @@ impl TextContent {
     fn text_layout_auto_height(&self) -> TextContentLayoutResult {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+
+        let normalized_line_height =
+            self.calculate_normalized_line_height(&mut paragraph_builders, width);
+
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let height = paragraphs
@@ -434,7 +483,12 @@ impl TextContent {
             .fold(0.0, |auto_height, paragraph| {
                 auto_height + paragraph.height()
             });
-        let size = TextContentSize::new_with_size(width.ceil(), height.ceil());
+        let size = TextContentSize::new_with_normalized_line_height(
+            width,
+            height.ceil(),
+            DEFAULT_TEXT_CONTENT_SIZE,
+            normalized_line_height,
+        );
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
@@ -442,6 +496,10 @@ impl TextContent {
     fn text_layout_fixed(&self) -> TextContentLayoutResult {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+
+        let normalized_line_height =
+            self.calculate_normalized_line_height(&mut paragraph_builders, width);
+
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let paragraph_height = paragraphs
@@ -451,7 +509,12 @@ impl TextContent {
                 auto_height + paragraph.height()
             });
 
-        let size = TextContentSize::new_with_size(width.ceil(), paragraph_height.ceil());
+        let size = TextContentSize::new_with_normalized_line_height(
+            width,
+            paragraph_height.ceil(),
+            DEFAULT_TEXT_CONTENT_SIZE,
+            normalized_line_height,
+        );
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 

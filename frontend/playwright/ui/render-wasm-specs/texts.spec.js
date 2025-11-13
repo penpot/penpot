@@ -347,6 +347,23 @@ test("Renders a file with texts with with text spans of different sizes", async 
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with texts with paragraphs and breaking lines", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-paragraph-new-lines.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "a5f238bd-dd8a-8164-8007-1bc3481eaf05",
+    pageId: "a5f238bd-dd8a-8164-8007-1bc3481eaf06",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 // TODO: enable this test once we use the wasm renderer in the new editor
 test.skip("Renders a file with texts with tabs", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
