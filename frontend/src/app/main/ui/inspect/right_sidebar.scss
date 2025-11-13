@@ -132,12 +132,17 @@
   display: flex;
   align-items: center;
   flex: 1;
+  gap: var(--sp-s);
   justify-content: flex-end;
 }
 
 .inspect-tab-switcher-controls-color-space {
   // 65px is the minimum size of the switcher to avoid text ellipsis on the options
   flex: 0 0 65px;
+}
+
+.inspect-tab-switcher-controls-color-space-select {
+  justify-self: end;
 }
 
 .inspect-tab-switcher-controls-tab {

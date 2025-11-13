@@ -53,6 +53,12 @@
   display: none;
 }
 
+:where(.property-detail-text, .property-detail-text-token) {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 .property-detail-text {
   color: var(--detail-color);
 }
@@ -62,7 +68,4 @@
   --detail-color: var(--color-token-foreground);
 
   line-height: 1.4;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
 }

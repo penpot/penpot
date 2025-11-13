@@ -165,7 +165,8 @@
             [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.tabs.switcher.label")]
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
-              [:> select* {:options color-spaces
+              [:> select* {:class (stl/css :inspect-tab-switcher-controls-color-space-select)
+                           :options color-spaces
                            :default-selected "hex"
                            :variant "ghost"
                            :on-change handle-change-color-space}]]
