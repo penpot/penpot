@@ -60,8 +60,10 @@ penpot on-premise you will need to apply the same changes on your own
 
 ### :sparkles: New features & Enhancements
 
-- Select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
-- Toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
+- Add the ability to select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
+- Add toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
+- Make the file export process more reliable [Taiga #12555](https://tree.taiga.io/project/penpot/us/12555)
+- Add auth flow changes [Taiga #12333](https://tree.taiga.io/project/penpot/us/12333)
 
 ### :bug: Bugs fixed
 

@@ -77,6 +77,9 @@
    {:query-params [:file-id :revn]
     :form-data? true}
 
+   ::sse/export-binfile
+   {:stream? true}
+
    ::sse/clone-template
    {:stream? true}
 

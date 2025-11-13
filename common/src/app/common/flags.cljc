@@ -132,7 +132,6 @@
     :v2-migration
     :webhooks
     ;; TODO: deprecate this flag and consolidate the code
-    :export-file-v3
     :render-wasm-dpr
     :hide-release-modal
     :subscriptions

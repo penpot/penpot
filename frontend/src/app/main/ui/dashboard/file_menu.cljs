@@ -6,7 +6,6 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
-   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as-alias ev]
@@ -185,19 +184,10 @@
                       :on-accept del-shared
                       :count-libraries file-count})))
 
-        on-export-files
-        (fn [format]
-          (st/emit! (with-meta (fexp/export-files files format)
-                      {::ev/origin "dashboard"})))
-
         on-export-binary-files
-        (partial on-export-files :binfile-v1)
-
-        on-export-binary-files-v3
-        (partial on-export-files :binfile-v3)
-
-        on-export-standard-files
-        (partial on-export-files :legacy-zip)]
+        (fn []
+          (st/emit! (-> (fexp/open-export-dialog files)
+                        (with-meta {::ev/origin "dashboard"}))))]
 
     (mf/with-effect []
       (->> (rp/cmd! :get-all-projects)
@@ -248,20 +238,9 @@
                 :id      "file-move-multi"
                 :options    sub-options})
 
-             (when-not (contains? cf/flags :export-file-v3)
-               {:name    (tr "dashboard.export-binary-multi" file-count)
-                :id      "file-binary-export-multi"
-                :handler on-export-binary-files})
-
-             (when (contains? cf/flags :export-file-v3)
-               {:name    (tr "dashboard.export-binary-multi" file-count)
-                :id      "file-binary-export-multi"
-                :handler on-export-binary-files-v3})
-
-             (when-not (contains? cf/flags :export-file-v3)
-               {:name    (tr "dashboard.export-standard-multi" file-count)
-                :id      "file-standard-export-multi"
-                :handler on-export-standard-files})
+             {:name    (tr "dashboard.export-binary-multi" file-count)
+              :id      "file-binary-export-multi"
+              :handler on-export-binary-files}
 
              (when (and (:is-shared file) can-edit)
                {:name    (tr "labels.unpublish-multi-files" file-count)
@@ -307,20 +286,9 @@
 
              {:name   :separator}
 
-             (when-not (contains? cf/flags :export-file-v3)
-               {:name    (tr "dashboard.download-binary-file")
-                :id      "download-binary-file"
-                :handler on-export-binary-files})
-
-             (when (contains? cf/flags :export-file-v3)
-               {:name    (tr "dashboard.download-binary-file")
-                :id      "download-binary-file"
-                :handler on-export-binary-files-v3})
-
-             (when-not (contains? cf/flags :export-file-v3)
-               {:name    (tr "dashboard.download-standard-file")
-                :id      "download-standard-file"
-                :handler on-export-standard-files})
+             {:name    (tr "dashboard.download-binary-file")
+              :id      "download-binary-file"
+              :handler on-export-binary-files}
 
              (when (and (not is-lib-page?) (not is-search-page?) can-edit)
                {:name   :separator})
