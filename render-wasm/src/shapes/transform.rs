@@ -12,8 +12,8 @@ pub enum Modifier {
 }
 
 impl Modifier {
-    pub fn transform(id: Uuid, transform: Matrix) -> Self {
-        Modifier::Transform(TransformEntry::new(id, transform))
+    pub fn transform_propagate(id: Uuid, transform: Matrix) -> Self {
+        Modifier::Transform(TransformEntry::from_propagate(id, transform))
     }
     pub fn parent(id: Uuid, transform: Matrix) -> Self {
         Modifier::Transform(TransformEntry::parent(id, transform))
@@ -24,18 +24,34 @@ impl Modifier {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+pub enum TransformEntrySource {
+    Input,
+    Propagate,
+}
+
+#[derive(PartialEq, Debug, Clone)]
 #[repr(C)]
 pub struct TransformEntry {
     pub id: Uuid,
     pub transform: Matrix,
+    pub source: TransformEntrySource,
     pub propagate: bool,
 }
 
 impl TransformEntry {
-    pub fn new(id: Uuid, transform: Matrix) -> Self {
+    pub fn from_input(id: Uuid, transform: Matrix) -> Self {
         TransformEntry {
             id,
             transform,
+            source: TransformEntrySource::Input,
+            propagate: true,
+        }
+    }
+    pub fn from_propagate(id: Uuid, transform: Matrix) -> Self {
+        TransformEntry {
+            id,
+            transform,
+            source: TransformEntrySource::Propagate,
             propagate: true,
         }
     }
@@ -43,6 +59,7 @@ impl TransformEntry {
         TransformEntry {
             id,
             transform,
+            source: TransformEntrySource::Propagate,
             propagate: false,
         }
     }
@@ -70,7 +87,7 @@ impl SerializableResult for TransformEntry {
             0.0,
             1.0,
         );
-        TransformEntry::new(id, transform)
+        TransformEntry::from_input(id, transform)
     }
 
     fn as_bytes(&self) -> Self::BytesType {
@@ -176,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_serialization() {
-        let entry = TransformEntry::new(
+        let entry = TransformEntry::from_input(
             Uuid::new_v4(),
             Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
         );

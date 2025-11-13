@@ -212,13 +212,14 @@
         ;; Create a new objects only with the temporary modifications
         objects-changed
         (->> wasm-props
+             (group-by first)
              (reduce
               (fn [objects [id properties]]
                 (let [shape
                       (->> properties
                            (reduce
-                            (fn [shape {:keys [property value]}]
-                              (assoc shape property value))
+                            (fn [shape [_ operation]]
+                              (ctm/apply-modifier shape operation))
                             (get objects id)))]
                   (assoc objects id shape)))
               objects))]
