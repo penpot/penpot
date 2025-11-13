@@ -14,6 +14,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.inspect.common.colors :as isc]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
