@@ -53,6 +53,7 @@ import CommandMutations from "../commands/CommandMutations.js";
 import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
+import { sanitizeFontFamily } from "../content/dom/Style.js";
 
 /**
  * Supported options for the SelectionController.
@@ -206,7 +207,7 @@ export class SelectionController extends EventTarget {
   /**
    * @type {TextEditorOptions}
    */
-  #options
+  #options;
 
   /**
    * Constructor
@@ -277,7 +278,12 @@ export class SelectionController extends EventTarget {
   #applyStylesToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
-      const styleValue = element.style.getPropertyValue(styleName);
+
+      let styleValue = element.style.getPropertyValue(styleName);
+      if (styleName === "font-family") {
+        styleValue = sanitizeFontFamily(styleValue);
+      }
+
       this.#currentStyle.setProperty(styleName, styleValue);
     }
   }
@@ -525,21 +531,21 @@ export class SelectionController extends EventTarget {
     const root = this.#textEditor.root;
     const firstParagraph = root.firstElementChild;
     const lastParagraph = root.lastElementChild;
-    
+
     if (!firstParagraph || !lastParagraph) {
       return this;
     }
 
     const firstTextSpan = firstParagraph.firstElementChild;
     const lastTextSpan = lastParagraph.lastElementChild;
-    
+
     if (!firstTextSpan || !lastTextSpan) {
       return this;
     }
 
     const firstTextNode = firstTextSpan.firstChild;
     const lastTextNode = lastTextSpan.lastChild;
-    
+
     if (!firstTextNode || !lastTextNode) {
       return this;
     }
@@ -548,10 +554,10 @@ export class SelectionController extends EventTarget {
     const range = document.createRange();
     range.setStart(firstTextNode, 0);
     range.setEnd(lastTextNode, lastTextNode.nodeValue?.length || 0);
-    
+
     this.#selection.removeAllRanges();
     this.#selection.addRange(range);
-    
+
     // Ensure internal state is synchronized
     this.#focusNode = this.#selection.focusNode;
     this.#focusOffset = this.#selection.focusOffset;
@@ -560,10 +566,10 @@ export class SelectionController extends EventTarget {
     this.#range = range;
     this.#ranges.clear();
     this.#ranges.add(range);
-    
+
     // Notify style changes
     this.#notifyStyleChange();
-    
+
     return this;
   }
 
@@ -1156,13 +1162,16 @@ export class SelectionController extends EventTarget {
       this.focusParagraph.after(fragment);
       mergeParagraphs(a, b);
     } else {
-      if (this.isTextSpanStart) { 
+      if (this.isTextSpanStart) {
         this.focusTextSpan.before(...fragment.firstElementChild.children);
       } else if (this.isTextSpanEnd) {
         this.focusTextSpan.after(...fragment.firstElementChild.children);
       } else {
         const newTextSpan = splitTextSpan(this.focusTextSpan, this.focusOffset);
-        this.focusTextSpan.after(...fragment.firstElementChild.children, newTextSpan);
+        this.focusTextSpan.after(
+          ...fragment.firstElementChild.children,
+          newTextSpan,
+        );
       }
     }
     if (isLineBreak(collapseNode)) {
@@ -1292,7 +1301,10 @@ export class SelectionController extends EventTarget {
     this.#textNodeIterator.currentNode = this.focusNode;
 
     const originalNodeValue = this.focusNode.nodeValue || "";
-    const wordStart = findPreviousWordBoundary(originalNodeValue, this.focusOffset);
+    const wordStart = findPreviousWordBoundary(
+      originalNodeValue,
+      this.focusOffset,
+    );
 
     // Start node
     if (wordStart === this.focusOffset && this.focusOffset === 0) {

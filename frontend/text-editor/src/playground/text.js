@@ -71,6 +71,7 @@ export class TextSpan {
     if (!font) {
       throw new Error(`Invalid font "${fontFamily}"`);
     }
+
     return new TextSpan({
       fontId: font.id, // leafElement.style.getPropertyValue("--font-id"),
       fontFamilyHash: 0,
