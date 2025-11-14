@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
@@ -648,11 +648,11 @@
                           shape-ids (d/nilv (keys shapes)  [])
                           any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
-                          resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
+                          resolved-value (get-in resolved-tokens [(cfo/token-identifier token) :resolved-value])
                           resolved-value (if (contains? cf/flags :tokenscript)
                                            (ts/tokenscript-symbols->penpot-unit resolved-value)
                                            resolved-value)
-                          tokenized-attributes (cft/attributes-map attributes token)
+                          tokenized-attributes (cfo/attributes-map attributes token)
                           type (:type token)]
                       (rx/concat
                        (rx/of
@@ -711,7 +711,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token-name %))]
+       (let [remove-token #(when % (cfo/remove-attributes-for-token attributes token-name %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
@@ -740,7 +740,7 @@
             (get token-properties (:type token))
 
             unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
 
             shape-ids (map :id shapes)]
 

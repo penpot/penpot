@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -42,7 +42,6 @@
             (str/blank? value))
     (tr "workspace.tokens.empty-input")))
 
-
 (defn get-value-for-validator
   [active-tab value value-subfield form-type]
 
@@ -67,9 +66,9 @@
      [:name
       [:and
        [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-       (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
+       (sm/update-properties cto/schema:token-name assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (cft/token-name-path-exists? % tokens-tree))]]]
+        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
 
      [:value [::sm/text {:error/fn token-value-error-fn}]]
 
@@ -80,7 +79,7 @@
           :error/fn #(tr "workspace.tokens.self-reference")}
      (fn [{:keys [name value]}]
        (when (and name value)
-         (nil? (cto/token-value-self-reference? name value))))]]))
+         (not (cto/token-value-self-reference? name value))))]]))
 
 (mf/defc form*
   [{:keys [token
@@ -101,7 +100,7 @@
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
 
-        active-tab*     (mf/use-state #(if (cft/is-reference? token) :reference :composite))
+        active-tab*     (mf/use-state #(if (cfo/is-reference? token) :reference :composite))
         active-tab      (deref active-tab*)
 
         token

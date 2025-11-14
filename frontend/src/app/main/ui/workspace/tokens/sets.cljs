@@ -63,7 +63,8 @@
              (st/emit! (dwtl/start-token-set-edition id)))))]
 
     [:> controlled-sets-list*
-     {:token-sets token-sets
+     {:tokens-lib tokens-lib
+      :token-sets token-sets
 
       :is-token-set-active token-set-active?
       :is-token-set-group-active token-set-group-active?
@@ -80,6 +81,6 @@
 
       :on-toggle-token-set on-toggle-token-set-click
       :on-toggle-token-set-group on-toggle-token-set-group-click
-      :on-update-token-set sets-helpers/on-update-token-set
+      :on-update-token-set (partial sets-helpers/on-update-token-set tokens-lib)
       :on-update-token-set-group sets-helpers/on-update-token-set-group
       :on-create-token-set sets-helpers/on-create-token-set}]))

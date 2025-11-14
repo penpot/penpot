@@ -7,8 +7,11 @@
 (ns app.main.ui.workspace.tokens.themes.create-modal
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.logic.tokens :as clt]
+   [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
@@ -30,31 +33,8 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [cuerdas.core :as str]
-   [malli.core :as m]
-   [malli.error :as me]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-;; Schemas ---------------------------------------------------------------------
-
-(defn- theme-name-schema
-  "Generate a dynamic schema validation to check if a theme path derived from the name already exists at `tokens-tree`."
-  [{:keys [group theme-id tokens-lib]}]
-  (m/-simple-schema
-   {:type :token/name-exists
-    :pred (fn [name]
-            (if tokens-lib
-              (let [theme (ctob/get-theme-by-name tokens-lib group name)]
-                (or (nil? theme)
-                    (= (ctob/get-id theme) theme-id)))
-              true))  ;; if still no library exists, cannot be duplicate
-    :type-properties {:error/fn #(tr "workspace.tokens.theme-name-already-exists")}}))
-
-(defn validate-theme-name
-  [tokens-lib group theme-id name]
-  (let [schema     (theme-name-schema {:tokens-lib tokens-lib :theme-id theme-id :group group})
-        validation (m/explain schema (str/trim name))]
-    (me/humanize validation)))
 
 ;; Form Component --------------------------------------------------------------
 
@@ -181,26 +161,43 @@
                             theme-groups)
         current-group* (mf/use-state (:group theme))
         current-group  (deref current-group*)
+        current-name*  (mf/use-state (:name theme))
+        current-name   (deref current-name*)
+        group-errors*  (mf/use-state nil)
+        group-errors   (deref group-errors*)
         name-errors*   (mf/use-state nil)
         name-errors    (deref name-errors*)
 
         on-update-group
         (mf/use-fn
-         (mf/deps on-change-field)
+         (mf/deps on-change-field tokens-lib current-name)
          (fn [value]
-           (reset! current-group* value)
-           (on-change-field :group value)))
+           (let [errors (sm/validation-errors value (cfo/make-token-theme-group-schema
+                                                     tokens-lib
+                                                     current-name
+                                                     (ctob/get-id theme)))]
+             (reset! group-errors* errors)
+             (if (empty? errors)
+               (do
+                 (reset! current-group* value)
+                 (on-change-field :group value))
+               (on-change-field :group "")))))
 
         on-update-name
         (mf/use-fn
          (mf/deps on-change-field tokens-lib current-group)
          (fn [event]
            (let [value  (-> event dom/get-target dom/get-value)
-                 errors (validate-theme-name tokens-lib current-group (ctob/get-id theme) value)]
+                 errors (sm/validation-errors value (cfo/make-token-theme-name-schema
+                                                     tokens-lib
+                                                     current-group
+                                                     (ctob/get-id theme)))]
              (reset! name-errors* errors)
              (mf/set-ref-val! theme-name-ref value)
              (if (empty? errors)
-               (on-change-field :name value)
+               (do
+                 (reset! current-name* value)
+                 (on-change-field :name value))
                (on-change-field :name "")))))]
 
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
@@ -210,6 +207,7 @@
                      :placeholder (tr "workspace.tokens.label.group-placeholder")
                      :default-selected (:group theme)
                      :options (clj->js options)
+                     :has-error (d/not-empty? group-errors)
                      :on-change on-update-group}]]
 
      [:div {:class (stl/css :group-input-wrapper)}
@@ -262,6 +260,7 @@
 (mf/defc edit-create-theme*
   [{:keys [change-view theme on-save is-editing has-prev-view]}]
   (let [ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
+        tokens-lib (mf/deref refs/tokens-lib)
         token-sets (mf/deref refs/workspace-token-sets-tree)
 
         current-theme* (mf/use-state theme)
@@ -363,7 +362,8 @@
        [:div {:class (stl/css :sets-list-wrapper)}
 
         [:> wts/controlled-sets-list*
-         {:token-sets token-sets
+         {:tokens-lib tokens-lib
+          :token-sets token-sets
           :is-token-set-active token-set-active?
           :is-token-set-group-active token-set-group-active?
           :on-select on-click-token-set

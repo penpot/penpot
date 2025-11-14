@@ -92,6 +92,16 @@
   [& items]
   (apply mu/merge (map schema items)))
 
+(defn assoc-key
+  "Add a key & value to a schema"
+  [s k v]
+  (mu/assoc s k v))
+
+(defn dissoc-key
+  "Remove a key from a schema"
+  [s k]
+  (mu/dissoc s k))
+
 (defn ref?
   [s]
   (m/-ref-schema? s))
@@ -269,6 +279,13 @@
                       message "Validation Error"}}]
      (let [explain (fn [] (me/with-error-messages explain))]
        ((mdp/prettifier variant message explain default-options)))))
+
+(defn validation-errors
+  "Checks a value against a schema. If valid, returns nil. If not, returns a list
+   of english error messages."
+  [value schema]
+  (let [explainer (explainer schema)]
+    (-> value explainer simplify not-empty)))
 
 (defmacro ignoring
   [expr]

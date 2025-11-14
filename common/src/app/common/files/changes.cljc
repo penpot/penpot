@@ -27,6 +27,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
@@ -378,7 +379,7 @@
      [:type [:= :set-token]]
      [:set-id ::sm/uuid]
      [:token-id ::sm/uuid]
-     [:attrs [:maybe ctob/schema:token-attrs]]]]
+     [:attrs [:maybe cto/schema:token-attrs]]]]
 
    [:set-token-set
     [:map {:title "SetTokenSetChange"}

@@ -321,6 +321,7 @@
            on-select
            on-toggle-set
            on-toggle-set-group
+           tokens-lib
            token-sets
            new-path
            edition-id]}]
@@ -408,7 +409,7 @@
 
             :on-drop on-drop
             :on-reset-edition on-reset-edition
-            :on-edit-submit sets-helpers/on-create-token-set}]
+            :on-edit-submit (partial sets-helpers/on-create-token-set tokens-lib)}]
 
           :else
           [:> sets-tree-set*
@@ -434,7 +435,8 @@
             :on-edit-submit on-edit-submit-set}])))))
 
 (mf/defc controlled-sets-list*
-  [{:keys [token-sets
+  [{:keys [tokens-lib
+           token-sets
            selected
            on-update-token-set
            on-update-token-set-group
@@ -486,6 +488,7 @@
         {:is-draggable draggable?
          :new-path new-path
          :edition-id edition-id
+         :tokens-lib tokens-lib
          :token-sets token-sets
          :selected selected
          :on-select on-select
