@@ -116,6 +116,7 @@
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:> button* {:on-click open-menu
+                  :type "button"
                   :icon i/import-export
                   :variant "secondary"}
       (tr "workspace.tokens.tools")]

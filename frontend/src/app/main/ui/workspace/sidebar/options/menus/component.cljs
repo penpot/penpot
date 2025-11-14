@@ -1089,6 +1089,7 @@
 
           (when (and multi all-main? (not any-variant?))
             [:> button* {:variant "secondary"
+                         :type "button"
                          :class (stl/css :component-combine)
                          :on-click on-combine-as-variants}
              (tr "workspace.shape.menu.combine-as-variants")])
