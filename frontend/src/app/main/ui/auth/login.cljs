@@ -201,7 +201,7 @@
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
          [:> fm/submit-button*
-          {:label (tr "auth.login-submit")
+          {:label (tr "labels.continue")
            :data-testid "login-submit"
            :class (stl/css :login-button)}])
 
