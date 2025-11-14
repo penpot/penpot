@@ -29,11 +29,13 @@
     (mf/deref library)))
 
 (defn color->color-space->css-format
-  [color opacity color-space]
-  (case color-space
-    "hex"  color
-    "rgba" (let [[r g b a] (cc/hex->rgba color opacity)]
-             (dm/str "rgba(" (cc/format-rgba [r g b a]) ")"))
-    "hsla" (let [[h s l a] (cc/hex->hsla color opacity)]
-             (dm/str "hsla(" (cc/format-hsla [h s l a]) ")"))
-    (:color color)))
+  [color color-space]
+  (let [color-value (:color color)
+        color-opacity (or (:opacity color) 1)]
+    (case color-space
+      "hex"  color
+      "rgba" (let [[r g b a] (cc/hex->rgba color-value color-opacity)]
+               (dm/str "rgba(" (cc/format-rgba [r g b a]) ")"))
+      "hsla" (let [[h s l a] (cc/hex->hsla color-value color-opacity)]
+               (dm/str "hsla(" (cc/format-hsla [h s l a]) ")"))
+      (:color color))))

@@ -1999,6 +1999,14 @@ msgstr "Resolved value:"
 msgid "inspect.tabs.switcher.label"
 msgstr "Layer info"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.color-space.label"
+msgstr "Select color space"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.inspect-tab.label"
+msgstr "Select inspect tab"
+
 #: src/app/main/ui/dashboard/comments.cljs:96
 msgid "label.mark-all-as-read"
 msgstr "Mark all as read"

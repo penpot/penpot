@@ -41,14 +41,13 @@
    (fn [acc fill]
      (let [color-type (types.fills/fill->color fill)
            color-value (:color color-type)
-           color-opacity (:opacity color-type)
            color-gradient (:gradient color-type)
            gradient-data  {:type color-type
                            :stops (:stops color-gradient)}
            color-image (:image color-type)
            prefix (if color-value "background-color: " "background-image: ")
            value (cond
-                   color-value (isc/color->color-space->css-format color-value color-opacity color-space)
+                   color-value (isc/color->color-space->css-format color-type color-space)
                    color-gradient (uc/gradient->css gradient-data)
                    color-image (str "url('" (cfg/resolve-file-media color-image) "')")
                    :else "")

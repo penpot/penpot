@@ -63,8 +63,7 @@
                stroke-width (:stroke-width stroke)
                stroke-style (:stroke-style stroke)
                color-value (:color stroke-type)
-               stroke-opacity (:opacity stroke-type)
-               formatted-color-value (isc/color->color-space->css-format color-value stroke-opacity color-space)
+               formatted-color-value (isc/color->color-space->css-format stroke-type color-space)
                color-gradient (:gradient stroke-type)
                gradient-data  {:type (get-in stroke-type [:gradient :type])
                                :stops (get-in stroke-type [:gradient :stops])}

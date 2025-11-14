@@ -166,12 +166,14 @@
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
               [:> select* {:class (stl/css :inspect-tab-switcher-controls-color-space-select)
+                           :aria-label (tr "inspect.tabs.switcher.color-space.label")
                            :options color-spaces
                            :default-selected "hex"
                            :variant "ghost"
                            :on-change handle-change-color-space}]]
              [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
               [:> select* {:options tabs
+                           :aria-label (tr "inspect.tabs.switcher.inspect-tab.label")
                            :default-selected (name @section)
                            :on-change handle-change-tab}]]]]
            nil)

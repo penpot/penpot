@@ -80,7 +80,7 @@
                            (cond
                              (:color color) (if (= format "hex")
                                               (dm/str css-term ": " color-value "; opacity: " color-opacity ";")
-                                              (dm/str css-term ": " (isc/color->color-space->css-format color-value color-opacity format) ";"))
+                                              (dm/str css-term ": " (isc/color->color-space->css-format color format) ";"))
                              (:gradient color) (dm/str css-term ": " (uc/color->background color) ";")
                              (:image color) (dm/str css-term ": url(" color-image-url ") no-repeat center center / cover;")
                              :else "none")))
