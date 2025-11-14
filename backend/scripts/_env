@@ -36,7 +36,8 @@ export PENPOT_FLAGS="\
        enable-file-validation \
        enable-file-schema-validation \
        enable-redis-cache \
-       enable-subscriptions";
+       enable-subscriptions \
+       enable-nitrate";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"
