@@ -28,7 +28,7 @@
 
         token-path
         (mf/with-memo [token]
-          (cft/token-name->path (:name token)))
+          (ctob/get-token-path token))
 
         tokens-tree-in-selected-set
         (mf/with-memo [token-path tokens-in-selected-set]

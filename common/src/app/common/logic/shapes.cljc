@@ -58,7 +58,7 @@
                               (cto/shape-attr->token-attrs attr changed-sub-attr))]
 
             (if (some #(contains? tokens %) token-attrs)
-              (pcb/update-shapes changes [shape-id] #(cto/unapply-token-id % token-attrs))
+              (pcb/update-shapes changes [shape-id] #(cto/unapply-tokens-from-shape % token-attrs))
               changes)))
 
         check-shape
