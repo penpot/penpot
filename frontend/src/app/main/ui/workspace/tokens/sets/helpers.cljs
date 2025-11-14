@@ -28,7 +28,8 @@
         (if-let [parent-path (ctob/get-set-path parent-set)]
           (->> (concat parent-path (ctob/split-set-name name))
                (ctob/join-set-path))
-          (ctob/normalize-set-name name))]
+          (ctob/normalize-set-name name))
+        token-set (ctob/make-token-set :name name)]
 
     (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
-              (dwtl/create-token-set name))))
+              (dwtl/create-token-set token-set))))

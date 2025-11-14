@@ -31,6 +31,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -42,6 +43,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -765,6 +767,8 @@
 
 
            ;; Interactions
+
+
            :interactions
            {:this true
             :get
@@ -1223,6 +1227,31 @@
                :else
                (let [guide (u/proxy->ruler-guide value)]
                  (st/emit! (dwgu/remove-guide guide)))))
+
+           :tokens
+           {:this true
+            :get
+            (fn [_]
+              (let [tokens
+                    (-> (u/locate-shape file-id page-id id)
+                        (get :applied-tokens))]
+                (reduce
+                 (fn [acc [prop name]]
+                   (obj/set! acc (d/name prop) name))
+                 #js {}
+                 tokens)))}
+
+           :applyToken
+           (fn [token attrs]
+             (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
+                   kw-attrs (into #{} (map keyword attrs))]
+               (if (some #(not (cto/token-attr? %)) kw-attrs)
+                 (u/display-not-valid :applyToken attrs)
+                 (st/emit!
+                  (dwta/toggle-token {:token token
+                                      :attrs kw-attrs
+                                      :shape-ids [id]
+                                      :expand-with-children false})))))
 
            :isVariantHead
            (fn []

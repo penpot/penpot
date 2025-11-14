@@ -758,7 +758,7 @@
   (theme-active? [_ id] "predicate if token theme is active")
   (activate-theme [_ id] "adds theme from the active-themes")
   (deactivate-theme [_ id] "removes theme from the active-themes")
-  (toggle-theme-active? [_ id] "toggles theme in the active-themes")
+  (toggle-theme-active [_ id] "toggles theme in the active-themes")
   (get-hidden-theme [_] "get the hidden temporary theme"))
 
 (def schema:token-themes
@@ -901,6 +901,7 @@
   (delete-token [_ set-id token-id] "delete a token from a set")
   (toggle-set-in-theme [_ theme-id set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
+  (token-set-active? [_ set-name] "if a set is active in any of the active themes")
   (sets-at-path-all-active? [_ group-path] "compute active state for child sets at `group-path`.
 Will return a value that matches this schema:
 `:none`    None of the nested sets are active
@@ -1206,7 +1207,7 @@ Will return a value that matches this schema:
     (when-let [theme (get-theme this id)]
       (contains? active-themes (get-theme-path theme))))
 
-  (toggle-theme-active? [this id]
+  (toggle-theme-active [this id]
     (if (theme-active? this id)
       (deactivate-theme this id)
       (activate-theme this id)))
@@ -1269,6 +1270,10 @@ Will return a value that matches this schema:
     (into #{}
           (mapcat :sets)
           (get-active-themes this)))
+
+  (token-set-active? [this set-name]
+    (let [set-names (get-active-themes-set-names this)]
+      (contains? set-names set-name)))
 
   (sets-at-path-all-active? [this group-path]
     (let [active-set-names (get-active-themes-set-names this)
