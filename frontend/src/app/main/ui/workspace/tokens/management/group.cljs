@@ -77,7 +77,7 @@
 
         on-popover-open-click
         (mf/use-fn
-         (mf/deps type title modal)
+         (mf/deps type title modal active-theme-tokens)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwtl/set-token-type-section-open type true)
@@ -86,6 +86,7 @@
                                    {:x (:x pos)
                                     :y (:y pos)
                                     :position :right
+                                    :tokens active-theme-tokens
                                     :fields (:fields modal)
                                     :title title
                                     :action "create"
