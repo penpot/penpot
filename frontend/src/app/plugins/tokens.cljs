@@ -7,17 +7,19 @@
 (ns app.plugins.tokens
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
+   [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.management.forms.validators :as form-validator]
-   [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [clojure.datafy :refer [datafy]]))
+
+;; === Token
 
 (defn- apply-token-to-shapes
   [file-id set-id id shape-ids attrs]
@@ -50,15 +52,13 @@
          (ctob/get-name token)))
      :set
      (fn [_ value]
-       (let [tokens-lib (u/locate-tokens-lib file-id)
-             errors     (form-validator/validate-token-name
-                         (ctob/get-tokens tokens-lib set-id)
-                         value)]
-         (cond
-           (some? errors)
-           (u/display-not-valid :name (first errors))
-
-           :else
+       (let [name (u/coerce-1 value
+                              (cfo/make-token-name-schema
+                               (-> (u/locate-tokens-lib file-id)
+                                   (ctob/get-tokens set-id)))
+                              :name
+                              "Invalid token name")]
+         (when name
            (st/emit! (dwtl/update-token set-id id {:name value})))))}
 
     :type
@@ -84,6 +84,11 @@
 
     :duplicate
     (fn []
+      ;; TODO:
+      ;;  - add function duplicate-token in tokens-lib, that allows to specify the new id
+      ;;  - use this function in dwtl/duplicate-token
+      ;;  - return the new token proxy using the locally forced id
+      ;;  - do the same with sets and themes
       (let [token  (u/locate-token file-id set-id id)
             token' (ctob/make-token (-> (datafy token)
                                         (dissoc :id
@@ -104,6 +109,9 @@
       (let [selected (get-in @st/state [:workspace-local :selected])]
         (apply-token-to-shapes file-id set-id id selected attrs)))))
 
+
+;; === Token Set
+
 (defn token-set-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"}
@@ -122,13 +130,15 @@
          (ctob/get-name set)))
      :set
      (fn [_ value]
-       (let [set (u/locate-token-set file-id id)]
-         (cond
-           (not (string? value))
-           (u/display-not-valid :name value)
-
-           :else
-           (st/emit! (dwtl/update-token-set set value)))))}
+       (let [set (u/locate-token-set file-id id)
+             name (u/coerce-1 value
+                              (cfo/make-token-set-name-schema
+                               (u/locate-tokens-lib file-id)
+                               id)
+                              :setTokenSet
+                              "Invalid token set name")]
+         (when name
+           (st/emit! (dwtl/rename-token-set set name)))))}
 
     :active
     {:this true
@@ -140,8 +150,13 @@
          (ctob/token-set-active? tokens-lib (ctob/get-name set))))
      :set
      (fn [_ value]
-       (let [set (u/locate-token-set file-id id)]
-         (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value))))}
+       (let [value (u/coerce-1 value
+                               (sm/schema [:boolean])
+                               :setActiveSet
+                               value)]
+         (when (some? value)
+           (let [set (u/locate-token-set file-id id)]
+             (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value))))))}
 
     :toggleActive
     (fn [_]
@@ -153,8 +168,7 @@
      :enumerable false
      :get
      (fn [_]
-       (let [file (u/locate-file file-id)
-             tokens-lib (->> file :data :tokens-lib)]
+       (let [tokens-lib (u/locate-tokens-lib file-id)]
          (->> (ctob/get-tokens tokens-lib id)
               (vals)
               (map #(token-proxy plugin-id file-id id (:id %)))
@@ -165,8 +179,7 @@
      :enumerable false
      :get
      (fn [_]
-       (let [file (u/locate-file file-id)
-             tokens-lib (->> file :data :tokens-lib)
+       (let [tokens-lib (u/locate-tokens-lib file-id)
              tokens (ctob/get-tokens tokens-lib id)]
          (->> tokens
               (vals)
@@ -193,35 +206,27 @@
             (token-proxy plugin-id file-id id token-id)))))
 
     :addToken
-    (fn [type-str name value]
-      (let [type (cto/dtcg-token-type->token-type type-str)
-            value (case type
-                    :font-family (ctob/convert-dtcg-font-family (js->clj value))
-                    :typography (ctob/convert-dtcg-typography-composite (js->clj value))
-                    :shadow (ctob/convert-dtcg-shadow-composite (js->clj value))
-                    (js->clj value))]
-        (cond
-          (nil? type)
-          (u/display-not-valid :addTokenType type-str)
-
-          (not (string? name))
-          (u/display-not-valid :addTokenName name)
-
-          :else
-          (let [token (ctob/make-token {:type type
-                                        :name name
-                                        :value value})]
+    (fn [attrs]
+      ;; review this
+      ;; value (case type
+      ;;         :font-family (ctob/convert-dtcg-font-family (js->clj value))
+      ;;         :typography (ctob/convert-dtcg-typography-composite (js->clj value))
+      ;;         :shadow (ctob/convert-dtcg-shadow-composite (js->clj value))
+      ;;         (js->clj value))]
+      ;; end review this
+      (let [schema (-> (sm/schema (cfo/make-token-schema
+                                   (-> (u/locate-tokens-lib file-id)
+                                       (ctob/get-tokens id))))
+                       (sm/dissoc-key :id)) ;; We don't allow plugins to set the id
+            attrs (u/coerce attrs schema :addToken "invalid token attrs")]
+        (when attrs
+          (let [token (ctob/make-token attrs)]
             (st/emit! (dwtl/create-token id token))
             (token-proxy plugin-id file-id (:id set) (:id token))))))
 
     :duplicate
     (fn []
-      (let [set  (u/locate-token-set file-id id)
-            set' (ctob/make-token-set (-> (datafy set)
-                                          (dissoc :id
-                                                  :modified-at)))]
-        (st/emit! (dwtl/create-token-set set'))
-        (token-set-proxy plugin-id file-id (:id set'))))
+      (st/emit! (dwtl/duplicate-token-set id)))
 
     :remove
     (fn []
@@ -252,12 +257,15 @@
          (:group theme)))
      :set
      (fn [_ value]
-       (let [theme (u/locate-token-theme file-id id)]
-         (cond
-           (not (string? value))
-           (u/display-not-valid :group value)
-
-           :else
+       (let [theme (u/locate-token-theme file-id id)
+             group (u/coerce-1 value
+                               (cfo/make-token-theme-group-schema
+                                (u/locate-tokens-lib file-id)
+                                (:name theme)
+                                (:id theme))
+                               :group
+                               "Invalid token theme group")]
+         (when group
            (st/emit! (dwtl/update-token-theme id (assoc theme :group value))))))}
 
     :name
@@ -269,16 +277,14 @@
      :set
      (fn [_ value]
        (let [theme (u/locate-token-theme file-id id)
-             errors (theme-form/validate-theme-name
-                     (u/locate-tokens-lib file-id)
-                     (:group theme)
-                     id
-                     value)]
-         (cond
-           (some? errors)
-           (u/display-not-valid :name (first errors))
-
-           :else
+             name  (u/coerce-1 value
+                               (cfo/make-token-theme-name-schema
+                                (u/locate-tokens-lib file-id)
+                                (:id theme)
+                                (:group theme))
+                               :name
+                               "Invalid token theme name")]
+         (when name
            (st/emit! (dwtl/update-token-theme id (assoc theme :name value))))))}
 
     :active
@@ -333,8 +339,7 @@
      :enumerable false
      :get
      (fn [_]
-       (let [file (u/locate-file file-id)
-             tokens-lib (->> file :data :tokens-lib)
+       (let [tokens-lib (u/locate-tokens-lib file-id)
              themes (->> (ctob/get-themes tokens-lib)
                          (remove #(= (:id %) uuid/zero)))]
          (apply array (map #(token-theme-proxy plugin-id file-id (ctob/get-id %)) themes))))}
@@ -344,36 +349,36 @@
      :enumerable false
      :get
      (fn [_]
-       (let [file (u/locate-file file-id)
-             tokens-lib (->> file :data :tokens-lib)
+       (let [tokens-lib (u/locate-tokens-lib file-id)
              sets (ctob/get-sets tokens-lib)]
          (apply array (map #(token-set-proxy plugin-id file-id (ctob/get-id %)) sets))))}
 
     :addTheme
-    (fn [group name]
-      (cond
-        (not (string? group))
-        (u/display-not-valid :addThemeGroup group)
-
-        (not (string? name))
-        (u/display-not-valid :addThemeName name)
-
-        :else
-        (let [theme (ctob/make-token-theme {:group group
-                                            :name name})]
-          (st/emit! (dwtl/create-token-theme theme))
-          (token-theme-proxy plugin-id file-id (:id theme)))))
+    (fn [attrs]
+      (let [schema (-> (sm/schema (cfo/make-token-theme-schema
+                                   (u/locate-tokens-lib file-id)
+                                   (or (obj/get attrs "group") "")
+                                   (or (obj/get attrs "name") "")
+                                   nil))
+                       (sm/dissoc-key :id)) ;; We don't allow plugins to set the id
+            attrs  (u/coerce attrs schema :addTheme "invalid theme attrs")]
+        (when attrs
+          (let [theme (ctob/make-token-theme attrs)]
+            (st/emit! (dwtl/create-token-theme theme))
+            (token-theme-proxy plugin-id file-id (:id theme))))))
 
     :addSet
-    (fn [name]
-      (cond
-        (not (string? name))
-        (u/display-not-valid :addSetName name)
-
-        :else
-        (let [set (ctob/make-token-set {:name name})]
-          (st/emit! (dwtl/create-token-set set))
-          (token-set-proxy plugin-id file-id (:id set)))))
+    (fn [attrs]
+      (obj/update! attrs "name" ctob/normalize-set-name)  ;; TODO: seems a quite weird way of doing this
+      (let [schema (-> (sm/schema (cfo/make-token-set-schema
+                                   (u/locate-tokens-lib file-id)
+                                   nil))
+                       (sm/dissoc-key :id)) ;; We don't allow plugins to set the id
+            attrs  (u/coerce attrs schema :addSet "invalid set attrs")]
+        (when attrs
+          (let [set (ctob/make-token-set attrs)]
+            (st/emit! (dwtl/create-token-set set))
+            (token-set-proxy plugin-id file-id (ctob/get-id set))))))
 
     :getThemeById
     (fn [theme-id]

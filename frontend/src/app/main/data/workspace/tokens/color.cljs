@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.tokens.color
   (:require
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.main.data.tinycolor :as tinycolor]))
 
 (defn color-bullet-color [token-color-value]
@@ -17,5 +17,5 @@
       (tinycolor/->hex-string tc))))
 
 (defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
-  (when (and resolved-value (cft/color-token? token))
+  (when (and resolved-value (cfo/color-token? token))
     (color-bullet-color resolved-value)))

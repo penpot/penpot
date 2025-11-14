@@ -6,9 +6,9 @@
 
 (ns app.main.ui.workspace.tokens.management.forms.color
   (:require
-   [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.util.i18n :refer [tr]]
@@ -29,9 +29,9 @@
      [:name
       [:and
        [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-       (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
+       (sm/update-properties cto/schema:token-name assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (cft/token-name-path-exists? % tokens-tree))]]]
+        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
 
      [:value [::sm/text {:error/fn token-value-error-fn}]]
 

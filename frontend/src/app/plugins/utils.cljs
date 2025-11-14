@@ -9,12 +9,15 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.json :as json]
+   [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (defn locate-file
   [id]
@@ -218,13 +221,34 @@
 
 (defn display-not-valid
   [code value]
-  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
+  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code))
+  nil)
 
 (defn reject-not-valid
   [reject code value]
   (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)]
     (.error js/console msg)
     (reject msg)))
+
+(defn coerce
+  "Decodes a javascript object into clj and check against schema. If schema validation fails,
+   displays a not-valid message with the code and hint provided and returns nil."
+  [attrs schema code hint]
+  (let [decoder   (sm/decoder schema sm/json-transformer)
+        explainer (sm/explainer schema)
+        attrs     (-> attrs json/->clj decoder)]
+    (if-let [explain (explainer attrs)]
+      (display-not-valid code (str hint " " (sm/humanize-explain explain)))
+      attrs)))
+
+(defn coerce-1
+  "Checks a single javascript value against schema. If schema validation fails,
+   displays a not-valid message with the code and hint provided and returns nil."
+  [value schema code hint]
+  (let [errors (sm/validation-errors value schema)]
+    (if (d/not-empty? errors)
+      (display-not-valid code (str hint " " (str/join ", " errors)))
+      value)))
 
 (defn mixed-value
   [values]

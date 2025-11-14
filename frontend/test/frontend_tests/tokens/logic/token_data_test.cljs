@@ -57,8 +57,7 @@
           store      (ths/setup-store file)
           tokens-lib (toht/get-tokens-lib file)
           set-a      (ctob/get-set-by-name tokens-lib "Set A")
-          events     [(dwtl/update-token-set (ctob/rename set-a "Set A updated")
-                                             "Set A updated")]]
+          events     [(dwtl/rename-token-set set-a "Set A updated")]]
 
       (tohs/run-store-async
        store done events
