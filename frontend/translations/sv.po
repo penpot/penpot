@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
+"PO-Revision-Date: 2025-11-14 17:51+0000\n"
+"Last-Translator: Anton Palmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -6760,3 +6760,621 @@ msgstr "Autosparade versioner sparas i %s dagar."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicka för att stänga bana"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Denna token existerar inte eller har raderats."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "Lägg till fil"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "Lägg till ett bibliotek eller en mall"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Inga tillgängliga färgtokens. Kontrollera aktiva uppsättningar/teman eller "
+"lägg till nya tokens."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "Skapa ny fil"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:61
+msgid "dashboard.empty-project.explore"
+msgstr "Utforska några att lägga till"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Gå till bibliotek och mallar"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:49, src/app/main/ui/dashboard/placeholder.cljs:51
+msgid "dashboard.empty-project.import"
+msgstr "Importera en fil"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importera en .penpot-fil"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "Börja bygga fantastiska saker"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Alla filer har inte importerats"
+
+#: src/app/main/ui/dashboard/import.cljs:489
+msgid "dashboard.import.import-error.message1"
+msgstr "Följande filer har fel:"
+
+#: src/app/main/ui/dashboard/import.cljs:494
+msgid "dashboard.import.import-error.message2"
+msgstr "Filer med fel laddas inte upp."
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Du kommer att radera inbjudningarna till:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Du kommer att skicka om inbjudningarna till:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Ta bort inbjudningar"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Skicka inbjudningar igen"
+
+#: src/app/main/ui/dashboard/templates.cljs:267
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Här har du några bibliotek och mallar som du kan lägga till i ditt projekt"
+
+#: src/app/main/data/comments.cljs:473
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Markerade alla meddelanden som lästa"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Sortera efter roll"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Sortera efter status"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot Mörk (standard)"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot Ljus"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "Systemtema"
+
+#: src/app/main/ui/dashboard/templates.cljs:134
+msgid "dashboard.template.add-to-project"
+msgstr "Lägg till i ditt projekt"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Inga tillämpliga tokens i aktiva uppsättningar eller teman."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Inga träffar hittades."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:641, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:138
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Öppna token-lista"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:85, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Lösgör token"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:40, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:96, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Denna token är inte i någon aktiv uppsättning eller har ett ogiltigt värde."
+
+#: src/app/main/ui/comments.cljs:730, src/app/main/ui/comments.cljs:761, src/app/main/ui/comments.cljs:858
+msgid "errors.character-limit-exceeded"
+msgstr "Teckengränsen har överskridits"
+
+#: src/app/main/errors.cljs:231
+msgid "errors.comment-error"
+msgstr "Det uppstod ett fel med kommentaren"
+
+#: src/app/main/errors.cljs:300
+msgid "errors.deprecated"
+msgstr ""
+"Tyvärr! Det här är en gammal fil som använder en föråldrad typ av Penpot-"
+"tillgångar och du kan inte öppna den."
+
+#: src/app/main/errors.cljs:303
+msgid "errors.deprecated.contact.after"
+msgstr "så att vi kan hjälpa dig."
+
+#: src/app/main/errors.cljs:301
+msgid "errors.deprecated.contact.before"
+msgstr "Även om Penpot inte längre stödjer denna typ av tillgångar, kan du"
+
+#: src/app/main/errors.cljs:302
+msgid "errors.deprecated.contact.text"
+msgstr "kontakta oss"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:274
+msgid "errors.drop-token-set-parent-to-child"
+msgstr ""
+"Kan inte släppa en överordnad uppsättning på en egen underordnad sökväg."
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "E-post matchar inte inbjudan."
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Tomt fält"
+
+#: src/app/main/errors.cljs:193
+msgid "errors.internal-assertion-error"
+msgstr "Internt assertion-fel"
+
+#: src/app/main/errors.cljs:209
+msgid "errors.internal-worker-error"
+msgstr "Något fel har hänt med webbarbetaren."
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Ogiltig data"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Ogiltig text"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Endast skaparen av versionen kan låsa den"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Endast skaparen av versionen kan låsa upp den"
+
+#: src/app/main/errors.cljs:222
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG är ogiltig eller missformad"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:150, src/app/main/data/workspace/tokens/library_edit.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "En uppsättning med samma namn finns redan"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Kan inte duplicera en okänd uppsättning"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:273
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Kan inte slutföra släppet, en uppsättning med samma namn finns redan vid "
+"sökvägen."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:77, src/app/main/data/workspace/tokens/library_edit.cljs:95
+msgid "errors.token-theme-already-exists"
+msgstr "Tema-alternativ med samma namn finns"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Denna version är redan låst"
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Denna version är låst och kan inte raderas av andra"
+
+#: src/app/main/ui/components/color_input.cljs:31
+msgid "inspect.attributes.color"
+msgstr "Färg"
+
+#, unused
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Genomstruken"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Variantegenskaper"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Variantegenskaper"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:67
+msgid "inspect.subtitle.copy"
+msgstr "Kopiera"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:63
+msgid "inspect.subtitle.main"
+msgstr "Huvudkomponent"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Beräknad"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Kopiera till urklipp"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Storlek & position"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Växla panel %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Token-uppsättningar & teman"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Aktiva uppsättningar"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Aktiva teman"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Variantegenskaper"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Uträknat värde:"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Lagerinfo"
+
+#: src/app/main/ui/dashboard/comments.cljs:96
+msgid "label.mark-all-as-read"
+msgstr "Markera alla som lästa"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "Om Penpot"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Oskärpa"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Färg"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "Community & Bidrag"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Kopiera"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:99
+msgid "labels.copy-color"
+msgstr "Kopiera färg"
+
+#: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:65
+msgid "labels.duplicate"
+msgstr "Duplicera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:301
+msgid "labels.empty"
+msgstr "Tom"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.error"
+msgstr "Fel"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Fyll"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1019
+msgid "labels.help-learning"
+msgstr "Hjälp och utbildning"
+
+#: src/app/main/ui/dashboard/templates.cljs:91
+msgid "labels.hide"
+msgstr "Dölj"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "labels.learning-center"
+msgstr "Utbildningscentrum"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:209
+msgid "labels.lock"
+msgstr "Lås"
+
+#: src/app/main/ui/comments.cljs:581
+msgid "labels.mention"
+msgstr "Omnämnande"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:619
+msgid "labels.mixed-values"
+msgstr "Blandad"
+
+#: src/app/main/ui/dashboard/team.cljs:739
+msgid "labels.no-invitations-gather-people"
+msgstr "Samla ditt folk och bygg fantastiska saker tillsammans."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:878
+msgid "labels.penpot-changelog"
+msgstr "Penpots ändringslogg"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:804
+msgid "labels.penpot-hub"
+msgstr "Penpot hubb"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:751
+msgid "labels.pinned-projects"
+msgstr "Fästa projekt"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
+msgid "labels.reference"
+msgstr "Hänvisning"
+
+#: src/app/main/data/common.cljs:83
+msgid "labels.refresh"
+msgstr "Uppdatera"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Skicka igen"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "Skugga"
+
+#: src/app/main/ui/dashboard/templates.cljs:87
+msgid "labels.show"
+msgstr "Visa"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:730
+msgid "labels.sources"
+msgstr "Källor"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Streck"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+msgid "labels.styles"
+msgstr "Stilar"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Text"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "Typografi"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "labels.unknown-error"
+msgstr "Okänt fel"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:203
+msgid "labels.unlock"
+msgstr "Lås upp"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variant"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:872
+msgid "labels.version-notes"
+msgstr "Version anteckningar"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Synlighet"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr ""
+"Håll dina designer konsekventa och enkla att uppdatera mellan olika projekt."
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Återanvändbara komponenter"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr "Jobba med ditt team live, dela feedback direkt."
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Realtidssamarbete"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr "Designa flexibelt med välbekanta CSS-liknande layoutkontroller."
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Layouter som CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "Få CSS och SVG-kod direkt från dina designer."
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Exportera till kod"
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Dela tillgångar och stilar för att upprätthålla konsekvens."
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Designbibliotek"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Ge dina idéer liv med animationer och övergångar."
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Interaktiva prototyper"
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "Penpot använder SVG och CSS för sömlös utveckling."
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Webbstandardformat"
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Snabba upp ditt arbetsflöde med praktiska genvägar som Skift + A för "
+"automatisk layout."
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Kortkommandon"
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Välj det tema som passar din stil."
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Mörkt & ljust läge"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr "Utöka Penpot med community-byggda plugins för extra funktionalitet."
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Stöd för plugins"
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "Inbjudan har raderats"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "Kopiera egenskaper"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Skapa komponent / variant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "Klista in egenskaper"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "Pluginhanterare"
+
+#: src/app/main/ui/dashboard/subscription.cljs:89, src/app/main/ui/dashboard/subscription.cljs:131
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Enterprise-paket"
+
+#: src/app/main/ui/dashboard/subscription.cljs:85
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Enterprise-paket (provperiod)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"Få extra lagringsutrymme, filåterställning och mer för dina team med "
+"Unlimited-paketet. [Ladda!!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:63
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Professionellt paket"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+#, unused
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Prenumerera"
+
+#: src/app/main/ui/dashboard/subscription.cljs:72
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr ""
+"Trivs du med din provperiod? Få full åtkomst för alltid."
+"[Prenumerera|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:71
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Unlimited-paket (provperiod)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:77, src/app/main/ui/dashboard/subscription.cljs:130
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Unlimited-paket"
+
+#: src/app/main/ui/dashboard/subscription.cljs:78
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Få obegränsad lagring, utökad filåterställning och obegränsade "
+"redigeringsverktyg för alla dina team till ett fast pris. "
+"[Ta en titt på Enterprise-paketet.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Ta en titt"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr ""
+"Extra redigerare, lagring och automatiskt sparad version, säkerhetskopiering "
+"av filer och mer."
+
+#: src/app/main/ui/dashboard/subscription.cljs:62, src/app/main/ui/dashboard/subscription.cljs:70, src/app/main/ui/dashboard/subscription.cljs:76, src/app/main/ui/dashboard/subscription.cljs:84, src/app/main/ui/dashboard/subscription.cljs:88
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Din prenumeration:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Du har %s redaktörer i dina egna team, medan ditt professionella paket "
+"täcker upp till 8."
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Uppgradera nu till Unlimited eller Enterprise för att få tillgång till fler "
+"redigerare, lagringsutrymme och filåterställning. "
+"[Prenumerera nu.|target:self](%s)"
