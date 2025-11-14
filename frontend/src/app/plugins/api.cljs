@@ -512,6 +512,7 @@
             id (uuid/next)]
         (st/emit! (dw/create-page {:page-id id :file-id file-id}))
         (page/page-proxy plugin-id file-id id)))
+
     :openPage
     (fn [page new-window]
       (let [id (obj/get page "$id")
