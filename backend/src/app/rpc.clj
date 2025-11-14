@@ -301,6 +301,7 @@
   (let [cfg (assoc cfg ::type "management" ::metrics-id :rpc-management-timing)]
     (->> (sv/scan-ns
           'app.rpc.management.subscription
+          'app.rpc.management.nitrate
           'app.rpc.management.exporter)
          (map (partial process-method cfg "management" wrap-management))
          (into {}))))
