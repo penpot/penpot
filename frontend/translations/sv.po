@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-14 17:51+0000\n"
+"PO-Revision-Date: 2025-11-15 20:51+0000\n"
 "Last-Translator: Anton Palmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -580,40 +580,40 @@ msgstr "Avfärda alla"
 
 #: src/app/main/ui/dashboard/fonts.cljs:453
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Egna teckensnitt som du laddar upp visas här."
+msgstr "Egna typsnitt som du laddar upp visas här."
 
 #: src/app/main/ui/dashboard/fonts.cljs:456
 msgid "dashboard.fonts.empty-placeholder-viewer"
-msgstr "Inga anpassade teckensnitt än."
+msgstr "Inga anpassade typsnitt än."
 
 #: src/app/main/ui/dashboard/fonts.cljs:457
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
-msgstr "När en projektmedlem laddar upp ett anpassat teckensnitt visas det här."
+msgstr "När en projektmedlem laddar upp ett anpassat typsnitt visas det här."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "1 teckensnitt adderas"
-msgstr[1] "%s teckensnitt adderas"
+msgstr[0] "1 typsnitt adderas"
+msgstr[1] "%s typsnitt adderas"
 
 #: src/app/main/ui/dashboard/fonts.cljs:181
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Alla webbteckensnitt som du laddar upp här kommer att läggas till i listan "
-"över teckensnittsfamiljer som finns i textens egenskaper för filerna i "
-"detta team. Teckensnitt med samma namn på teckensnittsfamiljen kommer att "
-"grupperas som en **enkel teckensnittsfamilj**. Du kan ladda upp teckensnitt "
-"med följande format: **TTF, OTF och WOFF** (endast ett format behövs)."
+"Alla webbtypsnitt som du laddar upp här kommer att läggas till i listan över "
+"typsnittsfamiljer som finns i textens egenskaper för filerna i detta team. "
+"Typsnitt med samma namn på typsnittsfamiljen kommer att grupperas som en **"
+"enkel typsnittsfamilj**. Du kan ladda upp typsnitt med följande format: **"
+"TTF, OTF och WOFF** (endast ett format behövs)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:194
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Du bör endast ladda upp teckensnitt som du äger eller har licens att "
-"använda i Penpot. Läs mer i avsnittet om innehållsrättigheter i [Penpots "
-"användarvillkor](%s). Du kanske också vill läsa om [licensiering av "
-"teckensnitt](https://www.typography.com/faq)."
+"Du bör endast ladda upp typsnitt som du äger eller har licens att använda i "
+"Penpot. Läs mer i avsnittet om innehållsrättigheter i "
+"[Penpots användarvillkor](%s). Du kanske också vill läsa om "
+"[licensiering av typsnitt](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:214
 msgid "dashboard.fonts.upload-all"
@@ -623,12 +623,12 @@ msgstr "Ladda upp allt"
 #, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"Vi har upptäckt ett möjligt problem i dina teckensnitt som rör vertikala "
+"Vi har upptäckt ett möjligt problem i dina typsnitt som rör vertikala "
 "mätvärden för olika operativsystem. För att kontrollera det kan du använda "
 "tjänster för vertikala mätvärden för typsnitt som [den här] "
 "(https://vertical-metrics.netlify.app/). Dessutom rekommenderar vi att du "
 "använder [Transfonter](https://transfonter.org/) för att generera "
-"webbteckensnitt och åtgärda fel. "
+"webbtypsnitt och åtgärda fel. "
 
 #: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
@@ -728,7 +728,7 @@ msgstr "laddar dina filer …"
 
 #: src/app/main/ui/dashboard/fonts.cljs:447
 msgid "dashboard.loading-fonts"
-msgstr "laddar dina teckensnitt …"
+msgstr "laddar dina typsnitt …"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
@@ -820,7 +820,7 @@ msgstr "Du är nu ägare till detta team."
 
 #: src/app/main/data/common.cljs:201
 msgid "dashboard.permissions-change.viewer"
-msgstr "Du är nu en tittare i det här teamet."
+msgstr "Du är nu en läsare i det här teamet."
 
 #: src/app/main/ui/dashboard/pin_button.cljs:23, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
@@ -1116,11 +1116,11 @@ msgstr "Du är inte autentiserad eller har sessionen löpt ut."
 
 #: src/app/main/data/fonts.cljs:192, src/app/main/ui/dashboard/fonts.cljs:120
 msgid "errors.bad-font"
-msgstr "Teckensnittet % kunde inte laddas"
+msgstr "Typsnittet % kunde inte laddas"
 
 #: src/app/main/data/fonts.cljs:191
 msgid "errors.bad-font-plural"
-msgstr "Teckensnittet %s kunde inte laddas"
+msgstr "Typsnittet %s kunde inte laddas"
 
 #: src/app/main/data/workspace/media.cljs:204
 msgid "errors.cannot-upload"
@@ -1521,7 +1521,7 @@ msgstr "Typografi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
 msgid "inspect.attributes.typography.font-family"
-msgstr "Teckensnittsfamilj"
+msgstr "Typsnittsfamilj"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
 msgid "inspect.attributes.typography.font-size"
@@ -1529,12 +1529,12 @@ msgstr "Teckenstorlek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:338
 msgid "inspect.attributes.typography.font-style"
-msgstr "Teckensnitt"
+msgstr "Typsnittsstil"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:113
 #, unused
 msgid "inspect.attributes.typography.font-weight"
-msgstr "Teckensnittsvikt"
+msgstr "Typsnittsvikt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1674,7 +1674,7 @@ msgstr "Lägg till"
 
 #: src/app/main/ui/dashboard/fonts.cljs:186
 msgid "labels.add-custom-font"
-msgstr "Lägg till teckensnitt"
+msgstr "Lägg till typsnitt"
 
 #: src/app/main/ui/workspace/libraries.cljs:177
 msgid "labels.adding"
@@ -1781,7 +1781,7 @@ msgstr "Ange nytt teamnamn"
 
 #, unused
 msgid "labels.custom-fonts"
-msgstr "Anpassade teckensnitt"
+msgstr "Anpassade typsnitt"
 
 #: src/app/main/ui/settings/sidebar.cljs:84
 msgid "labels.dashboard"
@@ -1863,11 +1863,11 @@ msgstr "Figma"
 
 #: src/app/main/ui/dashboard/fonts.cljs:430
 msgid "labels.font-family"
-msgstr "Teckensnittsfamilj"
+msgstr "Typsnittsfamilj"
 
 #, unused
 msgid "labels.font-providers"
-msgstr "Teckensnittsleverantör"
+msgstr "Typsnittsleverantörer"
 
 #: src/app/main/ui/dashboard/fonts.cljs:431
 msgid "labels.font-variants"
@@ -1875,7 +1875,7 @@ msgstr "Stilar"
 
 #: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:738
 msgid "labels.fonts"
-msgstr "Teckensnitt"
+msgstr "Typsnitt"
 
 #: src/app/main/ui/onboarding/questions.cljs:259
 #, unused
@@ -1921,7 +1921,7 @@ msgstr "Inaktiv"
 
 #: src/app/main/ui/dashboard/fonts.cljs:428
 msgid "labels.installed-fonts"
-msgstr "Installerade teckensnitt"
+msgstr "Installerade typsnitt"
 
 #: src/app/main/ui/static.cljs:373
 msgid "labels.internal-error.desc-message"
@@ -2163,7 +2163,7 @@ msgstr "Sök"
 
 #: src/app/main/ui/dashboard/fonts.cljs:433
 msgid "labels.search-font"
-msgstr "Sök teckensnitt"
+msgstr "Sök typsnitt"
 
 #: src/app/main/ui/onboarding/questions.cljs:84, src/app/main/ui/onboarding/questions.cljs:230, src/app/main/ui/onboarding/questions.cljs:240
 msgid "labels.select-option"
@@ -2273,7 +2273,7 @@ msgstr "Ladda upp"
 
 #: src/app/main/ui/dashboard/fonts.cljs:180
 msgid "labels.upload-custom-fonts"
-msgstr "Ladda upp teckensnitt"
+msgstr "Ladda upp typsnitt"
 
 #: src/app/main/ui/dashboard/fonts.cljs:252
 msgid "labels.uploading"
@@ -2516,17 +2516,17 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/fonts.cljs:355
 msgid "modals.delete-font-variant.title"
-msgstr "Ta bort teckensnittsformat"
+msgstr "Tar bort typsnittsstil"
 
 #: src/app/main/ui/dashboard/fonts.cljs:342
 msgid "modals.delete-font.message"
 msgstr ""
-"Är du säker på att du vill ta bort detta teckensnitt? Den laddas inte om "
+"Är du säker på att du vill ta bort detta typsnitt? Den kommer inte ladda om "
 "den används i en fil."
 
 #: src/app/main/ui/dashboard/fonts.cljs:341
 msgid "modals.delete-font.title"
-msgstr "Ta bort teckensnitt"
+msgstr "Tar bort typsnitt"
 
 #: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
 msgid "modals.delete-page.body"
@@ -3962,11 +3962,11 @@ msgstr "%s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs:46
 msgid "title.dashboard.font-providers"
-msgstr "Teckensnittsleverantörer - %s - Penpot"
+msgstr "Typsnittsleverantörer - %s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs:45
 msgid "title.dashboard.fonts"
-msgstr "Teckensnitt - %s - Penpot"
+msgstr "Typsnitt - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs:349
 msgid "title.dashboard.projects"
@@ -4263,7 +4263,7 @@ msgstr "Lägg till teckenssnitt"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.assets.typography.font-id"
-msgstr "Teckensnitt"
+msgstr "Typsnitt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
@@ -4445,7 +4445,7 @@ msgstr "Dölj linjaler"
 
 #: src/app/main/ui/workspace/main_menu.cljs:407
 msgid "workspace.header.menu.hide-textpalette"
-msgstr "Dölj teckensnittspaletten"
+msgstr "Dölj typsnittspaletten"
 
 #: src/app/main/ui/workspace/main_menu.cljs:900
 msgid "workspace.header.menu.option.edit"
@@ -4462,7 +4462,7 @@ msgstr "Hjälp & info"
 #: src/app/main/ui/workspace/main_menu.cljs:916
 #, unused
 msgid "workspace.header.menu.option.power-up"
-msgstr "Starta upp dina plan"
+msgstr "Ladda ditt abonnemang"
 
 #: src/app/main/ui/workspace/main_menu.cljs:922
 msgid "workspace.header.menu.option.preferences"
@@ -4502,7 +4502,7 @@ msgstr "Visa linjaler"
 
 #: src/app/main/ui/workspace/main_menu.cljs:408
 msgid "workspace.header.menu.show-textpalette"
-msgstr "Visa teckensnittpalett"
+msgstr "Visa typsnittspalett"
 
 #: src/app/main/ui/workspace/main_menu.cljs:316
 msgid "workspace.header.menu.toggle-dark-theme"
@@ -4608,7 +4608,7 @@ msgstr "Du har inga färgstilar i ditt bibliotek"
 
 #: src/app/main/ui/workspace/text_palette.cljs:161
 msgid "workspace.libraries.colors.empty-typography-palette"
-msgstr "Du har inga teckensnitt i ditt bibliotek"
+msgstr "Du har inga typsnittsstilar i ditt bibliotek än"
 
 #: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
 msgid "workspace.libraries.colors.file-library"
@@ -5539,7 +5539,7 @@ msgstr "Rotering"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:187
 msgid "workspace.options.search-font"
-msgstr "Sök teckensnitt"
+msgstr "Sök typsnitt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:750
 msgid "workspace.options.select-a-shape"
@@ -6398,14 +6398,12 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "Du har för närvarande inga teman."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
-msgstr "Originalvärde: "
+msgstr "Ursprungligt värde: %s"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
-msgstr "Lösta värden: "
+msgstr "Uträknat värde: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:234
 msgid "workspace.tokens.save-theme"
@@ -6431,7 +6429,6 @@ msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:608, src/app/main/ui/workspace/tokens/management/create/form.cljs:609
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beskrivning"
 
@@ -7304,22 +7301,22 @@ msgstr "Pluginhanterare"
 
 #: src/app/main/ui/dashboard/subscription.cljs:89, src/app/main/ui/dashboard/subscription.cljs:131
 msgid "subscription.dashboard.power-up.enterprise-plan"
-msgstr "Enterprise-paket"
+msgstr "Enterprise-abonnemang"
 
 #: src/app/main/ui/dashboard/subscription.cljs:85
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
-msgstr "Enterprise-paket (provperiod)"
+msgstr "Enterprise-abonnemang (provperiod)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:64
 #, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-text"
 msgstr ""
 "Få extra lagringsutrymme, filåterställning och mer för dina team med "
-"Unlimited-paketet. [Ladda!!|target:self](%s)"
+"Unlimited-abonnemanget. [Ladda!!|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:63
 msgid "subscription.dashboard.power-up.professional.top-title"
-msgstr "Professionellt paket"
+msgstr "Professional-abonnemang"
 
 #: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
 #, unused
@@ -7335,11 +7332,11 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/subscription.cljs:71
 msgid "subscription.dashboard.power-up.trial.top-title"
-msgstr "Unlimited-paket (provperiod)"
+msgstr "Unlimited-abonnemang (provperiod)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:77, src/app/main/ui/dashboard/subscription.cljs:130
 msgid "subscription.dashboard.power-up.unlimited-plan"
-msgstr "Unlimited-paket"
+msgstr "Unlimited-abonnemang"
 
 #: src/app/main/ui/dashboard/subscription.cljs:78
 #, markdown
@@ -7347,7 +7344,7 @@ msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "Få obegränsad lagring, utökad filåterställning och obegränsade "
 "redigeringsverktyg för alla dina team till ett fast pris. "
-"[Ta en titt på Enterprise-paketet.|target:self](%s)"
+"[Ta en titt på Enterprise-abonnemanget.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -7358,7 +7355,7 @@ msgstr "Ta en titt"
 #, unused
 msgid "subscription.dashboard.power-up.unlimited.top-description"
 msgstr ""
-"Extra redigerare, lagring och automatiskt sparad version, säkerhetskopiering "
+"Extra redaktörer, lagring och automatiskt sparad version, säkerhetskopiering "
 "av filer och mer."
 
 #: src/app/main/ui/dashboard/subscription.cljs:62, src/app/main/ui/dashboard/subscription.cljs:70, src/app/main/ui/dashboard/subscription.cljs:76, src/app/main/ui/dashboard/subscription.cljs:84, src/app/main/ui/dashboard/subscription.cljs:88
@@ -7368,7 +7365,7 @@ msgstr "Din prenumeration:"
 #: src/app/main/ui/dashboard/subscription.cljs:168
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
-"Du har %s redaktörer i dina egna team, medan ditt professionella paket "
+"Du har %s redaktörer i dina egna team, medan ditt Professional-abonnemang "
 "täcker upp till 8."
 
 #: src/app/main/ui/dashboard/subscription.cljs:176
@@ -7376,5 +7373,929 @@ msgstr ""
 msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
 msgstr ""
 "Uppgradera nu till Unlimited eller Enterprise för att få tillgång till fler "
-"redigerare, lagringsutrymme och filåterställning. "
+"redaktörer, lagringsutrymme och filåterställning. "
 "[Prenumerera nu.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:111
+msgid "subscription.dashboard.team-plan"
+msgstr "Team-abonnemang"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Ditt team fortsätter att växa! Ditt Unlimited-abonnemang täcker upp till %s "
+"redaktörer, men du har nu %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Uppgradera nu för att matcha ditt nuvarande antal redaktörer. "
+"[Prenumerera nu.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Endast nya redaktörer i dina ägda team räknas mot framtida fakturering. En "
+"fast avgift på 175 USD/månad gäller fortfarande för 25+ redaktörer."
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Bjuda in personer medan du har Unlimited-abonnemanget"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:978
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "Ladda"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:318, src/app/main/ui/settings/subscription.cljs:351
+msgid "subscription.labels"
+msgstr "Prenumeration"
+
+#: src/app/main/ui/settings/subscription.cljs:373, src/app/main/ui/settings/subscription.cljs:397
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Lägg till en betalningsmetod för att fortsätta efter din provperiod"
+
+#: src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:439
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Alla förmåner för Professional-abonnemanget och:"
+
+#: src/app/main/ui/settings/subscription.cljs:379, src/app/main/ui/settings/subscription.cljs:391, src/app/main/ui/settings/subscription.cljs:401, src/app/main/ui/settings/subscription.cljs:453
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Alla förmåner för Unlimited-abonnemanget och:"
+
+#: src/app/main/ui/settings/subscription.cljs:39
+msgid "subscription.settings.editors"
+msgstr "(x %s redaktörer)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:72, src/app/main/ui/settings/subscription.cljs:346, src/app/main/ui/settings/subscription.cljs:399, src/app/main/ui/settings/subscription.cljs:449
+msgid "subscription.settings.enterprise"
+msgstr "Enterprise"
+
+#: src/app/main/ui/settings/subscription.cljs:68, src/app/main/ui/settings/subscription.cljs:345, src/app/main/ui/settings/subscription.cljs:389
+msgid "subscription.settings.enterprise-trial"
+msgstr "Enterprise (provperiod)"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:403, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90-dagar av autosparade versioner och filåterställning"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Fast månadsfaktura"
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Obegränsad lagring"
+
+#: src/app/main/ui/dashboard/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:383, src/app/main/ui/settings/subscription.cljs:395, src/app/main/ui/settings/subscription.cljs:405
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Hantera din prenumeration"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "För närvarande har du %s person i dina team som kan redigera."
+msgstr[1] "För närvarande har du %s personer i dina team som kan redigera."
+
+#: src/app/main/ui/settings/subscription.cljs:149
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr ""
+"Obs: att byta till ett lägre abonnemang innebär mindre lagringsutrymme och "
+"kortare säkerhetskopior och versionshistorik."
+
+#: src/app/main/ui/settings/subscription.cljs:133
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Redaktörer"
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr ""
+"(Ägare, administratör och redaktörer. Läsare räknas inte som redaktörer)"
+
+#: src/app/main/ui/settings/subscription.cljs:181
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Du kan inte ange färre redaktörer än du har nu. Ändra rollen "
+"(redaktör/administratör till läsare) för personer som inte faktiskt "
+"redigerar filer i teaminställningarna."
+
+#: src/app/main/ui/settings/subscription.cljs:177
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr "Debiterad efter provperioden. Inget kreditkort krävs just nu."
+
+#: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
+#, markdown
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "**$%s**/månad"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.management.dialog.title"
+msgstr "Applicera %s till dina team"
+
+#: src/app/main/ui/settings/subscription.cljs:184
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Tips: Du kan öka antalet platser nu för att ligga steget före inbjudningar. "
+"Med 25+ redaktörer över teamen åtnjuter du en fast avgift på 175 USD/månad."
+
+#: src/app/main/ui/settings/subscription.cljs:418
+msgid "subscription.settings.member-since"
+msgstr "Penpot-medlem sedan: %s"
+
+#: src/app/main/ui/settings/subscription.cljs:431, src/app/main/ui/settings/subscription.cljs:445, src/app/main/ui/settings/subscription.cljs:459
+msgid "subscription.settings.more-information"
+msgstr "Mer information"
+
+#: src/app/main/ui/settings/subscription.cljs:421
+msgid "subscription.settings.other-plans"
+msgstr "Övriga Penpot-abonnemang"
+
+#: src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:438
+msgid "subscription.settings.price-editor-month"
+msgstr "redaktör per månad"
+
+#: src/app/main/ui/settings/subscription.cljs:452
+msgid "subscription.settings.price-organization-month"
+msgstr "organisation per månad"
+
+#: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:70, src/app/main/ui/settings/subscription.cljs:358, src/app/main/ui/settings/subscription.cljs:423
+msgid "subscription.settings.professional"
+msgstr "Professional"
+
+#: src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:427
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "7-dagars autosparversioner och filåterställning"
+
+#: src/app/main/ui/settings/subscription.cljs:359, src/app/main/ui/settings/subscription.cljs:426
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10 GB lagringsutrymme"
+
+#: src/app/main/ui/settings/subscription.cljs:361, src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "Obegränsat antal team. Upp till 8 redaktörer över alla dina egna team."
+
+#: src/app/main/ui/settings/subscription.cljs:355
+msgid "subscription.settings.section-plan"
+msgstr "Din prenumeration"
+
+#: src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
+msgid "subscription.settings.start-trial"
+msgstr "Starta gratis provperiod"
+
+#: src/app/main/ui/settings/subscription.cljs:429, src/app/main/ui/settings/subscription.cljs:443, src/app/main/ui/settings/subscription.cljs:457
+msgid "subscription.settings.subscribe"
+msgstr "Prenumerera"
+
+#: src/app/main/ui/settings/subscription.cljs:239
+msgid "subscription.settings.success.dialog.description"
+msgstr ""
+"Du kan ändra din prenumeration när som helst från sidan \"Prenumeration\" i "
+"dina kontouppgifter."
+
+#: src/app/main/ui/settings/subscription.cljs:238
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Tack för att du valt Penpot %s-abonnemanget!"
+
+#: src/app/main/ui/settings/subscription.cljs:240
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "Lycka till med ditt abonnemang!"
+
+#: src/app/main/ui/settings/subscription.cljs:236
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "Du är %!"
+
+#: src/app/main/ui/settings/subscription.cljs:413
+msgid "subscription.settings.support-us-since"
+msgstr "Du har stöttat oss med detta abonnemang sedan: %"
+
+#: src/app/main/ui/settings/subscription.cljs:443, src/app/main/ui/settings/subscription.cljs:457
+msgid "subscription.settings.try-it-free"
+msgstr "Prova det gratis i 14 dagar"
+
+#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/settings/subscription.cljs:71, src/app/main/ui/settings/subscription.cljs:343, src/app/main/ui/settings/subscription.cljs:377, src/app/main/ui/settings/subscription.cljs:435
+msgid "subscription.settings.unlimited"
+msgstr "Unlimited"
+
+#: src/app/main/ui/dashboard/subscription.cljs:116, src/app/main/ui/settings/subscription.cljs:67, src/app/main/ui/settings/subscription.cljs:342, src/app/main/ui/settings/subscription.cljs:365
+msgid "subscription.settings.unlimited-trial"
+msgstr "Unlimited (provperiod)"
+
+#: src/app/main/ui/settings/subscription.cljs:369, src/app/main/ui/settings/subscription.cljs:381, src/app/main/ui/settings/subscription.cljs:441
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "30-dagars autosparversioner och filåterställning"
+
+#: src/app/main/ui/settings/subscription.cljs:370, src/app/main/ui/settings/subscription.cljs:382, src/app/main/ui/settings/subscription.cljs:442
+msgid "subscription.settings.unlimited.bill"
+msgstr "Månadsfaktura med maxbelopp på 175 USD"
+
+#: src/app/main/ui/settings/subscription.cljs:368, src/app/main/ui/settings/subscription.cljs:380, src/app/main/ui/settings/subscription.cljs:440
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25 GB lagringsutrymme"
+
+#: src/app/main/ui/dashboard/subscription.cljs:147, src/app/main/ui/workspace/main_menu.cljs:961
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Ladda ditt abonnemang"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:56
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "Om du vill öka denna gräns, skriv till oss på [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr "Om du vill öka denna gräns, kontakta teamägaren: [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:57
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Om du vill öka denna gräns, [uppgradera ditt abonnemang|target:self](%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
+msgid "workspace.assets.component-group-options"
+msgstr "Komponentgruppsalternativ"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:178, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:547
+msgid "workspace.assets.components.num-variants"
+msgstr "% Varianter"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:177
+msgid "workspace.assets.manage-library"
+msgstr "Hantera bibliotek"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Färg-tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
+msgid "workspace.component.swap.loop-error"
+msgstr "Komponenter kan inte kapslas inuti sig själva."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Vissa kopior kunde inte bytas. Komponenter kan inte kapslas inuti sig själva."
+
+#: src/app/main/ui/workspace/main_menu.cljs:315
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Växla till systemtema"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:436
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Bottenvaddering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:362
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Horisontell vaddering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:451
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Vänstervaddering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:415, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:421
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Högervaddering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:400, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:406
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Toppvaddering"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:341, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:347
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Vertikalvaddering"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 färg"
+msgstr[1] "%s färger"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 komponent"
+msgstr[1] "%s komponenter"
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "Ansluten till"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 grafik"
+msgstr[1] "%s grafiker"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 typografi"
+msgstr[1] "%s typografier"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:67, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:72
+msgid "workspace.notification-pill.detail"
+msgstr "Detaljer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:993
+msgid "workspace.options.component.unlinked"
+msgstr "Olänkad"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:512
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Hitta motstridiga varianter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:509
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Denna komponent har motstridiga varianter. Se till att varje variation har "
+"en unik uppsättning egenskapsvärden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1281
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Hitta duplicerade varianter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1278
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Vissa varianter har identiska egenskaper och värden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:268
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"Dessa varianter har identiska egenskaper och värden. Justera värdena så att "
+"de kan hämtas."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:265
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"Denna variant har identiska egenskaper och värden som en annan variant. "
+"Justera värdena så att de kan hämtas."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:271
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"Några av dessa varianter har identiska egenskaper och värden. Justera "
+"värdena så att de kan hämtas."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Denna komponent har varianter med ogiltiga namn. Se till att varje variant "
+"följer rätt struktur."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1271
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "Hitta ogiltiga varianter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1268
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "Vissa varianter har ogiltiga namn"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Hitta ogiltiga varianter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:252
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "Dessa varianter har ogiltiga namn."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:249
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "Denna variant har ett ogiltigt namn."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:255
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "Några av dessa varianter har ogiltiga namn."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:391
+msgid "workspace.options.component.variant.malformed.structure.example"
+msgstr "[egenskap]=[värde], [egenskap]=[värde]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:389
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "Försök att använda följande struktur:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"För att behålla ändringar när man växlar mellan varianter kopplar Penpot "
+"samman lager som:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"Att ändra någon av dessa (t.ex. byta namn på eller gruppera ett lager) "
+"bryter kopplingen, men att återställa ändringen återställer den."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Dela samma namn."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Är samma typ."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Rektangel-, ellips-, ban- och booleska operationer räknas som samma typ."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "Har samma hierarkinivå."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Grupper, tavlor och layouter anses vara likvärdiga."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:955, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1191, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Hur varianter förblir sammankopplade"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:474
+msgid "workspace.options.fit-content"
+msgstr "Ändra storlek på tavlan för att passa innehållet"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:534
+msgid "workspace.options.size.lock"
+msgstr "Lås förhållande"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:534
+msgid "workspace.options.size.unlock"
+msgstr "Lås upp förhållande"
+
+#: src/app/main/ui/workspace/plugins.cljs:286
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Lagra data i webbläsaren."
+
+#: src/app/main/ui/workspace/context_menu.cljs:610, src/app/main/ui/workspace/sidebar/assets/common.cljs:514, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:961, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1113, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1195
+msgid "workspace.shape.menu.add-variant"
+msgstr "Skapa variant"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:518, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1010, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1115, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1233
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Lägg till ny egenskap"
+
+#: src/app/main/ui/workspace/context_menu.cljs:617, src/app/main/ui/workspace/sidebar/assets/components.cljs:634, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1041
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Kombinera som varianter"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:636
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Komponenter måste vara på samma sida"
+
+#: src/app/main/ui/workspace/context_menu.cljs:221
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Kopiera som SVG"
+
+#: src/app/main/ui/workspace/context_menu.cljs:226
+msgid "workspace.shape.menu.copy-text"
+msgstr "Kopiera som text"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1257
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Ta bort egenskap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1256
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "Varianten bör ha minst en egenskap"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:504
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Återställ variant"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:165, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:328
+msgid "workspace.tokens.add-new-theme"
+msgstr "Lägg till nytt tema"
+
+#: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:62
+msgid "workspace.tokens.add-set-to-group"
+msgstr "Lägg till uppsättning i denna grupp"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:197, src/app/main/ui/workspace/tokens/management/group.cljs:115
+msgid "workspace.tokens.add-token"
+msgstr "Lägg till token: %s"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
+msgid "workspace.tokens.applied-to"
+msgstr "Applicerad på"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:316
+msgid "workspace.tokens.axis"
+msgstr "Axel"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:89
+msgid "workspace.tokens.base-font-size"
+msgstr "Basteckenstorlek"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:43
+msgid "workspace.tokens.base-font-size.error"
+msgstr "Basteckenstorlek måste anges i pixlar eller vara enhetslöst."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+#, unused
+msgid "workspace.tokens.choose-file"
+msgstr "Välj fil"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+#, unused
+msgid "workspace.tokens.choose-folder"
+msgstr "Välj mapp"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:286
+msgid "workspace.tokens.color"
+msgstr "Färg"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"Radhöjden beror på teckenstorleken. Lägg till en teckenstorlek för att få "
+"det uträknade värdet."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:197, src/app/main/data/workspace/tokens/library_edit.cljs:415
+msgid "workspace.tokens.duplicate-suffix"
+msgstr "kopiera"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
+msgid "workspace.tokens.edit-token"
+msgstr "Redigera %s token"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:41
+msgid "workspace.tokens.empty-input"
+msgstr "Token-värdet kan inte vara tomt"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:15
+msgid "workspace.tokens.error-parse"
+msgstr "Importeringsfel: Kunde inte tolka JSON."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:49
+msgid "workspace.tokens.export"
+msgstr "Exportera"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:125
+msgid "workspace.tokens.export-tokens"
+msgstr "Exportera tokens"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:118
+msgid "workspace.tokens.export.multiple-files"
+msgstr "Flera filer"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:38
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "Det finns inga tokens, teman eller uppsättningar att exportera."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:35
+msgid "workspace.tokens.export.preview"
+msgstr "Förhandsgranskning:"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:116
+msgid "workspace.tokens.export.single-file"
+msgstr "Enskild fil"
+
+#: src/app/main/data/workspace/tokens/application.cljs:292
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Fel vid inställning av typsnittsvikt/stil. Den här typsnittsstilen finns "
+"inte i det aktuella typsnittet"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Ange ett värde (300, fet, normal kursiv ...) eller en {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
+msgid "workspace.tokens.gaps"
+msgstr "Mellanrum"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.generic-error"
+msgstr "Fel: "
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:104
+msgid "workspace.tokens.group-name"
+msgstr "Gruppnamn"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Importera %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.import-error"
+msgstr "Importeringsfel:"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Mapp"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Enskild JSON-fil"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP-fil"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:241
+msgid "workspace.tokens.import-multiple-files"
+msgstr "I flera filer är filnamnet/sökvägen uppsättningsnamnen."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:240
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"I en enskild JSON-fil bör nycklarna på första nivån vara namnen på token-"
+"uppsättningarna."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:237
+msgid "workspace.tokens.import-tokens"
+msgstr "Importera tokens"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+#, unused
+msgid "workspace.tokens.import-tooltip"
+msgstr ""
+"Att importera en JSON-fil kommer att åsidosätta alla dina nuvarande tokens, "
+"uppsättningar och teman"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:247
+msgid "workspace.tokens.import-warning"
+msgstr ""
+"Import av tokens kommer att åsidosätta alla dina nuvarande tokens, "
+"uppsättningar och teman."
+
+#: src/app/main/ui/workspace/tokens/management.cljs:141
+msgid "workspace.tokens.inactive-set"
+msgstr "Inaktiv"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:132
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Denna uppsättning är inte aktiv. Ändra temat eller aktivera denna "
+"uppsättning för att se ändringar i visningsfönstret"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "Använd individuella tokens"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "workspace.tokens.invalid-color"
+msgstr "Ogiltigt färgvärde: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Ogiltigt värde för typsnittsvikt: använd numeriska värden (100–950) eller "
+"standardnamn (smal, lätt, normal, fet, etc.) eventuellt följt av 'Kursiv'"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json"
+msgstr "Importeringsfel: Ogiltig token-data i JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:27
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "Importeringsfel: Ogiltigt token-namn i JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" är inte ett giltigt token-namn.\n"
+"Token-namn ska endast innehålla bokstäver och siffror separerade med . "
+"tecken och får inte börja med ett $-tecken."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Ogiltigt token-värde: endast ingen, versaler, gemener eller versalisera "
+"accepteras"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Ogiltigt token-värde: endast ingen, understruken och genomstruken accepteras"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Ogiltigt värde: måste referera till en sammansatt typografi-token."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
+msgid "workspace.tokens.invalid-value"
+msgstr "Ogiltigt token-värde: %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:191
+msgid "workspace.tokens.label.group"
+msgstr "Grupp"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:193
+msgid "workspace.tokens.label.group-placeholder"
+msgstr "Lägg till grupp (dvs. läge)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:199
+msgid "workspace.tokens.label.theme"
+msgstr "Tema"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:200
+msgid "workspace.tokens.label.theme-placeholder"
+msgstr "Lägg till ett tema (dvs. ljust)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Lägg till bokstavsavstånd eller {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Ange radhöjd — multiplikator, px, % eller {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:220
+msgid "workspace.tokens.margins"
+msgstr "Marginaler"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
+msgid "workspace.tokens.max-size"
+msgstr "Max. storlek"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:250
+msgid "workspace.tokens.min-size"
+msgstr "Min. storlek"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.missing-references"
+msgstr "Saknade token-referenser: "
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.more-options"
+msgstr "Högerklicka för att se alternativ"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:149
+msgid "workspace.tokens.no-active-sets"
+msgstr "Inga aktiva uppsättningar"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:72
+msgid "workspace.tokens.no-permisions-set"
+msgstr "Du måste vara en redaktör för att aktivera / inaktivera uppsättningar"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:53
+msgid "workspace.tokens.no-permission-themes"
+msgstr "Du måste vara redaktör för att använda teman"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "Inga tokens, uppsättningar eller teman hittades i den här filen."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:148
+msgid "workspace.tokens.num-active-sets"
+msgstr "%s aktiva uppsättningar"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:53
+msgid "workspace.tokens.number-too-large"
+msgstr "Ogiltigt token-värde. Det uträknade värdet är för stort: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
+msgid "workspace.tokens.opacity-range"
+msgstr ""
+"Opaciteten måste vara mellan 0 och 100 % eller 0 och 1 (t.ex. 50 % eller 0,5)"
+"."
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:204
+msgid "workspace.tokens.paddings"
+msgstr "Vadderingar"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+msgid "workspace.tokens.radius"
+msgstr "Radie"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:128
+msgid "workspace.tokens.ref-not-valid"
+msgstr "Referensen är inte giltig eller finns inte i någon aktiv uppsättning"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
+msgid "workspace.tokens.reference-composite"
+msgstr "Ange ett alias för token-typografi"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.reference-error"
+msgstr "Referensfel: "
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45
+msgid "workspace.tokens.self-reference"
+msgstr "Token har självreferens"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
+msgid "workspace.tokens.set-edit-placeholder"
+msgstr "Ange namn (använd \"/\" för grupper)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:143
+msgid "workspace.tokens.sets-hint"
+msgstr "Redigera tema och hantera uppsättningar"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:91
+msgid "workspace.tokens.setting-description"
+msgstr ""
+"Här kan du ställa in basteckenstorlek, vilket definierar värdet för 1rem:"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:84
+msgid "workspace.tokens.settings"
+msgstr "Token-inställningar"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:244
+msgid "workspace.tokens.size"
+msgstr "Storlek"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "Streckbredden måste vara större än eller lika med 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1012, src/app/main/ui/workspace/tokens/management/create/form.cljs:1051
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "Ange: ingen | versaler | gemener | versalisera eller {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Ange textdekoration: ingen | understrykning | genomstrykning"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+msgid "workspace.tokens.themes-description"
+msgstr ""
+"Här kan du hantera dina teman, aktivera/inaktivera dem och konfigurera dess "
+"aktiva uppsättningar."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:45, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:94
+msgid "workspace.tokens.themes-list"
+msgstr "Temalista"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:973
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Välj typsnittsfamilj"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1029
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Typsnittsfamilj"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:979, src/app/main/ui/workspace/tokens/management/create/form.cljs:1031
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr ""
+"Typsnittsfamilj eller lista över typsnitt separerade med kommatecken (,)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:69
+msgid "workspace.tokens.token-name-validation-error"
+msgstr ""
+" är inte ett giltigt token-namn.\n"
+"Token-namn ska endast innehålla bokstäver och siffror separerade med . "
+"tecken och får inte börja med ett $-tecken."
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+#, unused
+msgid "workspace.tokens.token-not-resolved"
+msgstr "Kunde inte tolka referens-token med namnet: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:584, src/app/main/ui/workspace/tokens/management/create/form.cljs:1035
+msgid "workspace.tokens.token-value-enter"
+msgstr "Ange ett värde eller alias med {alias}"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:131
+msgid "workspace.tokens.tokens-section-title"
+msgstr "TOKEN -   %s"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:47
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "Importen lyckades. Vissa tokens inkluderades ej."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:49
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "Typen '%s' stödjs ej (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "Använd en referens"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
+msgid "workspace.tokens.value-not-valid"
+msgstr "Värdet är inte giltigt"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Ogiltigt värde: % är inte tillåtet."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65
+msgid "workspace.tokens.value-with-units"
+msgstr "Ogiltigt värde: Enheter är ej tillåtna."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:581
+msgid "workspace.tokens.warning-name-change"
+msgstr ""
+"Om du byter namn på denna token bryts alla referenser till dess gamla namn."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:129
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Skapa tavla. Klicka och dra för att ställa in dess storlek. (%s)"
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "Denna version är låst av %s och kan inte ändras"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Denna version är låst av dig"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Låst version - bara skaparen kan ändra den"
