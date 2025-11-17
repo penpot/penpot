@@ -51,6 +51,7 @@ jobs:
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: test-results
           path: frontend/test-results/
