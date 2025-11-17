@@ -44,7 +44,7 @@ export default {
     property: "search",
   },
   parameters: {
-    controls: { exclude: ["tokens"] }
+    controls: { exclude: ["tokens"] },
   },
 
   render: ({ ...args }) => <NumericInput {...args} />,
@@ -118,7 +118,7 @@ export const WithTokens = {
       ],
     },
   },
-    parameters: {
+  parameters: {
     controls: { exclude: ["tokens"] },
     docs: {
       story: {

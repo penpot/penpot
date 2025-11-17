@@ -42,9 +42,7 @@ test.describe("Export frames to PDF", () => {
     await page.getByText("file").last().click();
 
     // The "Export frames to PDF" option should NOT be visible when there are no frames
-    await expect(
-      page.locator("#file-menu-export-frames"),
-    ).not.toBeVisible();
+    await expect(page.locator("#file-menu-export-frames")).not.toBeVisible();
   });
 
   test("Export frames menu option is visible when there are frames (even if not selected)", async ({
@@ -58,12 +56,12 @@ test.describe("Export frames to PDF", () => {
     await page.getByText("file").last().click();
 
     // The "Export frames to PDF" option should be visible when there are frames on the page
-    await expect(
-      page.locator("#file-menu-export-frames"),
-    ).toBeVisible();
+    await expect(page.locator("#file-menu-export-frames")).toBeVisible();
   });
 
-  test("Export frames modal shows all frames when none are selected", async ({ page }) => {
+  test("Export frames modal shows all frames when none are selected", async ({
+    page,
+  }) => {
     const workspacePage = new WorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
@@ -87,7 +85,9 @@ test.describe("Export frames to PDF", () => {
     await expect(page.getByText("2 of 2 elements selected")).toBeVisible();
   });
 
-  test("Export frames modal shows only the selected frames", async ({ page }) => {
+  test("Export frames modal shows only the selected frames", async ({
+    page,
+  }) => {
     const workspacePage = new WorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
@@ -107,7 +107,9 @@ test.describe("Export frames to PDF", () => {
     // Only Frame 1 should appear in the list
     // await page.getByRole("button", { name: "Board 1" }),
     await expect(page.getByRole("button", { name: "Board 1" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Board 2" })).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Board 2" }),
+    ).not.toBeVisible();
 
     // The selection counter should show "1 of 1"
     await expect(page.getByText("1 of 1 elements selected")).toBeVisible();
@@ -119,7 +121,7 @@ test.describe("Export frames to PDF", () => {
 
     // Select Frame 1
     await workspacePage.clickLeafLayer("Board 1");
-    
+
     // Add Frame 2 to selection
     await page.keyboard.down("Shift");
     await workspacePage.clickLeafLayer("Board 2");
@@ -144,7 +146,9 @@ test.describe("Export frames to PDF", () => {
     await expect(exportButton).toBeEnabled();
   });
 
-  test("Export button is disabled when all frames are deselected", async ({ page }) => {
+  test("Export button is disabled when all frames are deselected", async ({
+    page,
+  }) => {
     const workspacePage = new WorkspacePage(page);
     await setupWorkspaceWithFrames(workspacePage);
 
@@ -163,7 +167,9 @@ test.describe("Export frames to PDF", () => {
     await expect(page.getByText("0 of 1 elements selected")).toBeVisible();
 
     // // The export button should be disabled
-    await expect(page.getByRole("button", { name: "Export" , exact: true})).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Export", exact: true }),
+    ).toBeDisabled();
   });
 
   test("User can cancel the export modal", async ({ page }) => {
@@ -188,4 +194,3 @@ test.describe("Export frames to PDF", () => {
     await expect(page.getByText("0 of 1 elements selected")).not.toBeVisible();
   });
 });
-

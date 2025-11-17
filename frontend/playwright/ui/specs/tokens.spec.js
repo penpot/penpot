@@ -102,22 +102,24 @@ const setupTypographyTokensFile = async (page, options = {}) => {
   });
 };
 
-const checkInputFieldWithError = async (tokenThemeUpdateCreateModal, inputLocator) => {
-    await expect(inputLocator).toHaveAttribute("aria-invalid", "true");
+const checkInputFieldWithError = async (
+  tokenThemeUpdateCreateModal,
+  inputLocator,
+) => {
+  await expect(inputLocator).toHaveAttribute("aria-invalid", "true");
 
-    const errorMessageId = await inputLocator.getAttribute("aria-describedby");
-    await expect(
-      tokenThemeUpdateCreateModal.locator(`#${errorMessageId}`),
-    ).toBeVisible();
+  const errorMessageId = await inputLocator.getAttribute("aria-describedby");
+  await expect(
+    tokenThemeUpdateCreateModal.locator(`#${errorMessageId}`),
+  ).toBeVisible();
 };
 
-const checkInputFieldWithoutError = async (tokenThemeUpdateCreateModal, inputLocator) => {
-    expect(
-      await inputLocator.getAttribute("aria-invalid")
-    ).toBeNull();
-    expect(
-      await inputLocator.getAttribute("aria-describedby")
-    ).toBeNull();
+const checkInputFieldWithoutError = async (
+  tokenThemeUpdateCreateModal,
+  inputLocator,
+) => {
+  expect(await inputLocator.getAttribute("aria-invalid")).toBeNull();
+  expect(await inputLocator.getAttribute("aria-describedby")).toBeNull();
 };
 
 test.describe("Tokens: Tokens Tab", () => {
@@ -199,7 +201,9 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
-    await expect(tokensTabPanel.getByRole("button", {name: "#ff0000"})).toHaveCount(2);
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "#ff0000" }),
+    ).toHaveCount(2);
 
     // Global set has been auto created and is active
     await expect(
@@ -828,16 +832,14 @@ test.describe("Tokens: Themes modal", () => {
       .first()
       .click();
 
-    await expect(
-       tokenThemeUpdateCreateModal
-    ).toBeVisible();
+    await expect(tokenThemeUpdateCreateModal).toBeVisible();
 
     const groupInput = tokenThemeUpdateCreateModal.getByLabel("Group");
     const nameInput = tokenThemeUpdateCreateModal.getByLabel("Theme");
     const saveButton = tokenThemeUpdateCreateModal.getByRole("button", {
       name: "Save theme",
     });
- 
+
     await groupInput.fill("New Group name");
     await nameInput.fill("New Theme name");
 
@@ -853,7 +855,7 @@ test.describe("Tokens: Themes modal", () => {
       tokenThemeUpdateCreateModal.getByText("New Group name"),
     ).toBeVisible();
   });
- 
+
   test("Add new theme", async ({ page }) => {
     const { tokenThemeUpdateCreateModal, workspacePage } =
       await setupTokensFile(page);
@@ -871,7 +873,7 @@ test.describe("Tokens: Themes modal", () => {
     const saveButton = tokenThemeUpdateCreateModal.getByRole("button", {
       name: "Save theme",
     });
- 
+
     await groupInput.fill("Core"); // Invalid because "Core / Light" theme already exists
     await nameInput.fill("Light");
 
@@ -917,13 +919,13 @@ test.describe("Tokens: Themes modal", () => {
     const saveButton = tokenThemeUpdateCreateModal.getByRole("button", {
       name: "Save theme",
     });
- 
+
     await groupInput.fill("Core"); // Invalid because "Core / Dark" theme already exists
     await nameInput.fill("Dark");
 
     await checkInputFieldWithError(tokenThemeUpdateCreateModal, nameInput);
     await expect(saveButton).toBeDisabled();
- 
+
     await groupInput.fill("Core"); // Valid because "Core / Light" theme already exists
     await nameInput.fill("Light"); // but it's the same theme we are editing
 
@@ -936,12 +938,8 @@ test.describe("Tokens: Themes modal", () => {
     await checkInputFieldWithoutError(tokenThemeUpdateCreateModal, nameInput);
     await expect(saveButton).not.toBeDisabled();
 
-    expect(
-      await nameInput.getAttribute("aria-invalid")
-    ).toBeNull();
-    expect(
-      await nameInput.getAttribute("aria-describedby")
-    ).toBeNull();
+    expect(await nameInput.getAttribute("aria-invalid")).toBeNull();
+    expect(await nameInput.getAttribute("aria-describedby")).toBeNull();
 
     const checkboxes = await tokenThemeUpdateCreateModal
       .locator('[role="checkbox"]')
@@ -956,9 +954,9 @@ test.describe("Tokens: Themes modal", () => {
     }
 
     const firstButton = await tokenThemeUpdateCreateModal
-      .getByTestId('tokens-set-item')
+      .getByTestId("tokens-set-item")
       .first();
-    
+
     await firstButton.click();
 
     await expect(saveButton).not.toBeDisabled();
@@ -1109,12 +1107,10 @@ test.describe("Tokens: Apply token", () => {
     // Fill in values for all fields and verify they persist when switching tabs
     await fontSizeField.fill("16");
 
-    const fontWeightField =
-      tokensUpdateCreateModal.getByLabel(/Font Weight/i);
+    const fontWeightField = tokensUpdateCreateModal.getByLabel(/Font Weight/i);
     const letterSpacingField =
       tokensUpdateCreateModal.getByLabel(/Letter Spacing/i);
-    const lineHeightField =
-      tokensUpdateCreateModal.getByLabel(/Line Height/i);
+    const lineHeightField = tokensUpdateCreateModal.getByLabel(/Line Height/i);
     const textCaseField = tokensUpdateCreateModal.getByLabel(/Text Case/i);
     const textDecorationField =
       tokensUpdateCreateModal.getByLabel(/Text Decoration/i);
@@ -1149,9 +1145,7 @@ test.describe("Tokens: Apply token", () => {
     await expect(fontSizeField).toHaveValue(originalValues.fontSize);
     await expect(fontFamilyField).toHaveValue(originalValues.fontFamily);
     await expect(fontWeightField).toHaveValue(originalValues.fontWeight);
-    await expect(letterSpacingField).toHaveValue(
-      originalValues.letterSpacing,
-    );
+    await expect(letterSpacingField).toHaveValue(originalValues.letterSpacing);
     await expect(lineHeightField).toHaveValue(originalValues.lineHeight);
     await expect(textCaseField).toHaveValue(originalValues.textCase);
     await expect(textDecorationField).toHaveValue(
@@ -1248,9 +1242,15 @@ test.describe("Tokens: Apply token", () => {
     await expect(newToken).toBeVisible();
   });
 
-  test("User adds shadow token with multiple shadows and applies it to shape", async ({ page, }) => {
-    const { tokensUpdateCreateModal, tokensSidebar, workspacePage, tokenContextMenuForToken } =
-      await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+  test("User adds shadow token with multiple shadows and applies it to shape", async ({
+    page,
+  }) => {
+    const {
+      tokensUpdateCreateModal,
+      tokensSidebar,
+      workspacePage,
+      tokenContextMenuForToken,
+    } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -1301,7 +1301,9 @@ test.describe("Tokens: Apply token", () => {
       await expect(firstColorValue).toMatch(/^rgb(.*)$/);
 
       // Wait for validation to complete
-      await expect(tokensUpdateCreateModal.getByText(/Resolved value:/).first()).toBeVisible();
+      await expect(
+        tokensUpdateCreateModal.getByText(/Resolved value:/).first(),
+      ).toBeVisible();
 
       // Save button should be enabled
       const submitButton = tokensUpdateCreateModal.getByRole("button", {
@@ -1349,18 +1351,32 @@ test.describe("Tokens: Apply token", () => {
       await thirdColorInput.fill("#FF0000");
 
       // User removes the 2nd shadow
-      const removeButton2 = secondShadowFields.getByTestId("shadow-remove-button-1");
+      const removeButton2 = secondShadowFields.getByTestId(
+        "shadow-remove-button-1",
+      );
       await removeButton2.click();
 
       // Verify second shadow is removed
-      await expect(secondShadowFields.getByTestId("shadow-add-button-3")).not.toBeVisible();
+      await expect(
+        secondShadowFields.getByTestId("shadow-add-button-3"),
+      ).not.toBeVisible();
 
       // Verify that the first shadow kept its values
-      const firstOffsetXValue = await firstShadowFields.getByLabel("X").inputValue();
-      const firstOffsetYValue = await firstShadowFields.getByLabel("Y").inputValue();
-      const firstBlurValue = await firstShadowFields.getByLabel("Blur").inputValue();
-      const firstSpreadValue = await firstShadowFields.getByLabel("Spread").inputValue();
-      const firstColorValueAfter = await firstShadowFields.getByLabel("Color").inputValue();
+      const firstOffsetXValue = await firstShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const firstOffsetYValue = await firstShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const firstBlurValue = await firstShadowFields
+        .getByLabel("Blur")
+        .inputValue();
+      const firstSpreadValue = await firstShadowFields
+        .getByLabel("Spread")
+        .inputValue();
+      const firstColorValueAfter = await firstShadowFields
+        .getByLabel("Color")
+        .inputValue();
 
       await expect(firstOffsetXValue).toBe("2");
       await expect(firstOffsetYValue).toBe("2");
@@ -1375,11 +1391,21 @@ test.describe("Tokens: Apply token", () => {
       );
       await expect(newSecondShadowFields).toBeVisible();
 
-      const secondOffsetXValue = await newSecondShadowFields.getByLabel("X").inputValue();
-      const secondOffsetYValue = await newSecondShadowFields.getByLabel("Y").inputValue();
-      const secondBlurValue = await newSecondShadowFields.getByLabel("Blur").inputValue();
-      const secondSpreadValue = await newSecondShadowFields.getByLabel("Spread").inputValue();
-      const secondColorValue = await newSecondShadowFields.getByLabel("Color").inputValue();
+      const secondOffsetXValue = await newSecondShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const secondOffsetYValue = await newSecondShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const secondBlurValue = await newSecondShadowFields
+        .getByLabel("Blur")
+        .inputValue();
+      const secondSpreadValue = await newSecondShadowFields
+        .getByLabel("Spread")
+        .inputValue();
+      const secondColorValue = await newSecondShadowFields
+        .getByLabel("Color")
+        .inputValue();
 
       await expect(secondOffsetXValue).toBe("10");
       await expect(secondOffsetYValue).toBe("10");
@@ -1399,14 +1425,16 @@ test.describe("Tokens: Apply token", () => {
       const firstColorValue = await colorInput.inputValue();
 
       // Switch to reference tab
-      const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
+      const referenceTabButton =
+        tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceTabButton.click();
 
       // Verify we're in reference mode - the composite fields should not be visible
       await expect(firstShadowFields).not.toBeVisible();
 
       // Switch back to composite tab
-      const compositeTabButton = tokensUpdateCreateModal.getByTestId("composite-opt");
+      const compositeTabButton =
+        tokensUpdateCreateModal.getByTestId("composite-opt");
       await compositeTabButton.click();
 
       // Verify that shadows are restored
@@ -1414,11 +1442,21 @@ test.describe("Tokens: Apply token", () => {
       await expect(newSecondShadowFields).toBeVisible();
 
       // Verify first shadow values are still there
-      const restoredFirstOffsetX = await firstShadowFields.getByLabel("X").inputValue();
-      const restoredFirstOffsetY = await firstShadowFields.getByLabel("Y").inputValue();
-      const restoredFirstBlur = await firstShadowFields.getByLabel("Blur").inputValue();
-      const restoredFirstSpread = await firstShadowFields.getByLabel("Spread").inputValue();
-      const restoredFirstColor = await firstShadowFields.getByLabel("Color").inputValue();
+      const restoredFirstOffsetX = await firstShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const restoredFirstOffsetY = await firstShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const restoredFirstBlur = await firstShadowFields
+        .getByLabel("Blur")
+        .inputValue();
+      const restoredFirstSpread = await firstShadowFields
+        .getByLabel("Spread")
+        .inputValue();
+      const restoredFirstColor = await firstShadowFields
+        .getByLabel("Color")
+        .inputValue();
 
       await expect(restoredFirstOffsetX).toBe("2");
       await expect(restoredFirstOffsetY).toBe("2");
@@ -1427,11 +1465,21 @@ test.describe("Tokens: Apply token", () => {
       await expect(restoredFirstColor).toBe(firstColorValue);
 
       // Verify second shadow values are still there
-      const restoredSecondOffsetX = await newSecondShadowFields.getByLabel("X").inputValue();
-      const restoredSecondOffsetY = await newSecondShadowFields.getByLabel("Y").inputValue();
-      const restoredSecondBlur = await newSecondShadowFields.getByLabel("Blur").inputValue();
-      const restoredSecondSpread = await newSecondShadowFields.getByLabel("Spread").inputValue();
-      const restoredSecondColor = await newSecondShadowFields.getByLabel("Color").inputValue();
+      const restoredSecondOffsetX = await newSecondShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const restoredSecondOffsetY = await newSecondShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const restoredSecondBlur = await newSecondShadowFields
+        .getByLabel("Blur")
+        .inputValue();
+      const restoredSecondSpread = await newSecondShadowFields
+        .getByLabel("Spread")
+        .inputValue();
+      const restoredSecondColor = await newSecondShadowFields
+        .getByLabel("Color")
+        .inputValue();
 
       await expect(restoredSecondOffsetX).toBe("10");
       await expect(restoredSecondOffsetY).toBe("10");
