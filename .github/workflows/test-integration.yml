@@ -1,0 +1,52 @@
+name: "Integration Tests"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - main
+      - develop
+      - staging
+
+jobs:
+  test-integration:
+    name: "test1"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          yarn install
+          yarn run build:app:assets
+          yarn run build:app
+          yarn run build:app:libs
+
+      - name: Build WASM
+        working-directory: "./render-wasm"
+        run: |
+          EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
+          ./build release
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          yarn run playwright install chromium --with-deps
+          yarn run test:e2e -x --workers=4 --reporter=line
+
+
