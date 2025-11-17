@@ -239,10 +239,11 @@
           (cfh/text-shape? shape)
           (let [pending-thumbnails (into [] (concat (api/set-shape-text-content id v)))
                 pending-full (into [] (concat (api/set-shape-text-images id v)))]
-            ;; FIXME: this is a hack to process the pending tasks asynchronously
-            ;; we should probably modify set-wasm-attr! to return a list of callbacks
-            ;;to be executed in a second pass.
-            (api/process-pending! [shape] pending-thumbnails pending-full)
+            ;; FIXME: this is a hack to process the pending tasks
+            ;; asynchronously we should probably modify set-wasm-attr!
+            ;; to return a list of callbacks to be executed in a
+            ;; second pass.
+            (api/process-pending [shape] pending-thumbnails pending-full api/noop-fn)
             nil))
 
         :grow-type

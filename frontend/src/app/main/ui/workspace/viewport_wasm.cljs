@@ -323,7 +323,7 @@
 
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
-        (wasm.api/initialize base-objects zoom vbox background)
+        (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
 
     (mf/with-effect [focus]

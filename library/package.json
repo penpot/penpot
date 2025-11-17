@@ -28,6 +28,7 @@
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs",
     "build": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs release library",
+    "build:bundle": "./scripts/build",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
     "lint:clj": "clj-kondo --parallel --lint src/",

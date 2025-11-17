@@ -34,9 +34,11 @@
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
+   ;; FIXME: rename; confunsing name
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
+   [app.util.globals :as ug]
    [app.util.text.content :as tc]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -59,6 +61,9 @@
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
+
+(def noop-fn
+  (constantly nil))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -87,9 +92,7 @@
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_render" timestamp)
     (set! wasm/internal-frame-id nil)
-    ;; emit custom event
-    (let [event (js/CustomEvent. "wasm:render")]
-      (js/document.dispatchEvent ^js event))))
+    (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
 (def set-view-render
   (fns/debounce
@@ -957,28 +960,32 @@
                      :shape-id id
                      :dimensions (get-text-dimensions id)})))))
 
-(defn process-pending!
-  [shapes thumbnails full]
-  (let [event (js/CustomEvent. "wasm:set-objects-finished")
-        pending-thumbnails (-> (d/index-by :key :callback thumbnails) vals)
-        pending-full (-> (d/index-by :key :callback full) vals)]
+(defn process-pending
+  [shapes thumbnails full on-complete]
+  (let [pending-thumbnails
+        (d/index-by :key :callback thumbnails)
+
+        pending-full
+        (d/index-by :key :callback full)]
+
     (->> (rx/concat
-          (->> (rx/from pending-thumbnails)
+          (->> (rx/from (vals pending-thumbnails))
                (rx/merge-map (fn [callback] (callback)))
                (rx/reduce conj []))
-          (->> (rx/from pending-full)
+          (->> (rx/from (vals pending-full))
                (rx/mapcat (fn [callback] (callback)))
-               (rx/reduce conj [])
-               (rx/tap #(.dispatchEvent ^js js/document event))))
+               (rx/reduce conj [])))
          (rx/subs!
           (fn [_]
             (update-text-layouts shapes)
-            (request-render "pending-finished"))))))
+            (request-render "pending-finished"))
+          noop-fn
+          on-complete))))
 
 (defn process-object
   [shape]
   (let [{:keys [thumbnails full]} (set-object [] shape)]
-    (process-pending! [shape] thumbnails full)))
+    (process-pending [shape] thumbnails full noop-fn)))
 
 (defn set-objects
   [objects]
@@ -996,7 +1003,9 @@
                      (into full-acc full)))
             {:thumbnails thumbnails-acc :full full-acc}))]
     (perf/end-measure "set-objects")
-    (process-pending! shapes thumbnails full)))
+    (process-pending shapes thumbnails full
+                     (fn []
+                       (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))
 
 (defn clear-focus-mode
   []
@@ -1122,7 +1131,7 @@
 
         (request-render "set-modifiers")))))
 
-(defn initialize
+(defn initialize-viewport
   [base-objects zoom vbox background]
   (let [rgba         (sr-clr/hex->u32argb background 1)
         shapes       (into [] (vals base-objects))
@@ -1132,7 +1141,7 @@
     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
     (set-objects base-objects)))
 
-(def ^:private context-options
+(def ^:private default-context-options
   #js {:antialias false
        :depth true
        :stencil true
@@ -1166,13 +1175,12 @@
           (re-find #"(?i)edge" user-agent) :edge
           :else :unknown)))))
 
-
 (defn init-canvas-context
   [canvas]
   (let [gl      (unchecked-get wasm/internal-module "GL")
         flags   (debug-flags)
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
-        context (.getContext ^js canvas context-id context-options)
+        context (.getContext ^js canvas context-id default-context-options)
         context-init? (not (nil? context))
         browser (get-browser)
         browser (sr/translate-browser browser)]

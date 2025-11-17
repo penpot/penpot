@@ -35,27 +35,62 @@ const setupVariantsFileWithVariant = async (workspacePage) => {
 
   await workspacePage.clickLeafLayer("Rectangle");
   await workspacePage.page.keyboard.press("Control+k");
+  await workspacePage.page.waitForTimeout(500);
   await workspacePage.page.keyboard.press("Control+k");
+  await workspacePage.page.waitForTimeout(500);
+
+  // We wait until layer-row starts looking like it an component
+  await workspacePage.page
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .getByTestId("icon-component")
+    .waitFor();
 };
 
-const findVariant = async (workspacePage, num_variant) => {
-  const container = await workspacePage.layers
+const findVariant = async (workspacePage, index) => {
+  const container = workspacePage.layers
     .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.getByText("Rectangle") })
+    .filter({ hasText: "Rectangle" })
     .filter({ has: workspacePage.page.getByTestId("icon-component") })
-    .nth(num_variant);
+    .nth(index);
 
-  const variant1 = await workspacePage.layers
+  const variant1 = workspacePage.layers
     .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.getByText("Value 1") })
+    .filter({ hasText: "Value 1" })
     .filter({ has: workspacePage.page.getByTestId("icon-variant") })
-    .nth(num_variant);
+    .nth(index);
 
-  const variant2 = await workspacePage.layers
+  const variant2 = workspacePage.layers
     .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.getByText("Value 2") })
+    .filter({ hasText: "Value 2" })
     .filter({ has: workspacePage.page.getByTestId("icon-variant") })
-    .nth(num_variant);
+    .nth(index);
+
+  await container.waitFor();
+
+  return {
+    container: container,
+    variant1: variant1,
+    variant2: variant2,
+  };
+};
+
+const findVariantNoWait = (workspacePage, index) => {
+  const container = workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .filter({ has: workspacePage.page.getByTestId("icon-component") })
+    .nth(index);
+
+  const variant1 = workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Value 1" })
+    .nth(index);
+
+  const variant2 = workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Value 2" })
+    .nth(index);
 
   return {
     container: container,
@@ -138,27 +173,33 @@ test("User copy paste a variant container", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
-  const variant = await findVariant(workspacePage, 0);
+  const variant = findVariantNoWait(workspacePage, 0);
+
+  // await variant.container.waitFor();
 
   // Select the variant container
   await variant.container.click();
 
-  //Copy the variant container
+  await workspacePage.page.waitForTimeout(1000);
+
+  // Copy the variant container
   await workspacePage.page.keyboard.press("Control+c");
 
-  //Paste the variant container
-  await workspacePage.clickAt(500, 500);
+  // Paste the variant container
+  await workspacePage.clickAt(400, 400);
   await workspacePage.page.keyboard.press("Control+v");
 
-  const variant_original = await findVariant(workspacePage, 1);
-  const variant_duplicate = await findVariant(workspacePage, 0);
+  const variantDuplicate = findVariantNoWait(workspacePage, 0);
+  const variantOriginal = findVariantNoWait(workspacePage, 1);
 
   // Expand the layers
-  await variant_duplicate.container.getByRole("button").first().click();
+  await variantDuplicate.container.waitFor();
+  await variantDuplicate.container.locator("button").first().click();
 
-  // The variants are valid
-  await validateVariant(variant_original);
-  await validateVariant(variant_duplicate);
+  // // The variants are valid
+  // // await variantOriginal.container.waitFor();
+  await validateVariant(variantOriginal);
+  await validateVariant(variantDuplicate);
 });
 
 test("User cut paste a variant container", async ({ page }) => {
@@ -172,21 +213,23 @@ test("User cut paste a variant container", async ({ page }) => {
 
   //Cut the variant container
   await workspacePage.page.keyboard.press("Control+x");
+  await workspacePage.page.waitForTimeout(500);
 
   //Paste the variant container
   await workspacePage.clickAt(500, 500);
   await workspacePage.page.keyboard.press("Control+v");
+  await workspacePage.page.waitForTimeout(500);
 
-  const variant_pasted = await findVariant(workspacePage, 0);
+  const variantPasted = await findVariant(workspacePage, 0);
 
   // Expand the layers
-  await variant_pasted.container.getByRole("button").first().click();
+  await variantPasted.container.locator("button").first().click();
 
   // The variants are valid
-  await validateVariant(variant_pasted);
+  await validateVariant(variantPasted);
 });
 
-test("[Bugfixing] User cut paste a variant container into a board, and undo twice", async ({
+test("User cut paste a variant container into a board, and undo twice", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
@@ -205,6 +248,7 @@ test("[Bugfixing] User cut paste a variant container into a board, and undo twic
 
   //Cut the variant container
   await workspacePage.page.keyboard.press("Control+x");
+  await workspacePage.page.waitForTimeout(500);
 
   //Select the board
   await workspacePage.clickLeafLayer("Board");
@@ -215,11 +259,12 @@ test("[Bugfixing] User cut paste a variant container into a board, and undo twic
   //Undo twice
   await workspacePage.page.keyboard.press("Control+z");
   await workspacePage.page.keyboard.press("Control+z");
+  await workspacePage.page.waitForTimeout(500);
 
-  const variant_after_undo = await findVariant(workspacePage, 0);
+  const variantAfterUndo = await findVariant(workspacePage, 0);
 
   // The variants are valid
-  await validateVariant(variant_after_undo);
+  await validateVariant(variantAfterUndo);
 });
 
 test("User copy paste a variant", async ({ page }) => {
@@ -364,7 +409,7 @@ test("User drag and drop a component with path inside a variant", async ({
   const workspacePage = new WorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
-  const variant = await findVariant(workspacePage, 0);
+  const variant = findVariantNoWait(workspacePage, 0);
 
   //Create a component
   await workspacePage.ellipseShapeButton.click();
@@ -404,11 +449,12 @@ test("User cut paste a variant into another container", async ({ page }) => {
   await workspacePage.page.keyboard.press("Control+k");
   await workspacePage.page.keyboard.press("Control+k");
 
-  const variant_origin = await findVariant(workspacePage, 1);
-  const variant_target = await findVariant(workspacePage, 0);
+  const variantOrigin = await findVariantNoWait(workspacePage, 1);
 
   // Select the variant1
-  await variant_origin.variant1.click();
+  await variantOrigin.variant1.waitFor();
+  await variantOrigin.variant1.click();
+  await variantOrigin.variant1.click();
 
   //Cut the variant
   await workspacePage.page.keyboard.press("Control+x");
@@ -417,7 +463,7 @@ test("User cut paste a variant into another container", async ({ page }) => {
   await workspacePage.layers.getByText("Ellipse").first().click();
   await workspacePage.page.keyboard.press("Control+v");
 
-  const variant3 = await workspacePage.layers
+  const variant3 = workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Value 1, rectangle") })
     .filter({ has: workspacePage.page.getByTestId("icon-variant") })

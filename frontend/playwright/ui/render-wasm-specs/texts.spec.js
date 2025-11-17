@@ -51,7 +51,7 @@ test("Renders a file with texts", async ({ page }) => {
     id: "3b0d758a-8c9d-8013-8006-52c8337e5c72",
     pageId: "3b0d758a-8c9d-8013-8006-52c8337e5c73",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -64,7 +64,7 @@ test("Updates a text font", async ({ page }) => {
     id: "3b0d758a-8c9d-8013-8006-52c8337e5c72",
     pageId: "3b0d758a-8c9d-8013-8006-52c8337e5c73",
   });
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
 
   await workspace.clickLeafLayer("this is a text");
   await page.keyboard.press("Control+b");
@@ -88,7 +88,7 @@ test("Renders a file with texts that use google fonts", async ({ page }) => {
     id: "434b0541-fa2f-802f-8006-5981e47bd732",
     pageId: "434b0541-fa2f-802f-8006-5981e47bd733",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
@@ -114,7 +114,7 @@ test("Renders a file with texts that use custom fonts", async ({ page }) => {
     id: "434b0541-fa2f-802f-8006-59827d964a9b",
     pageId: "434b0541-fa2f-802f-8006-59827d964a9c",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
@@ -128,7 +128,7 @@ test("Renders a file with styled texts", async ({ page }) => {
     id: "6bd7c17d-4f59-815e-8006-5c2559af4939",
     pageId: "6bd7c17d-4f59-815e-8006-5c2559af493a",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -152,7 +152,7 @@ test("Renders a file with texts with images", async ({ page }) => {
     id: "6bd7c17d-4f59-815e-8006-5e96453952b0",
     pageId: "6bd7c17d-4f59-815e-8006-5e96453952b1",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -170,7 +170,7 @@ test("Renders a file with texts with emoji and different symbols", async ({
     id: "74d31005-5d0c-81fe-8006-949a8226e8c4",
     pageId: "74d31005-5d0c-81fe-8006-949a8226e8c5",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -191,7 +191,7 @@ test("Renders a file with text decoration", async ({ page }) => {
     id: "d6c33e7b-7b64-80f3-8006-785098582f1d",
     pageId: "d6c33e7b-7b64-80f3-8006-785098582f1e",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -208,7 +208,7 @@ test("Renders a file with emoji and text decoration", async ({ page }) => {
     id: "82d128e1-d3b1-80a5-8006-ae60fedcd5e7",
     pageId: "82d128e1-d3b1-80a5-8006-ae60fedcd5e8",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -225,7 +225,7 @@ test("Renders a file with multiple emoji", async ({ page }) => {
     pageId: "6bd7c17d-4f59-815e-8006-5e999f38f211",
   });
 
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -243,7 +243,7 @@ test("Renders a file with multiple text shadows, strokes, and blur combinations"
     id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
     pageId: "15b74473-2908-8094-8006-bdb4fbd2c6a4",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -261,7 +261,7 @@ test("Renders a file with different text leaves decoration", async ({
     pageId: "b4cb802d-4245-807d-8006-b4a4b90b79cd",
   });
 
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -279,7 +279,7 @@ test("Renders a file with different text shadows combinations", async ({
     pageId: "15b74473-2908-8094-8006-bc90c3982c74",
   });
 
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -293,7 +293,7 @@ test("Renders a file with multiple text shadows in order", async ({ page }) => {
     pageId: "48ffa82f-6950-81b5-8006-e49a2a396580",
   });
 
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -311,7 +311,7 @@ test("Renders a file with text in frames and different strokes, shadows, and blu
     pageId: "44471494-966a-8178-8006-c5bd93f0fe73",
   });
 
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -326,7 +326,7 @@ test("Renders a file with texts with different alignments", async ({
     id: "692f368b-63ca-8141-8006-62925640b827",
     pageId: "692f368b-63ca-8141-8006-62925640b828",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -343,7 +343,7 @@ test("Renders a file with texts with with text spans of different sizes", async 
     id: "a0b1a70e-0d02-8082-8006-ff6d160f15ce",
     pageId: "a0b1a70e-0d02-8082-8006-ff6d160f15cf",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -375,7 +375,7 @@ test.skip("Renders a file with texts with tabs", async ({ page }) => {
     pageId: "55ed444c-1179-8175-8007-09da51f502e8",
   });
 
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
   await workspace.clickLeafLayer("shape-list");
   await workspace.hideUI();
   await workspace.page.keyboard.press("Enter");
@@ -394,7 +394,7 @@ test.skip("Renders a file with texts with empty lines", async ({ page }) => {
     pageId: "15222a7a-d3bc-80f1-8007-0d8e166e650f",
   });
 
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
   await workspace.clickLeafLayer("text-with-empty-lines-2");
   await workspace.hideUI();
   await workspace.page.keyboard.press("Enter");
@@ -413,7 +413,7 @@ test.skip("Renders a file with texts with breaking words", async ({ page }) => {
     pageId: "15222a7a-d3bc-80f1-8007-0d8e166e650f",
   });
 
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
   await workspace.clickLeafLayer("text-with-empty-lines-3");
   await workspace.hideUI();
   await workspace.page.keyboard.press("Enter");
@@ -433,7 +433,7 @@ test("Renders a file with group with text with inherited shadows", async ({
     pageId: "58c5cc60-d124-81bd-8007-0f30f1ac452b",
   });
 
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
@@ -446,7 +446,7 @@ test.skip("Updates text alignment edition - part 1", async ({ page }) => {
     id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
     pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
   });
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
   await workspace.clickLeafLayer("Text 1");
 
   const textOptionsButton = workspace.page.getByTestId(
@@ -490,7 +490,7 @@ test.skip("Updates text alignment edition - part 2", async ({ page }) => {
     id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
     pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
   });
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
   await workspace.clickLeafLayer("Text 1");
 
   const textOptionsButton = workspace.page.getByTestId(
@@ -542,7 +542,7 @@ test.skip("Updates text alignment edition - part 3", async ({ page }) => {
     id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
     pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
   });
-  await workspace.waitForFirstRender({ hideUI: false });
+  await workspace.waitForFirstRender();
   await workspace.clickLeafLayer("Text 1");
 
   const textOptionsButton = workspace.page.getByTestId(
