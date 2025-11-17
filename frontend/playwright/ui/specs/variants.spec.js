@@ -36,6 +36,12 @@ const setupVariantsFileWithVariant = async (workspacePage) => {
   await workspacePage.clickLeafLayer("Rectangle");
   await workspacePage.page.keyboard.press("Control+k");
   await workspacePage.page.keyboard.press("Control+k");
+
+  // We wait until layer-row starts looking like it an component
+  await workspacePage.page.getByTestId("layer-row")
+    .filter({ hasText: "Rectangle"})
+    .getByTestId("icon-component")
+    .waitFor();
 };
 
 const findVariant = async (workspacePage, index) => {
@@ -76,16 +82,12 @@ const findVariantNoWait = (workspacePage, index) => {
   const variant1 = workspacePage.layers
         .getByTestId("layer-row")
         .filter({ hasText: "Value 1" })
-        .filter({ has: workspacePage.page.getByTestId("icon-variant") })
         .nth(index);
 
   const variant2 = workspacePage.layers
         .getByTestId("layer-row")
         .filter({ hasText: "Value 2" })
-        .filter({ has: workspacePage.page.getByTestId("icon-variant") })
         .nth(index);
-
-  // await container.waitFor();
 
   return {
     container: container,
