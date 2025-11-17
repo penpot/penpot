@@ -26,7 +26,7 @@
     "build:wasm": "../render-wasm/build",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
     "build:app:libs": "node ./scripts/build-libs.js",
-    "build:app:main": "clojure -M:dev:shadow-cljs release main worker",
+    "build:app:main": "clojure -M:dev:shadow-cljs release main worker --debug",
     "build:app": "yarn run clear:shadow-cache && yarn run build:app:main && yarn run build:app:libs",
     "e2e:server": "node ./scripts/e2e-server.js",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",

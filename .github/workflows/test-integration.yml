@@ -55,3 +55,5 @@ jobs:
         with:
           name: test-results
           path: frontend/test-results/
+          overwrite: true
+          retention-days: 7

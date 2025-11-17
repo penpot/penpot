@@ -181,7 +181,8 @@
         handle-hover-copy-paste
         (mf/use-callback
          (fn []
-           (->> (clipboard/from-clipboard)
+           (->> (clipboard/from-dom-api)
+                ;: FIXME: use specific API for access .text
                 (rx/mapcat #(.text %))
                 (rx/take 1)
                 (rx/subs!

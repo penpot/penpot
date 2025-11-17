@@ -255,6 +255,7 @@
 (defn create-paste-from-blob
   [in-viewport?]
   (fn [blob]
+    (js/console.log "create-paste-from-blob" blob)
     (let [type (.-type blob)
           result (cond
                    (= type "image/svg+xml")
@@ -288,7 +289,8 @@
   (ptk/reify ::paste-from-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (clipboard/from-clipboard)
+      (prn "paste-from-clipboard")
+      (->> (clipboard/from-dom-api)
            (rx/mapcat default-paste-from-blob)
            (rx/take 1)))))
 
@@ -298,6 +300,7 @@
   (ptk/reify ::paste-from-event
     ptk/WatchEvent
     (watch [_ state _]
+      (prn "paste-from-event")
       (let [objects     (dsh/lookup-page-objects state)
             edit-id     (dm/get-in state [:workspace-local :edition])
             is-editing? (and edit-id (= :text (get-in objects [edit-id :type])))]
@@ -306,7 +309,7 @@
         ;; we forbid that scenario so the default behaviour is executed
         (if is-editing?
           (rx/empty)
-          (->> (clipboard/from-synthetic-clipboard-event event)
+          (->> (clipboard/from-synthetic-event event)
                (rx/mapcat (create-paste-from-blob in-viewport?))))))))
 
 (defn copy-selected-svg
@@ -476,7 +479,7 @@
                       (js/console.error "Clipboard error:" cause))
                     (rx/empty)))]
 
-          (->> (clipboard/from-clipboard)
+          (->> (clipboard/from-dom-api)
                (rx/mapcat #(.text %))
                (rx/map decode-entry)
                (rx/take 1)

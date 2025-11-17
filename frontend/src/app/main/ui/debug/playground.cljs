@@ -11,7 +11,7 @@
   []
   (let [on-paste (mf/use-fn
                   (fn [e]
-                    (let [stream (clipboard/from-clipboard-event e)]
+                    (let [stream (clipboard/from-event e)]
                       (rx/sub! stream
                                (fn [data]
                                  (js/console.log "data" data))))))
@@ -31,7 +31,7 @@
         on-click (mf/use-fn
                   (fn [e]
                     (js/console.log "event" e)
-                    (let [stream (clipboard/from-clipboard)]
+                    (let [stream (clipboard/from-dom-api)]
                       (rx/sub! stream
                                (fn [data]
                                  (js/console.log "data" data))))))]
