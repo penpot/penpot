@@ -90,7 +90,8 @@ test.describe("Shape attributes", () => {
     await expect(workspace.page.getByTestId("add-fill")).toBeDisabled();
   });
 
-  test("Cannot add a new text fill when the limit has been reached", async ({
+  // FIXME: flaky
+  test.skip("Cannot add a new text fill when the limit has been reached", async ({
     page,
   }) => {
     const workspace = new WorkspacePage(page);

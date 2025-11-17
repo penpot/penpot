@@ -67,9 +67,11 @@ export class WorkspacePage extends BaseWebSocketPage {
   constructor(page) {
     super(page);
     this.pageName = page.getByTestId("page-name");
+
     this.presentUserListItems = page
       .getByTestId("active-users-list")
       .getByAltText("Princesa Leia");
+
     this.viewport = page.getByTestId("viewport");
     this.rootShape = page.locator(
       `[id="shape-00000000-0000-0000-0000-000000000000"]`,
@@ -243,14 +245,20 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickLeafLayer(name, clickOptions = {}) {
     const layer = this.layers.getByText(name).first();
+    await layer.waitFor();
     await layer.click(clickOptions);
+    await this.page.waitForTimeout(500);
   }
 
   async clickToggableLayer(name, clickOptions = {}) {
     const layer = this.layers
-      .getByTestId("layer-row")
-      .filter({ has: this.page.getByText(name) });
-    await layer.getByRole("button").click(clickOptions);
+          .getByTestId("layer-row")
+          .filter({ hasText: name });
+    const button = layer.getByRole("button");
+
+    await button.waitFor();
+    await button.click(clickOptions);
+    await this.page.waitForTimeout(500);
   }
 
   async expectSelectedLayer(name) {

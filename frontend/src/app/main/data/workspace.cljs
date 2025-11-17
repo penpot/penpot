@@ -261,7 +261,8 @@
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 
-(defn process-wasm-object
+;; FIXME: this need docstring
+(defn- process-wasm-object
   [id]
   (ptk/reify ::process-wasm-object
     ptk/EffectEvent
@@ -300,6 +301,10 @@
                (rx/merge
                 (if ^boolean render-wasm?
                   (->> (rx/from @wasm/module)
+                       (rx/filter true?)
+                       (rx/tap (fn [_]
+                                 (let [event (ug/event "penpot:wasm:loaded")]
+                                   (ug/dispatch! event))))
                        (rx/ignore))
                   (rx/empty))
 
