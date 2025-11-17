@@ -172,25 +172,27 @@ test.only("User copy paste a variant container", async ({ page }) => {
 
   const variant = findVariantNoWait(workspacePage, 0);
 
-  // Select the variant container
   await variant.container.waitFor();
+
+  // Select the variant container
   await variant.container.click();
 
-  //Copy the variant container
+  // Copy the variant container
   await workspacePage.page.keyboard.press("Control+c");
 
-  //Paste the variant container
+  // Paste the variant container
   await workspacePage.clickAt(500, 500);
   await workspacePage.page.keyboard.press("Control+v");
 
-  const variantOriginal = findVariantNoWait(workspacePage, 1);
   const variantDuplicate = findVariantNoWait(workspacePage, 0);
+  const variantOriginal = findVariantNoWait(workspacePage, 1);
 
   // Expand the layers
   await variantDuplicate.container.waitFor();
-  await variantDuplicate.container.getByRole("button").first().click();
+  await variantDuplicate.container.locator("button").first().click();
 
   // The variants are valid
+  // await variantOriginal.container.waitFor();
   await validateVariant(variantOriginal);
   await validateVariant(variantDuplicate);
 });

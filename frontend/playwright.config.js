@@ -21,8 +21,10 @@ export default defineConfig({
   /* Opt out of parallel tests by default; can be overriden with --workers */
   workers: 1,
   /* Timeout for expects (longer in CI) */
+
+  timeout: 40000,
   expect: {
-    timeout: process.env.CI ? 60000 : 5000,
+    timeout: process.env.CI ? 20000 : 5000,
   },
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -46,6 +48,7 @@ export default defineConfig({
       name: "default",
       use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/specs",
+
     },
     {
       name: "ds",
