@@ -11,6 +11,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./playwright",
+  outputDir: './test-results',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -48,7 +49,10 @@ export default defineConfig({
       name: "default",
       use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/specs",
-
+      use: {
+        video: 'retain-on-failure',
+        trace: 'on'
+      }
     },
     {
       name: "ds",
