@@ -35,7 +35,9 @@ const setupVariantsFileWithVariant = async (workspacePage) => {
 
   await workspacePage.clickLeafLayer("Rectangle");
   await workspacePage.page.keyboard.press("Control+k");
+  await workspacePage.page.waitForTimeout(500);
   await workspacePage.page.keyboard.press("Control+k");
+  await workspacePage.page.waitForTimeout(500);
 
   // We wait until layer-row starts looking like it an component
   await workspacePage.page.getByTestId("layer-row")
@@ -172,16 +174,18 @@ test.only("User copy paste a variant container", async ({ page }) => {
 
   const variant = findVariantNoWait(workspacePage, 0);
 
-  await variant.container.waitFor();
+  // await variant.container.waitFor();
 
   // Select the variant container
   await variant.container.click();
+
+  await workspacePage.page.waitForTimeout(1000);
 
   // Copy the variant container
   await workspacePage.page.keyboard.press("Control+c");
 
   // Paste the variant container
-  await workspacePage.clickAt(500, 500);
+  await workspacePage.clickAt(400,400);
   await workspacePage.page.keyboard.press("Control+v");
 
   const variantDuplicate = findVariantNoWait(workspacePage, 0);
