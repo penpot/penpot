@@ -37,6 +37,7 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
    [app.main.ui.workspace.tokens.management.create.border-radius :as border-radius]
+   [app.main.ui.workspace.tokens.management.create.color :as color]
    [app.main.ui.workspace.tokens.management.create.dimensions :as dimensions]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
@@ -1483,7 +1484,7 @@
                                 :token token})]
 
     (case token-type
-      :color [:> color-form* props]
+      :color [:> color/form* props]
       :typography [:> typography-form* props]
       :shadow [:> shadow-form* props]
       :font-family [:> font-family-form* props]
