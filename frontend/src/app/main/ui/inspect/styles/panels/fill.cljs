@@ -10,7 +10,6 @@
    [app.common.types.fills :as types.fills]
    [app.config :as cfg]
    [app.main.ui.inspect.attributes.common :as cmm]
-   [app.main.ui.inspect.common.colors :as isc]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.util.color :as uc]
    [rumext.v2 :as mf]))
@@ -39,17 +38,11 @@
   [shape color-space]
   (reduce
    (fn [acc fill]
-     (let [color-type (types.fills/fill->color fill)
-           color-value (:color color-type)
-           color-gradient (:gradient color-type)
-           gradient-data  {:type color-type
-                           :stops (:stops color-gradient)}
-           color-image (:image color-type)
-           prefix (if color-value "background-color: " "background-image: ")
+     (let [color (types.fills/fill->color fill)
+           prefix (if (:color color) "background-color: " "background-image: ")
            value (cond
-                   color-value (isc/color->color-space->css-format color-type color-space)
-                   color-gradient (uc/gradient->css gradient-data)
-                   color-image (str "url('" (cfg/resolve-file-media color-image) "')")
+                   (or (:color color) (:gradient color)) (uc/color->format->background color (keyword color-space))
+                   (:image color) (str "url('" (cfg/resolve-file-media (:image color)) "')")
                    :else "")
            full-value (str prefix value ";")]
        (if (empty? acc)

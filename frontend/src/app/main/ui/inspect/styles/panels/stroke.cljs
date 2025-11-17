@@ -12,7 +12,6 @@
    [app.common.types.color :as ctc]
    [app.config :as cfg]
    [app.main.ui.inspect.attributes.common :as cmm]
-   [app.main.ui.inspect.common.colors :as isc]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
@@ -63,7 +62,7 @@
                stroke-width (:stroke-width stroke)
                stroke-style (:stroke-style stroke)
                color-value (:color stroke-type)
-               formatted-color-value (isc/color->color-space->css-format stroke-type color-space)
+               formatted-color-value (uc/color->format->background stroke-type (keyword color-space))
                color-gradient (:gradient stroke-type)
                gradient-data  {:type (get-in stroke-type [:gradient :type])
                                :stops (get-in stroke-type [:gradient :stops])}

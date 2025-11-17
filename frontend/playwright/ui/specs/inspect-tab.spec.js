@@ -418,7 +418,7 @@ test.describe("Inspect tab - Styles", () => {
       const backgroundHEX = await page.evaluate(() =>
         navigator.clipboard.readText(),
       );
-      expect(backgroundHEX).toContain("background: #0438d5;");
+      expect(backgroundHEX).toContain("background: #0438d5FF;");
 
       // Change color space to RGBA
       await selectColorSpace(workspacePage, "rgba");

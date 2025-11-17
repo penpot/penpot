@@ -14,7 +14,6 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.inspect.common.colors :as isc]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -78,9 +77,7 @@
                         #(if (some? token)
                            (:name token)
                            (cond
-                             (:color color) (if (= format "hex")
-                                              (dm/str css-term ": " color-value "; opacity: " color-opacity ";")
-                                              (dm/str css-term ": " (isc/color->color-space->css-format color format) ";"))
+                             (:color color) (dm/str css-term ": " (uc/color->format->background color (keyword format)) ";")
                              (:gradient color) (dm/str css-term ": " (uc/color->background color) ";")
                              (:image color) (dm/str css-term ": url(" color-image-url ") no-repeat center center / cover;")
                              :else "none")))
