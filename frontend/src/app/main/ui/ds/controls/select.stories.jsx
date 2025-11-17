@@ -9,10 +9,7 @@ import Components from "@target/components";
 
 const { Select } = Components;
 
-const variants = [
-  "default",
-  "ghost",
-];
+const variants = ["default", "ghost"];
 
 const options = [
   { id: "option-code", label: "Code" },
