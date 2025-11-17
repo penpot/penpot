@@ -168,7 +168,7 @@ test("User duplicates a variant container", async ({ page }) => {
   await validateVariant(variant_duplicate);
 });
 
-test.only("User copy paste a variant container", async ({ page }) => {
+test("User copy paste a variant container", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
@@ -195,8 +195,8 @@ test.only("User copy paste a variant container", async ({ page }) => {
   await variantDuplicate.container.waitFor();
   await variantDuplicate.container.locator("button").first().click();
 
-  // The variants are valid
-  // await variantOriginal.container.waitFor();
+  // // The variants are valid
+  // // await variantOriginal.container.waitFor();
   await validateVariant(variantOriginal);
   await validateVariant(variantDuplicate);
 });
@@ -212,21 +212,23 @@ test("User cut paste a variant container", async ({ page }) => {
 
   //Cut the variant container
   await workspacePage.page.keyboard.press("Control+x");
+  await workspacePage.page.waitForTimeout(500);
 
   //Paste the variant container
   await workspacePage.clickAt(500, 500);
   await workspacePage.page.keyboard.press("Control+v");
+  await workspacePage.page.waitForTimeout(500);
 
-  const variant_pasted = await findVariant(workspacePage, 0);
+  const variantPasted = await findVariant(workspacePage, 0);
 
   // Expand the layers
-  await variant_pasted.container.getByRole("button").first().click();
+  await variantPasted.container.locator("button").first().click();
 
   // The variants are valid
-  await validateVariant(variant_pasted);
+  await validateVariant(variantPasted);
 });
 
-test("[Bugfixing] User cut paste a variant container into a board, and undo twice", async ({
+test("User cut paste a variant container into a board, and undo twice", async ({
   page,
 }) => {
   const workspacePage = new WorkspacePage(page);
@@ -245,6 +247,7 @@ test("[Bugfixing] User cut paste a variant container into a board, and undo twic
 
   //Cut the variant container
   await workspacePage.page.keyboard.press("Control+x");
+  await workspacePage.page.waitForTimeout(500);
 
   //Select the board
   await workspacePage.clickLeafLayer("Board");
@@ -255,6 +258,7 @@ test("[Bugfixing] User cut paste a variant container into a board, and undo twic
   //Undo twice
   await workspacePage.page.keyboard.press("Control+z");
   await workspacePage.page.keyboard.press("Control+z");
+  await workspacePage.page.waitForTimeout(500);
 
   const variantAfterUndo = await findVariant(workspacePage, 0);
 
