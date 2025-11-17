@@ -156,15 +156,7 @@
                                             :value (:value valid-token)
                                             :description description}))
                       (dwtp/propagate-workspace-tokens)
-                      (modal/hide))))))))
-
-        handle-key-down-save
-        (mf/use-fn
-         (mf/deps on-submit form)
-         (fn [e]
-           (when (or (k/enter? e) (k/space? e))
-             (dom/prevent-default e)
-             (on-submit form e))))]
+                      (modal/hide))))))))]
 
     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form
@@ -224,5 +216,5 @@
         (tr "labels.cancel")]
 
        [:> fc/form-submit* {:variant "primary"
-                            :on-key-down handle-key-down-save}
+                            :on-submit on-submit}
         (tr "labels.save")]]]]))
