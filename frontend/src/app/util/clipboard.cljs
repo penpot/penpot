@@ -6,8 +6,9 @@
 
 (ns app.util.clipboard
   (:require
-   ["./clipboard.js" :as clipboard]
+   ["./clipboard.js" :as impl]
    [app.common.transit :as t]
+   [app.util.dom :as dom]
    [beicon.v2.core :as rx]))
 
 (def image-types
@@ -16,31 +17,50 @@
    "image/jpeg"
    "image/svg+xml"])
 
-(def clipboard-settings #js {:decodeTransit t/decode-str})
+(def ^:private default-options
+  #js {:decodeTransit t/decode-str})
 
-(defn from-clipboard []
-  (->> (rx/from (clipboard/fromClipboard clipboard-settings))
+(defn- from-data-transfer
+  "Get clipboard stream from DataTransfer instance"
+  [data-transfer]
+  (->> (rx/from (impl/fromDataTransfer data-transfer default-options))
        (rx/mapcat #(rx/from %))))
 
-(defn from-data-transfer [data-transfer]
-  (->> (rx/from (clipboard/fromDataTransfer data-transfer clipboard-settings))
+(defn from-navigator
+  []
+  (->> (rx/from (impl/fromNavigator default-options))
        (rx/mapcat #(rx/from %))))
 
-(defn from-clipboard-data [clipboard-data]
-  (from-data-transfer clipboard-data))
+(defn from-clipboard-event
+  "Get clipboard stream from clipboard event"
+  [event]
+  (let [cdata (.-clipboardData ^js event)]
+    (from-data-transfer cdata)))
 
-(defn from-clipboard-event [event]
-  (from-clipboard-data (.-clipboardData event)))
+(defn from-synthetic-clipboard-event
+  "Get clipboard stream from syntetic clipboard event"
+  [event]
+  (let [target
+        (dom/get-target event)
 
-(defn from-synthetic-clipboard-event [event]
-  (let [target (.-target ^js event)]
-    (when (and (not (.-isContentEditable ^js target)) ;; ignore when pasting into
-               (not= (.-tagName ^js target) "INPUT")) ;; an editable control
-      (from-clipboard-event (. ^js event getBrowserEvent)))))
+        content-editable?
+        (dom/is-content-editable? target)
 
-(defn from-drop-event [event]
-  (from-data-transfer (.-dataTransfer event)))
+        is-input?
+        (= (dom/get-tag-name target) "INPUT")]
 
+    ;; ignore when pasting into an editable control
+    (when-not (or content-editable? is-input?)
+      (-> event
+          (dom/event->browser-event)
+          (from-clipboard-event)))))
+
+(defn from-drop-event
+  "Get clipboard stream from drop event"
+  [event]
+  (from-data-transfer (.-dataTransfer ^js event)))
+
+;; FIXME: rename to `write-text`
 (defn to-clipboard
   [data]
   (assert (string? data) "`data` should be string")
@@ -52,6 +72,7 @@
   (js/ClipboardItem.
    (js-obj mimetype promise)))
 
+;; FIXME: this API is very confuse
 (defn to-clipboard-promise
   [mimetype promise]
   (let [clipboard (unchecked-get js/navigator "clipboard")

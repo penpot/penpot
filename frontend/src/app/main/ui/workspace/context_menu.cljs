@@ -181,7 +181,7 @@
         handle-hover-copy-paste
         (mf/use-callback
          (fn []
-           (->> (clipboard/from-clipboard)
+           (->> (clipboard/from-navigator)
                 (rx/mapcat #(.text %))
                 (rx/take 1)
                 (rx/subs!
@@ -801,7 +801,6 @@
 
 
 ;; FIXME: optimize because it is rendered always
-
 
 (mf/defc context-menu*
   []
