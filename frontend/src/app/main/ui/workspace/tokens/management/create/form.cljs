@@ -36,6 +36,7 @@
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
+   [app.main.ui.workspace.tokens.management.create.border-radius :as border-radius]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
    [app.util.dom :as dom]
@@ -1455,10 +1456,31 @@
 
 (mf/defc form-wrapper*
   [{:keys [token token-type] :rest props}]
-  (let [token-type' (or (:type token) token-type)
-        props (mf/spread-props props {:token-type token-type'
-                                      :token token})]
-    (case token-type'
+  (let [token-type
+        (or (:type token) token-type)
+        ;; NOTE: All this references to tokens can be
+        ;; provided via context for
+        ;; avoid duplicate code among each form, this is because it is
+        ;; a common code and is probably will be needed on all forms
+
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
+        token-path
+        (mf/with-memo [token]
+          (cft/token-name->path (:name token)))
+
+        tokens-tree-in-selected-set
+        (mf/with-memo [token-path tokens-in-selected-set]
+          (-> (ctob/tokens-tree tokens-in-selected-set)
+              (d/dissoc-in token-path)))
+        props
+        (mf/spread-props props {:token-type token-type
+                                :validate-token default-validate-token
+                                :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                :token token})]
+
+    (case token-type
       :color [:> color-form* props]
       :typography [:> typography-form* props]
       :shadow [:> shadow-form* props]
@@ -1466,4 +1488,5 @@
       :text-case [:> text-case-form* props]
       :text-decoration [:> text-decoration-form* props]
       :font-weight [:> font-weight-form* props]
+      :border-radius [:> border-radius/form* props]
       [:> form* props])))
