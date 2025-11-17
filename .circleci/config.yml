@@ -114,7 +114,7 @@ jobs:
           # uses the same cache as this task so we prepopulate it
           command: |
             yarn install
-            yarn run playwright install chromium
+            yarn run playwright install chromium --with-deps
 
       - run:
           name: "lint scss on frontend"
@@ -249,8 +249,8 @@ jobs:
           name: "integration tests"
           working_directory: "./frontend"
           command: |
-            yarn run playwright install chromium
-            yarn run test:e2e -x --workers=4
+            yarn run playwright install chromium --with-deps
+            yarn run test:e2e -x --workers=4 --reporter=line
 
   test-backend:
     docker:
