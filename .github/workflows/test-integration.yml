@@ -50,8 +50,7 @@ jobs:
           yarn run test:e2e -x --workers=4 --reporter=line
 
       - name: Upload test result
-        working-directory: ./frontend
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: ./test-results/
+          path: frontend/test-results/
