@@ -559,9 +559,7 @@
                   "~:stroke-style": "~:solid",
                   "~:stroke-color": "#e1c1dc",
                   "~:stroke-opacity": 1,
-                  "~:stroke-width": 1,
-                  "~:color": "#e1c1dc",
-                  "~:opacity": 1
+                  "~:stroke-width": 1
                 }
               ],
               "~:x": 881.1199999999999,

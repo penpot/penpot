@@ -263,13 +263,15 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
   await workspacePage.clickToggableLayer("Group");
   await page.getByText("A", { exact: true }).click();
 
-  // await workspacePage.rightSidebar.getByTestId("component-pill-button").click();
+  // await page.locator(".main_ui_workspace_sidebar_options_menus_component__component-section").waitFor();
 
-  // await page.getByTitle("C", { exact: true }).click();
+  await workspacePage.rightSidebar.getByTestId("component-pill-button").click();
 
-  // await expect(
-  //   page.getByTestId("children-6ad3e6b9-c5a0-80cf-8005-283bbe378bcb"),
-  // ).toHaveText(["CBCDEF"]);
+  await page.getByTitle("C", { exact: true }).click();
+
+  await expect(
+    page.getByTestId("children-6ad3e6b9-c5a0-80cf-8005-283bbe378bcb"),
+  ).toHaveText(["CBCDEF"]);
 });
 
 test("User have toolbar", async ({ page }) => {
