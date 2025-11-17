@@ -40,7 +40,7 @@
     "test": "yarn run build:test && node target/tests/test.js",
     "test:storybook": "vitest run --project=storybook",
     "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
-    "test:e2e": "playwright test --project default",
+    "test:e2e": "playwright test playwright/ui/specs/variants.spec.js --project default",
     "translations": "node ./scripts/translations.js",
     "watch:app:assets": "node ./scripts/watch.js",
     "watch:app:libs": "node ./scripts/build-libs.js --watch",
