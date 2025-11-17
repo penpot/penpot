@@ -36,20 +36,25 @@ const exclusiveTypes = [
  * @param {Blob} [defaultReturn]
  * @returns {Blob}
  */
-function parseClipboardItemText(
-  text,
-  options,
-  defaultReturn = new Blob([text], { type: "text/plain" }),
-) {
-  let decodedTransit = false;
-  try { decodedTransit = options?.decodeTransit?.(text) ?? false }
-  catch (error) { /* NOOP */ }
+function parseText(text, options) {
+  options = options || {};
+
+  const decodeTransit = options["decodeTransit"];
+
+  if (decodeTransit) {
+    try {
+      decodeTransit(text);
+      return new Blob([text], { type: "application/transit+json" });
+    } catch (_error) {
+      // NOOP
+    }
+  }
+
   if (/^<svg[\s>]/i.test(text)) {
     return new Blob([text], { type: "image/svg+xml" });
-  } else if (decodedTransit) {
-    return new Blob([text], { type: "application/transit+json" });
+  } else {
+    return new Blob([text], { type: "text/plain" });
   }
-  return defaultReturn;
 }
 
 /**
@@ -57,9 +62,8 @@ function parseClipboardItemText(
  * @param {ClipboardSettings} [options]
  * @returns {Promise<Array<Blob>>}
  */
-export async function fromClipboard(options) {
+export async function fromNavigator(options) {
   const items = await navigator.clipboard.read();
-  console.log("items", items);
   return Promise.all(
     Array.from(items).map(async (item) => {
       const itemAllowedTypes = Array.from(item.types)
@@ -73,9 +77,10 @@ export async function fromClipboard(options) {
         const blob = await item.getType("text/plain");
         if (blob.size < maxParseableSize) {
           const text = await blob.text();
-          return parseClipboardItemText(text, options);
+          return parseText(text, options);
+        } else {
+          return blob;
         }
-        return blob;
       }
 
       const type = itemAllowedTypes.at(0);
@@ -105,9 +110,10 @@ export async function fromDataTransfer(dataTransfer, options) {
             const type = item.type;
             item.getAsString((text) => {
               if (type === "text/plain") {
-                return resolve(parseClipboardItemText(text, options));
+                return resolve(parseText(text, options));
+              } else {
+                return resolve(new Blob([text], { type }));
               }
-              return resolve(new Blob([text], { type }));
             });
           });
         }
@@ -119,9 +125,7 @@ export async function fromDataTransfer(dataTransfer, options) {
     .reduce((filtered, item) => {
       if (
         exclusiveTypes.includes(item.type) &&
-        filtered.find((filteredItem) =>
-          exclusiveTypes.includes(filteredItem.type),
-        )
+        filtered.find((filteredItem) => exclusiveTypes.includes(filteredItem.type))
       ) {
         return filtered;
       }

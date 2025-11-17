@@ -31,7 +31,7 @@
         on-click (mf/use-fn
                   (fn [e]
                     (js/console.log "event" e)
-                    (let [stream (clipboard/from-clipboard)]
+                    (let [stream (clipboard/from-navigator)]
                       (rx/sub! stream
                                (fn [data]
                                  (js/console.log "data" data))))))]
