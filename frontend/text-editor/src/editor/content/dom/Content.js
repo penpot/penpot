@@ -117,6 +117,52 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
 }
 
 /**
+ * Converts HTML to plain text, preserving line breaks from <br> tags and block elements.
+ *
+ * @param {string} html - The HTML string to convert
+ * @returns {string} Plain text with preserved line breaks
+ */
+export function htmlToText(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+
+  const blockTags = [
+    "P", "DIV", "SECTION", "ARTICLE", "HEADER", "FOOTER",
+    "UL", "OL", "LI", "TABLE", "TR", "TD", "TH", "PRE"
+  ];
+
+  function walk(node) {
+    let text = "";
+
+    node.childNodes.forEach(child => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        text += child.textContent;
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+
+        if (child.tagName === "BR") {
+          text += "\n";
+        }
+
+        if (blockTags.includes(child.tagName)) {
+          text += "\n" + walk(child) + "\n";
+          return;
+        }
+
+        text += walk(child);
+      }
+    });
+
+    return text;
+  }
+
+  let result = walk(tmp);
+  result = result.replace(/\n{3,}/g, "\n\n");
+
+  return result.trim();
+}
+
+
+/**
  * Maps any HTML into a valid content DOM element.
  *
  * @param {string} html
@@ -124,13 +170,8 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
  * @returns {DocumentFragment}
  */
 export function mapContentFragmentFromHTML(html, styleDefaults) {
-  const parser = new DOMParser();
-  const htmlDocument = parser.parseFromString(html, "text/html");
-  return mapContentFragmentFromDocument(
-    htmlDocument,
-    htmlDocument.documentElement,
-    styleDefaults,
-  );
+  const plainText = htmlToText(html);
+  return mapContentFragmentFromString(plainText, styleDefaults);
 }
 
 /**
