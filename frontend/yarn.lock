@@ -4352,7 +4352,7 @@ __metadata:
     npm-run-all: "npm:^4.1.5"
     opentype.js: "npm:^1.3.4"
     p-limit: "npm:^6.2.0"
-    playwright: "npm:1.52.0"
+    playwright: "npm:1.56.1"
     postcss: "npm:^8.5.4"
     postcss-clean: "npm:^1.2.2"
     postcss-modules: "npm:^6.0.1"
