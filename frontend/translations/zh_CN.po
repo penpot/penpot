@@ -1764,7 +1764,7 @@ msgid "inspect.tabs.code.selected.mask"
 msgstr "蒙版"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "已选中%s项"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149
@@ -1792,7 +1792,7 @@ msgid "inspect.tabs.info"
 msgstr "信息"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs.switcher.label"
+msgid "inspect.layer-info"
 msgstr "图层信息"
 
 #: src/app/main/ui/dashboard/comments.cljs:96

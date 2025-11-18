@@ -48,6 +48,6 @@
    [:> icon* {:class (stl/css :property-detail-icon)
               :icon-id (if copied i/tick i/clipboard)
               :size "s"
-              :aria-label (tr "inspect.tabs.styles.panel.copy-to-clipboard")}]])
+              :aria-label (tr "inspect.tabs.styles.copy-to-clipboard")}]])
 
 

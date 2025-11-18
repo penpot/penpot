@@ -1886,7 +1886,7 @@ msgid "inspect.tabs.code.selected.mask"
 msgstr "Maschera"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "%s selezionati"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149
@@ -1914,39 +1914,39 @@ msgid "inspect.tabs.info"
 msgstr "Informazione"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgid "inspect.tabs.styles.copy-to-clipboard"
 msgstr "Copia negli appunti"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:22
-msgid "inspect.tabs.styles.panel.geometry"
+msgid "inspect.tabs.styles.geometry-panel"
 msgstr "Dimensione e posizione"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
-msgid "inspect.tabs.styles.panel.toggle-style"
+msgid "inspect.tabs.styles.toggle-style"
 msgstr "Attiva/disattiva pannello %s"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:21
-msgid "inspect.tabs.styles.panel.token"
+msgid "inspect.tabs.styles.token-panel"
 msgstr "Set di token e temi"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgid "inspect.tabs.styles.active-sets"
 msgstr "Set attivi"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
-msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgid "inspect.tabs.styles.active-themes"
 msgstr "Temi attivi"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:20
-msgid "inspect.tabs.styles.panel.variant"
+msgid "inspect.tabs.styles.variants-panel"
 msgstr "Proprietà delle varianti"
 
 #: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
-msgid "inspect.tabs.styles.token.resolved-value"
+msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "Valore risolto:"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs.switcher.label"
+msgid "inspect.layer-info"
 msgstr "Informazioni livello"
 
 #: src/app/main/ui/dashboard/comments.cljs:96
