@@ -7,7 +7,7 @@
 #### Backend RPC API changes
 
 The backend RPC API URLS are changed from `/api/rpc/command/<name>` to
-`/api/main/methods/<name>` (the previou PATH is preserved for backward
+`/api/main/methods/<name>`. The previous PATH is preserved for backward
 compatibility; however, if you are a user of this API, it is strongly
 recommended that you adapt your code to use the new PATH.
 
@@ -35,7 +35,7 @@ If you have SSO/Social-Auth configured on your on-premise instance,
 the following actions are required before update:
 
 Update your OAuth or SSO provider configuration (e.g., Okta, Google,
-Azure AD, etc.) to use the new callback URL.  Failure to update may
+Azure AD, etc.) to use the new callback URL. Failure to update may
 result in authentication failures after upgrading.
 
 **Reason for change:**
@@ -43,6 +43,15 @@ result in authentication failures after upgrading.
 This update standardizes all authentication flows under the single URL
 and makis it more modular, enabling the ability to configure SSO auth
 provider dinamically.
+
+
+#### Changes on default docker compose
+
+We have updated the `docker/images/docker-compose.yaml` with a small
+change related to the `PENPOT_SECRET_KEY`. Since this version, this
+environment variable is also required on exporter. So if you are using
+penpot on-premise you will need to apply the same changes on your own
+`docker-compose.yaml` file.
 
 
 ### :rocket: Epics and highlights
@@ -53,7 +62,6 @@ provider dinamically.
 
 - Select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
 - Toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
-- Add auth flow changes [Taiga #12333](https://tree.taiga.io/project/penpot/us/12333)
 
 ### :bug: Bugs fixed
 
