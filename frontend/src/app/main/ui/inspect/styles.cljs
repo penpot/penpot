@@ -257,19 +257,3 @@
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
-
-
-;; WIP
-;; Panel list as stylebox children
-#_(case option
-    :geometry         [:> geometry-panel {}]
-    :layout           [:> layout-panel {}]
-    :layout-element   [:> layout-element-panel {}]
-    :fill             [:> fill-panel {:color-space color-space}]
-    :stroke           [:> stroke-panel {:color-space color-space}]
-    :text             [:> text-panel {:color-space color-space}]
-    :shadow           [:> shadow-panel {}]
-    :blur             [:> blur-panel {}]
-    :svg              [:> svg-panel {}]
-    :variant          [:> variant-panel* {}]
-    :visibility       [:> visibility-panel* {}])

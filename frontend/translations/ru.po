@@ -1561,7 +1561,7 @@ msgid "inspect.tabs.code.selected.mask"
 msgstr "Маска"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "Выделено: %s"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149
