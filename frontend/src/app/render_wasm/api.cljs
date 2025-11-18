@@ -23,6 +23,8 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.render :as render]
+   [app.main.store :as st]
+   [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.deserializers :as dr]
@@ -107,6 +109,15 @@
        (reset! pending-render false)
        (render ts)))))
 
+(declare get-text-dimensions)
+
+(defn update-text-rect!
+  [id]
+  (mw/emit!
+   {:cmd :index/update-text-rect
+    :page-id (:current-page-id @st/state)
+    :shape-id id
+    :dimensions (get-text-dimensions id)}))
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
@@ -813,9 +824,25 @@
          heapf32   (mem/get-heap-f32)
          width     (aget heapf32 (+ offset 0))
          height    (aget heapf32 (+ offset 1))
-         max-width (aget heapf32 (+ offset 2))]
+         max-width (aget heapf32 (+ offset 2))
+
+         x (aget heapf32 (+ offset 3))
+         y (aget heapf32 (+ offset 4))]
      (mem/free)
-     {:width width :height height :max-width max-width})))
+     {:x x :y y :width width :height height :max-width max-width})))
+
+(defn intersect-position
+  [id position]
+  (let [buffer (uuid/get-u32 id)
+        result
+        (h/call wasm/internal-module "_intersect_position"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                (:x position)
+                (:y position))]
+    (= result 1)))
 
 (defn set-view-box
   [zoom vbox]
@@ -922,7 +949,13 @@
   (->> shapes
        (filter cfh/text-shape?)
        (map :id)
-       (run! f/update-text-layout)))
+       (run!
+        (fn [id]
+          (f/update-text-layout id)
+          (mw/emit! {:cmd :index/update-text-rect
+                     :page-id (:current-page-id @st/state)
+                     :shape-id id
+                     :dimensions (get-text-dimensions id)})))))
 
 (defn process-pending!
   [shapes thumbnails full]

@@ -7,7 +7,9 @@ use crate::shapes::{
     self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
-use crate::{with_current_shape_mut, with_state_mut, with_state_mut_current_shape, STATE};
+use crate::{
+    with_current_shape_mut, with_state, with_state_mut, with_state_mut_current_shape, STATE,
+};
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -312,14 +314,23 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
 #[no_mangle]
 pub extern "C" fn get_text_dimensions() -> *mut u8 {
     let mut ptr = std::ptr::null_mut();
+
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(content) = &mut shape.shape_type {
             let text_content_size = content.update_layout(shape.selrect);
 
-            let mut bytes = vec![0; 12];
+            // Sacar de aqui x, y, width, height
+            let rect = content.content_rect(&shape.selrect, shape.vertical_align);
+
+            let mut bytes = vec![0; 20];
             bytes[0..4].clone_from_slice(&text_content_size.width.to_le_bytes());
             bytes[4..8].clone_from_slice(&text_content_size.height.to_le_bytes());
             bytes[8..12].clone_from_slice(&text_content_size.max_width.to_le_bytes());
+
+            // veamos
+            bytes[12..16].clone_from_slice(&rect.x().to_le_bytes());
+            bytes[16..20].clone_from_slice(&rect.y().to_le_bytes());
+
             ptr = mem::write_bytes(bytes)
         }
     });
@@ -327,6 +338,27 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
     // FIXME: I think it should be better if instead of returning
     // a NULL ptr we failed gracefully.
     ptr
+}
+
+#[no_mangle]
+pub extern "C" fn intersect_position(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    x_pos: f32,
+    y_pos: f32,
+) -> bool {
+    with_state!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        let Some(shape) = state.shapes.get(&id) else {
+            return false;
+        };
+        if let Type::Text(content) = &shape.shape_type {
+            return content.intersect_position(shape, x_pos, y_pos);
+        }
+    });
+    false
 }
 
 fn update_text_layout(shape: &mut Shape) {

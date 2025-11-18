@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
@@ -131,66 +132,116 @@
     (let [v  (get shape k)
           id (get shape :id)]
       (case k
-        :parent-id    (api/set-parent-id v)
-        :type         (do
-                        (api/set-shape-type v)
-                        (when (or (= v :path) (= v :bool))
-                          (api/set-shape-path-content (:content shape))))
-        :bool-type    (api/set-shape-bool-type v)
-        :selrect      (do
-                        (api/set-shape-selrect v)
-                        (when (= (:type shape) :svg-raw)
-                          (api/set-shape-svg-raw-content (api/get-static-markup shape))))
-        :show-content (if (= (:type shape) :frame)
-                        (api/set-shape-clip-content (not v))
-                        (api/set-shape-clip-content false))
-        :rotation     (api/set-shape-rotation v)
-        :transform    (api/set-shape-transform v)
-        :fills        (into [] (api/set-shape-fills id v false))
-        :strokes      (into [] (api/set-shape-strokes id v false))
-        :blend-mode   (api/set-shape-blend-mode v)
-        :opacity      (api/set-shape-opacity v)
-        :hidden       (api/set-shape-hidden v)
-        :shapes       (api/set-shape-children v)
-        :blur         (api/set-shape-blur v)
-        :shadow       (api/set-shape-shadows v)
-        :constraints-h (api/set-constraints-h v)
-        :constraints-v (api/set-constraints-v v)
+        :parent-id
+        (api/set-parent-id v)
+
+        :type
+        (do
+          (api/set-shape-type v)
+          (when (or (= v :path) (= v :bool))
+            (api/set-shape-path-content (:content shape))))
+
+        :bool-type
+        (api/set-shape-bool-type v)
+
+        :selrect
+        (do
+          (api/set-shape-selrect v)
+          (when (cfh/svg-raw-shape? shape)
+            (api/set-shape-svg-raw-content (api/get-static-markup shape))))
+
+        :show-content
+        (if (cfh/frame-shape? shape)
+          (api/set-shape-clip-content (not v))
+          (api/set-shape-clip-content false))
+
+        :rotation
+        (api/set-shape-rotation v)
+
+        :transform
+        (api/set-shape-transform v)
+
+        :fills
+        (into [] (api/set-shape-fills id v false))
+
+        :strokes
+        (into [] (api/set-shape-strokes id v false))
+
+        :blend-mode
+        (api/set-shape-blend-mode v)
+
+        :opacity
+        (api/set-shape-opacity v)
+
+        :hidden
+        (api/set-shape-hidden v)
+
+        :shapes
+        (api/set-shape-children v)
+
+        :blur
+        (api/set-shape-blur v)
+
+        :shadow
+        (api/set-shape-shadows v)
+
+        :constraints-h
+        (api/set-constraints-h v)
+
+        :constraints-v
+        (api/set-constraints-v v)
 
         :r1
-        (api/set-shape-corners [v (dm/get-prop shape :r2) (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+        (api/set-shape-corners
+         [v
+          (dm/get-prop shape :r2)
+          (dm/get-prop shape :r3)
+          (dm/get-prop shape :r4)])
 
         :r2
-        (api/set-shape-corners [(dm/get-prop shape :r1) v (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+        (api/set-shape-corners
+         [(dm/get-prop shape :r1)
+          v
+          (dm/get-prop shape :r3)
+          (dm/get-prop shape :r4)])
 
         :r3
-        (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) v (dm/get-prop shape :r4)])
+        (api/set-shape-corners
+         [(dm/get-prop shape :r1)
+          (dm/get-prop shape :r2)
+          v
+          (dm/get-prop shape :r4)])
 
         :r4
-        (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) (dm/get-prop shape :r3) v])
+        (api/set-shape-corners
+         [(dm/get-prop shape :r1)
+          (dm/get-prop shape :r2)
+          (dm/get-prop shape :r3)
+          v])
 
         :svg-attrs
-        (when (= (:type shape) :path)
+        (when (cfh/path-shape? shape)
           (api/set-shape-path-attrs v))
 
         :masked-group
-        (when (and (= (:type shape) :group) (:masked-group shape))
+        (when (cfh/mask-shape? shape)
           (api/set-masked (:masked-group shape)))
 
         :content
         (cond
-          (or (= (:type shape) :path)
-              (= (:type shape) :bool))
+          (or (cfh/path-shape? shape)
+              (cfh/bool-shape? shape))
           (api/set-shape-path-content v)
 
-          (= (:type shape) :svg-raw)
+          (cfh/svg-raw-shape? shape)
           (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
-          (= (:type shape) :text)
+          (cfh/text-shape? shape)
           (let [pending-thumbnails (into [] (concat (api/set-shape-text-content id v)))
                 pending-full (into [] (concat (api/set-shape-text-images id v)))]
-                ;; FIXME: this is a hack to process the pending tasks asynchronously
-                ;; we should probably modify set-wasm-attr! to return a list of callbacks to be executed in a second pass.
+            ;; FIXME: this is a hack to process the pending tasks asynchronously
+            ;; we should probably modify set-wasm-attr! to return a list of callbacks
+            ;;to be executed in a second pass.
             (api/process-pending! [shape] pending-thumbnails pending-full)
             nil))
 
@@ -239,7 +290,7 @@
             (ctl/flex-layout? shape)
             (api/set-flex-layout shape)))
 
-      ;; Property not in WASM
+        ;; Property not in WASM
         nil))))
 
 (defn process-shape!
@@ -254,7 +305,11 @@
              (vals)
              (rx/from)
              (rx/mapcat (fn [callback] (callback)))
-             (rx/reduce conj [])))
+             (rx/reduce conj [])
+             (rx/tap
+              (fn []
+                (when (cfh/text-shape? shape)
+                  (api/update-text-rect! (:id shape)))))))
       (rx/empty))))
 
 (defn process-shape-changes!

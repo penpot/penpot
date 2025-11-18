@@ -6,13 +6,16 @@ use crate::{
 
 use core::f32;
 use macros::ToJs;
+use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
     textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
     textlayout::PositionWithAffinity,
+    Contains,
 };
+
 use std::collections::HashSet;
 
 use super::FontFamily;
@@ -182,6 +185,24 @@ impl TextContentLayout {
     }
 }
 
+/*
+ * Check if the current x,y (in paragraph relative coordinates) is inside
+ * the paragraph
+ */
+fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> bool {
+    if y < 0.0 || y > paragraph.height() {
+        return false;
+    }
+
+    let pos = paragraph.get_glyph_position_at_coordinate((x, y));
+    let idx = pos.position as usize;
+
+    let rects =
+        paragraph.get_rects_for_range(0..idx + 1, RectHeightStyle::Tight, RectWidthStyle::Tight);
+
+    rects.iter().any(|r| r.rect.contains(&Point::new(x, y)))
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
@@ -302,6 +323,32 @@ impl TextContent {
         }
 
         bounds
+    }
+
+    pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
+        let x = selrect.x();
+        let mut y = selrect.y();
+
+        let width = if self.grow_type() == GrowType::AutoWidth {
+            self.size.width
+        } else {
+            selrect.width()
+        };
+
+        let height = if self.size.width.round() != width.round() {
+            self.get_height(width)
+        } else {
+            self.size.height
+        };
+
+        let offset_y = match valign {
+            VerticalAlign::Center => (selrect.height() - height) / 2.0,
+            VerticalAlign::Bottom => selrect.height() - height,
+            _ => 0.0,
+        };
+        y += offset_y;
+
+        Rect::from_xywh(x, y, width, height)
     }
 
     pub fn transform(&mut self, transform: &Matrix) {
@@ -644,6 +691,42 @@ impl TextContent {
         let fallback_height = selrect.height().max(self.size.height);
 
         (fallback_width, fallback_height)
+    }
+
+    pub fn intersect_position(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
+        let rect = self.content_rect(&shape.selrect, shape.vertical_align);
+        let mut matrix = Matrix::new_identity();
+        let center = shape.center();
+        let Some(inv_transform) = &shape.transform.invert() else {
+            return false;
+        };
+        matrix.pre_translate(center);
+        matrix.pre_concat(inv_transform);
+        matrix.pre_translate(-center);
+
+        let result = matrix.map_point((x_pos, y_pos));
+
+        // Change coords to content space
+        let x_pos = result.x - rect.x();
+        let y_pos = result.y - rect.y();
+
+        let width = self.width();
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+
+        paragraphs
+            .iter()
+            .flatten()
+            .scan(
+                (0 as f32, None::<skia::textlayout::Paragraph>),
+                |(height, _), p| {
+                    let prev_height = *height;
+                    *height += p.height();
+                    Some((prev_height, p))
+                },
+            )
+            .any(|(height, p)| intersects(p, x_pos, y_pos - height))
     }
 }
 
