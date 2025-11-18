@@ -106,6 +106,7 @@ export class TextEditor extends EventTarget {
 
       beforeinput: this.#onBeforeInput,
       input: this.#onInput,
+      keydown: this.#onKeyDown,
     };
     this.#styleDefaults = options?.styleDefaults;
     this.#setup(options);
@@ -360,6 +361,36 @@ export class TextEditor extends EventTarget {
 
     if (e.inputType === "insertCompositionText" && e.data) {
       this.#notifyLayout(LayoutType.FULL, null);
+    }
+  };
+
+  /**
+   * Handles keydown events
+   *
+   * @param {KeyboardEvent} e
+   */
+  #onKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+      e.preventDefault();
+      this.selectAll();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
+      e.preventDefault();
+
+      if (!this.#selectionController.startMutation()) {
+        return;
+      }
+
+      if (this.#selectionController.isCollapsed) {
+        this.#selectionController.removeWordBackward();
+      } else {
+        this.#selectionController.removeSelected();
+      }
+
+      const mutations = this.#selectionController.endMutation();
+      this.#notifyLayout(LayoutType.FULL, mutations);
     }
   };
 
