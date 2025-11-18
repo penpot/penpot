@@ -28,7 +28,6 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.dom :as dom]
@@ -567,11 +566,11 @@
          [:& radio-buttons {:selected (if is-listing-thumbs "grid" "list")
                             :on-change toggle-list-style
                             :name "listing-style"}
-          [:& radio-button {:icon deprecated-icon/view-as-list
+          [:& radio-button {:icon i/view-as-list
                             :value "list"
                             :title (tr "workspace.assets.list-view")
                             :id "opt-list"}]
-          [:& radio-button {:icon deprecated-icon/flex-grid
+          [:& radio-button {:icon i/flex-grid
                             :value "grid"
                             :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])

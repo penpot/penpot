@@ -52,8 +52,6 @@
 
      [:value [::sm/text {:error/fn token-value-error-fn}]]
 
-     [:resolved-value ::sm/any]
-
      [:description {:optional true}
       [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]]]
 
@@ -82,7 +80,7 @@
         (mf/deref refs/workspace-active-theme-sets-tokens)
 
         tokens
-        (mf/with-memo [tokens]
+        (mf/with-memo [tokens token]
           ;; Ensure that the resolved value uses the currently editing token
           ;; even if the name has been overriden by a token with the same name
           ;; in another set below.

@@ -120,7 +120,9 @@
 }
 
 .constraints-selects {
-  @include deprecated.flexColumn;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .horizontal-select,

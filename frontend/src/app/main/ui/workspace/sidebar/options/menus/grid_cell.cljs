@@ -18,6 +18,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -52,29 +53,29 @@
                         :name (dm/str "flex-align-items-" type)}
       [:& radio-button {:value "start"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-left
-                                 deprecated-icon/align-self-column-top)
+                                 i/align-self-row-left
+                                 i/align-self-column-top)
                         :title "Align self start"
                         :id     (dm/str "align-self-start-" type)}]
 
       [:& radio-button {:value "center"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-center
-                                 deprecated-icon/align-self-column-center)
+                                 i/align-self-row-center
+                                 i/align-self-column-center)
                         :title "Align self center"
                         :id     (dm/str "align-self-center-" type)}]
 
       [:& radio-button {:value "end"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-right
-                                 deprecated-icon/align-self-column-bottom)
+                                 i/align-self-row-right
+                                 i/align-self-column-bottom)
                         :title "Align self end"
                         :id     (dm/str "align-self-end-" type)}]
 
       [:& radio-button {:value "stretch"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-stretch
-                                 deprecated-icon/align-self-column-stretch)
+                                 i/align-self-row-stretch
+                                 i/align-self-column-stretch)
                         :title "Align self stretch"
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 

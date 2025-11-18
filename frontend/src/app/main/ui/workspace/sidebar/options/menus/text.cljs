@@ -53,19 +53,19 @@
       [:& radio-button {:value "left"
                         :id "text-align-left"
                         :title (tr "workspace.options.text-options.text-align-left")
-                        :icon deprecated-icon/text-align-left}]
+                        :icon i/text-align-left}]
       [:& radio-button {:value "center"
                         :id "text-align-center"
                         :title (tr "workspace.options.text-options.text-align-center")
-                        :icon deprecated-icon/text-align-center}]
+                        :icon i/text-align-center}]
       [:& radio-button {:value "right"
                         :id "text-align-right"
                         :title (tr "workspace.options.text-options.text-align-right")
-                        :icon deprecated-icon/text-align-right}]
+                        :icon i/text-align-right}]
       [:& radio-button {:value "justify"
                         :id "text-align-justify"
                         :title (tr "workspace.options.text-options.text-align-justify")
-                        :icon deprecated-icon/text-justify}]]]))
+                        :icon i/text-justify}]]]))
 
 (mf/defc text-direction-options
   [{:keys [values on-change on-blur] :as props}]
@@ -88,12 +88,12 @@
                         :type "checkbox"
                         :id "ltr-text-direction"
                         :title (tr "workspace.options.text-options.direction-ltr")
-                        :icon deprecated-icon/text-ltr}]
+                        :icon i/text-ltr}]
       [:& radio-button {:value "rtl"
                         :type "checkbox"
                         :id "rtl-text-direction"
                         :title (tr "workspace.options.text-options.direction-rtl")
-                        :icon deprecated-icon/text-rtl}]]]))
+                        :icon i/text-rtl}]]]))
 
 (mf/defc vertical-align
   [{:keys [values on-change on-blur] :as props}]
@@ -113,15 +113,15 @@
       [:& radio-button {:value "top"
                         :id "vertical-text-align-top"
                         :title (tr "workspace.options.text-options.align-top")
-                        :icon deprecated-icon/text-top}]
+                        :icon i/text-top}]
       [:& radio-button {:value "center"
                         :id "vertical-text-align-center"
                         :title (tr "workspace.options.text-options.align-middle")
-                        :icon deprecated-icon/text-middle}]
+                        :icon i/text-middle}]
       [:& radio-button {:value "bottom"
                         :id "vertical-text-align-bottom"
                         :title (tr "workspace.options.text-options.align-bottom")
-                        :icon deprecated-icon/text-bottom}]]]))
+                        :icon i/text-bottom}]]]))
 
 (mf/defc grow-options
   [{:keys [ids values on-blur] :as props}]
@@ -150,15 +150,15 @@
       [:& radio-button {:value "fixed"
                         :id "text-fixed-grow"
                         :title (tr "workspace.options.text-options.grow-fixed")
-                        :icon deprecated-icon/text-fixed}]
+                        :icon i/text-fixed}]
       [:& radio-button {:value "auto-width"
                         :id "text-auto-width-grow"
                         :title (tr "workspace.options.text-options.grow-auto-width")
-                        :icon deprecated-icon/text-auto-width}]
+                        :icon i/text-auto-width}]
       [:& radio-button {:value "auto-height"
                         :id "text-auto-height-grow"
                         :title (tr "workspace.options.text-options.grow-auto-height")
-                        :icon deprecated-icon/text-auto-height}]]]))
+                        :icon i/text-auto-height}]]]))
 
 (mf/defc text-decoration-options
   [{:keys [values on-change on-blur] :as props}]
@@ -180,12 +180,12 @@
                         :type "checkbox"
                         :id "underline-text-decoration"
                         :title (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
-                        :icon deprecated-icon/text-underlined}]
+                        :icon i/text-underlined}]
       [:& radio-button {:value "line-through"
                         :type "checkbox"
                         :id "line-through-text-decoration"
                         :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
-                        :icon deprecated-icon/text-stroked}]]]))
+                        :icon i/text-stroked}]]]))
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}

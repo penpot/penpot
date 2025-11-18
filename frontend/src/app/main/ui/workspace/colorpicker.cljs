@@ -418,11 +418,11 @@
           [:& radio-buttons {:selected color-style
                              :on-change toggle-token-color
                              :name "color-style"}
-           [:& radio-button {:icon deprecated-icon/swatches
+           [:& radio-button {:icon i/swatches
                              :value :direct-color
                              :title (tr "labels.color")
                              :id "opt-color"}]
-           [:& radio-button {:icon deprecated-icon/tokens
+           [:& radio-button {:icon i/tokens
                              :value :token-color
                              :title (tr "workspace.colorpicker.color-tokens")
                              :id "opt-token-color"}]])]
