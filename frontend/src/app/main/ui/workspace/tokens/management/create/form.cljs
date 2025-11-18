@@ -38,6 +38,7 @@
    [app.main.ui.workspace.tokens.management.create.border-radius :as border-radius]
    [app.main.ui.workspace.tokens.management.create.color :as color]
    [app.main.ui.workspace.tokens.management.create.dimensions :as dimensions]
+   [app.main.ui.workspace.tokens.management.create.font-family :as font-family]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
    [app.main.ui.workspace.tokens.management.create.text-case :as text-case]
@@ -1437,13 +1438,14 @@
         (mf/spread-props props {:token-type token-type
                                 :validate-token default-validate-token
                                 :tokens-tree-in-selected-set tokens-tree-in-selected-set
-                                :token token})]
+                                :token token})
+        font-family-props (mf/spread-props props {:validate-token validate-font-family-token})]
 
     (case token-type
       :color [:> color/form* props]
       :typography [:> typography-form* props]
       :shadow [:> shadow-form* props]
-      :font-family [:> font-family-form* props]
+      :font-family [:> font-family/form* font-family-props]
       :text-case [:> text-case/form* props]
       :text-decoration [:> text-decoration-form* props]
       :font-weight [:> font-weight-form* props]
