@@ -119,6 +119,7 @@
     :shape-id id
     :dimensions (get-text-dimensions id)}))
 
+
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
   content is nil (freshly created text) we fall back to
@@ -831,11 +832,11 @@
      (mem/free)
      {:x x :y y :width width :height height :max-width max-width})))
 
-(defn intersect-position
+(defn intersect-position-in-shape
   [id position]
   (let [buffer (uuid/get-u32 id)
         result
-        (h/call wasm/internal-module "_intersect_position"
+        (h/call wasm/internal-module "_intersect_position_in_shape"
                 (aget buffer 0)
                 (aget buffer 1)
                 (aget buffer 2)

@@ -316,7 +316,7 @@
                                      (not (contains? child-parent? %)))
                                 (and (features/active-feature? @st/state "render-wasm/v1")
                                      (cfh/text-shape? objects %)
-                                     (not (wasm.api/intersect-position % @last-point-ref)))))))
+                                     (not (wasm.api/intersect-position-in-shape % @last-point-ref)))))))
 
                remove-measure-xf
                (cond

@@ -341,7 +341,7 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn intersect_position(
+pub extern "C" fn intersect_position_in_shape(
     a: u32,
     b: u32,
     c: u32,
@@ -355,7 +355,7 @@ pub extern "C" fn intersect_position(
             return false;
         };
         if let Type::Text(content) = &shape.shape_type {
-            return content.intersect_position(shape, x_pos, y_pos);
+            return content.intersect_position_in_shape(shape, x_pos, y_pos);
         }
     });
     false
