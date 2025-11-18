@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-15 20:51+0000\n"
+"PO-Revision-Date: 2025-11-18 13:52+0000\n"
 "Last-Translator: Anton Palmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -4579,7 +4579,7 @@ msgstr "Avsluta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:490, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:491
 msgid "workspace.layout_grid.editor.padding.expand"
-msgstr "Visa padding-inställningar för 4 sidor"
+msgstr "Visa 4-sidiga utfyllnadsalternativ"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:60
 msgid "workspace.layout_grid.editor.title"
@@ -5444,7 +5444,7 @@ msgstr "fullpackad"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding"
-msgstr "Padding"
+msgstr "Utfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -5454,7 +5454,7 @@ msgstr "Alla sidor"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding-simple"
-msgstr "Enkel padding"
+msgstr "Enkel utfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -7643,27 +7643,27 @@ msgstr "Växla till systemtema"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:436
 msgid "workspace.layout_grid.editor.padding.bottom"
-msgstr "Bottenvaddering"
+msgstr "Bottenutfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:362
 msgid "workspace.layout_grid.editor.padding.horizontal"
-msgstr "Horisontell vaddering"
+msgstr "Horisontell utfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:451
 msgid "workspace.layout_grid.editor.padding.left"
-msgstr "Vänstervaddering"
+msgstr "Vänsterutfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:415, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:421
 msgid "workspace.layout_grid.editor.padding.right"
-msgstr "Högervaddering"
+msgstr "Högerutfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:400, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:406
 msgid "workspace.layout_grid.editor.padding.top"
-msgstr "Toppvaddering"
+msgstr "Topputfyllnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:341, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:347
 msgid "workspace.layout_grid.editor.padding.vertical"
-msgstr "Vertikalvaddering"
+msgstr "Vertikalutfyllnad"
 
 #: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
 msgid "workspace.libraries.colors"
@@ -8156,7 +8156,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:204
 msgid "workspace.tokens.paddings"
-msgstr "Vadderingar"
+msgstr "Utfyllnader"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
 msgid "workspace.tokens.radius"
