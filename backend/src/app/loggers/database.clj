@@ -49,7 +49,7 @@
           ctx  (-> context
                    (assoc :tenant (cf/get :tenant))
                    (assoc :host (cf/get :host))
-                   (assoc :public-uri (cf/get :public-uri))
+                   (assoc :public-uri (str (cf/get :public-uri)))
                    (assoc :logger/name logger)
                    (assoc :logger/level level)
                    (dissoc :request/params :value :params :data))]
