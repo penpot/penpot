@@ -93,15 +93,15 @@
     (update-session [_ session]
       (let [modified-at (ct/now)]
         (if (string? (:id session))
-          (let [params (-> session
-                           (assoc :id (uuid/next))
-                           (assoc :created-at modified-at)
-                           (assoc :modified-at modified-at))]
-            (db/insert! pool :http-session-v2 params))
-
+          (db/insert! pool :http-session-v2
+                      (-> session
+                          (assoc :id (uuid/next))
+                          (assoc :created-at modified-at)
+                          (assoc :modified-at modified-at)))
           (db/update! pool :http-session-v2
                       {:modified-at modified-at}
-                      {:id (:id session)}))))
+                      {:id (:id session)}
+                      {::db/return-keys true}))))
 
     (delete-session [_ id]
       (if (string? id)
