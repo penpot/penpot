@@ -53,7 +53,7 @@
        (is-first-element? idx)))
 
 (defn- generate-stroke-shorthand
-  [shapes]
+  [shapes color-space]
   (when (= (count shapes) 1)
     (let [shape (first shapes)]
       (reduce
@@ -62,12 +62,13 @@
                stroke-width (:stroke-width stroke)
                stroke-style (:stroke-style stroke)
                color-value (:color stroke-type)
+               formatted-color-value (uc/color->format->background stroke-type (keyword color-space))
                color-gradient (:gradient stroke-type)
                gradient-data  {:type (get-in stroke-type [:gradient :type])
                                :stops (get-in stroke-type [:gradient :stops])}
                color-image (:image stroke-type)
                value (cond
-                       color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " color-value ";")
+                       color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " formatted-color-value ";")
                        color-gradient (dm/str "border-image: " (uc/gradient->css gradient-data) " 100 / " stroke-width "px;")
                        color-image (dm/str "border-image: url(" (cfg/resolve-file-media color-image) ") 100 / " stroke-width "px;")
                        :else "")]
@@ -79,12 +80,12 @@
 
 (mf/defc stroke-panel*
   [{:keys [shapes objects resolved-tokens color-space on-stroke-shorthand]}]
-  (let [shorthand* (mf/use-state #(generate-stroke-shorthand shapes))
+  (let [shorthand* (mf/use-state #(generate-stroke-shorthand shapes color-space))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-stroke-shorthand shapes)
      (fn []
-       (reset! shorthand* (generate-stroke-shorthand shapes))
+       (reset! shorthand* (generate-stroke-shorthand shapes color-space))
        (on-stroke-shorthand {:panel :stroke
                              :property shorthand})))
     [:div {:class (stl/css :stroke-panel)}

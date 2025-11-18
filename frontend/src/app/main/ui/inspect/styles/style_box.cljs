@@ -64,6 +64,7 @@
       [:span {:class (stl/css :panel-title)} title]
       (when shorthand
         [:> icon-button* {:variant "ghost"
+                          :tooltip-placement "top-left"
                           :aria-label (tr "inspect.tabs.styles.panel.copy-style-shorthand")
                           :on-click copy-shorthand
                           :icon i/clipboard}])]

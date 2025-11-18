@@ -122,7 +122,8 @@
      (fn []
        (if (seq shapes)
          (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
-         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))))
+         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))
+       (reset! color-space* "hex")))
 
     [:aside {:class (stl/css-case :settings-bar-right true
                                   :viewer-code (= from :viewer))}
@@ -166,12 +167,14 @@
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
               [:> select* {:class (stl/css :inspect-tab-switcher-controls-color-space-select)
+                           :aria-label (tr "inspect.tabs.switcher.color-space.label")
                            :options color-spaces
                            :default-selected "hex"
                            :variant "ghost"
                            :on-change handle-change-color-space}]]
              [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
               [:> select* {:options tabs
+                           :aria-label (tr "inspect.tabs.switcher.inspect-tab.label")
                            :default-selected (name @section)
                            :on-change handle-change-tab}]]]]
            nil)
