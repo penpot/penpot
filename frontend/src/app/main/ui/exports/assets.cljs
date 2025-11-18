@@ -34,7 +34,8 @@
 (def ^:private close-icon
   (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
-(mf/defc export-multiple-dialog
+(mf/defc export-multiple-dialog*
+  {::mf/private true}
   [{:keys [exports title cmd no-selection origin]}]
   (let [lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
@@ -186,7 +187,7 @@
    ::mf/register-as :export-shapes}
   [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-shapes.title")]
-    [:& export-multiple-dialog
+    [:> export-multiple-dialog*
      {:exports exports
       :title title
       :cmd :export-shapes
@@ -198,7 +199,7 @@
    ::mf/register-as :export-frames}
   [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-frames.title")]
-    [:& export-multiple-dialog
+    [:> export-multiple-dialog*
      {:exports exports
       :title title
       :cmd :export-frames

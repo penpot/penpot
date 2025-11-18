@@ -9,9 +9,13 @@
   (:require
    ["archiver$default" :as arc]
    ["node:fs" :as fs]
+   ["node:fs/promises" :as fsp]
    ["node:path" :as path]
    [app.common.exceptions :as ex]
+   [app.common.transit :as t]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [cljs.core :as c]
@@ -25,44 +29,20 @@
 (defn create
   "Generates ephimeral resource object."
   [type name]
-  (let [task-id (uuid/next)]
-    {:path     (get-path type task-id)
+  (let [task-id (uuid/next)
+        path    (-> (get-path type task-id)
+                    (sh/schedule-deletion))]
+    {:path     path
      :mtype    (mime/get type)
      :name     name
      :filename (str/concat name (mime/get-extension type))
-     :id       (str/concat (c/name type) "." task-id)}))
-
-(defn- lookup
-  [id]
-  (p/let [[type task-id] (str/split id "." 2)
-          path  (get-path type task-id)
-          mtype (mime/get (keyword type))
-          stat  (sh/stat path)]
-
-    (when-not stat
-      (ex/raise :type :not-found))
-
-    {:stream (fs/createReadStream path)
-     :headers {"content-type" mtype
-               "content-length" (:size stat)}}))
-
-(defn handler
-  [{:keys [:request/params] :as exchange}]
-  (when-not (contains? params :id)
-    (ex/raise :type :validation
-              :code :missing-id))
-
-  (-> (lookup (get params :id))
-      (p/then (fn [{:keys [stream headers] :as resource}]
-                (-> exchange
-                    (assoc :response/status 200)
-                    (assoc :response/body stream)
-                    (assoc :response/headers headers))))))
+     :id       task-id}))
 
 (defn create-zip
   [& {:keys [resource on-complete on-progress on-error]}]
   (let [^js zip  (arc/create "zip")
         ^js out  (fs/createWriteStream (:path resource))
+        on-complete (or on-complete (constantly nil))
         progress (atom 0)]
     (.on zip "error" on-error)
     (.on zip "end" on-complete)
@@ -80,3 +60,29 @@
 (defn close-zip!
   [zip]
   (.finalize ^js zip))
+
+(defn upload-resource
+  [auth-token resource]
+  (->> (fsp/readFile (:path resource))
+       (p/fmap (fn [buffer]
+                 (new js/Blob #js [buffer] #js {:type (:mtype resource)})))
+       (p/mcat (fn [blob]
+                 (let [fdata (new js/FormData)
+                       uri   (-> (cf/get :public-uri)
+                                 (u/ensure-path-slash)
+                                 (u/join "api/management/methods/upload-tempfile")
+                                 (str))]
+                   (.append fdata "content" blob (:filename resource))
+                   (js/fetch uri #js {:headers #js {"X-Shared-Key" cf/management-key
+                                                    "Authorization" (str "Bearer " auth-token)}
+                                      :method "POST"
+                                      :body fdata}))))
+       (p/mcat (fn [response]
+                 (if (not= (.-status response) 200)
+                   (ex/raise :type :internal
+                             :code :unable-to-upload-resource
+                             :response-status (.-status response))
+                   (.text response))))
+       (p/fmap t/decode-str)
+       (p/fmap (fn [result]
+                 (merge resource (dissoc result :id))))))
