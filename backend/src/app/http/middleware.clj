@@ -16,6 +16,7 @@
    [app.http.errors :as errors]
    [app.tokens :as tokens]
    [app.util.pointer-map :as pmap]
+   [buddy.core.codecs :as bc]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
    [yetti.middleware :as ymw]
@@ -243,7 +244,6 @@
                (handler request)
                {::yres/status 405}))))))})
 
-
 (defn- wrap-auth
   [handler decoders]
   (let [token-re
@@ -303,11 +303,14 @@
 (defn- wrap-shared-key-auth
   [handler shared-key]
   (if shared-key
-    (fn [request]
-      (let [key (yreq/get-header request "x-shared-key")]
-        (if (= key shared-key)
-          (handler request)
-          {::yres/status 403})))
+    (let [shared-key (if (string? shared-key)
+                       shared-key
+                       (bc/bytes->b64-str shared-key true))]
+      (fn [request]
+        (let [key (yreq/get-header request "x-shared-key")]
+          (if (= key shared-key)
+            (handler request)
+            {::yres/status 403}))))
     (fn [_ _]
       {::yres/status 403})))
 

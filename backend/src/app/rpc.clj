@@ -346,14 +346,16 @@
   (assert (valid-methods? (::management-methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::methods ::management-methods] :as cfg}]
+  [_ {:keys [::methods ::management-methods ::setup/props] :as cfg}]
 
-  (let [public-uri (cf/get :public-uri)]
+  (let [public-uri     (cf/get :public-uri)
+        management-key (or (cf/get :management-api-key)
+                           (get props :management-key))]
+
     ["/api"
-
      ["/management"
       ["/methods/:type"
-       {:middleware [[mw/shared-key-auth (cf/get :management-api-shared-key)]
+       {:middleware [[mw/shared-key-auth management-key]
                      [session/authz cfg]]
         :handler (make-rpc-handler management-methods)}]
 

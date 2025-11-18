@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.config
-  "A configuration management."
   (:refer-clojure :exclude [get])
   (:require
    [app.common.data :as d]
@@ -103,7 +102,7 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
-    [:management-api-shared-key {:optional true} :string]
+    [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
