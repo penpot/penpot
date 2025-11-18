@@ -84,6 +84,27 @@ export class TextEditor extends EventTarget {
   #canvas = null;
 
   /**
+   * Undo history stack for text editor content.
+   *
+   * @type {Array<{root: HTMLElement, selection: object}>}
+   */
+  #undoHistory = [];
+
+  /**
+   * Redo history stack for text editor content.
+   *
+   * @type {Array<{root: HTMLElement, selection: object}>}
+   */
+  #redoHistory = [];
+
+  /**
+   * Maximum number of undo states to keep.
+   *
+   * @type {number}
+   */
+  #maxUndoStates = 50;
+
+  /**
    * Constructor.
    *
    * @param {HTMLElement} element
@@ -158,9 +179,12 @@ export class TextEditor extends EventTarget {
     if (options.shouldUpdatePositionOnScroll) {
       window.addEventListener("scroll", this.#onScroll);
     }
+
     addEventListeners(this.#element, this.#events, {
       capture: true,
     });
+
+    this.#element.addEventListener("keydown", this.#onDocumentKeyDown, true);
   }
 
   /**
@@ -177,6 +201,11 @@ export class TextEditor extends EventTarget {
       options,
     );
     this.#setupListeners(options);
+
+    // Save initial state for undo
+    setTimeout(() => {
+      this.#saveUndoState();
+    }, 0);
   }
 
   /**
@@ -310,6 +339,7 @@ export class TextEditor extends EventTarget {
    */
   #onBeforeInput = (e) => {
     if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+      e.preventDefault();
       return;
     }
 
@@ -331,6 +361,10 @@ export class TextEditor extends EventTarget {
       if (!this.#selectionController.startMutation()) {
         return;
       }
+
+      // Save undo state before making changes
+      this.#saveUndoState();
+
       command(e, this, this.#selectionController);
       const mutations = this.#selectionController.endMutation();
       this.#notifyLayout(LayoutType.FULL, mutations);
@@ -344,6 +378,7 @@ export class TextEditor extends EventTarget {
    */
   #onInput = (e) => {
     if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+      e.preventDefault();
       return;
     }
 
@@ -365,6 +400,42 @@ export class TextEditor extends EventTarget {
   };
 
   /**
+   * Handles keydown events for undo/redo operations
+   *
+   * @param {KeyboardEvent} e
+   */
+  #onDocumentKeyDown = (e) => {
+    // Prevent browser's native undo/redo and use text editor's internal undo/redo
+    if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      this.#performUndo();
+      return;
+    }
+
+    // Handle Ctrl+Shift+Z (redo) and Ctrl+Y (redo)
+    if ((e.ctrlKey || e.metaKey) && ((e.key === "z" || e.key === "Z") && e.shiftKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      this.#performRedo();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y")) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      this.#performRedo();
+      return;
+    }
+  };
+
+  /**
    * Handles keydown events
    *
    * @param {KeyboardEvent} e
@@ -376,12 +447,35 @@ export class TextEditor extends EventTarget {
       return;
     }
 
+    // Prevent browser's native undo/redo and let document handler take care of it
+    if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // Handle Ctrl+Shift+Z (redo) and Ctrl+Y (redo)
+    if ((e.ctrlKey || e.metaKey) && ((e.key === "z" || e.key === "Z") && e.shiftKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y")) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
       e.preventDefault();
 
       if (!this.#selectionController.startMutation()) {
         return;
       }
+
+      // Save undo state before making changes
+      this.#saveUndoState();
 
       if (this.#selectionController.isCollapsed) {
         this.#selectionController.removeWordBackward();
@@ -560,6 +654,214 @@ export class TextEditor extends EventTarget {
   }
 
   /**
+   * Saves current state to undo history.
+   */
+  #saveUndoState() {
+    try {
+      const rootClone = this.#root.cloneNode(true);
+
+      // Save selection as simple text content for safer restoration
+      const selectionInfo = this.#selectionController.hasFocus ? {
+        textContent: this.#root.textContent,
+        isCollapsed: this.#selectionController.isCollapsed,
+        startOffset: this.#getTextOffset(this.#selectionController.anchorNode, this.#selectionController.anchorOffset),
+        endOffset: this.#getTextOffset(this.#selectionController.focusNode, this.#selectionController.focusOffset)
+      } : null;
+
+      this.#undoHistory.push({
+        root: rootClone,
+        selection: selectionInfo
+      });
+
+      // Limit history size
+      if (this.#undoHistory.length > this.#maxUndoStates) {
+        this.#undoHistory.shift();
+      }
+
+      // Clear redo history when new action is performed
+      this.#redoHistory = [];
+    } catch (error) {
+      console.warn("Failed to save undo state:", error);
+    }
+  }
+
+  /**
+   * Gets the text offset for a given node and offset within the root.
+   */
+  #getTextOffset(node, offset) {
+    if (!node || !this.#root.contains(node)) return 0;
+
+    const walker = this.#root.ownerDocument.createTreeWalker(
+      this.#root,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+
+    let textOffset = 0;
+    let currentNode;
+
+    while (currentNode = walker.nextNode()) {
+      if (currentNode === node) {
+        return textOffset + offset;
+      }
+      textOffset += currentNode.textContent.length;
+    }
+
+    return textOffset;
+  }
+
+  /**
+   * Restores selection to a text offset position.
+   */
+  #restoreTextSelection(startOffset, endOffset) {
+    try {
+      const walker = this.#root.ownerDocument.createTreeWalker(
+        this.#root,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+
+      let currentOffset = 0;
+      let currentNode;
+      let startNode = null, startPos = 0;
+      let endNode = null, endPos = 0;
+
+      while (currentNode = walker.nextNode()) {
+        const nodeLength = currentNode.textContent.length;
+
+        if (!startNode && currentOffset + nodeLength >= startOffset) {
+          startNode = currentNode;
+          startPos = startOffset - currentOffset;
+        }
+
+        if (!endNode && currentOffset + nodeLength >= endOffset) {
+          endNode = currentNode;
+          endPos = endOffset - currentOffset;
+          break;
+        }
+
+        currentOffset += nodeLength;
+      }
+
+      if (startNode) {
+        endNode = endNode || startNode;
+        endPos = endNode === startNode ? startPos : endPos;
+
+        this.#selectionController.setSelection(
+          startNode, Math.min(startPos, startNode.textContent.length),
+          endNode, Math.min(endPos, endNode.textContent.length)
+        );
+      }
+    } catch (error) {
+      console.warn("Failed to restore text selection:", error);
+      // Fallback: just focus the editor
+      this.#element.focus();
+    }
+  }
+
+  /**
+   * Performs undo operation.
+   */
+  #performUndo() {
+    if (this.#undoHistory.length === 0) {
+      return;
+    }
+
+    try {
+      // Save current state to redo history
+      const currentRootClone = this.#root.cloneNode(true);
+      const currentSelectionInfo = this.#selectionController.hasFocus ? {
+        textContent: this.#root.textContent,
+        isCollapsed: this.#selectionController.isCollapsed,
+        startOffset: this.#getTextOffset(this.#selectionController.anchorNode, this.#selectionController.anchorOffset),
+        endOffset: this.#getTextOffset(this.#selectionController.focusNode, this.#selectionController.focusOffset)
+      } : null;
+
+      this.#redoHistory.push({
+        root: currentRootClone,
+        selection: currentSelectionInfo
+      });
+
+      // Restore previous state
+      const undoState = this.#undoHistory.pop();
+      const restoredRoot = undoState.root.cloneNode(true);
+
+      this.#root.replaceWith(restoredRoot);
+      this.#root = restoredRoot;
+
+      // Restore selection using text offset approach
+      if (undoState.selection) {
+        setTimeout(() => {
+          this.#restoreTextSelection(undoState.selection.startOffset, undoState.selection.endOffset);
+        }, 0);
+      } else {
+        // Just focus the editor if no selection info
+        setTimeout(() => {
+          this.#element.focus();
+        }, 0);
+      }
+
+      // Notify that content changed
+      this.#changeController.notifyImmediately();
+      this.#notifyLayout(LayoutType.FULL, null);
+    } catch (error) {
+      console.error("Failed to perform undo:", error);
+    }
+  }
+
+  /**
+   * Performs redo operation.
+   */
+  #performRedo() {
+    if (this.#redoHistory.length === 0) {
+      return;
+    }
+
+    try {
+      // Save current state to undo history
+      const currentRootClone = this.#root.cloneNode(true);
+      const currentSelectionInfo = this.#selectionController.hasFocus ? {
+        textContent: this.#root.textContent,
+        isCollapsed: this.#selectionController.isCollapsed,
+        startOffset: this.#getTextOffset(this.#selectionController.anchorNode, this.#selectionController.anchorOffset),
+        endOffset: this.#getTextOffset(this.#selectionController.focusNode, this.#selectionController.focusOffset)
+      } : null;
+
+      this.#undoHistory.push({
+        root: currentRootClone,
+        selection: currentSelectionInfo
+      });
+
+      // Restore redo state
+      const redoState = this.#redoHistory.pop();
+      const restoredRoot = redoState.root.cloneNode(true);
+
+      this.#root.replaceWith(restoredRoot);
+      this.#root = restoredRoot;
+
+      // Restore selection using text offset approach
+      if (redoState.selection) {
+        setTimeout(() => {
+          this.#restoreTextSelection(redoState.selection.startOffset, redoState.selection.endOffset);
+        }, 0);
+      } else {
+        // Just focus the editor if no selection info
+        setTimeout(() => {
+          this.#element.focus();
+        }, 0);
+      }
+
+      // Notify that content changed
+      this.#changeController.notifyImmediately();
+      this.#notifyLayout(LayoutType.FULL, null);
+    } catch (error) {
+      console.error("Failed to perform redo:", error);
+    }
+  }
+
+  /**
    * Disposes everything.
    */
   dispose() {
@@ -573,6 +875,9 @@ export class TextEditor extends EventTarget {
     this.#selectionController.dispose();
     this.#selectionController = null;
     removeEventListeners(this.#element, this.#events);
+    this.#element.removeEventListener("keydown", this.#onDocumentKeyDown, true);
+    this.#undoHistory = [];
+    this.#redoHistory = [];
     this.#element = null;
     this.#root = null;
   }
