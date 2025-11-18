@@ -22,6 +22,7 @@
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
    [app.main.data.workspace.text.shortcuts :as tsc]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
@@ -313,7 +314,8 @@
                    (filter #(or (root-frame-with-data? %)
                                 (and (cfh/group-shape? objects %)
                                      (not (contains? child-parent? %)))
-                                (and (cfh/text-shape? objects %)
+                                (and (features/active-feature? @st/state "render-wasm/v1")
+                                     (cfh/text-shape? objects %)
                                      (not (wasm.api/intersect-position % @last-point-ref)))))))
 
                remove-measure-xf
