@@ -29,6 +29,7 @@
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.worker :as mw]
+   [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -311,7 +312,9 @@
                              ids)]
                    (filter #(or (root-frame-with-data? %)
                                 (and (cfh/group-shape? objects %)
-                                     (not (contains? child-parent? %)))))))
+                                     (not (contains? child-parent? %)))
+                                (and (cfh/text-shape? objects %)
+                                     (not (wasm.api/intersect-position % @last-point-ref)))))))
 
                remove-measure-xf
                (cond

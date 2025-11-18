@@ -120,6 +120,16 @@ const openInspectTab = async (workspacePage) => {
   await inspectButton.click();
 };
 
+const selectColorSpace = async (workspacePage, colorSpace) => {
+  const sidebar = workspacePage.page.getByTestId("right-sidebar");
+  const colorSpaceSelector = sidebar.getByLabel("Select color space");
+  await colorSpaceSelector.click();
+  const colorSpaceOption = sidebar.getByRole("option", {
+    name: colorSpace,
+  });
+  await colorSpaceOption.click();
+};
+
 test.describe("Inspect tab - Styles", () => {
   test("Open Inspect tab", async ({ page }) => {
     const workspacePage = new WorkspacePage(page);
@@ -381,6 +391,46 @@ test.describe("Inspect tab - Styles", () => {
       const propertyRowCount = await propertyRow.count();
 
       expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+    });
+
+    test("Change color space and ensure fill and shorthand changes", async ({
+      page,
+    }) => {
+      const workspacePage = new WorkspacePage(page);
+      await setupFile(workspacePage);
+
+      await selectLayer(workspacePage, shapeToLayerName.fill.solid);
+      await openInspectTab(workspacePage);
+      const panel = await getPanelByTitle(workspacePage, "Fill");
+      await expect(panel).toBeVisible();
+
+      const propertyRow = panel.getByTestId("property-row");
+      const backgroundRow = propertyRow.filter({
+        hasText: "Background",
+      });
+      await expect(backgroundRow).toBeVisible();
+
+      // Ensure initial value and copied value are in HEX format
+      expect(backgroundRow).toContainText("#0438d5 100%");
+
+      await copyPropertyFromPropertyRow(panel, "Background");
+
+      const backgroundHEX = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(backgroundHEX).toContain("background: #0438d5FF;");
+
+      // Change color space to RGBA
+      await selectColorSpace(workspacePage, "rgba");
+
+      // Ensure new value and copied value are in RGBA format
+      expect(backgroundRow).toContainText("4, 56, 213, 1");
+
+      await copyPropertyFromPropertyRow(panel, "Background");
+      const backgroundRGBA = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      expect(backgroundRGBA).toContain("background: rgba(4, 56, 213, 1);");
     });
 
     test("Shape - Fill - Gradient", async ({ page }) => {

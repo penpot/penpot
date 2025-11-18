@@ -7,7 +7,6 @@
 (ns app.main.ui.inspect.styles.panels.fill
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.types.fills :as types.fills]
    [app.config :as cfg]
    [app.main.ui.inspect.attributes.common :as cmm]
@@ -36,20 +35,14 @@
        (= 0 idx)))
 
 (defn- generate-fill-shorthand
-  [shape]
+  [shape color-space]
   (reduce
    (fn [acc fill]
-     (let [color-type (types.fills/fill->color fill)
-           color-value (:color color-type)
-           color-gradient (:gradient color-type)
-           gradient-data  {:type color-type
-                           :stops (:stops color-gradient)}
-           color-image (:image color-type)
-           prefix (if color-value "background-color: " "background-image: ")
+     (let [color (types.fills/fill->color fill)
+           prefix (if (:color color) "background-color: " "background-image: ")
            value (cond
-                   (:color color-type) (dm/str color-value)
-                   color-gradient (uc/gradient->css gradient-data)
-                   color-image (str "url(\"" (cfg/resolve-file-media color-image) "\")")
+                   (or (:color color) (:gradient color)) (uc/color->format->background color (keyword color-space))
+                   (:image color) (str "url('" (cfg/resolve-file-media (:image color)) "')")
                    :else "")
            full-value (str prefix value ";")]
        (if (empty? acc)
@@ -60,12 +53,12 @@
 
 (mf/defc fill-panel*
   [{:keys [shapes resolved-tokens color-space on-fill-shorthand]}]
-  (let [shorthand* (mf/use-state #(generate-fill-shorthand (first shapes)))
+  (let [shorthand* (mf/use-state #(generate-fill-shorthand (first shapes) color-space))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-fill-shorthand shapes)
      (fn []
-       (reset! shorthand* (generate-fill-shorthand (first shapes)))
+       (reset! shorthand* (generate-fill-shorthand (first shapes) color-space))
        (on-fill-shorthand {:panel :fill
                            :property shorthand})))
     [:div {:class (stl/css :fill-panel)}
