@@ -19,7 +19,7 @@
 ##
 ## You can read more about all available flags and other
 ## environment variables here:
-## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
+## https://help.penpot.app/technical-guide/configuration/#penpot-configuration
 #
 # WARNING: if you're exposing Penpot to the internet, you should remove the flags
 # 'disable-secure-session-cookies' and 'disable-email-verification'
@@ -37,6 +37,15 @@ x-body-size: &penpot-http-body-size
   # Max multipart body size (350MiB)
   PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
 
+## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
+## (eg http sessions, or invitations) are derived.
+##
+## We recommend to use a trully randomly generated
+## 512 bits base64 encoded string here. You can generate one with:
+##
+## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+x-secret-key: &penpot-secret-key
+  PENPOT_SECRET_KEY: change-this-insecure-key
 
 networks:
   penpot:
@@ -120,20 +129,7 @@ services:
     ## Configuration envronment variables for the backend container.
 
     environment:
-      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size]
-
-      ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
-      ## (eg http sessions, or invitations) are derived.
-      ##
-      ## If you leave it commented, all created sessions and invitations will
-      ## become invalid on container restart.
-      ##
-      ## If you going to uncomment this, we recommend to use a trully randomly generated
-      ## 512 bits base64 encoded string here.  You can generate one with:
-      ##
-      ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
-
-      # PENPOT_SECRET_KEY: my-insecure-key
+      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key]
 
       ## The PREPL host. Mainly used for external programatic access to penpot backend
       ## (example: admin). By default it will listen on `localhost` but if you are going to use
@@ -202,6 +198,7 @@ services:
       - penpot
 
     environment:
+      << : [*penpot-secret-key]
       # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
       PENPOT_PUBLIC_URI: http://penpot-frontend:8080
