@@ -371,7 +371,7 @@
    [:set-tokens-lib
     [:map {:title "SetTokensLib"}
      [:type [:= :set-tokens-lib]]
-     [:tokens-lib ctob/schema:tokens-lib]]]
+     [:tokens-lib [:maybe ctob/schema:tokens-lib]]]]
 
    [:set-token
     [:map {:title "SetTokenChange"}
