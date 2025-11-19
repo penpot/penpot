@@ -1209,7 +1209,7 @@
 ;; --- MUTATION COMMAND: restore-files-immediatelly
 
 (def ^:private sql:resolve-editable-files
-  "SELECT f.id
+  "SELECT f.id, f.project_id
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
      JOIN team AS t ON (t.id = p.team_id)
@@ -1250,18 +1250,38 @@
               {:file-id file-id}
               {::db/return-keys false}))
 
+(def ^:private sql:restore-projects
+  "UPDATE project SET deleted_at = null WHERE id = ANY(?::uuid[])")
+
+(defn- restore-projects
+  [conn project-ids]
+  (let [project-ids (db/create-array conn "uuid" project-ids)]
+    (->> (db/exec-one! conn [sql:restore-projects project-ids])
+         (db/get-update-count))))
+
 (defn- restore-deleted-team-files
   [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id ids]}]
   (teams/check-edition-permissions! conn profile-id team-id)
+  (let [total-files
+        (count ids)
 
-  (reduce (fn [affected {:keys [id]}]
-            (let [index (inc (count affected))]
-              (events/tap :progress {:file-id id :index index :total (count ids)})
-              (restore-file conn id)
-              (conj affected id)))
-          #{}
-          (db/plan conn [sql:resolve-editable-files team-id
-                         (db/create-array conn "uuid" ids)])))
+        {:keys [files projects]}
+        (reduce (fn [result {:keys [id project-id]}]
+                  (let [index (-> result :files count)]
+                    (events/tap :progress {:file-id id :index index :total total-files})
+                    (restore-file conn id)
+
+                    (-> result
+                        (update :files conj id)
+                        (update :projects conj project-id))))
+
+                {:files #{} :projectes #{}}
+                (db/plan conn [sql:resolve-editable-files team-id
+                               (db/create-array conn "uuid" ids)]))]
+
+    (restore-projects conn projects)
+
+    files))
 
 (def ^:private schema:restore-deleted-team-files
   [:map {:title "restore-deleted-team-files"}
@@ -1269,8 +1289,8 @@
    [:ids [::sm/set ::sm/uuid]]])
 
 (sv/defmethod ::restore-deleted-team-files
-  "Removes the deletion mark from the specified files (and respective projects)."
-
+  "Removes the deletion mark from the specified files (and respective
+  projects) on the specified team."
   {::doc/added "2.12"
    ::sse/stream? true
    ::sm/params schema:restore-deleted-team-files}

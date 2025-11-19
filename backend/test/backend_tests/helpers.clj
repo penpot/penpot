@@ -30,6 +30,7 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
    [app.rpc.commands.files-update :as files.update]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
@@ -185,15 +186,17 @@
 (defn create-project*
   ([i params] (create-project* *system* i params))
   ([system i {:keys [profile-id team-id] :as params}]
-   (us/assert uuid? profile-id)
-   (us/assert uuid? team-id)
 
-   (db/run! system
-            (fn [{:keys [::db/conn]}]
-              (->> (merge {:id (mk-uuid "project" i)
-                           :name (str "project" i)}
-                          params)
-                   (#'teams/create-project conn))))))
+   (assert (uuid? profile-id))
+   (assert (uuid? team-id))
+   (let [timestamp (ct/now)]
+     (db/run! system
+              (fn [cfg]
+                (->> (merge {:id (mk-uuid "project" i)
+                             :name (str "project" i)}
+                            params
+                            {::rpc/request-at timestamp})
+                     (#'projects/create-project cfg)))))))
 
 (defn create-file*
   ([i params]

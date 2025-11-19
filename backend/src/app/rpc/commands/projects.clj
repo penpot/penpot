@@ -169,12 +169,19 @@
 ;; --- MUTATION: Create Project
 
 (defn- create-project
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
-  (let [project (teams/create-project conn params)]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at profile-id team-id] :as params}]
+  (assert (ct/inst? request-at) "expect request-at assigned")
+  (let [params    (-> params
+                      (assoc :created-at request-at)
+                      (assoc :modified-at request-at))
+        project   (teams/create-project conn params)
+        timestamp (::rpc/request-at params)]
     (teams/create-project-role conn profile-id (:id project) :owner)
     (db/insert! conn :team-project-profile-rel
                 {:project-id (:id project)
                  :profile-id profile-id
+                 :created-at timestamp
+                 :modified-at timestamp
                  :team-id team-id
                  :is-pinned false})
     (assoc project :is-pinned false)))
