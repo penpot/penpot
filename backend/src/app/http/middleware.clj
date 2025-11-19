@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.http :as-alias http]
    [app.http.errors :as errors]
+   [app.tokens :as tokens]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
@@ -272,9 +273,24 @@
         process-request
         (fn [request]
           (if-let [{:keys [type token] :as auth} (get-token request)]
-            (if-let [decode-fn (get decoders type)]
-              (assoc request ::http/auth-data (assoc auth :claims (decode-fn token)))
-              (assoc request ::http/auth-data auth))
+            (let [decode-fn (get decoders type)]
+              (if (= type :cookie)
+                (let [metadata (tokens/decode-header token)]
+                  ;; NOTE: we only proceed to decode claims on new
+                  ;; cookie tokens. The old cookies dont need to be
+                  ;; decoded because they use the token string as ID
+                  (if (and (= (:kid metadata) 1)
+                           (= (:ver metadata) 1)
+                           (some? decode-fn))
+                    (assoc request ::http/auth-data (assoc auth
+                                                           :claims (decode-fn token)
+                                                           :metadata metadata))
+                    (assoc request ::http/auth-data (assoc auth :metadata {:ver 0}))))
+
+                (if decode-fn
+                  (assoc request ::http/auth-data (assoc auth :claims (decode-fn token)))
+                  (assoc request ::http/auth-data auth))))
+
             request))]
 
     (fn [request]

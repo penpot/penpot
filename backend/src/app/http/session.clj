@@ -93,15 +93,15 @@
     (update-session [_ session]
       (let [modified-at (ct/now)]
         (if (string? (:id session))
-          (let [params (-> session
-                           (assoc :id (uuid/next))
-                           (assoc :created-at modified-at)
-                           (assoc :modified-at modified-at))]
-            (db/insert! pool :http-session-v2 params))
-
+          (db/insert! pool :http-session-v2
+                      (-> session
+                          (assoc :id (uuid/next))
+                          (assoc :created-at modified-at)
+                          (assoc :modified-at modified-at)))
           (db/update! pool :http-session-v2
                       {:modified-at modified-at}
-                      {:id (:id session)}))))
+                      {:id (:id session)}
+                      {::db/return-keys true}))))
 
     (delete-session [_ id]
       (if (string? id)
@@ -158,14 +158,15 @@
 
 (defn- assign-token
   [cfg session]
-  (let [token (tokens/generate cfg
-                               {:iss "authentication"
-                                :aud "penpot"
-                                :sid (:id session)
-                                :iat (:modified-at session)
-                                :uid (:profile-id session)
-                                :sso-provider-id (:sso-provider-id session)
-                                :sso-session-id (:sso-session-id session)})]
+  (let [claims {:iss "authentication"
+                :aud "penpot"
+                :sid (:id session)
+                :iat (:modified-at session)
+                :uid (:profile-id session)
+                :sso-provider-id (:sso-provider-id session)
+                :sso-session-id (:sso-session-id session)}
+        header {:kid 1 :ver 1}
+        token  (tokens/generate cfg claims header)]
     (assoc session :token token)))
 
 (defn create-fn
@@ -225,13 +226,14 @@
   [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request]
-    (let [{:keys [type token claims]} (get request ::http/auth-data)]
+    (let [{:keys [type token claims metadata]} (get request ::http/auth-data)]
       (cond
         (= type :cookie)
-        (let [session (if-let [sid (:sid claims)]
-                        (read-session manager sid)
+        (let [session (case (:ver metadata)
                         ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
-                        (read-session manager token))
+                        0 (read-session manager token)
+                        1 (some->> (:sid claims) (read-session manager))
+                        nil)
 
               request (cond-> request
                         (some? session)
@@ -240,7 +242,7 @@
 
               response (handler request)]
 
-          (if (renew-session? session)
+          (if (and session (renew-session? session))
             (let [session (->> session
                                (update-session manager)
                                (assign-token cfg))]
@@ -248,11 +250,11 @@
             response))
 
         (= type :bearer)
-        (let [session (if-let [sid (:sid claims)]
-                        (read-session manager sid)
+        (let [session (case (:ver metadata)
                         ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
-                        (read-session manager token))
-
+                        0 (read-session manager token)
+                        1 (some->> (:sid claims) (read-session manager))
+                        nil)
               request (cond-> request
                         (some? session)
                         (-> (assoc ::profile-id (:profile-id session))
