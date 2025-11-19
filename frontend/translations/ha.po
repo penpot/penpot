@@ -1316,7 +1316,7 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "rubutu"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "bayani"
 
 #: src/app/main/ui/workspace/main_menu.cljs:192

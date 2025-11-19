@@ -1906,11 +1906,11 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "Testo"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
-msgid "inspect.tabs.computed"
+msgid "labels.computed"
 msgstr "Calcolato"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "Informazione"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52

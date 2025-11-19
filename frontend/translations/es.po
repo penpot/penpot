@@ -2799,7 +2799,7 @@ msgid "labels.computed"
 msgstr "Calculado"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:111
-msgid "labels.code"
+msgid "labels.info"
 msgstr "Información"
 
 #: src/app/main/ui/ds/product/loader.cljs:21

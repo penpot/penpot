@@ -1733,7 +1733,7 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "Teks"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "Info"
 
 #: src/app/main/ui/dashboard/comments.cljs:96

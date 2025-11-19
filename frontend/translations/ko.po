@@ -621,7 +621,7 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "텍스트"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "정보"
 
 #: src/app/main/ui/workspace/main_menu.cljs:192

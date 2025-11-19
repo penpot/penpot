@@ -1997,7 +1997,7 @@ msgid "inspect.color-space-label"
 msgstr "Select color space"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs-switcher-label"
+msgid "inspect.layer-info"
 msgstr "Select inspect tab"
 
 #: src/app/main/ui/dashboard/comments.cljs:96
@@ -2825,7 +2825,7 @@ msgid "labels.computed"
 msgstr "Computed"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:111
-msgid "labels.code"
+msgid "labels.info"
 msgstr "Code"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114

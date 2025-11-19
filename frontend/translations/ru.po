@@ -1581,7 +1581,7 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "Текст"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "Информация"
 
 #: src/app/main/ui/workspace/main_menu.cljs:192
@@ -6355,39 +6355,39 @@ msgid "inspect.subtitle.main"
 msgstr "Основной компонент"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgid "inspect.tabs.styles.copy-to-clipboard"
 msgstr "Копировать в буфер обмена"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:22
-msgid "inspect.tabs.styles.panel.geometry"
+msgid "inspect.tabs.styles.geometry-panel"
 msgstr "Размер и Положение"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
-msgid "inspect.tabs.styles.panel.toggle-style"
+msgid "inspect.tabs.styles.toggle-style"
 msgstr "Переключить панель %s"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:21
-msgid "inspect.tabs.styles.panel.token"
+msgid "inspect.tabs.styles.token-panel"
 msgstr "Наборы токенов и Темы"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgid "inspect.tabs.styles.active-sets"
 msgstr "Активные наборы"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
-msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgid "inspect.tabs.styles.active-themes"
 msgstr "Активные темы"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:20
-msgid "inspect.tabs.styles.panel.variant"
+msgid "inspect.tabs.styles.variants-panel"
 msgstr "Вариант свойств"
 
 #: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
-msgid "inspect.tabs.styles.token.resolved-value"
+msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "Полученное значение:"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs.switcher.label"
+msgid "inspect.layer-info"
 msgstr "Информация о слое"
 
 #: src/app/main/ui/dashboard/comments.cljs:96

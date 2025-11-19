@@ -1861,11 +1861,11 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "Text"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
-msgid "inspect.tabs.computed"
+msgid "labels.computed"
 msgstr "Berechnet"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "Info"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
@@ -7450,23 +7450,23 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Nach Status sortieren"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgid "inspect.tabs.styles.copy-to-clipboard"
 msgstr "In die Zwischenablage kopieren"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:22
-msgid "inspect.tabs.styles.panel.geometry"
+msgid "inspect.tabs.styles.geometry-panel"
 msgstr "Größe und Position"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgid "inspect.tabs.styles.active-sets"
 msgstr "Aktive Sets"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
-msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgid "inspect.tabs.styles.active-themes"
 msgstr "Aktive Themes"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:20
-msgid "inspect.tabs.styles.panel.variant"
+msgid "inspect.tabs.styles.variants-panel"
 msgstr "Varianteneigenschaften"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1043

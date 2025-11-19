@@ -1806,7 +1806,7 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "पाठ"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "जानकारी"
 
 #: src/app/main/ui/dashboard/comments.cljs:96

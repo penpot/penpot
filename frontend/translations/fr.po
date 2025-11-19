@@ -1888,11 +1888,11 @@ msgid "inspect.tabs.code.selected.text"
 msgstr "Texte"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
-msgid "inspect.tabs.computed"
+msgid "labels.computed"
 msgstr "Calculé"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
+msgid "labels.info"
 msgstr "Information"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
@@ -7930,15 +7930,15 @@ msgid "dashboard.invitation-modal.title.resend-invitations"
 msgstr "Renvoyer les invitations"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgid "inspect.tabs.styles.copy-to-clipboard"
 msgstr "Copier dans le Presse-papiers"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
-msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgid "inspect.tabs.styles.active-themes"
 msgstr "Thèmes actifs"
 
 #: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
-msgid "inspect.tabs.styles.token.resolved-value"
+msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "Valeur déduite :"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1043
@@ -8041,19 +8041,19 @@ msgid "dashboard.order-invitations-by-status"
 msgstr "Classer par statut"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:22
-msgid "inspect.tabs.styles.panel.geometry"
+msgid "inspect.tabs.styles.geometry-panel"
 msgstr "Taille et position"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:21
-msgid "inspect.tabs.styles.panel.token"
+msgid "inspect.tabs.styles.token-panel"
 msgstr "Collections de tokens et thèmes"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgid "inspect.tabs.styles.active-sets"
 msgstr "Collections actives"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:20
-msgid "inspect.tabs.styles.panel.variant"
+msgid "inspect.tabs.styles.variants-panel"
 msgstr "Propriétés de la variante"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:427
@@ -8220,7 +8220,7 @@ msgid "workspace.tokens.use-reference"
 msgstr "Utiliser une référence"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
-msgid "inspect.tabs.styles.panel.toggle-style"
+msgid "inspect.tabs.styles.toggle-style"
 msgstr "Afficher/Masquer le panneau %s"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:26
