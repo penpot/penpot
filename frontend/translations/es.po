@@ -69,8 +69,8 @@ msgstr "Entrar"
 #: src/app/main/ui/auth/login.cljs:274
 msgid "auth.login-tagline"
 msgstr ""
-"Penpot es la herramienta de diseño libre y open-source para la "
-"colaboración entre Diseño y Código"
+"Penpot es la herramienta de diseño libre y open-source para la colaboración "
+"entre Diseño y Código"
 
 #: src/app/main/ui/auth/login.cljs:231
 msgid "auth.login-with-github-submit"
@@ -178,9 +178,7 @@ msgstr "La solución de código abierto para diseñar y prototipar."
 #: src/app/main/ui/auth/register.cljs:51
 #, markdown
 msgid "auth.terms-and-privacy-agreement"
-msgstr ""
-"Yo acepto los [términos de servicio](%s) y la [política de "
-"privacidad](%s)."
+msgstr "Yo acepto los [términos de servicio](%s) y la [política de privacidad](%s)."
 
 #: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
@@ -230,8 +228,8 @@ msgstr "Todo usario de Penpot"
 #: src/app/main/ui/viewer/share_link.cljs:200
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace "
-"dejara de funcionar para cualquiera"
+"¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
+"de funcionar para cualquiera"
 
 #: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
 msgid "common.share-link.current-tag"
@@ -313,8 +311,8 @@ msgstr "¡Forma equipo!"
 #, unused
 msgid "dasboard.tutorial-hero.info"
 msgstr ""
-"Aprende los básicos de Penpot mientras pasas un buen rato con este "
-"tutorial práctico."
+"Aprende los básicos de Penpot mientras pasas un buen rato con este tutorial "
+"práctico."
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
@@ -480,16 +478,16 @@ msgstr "Aún no hay archivos."
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
-"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar "
-"con alguna plantilla ve a [Bibliotecas y "
+"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar con "
+"alguna plantilla ve a [Bibliotecas y "
 "plantillas](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs
 #, markdown, unused
 msgid "dashboard.empty-placeholder-libraries-subtitle"
 msgstr ""
-"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar "
-"con alguna plantilla ve a [Bibliotecas y "
+"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar con "
+"alguna plantilla ve a [Bibliotecas y "
 "plantillas](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs:114
@@ -587,8 +585,8 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"ficheros con librerias compartidas se inclurán en el paquete de "
-"exportación y mantendrán los enlaces."
+"ficheros con librerias compartidas se inclurán en el paquete de exportación "
+"y mantendrán los enlaces."
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"
@@ -661,9 +659,9 @@ msgstr ""
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
-"licencia que te permita usarlas en Penpot. Encuentra más información en "
-"la sección de Derechos de Contenido: [Penpot's Terms of Service](%s). "
-"También te puede interesar leer más sobre licencias tipográficas: [font "
+"licencia que te permita usarlas en Penpot. Encuentra más información en la "
+"sección de Derechos de Contenido: [Penpot's Terms of Service](%s). También "
+"te puede interesar leer más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:214
@@ -793,9 +791,7 @@ msgstr "Bibliotecas y plantillas"
 
 #: src/app/main/ui/dashboard/templates.cljs:267
 msgid "dashboard.libraries-and-templates.description"
-msgstr ""
-"Aquí tienes algunas Bibliotecas y plantillas que puedes añadir a tu "
-"proyecto"
+msgstr "Aquí tienes algunas Bibliotecas y plantillas que puedes añadir a tu proyecto"
 
 #: src/app/main/ui/dashboard/templates.cljs:170
 msgid "dashboard.libraries-and-templates.explore"
@@ -1406,8 +1402,8 @@ msgstr "Ha alcalzando el maximo de la quota '%s'. Contacte con soporte tecnico."
 #: src/app/main/ui/dashboard/team.cljs:187, src/app/main/ui/dashboard/team.cljs:849, src/app/main/ui/onboarding/team_choice.cljs:101
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr ""
-"Se ha alcanzado el número máximo (%s) de correos electrónicos que se "
-"pueden invitar en una sola solicitud"
+"Se ha alcanzado el número máximo (%s) de correos electrónicos que se pueden "
+"invitar en una sola solicitud"
 
 #: src/app/main/data/workspace/media.cljs:190
 msgid "errors.media-too-large"
@@ -1581,8 +1577,8 @@ msgstr "Otras formas de contactarnos"
 #: src/app/main/ui/settings/feedback.cljs:126
 msgid "feedback.penpot.link"
 msgstr ""
-"Si el comentario está relacionado con un archivo o un proyecto, añade "
-"aquí el enlace de Penpot:"
+"Si el comentario está relacionado con un archivo o un proyecto, añade aquí "
+"el enlace de Penpot:"
 
 #: src/app/main/ui/settings/feedback.cljs:105
 msgid "feedback.subject"
@@ -1835,8 +1831,8 @@ msgstr "Propiedades de las variantes"
 #: src/app/main/ui/inspect/right_sidebar.cljs:237
 msgid "inspect.empty.help"
 msgstr ""
-"Si quieres saber más sobre la inspección puedes visitar el centro de "
-"ayuda de Penpot"
+"Si quieres saber más sobre la inspección puedes visitar el centro de ayuda "
+"de Penpot"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
 msgid "inspect.empty.more-info"
@@ -1861,11 +1857,6 @@ msgstr "Copia"
 #: src/app/main/ui/inspect/right_sidebar.cljs:63
 msgid "inspect.subtitle.main"
 msgstr "Componente principal"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
-#, unused
-msgid labels.code
-msgstr "Código"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:143
 msgid "inspect.tabs.code.selected.circle"
@@ -2030,6 +2021,10 @@ msgstr "Canva"
 #: src/app/main/data/common.cljs:95, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:100, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:655, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:244, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/create/modals.cljs:91, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:186, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:480
 msgid "labels.close"
 msgstr "Cerrar"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
+msgid "labels.code"
+msgstr "Código"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:181
 msgid "labels.collapse"
@@ -2925,9 +2920,7 @@ msgstr "Verificar el nuevo correo"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
-msgstr ""
-"Enviaremos un mensaje a tu correo actual “%s” para verificar tu "
-"identidad."
+msgstr "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
 
 #: src/app/main/ui/settings/change_email.cljs:102
 msgid "modals.change-email.new-email"
@@ -3158,8 +3151,8 @@ msgstr[0] ""
 "Los elementos que hayan sido utilizados en este archivo permanecerán allí "
 "(¡ningún diseño se romperá!)."
 msgstr[1] ""
-"Los elementos que hayan sido utilizados en esos archivos permanecerán "
-"allí (¡ningún diseño se romperá!)."
+"Los elementos que hayan sido utilizados en esos archivos permanecerán allí "
+"(¡ningún diseño se romperá!)."
 
 #: src/app/main/ui/dashboard/team.cljs:1197
 msgid "modals.delete-webhook.accept"
@@ -3208,8 +3201,8 @@ msgstr "Invitar a miembros al equipo"
 #: src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:427
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"Al ser la única persona integrante de este equipo, el equipo será "
-"eliminado junto con sus proyectos y archivos."
+"Al ser la única persona integrante de este equipo, el equipo será eliminado "
+"junto con sus proyectos y archivos."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:412, src/app/main/ui/dashboard/team.cljs:426
 msgid "modals.leave-and-close-confirm.message"
@@ -3517,8 +3510,8 @@ msgstr ""
 #, unused
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
-"Información detallada sobre cómo usar Penpot. Desde prototipar a "
-"organizar y compartir diseños."
+"Información detallada sobre cómo usar Penpot. Desde prototipar a organizar "
+"y compartir diseños."
 
 #, unused
 msgid "onboarding-v2.before-start.desc2.title"
@@ -3539,14 +3532,14 @@ msgstr "Antes de comenzar"
 #: src/app/main/ui/onboarding/newsletter.cljs:68
 msgid "onboarding-v2.newsletter.desc"
 msgstr ""
-"Suscríbete a la newsletter de Penpot para estar al día de los progresos "
-"del producto y noticias."
+"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
+"producto y noticias."
 
 #: src/app/main/ui/onboarding/newsletter.cljs:88
 msgid "onboarding-v2.newsletter.news"
 msgstr ""
-"Quiero recibir noticias sobre Penpot (artículos del blog, vídeo "
-"tutoriales, directos...)."
+"Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, "
+"directos...)."
 
 #: src/app/main/ui/onboarding/newsletter.cljs:96
 msgid "onboarding-v2.newsletter.privacy1"
@@ -3568,8 +3561,8 @@ msgstr ""
 #, unused
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
-"Penpot es Código Abierto y está hecho por Kaleidos y la comunidad, donde "
-"ya hay mucha gente ayudándose unos a otros. Formas de colaborar:"
+"Penpot es Código Abierto y está hecho por Kaleidos y la comunidad, donde ya "
+"hay mucha gente ayudándose unos a otros. Formas de colaborar:"
 
 #, unused
 msgid "onboarding-v2.welcome.desc2"
@@ -3639,8 +3632,8 @@ msgstr "Invitar integrantes"
 #: src/app/main/ui/onboarding/team_choice.cljs:188
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"No olvides incluir personas de desarrollo, diseño, gestión… la "
-"diversidad suma :)"
+"No olvides incluir personas de desarrollo, diseño, gestión… la diversidad "
+"suma :)"
 
 #: src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/onboarding/team_choice.cljs:194
 msgid "onboarding.choice.team-up.roles"
@@ -3661,8 +3654,8 @@ msgstr "Si, suscribirme"
 #: src/app/main/ui/onboarding/newsletter.cljs:42
 msgid "onboarding.newsletter.acceptance-message"
 msgstr ""
-"Tu solicitud de suscripción ha sido enviada, te haremos una confirmación "
-"a tu email."
+"Tu solicitud de suscripción ha sido enviada, te haremos una confirmación a "
+"tu email."
 
 #: src/app/main/ui/onboarding/newsletter.cljs:100
 msgid "onboarding.newsletter.policy"
@@ -4624,8 +4617,8 @@ msgstr ""
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr ""
 "Solo los nuevos editores de tus equipos se tendrán en cuenta para la "
-"facturación futura. Se seguirá aplicando una tarifa plana de 175$/mes "
-"para 25+ editores."
+"facturación futura. Se seguirá aplicando una tarifa plana de 175$/mes para "
+"25+ editores."
 
 #: src/app/main/ui/dashboard/subscription.cljs:178
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
@@ -4665,9 +4658,7 @@ msgstr "Enterprise (prueba)"
 
 #: src/app/main/ui/settings/subscription.cljs:418, src/app/main/ui/settings/subscription.cljs:428, src/app/main/ui/settings/subscription.cljs:486
 msgid "subscription.settings.enterprise.autosave"
-msgstr ""
-"Versiones guardadas automáticamente cada 90 días y recuperación de "
-"archivos"
+msgstr "Versiones guardadas automáticamente cada 90 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:419, src/app/main/ui/settings/subscription.cljs:429, src/app/main/ui/settings/subscription.cljs:487
 msgid "subscription.settings.enterprise.capped-bill"
@@ -4713,8 +4704,8 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:202
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr ""
-"Se cobrara después del periodo de prueba. No se requiere tarjeta de "
-"crédito en este momento."
+"Se cobrara después del periodo de prueba. No se requiere tarjeta de crédito "
+"en este momento."
 
 #: src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:199
 #, markdown
@@ -4728,9 +4719,9 @@ msgstr "Aplica %s a tus equipos"
 #: src/app/main/ui/settings/subscription.cljs:209
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr ""
-"Consejo: Puedes aumentar ahora el número de asientos para adelantarte a "
-"las invitaciones. Con más de 25 editores en todos tus equipos, "
-"disfrutarás de una tarifa plana de 175 $ al mes."
+"Consejo: Puedes aumentar ahora el número de asientos para adelantarte a las "
+"invitaciones. Con más de 25 editores en todos tus equipos, disfrutarás de "
+"una tarifa plana de 175 $ al mes."
 
 #: src/app/main/ui/settings/subscription.cljs:447
 msgid "subscription.settings.member-since"
@@ -5806,8 +5797,8 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:265
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr ""
-"Esta variante tiene propiedades y valores idénticos a los de otra "
-"variante. Ajusta los valores para que puedan ser encontradas"
+"Esta variante tiene propiedades y valores idénticos a los de otra variante. "
+"Ajusta los valores para que puedan ser encontradas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:271
 msgid "workspace.options.component.variant.duplicated.single.some"
@@ -7605,8 +7596,8 @@ msgstr "Error al importar:"
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:241
 msgid "workspace.tokens.import-multiple-files"
 msgstr ""
-"En multiples archivos, el nombre o la ruta del archivo serán los nombres "
-"de los sets."
+"En multiples archivos, el nombre o la ruta del archivo serán los nombres de "
+"los sets."
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:240
 msgid "workspace.tokens.import-single-file"
@@ -7648,9 +7639,9 @@ msgstr "Valor de color inválido: %s"
 #: src/app/main/data/workspace/tokens/errors.cljs:89
 msgid "workspace.tokens.invalid-font-weight-token-value"
 msgstr ""
-"Valor de peso de fuente inválido: usa valores numéricos (100-950) o "
-"nombres estándar (thin, light, regular, bold, etc.) opcionalmente seguidos "
-"de 'Italic'"
+"Valor de peso de fuente inválido: usa valores numéricos (100-950) o nombres "
+"estándar (thin, light, regular, bold, etc.) opcionalmente seguidos de "
+"'Italic'"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
 msgid "workspace.tokens.invalid-json"

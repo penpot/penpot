@@ -1872,11 +1872,6 @@ msgstr "Main component"
 msgid "inspect.tabs-switcher-label"
 msgstr ""
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
-#, unused
-msgid labels.code
-msgstr "Code"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:143
 msgid "inspect.tabs.code.selected.circle"
 msgstr "Circle"
