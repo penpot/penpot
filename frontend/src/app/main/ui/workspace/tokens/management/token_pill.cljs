@@ -22,6 +22,7 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [cljs.pprint :as pp]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -220,7 +221,8 @@
 
         color
         (when (cft/color-token? token)
-          (let [theme-token (get active-theme-tokens name)]
+          (let [theme-token (get active-theme-tokens name)
+                _ (pp/pprint {:theme-token active-theme-tokens :name name})]
             (or (dwtc/resolved-token-bullet-color theme-token)
                 (dwtc/resolved-token-bullet-color token))))
 
@@ -307,10 +309,9 @@
          :class (stl/css :token-pill-icon)}])
 
      (if contains-path?
-       (let [[first-part last-part] (cpn/split-by-last-period name)]
+       (let [[_ last-part] (cpn/split-by-last-period name)]
          [:span {:class (stl/css :divided-name-wrapper)
                  :aria-label name}
-          [:span {:class (stl/css :first-name-wrapper)} first-part]
           [:span {:class (stl/css :last-name-wrapper)} last-part]])
        [:span {:class (stl/css :name-wrapper)
                :aria-label name}
