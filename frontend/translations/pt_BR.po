@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Hugo Figueira <hugo.figueira7@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
+"PO-Revision-Date: 2025-11-18 13:51+0000\n"
+"Last-Translator: Tiago José <soutiagojose@outlook.com>\n"
+"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5388,3 +5388,587 @@ msgstr "Versões com salvamento automático serão mantidos por %s dias."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Este token não existe ou foi excluído."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Não há tokens de cor disponíveis. Verifique os conjuntos/temas ativos ou "
+"adicione novos tokens.﻿"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:49, src/app/main/ui/dashboard/placeholder.cljs:51
+msgid "dashboard.empty-project.import"
+msgstr "Importe um arquivo"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importe um arquivo .penpot"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "Comece a criar coisas incríveis"
+
+#: src/app/main/ui/dashboard/fonts.cljs:456
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Ainda não há fontes personalizadas."
+
+#: src/app/main/ui/dashboard/fonts.cljs:457
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Assim que um membro do projeto enviar uma fonte personalizada, ela será "
+"exibida aqui."
+
+#: src/app/main/ui/dashboard/fonts.cljs:199
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Detectamos um possível problema nas suas fontes relacionado às métricas "
+"verticais para diferentes sistemas operacionais. Para verificar, você pode "
+"usar serviços de métricas verticais de fontes como [este aqui]"
+"(https://vertical-metrics.netlify.app/). Além disso, recomendamos utilizar o "
+"[Transfonter](https://transfonter.org/) para gerar webfonts e corrigir "
+"erros. "
+
+#, unused
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Arquivo com componentes v2 ativado, mas esta equipe ainda não oferece "
+"suporte."
+
+#: src/app/main/ui/dashboard.cljs:243
+msgid "dashboard.import.bad-url"
+msgstr "Falhou ao importar. A URL do modelo está incorreta"
+
+#: src/app/main/ui/dashboard.cljs:241
+#, unused
+msgid "dashboard.import.error"
+msgstr "Falhou ao importar. Por favor, tente novamente"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Nem todos os arquivos foram importados"
+
+#: src/app/main/ui/dashboard/import.cljs:489
+msgid "dashboard.import.import-error.message1"
+msgstr "Os seguintes arquivos apresentam erros:"
+
+#: src/app/main/ui/dashboard/import.cljs:494
+msgid "dashboard.import.import-error.message2"
+msgstr "Arquivos com erros não puderam ser enviados."
+
+#: src/app/main/ui/dashboard.cljs:244
+msgid "dashboard.import.no-perms"
+msgstr "Você não tem permissão para importar para esta equipe"
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Você vai excluir os convites para:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Você vai reenviar os convites para:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Exclua convites"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Reenviar convites"
+
+#: src/app/main/ui/dashboard/templates.cljs:267
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Aqui você tem algumas bibliotecas e modelos que você pode adicionar ao seu "
+"projeto"
+
+#: src/app/main/data/comments.cljs:473
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Marquei todas as notificações como lidas"
+
+#: src/app/main/ui/dashboard/comments.cljs:91
+msgid "dashboard.notifications"
+msgstr "Notificações"
+
+#: src/app/main/data/profile.cljs:273
+msgid "dashboard.notifications.notifications-saved"
+msgstr "As configurações de notificações foram atualizadas"
+
+#: src/app/main/ui/dashboard/comments.cljs:45
+msgid "dashboard.notifications.view"
+msgstr "Ver notificações"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Ordenar por função"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Ordenar por status"
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.admin"
+msgstr "Agora você é administrador desta equipe."
+
+#: src/app/main/data/common.cljs:202
+msgid "dashboard.permissions-change.editor"
+msgstr "Agora você é editor dessa equipe."
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot Dark (padrão)"
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.owner"
+msgstr "Agora você é o proprietário desta equipe."
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "Tema do sistema"
+
+#: src/app/main/ui/settings/notifications.cljs:53
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Painel de notificações"
+
+#: src/app/main/ui/settings/notifications.cljs:67
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Todos os comentários, menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:69
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Nenhum"
+
+#: src/app/main/ui/settings/notifications.cljs:68
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Somente menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Comentários de arquivos"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Todos os tipos de convites e solicitações"
+
+#: src/app/main/ui/settings/notifications.cljs:79
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Nenhum"
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Convites e solicitações"
+
+#: src/app/main/ui/settings/notifications.cljs:63
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notificações de emails"
+
+#: src/app/main/ui/settings/notifications.cljs:52
+msgid "dashboard.settings.notifications.title"
+msgstr "Notificações"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Nenhum token aplicável nos conjuntos ou temas ativos."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Nenhum resultado encontrado."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:641, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:138
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Abrir lista de tokens"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:85, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Desvincular token"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:40, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:96, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Este token não está em nenhum conjunto ativo ou possui um valor inválido."
+
+#: src/app/main/errors.cljs:231
+msgid "errors.comment-error"
+msgstr "Houve um erro com o comentário﻿"
+
+#: src/app/main/errors.cljs:300
+msgid "errors.deprecated"
+msgstr ""
+"Desculpe! Este é um arquivo antigo que utiliza um tipo obsoleto de recursos "
+"do Penpot e você não pode abri-lo."
+
+#: src/app/main/errors.cljs:303
+msgid "errors.deprecated.contact.after"
+msgstr "para que possamos ajudar você."
+
+#: src/app/main/errors.cljs:301
+msgid "errors.deprecated.contact.before"
+msgstr ""
+"Embora o Penpot não seja mais compatível com este tipo de recurso, você pode﻿"
+
+#: src/app/main/errors.cljs:302
+msgid "errors.deprecated.contact.text"
+msgstr "contate-nos"
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "O e-mail não corresponde ao convite."
+
+#: src/app/main/errors.cljs:193
+msgid "errors.internal-assertion-error"
+msgstr "Erro interno de asserção﻿"
+
+#: src/app/main/errors.cljs:209
+msgid "errors.internal-worker-error"
+msgstr "Algo de errado aconteceu com o web worker."
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Somente o criador da versão pode bloqueá-la﻿"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Somente o criador da versão pode desbloqueá-la﻿"
+
+#: src/app/main/errors.cljs:222
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG inválido ou malformado﻿"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Não é possível duplicar um conjunto desconhecido﻿"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Esta versão já está bloqueada﻿"
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Esta versão está bloqueada e não pode ser excluída por outras pessoas﻿"
+
+#: src/app/main/ui/components/color_input.cljs:31
+msgid "inspect.attributes.color"
+msgstr "Cor"
+
+#, unused
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Taxado"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:152
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Não definido"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Propriedades da variante"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Propriedades das variantes"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:67
+msgid "inspect.subtitle.copy"
+msgstr "Copiar"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:63
+msgid "inspect.subtitle.main"
+msgstr "Componente principal"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Calculado"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copiar para a área de transferência"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Tamanho e posição"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Alternar painel %s﻿"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Conjunto de tokens e temas"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Conjuntos ativos"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Temas ativos"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Propriedades da variante"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Valor resolvido:"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "Sobre o Penpot"
+
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.access-tokens"
+msgstr "Tokens de acesso"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Informações da camada"
+
+#: src/app/main/ui/dashboard/comments.cljs:96
+msgid "label.mark-all-as-read"
+msgstr "Marcar todos como lidos"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:751
+msgid "labels.pinned-projects"
+msgstr "Projetos fixados"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:730
+msgid "labels.sources"
+msgstr "Recursos"
+
+#: src/app/main/ui/workspace/libraries.cljs:177
+msgid "labels.add"
+msgstr "Adicionar"
+
+#: src/app/main/ui/workspace/libraries.cljs:177
+msgid "labels.adding"
+msgstr "Adicionando..."
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Desfoque"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:181
+msgid "labels.collapse"
+msgstr "Recolher"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Cor"
+
+#: src/app/main/ui/comments.cljs:913
+msgid "labels.comment"
+msgstr "Comentário"
+
+#: src/app/main/ui/comments.cljs:917
+msgid "labels.comment.mark-as-solved"
+msgstr "Marcar como resolvido"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "Comunidade e contribuições﻿"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Copiar"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:99
+msgid "labels.copy-color"
+msgstr "Copiar cor"
+
+#: src/app/main/ui/dashboard/subscription.cljs:62, src/app/main/ui/dashboard/subscription.cljs:70, src/app/main/ui/dashboard/subscription.cljs:76, src/app/main/ui/dashboard/subscription.cljs:84, src/app/main/ui/dashboard/subscription.cljs:88
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Sua assinatura:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"Obtenha armazenamento extra, recuperação de arquivos e mais para suas "
+"equipes com o plano Ilimitado.﻿ [Impulsione!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:89, src/app/main/ui/dashboard/subscription.cljs:131
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Plano empresarial"
+
+#: src/app/main/ui/dashboard/subscription.cljs:85
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Plano empresarial (teste)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:63
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Plano profissional"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+#, unused
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Assinar"
+
+#: src/app/main/ui/dashboard/subscription.cljs:72
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr ""
+"Está gostando do seu teste? Libere acesso total para sempre﻿. "
+"[Assine|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:71
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Plano ilimitado (teste)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:77, src/app/main/ui/dashboard/subscription.cljs:130
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Plano ilimitado"
+
+#: src/app/main/ui/dashboard/subscription.cljs:78
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Obtenha armazenamento ilimitado, recuperação estendida de arquivos e "
+"editores ilimitados para todas as suas equipes por um preço fixo.﻿ "
+"[Dê uma olhada no plano empresarial.﻿|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Dê uma olhada"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr ""
+"Editores extras, armazenamento, versão salva automaticamente, backup de "
+"arquivos e mais."
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Você tem %s editores em suas equipes próprias, enquanto seu plano "
+"profissional cobre até 8.﻿"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Por favor, faça upgrade agora para Ilimitado ou Empresarial para liberar "
+"mais editores, armazenamento e recuperação de arquivos.﻿ "
+"[Assine agora.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:111
+msgid "subscription.dashboard.team-plan"
+msgstr "Plano de equipe"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Sua equipe continua crescendo! Seu plano Ilimitado cobre até %s editores, "
+"mas agora você tem %s.﻿"
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Por favor, faça upgrade agora para corresponder ao número atual de editores.﻿ "
+"[Assine agora.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Somente novos editores em suas equipes próprias contam para a cobrança "
+"futura. Uma tarifa fixa de $175/mês ainda se aplica para 25+ editores.﻿"
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Convidando pessoas enquanto estiver no plano Ilimitado﻿"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:978
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "Impulsionar"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:318, src/app/main/ui/settings/subscription.cljs:351
+msgid "subscription.labels"
+msgstr "Assinatura"
+
+#: src/app/main/ui/settings/subscription.cljs:373, src/app/main/ui/settings/subscription.cljs:397
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Adicione um método de pagamento para continuar após o seu teste﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:439
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Todos os benefícios do plano Profissional e:﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:379, src/app/main/ui/settings/subscription.cljs:391, src/app/main/ui/settings/subscription.cljs:401, src/app/main/ui/settings/subscription.cljs:453
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Todos os benefícios do plano Ilimitado e:﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:39
+msgid "subscription.settings.editors"
+msgstr "(x %s editores)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:72, src/app/main/ui/settings/subscription.cljs:346, src/app/main/ui/settings/subscription.cljs:399, src/app/main/ui/settings/subscription.cljs:449
+msgid "subscription.settings.enterprise"
+msgstr "Empresarial"
+
+#: src/app/main/ui/settings/subscription.cljs:68, src/app/main/ui/settings/subscription.cljs:345, src/app/main/ui/settings/subscription.cljs:389
+msgid "subscription.settings.enterprise-trial"
+msgstr "Empresarial (teste)"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:403, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.enterprise.autosave"
+msgstr "Versões salvas automaticamente e recuperação de arquivos﻿ por 90 dias"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Fatura mensal fixa"
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Armazenamento ilimitado"
+
+#: src/app/main/ui/dashboard/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:383, src/app/main/ui/settings/subscription.cljs:395, src/app/main/ui/settings/subscription.cljs:405
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Gerencie sua assinatura"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Atualmente, você tem %s pessoa em suas equipes que pode editar.﻿"
+msgstr[1] "Atualmente, você tem %s pessoas em suas equipes que podem editar.﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:149
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr ""
+"Atenção: mudar para um plano inferior significa menos armazenamento e "
+"backups e histórico de versões mais curtos.﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:133
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Editores"
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr ""
+"(Proprietários, Administradores e Editores. Visualizadores não contam como "
+"Editores)﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:181
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Você não pode definir menos editores do que tem agora. Altere o papel "
+"(editor/administrador para visualizador) para pessoas que realmente não "
+"editam arquivos nas configurações da equipe.﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:177
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr ""
+"Cobrado após o período de teste. Nenhum cartão de crédito necessário agora.﻿"
+
+#: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
+#, markdown
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "**$%s**/mês"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.management.dialog.title"
+msgstr "Aplicado %s às suas equipes"

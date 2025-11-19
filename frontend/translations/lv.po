@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"PO-Revision-Date: 2025-10-14 17:08+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian "
 "<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
@@ -4566,7 +4566,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Tu esi %s."
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Tu atbalsti mūs ar šo plānu kopš: %s"
 
@@ -7424,7 +7423,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Sākotnējā vērtība: %s"
 
@@ -7446,7 +7444,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Atsauču kļūdas: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Atrisinātā vērtība: %s"
 
@@ -7512,7 +7509,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Izskatu saraksts"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:608, src/app/main/ui/workspace/tokens/management/create/form.cljs:609
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Apraksts"
 
@@ -7883,3 +7879,82 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Šī tekstvienība nepastāv vai ir izdzēsta."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Nav pieejama neviena krāsu tekstvienība. Jāpārbauda izmantotās kopas/izskati "
+"vai jāpievieno jaunas tekstvienības."
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Tu grasies izdzēst uzaicinājumus:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Tu grasies atkārtoti nosūtīt uzaicinājumus:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Izdzēst uzaicinājumus"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Atkārtoti nosūtīt uzaicinājumus"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "%s burtu stilu un veidu"
+msgstr[1] "%s burtu stils un veids"
+msgstr[2] "%s burtu stili un veidi"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "%s attēli"
+msgstr[1] "%s attēls"
+msgstr[2] "%s attēli"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "%s sastāvdaļu"
+msgstr[1] "%s sastāvdaļa"
+msgstr[2] "%s sastāvdaļas"
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "Savienota ar"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "%s krāsu"
+msgstr[1] "%s krāsa"
+msgstr[2] "%s krāsas"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Kārtot pēc lomas"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Kārtot pēc stāvokļa"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Ievietot starpliktuvē"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Izmērs un novietojums"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Pārslēgt paneli %s"

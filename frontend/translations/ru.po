@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Vint Prox <vintprox@envs.net>\n"
-"Language-Team: Russian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
+"PO-Revision-Date: 2025-10-14 17:07+0000\n"
+"Last-Translator: \"Roman D.\" <williampuh@gmail.com>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2003,7 +2003,7 @@ msgstr "Снова отправить приглашение"
 
 #: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
 msgid "labels.retry"
-msgstr "Заново"
+msgstr "Повторить"
 
 #: src/app/main/ui/dashboard/team.cljs:513, src/app/main/ui/dashboard/team.cljs:945
 msgid "labels.role"
@@ -6048,3 +6048,471 @@ msgstr "Автосохранённые версии будут хранитьс�
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#, unused
+msgid "errors.invalid-email"
+msgstr "Пожалуйста, введите действительный адрес электронной почты"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "Неверные данные"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:730
+msgid "labels.sources"
+msgstr "Источники"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:751
+msgid "labels.pinned-projects"
+msgstr "Закреплённые Проекты"
+
+#: src/app/main/ui/static.cljs:283
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Эта страница не существует"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:636
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Компоненты должны находиться на одной странице"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Добавить страницу"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Этот токен не существует или был удален."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Нет доступных токенов цвета. Проверьте активные наборы/темы или добавьте "
+"новые токены."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "Добавить библиотеку или шаблон"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "Создать новый файл"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Перейти к библиотекам и шаблонам"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:49, src/app/main/ui/dashboard/placeholder.cljs:51
+msgid "dashboard.empty-project.import"
+msgstr "Импортировать файл"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Импорт .penpot файл"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "Начать создавать удивительные вещи"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Не все файлы были импортированы"
+
+#: src/app/main/ui/dashboard/import.cljs:489
+msgid "dashboard.import.import-error.message1"
+msgstr "В следующих файлах есть ошибки:"
+
+#: src/app/main/ui/dashboard/import.cljs:494
+msgid "dashboard.import.import-error.message2"
+msgstr "Файлы с ошибками загружены не будут."
+
+#: src/app/main/ui/dashboard.cljs:244
+msgid "dashboard.import.no-perms"
+msgstr "У вас нет разрешения на импорт в эту команду"
+
+#: src/app/main/ui/dashboard/team.cljs:765
+#, fuzzy
+msgid "dashboard.invitation-modal.delete"
+msgstr "Вы собираетесь удалить приглашения в:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Вы собираетесь повторно разослать приглашения:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Удалить приглашения"
+
+#: src/app/main/ui/dashboard/fonts.cljs:457
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Как только участник проекта загрузит собственный шрифт, он будет отображен "
+"здесь."
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Повторно отправить приглашения"
+
+#: src/app/main/ui/dashboard/templates.cljs:267
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Здесь вы найдете библиотеки и шаблоны, которые вы можете добавить в свой "
+"проект"
+
+#: src/app/main/data/comments.cljs:473
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Отметил все уведомления как прочитанные"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Сортировать по роли"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Сортировать по статусу"
+
+#: src/app/main/data/common.cljs:236
+msgid "dashboard.removed-from-team"
+msgstr "Вы больше не являетесь частью команды “%s“."
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Темный Penpot (по умолчанию)"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Светлый Penpot"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "Системная тема"
+
+#: src/app/main/ui/dashboard/templates.cljs:134
+msgid "dashboard.template.add-to-project"
+msgstr "Добавить в свой проект"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:976
+#, fuzzy
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Безграничное творчество"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:974
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Бесплатный"
+
+#: src/app/main/ui/dashboard/team.cljs:1160
+#, fuzzy
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Вы можете удалять или изменять только созданные вами webhook'и."
+
+#: src/app/main/ui/workspace/plugins.cljs:339, src/app/main/ui/workspace/plugins.cljs:393
+msgid "ds.confirm-allow"
+msgstr "Разрешить"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "В активных наборах или темах нет применимых токенов."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Совпадений не найдено."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:641, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:138
+#, fuzzy
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Открыть список токенов"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:85, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+#, fuzzy
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Отсоединить токен"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:40, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:96, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Этот токен не входит ни в один активный набор или имеет недопустимое "
+"значение."
+
+#: src/app/main/ui/comments.cljs:730, src/app/main/ui/comments.cljs:761, src/app/main/ui/comments.cljs:858
+msgid "errors.character-limit-exceeded"
+msgstr "Превышен лимит символов"
+
+#: src/app/main/errors.cljs:231
+#, fuzzy
+msgid "errors.comment-error"
+msgstr "В комментарии произошла ошибка"
+
+#: src/app/main/errors.cljs:300
+msgid "errors.deprecated"
+msgstr ""
+"Извините! Это старый файл, использующий устаревший тип ресурсов Penpot, и вы "
+"не можете его открыть."
+
+#: src/app/main/errors.cljs:301
+msgid "errors.deprecated.contact.before"
+msgstr "Хоть Penpot больше не поддерживает этот тип Ресурсов, вы можете"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:274
+msgid "errors.drop-token-set-parent-to-child"
+msgstr "Невозможно переместить родительский набор в собственный дочерний путь."
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "Адрес электронной почты не соответствует приглашению."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, fuzzy, unused
+msgid "errors.field-max-length"
+msgstr "Должен содержать не более 1 символа."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Должен содержать не менее 1 символа."
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "Пустое поле"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "Имя должно содержать какой-либо символ, отличный от пробела."
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Неверный текст"
+
+#: src/app/main/ui/dashboard/team.cljs:187, src/app/main/ui/dashboard/team.cljs:849, src/app/main/ui/onboarding/team_choice.cljs:101
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Достигнуто максимальное (%s) количество адресов электронной почты, которые "
+"можно пригласить в одном запросе"
+
+#: src/app/main/errors.cljs:263
+msgid "errors.migration-in-progress"
+msgstr "Миграция в процессе"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Только создатель версии может ее заблокировать"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Разблокировать версию может только ее создатель"
+
+#: src/app/main/errors.cljs:222
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG недействителен или имеет неправильный формат"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:150, src/app/main/data/workspace/tokens/library_edit.cljs:180
+msgid "errors.token-set-already-exists"
+msgstr "Набор с таким именем уже существует"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Невозможно дублировать неизвестный набор"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:273
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Невозможно завершить перенос, набор с таким именем уже существует по "
+"указанному пути."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:77, src/app/main/data/workspace/tokens/library_edit.cljs:95
+msgid "errors.token-theme-already-exists"
+msgstr "Вариант темы с таким же названием уже существует"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Эта версия уже заблокирована"
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Эта версия заблокирована и не может быть удалена другими пользователями"
+
+#: src/app/main/ui/components/color_input.cljs:31
+msgid "inspect.attributes.color"
+msgstr "Цвет"
+
+#, unused
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Зачеркивание"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Вариант свойств"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Варианты свойств"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:67
+msgid "inspect.subtitle.copy"
+msgstr "Копировать"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:63
+msgid "inspect.subtitle.main"
+msgstr "Основной компонент"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Копировать в буфер обмена"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Размер и Положение"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Переключить панель %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Наборы токенов и Темы"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Активные наборы"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Активные темы"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Вариант свойств"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Полученное значение:"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Информация о слое"
+
+#: src/app/main/ui/dashboard/comments.cljs:96
+msgid "label.mark-all-as-read"
+msgstr "Отметить все как прочитанное"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "О Penpot"
+
+#: src/app/main/ui/workspace/libraries.cljs:177
+msgid "labels.add"
+msgstr "Добавить"
+
+#: src/app/main/ui/workspace/libraries.cljs:177
+msgid "labels.adding"
+msgstr "Добавление..."
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Размытие"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:181
+msgid "labels.collapse"
+msgstr "Свернуть"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Цвет"
+
+#: src/app/main/ui/comments.cljs:913
+msgid "labels.comment"
+msgstr "Комментарий"
+
+#: src/app/main/ui/comments.cljs:917
+msgid "labels.comment.mark-as-solved"
+msgstr "Отметить как решенное"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Копировать"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:99
+msgid "labels.copy-color"
+msgstr "Копировать цвет"
+
+#: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:65
+#, fuzzy
+msgid "labels.duplicate"
+msgstr "Дубликат"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:301
+#, fuzzy
+msgid "labels.empty"
+msgstr "Пусто"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.error"
+msgstr "Ошибка"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+#, fuzzy
+msgid "labels.fill"
+msgstr "Заливка"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1019
+msgid "labels.help-learning"
+msgstr "Помощь и Обучение"
+
+#: src/app/main/ui/dashboard/templates.cljs:91
+msgid "labels.hide"
+msgstr "Скрыть"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:130
+msgid "labels.import"
+msgstr "Импорт"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Слой"
+
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:115, src/app/main/ui/dashboard/grid.cljs:134, src/app/main/ui/dashboard/import.cljs:258, src/app/main/ui/dashboard/placeholder.cljs:140, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:249, src/app/main/ui/workspace.cljs:128, src/app/main/ui.cljs:68, src/app/main/ui.cljs:106, src/app/main/ui.cljs:125
+msgid "labels.loading"
+msgstr "Загрузка…"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:82
+msgid "workspace.versions.restore-warning"
+msgstr "Вы хотите восстановить эту версию?"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Эта версия заблокирована вами"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:389
+msgid "workspace.versions.loading"
+msgstr "Загрузка..."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:369
+msgid "workspace.versions.filter.mine"
+msgstr "Мои версии"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:382
+msgid "workspace.versions.filter.label"
+msgstr "Фильтр версий"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:368
+msgid "workspace.versions.filter.all"
+msgstr "Все версии"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:403
+msgid "workspace.versions.empty"
+msgstr "Версий пока нет"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:272
+msgid "workspace.versions.button.restore"
+msgstr "Восстановить версию"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:277
+msgid "workspace.versions.button.pin"
+msgstr "Закрепить версию"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:208, src/app/main/ui/workspace/top_toolbar.cljs:209
+msgid "workspace.toolbar.plugins"
+msgstr "Плагины (%s)"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
+msgid "workspace.tokens.value-not-valid"
+msgstr "Значение недействительное"

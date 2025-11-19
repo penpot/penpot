@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2025-11-18 13:52+0000\n"
+"Last-Translator: jonnysemon <jonnysemon@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Arabic "
 "<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -23,11 +23,11 @@ msgstr "تحقق من بريدك الإلكتروني وانقر على الرا
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
-msgstr "تأكيد كلمة المرور"
+msgstr "أكّد كلمة السر"
 
 #: src/app/main/ui/auth/register.cljs:227
 msgid "auth.create-demo-account"
-msgstr "إنشاء حساب تجريبي"
+msgstr "أنشئ حساب تجريبي"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 #, unused
@@ -36,11 +36,11 @@ msgstr "ترغب في التجربة فحسب؟"
 
 #: src/app/main/ui/auth/login.cljs:43
 msgid "auth.demo-warning"
-msgstr "هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
+msgstr "هذه خدمة تجريبية، لا تستخدمها للعمل الحقيقي، ستُمسح المشاريع بشكل دوري."
 
 #: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
-msgstr "هل نسيت كلمة السر؟"
+msgstr "أنسيت كلمة السر؟"
 
 #: src/app/main/ui/auth/register.cljs:160, src/app/main/ui/auth/register.cljs:328
 msgid "auth.fullname"
@@ -48,15 +48,15 @@ msgstr "الاسم الكامل"
 
 #: src/app/main/ui/auth/login.cljs:282
 msgid "auth.login-account-title"
-msgstr "قم بتسجيل الدخول إلى حسابي"
+msgstr "لِج إلى حسابي"
 
 #: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:156, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "تسجيل الدخول هنا"
+msgstr "لِج هنا."
 
 #: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
-msgstr "تسجيل الدخول"
+msgstr "لِج"
 
 #: src/app/main/ui/auth/login.cljs:285
 msgid "auth.login-tagline"
@@ -68,7 +68,7 @@ msgstr "Github"
 
 #: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlabسجل دخولك عن طريق"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
@@ -76,31 +76,32 @@ msgstr "جوجل"
 
 #: src/app/main/ui/auth/login.cljs:201
 msgid "auth.login-with-ldap-submit"
-msgstr "LDAPسجل دخولك عن طريق"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
+#, fuzzy
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID سجل دخولك عن طريق"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs:60
 msgid "auth.new-password"
-msgstr "اكتب كلمة مرور جديدة"
+msgstr "اكتب كلمة سر جديدة"
 
 #: src/app/main/ui/auth/recovery.cljs:36
 msgid "auth.notifications.password-changed-successfully"
-msgstr "تم تغيير كلمة المرور بنجاح"
+msgstr "غُيّرت كلمة السر بنجاح"
 
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
-msgstr "لم يتم التأكيد على الحساب الشخصي ، يرجى التحقق قبل المواصلة"
+msgstr "الملف التعريف غير موثّق، يُرجى توثيق الملف التعريف قبل المتابعة."
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
 msgid "auth.notifications.recovery-token-sent"
-msgstr "تم إرسال رمز الاسترداد لاستعادة كلمة المرور إلى صندوق البريد الخاص بك"
+msgstr "أُرسل رابط استعادة كلمة السر إلى بريدك الوارد."
 
 #: src/app/main/ui/auth/verify_token.cljs:49
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "تم الانضمام إلى الفريق بنجاح"
+msgstr "انضممت إلى الفريق بنجاح"
 
 #: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
@@ -116,7 +117,7 @@ msgstr "سياسة الخصوصية"
 
 #: src/app/main/ui/auth/recovery_request.cljs:82
 msgid "auth.recovery-request-submit"
-msgstr "إستعادة كلمة المرور"
+msgstr "استعد كلمة السر"
 
 #: src/app/main/ui/auth/recovery_request.cljs:95
 msgid "auth.recovery-request-subtitle"
@@ -124,11 +125,11 @@ msgstr "سنرسل لك رسالة بريد إلكتروني تحتوي على �
 
 #: src/app/main/ui/auth/recovery_request.cljs:94
 msgid "auth.recovery-request-title"
-msgstr "نسيت كلمة المرور؟"
+msgstr "أنسيت كلمة السر؟"
 
 #: src/app/main/ui/auth/recovery.cljs:71
 msgid "auth.recovery-submit"
-msgstr "تغيير كلمة المرور"
+msgstr "غيّر كلمة سرك"
 
 #: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
@@ -136,11 +137,11 @@ msgstr "لا تملك حساب بعد؟"
 
 #: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:143, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
-msgstr "إنشاء حساب"
+msgstr "أنشئ حساب"
 
 #: src/app/main/ui/auth/register.cljs:206
 msgid "auth.register-title"
-msgstr "إنشاء حساب"
+msgstr "أنشئ حساب"
 
 #: src/app/main/ui/auth.cljs
 #, unused
@@ -166,7 +167,7 @@ msgstr "...علامة تجارية، رسوم توضيحية، قطع تسويق
 
 #: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
-msgstr "أنشر"
+msgstr "انشر"
 
 #: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
 msgid "common.share-link.all-users"
@@ -174,9 +175,7 @@ msgstr "جميع مستخدمي Penpot"
 
 #: src/app/main/ui/viewer/share_link.cljs:200
 msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
-"شخص"
+msgstr "أمتأكد أنك تريد إزالة هذا الرابط؟ إذا فعلت ذلك، فلن يكون متاحًا لأي شخص"
 
 #: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
 msgid "common.share-link.current-tag"
@@ -184,19 +183,19 @@ msgstr "(الحالي)"
 
 #: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
-msgstr "إتلاف الرابط"
+msgstr "أتلف الرابط"
 
 #: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
-msgstr "خذ رابطا إلكتروني"
+msgstr "احصل على الرابط"
 
 #: src/app/main/ui/viewer/share_link.cljs:139
 msgid "common.share-link.link-copied-success"
-msgstr "تم نسخ الرابط بنجاح"
+msgstr "نُسخ الرابط بنجاح"
 
 #: src/app/main/ui/viewer/share_link.cljs:233
 msgid "common.share-link.manage-ops"
-msgstr "إدارة التصاريح"
+msgstr "أدر الأذونات"
 
 #: src/app/main/ui/viewer/share_link.cljs:279
 msgid "common.share-link.page-shared"
@@ -214,7 +213,7 @@ msgstr "يمكن التعليق"
 
 #: src/app/main/ui/viewer/share_link.cljs:310
 msgid "common.share-link.permissions-can-inspect"
-msgstr "يمكن فحص الكود"
+msgstr "يمكن فحص الرمز"
 
 #: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.permissions-hint"
@@ -234,15 +233,15 @@ msgstr "أعضاء الفريق فقط"
 
 #: src/app/main/ui/viewer/share_link.cljs:173
 msgid "common.share-link.title"
-msgstr "مشاركة النماذج"
+msgstr "شارك النماذج"
 
 #: src/app/main/ui/viewer/share_link.cljs:271
 msgid "common.share-link.view-all"
-msgstr "اختر الكل"
+msgstr "حدّد الكل"
 
 #: src/app/main/ui/workspace/libraries.cljs:329
 msgid "common.unpublish"
-msgstr "إلغاء النشر"
+msgstr "ألغِ النشر"
 
 #: src/app/main/ui/dashboard/projects.cljs:91
 msgid "dasboard.team-hero.management"
@@ -250,7 +249,7 @@ msgstr "إدارة الفريق"
 
 #: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.text"
-msgstr "Penpot تم تصميمه للفرق. أدعُ زملاءك للعمل سوياَ على المشاريع والملفات"
+msgstr "Penpot صُمّم للفِرق. أدعُ زملاءك للعمل سوياَ على المشاريع والملفات"
 
 #: src/app/main/ui/dashboard/projects.cljs:88
 msgid "dasboard.team-hero.title"
@@ -264,7 +263,7 @@ msgstr "تعلم أساسيات برنامج Penpot بينما تستمع بتج
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.start"
-msgstr "إبدا الدورة التعليمية"
+msgstr "ابدأ الدورة التعليمية"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
@@ -274,12 +273,12 @@ msgstr "دورة تعليمية عملية"
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.walkthrough-hero.info"
-msgstr "إذهب في جولة في البرنامج وتعرف على ميزاته."
+msgstr "اذهب في جولة في البرنامج وتعرّف على ميزاته."
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.walkthrough-hero.start"
-msgstr "إبدا الجولة"
+msgstr "ابدأ الجولة"
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
@@ -288,19 +287,19 @@ msgstr "جولة في الواجهة"
 
 #: src/app/main/ui/settings/access_tokens.cljs:103
 msgid "dashboard.access-tokens.copied-success"
-msgstr "الرمز منسوخ"
+msgstr "نُسخ الرمز"
 
 #: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
-msgstr "قم بإنشاء رمز جديد"
+msgstr "ولّد رمز جديد"
 
 #: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
-msgstr "تم إنشاء رمز الوصول بنجاح."
+msgstr "أُنشئ رمز الوصول بنجاح."
 
 #: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "اضغط على الزر \"إنشاء رمز جديد\" لإنشاء واحد."
+msgstr "اضغط على الزر \"ولّد رمز جديد\" لإنشاء واحد."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
 msgid "dashboard.add-shared"
@@ -308,15 +307,15 @@ msgstr "أضف كمكتبة مشتركة"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
-msgstr "تغيير البريد الإلكتروني"
+msgstr "غيّر البريد الإلكتروني"
 
 #: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
-msgstr "(نسخة)"
+msgstr "(نسخ)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:329
 msgid "dashboard.create-new-team"
-msgstr "إنشاء فريق جديد"
+msgstr "أنشئ فريق جديد"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
@@ -332,15 +331,15 @@ msgstr "تنزيل ملف Penpot (.penpot)"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:707
 msgid "dashboard.download-standard-file"
-msgstr "تنزيل ملف قياسي (.svg + .json)"
+msgstr "نزّل ملف قياسي (.svg + .json)"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
-msgstr "تكرير"
+msgstr "كرّر"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:242
 msgid "dashboard.duplicate-multi"
-msgstr "تكرير %s الملفات"
+msgstr "كرّر %s ملفات"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:257
 msgid "dashboard.export-binary-multi"
@@ -348,23 +347,23 @@ msgstr "تنزيل ملفات ٪s Penpot (.penpot)"
 
 #: src/app/main/ui/workspace/main_menu.cljs:715
 msgid "dashboard.export-frames"
-msgstr "صدر اللوحة الفنية الى ملف PDF…"
+msgstr "صدّر اللوحات ك PDF"
 
 #: src/app/main/ui/exports/assets.cljs:200
 msgid "dashboard.export-frames.title"
-msgstr "استخراج PDF"
+msgstr "صدّر ك PDF"
 
 #, unused
 msgid "dashboard.export-multi"
-msgstr "تصدير %s الملفات"
+msgstr "صدّر ملفات Penpot %s"
 
 #: src/app/main/ui/exports/assets.cljs:107
 msgid "dashboard.export-multiple.selected"
-msgstr "%s من %s عناصر مختارة"
+msgstr "%s من %s عناصر محدّدة"
 
 #: src/app/main/ui/workspace/main_menu.cljs:677
 msgid "dashboard.export-shapes"
-msgstr "استخراج"
+msgstr "صدّر"
 
 #: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.how-to"
@@ -374,7 +373,7 @@ msgstr ""
 
 #: src/app/main/ui/exports/assets.cljs:182
 msgid "dashboard.export-shapes.how-to-link"
-msgstr "معلومات عن كيفية إعداد التصدير."
+msgstr "معلومات عن كيفية إعداد التصديرات في Penpot."
 
 #: src/app/main/ui/exports/assets.cljs:177
 msgid "dashboard.export-shapes.no-elements"
@@ -382,7 +381,7 @@ msgstr "لا يوجد عناصر بإعدادت التصدير."
 
 #: src/app/main/ui/exports/assets.cljs:188
 msgid "dashboard.export-shapes.title"
-msgstr "إختيار التصدير"
+msgstr "صدّر التحديد"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:262
 msgid "dashboard.export-standard-multi"
@@ -390,7 +389,7 @@ msgstr "تحميل %s ملفات أساسية (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
 msgid "dashboard.export.detail"
-msgstr "* ربما يحتوي على عناصر، رسومات، الوان، و/أو خطوط."
+msgstr "* ربما يحتوي على مكوّنات، رسوميات والوان و/أو خطوط."
 
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
@@ -404,7 +403,7 @@ msgstr "سيتم ادراج الملفات التي لها مكتبات مشتر
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"
-msgstr "صدر المكتبات المشتركة"
+msgstr "صدّر المكتبات المشتركة"
 
 #: src/app/main/ui/exports/files.cljs:166
 msgid "dashboard.export.options.detach.message"
@@ -426,19 +425,19 @@ msgstr "تضمين أصول المكتبة المشتركة في مكتبات ا
 
 #: src/app/main/ui/exports/files.cljs:147
 msgid "dashboard.export.title"
-msgstr "صدر الملفات"
+msgstr "صدّر الملفات"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "الخط محذوف"
+msgstr "خط مفقود"
 
 #: src/app/main/ui/dashboard/fonts.cljs:218
 msgid "dashboard.fonts.dismiss-all"
-msgstr "الغاء الكل"
+msgstr "أهمِل الكل"
 
 #: src/app/main/ui/dashboard/fonts.cljs:453
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "لا يزال ليس لديك خطوط مخصصة مثبتة."
+msgstr "ستظهر الخطوط المخصّصة التي ترفعها هنا."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.fonts-added"
@@ -456,43 +455,42 @@ msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "ستتم إضافة أي خط ويب تقوم بتحميله هنا إلى قائمة عائلة الخطوط المتوفرة في "
 "خصائص النص الخاصة بملفات هذا الفريق. سيتم تجميع الخطوط التي لها نفس اسم "
-"عائلة الخطوط على أنها ** عائلة خط واحدة **. يمكنك تحميل الخطوط بالتنسيقات "
-"التالية: ** TTF و OTF و WOFF ** (ستحتاج إلى تنسيق واحد فقط)."
+"عائلة الخطوط على أنها **عائلة خط واحدة **. يمكنك رفع الخطوط بالتنسيقات "
+"التالية: **TTF و OTF و WOFF** (ستحتاج إلى واحد فقط)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:194
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "يجب عليك فقط تحميل الخطوط التي تمتلكها أو لديك ترخيص لاستخدامها في Penpot. "
-"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] (%s). قد ترغب أيضًا "
-"في القراءة عن [ترخيص الخطوط] (2)."
+"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot](%s). قد ترغب أيضًا في "
+"القراءة عن [ترخيص الخطوط](https://www.typography.com/faq).."
 
 #: src/app/main/ui/dashboard/fonts.cljs:214
 msgid "dashboard.fonts.upload-all"
-msgstr "حمل الكل"
+msgstr "ارفع الكل"
 
 #: src/app/main/ui/dashboard/fonts.cljs:199
 #, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"لقد اكتشفنا مشكلة محتملة في الخطوط الخاصة بك تتعلق بالمقاييس الرأسية لأنظمة "
-"التشغيل المختلفة. للتحقق من ذلك ، يمكنك استخدام خدمات المقاييس العمودية "
-"للخطوط مثل [هذه] (https://vertical-metrics.netlify.app/). بالإضافة إلى ذلك "
-"، نوصي باستخدام [Transfonter] (https://transfonter.org/) لإنشاء خطوط الويب "
-"وإصلاح الأخطاء. "
+"لقد اكتشفنا مشكلة محتملة في خطوطك تتعلق بالمقاييس الرأسية لأنظمة تشغيل "
+"مختلفة. للتحقق من ذلك، يمكنك استخدام خدمات المقاييس الرأسية للخطوط مثل [هذه]"
+"(https://vertical-metrics.netlify.app/). بالإضافة إلى ذلك، نوصي باستخدام "
+"[Transfonter](https://transfonter.org/) لإنشاء خطوط الويب وإصلاح الأخطاء. "
 
 #: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
-msgstr "استيراد ملفات"
+msgstr "استورد ملفات Penpot"
 
 #: src/app/main/ui/dashboard/import.cljs:293, src/app/worker/import.cljs:121, src/app/worker/import.cljs:124
 msgid "dashboard.import.analyze-error"
-msgstr "لم نستطع استيراد أو إدراج هذا الملف"
+msgstr "عذراً! لم نتمكن من استيراد هذا الملف"
 
 #: src/app/main/ui/dashboard/import.cljs:292
 #, unused
 msgid "dashboard.import.import-error"
-msgstr "حصل خلل خلال إدراج الملف. لم يتم إدراج الملف على البرنامج."
+msgstr "حدثت مشكلة أثناء استيراد الملف. لم يتم استيراد الملف."
 
 #: src/app/main/ui/dashboard/import.cljs:479
 msgid "dashboard.import.import-message"
@@ -500,79 +498,79 @@ msgstr "%s ملف تم ادراجهم بنجاح."
 
 #: src/app/main/ui/dashboard/import.cljs:474
 msgid "dashboard.import.import-warning"
-msgstr "تحتوي بعض الملفات على كائنات غير صالحة تمت إزالتها."
+msgstr "احتوت بعض الملفات على كائنات غير صالحة أُزيلت."
 
 #: src/app/main/ui/dashboard/import.cljs:128
 msgid "dashboard.import.progress.process-colors"
-msgstr "يتم معالجة الألوان"
+msgstr "معالجة الألوان"
 
 #: src/app/main/ui/dashboard/import.cljs:137, src/app/main/ui/dashboard/import.cljs:140
 msgid "dashboard.import.progress.process-components"
-msgstr "يتم معالجة العناصر"
+msgstr "معالجة المكوّنات"
 
 #: src/app/main/ui/dashboard/import.cljs:134
 msgid "dashboard.import.progress.process-media"
-msgstr "يتم معالجة الوسائط"
+msgstr "معالجة الوسائط"
 
 #: src/app/main/ui/dashboard/import.cljs:125
 msgid "dashboard.import.progress.process-page"
-msgstr "يتم معالجة الصفحة: %s"
+msgstr "معالجة الصفحة: %s"
 
 #: src/app/main/ui/dashboard/import.cljs:131
 msgid "dashboard.import.progress.process-typographies"
-msgstr "يتم معالجة الخطوط"
+msgstr "معالجة الخطوط"
 
 #: src/app/main/ui/dashboard/import.cljs:119
 msgid "dashboard.import.progress.upload-data"
-msgstr "تحميل البيانات للخادم (%s/%s)"
+msgstr "يرفع البيانات للخادم (%s/%s)"
 
 #: src/app/main/ui/dashboard/import.cljs:122
 msgid "dashboard.import.progress.upload-media"
-msgstr "تحميل الملف: %s"
+msgstr "يرفع الملف: %s"
 
 #: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
 msgid "dashboard.invite-profile"
-msgstr "قم بدعوة للفريق"
+msgstr "ادعُ الناس"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
-msgstr "ترك الفريق"
+msgstr "غادر الفريق"
 
 #: src/app/main/ui/dashboard/templates.cljs:84, src/app/main/ui/dashboard/templates.cljs:169
 msgid "dashboard.libraries-and-templates"
-msgstr "المكتبات & القوالب"
+msgstr "المكتبات والقوالب"
 
 #: src/app/main/ui/dashboard/templates.cljs:170
 msgid "dashboard.libraries-and-templates.explore"
-msgstr "استعرض المزيد منهم وتعلم كيف تساهم"
+msgstr "استكشف المزيد منهم وتعلم كيف تساهم"
 
 #: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:152
 msgid "dashboard.libraries-and-templates.import-error"
-msgstr "حدثت مشكلة في استيراد النموذج. لم يتم استيراد النموذج."
+msgstr "حدثت مشكلة أثناء استيراد القالب. لم يتم استيراد القالب."
 
 #: src/app/main/ui/dashboard/libraries.cljs:66
 msgid "dashboard.libraries-title"
-msgstr "المكتبات المشتركة"
+msgstr "المكتبات"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:143
 msgid "dashboard.loading-files"
-msgstr "تحميل ملفاتك …"
+msgstr "جارِ تحميل ملفاتك …"
 
 #: src/app/main/ui/dashboard/fonts.cljs:447
 msgid "dashboard.loading-fonts"
-msgstr "جاري تحميل الخطوط …"
+msgstr "جارِ تحميل خطوطك …"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
-msgstr "الانتقال إلى"
+msgstr "انقل إلى"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:247
 msgid "dashboard.move-to-multi"
-msgstr "أنقل %s الملفات إلى"
+msgstr "انقل %s ملف إلى"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.move-to-other-team"
-msgstr "الانتقال إلى فريق آخر"
+msgstr "انقل إلى فريق آخر"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
 msgid "dashboard.new-file"
@@ -600,15 +598,15 @@ msgstr "ستظهر المشاريع المثبتة هنا"
 
 #: src/app/main/ui/auth/verify_token.cljs:34
 msgid "dashboard.notifications.email-changed-successfully"
-msgstr "تم تحديث عنوان بريدك الإلكتروني بنجاح"
+msgstr "حُدّث عنوان بريدك الإلكتروني بنجاح"
 
 #: src/app/main/ui/auth/verify_token.cljs:28
 msgid "dashboard.notifications.email-verified-successfully"
-msgstr "تم التحقق من عنوان بريدك الإلكتروني بنجاح"
+msgstr "تحققَ من عنوان بريدك الإلكتروني بنجاح"
 
 #: src/app/main/ui/settings/password.cljs:36
 msgid "dashboard.notifications.password-saved"
-msgstr "تم حفظ كلمة المرور بنجاح!"
+msgstr "حُفظت كلمة السر بنجاح!"
 
 #: src/app/main/ui/dashboard/team.cljs:1340
 msgid "dashboard.num-of-members"
@@ -616,7 +614,7 @@ msgstr "%s الأعضاء"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:277
 msgid "dashboard.open-in-new-tab"
-msgstr "فتح ملف في علامة تبويب جديدة"
+msgstr "افتح الملف في لسان جديد"
 
 #: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
 msgid "dashboard.options"
@@ -624,11 +622,11 @@ msgstr "الخيارات"
 
 #: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
 msgid "dashboard.password-change"
-msgstr "تغيير كلمة المرور"
+msgstr "غيّر كلمة السر"
 
 #: src/app/main/ui/dashboard/pin_button.cljs:23, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
-msgstr "تثبيت / إلغاء التثبيت"
+msgstr "ثبت/ألغِ التثبيت"
 
 #: src/app/main/ui/dashboard/projects.cljs:55
 msgid "dashboard.projects-title"
@@ -636,20 +634,20 @@ msgstr "المشاريع"
 
 #: src/app/main/ui/settings/profile.cljs:86
 msgid "dashboard.remove-account"
-msgstr "هل تريد إزالة حسابك؟"
+msgstr "أتريد إزالة حسابك؟"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
 msgid "dashboard.remove-shared"
-msgstr "إزالة كمكتبة مشتركة"
+msgstr "أزِل كمكتبة مشتركة"
 
 #: src/app/main/ui/settings/profile.cljs:78
 msgid "dashboard.save-settings"
-msgstr "حفظ الإعدادات"
+msgstr "احفظ الإعدادات"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
 msgid "dashboard.search-placeholder"
-msgstr "بحث…"
+msgstr "ابحث…"
 
 #: src/app/main/ui/dashboard/search.cljs:72
 msgid "dashboard.searching-for"
@@ -657,15 +655,15 @@ msgstr "البحث عن \"%s\"…"
 
 #: src/app/main/ui/settings/options.cljs:58
 msgid "dashboard.select-ui-language"
-msgstr "حدد لغة واجهة المستخدم"
+msgstr "حدّد لغة واجهة المستخدم"
 
 #: src/app/main/ui/settings/options.cljs:65
 msgid "dashboard.select-ui-theme"
-msgstr "اختر نمطا"
+msgstr "حدّد نَسقا"
 
 #: src/app/main/ui/dashboard/projects.cljs:304
 msgid "dashboard.show-all-files"
-msgstr "إظهار كافة الملفات"
+msgstr "أظهر كل الملفات"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
@@ -681,19 +679,19 @@ msgstr "تم تكرار ملفك بنجاح"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:35
 msgid "dashboard.success-duplicate-project"
-msgstr "تم نسخ مشروعك بنجاح"
+msgstr "كُرّر مشروعك بنجاح"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
-msgstr "تم نقل ملفك بنجاح"
+msgstr "نُقل ملفك بنجاح"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
-msgstr "تم نقل الملفات بنجاح"
+msgstr "نُقلت الملفات بنجاح"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:57
 msgid "dashboard.success-move-project"
-msgstr "تم نقل مشروعك بنجاح"
+msgstr "نُقل مشروعك بنجاح"
 
 #: src/app/main/ui/dashboard/team.cljs:1323
 msgid "dashboard.team-info"
@@ -709,7 +707,7 @@ msgstr "مشاريع الفريق"
 
 #: src/app/main/ui/settings/options.cljs:63
 msgid "dashboard.theme-change"
-msgstr "ثيم واجهة الاستخدام"
+msgstr "نسق واجهة المستخدم"
 
 #: src/app/main/ui/dashboard/search.cljs:59
 msgid "dashboard.title-search"
@@ -721,11 +719,11 @@ msgstr "اكتب لإظهار نتائج البحث"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:640
 msgid "dashboard.unpublish-shared"
-msgstr "الغاء نشر المكتبة"
+msgstr "ألغِ نشر المكتبة"
 
 #: src/app/main/ui/settings/options.cljs:74
 msgid "dashboard.update-settings"
-msgstr "تحديث الإعدادات"
+msgstr "حدّث الإعدادات"
 
 #: src/app/main/ui/dashboard/team.cljs:1115
 msgid "dashboard.webhooks.active"
@@ -733,7 +731,7 @@ msgstr "نشط"
 
 #: src/app/main/ui/dashboard/team.cljs:1116
 msgid "dashboard.webhooks.active.explain"
-msgstr "عندما يتم تشغيل هذا الخطاف ، سيتم تسليم تفاصيل الحدث"
+msgstr "عندما يتم تشغيل هذا الخطاف، سيتم تسليم تفاصيل الحدث"
 
 #: src/app/main/ui/dashboard/team.cljs:1106
 msgid "dashboard.webhooks.content-type"
@@ -741,7 +739,7 @@ msgstr "نوع المحتوى"
 
 #: src/app/main/ui/dashboard/team.cljs:1139
 msgid "dashboard.webhooks.create"
-msgstr "إنشاء الرد التلقائي على الويب"
+msgstr "أنشئ webhook"
 
 #: src/app/main/ui/settings.cljs:34
 msgid "dashboard.your-account-title"
@@ -761,19 +759,19 @@ msgstr "Penpot الخاص بك"
 
 #: src/app/main/ui/alert.cljs:35
 msgid "ds.alert-ok"
-msgstr "حسناَ"
+msgstr "حسنًا"
 
 #: src/app/main/ui/alert.cljs:34, src/app/main/ui/alert.cljs:37
 msgid "ds.alert-title"
-msgstr "إنتباه"
+msgstr "انتباه"
 
 #: src/app/main/ui/confirm.cljs:86
 msgid "ds.component-subtitle"
-msgstr "عناصر سيتم تحديثها:"
+msgstr "مكوّنات لتحدّثها:"
 
 #: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:333, src/app/main/ui/workspace/plugins.cljs:387
 msgid "ds.confirm-cancel"
-msgstr "إلغاء الأمر"
+msgstr "ألغِ"
 
 #: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
 msgid "ds.confirm-ok"
@@ -785,19 +783,19 @@ msgstr "هل أنت متأكد؟"
 
 #: src/app/main/ui/auth/login.cljs:78
 msgid "errors.auth-provider-not-configured"
-msgstr "موفر المصادقة غير معد ومسجل."
+msgstr "موفّر الاستيثاق غير مضبط."
 
 #: src/app/main/errors.cljs:112
 msgid "errors.auth.unable-to-login"
-msgstr "يبدوا أنك غير مصرح لك أو أن الجلسة إنتهت."
+msgstr "يبدوا أنك غير مُستوثق أو أن الجلسة انتهت."
 
 #: src/app/main/data/fonts.cljs:192, src/app/main/ui/dashboard/fonts.cljs:120
 msgid "errors.bad-font"
-msgstr "تعذر تحميل الخط٪ s"
+msgstr "تعذر تحميل الخط %s"
 
 #: src/app/main/data/fonts.cljs:191
 msgid "errors.bad-font-plural"
-msgstr "تعذر تحميل الخطوط٪ s"
+msgstr "تعذر تحميل الخطوط %s"
 
 #: src/app/main/data/workspace/clipboard.cljs:279, src/app/main/data/workspace/clipboard.cljs:497
 msgid "errors.clipboard-not-implemented"
@@ -809,11 +807,11 @@ msgstr "البريد الإلكتروني مستخدم بالفعل"
 
 #: src/app/main/ui/auth/verify_token.cljs:89
 msgid "errors.email-already-validated"
-msgstr "متم التحقق من صحة البريد الإلكتروني"
+msgstr "تحققَ من صحة البريد الإلكتروني بالفعل."
 
 #: src/app/main/ui/auth/register.cljs:105, src/app/main/ui/settings/password.cljs:27
 msgid "errors.email-as-password"
-msgstr "لا يمكنك استخدام بريدك الإلكتروني ككلمة مرور"
+msgstr "لا يمكن لكلمة السر أن تكون بريدك الإلكتروني"
 
 #: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:627, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
@@ -821,17 +819,17 @@ msgstr "يحتوي البريد الإلكتروني «%s» على العديد 
 
 #: src/app/main/ui/dashboard/team.cljs:196, src/app/main/ui/dashboard/team.cljs:858, src/app/main/ui/onboarding/team_choice.cljs:110
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr "تم الإبلاغ عن البريد الإلكتروني «٪ s» كبريد عشوائي أو مرتد بشكل دائم."
+msgstr "بُلّغ عن البريد الإلكتروني «%s» كبريد عشوائي أو مرتد بشكل دائم."
 
 #: src/app/main/errors.cljs:277
 msgid "errors.feature-mismatch"
 msgstr ""
-"يبدو أنك تفتح ملفًا تم تمكين الميزة \"٪ s\" فيه ولكن الواجهة الأمامية لـ "
-"penpot لا تدعمه أو تم تعطيله."
+"يبدو أنك تفتح ملفًا فُعّل الميزة \"%s\" فيه ولكن الواجهة الأمامية لـ penpot لا "
+"تدعمه أو عُطّل."
 
 #: src/app/main/errors.cljs:281, src/app/main/errors.cljs:295
 msgid "errors.feature-not-supported"
-msgstr "الميزة '٪ s' غير مدعومة."
+msgstr "الميزة '%s' غير مدعومة."
 
 #: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
@@ -860,15 +858,15 @@ msgstr "دعوة غير صالحة"
 
 #: src/app/main/ui/static.cljs:71
 msgid "errors.invite-invalid.info"
-msgstr "هذه الدعوة قد تلغى أو قد تنتهي."
+msgstr "قد تكون هذه الدعوة ملغاة أو منتهية الصلاحية."
 
 #: src/app/main/ui/auth/login.cljs:107
 msgid "errors.ldap-disabled"
-msgstr "تم تعطيل مصادقة LDAP."
+msgstr "استيثاق LDAP معطّل."
 
 #: src/app/main/data/workspace/media.cljs:190
 msgid "errors.media-too-large"
-msgstr "الصورة كبيرة جدا بحيث لا يمكن إدراجها."
+msgstr "الصورة كبيرة جدًا بحيث لا يمكن إدراجها."
 
 #: src/app/main/data/media.cljs:70, src/app/main/data/workspace/media.cljs:193
 msgid "errors.media-type-mismatch"
@@ -887,12 +885,12 @@ msgstr ""
 #: src/app/main/ui/settings/password.cljs
 #, unused
 msgid "errors.password-invalid-confirmation"
-msgstr "يجب أن تتطابق كلمة مرور التأكيد"
+msgstr "يجب أن تتطابق كلمة سر التأكيد"
 
 #: src/app/main/ui/settings/password.cljs
 #, unused
 msgid "errors.password-too-short"
-msgstr "يجب ألا تقل كلمة المرور عن 8 أحرف"
+msgstr "يجب ألا تقل كلمة السر عن 8 أحرف"
 
 #: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
 msgid "errors.profile-blocked"
@@ -950,11 +948,11 @@ msgstr "حالة غير متوقعة٪ s"
 
 #: src/app/main/ui/auth/login.cljs:115, src/app/main/ui/auth/login.cljs:119
 msgid "errors.wrong-credentials"
-msgstr "يبدو أن اسم المستخدم أو كلمة المرور خاطئة."
+msgstr "اسم المستخدم أو كلمة السر خاطئة."
 
 #: src/app/main/ui/settings/password.cljs:24
 msgid "errors.wrong-old-password"
-msgstr "كلمة المرور القديمة غير صحيحة"
+msgstr "كلمة السر القديمة غير صحيحة"
 
 #: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
@@ -1280,7 +1278,7 @@ msgstr "مدخل خاطأ"
 
 #: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
 msgid "labels.cancel"
-msgstr "الغاء"
+msgstr "ألغِ"
 
 #: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:246, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:656, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:244, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/create/modals.cljs:91, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:58, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:161, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:441
 msgid "labels.close"
@@ -1296,7 +1294,7 @@ msgstr "مجتمع"
 
 #: src/app/main/ui/settings/password.cljs:91
 msgid "labels.confirm-password"
-msgstr "تأكيد كلمة المرور"
+msgstr "أكّد كلمة السر"
 
 #: src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
 msgid "labels.continue"
@@ -1312,11 +1310,11 @@ msgstr "يمكنك المتابعة مع حساب Penpot"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
 msgid "labels.create"
-msgstr "انشاء"
+msgstr "أنشئ"
 
 #: src/app/main/ui/dashboard/team_form.cljs:100, src/app/main/ui/dashboard/team_form.cljs:120
 msgid "labels.create-team"
-msgstr "إنشاء فريق جديد"
+msgstr "أنشئ فريق جديد"
 
 #: src/app/main/ui/dashboard/team_form.cljs:112
 msgid "labels.create-team.placeholder"
@@ -1460,7 +1458,7 @@ msgstr "الأعضاء"
 
 #: src/app/main/ui/settings/password.cljs:84
 msgid "labels.new-password"
-msgstr "كلمة مرور جديدة"
+msgstr "كلمة سر جديدة"
 
 #: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:165
 msgid "labels.no-comments-available"
@@ -1511,7 +1509,7 @@ msgstr[5] "غير ذلك"
 
 #: src/app/main/ui/settings/password.cljs:77
 msgid "labels.old-password"
-msgstr "كلمة المرور القديمة"
+msgstr "كلمة السر القديمة"
 
 #: src/app/main/ui/workspace/comments.cljs
 #, unused
@@ -1528,7 +1526,7 @@ msgstr "مالك"
 
 #: src/app/main/ui/settings/sidebar.cljs:98
 msgid "labels.password"
-msgstr "كلمة المرور"
+msgstr "كلمة السر"
 
 #: src/app/main/ui/dashboard/team.cljs:669
 msgid "labels.pending-invitation"
@@ -1711,7 +1709,7 @@ msgstr "تغيير بريدك الإلكتروني"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
-msgstr "إلغاء والاحتفاظ بحسابي"
+msgstr "ألغِ واحتفظ بحسابي"
 
 #: src/app/main/ui/settings/delete_account.cljs:61
 msgid "modals.delete-account.confirm"
@@ -1938,7 +1936,7 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 #, unused
 msgid "modals.update-remote-component-in-bulk.message"
-msgstr "تحديث المكونات في مكتبة مشتركة"
+msgstr "حدّث المكوّنات في المكتبة المشتركة"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
 msgid "modals.update-remote-component.accept"
@@ -1946,17 +1944,17 @@ msgstr "تحديث المكون"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
 msgid "modals.update-remote-component.cancel"
-msgstr "إلغاﺀ"
+msgstr "ألغِ"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:421
 msgid "modals.update-remote-component.hint"
 msgstr ""
-"أنت على وشك تحديث مكون في مكتبة مشتركة. قد يؤثر هذا على الملفات الأخرى التي "
-"تستخدمها."
+"أنت على وشك تحديث مكوّن في المكتبة المشتركة. قد يؤثر هذا على الملفات الأخرى "
+"التي تستخدمها."
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:420
 msgid "modals.update-remote-component.message"
-msgstr "تحديث المكون في المكتبة المشتركة"
+msgstr "حدّث المكوّن في المكتبة المشتركة"
 
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
@@ -2034,7 +2032,7 @@ msgstr "مرحبًا بك في Penpot!"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:177
 msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "بعد تسمية فريقك ، ستتمكن من دعوة الأشخاص للانضمام."
+msgstr "بعد تسمية فريقك، ستتمكن من دعوة الأشخاص للانضمام."
 
 #: src/app/main/ui/onboarding/team_choice.cljs:185
 msgid "onboarding.choice.team-up.create-team-placeholder"
@@ -2096,7 +2094,7 @@ msgstr "عدد غير محدود من الأعضاء"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:52
 msgid "onboarding.team-modal.create-team-feature-5"
-msgstr "مجانا 100٪ !"
+msgstr "مجانا 100٪!"
 
 #: src/app/main/ui/onboarding/templates.cljs:77
 msgid "onboarding.templates.subtitle"
@@ -2230,7 +2228,7 @@ msgstr "محاذاة المركز عموديًا"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:84
 msgid "shortcuts.artboard-selection"
-msgstr "إنشاء لوحة من الاختيار"
+msgstr "أنشئ لوحة من التحديد"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
 msgid "shortcuts.bool-difference"
@@ -2330,7 +2328,7 @@ msgstr "كرر"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:112
 msgid "shortcuts.escape"
-msgstr "إلغي"
+msgstr "ألغِ"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:113
 msgid "shortcuts.export-shapes"
@@ -2494,7 +2492,7 @@ msgstr "أداة انتقاء اللون"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
 msgid "shortcuts.open-dashboard"
-msgstr "إذهب إلى لوحة المعلومات"
+msgstr "اذهب إلى لوحة المعلومات"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:189
 msgid "shortcuts.toggle-layers"
@@ -2598,7 +2596,7 @@ msgstr "إعدادات - Penpot"
 
 #: src/app/main/ui/settings/password.cljs:103
 msgid "title.settings.password"
-msgstr "كلمة المرور - Penpot"
+msgstr "كلمة السر - Penpot"
 
 #: src/app/main/ui/settings/profile.cljs:124
 msgid "title.settings.profile"
@@ -2632,9 +2630,8 @@ msgstr "%s -مساحة العمل Penpot"
 #, unused
 msgid "viewer.breaking-change.description"
 msgstr ""
-"وصف كسر التغييرThis shareable link is no longer valid. Create a new one or "
-"ask the owner for a new one.هذا الرابط القابل للمشاركة لم يعد صالحا.صمم "
-"جديدا أو اسأل مالكه للجديد"
+"لم يعد هذا الرابط القابل للمشاركة صالحًا. أنشئ رابطًا جديدًا أو اطلب من المالك "
+"رابطًا جديدًا."
 
 #: src/app/main/ui.cljs:137
 #, unused
@@ -2744,11 +2741,11 @@ msgstr "عناصر"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:141
 msgid "workspace.assets.create-group"
-msgstr "إيجاد مجموعة"
+msgstr "أنشئ مجموعة"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:152
 msgid "workspace.assets.create-group-hint"
-msgstr "\"ستسمى عناصرك تلقائيا ك\"اسم مجموعة\" \"اسم عنصر"
+msgstr "ستُسمى عناصرك تلقائيًا ك \"اسم مجموعة / اسم عنصر\""
 
 #: src/app/main/ui/workspace/context_menu.cljs:682, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:641, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:443
 msgid "workspace.assets.delete"
@@ -2781,7 +2778,7 @@ msgstr "اسم المجموعة"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:631
 msgid "workspace.assets.local-library"
-msgstr "المكتبة المحلية"
+msgstr "مكتبة محلية"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:307
 msgid "workspace.assets.not-found"
@@ -2789,7 +2786,7 @@ msgstr "الأصل غير موجود"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:113
 msgid "workspace.assets.open-library"
-msgstr "افتح ملف المكتب"
+msgstr "افتح ملف المكتبة"
 
 #: src/app/main/ui/workspace/context_menu.cljs:685, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:616, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:434
 msgid "workspace.assets.rename"
@@ -3112,7 +3109,7 @@ msgstr "المكتبة"
 
 #: src/app/main/ui/workspace/libraries.cljs:500
 msgid "workspace.libraries.library-updates"
-msgstr "تحديث المكتبة"
+msgstr "تحديثات المكتبة"
 
 #: src/app/main/ui/workspace/libraries.cljs:498
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -3188,7 +3185,7 @@ msgstr "النسخ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:188
 msgid "workspace.options.component.create-annotation"
-msgstr "إنشاء حاشية"
+msgstr "أنشئ تعليق توضيحي"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:187
 msgid "workspace.options.component.edit-annotation"
@@ -3520,15 +3517,15 @@ msgstr "بعد النقر"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:377
 msgid "workspace.options.interaction-open-overlay"
-msgstr "فتح التراكب"
+msgstr "افتح التراكب"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:54
 msgid "workspace.options.interaction-open-overlay-dest"
-msgstr "فتح التراكب: %s"
+msgstr "افتح التراكب: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:61, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:381
 msgid "workspace.options.interaction-open-url"
-msgstr "رابط مفتوح"
+msgstr "افتح الرابط"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 #, unused
@@ -4226,19 +4223,19 @@ msgstr "انسخ"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:490
 msgid "workspace.shape.menu.create-annotation"
-msgstr "إنشاء تعليق توضيحي"
+msgstr "أنشئ تعليق توضيحي"
 
 #: src/app/main/ui/workspace/context_menu.cljs:381
 msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "تحديد محتوى اللوحة"
+msgstr "تحديد إلى اللوحة"
 
 #: src/app/main/ui/workspace/context_menu.cljs:590
 msgid "workspace.shape.menu.create-component"
-msgstr "إنشاء نعصر"
+msgstr "أنشئ مكوّن"
 
 #: src/app/main/ui/workspace/context_menu.cljs:594
 msgid "workspace.shape.menu.create-multiple-components"
-msgstr "إنشاء عناصر جديدة"
+msgstr "أنشى مكوّنات جديدة"
 
 #: src/app/main/ui/workspace/context_menu.cljs:205
 msgid "workspace.shape.menu.cut"
@@ -4680,3 +4677,72 @@ msgstr "تحديث"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لتغلق المسار"
+
+#: src/app/main/ui/workspace/plugins.cljs:439
+msgid "workspace.plugins.try-out.cancel"
+msgstr "ليس اﻵن"
+
+#: src/app/main/ui/workspace/plugins.cljs:84
+msgid "workspace.plugins.button-open"
+msgstr "افتح"
+
+#: src/app/main/ui/workspace/plugins.cljs:379
+msgid "workspace.plugins.permissions-update.warning"
+msgstr "عُدّل الملحق منذ آخر مرة فتحته. ويريد الآن أيضًا الوصول إلى:"
+
+#: src/app/main/ui/workspace/plugins.cljs:432
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"أتريد إلقاء نظرة؟ سيتم فتحه في مسودة جديدة لفريقك الحالي. "
+"(وإلا، يمكنك دائمًا العثور عليه في الملحقات المثبتة لأي ملف.)"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "افتح قائمة اللقطات"
+
+#: src/app/main/ui/ds/product/milestone.cljs:84, src/app/main/ui/ds/product/milestone_group.cljs:86
+msgid "workspace.versions.version-menu"
+msgstr "افتح قائمة الإصدار"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "أنشئ ملف جديد"
+
+#: src/app/main/ui/workspace/context_menu.cljs:794
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "أنشئ منطقة"
+
+#: src/app/main/ui/workspace/context_menu.cljs:797
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "أنشئ لوحة"
+
+#: src/app/main/ui/workspace/plugins.cljs:326
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr ""
+"يُرجى ملاحظة أن هذا المكون الإضافي أُنشئ بواسطة طرف خارجي، لذا تأكد من الوثوق "
+"به قبل منحه حق الوصول. خصوصية بياناتك وأمنها مهمان بالنسبة لنا. إذا كانت "
+"لديك أي مخاوف، يُرجى التواصل مع الدعم."
+
+#: src/app/main/ui/workspace/context_menu.cljs:610, src/app/main/ui/workspace/sidebar/assets/common.cljs:514, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:961, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1113, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1195
+msgid "workspace.shape.menu.add-variant"
+msgstr "أنشئ تنويعة"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:172
+msgid "workspace.assets.add-library"
+msgstr "أضف مكتبة"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:177
+msgid "workspace.assets.manage-library"
+msgstr "أدر المكتبة"
+
+#: src/app/main/ui/workspace/libraries.cljs:385
+msgid "workspace.libraries.shared-library-btn"
+msgstr "اتصل بمكتبة"
+
+#: src/app/main/ui/workspace/libraries.cljs:354
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "افصل المكتبة"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:765
+msgid "workspace.options.component.swap.empty"
+msgstr "لا توجد أصول في هذه المكتبة بعد"
