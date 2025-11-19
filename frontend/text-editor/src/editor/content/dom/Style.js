@@ -46,22 +46,22 @@ function resetStyleDeclaration(styleDeclaration) {
 }
 
 /**
+ * Resets the style declaration of the inert
+ * element.
+ */
+export function resetInertElement() {
+  const inertElement = getInertElement();
+  resetStyleDeclaration(inertElement.style);
+  return inertElement;
+}
+
+/**
  * An inert element that only keeps the style
  * declaration used for merging other styleDeclarations.
  *
  * @type {HTMLDivElement|null}
  */
-let inertElement = null;
-
-/**
- * Resets the style declaration of the inert
- * element.
- */
-export function resetInertElement() {
-  if (!inertElement) throw new Error("Invalid inert element");
-  resetStyleDeclaration(inertElement.style);
-  return inertElement;
-}
+let globalInertElement = null;
 
 /**
  * Returns an instance of a <div> element used
@@ -70,12 +70,11 @@ export function resetInertElement() {
  * @returns {HTMLDivElement}
  */
 function getInertElement() {
-  if (!inertElement) {
-    inertElement = document.createElement("div");
-    return inertElement;
+  if (!globalInertElement) {
+    globalInertElement = document.createElement("div");
+    return globalInertElement;
   }
-  resetInertElement();
-  return inertElement;
+  return globalInertElement;
 }
 
 /**
@@ -84,9 +83,9 @@ function getInertElement() {
  * @returns {CSSStyleDeclaration}
  */
 function getStyleDefaultsDeclaration() {
-  const element = getInertElement();
+  const inertElement = getInertElement();
   resetInertElement();
-  return element.style;
+  return inertElement.style;
 }
 
 /**
@@ -98,17 +97,23 @@ function getStyleDefaultsDeclaration() {
 export function getComputedStyle(element) {
   if (typeof window !== "undefined" && window.getComputedStyle) {
     const inertElement = getInertElement();
+    resetInertElement(element);
     const computedStyle = window.getComputedStyle(element);
     inertElement.style = computedStyle;
-
     return inertElement.style;
   }
   return getComputedStylePolyfill(element);
 }
 
+/**
+ * Returns a polyfilled version of a computed style.
+ *
+ * @param {Element} element
+ * @returns {CSSStyleDeclaration}
+ */
 export function getComputedStylePolyfill(element) {
   const inertElement = getInertElement();
-
+  resetInertElement(element);
   let currentElement = element;
   while (currentElement) {
     for (let index = 0; index < currentElement.style.length; index++) {
