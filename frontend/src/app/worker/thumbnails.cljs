@@ -7,16 +7,24 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
+   [app.common.types.color :as cc]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.render :as render]
+   [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
    [app.worker.impl :as impl]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [rumext.v2 :as mf]))
+   [promesa.core :as p]
+   [rumext.v2 :as mf]
+   [shadow.esm :refer (dynamic-import)]))
 
 (log/set-level! :trace)
 
@@ -42,11 +50,11 @@
                :http-body body})))
 
 (defn- request-data-for-thumbnail
-  [file-id revn]
+  [file-id revn strip-frames-with-thumbnails]
   (let [path    "api/main/methods/get-file-data-for-thumbnail"
         params   {:file-id file-id
                   :revn revn
-                  :strip-frames-with-thumbnails true}
+                  :strip-frames-with-thumbnails strip-frames-with-thumbnails}
         request  {:method :get
                   :uri (u/join cf/public-uri path)
                   :credentials "include"
@@ -86,5 +94,89 @@
 
 (defmethod impl/handler :thumbnails/generate-for-file
   [{:keys [file-id revn] :as message} _]
-  (->> (request-data-for-thumbnail file-id revn)
+  (->> (request-data-for-thumbnail file-id revn true)
        (rx/map render-thumbnail)))
+
+(def init-wasm
+  (delay
+    (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
+      (-> (dynamic-import (str uri))
+          (p/then #(wasm.api/init-wasm-module %))
+          (p/then #(set! wasm/internal-module %))))))
+
+(mf/defc svg-wrapper
+  [{:keys [data-uri background width height]}]
+  [:svg {:version "1.1"
+         :xmlns "http://www.w3.org/2000/svg"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
+
+         :style {:width "100%"
+                 :height "100%"
+                 :background background}
+         :fill "none"
+         :viewBox (dm/str "0 0 " width " " height)}
+   [:image {:xlinkHref data-uri
+            :width width
+            :height height}]])
+
+(defn blob->uri
+  [blob]
+  (.readAsDataURL (js/FileReaderSync.) blob))
+
+(def thumbnail-aspect-ratio (/ 2 3))
+
+(defmethod impl/handler :thumbnails/generate-for-file-wasm
+  [{:keys [file-id revn width] :as message} _]
+
+  (->> (rx/from @init-wasm)
+       (rx/mapcat #(request-data-for-thumbnail file-id revn false))
+       (rx/mapcat
+        (fn [{:keys [page] :as file}]
+          (rx/create
+           (fn [subs]
+             (try
+               (let [background-color (or (:background page) cc/canvas)
+                     height (* width thumbnail-aspect-ratio)
+                     canvas (js/OffscreenCanvas. width height)
+                     init? (wasm.api/init-canvas-context canvas)]
+                 (if init?
+                   (let [objects (:objects page)
+                         frame (some->> page :thumbnail-frame-id (get objects))
+                         vbox (if frame
+                                (-> (gsb/get-object-bounds objects frame)
+                                    (grc/fix-aspect-ratio thumbnail-aspect-ratio))
+                                (render/calculate-dimensions objects thumbnail-aspect-ratio))
+                         zoom (/ width (:width vbox))]
+
+                     (wasm.api/initialize-viewport
+                      objects zoom vbox background-color
+                      (fn []
+                        (if frame
+                          (wasm.api/render-sync-shape (:id frame))
+                          (wasm.api/render-sync))
+
+                        (-> (.convertToBlob canvas)
+                            (p/then
+                             (fn [blob]
+                               (let [data
+                                     (rds/renderToStaticMarkup
+                                      (mf/element
+                                       svg-wrapper
+                                       #js {:data-uri (blob->uri blob)
+                                            :width width
+                                            :height height
+                                            :background background-color}))]
+                                 (rx/push! subs {:data data :file-id file-id :revn revn}))))
+                            (p/catch #(do (.error js/console %)
+                                          (rx/error! subs %)))
+                            (p/finally #(rx/end! subs))))))
+
+                   (do (rx/error! subs "Error loading webgl context")
+                       (rx/end! subs)))
+
+                 nil)
+
+               (catch :default err
+                 (.error js/console err)
+                 (rx/error! subs err)
+                 (rx/end! subs)))))))))

@@ -63,15 +63,27 @@ impl<'a> State<'a> {
         self.render_state.render_from_cache(&self.shapes);
     }
 
+    pub fn render_sync(&mut self, timestamp: i32) -> Result<(), String> {
+        self.render_state
+            .start_render_loop(None, &self.shapes, timestamp, true)?;
+        Ok(())
+    }
+
+    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<(), String> {
+        self.render_state
+            .start_render_loop(Some(id), &self.shapes, timestamp, true)?;
+        Ok(())
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .start_render_loop(&self.shapes, timestamp)?;
+            .start_render_loop(None, &self.shapes, timestamp, false)?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .process_animation_frame(&self.shapes, timestamp)?;
+            .process_animation_frame(None, &self.shapes, timestamp)?;
         Ok(())
     }
 
@@ -162,7 +174,11 @@ impl<'a> State<'a> {
     }
 
     pub fn rebuild_tiles(&mut self) {
-        self.render_state.rebuild_tiles(&self.shapes);
+        self.render_state.rebuild_tiles_from(&self.shapes, None);
+    }
+
+    pub fn rebuild_tiles_from(&mut self, base_id: Option<&Uuid>) {
+        self.render_state.rebuild_tiles_from(&self.shapes, base_id);
     }
 
     pub fn rebuild_touched_tiles(&mut self) {

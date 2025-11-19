@@ -867,7 +867,13 @@ impl RenderState {
         }
     }
 
-    pub fn start_render_loop(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<(), String> {
+    pub fn start_render_loop(
+        &mut self,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
+        timestamp: i32,
+        sync_render: bool,
+    ) -> Result<(), String> {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
 
@@ -917,20 +923,27 @@ impl RenderState {
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
-        self.process_animation_frame(tree, timestamp)?;
+
+        if sync_render {
+            self.render_shape_tree_sync(base_object, tree, timestamp)?;
+        } else {
+            self.process_animation_frame(base_object, tree, timestamp)?;
+        }
+
         performance::end_measure!("start_render_loop");
         Ok(())
     }
 
     pub fn process_animation_frame(
         &mut self,
+        base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             if tree.len() != 0 {
-                self.render_shape_tree_partial(tree, timestamp)?;
+                self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
             } else {
                 println!("Empty tree");
             }
@@ -944,6 +957,22 @@ impl RenderState {
             }
         }
         performance::end_measure!("process_animation_frame");
+        Ok(())
+    }
+
+    pub fn render_shape_tree_sync(
+        &mut self,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if tree.len() != 0 {
+            self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
+        } else {
+            println!("Empty tree");
+        }
+        self.flush_and_submit();
+
         Ok(())
     }
 
@@ -1215,6 +1244,7 @@ impl RenderState {
         &mut self,
         tree: ShapesPoolRef,
         timestamp: i32,
+        allow_stop: bool,
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
@@ -1495,7 +1525,7 @@ impl RenderState {
             }
 
             // We try to avoid doing too many calls to get_time
-            if self.should_stop_rendering(iteration, timestamp) {
+            if allow_stop && self.should_stop_rendering(iteration, timestamp) {
                 return Ok((is_empty, true));
             }
             iteration += 1;
@@ -1505,8 +1535,10 @@ impl RenderState {
 
     pub fn render_shape_tree_partial(
         &mut self,
+        base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
+        allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
         while !should_stop {
@@ -1532,7 +1564,7 @@ impl RenderState {
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) =
-                        self.render_shape_tree_partial_uncached(tree, timestamp)?;
+                        self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop)?;
 
                     if early_return {
                         return Ok(());
@@ -1564,10 +1596,16 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            let Some(root) = tree.get(&Uuid::nil()) else {
-                return Err(String::from("Root shape not found"));
+            let root_ids = {
+                if let Some(shape_id) = base_object {
+                    vec![*shape_id]
+                } else {
+                    let Some(root) = tree.get(&Uuid::nil()) else {
+                        return Err(String::from("Root shape not found"));
+                    };
+                    root.children_ids(false)
+                }
             };
-            let root_ids = root.children_ids(false);
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -1711,13 +1749,19 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
-    pub fn rebuild_tiles(&mut self, tree: ShapesPoolRef) {
+    pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
         performance::begin_measure!("rebuild_tiles");
 
         self.tiles.invalidate();
 
         let mut all_tiles = HashSet::<tiles::Tile>::new();
-        let mut nodes = vec![Uuid::nil()];
+        let mut nodes = {
+            if let Some(base_id) = base_id {
+                vec![*base_id]
+            } else {
+                vec![Uuid::nil()]
+            }
+        };
 
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
@@ -1737,7 +1781,6 @@ impl RenderState {
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
-
         performance::end_measure!("rebuild_tiles");
     }
 

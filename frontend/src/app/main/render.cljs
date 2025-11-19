@@ -67,7 +67,7 @@
     :height (:height vbox)
     :fill color}])
 
-(defn- calculate-dimensions
+(defn calculate-dimensions
   [objects aspect-ratio]
   (let [root-objects (ctst/get-root-objects objects)]
     (if (empty? root-objects)
