@@ -162,10 +162,24 @@
 
 
 (t/deftest find-boolean-pair
-  (t/testing "find-boolean-pair"
+  (t/testing "find-boolean-pair basic cases"
     (t/is (= (ctv/find-boolean-pair ["off" "on"]) {"on" true "off" false}))
     (t/is (= (ctv/find-boolean-pair ["on" "off"]) {"on" true "off" false}))
     (t/is (= (ctv/find-boolean-pair ["off" "on" "other"]) nil))
     (t/is (= (ctv/find-boolean-pair ["yes" "no"]) {"yes" true "no" false}))
     (t/is (= (ctv/find-boolean-pair ["false" "true"]) {"true" true "false" false}))
-    (t/is (= (ctv/find-boolean-pair ["hello" "bye"]) nil))))
+    (t/is (= (ctv/find-boolean-pair ["hello" "bye"]) nil)))
+
+  (t/testing "find-boolean-pair with original casing"
+    (t/is (= (ctv/find-boolean-pair ["tRue" "faLse"]) {"tRue" true "faLse" false}))
+    (t/is (= (ctv/find-boolean-pair ["ON" "OFF"]) {"ON" true "OFF" false}))
+    (t/is (= (ctv/find-boolean-pair ["YeS" "nO"]) {"YeS" true "nO" false})))
+
+  (t/testing "find-boolean-pair with reversed order and mixed case"
+    (t/is (= (ctv/find-boolean-pair ["FaLsE" "TrUe"]) {"TrUe" true "FaLsE" false}))
+    (t/is (= (ctv/find-boolean-pair ["No" "Yes"]) {"Yes" true "No" false})))
+
+  (t/testing "find-boolean-pair with invalid input"
+    (t/is (= (ctv/find-boolean-pair ["yes"]) nil))
+    (t/is (= (ctv/find-boolean-pair ["true" "false" "extra"]) nil))
+    (t/is (= (ctv/find-boolean-pair ["maybe" "nope"]) nil))))

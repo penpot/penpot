@@ -309,18 +309,22 @@
   "Transforms a variant-name (its properties values) into a standard name:
    the real name of the shape joined by the properties values separated by '/'"
   [variant]
-  (cpn/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
+  (cpn/merge-path-item (str/lower (:name variant)) (str/lower (str/replace (:variant-name variant) #", " " / "))))
 
 (defn find-boolean-pair
-  "Given a vector, return the map from 'bool-values' that contains both as keys.
-   Returns nil if none match."
-  [v]
+  "Given a vector, return the map from 'bool-values' (case-insensitive) that contains both as keys.
+  Returns nil if none match."
+  [vector]
   (let [bool-values [{"on" true   "off" false}
                      {"yes" true  "no" false}
                      {"true" true "false" false}]]
-    (when (= (count v) 2)
-      (some (fn [b]
-              (when (and (contains? b (first v))
-                         (contains? b (last v)))
-                b))
+
+    (when (= (count vector) 2)
+      (some (fn [bool-value]
+              (let [v1 (str/lower (first vector))
+                    v2 (str/lower (second vector))]
+                (when (and (contains? bool-value v1)
+                           (contains? bool-value v2))
+                  {(first vector) (bool-value v1)
+                   (second vector) (bool-value v2)})))
             bool-values))))
