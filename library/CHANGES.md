@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0
+
+- Same as 1.1.0-RC2
+
+
 ## 1.1.0-RC2
 
 - Fix validation issue with several token nodes
