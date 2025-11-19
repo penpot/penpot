@@ -1925,7 +1925,7 @@
         (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
           (t/is (= (:deleted-at row) now)))))))
 
-(t/deftest deleted-files-restore
+(t/deftest restore-deleted-files
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
@@ -1988,3 +1988,78 @@
 
       (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
         (t/is (nil? (:deleted-at row)))))))
+
+
+(t/deftest restore-deleted-files-and-projets
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id profile)
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+
+    (binding [ct/*clock* (clock/fixed now)]
+      (let [project (th/create-project* 1 {:profile-id (:id profile)
+                                           :team-id team-id})
+            file    (th/create-file* 1 {:profile-id (:id profile)
+                                        :project-id (:id project)})
+
+            data    {::th/type :delete-project
+                     :id (:id project)
+                     ::rpc/profile-id (:id profile)}
+            out     (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))
+
+        (th/run-pending-tasks!)
+
+        ;; get deleted files
+        (let [data {::th/type :get-team-deleted-files
+                    ::rpc/profile-id (:id profile)
+                    :team-id team-id}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [[row1 :as result] (:result out)]
+            (t/is (= 1 (count result)))
+            (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+            (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+            (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+
+        ;; Check if project is deleted
+        (let [[row1 :as rows] (th/db-query :project {:id (:id project)})]
+          ;; (pp/pprint rows)
+          (t/is (= 1 (count rows)))
+          (t/is (= (:deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z")))
+
+        ;; Restore files
+        (let [data {::th/type :restore-deleted-team-files
+                    ::rpc/profile-id (:id profile)
+                    :team-id team-id
+                    :ids #{(:id file)}}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [result (:result out)]
+            (t/is (fn? result))
+            (let [events (th/consume-sse result)]
+              ;; (pp/pprint events)
+              (t/is (= 2 (count events)))
+              (t/is (= :end (first (last events))))
+              (t/is (= (:ids data) (last (last events)))))))
+
+
+        (let [[row1 :as rows] (th/db-query :file {:project-id (:id project)})]
+          ;; (pp/pprint rows)
+          (t/is (= 1 (count rows)))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (nil? (:deleted-at row1))))
+
+
+        ;; Check if project is restored
+        (let [[row1 :as rows] (th/db-query :project {:id (:id project)})]
+          ;; (pp/pprint rows)
+          (t/is (= 1 (count rows)))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (nil? (:deleted-at row1))))))))
