@@ -268,7 +268,7 @@ msgstr "Skriftstil"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 #, unused
-msgid "inspect.tabs.code"
+msgid labels.code
 msgstr "Kode"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:143

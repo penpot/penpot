@@ -1874,7 +1874,7 @@ msgstr ""
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 #, unused
-msgid "inspect.tabs.code"
+msgid labels.code
 msgstr "Code"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:143
@@ -2042,9 +2042,8 @@ msgid "labels.close"
 msgstr "Close"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
-#, fuzzy
 msgid "labels.code"
-msgstr ""
+msgstr "Code"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:181
 msgid "labels.collapse"
