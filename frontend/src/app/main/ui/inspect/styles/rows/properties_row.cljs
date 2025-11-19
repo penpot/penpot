@@ -57,7 +57,7 @@
                           :content #(mf/html
                                      [:div {:class (stl/css :tooltip-token)}
                                       [:div {:class (stl/css :tooltip-token-title)}
-                                       (tr "inspect.tabs.styles.token.resolved-value")]
+                                       (tr "inspect.tabs.styles.token-resolved-value")]
                                       [:div {:class (stl/css :tooltip-token-value)}
                                        (cond
                                          (= :typography token-type)

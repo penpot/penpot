@@ -1216,7 +1216,7 @@ msgid "inspect.tabs.code.selected.mask"
 msgstr "قناع"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "%s محدد"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149

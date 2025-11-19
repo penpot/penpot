@@ -1860,7 +1860,7 @@ msgid "inspect.tabs.code.selected.mask"
 msgstr "Maska"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "Atlasīti: %s"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149
@@ -1888,7 +1888,7 @@ msgid "inspect.tabs.info"
 msgstr "Infomācija"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs.switcher.label"
+msgid "inspect.layer-info"
 msgstr "Informācija par slāni"
 
 #: src/app/main/ui/dashboard/comments.cljs:96

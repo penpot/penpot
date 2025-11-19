@@ -1868,7 +1868,7 @@ msgid "inspect.tabs.code.selected.mask"
 msgstr "Masque"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "%s Sélectionné"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149
@@ -1896,7 +1896,7 @@ msgid "inspect.tabs.info"
 msgstr "Information"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs.switcher.label"
+msgid "inspect.layer-info"
 msgstr "Info sur la couche"
 
 #: src/app/main/ui/dashboard/comments.cljs:96

@@ -17,9 +17,9 @@
 (defn- panel->title
   [type]
   (case type
-    :variant    (tr "inspect.tabs.styles.panel.variant")
-    :token      (tr "inspect.tabs.styles.panel.token")
-    :geometry   (tr "inspect.tabs.styles.panel.geometry")
+    :variant    (tr "inspect.tabs.styles.variants-panel")
+    :token      (tr "inspect.tabs.styles.token-panel")
+    :geometry   (tr "inspect.tabs.styles.geometry-panel")
     :fill       (tr "labels.fill")
     :stroke     (tr "labels.stroke")
     :text       (tr "labels.text")
@@ -57,7 +57,7 @@
                 :aria-expanded expanded
                 :aria-controls (str "style-box-" (d/name panel))
                 :on-click toggle-panel
-                :aria-label (tr "inspect.tabs.styles.panel.toggle-style" title)}
+                :aria-label (tr "inspect.tabs.styles.toggle-style" title)}
        [:> icon* {:icon-id (if expanded "arrow-down" "arrow")
                   :class (stl/css :disclosure-icon)
                   :size "s"}]]
@@ -65,7 +65,7 @@
       (when shorthand
         [:> icon-button* {:variant "ghost"
                           :tooltip-placement "top-left"
-                          :aria-label (tr "inspect.tabs.styles.panel.copy-style-shorthand")
+                          :aria-label (tr "inspect.tabs.styles.copy-shorthand")
                           :on-click copy-shorthand
                           :icon i/clipboard}])]
      (when expanded

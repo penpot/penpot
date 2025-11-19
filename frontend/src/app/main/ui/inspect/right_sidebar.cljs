@@ -106,14 +106,14 @@
           (if (contains? cf/flags :inspect-styles)
             [{:label (tr "labels.styles")
               :id "styles"}
-             {:label (tr "inspect.tabs.computed")
+             {:label (tr "labels.computed")
               :id "computed"}
-             {:label (tr "inspect.tabs.code")
+             {:label (tr "labels.code")
               :data-testid "code"
               :id "code"}]
-            [{:label (tr "inspect.tabs.info")
+            [{:label (tr "labels.info")
               :id "info"}
-             {:label (tr "inspect.tabs.code")
+             {:label (tr "labels.code")
               :data-testid "code"
               :id "code"}]))]
 
@@ -134,7 +134,7 @@
            [:*
             [:div {:class (stl/css :layers-icon)}
              [:> icon* {:icon-id i/layers :size "s"}]]
-            [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
+            [:span {:class (stl/css :layer-title)} (tr "inspect.multiple-selected" (count shapes))]]
            [:*
             [:div {:class (stl/css :shape-icon)}
              ;; Use the shape icon utility to get the correct icon for the first shape
@@ -163,18 +163,18 @@
         [:div {:class (stl/css :inspect-content)}
          (if (contains? cf/flags :inspect-styles)
            [:div {:class (stl/css :inspect-tab-switcher)}
-            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.tabs.switcher.label")]
+            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.layer-info")]
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
               [:> select* {:class (stl/css :inspect-tab-switcher-controls-color-space-select)
-                           :aria-label (tr "inspect.tabs.switcher.color-space.label")
+                           :aria-label (tr "inspect.color-space-label")
                            :options color-spaces
                            :default-selected "hex"
                            :variant "ghost"
                            :on-change handle-change-color-space}]]
              [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
               [:> select* {:options tabs
-                           :aria-label (tr "inspect.tabs.switcher.inspect-tab.label")
+                           :aria-label (tr "inspect.tabs-switcher-label")
                            :default-selected (name @section)
                            :on-change handle-change-tab}]]]]
            nil)

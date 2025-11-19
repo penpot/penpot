@@ -651,7 +651,7 @@ msgid "inspect.tabs.code.selected.image"
 msgstr "Εικόνα"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
+msgid "inspect.multiple-selected"
 msgstr "%s Επιλεγμένα"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:149
