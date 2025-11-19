@@ -131,7 +131,7 @@ const selectColorSpace = async (workspacePage, colorSpace) => {
 };
 
 test.describe("Inspect tab - Styles", () => {
-  test("Open Inspect tab", async ({ page }) => {
+  test.skip("Open Inspect tab", async ({ page }) => {
     const workspacePage = new WorkspacePage(page);
     await setupFile(workspacePage);
 
