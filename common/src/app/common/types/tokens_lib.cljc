@@ -1794,17 +1794,19 @@ Will return a value that matches this schema:
   data (without any case transformation). Used as schema decoder and
   in the SDK."
   [data]
-  (let [data (if (string? data)
-               (json/decode data :key-fn identity)
-               data)
-        data #?(:cljs (if (object? data)
-                        (json/->clj data :key-fn identity)
-                        data)
-                :clj data)
+  (if (instance? TokensLib data)
+    data
+    (let [data (if (string? data)
+                 (json/decode data :key-fn identity)
+                 data)
+          data #?(:cljs (if (object? data)
+                          (json/->clj data :key-fn identity)
+                          data)
+                  :clj data)
 
-        data (decode-multi-set-dtcg-data data)]
-    (-> (check-multi-set-dtcg-data data)
-        (parse-multi-set-dtcg-json))))
+          data (decode-multi-set-dtcg-data data)]
+      (-> (check-multi-set-dtcg-data data)
+          (parse-multi-set-dtcg-json)))))
 
 (defn- parse-multi-set-legacy-json
   "Parse a decoded json file with multi sets in legacy format into a TokensLib."
