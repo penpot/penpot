@@ -83,7 +83,9 @@
    ::mf/register-as :management-dialog}
   [{:keys [subscription-type current-subscription editors subscribe-to-trial]}]
 
-  (let [subscription-name (if subscribe-to-trial
+  (let [unlimited-modal-step* (mf/use-state 1)
+        unlimited-modal-step  (deref unlimited-modal-step*)
+        subscription-name (if subscribe-to-trial
                             (if (= subscription-type "unlimited")
                               (tr "subscription.settings.unlimited-trial")
                               (tr "subscription.settings.enterprise-trial"))
@@ -91,19 +93,22 @@
                               "professional" (tr "subscription.settings.professional")
                               "unlimited" (tr "subscription.settings.unlimited")
                               "enterprise" (tr "subscription.settings.enterprise")))
-        min-editors                (or (count editors) 1)
+        min-editors                (if (seq editors) (count editors) 1)
         initial                    (mf/with-memo [min-editors]
                                      {:min-members min-editors})
         form                       (fm/use-form :schema (schema:seats-form min-editors)
                                                 :initial initial)
         submit-in-progress*        (mf/use-state false)
         subscribe-to-unlimited     (mf/use-fn
-                                    (fn [form]
+                                    (mf/deps form)
+                                    (fn [add-payment-details]
                                       (when (not @submit-in-progress*)
-                                        (reset! submit-in-progress* true)
                                         (let [data (:clean-data @form)
                                               return-url (-> (rt/get-current-href) (rt/encode-url))
-                                              href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" (:min-members data) "&returnUrl=" return-url)]
+                                              href (if add-payment-details
+                                                     (dm/str "payments/subscriptions/create?type=unlimited&show=true&quantity=" (:min-members data) "&returnUrl=" return-url)
+                                                     (dm/str "payments/subscriptions/create?type=unlimited&show=false&quantity=" (:min-members data) "&returnUrl=" return-url))]
+                                          (reset! submit-in-progress* true)
                                           (reset! form nil)
                                           (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
                                                                            :type "unlimited"
@@ -133,6 +138,13 @@
                                       (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
                                       (modal/hide!)))
 
+        handle-unlimited-modal-step (mf/use-fn
+                                     (mf/deps unlimited-modal-step)
+                                     (fn []
+                                       (if (= unlimited-modal-step 1)
+                                         (reset! unlimited-modal-step* 2)
+                                         (reset! unlimited-modal-step* 1))))
+
         show-editors-list*         (mf/use-state false)
         show-editors-list          (deref show-editors-list*)
         handle-click               (mf/use-fn
@@ -146,10 +158,12 @@
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title)}
-       (tr "subscription.settings.management.dialog.title" subscription-name)]
+       (if (= unlimited-modal-step 2)
+         (tr "subscription.settings.management-dialog.step-2-title")
+         (tr "subscription.settings.management.dialog.title" subscription-name))]
 
       [:div {:class (stl/css :modal-content)}
-       (when (seq editors)
+       (when (and (seq editors) (not= unlimited-modal-step 2))
          [:* [:p {:class (stl/css :editors-text)}
               (tr "subscription.settings.management.dialog.currently-editors-title" (c (count editors)))]
           [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
@@ -175,50 +189,71 @@
 
        (if (and (= subscription-type "unlimited")
                 (or subscribe-to-trial (contains? #{"unpaid" "canceled"} (:status current-subscription))))
-         [:& fm/form {:on-submit subscribe-to-unlimited
+         [:& fm/form {:on-submit handle-unlimited-modal-step
                       :class (stl/css :seats-form)
                       :form form}
+          (when (= unlimited-modal-step 1)
+            [:*
+             [:div {:class (stl/css :editors-wrapper)}
+              [:div {:class (stl/css :fields-row)}
+               [:& fm/input {:type "number"
+                             :name :min-members
+                             :show-error false
+                             :label ""
+                             :class (stl/css :input-field)}]]
+              [:div {:class (stl/css :editors-cost)}
+               [:span {:class (stl/css :modal-text-medium)}
+                (when (> (get-in @form [:clean-data :min-members]) 25)
+                  [:> i18n/tr-html*
+                   {:class (stl/css :modal-text-cap)
+                    :tag-name "span"
+                    :content (tr "subscription.settings.management.dialog.price-month" "175")}])
+                [:> i18n/tr-html*
+                 {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
+                  :tag-name "span"
+                  :content (tr "subscription.settings.management.dialog.price-month"
+                               (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
+               [:span {:class (stl/css :modal-text-medium)}
+                (tr "subscription.settings.management.dialog.payment-explanation")]]]
 
-          [:div {:class (stl/css :editors-wrapper)}
-           [:div {:class (stl/css :fields-row)}
-            [:& fm/input {:type "number"
-                          :name :min-members
-                          :show-error false
-                          :label ""
-                          :class (stl/css :input-field)}]]
-           [:div {:class (stl/css :editors-cost)}
-            [:span {:class (stl/css :modal-text-medium)}
-             (when (> (get-in @form [:clean-data :min-members]) 25)
-               [:> i18n/tr-html*
-                {:class (stl/css :modal-text-cap)
-                 :tag-name "span"
-                 :content (tr "subscription.settings.management.dialog.price-month" "175")}])
-             [:> i18n/tr-html*
-              {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
-               :tag-name "span"
-               :content (tr "subscription.settings.management.dialog.price-month"
-                            (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
-            [:span {:class (stl/css :modal-text-medium)}
-             (tr "subscription.settings.management.dialog.payment-explanation")]]]
+             (when (get-in @form [:errors :min-members])
+               [:div {:class (stl/css :error-message)}
+                (tr "subscription.settings.management.dialog.input-error")])
 
-          (when (get-in @form [:errors :min-members])
-            [:div {:class (stl/css :error-message)}
-             (tr "subscription.settings.management.dialog.input-error")])
+             [:div {:class (stl/css :unlimited-capped-warning)}
+              (tr "subscription.settings.management.dialog.unlimited-capped-warning")]
 
-          [:div {:class (stl/css :unlimited-capped-warning)}
-           (tr "subscription.settings.management.dialog.unlimited-capped-warning")]
+             [:div {:class (stl/css :modal-footer)}
+              [:div {:class (stl/css :action-buttons)}
+               [:input
+                {:class (stl/css :cancel-button)
+                 :type "button"
+                 :value (tr "ds.confirm-cancel")
+                 :on-click handle-close-dialog}]
 
-          [:div {:class (stl/css :modal-footer)}
-           [:div {:class (stl/css :action-buttons)}
-            [:input
-             {:class (stl/css :cancel-button)
-              :type "button"
-              :value (tr "ds.confirm-cancel")
-              :on-click handle-close-dialog}]
+               [:> fm/submit-button*
+                {:label (tr "labels.continue")
+                 :class (stl/css :primary-button)}]]]])
 
-            [:> fm/submit-button*
-             {:label (if subscribe-to-trial (tr "subscription.settings.start-trial") (tr "labels.continue"))
-              :class (stl/css :primary-button)}]]]]
+          (when (= unlimited-modal-step 2)
+            [:*
+             [:p {:class (stl/css :modal-text-medium)}
+              (tr "subscription.settings.management-dialog.step-2-description")]
+
+             [:div {:class (stl/css :modal-footer)}
+              [:div {:class (stl/css :action-buttons)}
+
+               [:input
+                {:class (stl/css :cancel-button)
+                 :type "button"
+                 :value (tr "ubscription.settings.management-dialog.step-2-skip-button")
+                 :on-click #(subscribe-to-unlimited false)}]
+
+               [:input
+                {:class (stl/css :primary-button)
+                 :type "button"
+                 :value (tr "subscription.settings.management-dialog.step-2-add-payment-button")
+                 :on-click #(subscribe-to-unlimited true)}]]]])]
 
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}
