@@ -18,20 +18,22 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
     Target = 0b00_0000_0001,
-    Cache = 0b00_0000_0010,
-    Current = 0b00_0000_0100,
-    Fills = 0b00_0000_1000,
-    Strokes = 0b00_0001_0000,
-    DropShadows = 0b00_0010_0000,
-    InnerShadows = 0b00_0100_0000,
-    TextDropShadows = 0b00_1000_0000,
-    UI = 0b01_0000_0000,
+    Filter = 0b00_0000_0010,
+    Cache = 0b00_0000_0100,
+    Current = 0b00_0000_1000,
+    Fills = 0b00_0001_0000,
+    Strokes = 0b00_0010_0000,
+    DropShadows = 0b00_0100_0000,
+    InnerShadows = 0b00_1000_0000,
+    TextDropShadows = 0b01_0000_0000,
+    UI = 0b10_0000_0000,
     Debug = 0b10_0000_0001,
 }
 
 pub struct Surfaces {
     // is the final destination surface, the one that it is represented in the canvas element.
     target: skia::Surface,
+    filter: skia::Surface,
     cache: skia::Surface,
     // keeps the current render
     current: skia::Surface,
@@ -70,6 +72,7 @@ impl Surfaces {
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
         let target = gpu_state.create_target_surface(width, height);
+        let filter = gpu_state.create_surface_with_dimensions("filter".to_string(), width, height);
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
         let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
         let drop_shadows =
@@ -89,6 +92,7 @@ impl Surfaces {
         let tiles = TileTextureCache::new();
         Surfaces {
             target,
+            filter,
             cache,
             current,
             drop_shadows,
@@ -111,6 +115,10 @@ impl Surfaces {
     pub fn snapshot(&mut self, id: SurfaceId) -> skia::Image {
         let surface = self.get_mut(id);
         surface.image_snapshot()
+    }
+
+    pub fn filter_size(&self) -> (i32, i32) {
+        (self.filter.width(), self.filter.height())
     }
 
     pub fn base64_snapshot(&mut self, id: SurfaceId) -> String {
@@ -156,6 +164,9 @@ impl Surfaces {
         performance::begin_measure!("apply_mut::flags");
         if ids & SurfaceId::Target as u32 != 0 {
             f(self.get_mut(SurfaceId::Target));
+        }
+        if ids & SurfaceId::Filter as u32 != 0 {
+            f(self.get_mut(SurfaceId::Filter));
         }
         if ids & SurfaceId::Current as u32 != 0 {
             f(self.get_mut(SurfaceId::Current));
@@ -215,6 +226,7 @@ impl Surfaces {
     fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
+            SurfaceId::Filter => &mut self.filter,
             SurfaceId::Cache => &mut self.cache,
             SurfaceId::Current => &mut self.current,
             SurfaceId::DropShadows => &mut self.drop_shadows,
@@ -230,6 +242,7 @@ impl Surfaces {
     fn reset_from_target(&mut self, target: skia::Surface) {
         let dim = (target.width(), target.height());
         self.target = target;
+        self.filter = self.target.new_surface_with_dimensions(dim).unwrap();
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
         self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
         // The rest are tile size surfaces
