@@ -25,14 +25,14 @@
     <link rel="icon" href="images/favicon.png" />
     {{# manifest}}
     <script>window.penpotWorkerURI="{{& worker_main}}"</script>
-    <script defer src="{{& config}}"></script>
-    <script defer src="{{& polyfills}}"></script>
+    <script src="{{& config}}"></script>
+    <script src="{{& polyfills}}"></script>
     {{/manifest}}
 
-    <script>
-      window.penpotTranslations = JSON.parse({{& translations}});
-      window.penpotVersion = "%version%";
-      window.penpotBuildDate = "%buildDate%";
+    <script type="module">
+      globalThis.penpotTranslations = JSON.parse({{& translations}});
+      globalThis.penpotVersion = "%version%";
+      globalThis.penpotBuildDate = "%buildDate%";
     </script>
     <!--cookie-consent-->
   </head>
@@ -44,9 +44,11 @@
     <section id="modal"></section>
 
     {{# manifest}}
-    <script defer src="js/libs.js?ts={{& ts}}"></script>
-    <script defer src="{{& shared}}"></script>
-    <script defer src="{{& main}}"></script>
+    <script type="module" src="{{& libs}}"></script>
+    <script type="module">
+      import { init } from "{{& main}}";
+      init();
+    </script>
     {{/manifest}}
   </body>
 </html>

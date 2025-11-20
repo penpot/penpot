@@ -182,23 +182,14 @@ jobs:
       - name: Build Bundle
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install
-          yarn run build:app:assets
-          yarn run build:app
-          yarn run build:app:libs
-
-      - name: Build WASM
-        working-directory: "./render-wasm"
-        run: |
-          ./build release
+          ./scripts/build 0.0.0
 
       - name: Store Bundle Cache
         uses: actions/cache@v4
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
+
 
   test-integration-1:
     name: "Integration Tests 1/4"

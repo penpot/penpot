@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.code-highlight
+(ns app.util.modules
+  (:refer-clojure :exclude [import])
+  (:require-macros [app.util.modules])
   (:require
-   ["@penpot/hljs" :as hljs]
-   [app.util.dom :as dom]))
+   [shadow.esm :refer [dynamic-import]]))
 
-(defn highlight!
-  {:lazy-loadable true}
-  [node]
-  (dom/set-data! node "highlighted" nil)
-  (hljs/highlightElement node))
+(defn import
+  "Dynamic esm module import import"
+  [path]
+  (dynamic-import (str path)))

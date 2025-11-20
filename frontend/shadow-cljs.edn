@@ -6,13 +6,12 @@
 
  :builds
  {:main
-  {:target :browser
+  {:target :esm
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :devtools {:watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
-   :module-loader true
    :modules
    {:shared
     {:entries []}
@@ -20,7 +19,7 @@
     :main
     {:entries [app.main app.plugins.api]
      :depends-on #{:shared}
-     :init-fn app.main/init}
+     :exports {init app.main/init}}
 
     :util-highlight
     {:entries [app.util.code-highlight]
@@ -50,12 +49,12 @@
     :render
     {:entries [app.render]
      :depends-on #{:shared}
-     :init-fn app.render/init}
+     :exports {init app.render/init}}
 
     :rasterizer
     {:entries [app.rasterizer]
      :depends-on #{:shared}
-     :init-fn app.rasterizer/init}}
+     :exports {init app.rasterizer/init}}}
 
    :js-options
    {:entry-keys ["module" "browser" "main"]
@@ -75,8 +74,6 @@
     :compiler-options
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
-     :output-wrapper true
-     :rename-prefix-namespace "PENPOT"
      :source-map true
      :elide-asserts true
      :anon-fn-naming-policy :off

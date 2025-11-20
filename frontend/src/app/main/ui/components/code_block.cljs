@@ -8,24 +8,28 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.util.modules :as modules]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [shadow.lazy :as lazy]))
+   [rumext.v2 :as mf]))
 
 (def highlight-fn
-  (lazy/loadable app.util.code-highlight/highlight!))
+  (delay (modules/load-fn 'app.util.code-highlight/highlight!)))
 
 (mf/defc code-block
   {::mf/wrap-props false}
   [{:keys [code type]}]
   (let [block-ref (mf/use-ref)
-        code (str/trim code)]
+        code      (str/trim code)]
 
     (mf/with-effect [code type]
       (when-let [node (mf/ref-val block-ref)]
-        (p/let [highlight-fn (lazy/load highlight-fn)]
-          (highlight-fn node))))
+        (->> @highlight-fn
+             (p/fmap (fn [f] (f)))
+             (p/fnly (fn [f cause]
+                       (if cause
+                         (js/console.error cause)
+                         (f node)))))))
 
     [:pre {:class (dm/str type " " (stl/css :code-display)) :ref block-ref} code]))
 
