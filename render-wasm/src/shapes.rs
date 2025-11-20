@@ -734,7 +734,7 @@ impl Shape {
             || self.selrect.height() * scale > ANTIALIAS_THRESHOLD
     }
 
-    pub fn calculate_bounds(&self) -> Bounds {
+    pub fn calculate_bounds(&self, apply_transform: bool) -> Bounds {
         let mut bounds = Bounds::new(
             Point::new(self.selrect.x(), self.selrect.y()),
             Point::new(self.selrect.x() + self.selrect.width(), self.selrect.y()),
@@ -749,7 +749,7 @@ impl Shape {
         // is not the identity matrix because if it is,
         // the result of applying this transformations would be
         // the same identity matrix.
-        if !self.transform.is_identity() {
+        if apply_transform && !self.transform.is_identity() {
             let mut matrix = self.transform;
             let center = self.center();
             matrix.post_translate(center);
@@ -761,7 +761,7 @@ impl Shape {
     }
 
     pub fn bounds(&self) -> Bounds {
-        *self.bounds.get_or_init(|| self.calculate_bounds())
+        *self.bounds.get_or_init(|| self.calculate_bounds(true))
     }
 
     pub fn selrect(&self) -> math::Rect {
@@ -829,19 +829,34 @@ impl Shape {
         rect
     }
 
-    fn apply_stroke_bounds(&self, rect: math::Rect, stroke_width: f32) -> math::Rect {
-        let mut expanded_rect = rect;
-        expanded_rect.left -= stroke_width;
-        expanded_rect.right += stroke_width;
-        expanded_rect.top -= stroke_width;
-        expanded_rect.bottom += stroke_width;
+    fn apply_stroke_bounds(&self, bounds: Bounds, stroke_width: f32) -> Bounds {
+        let mut result = bounds.to_rect();
+        if stroke_width > 0.0 {
+            let mut expanded_rect = bounds.to_rect();
+            expanded_rect.inset((-stroke_width, -stroke_width));
+            result.join(expanded_rect);
+        }
 
-        let mut result = rect;
-        result.join(expanded_rect);
-        result
+        let cap_margin = self.cap_bounds_margin();
+        if cap_margin > 0.0 {
+            let mut cap_rect = bounds.to_rect();
+            cap_rect.inset((-cap_margin, -cap_margin));
+            result.join(cap_rect);
+        }
+
+        Bounds::from_rect(&result)
     }
 
-    fn apply_shadow_bounds(&self, mut rect: math::Rect) -> math::Rect {
+    fn apply_cap_bounds(&self, bounds: Bounds, cap_margin: f32) -> Bounds {
+        let mut result = bounds.to_rect();
+        if cap_margin > 0.0 {
+            result.inset((-cap_margin, -cap_margin));
+        }
+        Bounds::from_rect(&result)
+    }
+
+    fn apply_shadow_bounds(&self, bounds: Bounds) -> Bounds {
+        let mut rect = bounds.to_rect();
         for shadow in self.shadows_visible() {
             if !shadow.hidden() {
                 if let Some(filter) = shadow.get_drop_shadow_filter() {
@@ -850,24 +865,26 @@ impl Shape {
                 }
             }
         }
-        rect
+        Bounds::from_rect(&rect)
     }
 
-    fn apply_blur_bounds(&self, mut rect: math::Rect) -> math::Rect {
+    fn apply_blur_bounds(&self, bounds: Bounds) -> Bounds {
+        let mut rect = bounds.to_rect();
         let image_filter = self.image_filter(1.);
         if let Some(image_filter) = image_filter {
             let blur_bounds = image_filter.compute_fast_bounds(rect);
             rect.join(blur_bounds);
         }
-        rect
+        Bounds::from_rect(&rect)
     }
 
     fn apply_children_bounds(
         &self,
-        mut rect: math::Rect,
+        bounds: Bounds,
         shapes_pool: ShapesPoolRef,
         scale: f32,
-    ) -> math::Rect {
+    ) -> Bounds {
+        let mut rect = bounds.to_rect();
         let include_children = match self.shape_type {
             Type::Group(_) => true,
             Type::Frame(_) => !self.clip_content,
@@ -883,10 +900,11 @@ impl Shape {
             }
         }
 
-        rect
+        Bounds::from_rect(&rect)
     }
 
-    pub fn apply_children_blur(&self, mut rect: math::Rect, tree: ShapesPoolRef) -> math::Rect {
+    pub fn apply_children_blur(&self, bounds: Bounds, tree: ShapesPoolRef) -> Bounds {
+        let mut rect = bounds.to_rect();
         let mut children_blur = 0.0;
         let mut current_parent_id = self.parent_id;
 
@@ -918,7 +936,7 @@ impl Shape {
             let blur_bounds = image_filter.compute_fast_bounds(rect);
             rect.join(blur_bounds);
         }
-        rect
+        Bounds::from_rect(&rect)
     }
 
     pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
@@ -940,30 +958,43 @@ impl Shape {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
-        let mut rect = match &shape.shape_type {
+        let mut bounds = match &shape.shape_type {
             Type::Path(_) | Type::Bool(_) => {
                 if let Some(path) = shape.get_skia_path() {
-                    return path
+                    let cap_margin = shape.cap_bounds_margin();
+                    let rect = path
                         .compute_tight_bounds()
                         .with_outset((max_stroke, max_stroke));
+                    self.apply_cap_bounds(Bounds::from_rect(&rect), cap_margin)
+                } else {
+                    shape.calculate_bounds(false)
                 }
-                shape.bounds().to_rect()
             }
             Type::Text(text_content) => {
                 // FIXME: we need to recalculate the text bounds here because the shape's selrect
-                let text_bounds = text_content.calculate_bounds(shape);
-                text_bounds.to_rect()
+                text_content.calculate_bounds(shape, false)
             }
-            _ => shape.bounds().to_rect(),
+            _ => shape.calculate_bounds(false),
         };
 
-        rect = self.apply_stroke_bounds(rect, max_stroke);
-        rect = self.apply_shadow_bounds(rect);
-        rect = self.apply_blur_bounds(rect);
-        rect = self.apply_children_bounds(rect, shapes_pool, scale);
-        rect = self.apply_children_blur(rect, shapes_pool);
+        bounds = self.apply_stroke_bounds(bounds, max_stroke);
+        bounds = self.apply_shadow_bounds(bounds);
+        bounds = self.apply_blur_bounds(bounds);
+        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
+        bounds = self.apply_children_blur(bounds, shapes_pool);
 
-        rect
+        if !self.transform.is_identity() {
+            // Expand everything in the shape's local axis-aligned space first (strokes,
+            // shadows, blur, children). Only after that do we map the resulting bounds
+            // through the shape transform so rotation/skew is reflected in the final
+            // extrect.
+            let mut matrix = self.transform;
+            let center = self.center();
+            matrix.post_translate(center);
+            matrix.pre_translate(-center);
+            bounds.transform_mut(&matrix);
+        }
+        bounds.to_rect()
     }
 
     pub fn left_top(&self) -> Point {
@@ -976,6 +1007,16 @@ impl Shape {
 
     pub fn clip(&self) -> bool {
         self.clip_content
+    }
+
+    pub fn cap_bounds_margin(&self) -> f32 {
+        if !self.is_open() {
+            return 0.0;
+        }
+        self.strokes
+            .iter()
+            .map(|stroke| stroke.cap_bounds_margin())
+            .fold(0.0, f32::max)
     }
 
     pub fn mask_id(&self) -> Option<&Uuid> {

@@ -277,7 +277,7 @@ impl TextContent {
         self.grow_type = grow_type;
     }
 
-    pub fn calculate_bounds(&self, shape: &Shape) -> Bounds {
+    pub fn calculate_bounds(&self, shape: &Shape, apply_transform: bool) -> Bounds {
         let (x, mut y, transform, center) = (
             shape.selrect.x(),
             shape.selrect.y(),
@@ -315,7 +315,7 @@ impl TextContent {
             Point::new(text_rect.x(), text_rect.y() + text_rect.height()),
         );
 
-        if !transform.is_identity() {
+        if apply_transform && !transform.is_identity() {
             let mut matrix = *transform;
             matrix.post_translate(*center);
             matrix.pre_translate(-*center);
