@@ -1,4 +1,4 @@
-name: "CI: Tests"
+name: "CI"
 
 defaults:
   run:
@@ -16,122 +16,137 @@ on:
       - develop
       - staging
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # lint:
-  #   name: "Code Linter"
-  #   runs-on: ubuntu-24.04
-  #   container: penpotapp/devenv:latest
+  lint:
+    name: "Code Linter"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Check clojure code format
-  #       run: |
-  #         corepack enable;
-  #         corepack install;
-  #         yarn install
-  #         yarn run fmt:clj:check
+      - name: Check clojure code format
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install
+          yarn run fmt:clj:check
 
-  # test-common:
-  #   name: "Common Tests"
-  #   runs-on: ubuntu-24.04
-  #   container: penpotapp/devenv:latest
+  test-common:
+    name: "Common Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Run tests on JVM
-  #       working-directory: ./common
-  #       run: |
-  #         clojure -M:dev:test
+      - name: Run tests on JVM
+        working-directory: ./common
+        run: |
+          clojure -M:dev:test
 
-  #     - name: Run tests on NODE
-  #       working-directory: ./common
-  #       run: |
-  #         corepack enable;
-  #         corepack install;
-  #         yarn install;
-  #         yarn run test;
+      - name: Run tests on NODE
+        working-directory: ./common
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install;
+          yarn run test;
 
-  # test-frontend:
-  #   name: "Frontend Tests"
-  #   runs-on: ubuntu-24.04
-  #   container: penpotapp/devenv:latest
+  test-frontend:
+    name: "Frontend Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Unit Tests
-  #       working-directory: ./frontend
-  #       run: |
-  #         corepack enable;
-  #         corepack install;
-  #         yarn install;
-  #         yarn run test;
+      - name: Unit Tests
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install;
+          yarn run test;
 
-  #     - name: Component Tests
-  #       working-directory: ./frontend
-  #       run: |
-  #           yarn run playwright install chromium --with-deps;
-  #           yarn run build:storybook
+      - name: Component Tests
+        working-directory: ./frontend
+        run: |
+            yarn run playwright install chromium --with-deps;
+            yarn run build:storybook
 
-  #           npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-  #             "npx http-server storybook-static --port 6006 --silent" \
-  #             "npx wait-on tcp:6006 && yarn test:storybook"
+            npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+              "npx http-server storybook-static --port 6006 --silent" \
+              "npx wait-on tcp:6006 && yarn test:storybook"
 
-  #     - name: Check SCSS Format
-  #       working-directory: ./frontend
-  #       run: |
-  #         yarn run lint:scss;
+      - name: Check SCSS Format
+        working-directory: ./frontend
+        run: |
+          yarn run lint:scss;
 
-  # test-backend:
-  #   name: "Backend Tests"
-  #   runs-on: ubuntu-24.04
-  #   container: penpotapp/devenv:latest
+  test-backend:
+    name: "Backend Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
 
-  #   services:
-  #     postgres:
-  #       image: postgres:17
-  #       # Provide the password for postgres
-  #       env:
-  #         POSTGRES_USER: penpot_test
-  #         POSTGRES_PASSWORD: penpot_test
-  #         POSTGRES_DB: penpot_test
+    services:
+      postgres:
+        image: postgres:17
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: penpot_test
+          POSTGRES_PASSWORD: penpot_test
+          POSTGRES_DB: penpot_test
 
-  #       # Set health checks to wait until postgres has started
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-  #     redis:
-  #       image: valkey/valkey:9
+      redis:
+        image: valkey/valkey:9
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  # test-library:
-  #   name: "Library Tests"
-  #   runs-on: ubuntu-24.04
-  #   container: penpotapp/devenv:latest
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
+          PENPOT_TEST_DATABASE_USERNAME: penpot_test
+          PENPOT_TEST_DATABASE_PASSWORD: penpot_test
+          PENPOT_TEST_REDIS_URI: "redis://redis/1"
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+        run: |
+          clojure -M:dev:test --reporter kaocha.report/documentation
 
-  #     - name: Run tests
-  #       working-directory: ./library
-  #       run: |
-  #         corepack enable;
-  #         corepack install;
-  #         yarn install;
-  #         yarn run build:bundle;
-  #         yarn run test;
+  test-library:
+    name: "Library Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        working-directory: ./library
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install;
+          yarn run build:bundle;
+          yarn run test;
 
   test-integration:
     name: "Integration Tests"
@@ -161,7 +176,7 @@ jobs:
         working-directory: ./frontend
         run: |
           yarn run playwright install chromium --with-deps
-          yarn run test:e2e -x --workers=1 --reporter=line
+          yarn run test:e2e -x --workers=2 --reporter=list
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
