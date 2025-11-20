@@ -274,7 +274,7 @@
         (fn [request]
           (if-let [{:keys [type token] :as auth} (get-token request)]
             (let [decode-fn (get decoders type)]
-              (if (= type :cookie)
+              (if (or (= type :cookie) (= type :bearer))
                 (let [metadata (tokens/decode-header token)]
                   ;; NOTE: we only proceed to decode claims on new
                   ;; cookie tokens. The old cookies dont need to be
