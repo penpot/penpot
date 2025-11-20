@@ -92,8 +92,9 @@
   is executed in the critical part (application bootstrap) and used in
   many parts of the application."
   [data]
-  (reset! locale (or (get storage/global ::locale) (autodetect)))
-  (set! translations data))
+  (set! translations data)
+  (reset! locale (or (get storage/global ::locale) (autodetect))))
+
 
 (defn set-locale!
   [lname]

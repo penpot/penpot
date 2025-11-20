@@ -18,9 +18,11 @@
   <body>
     <div id="app"></div>
     {{# manifest}}
-    <script src="js/libs.js?ts={{& ts}}"></script>
-    <script src="{{& shared}}"></script>
-    <script src="{{& render}}"></script>
+    <script type="module" src="{{& libs}}"></script>
+    <script type="module">
+      import { init } from "{{& render}}";
+      init();
+    </script>
     {{/manifest}}
   </body>
 </html>

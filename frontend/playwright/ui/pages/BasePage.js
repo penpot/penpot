@@ -73,7 +73,7 @@ export class BasePage {
   }
 
   static async mockConfigFlags(page, flags) {
-    const url = "**/js/config.js?ts=*";
+    const url = "**/js/config.js";
     return await page.route(url, (route) =>
       route.fulfill({
         status: 200,

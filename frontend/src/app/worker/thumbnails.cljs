@@ -20,12 +20,12 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
+   [app.util.modules :as mod]
    [app.worker.impl :as impl]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [shadow.esm :refer (dynamic-import)]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :trace)
 
@@ -101,7 +101,7 @@
 (def init-wasm
   (delay
     (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
-      (-> (dynamic-import (str uri))
+      (-> (mod/import (str uri))
           (p/then #(wasm.api/init-wasm-module %))
           (p/then #(set! wasm/internal-module %))))))
 

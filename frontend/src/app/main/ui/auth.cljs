@@ -19,8 +19,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc auth
-  {::mf/props :obj}
+(mf/defc auth*
   [{:keys [route]}]
   (let [section (dm/get-in route [:data :name])
         is-register (or
@@ -69,3 +68,9 @@
 
       (when (= section :auth-register)
         [:& terms-register])]]))
+
+
+(mf/defc auth-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> auth* props])
