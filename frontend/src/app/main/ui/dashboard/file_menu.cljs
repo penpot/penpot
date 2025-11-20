@@ -55,7 +55,7 @@
           projects))
 
 (mf/defc file-menu*
-  [{:keys [files on-edit on-close top left navigate origin parent-id can-edit]}]
+  [{:keys [files on-edit on-close top left navigate origin parent-id can-edit can-restore]}]
 
   (assert (seq files) "missing `files` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
@@ -187,7 +187,46 @@
         on-export-binary-files
         (fn []
           (st/emit! (-> (fexp/open-export-dialog files)
-                        (with-meta {::ev/origin "dashboard"}))))]
+                        (with-meta {::ev/origin "dashboard"}))))
+
+        restore-fn
+        (fn [_]
+          (st/emit! (dd/restore-files-immediately
+                     (with-meta {:team-id (:id current-team)
+                                 :ids #{(:id file)}}
+                       {:on-success #(st/emit! (ntf/success (tr "restore-modal.success-restore-immediately" (:name file)))
+                                               (dd/fetch-projects (:id current-team))
+                                               (dd/fetch-deleted-files (:id current-team)))
+                        :on-error #(st/emit! (ntf/error (tr "restore-modal.error-restore-file" (:name file))))}))))
+
+        on-restore-immediately
+        (fn []
+          (st/emit!
+           (modal/show {:type :confirm
+                        :title (tr "restore-modal.restore-file.title")
+                        :message (tr "restore-modal.restore-file.description" (:name file))
+                        :accept-label (tr "labels.continue")
+                        :accept-style :primary
+                        :on-accept restore-fn})))
+
+
+        delete-fn
+        (fn [_]
+          (st/emit! (ntf/success (tr "delete-forever-modal.success-delete-immediately" (:name file)))
+                    (dd/delete-files-immediately
+                     {:team-id (:id current-team)
+                      :ids #{(:id file)}})
+                    (dd/fetch-projects (:id current-team))
+                    (dd/fetch-deleted-files (:id current-team))))
+
+        on-delete-immediately
+        (fn []
+          (st/emit!
+           (modal/show {:type :confirm
+                        :title (tr "delete-forever-modal.title")
+                        :message (tr "delete-forever-modal.delete-file.description" (:name file))
+                        :accept-label (tr "delete-forever-modal.title")
+                        :on-accept delete-fn})))]
 
     (mf/with-effect []
       (->> (rp/cmd! :get-all-projects)
@@ -227,76 +266,85 @@
                                        (:id sub-project))})})}]))
 
           options
-          (if multi?
-            [(when can-edit
-               {:name    (tr "dashboard.duplicate-multi" file-count)
-                :id      "duplicate-multi"
-                :handler on-duplicate})
+          (if can-restore
+            [(when can-restore
+               {:name    (tr "dashboard.restore-file")
+                :id      "restore-file"
+                :handler on-restore-immediately})
+             (when can-restore
+               {:name    (tr "dashboard.delete-file")
+                :id      "delete-file"
+                :handler on-delete-immediately})]
+            (if multi?
+              [(when can-edit
+                 {:name    (tr "dashboard.duplicate-multi" file-count)
+                  :id      "duplicate-multi"
+                  :handler on-duplicate})
 
-             (when (and (or (seq current-projects) (seq other-teams)) can-edit)
-               {:name    (tr "dashboard.move-to-multi" file-count)
-                :id      "file-move-multi"
-                :options    sub-options})
+               (when (and (or (seq current-projects) (seq other-teams)) can-edit)
+                 {:name    (tr "dashboard.move-to-multi" file-count)
+                  :id      "file-move-multi"
+                  :options    sub-options})
 
-             {:name    (tr "dashboard.export-binary-multi" file-count)
-              :id      "file-binary-export-multi"
-              :handler on-export-binary-files}
+               {:name    (tr "dashboard.export-binary-multi" file-count)
+                :id      "file-binary-export-multi"
+                :handler on-export-binary-files}
 
-             (when (and (:is-shared file) can-edit)
-               {:name    (tr "labels.unpublish-multi-files" file-count)
-                :id      "file-unpublish-multi"
-                :handler on-del-shared})
+               (when (and (:is-shared file) can-edit)
+                 {:name    (tr "labels.unpublish-multi-files" file-count)
+                  :id      "file-unpublish-multi"
+                  :handler on-del-shared})
 
-             (when (and (not is-lib-page?) can-edit)
-               {:name    :separator}
-               {:name    (tr "labels.delete-multi-files" file-count)
-                :id      "file-delete-multi"
-                :handler on-delete})]
+               (when (and (not is-lib-page?) can-edit)
+                 {:name    :separator}
+                 {:name    (tr "labels.delete-multi-files" file-count)
+                  :id      "file-delete-multi"
+                  :handler on-delete})]
 
-            [{:name    (tr "dashboard.open-in-new-tab")
-              :id      "file-open-new-tab"
-              :handler on-new-tab}
-             (when (and (not is-search-page?) can-edit)
-               {:name    (tr "labels.rename")
-                :id      "file-rename"
-                :handler on-edit})
+              [{:name    (tr "dashboard.open-in-new-tab")
+                :id      "file-open-new-tab"
+                :handler on-new-tab}
+               (when (and (not is-search-page?) can-edit)
+                 {:name    (tr "labels.rename")
+                  :id      "file-rename"
+                  :handler on-edit})
 
-             (when (and (not is-search-page?) can-edit)
-               {:name    (tr "dashboard.duplicate")
-                :id      "file-duplicate"
-                :handler on-duplicate})
+               (when (and (not is-search-page?) can-edit)
+                 {:name    (tr "dashboard.duplicate")
+                  :id      "file-duplicate"
+                  :handler on-duplicate})
 
-             (when (and (not is-lib-page?)
-                        (not is-search-page?)
-                        (or (seq current-projects) (seq other-teams))
-                        can-edit)
-               {:name    (tr "dashboard.move-to")
-                :id      "file-move-to"
-                :options sub-options})
+               (when (and (not is-lib-page?)
+                          (not is-search-page?)
+                          (or (seq current-projects) (seq other-teams))
+                          can-edit)
+                 {:name    (tr "dashboard.move-to")
+                  :id      "file-move-to"
+                  :options sub-options})
 
-             (when (and (not is-search-page?)
-                        can-edit)
-               (if (:is-shared file)
-                 {:name    (tr "dashboard.unpublish-shared")
-                  :id      "file-del-shared"
-                  :handler on-del-shared}
-                 {:name    (tr "dashboard.add-shared")
-                  :id      "file-add-shared"
-                  :handler on-add-shared}))
+               (when (and (not is-search-page?)
+                          can-edit)
+                 (if (:is-shared file)
+                   {:name    (tr "dashboard.unpublish-shared")
+                    :id      "file-del-shared"
+                    :handler on-del-shared}
+                   {:name    (tr "dashboard.add-shared")
+                    :id      "file-add-shared"
+                    :handler on-add-shared}))
 
-             {:name   :separator}
+               {:name   :separator}
 
-             {:name    (tr "dashboard.download-binary-file")
-              :id      "download-binary-file"
-              :handler on-export-binary-files}
+               {:name    (tr "dashboard.download-binary-file")
+                :id      "download-binary-file"
+                :handler on-export-binary-files}
 
-             (when (and (not is-lib-page?) (not is-search-page?) can-edit)
-               {:name   :separator})
+               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
+                 {:name   :separator})
 
-             (when (and (not is-lib-page?) (not is-search-page?) can-edit)
-               {:name    (tr "labels.delete")
-                :id      "file-delete"
-                :handler on-delete})])]
+               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
+                 {:name    (tr "labels.delete")
+                  :id      "file-delete"
+                  :handler on-delete})]))]
 
       [:> context-menu*
        {:on-close on-close

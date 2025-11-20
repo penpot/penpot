@@ -14,7 +14,7 @@
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.exports.assets :refer [export-progress-widget]]
+   [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.comments :refer [comments-menu]]
@@ -167,7 +167,7 @@
         (open-share-dialog)))
 
     [:div {:class (stl/css :options-zone)}
-     [:& export-progress-widget]
+     [:& progress-widget {:operation :export}]
 
      (case section
        :interactions [:*

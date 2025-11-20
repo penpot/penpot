@@ -13,6 +13,7 @@
 ### :sparkles: New features & Enhancements
 
 - Make i18n translation files load on-demand [Taiga #11474](https://tree.taiga.io/project/penpot/us/11474)
+- Add deleted files to dashboard [Taiga #8149](https://tree.taiga.io/project/penpot/us/8149)
 
 ### :bug: Bugs fixed
 
