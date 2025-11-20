@@ -313,7 +313,7 @@
       ;; freeze because of the deduplication (we have uploaded 2 times
       ;; the same files).
 
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -372,14 +372,14 @@
       (th/db-exec! ["update file_change set deleted_at = now() where file_id = ? and label is not null" (:id file)])
       (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
 
-      (let [res (th/run-task! :objects-gc {:deletion-threshold 0})]
+      (let [res (th/run-task! :objects-gc {})]
         ;; this will remove the file change and file data entries for two snapshots
         (t/is (= 4 (:processed res))))
 
       ;; Rerun the file-gc and objects-gc
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      (let [res (th/run-task! :objects-gc {:deletion-threshold 0})]
+      (let [res (th/run-task! :objects-gc {})]
         ;; this will remove the file media objects marked as deleted
         ;; on prev file-gc
         (t/is (= 2 (:processed res))))
@@ -387,7 +387,7 @@
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -572,7 +572,7 @@
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted.
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -665,7 +665,7 @@
       ;; because of the deduplication (we have uploaded 2 times the
       ;; same files).
 
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 1 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -715,7 +715,7 @@
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
+      (let [res (th/run-task! "storage-gc-touched" {})]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects
@@ -750,7 +750,7 @@
 
       ;; Now that file-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 1 (:delete res))))
 
       ;; check file media objects
@@ -922,8 +922,9 @@
       (t/is (= 0 (:processed result))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 3 (:processed result))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [result (th/run-task! :objects-gc {})]
+        (t/is (= 3 (:processed result)))))
 
     ;; query the list of file libraries of a after hard deletion
     (let [data {::th/type :get-file-libraries
@@ -1134,7 +1135,7 @@
       (th/sleep 300)
 
       ;; run the task
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       ;; check that object thumbnails are still here
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1163,7 +1164,7 @@
         (t/is (= 2 (count rows))))
 
       ;; run the task again
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       ;; check that we have all object thumbnails
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1226,7 +1227,7 @@
         (t/is (= 2 (count rows)))))
 
     (t/testing "gc task"
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 2 (count rows)))
@@ -1273,7 +1274,7 @@
     ;; The FileGC task will schedule an inner taskq
     (th/run-pending-tasks!)
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 2 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
@@ -1367,7 +1368,7 @@
 
     ;; we ensure that once object-gc is passed and marked two storage
     ;; objects to delete
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 0 (:freeze res)))
       (t/is (= 2 (:delete res))))
 
@@ -1489,7 +1490,7 @@
         (t/is (some? (not-empty (:objects component))))))
 
     ;; Re-run the file-gc task
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
     (let [row (th/db-get :file {:id (:id file)})]
       (t/is (true? (:has-media-trimmed row))))
 
@@ -1519,7 +1520,7 @@
 
     ;; Now, we have deleted the usage of component if we pass file-gc,
     ;; that component should be deleted
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
     ;; Check that component is properly removed
     (let [data {::th/type :get-file
@@ -1610,8 +1611,8 @@
               :component-id c-id})}])
 
     ;; Run the file-gc on file and library
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)})))
 
     ;; Check that component exists
     (let [data {::th/type :get-file
@@ -1684,7 +1685,7 @@
 
     ;; Now, we have deleted the usage of component if we pass file-gc,
     ;; that component should be deleted
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
 
     ;; Check that component is properly removed
     (let [data {::th/type :get-file
@@ -1833,8 +1834,8 @@
         (t/is (not= (:id fill) (:id fmedia)))))
 
     ;; Run the file-gc on file and library
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)})))
 
     ;; Now proceed to delete file and absorb it
     (let [data {::th/type :delete-file

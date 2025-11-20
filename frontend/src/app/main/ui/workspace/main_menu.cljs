@@ -602,12 +602,9 @@
         on-export-file
         (mf/use-fn
          (mf/deps file)
-         (fn [event]
-           (let [target  (dom/get-current-target event)
-                 format  (-> (dom/get-data target "format")
-                             (keyword))]
-             (st/emit! (st/emit! (with-meta (fexp/export-files [file] format)
-                                   {::ev/origin "workspace"}))))))
+         (fn [_]
+           (st/emit! (-> (fexp/open-export-dialog [file])
+                         (with-meta {::ev/origin "workspace"})))))
 
         on-export-file-key-down
         (mf/use-fn
@@ -684,32 +681,13 @@
        (for [sc (scd/split-sc (sc/get-tooltip :export-shapes))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
-     (when-not (contains? cf/flags :export-file-v3)
-       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                                :on-click    on-export-file
-                                :on-key-down on-export-file-key-down
-                                :data-format "binfile-v1"
-                                :id          "file-menu-binary-file"}
-        [:span {:class (stl/css :item-name)}
-         (tr "dashboard.download-binary-file")]])
-
-     (when (contains? cf/flags :export-file-v3)
-       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                                :on-click    on-export-file
-                                :on-key-down on-export-file-key-down
-                                :data-format "binfile-v3"
-                                :id          "file-menu-binary-file"}
-        [:span {:class (stl/css :item-name)}
-         (tr "dashboard.download-binary-file")]])
-
-     (when-not (contains? cf/flags :export-file-v3)
-       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                                :on-click    on-export-file
-                                :on-key-down on-export-file-key-down
-                                :data-format "legacy-zip"
-                                :id          "file-menu-standard-file"}
-        [:span {:class (stl/css :item-name)}
-         (tr "dashboard.download-standard-file")]])
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :on-click    on-export-file
+                              :on-key-down on-export-file-key-down
+                              :data-format "binfile-v3"
+                              :id          "file-menu-binary-file"}
+      [:span {:class (stl/css :item-name)}
+       (tr "dashboard.download-binary-file")]]
 
      (when (seq frames)
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)

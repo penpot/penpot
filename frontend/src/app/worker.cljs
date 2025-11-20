@@ -11,7 +11,6 @@
    [app.common.schema :as sm]
    [app.common.types.objects-map]
    [app.util.object :as obj]
-   [app.worker.export]
    [app.worker.impl :as impl]
    [app.worker.import]
    [app.worker.index]
@@ -32,7 +31,7 @@
      [:cmd :keyword]]]
    [:buffer? {:optional true} :boolean]])
 
-(def ^:private check-message!
+(def ^:private check-message
   (sm/check-fn schema:message))
 
 (def buffer (rx/subject))
@@ -41,9 +40,7 @@
   "Process the message and returns to the client"
   [{:keys [sender-id payload transfer] :as message}]
 
-  (dm/assert!
-   "expected valid message"
-   (check-message! message))
+  (assert (check-message message))
 
   (letfn [(post [msg]
             (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
