@@ -111,12 +111,6 @@
               (aget buffer 3))
       (set! wasm/internal-frame-id nil))))
 
-(def set-view-render
-  (fns/debounce
-   (fn [ts]
-     (h/call wasm/internal-module "_set_view_end")
-     (render ts))
-   200))
 
 (defonce pending-render (atom false))
 
@@ -866,10 +860,24 @@
                 (:y position))]
     (= result 1)))
 
+(def render-finish
+  (letfn [(do-render [ts]
+            (h/call wasm/internal-module "_set_view_end")
+            (render ts))]
+    (fns/debounce do-render 100)))
+
+(def render-pan
+  (fns/throttle render 10))
+
 (defn set-view-box
-  [zoom vbox]
+  [prev-zoom zoom vbox]
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (set-view-render))
+
+  (if (mth/close? prev-zoom zoom)
+    (do (render-pan)
+        (render-finish))
+    (do (h/call wasm/internal-module "_render_from_cache" 0)
+        (render-finish))))
 
 (defn set-object
   [objects shape]
