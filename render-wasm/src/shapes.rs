@@ -1305,8 +1305,12 @@ impl Shape {
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    let index = usize::min(result.len() - 1, st.index as usize);
-                    result.shift_insert(index, st.id);
+                    if result.is_empty() {
+                        result.insert(st.id);
+                    } else {
+                        let index = usize::min(result.len() - 1, st.index as usize);
+                        result.shift_insert(index, st.id);
+                    }
                 }
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);
