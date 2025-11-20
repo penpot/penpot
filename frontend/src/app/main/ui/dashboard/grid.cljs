@@ -18,7 +18,6 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.project :as dpj]
    [app.main.data.team :as dtm]
-   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
@@ -59,22 +58,17 @@
 
 (defn render-thumbnail
   [file-id revn]
-  (if (features/active-feature? @st/state "render-wasm/v1")
-    (->> (mw/ask! {:cmd :thumbnails/generate-for-file-wasm
-                   :revn revn
-                   :file-id file-id
-                   :width thumbnail-width}))
-    (->> (mw/ask! {:cmd :thumbnails/generate-for-file
-                   :revn revn
-                   :file-id file-id
-                   :width thumbnail-width})
-         (rx/mapcat
-          (fn [{:keys [fonts] :as result}]
-            (->> (fonts/render-font-styles fonts)
-                 (rx/map (fn [styles]
-                           (-> result
-                               (assoc :styles styles
-                                      :width thumbnail-width))))))))))
+  (->> (mw/ask! {:cmd :thumbnails/generate-for-file
+                 :revn revn
+                 :file-id file-id
+                 :width thumbnail-width})
+       (rx/mapcat
+        (fn [{:keys [fonts] :as result}]
+          (->> (fonts/render-font-styles fonts)
+               (rx/map (fn [styles]
+                         (-> result
+                             (assoc :styles styles
+                                    :width thumbnail-width)))))))))
 
 (defn- ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"

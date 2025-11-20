@@ -83,7 +83,7 @@
      :source-map-detail-level :all}}}
 
   :worker
-  {:target :esm
+  {:target :browser
    :output-dir "resources/public/js/worker/"
    :asset-path "/js/worker"
    :devtools {:browser-inject :main
