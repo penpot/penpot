@@ -4723,16 +4723,16 @@ msgstr "**$%s**/mes"
 msgid "subscription.settings.management.dialog.title"
 msgstr "Aplica %s a tus equipos"
 
-msgid "subscription.settings.management.dialog.step-2.title"
+msgid "subscription.settings.management-dialog.step-2-title"
 msgstr "Ayúdanos a crecer y facilita tu periodo de prueba"
 
-msgid "subscription.settings.management.dialog.step-2.description"
+msgid "subscription.settings.management-dialog.step-2-description"
 msgstr "Añade ahora tus datos de pago para que tu suscripción siga funcionando sin problemas tras finalizar el periodo de prueba y seguir apoyando nuestro proyecto de código abierto. Por ahora no se te hará ningún cargo."
 
-msgid "subscription.settings.management.dialog.step-2.skip-button"
+msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "Saltar por ahora y comenzar la prueba"
 
-msgid "subscription.settings.management.dialog.step-2.add-payment-button"
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "Añadir datos de pago"
 
 #: src/app/main/ui/settings/subscription.cljs:209

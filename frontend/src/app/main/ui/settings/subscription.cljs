@@ -139,6 +139,7 @@
                                       (modal/hide!)))
 
         handle-unlimited-modal-step (mf/use-fn
+                                     (mf/deps unlimited-modal-step)
                                      (fn []
                                        (if (= unlimited-modal-step 1)
                                          (reset! unlimited-modal-step* 2)
@@ -158,7 +159,7 @@
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title)}
        (if (= unlimited-modal-step 2)
-         (tr "subscription.settings.management.dialog.step-2.title")
+         (tr "subscription.settings.management-dialog.step-2-title")
          (tr "subscription.settings.management.dialog.title" subscription-name))]
 
       [:div {:class (stl/css :modal-content)}
@@ -237,7 +238,7 @@
           (when (= unlimited-modal-step 2)
             [:*
              [:p {:class (stl/css :modal-text-medium)}
-              (tr "subscription.settings.management.dialog.step-2.description")]
+              (tr "subscription.settings.management-dialog.step-2-description")]
 
              [:div {:class (stl/css :modal-footer)}
               [:div {:class (stl/css :action-buttons)}
@@ -245,13 +246,13 @@
                [:input
                 {:class (stl/css :cancel-button)
                  :type "button"
-                 :value (tr "subscription.settings.management.dialog.step-2.skip-button")
+                 :value (tr "ubscription.settings.management-dialog.step-2-skip-button")
                  :on-click #(subscribe-to-unlimited false)}]
 
                [:input
                 {:class (stl/css :primary-button)
                  :type "button"
-                 :value (tr "subscription.settings.management.dialog.step-2.add-payment-button")
+                 :value (tr "subscription.settings.management-dialog.step-2-add-payment-button")
                  :on-click #(subscribe-to-unlimited true)}]]]])]
 
          [:div {:class (stl/css :modal-footer)}
