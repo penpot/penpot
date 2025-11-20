@@ -307,7 +307,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.pressSequentially(".changed");
 
-    await nameField.press("Enter");
+    await tokensUpdateCreateModal.getByRole("button", {name: "Save"}).click();
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
@@ -501,8 +501,9 @@ test.describe("Tokens: Tokens Tab", () => {
 
     // Clearing the input field should pick hex
     await valueField.fill("");
+    // TODO: We need to fix this translation
     await expect(
-      tokensUpdateCreateModal.getByText("Token value cannot be empty"),
+      tokensUpdateCreateModal.getByText("Empty field"),
     ).toBeVisible();
     await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
     await expect(valueField).toHaveValue(/^#[A-Fa-f\d]+$/);

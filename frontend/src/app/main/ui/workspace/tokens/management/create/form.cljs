@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.color :as c]
@@ -37,8 +36,11 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
    [app.main.ui.workspace.tokens.management.create.border-radius :as border-radius]
+   [app.main.ui.workspace.tokens.management.create.color :as color]
+   [app.main.ui.workspace.tokens.management.create.dimensions :as dimensions]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
+   [app.main.ui.workspace.tokens.management.create.text-case :as text-case]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -96,9 +98,6 @@
 (defn check-self-reference [token-name token-value]
   (when (cto/token-value-self-reference? token-name token-value)
     (wte/get-error-code :error.token/direct-self-reference)))
-
-(defn check-token-self-reference [token]
-  (check-self-reference (:name token) (:value token)))
 
 (defn validate-resolve-token
   [token prev-token tokens]
@@ -911,40 +910,6 @@
          :on-change on-change'}])
      [:> token-value-hint* {:result token-resolve-result}]]))
 
-(mf/defc color-form*
-  [{:keys [token on-display-colorpicker] :rest props}]
-  (let [color* (mf/use-state (:value token))
-        color (deref color*)
-        on-value-resolve (mf/use-fn
-                          (mf/deps color)
-                          (fn [value]
-                            (reset! color* value)
-                            value))
-
-        custom-input-token-value-props
-        (mf/use-memo
-         (mf/deps color on-display-colorpicker)
-         (fn []
-           {:color color
-            :on-display-colorpicker on-display-colorpicker}))
-
-        on-get-token-value
-        (mf/use-fn
-         (fn [e]
-           (let [value (dom/get-target-val e)]
-             (if (tinycolor/hex-without-hash-prefix? value)
-               (let [hex-value (dm/str "#" value)]
-                 (dom/set-value! (dom/get-target e) hex-value)
-                 hex-value)
-               value))))]
-
-    [:> form*
-     (mf/spread-props props {:token token
-                             :on-get-token-value on-get-token-value
-                             :on-value-resolve on-value-resolve
-                             :custom-input-token-value color-picker*
-                             :custom-input-token-value-props custom-input-token-value-props})]))
-
 (mf/defc shadow-color-picker-wrapper*
   "Wrapper for color-picker* that passes shadow color state from parent.
    Similar to color-form* but receives color state from shadow-value-inputs*."
@@ -1309,12 +1274,6 @@
                              :on-value-resolve on-value-resolve
                              :validate-token validate-font-family-token})]))
 
-(mf/defc text-case-form*
-  [{:keys [token] :rest props}]
-  [:> form*
-   (mf/spread-props props {:token token
-                           :input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})])
-
 (mf/defc text-decoration-form*
   [{:keys [token] :rest props}]
   [:> form*
@@ -1481,12 +1440,13 @@
                                 :token token})]
 
     (case token-type
-      :color [:> color-form* props]
+      :color [:> color/form* props]
       :typography [:> typography-form* props]
       :shadow [:> shadow-form* props]
       :font-family [:> font-family-form* props]
-      :text-case [:> text-case-form* props]
+      :text-case [:> text-case/form* props]
       :text-decoration [:> text-decoration-form* props]
       :font-weight [:> font-weight-form* props]
       :border-radius [:> border-radius/form* props]
+      :dimensions [:> dimensions/form* props]
       [:> form* props])))
