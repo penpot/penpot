@@ -309,6 +309,13 @@
                  to-space-between-pos (if (= relative-pos :bot) (inc pos) pos)]
              (on-reorder from-pos to-space-between-pos))))
 
+
+        on-prop-value-change
+        (mf/use-fn
+         (mf/deps on-prop-value-change pos)
+         (fn [value]
+           (on-prop-value-change pos value)))
+
         [dprops dref]
         (h/use-sortable
          :data-type "penpot/variant-property"
@@ -350,7 +357,8 @@
                            (get :objects))
 
         props-list     (map :variant-properties components)
-        component-ids  (map :id components)
+        component-ids  (mf/with-memo [components]
+                         (map :id components))
         properties     (if (> (count component-ids) 1)
                          (ctv/compare-properties props-list false)
                          (first props-list))
@@ -413,7 +421,7 @@
                                           :prop prop
                                           :options (get-options (:name prop))
                                           :on-prop-name-blur update-property-name
-                                          :on-prop-value-change (partial update-property-value pos)
+                                          :on-prop-value-change update-property-value
                                           :on-reorder reorder-properties}])]]
 
      (if malformed-msg
