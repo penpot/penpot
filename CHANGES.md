@@ -58,6 +58,8 @@ penpot on-premise you will need to apply the same changes on your own
 
 ### :heart: Community contributions (Thank you!)
 
+- Ensure consistent snap behavior across all zoom levels [Github #7774](https://github.com/penpot/penpot/pull/7774) by [@Tokytome](https://github.com/Tokytome)
+
 ### :sparkles: New features & Enhancements
 
 - Add the ability to select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
