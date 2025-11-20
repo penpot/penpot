@@ -139,7 +139,7 @@ pub fn render_workspace_current_tile(
 
     let tile_position_origin = skia::Point::new(rect.x() + 10., rect.y() + 20.);
     p.set_style(skia::PaintStyle::Fill);
-    let str = format!("{prefix} {}:{}", tile.0, tile.1);
+    let str = format!("{prefix} {}:{}", tile.x(), tile.y());
     let mut debug_font = render_state.fonts.debug_font().clone();
     debug_font.set_size(16.);
     canvas.draw_str(str, tile_position_origin, &debug_font, &p);

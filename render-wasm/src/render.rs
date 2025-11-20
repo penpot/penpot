@@ -1199,8 +1199,8 @@ impl RenderState {
         let start_tile_y =
             (self.viewbox.area.top * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
         Rect::from_xywh(
-            (tile.0 as f32 * tiles::TILE_SIZE) - start_tile_x,
-            (tile.1 as f32 * tiles::TILE_SIZE) - start_tile_y,
+            (tile.x() as f32 * tiles::TILE_SIZE) - start_tile_x,
+            (tile.y() as f32 * tiles::TILE_SIZE) - start_tile_y,
             tiles::TILE_SIZE,
             tiles::TILE_SIZE,
         )
@@ -1781,6 +1781,7 @@ impl RenderState {
 
         // Cache target surface in a texture
         self.cached_viewbox = self.viewbox;
+
         self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {
@@ -1815,7 +1816,7 @@ impl RenderState {
             .get_tiles_of(shape.id)
             .map_or(Vec::new(), |tiles| tiles.iter().copied().collect());
 
-        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)));
+        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)));
 
         let mut result = HashSet::<tiles::Tile>::new();
 
@@ -1841,7 +1842,7 @@ impl RenderState {
     pub fn add_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
         let tiles: Vec<_> = (rsx..=rex)
-            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
+            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)))
             .collect();
 
         for tile in tiles.iter() {
@@ -1998,5 +1999,9 @@ impl RenderState {
 
     pub fn get_cached_extrect(&mut self, shape: &Shape, tree: ShapesPoolRef, scale: f32) -> Rect {
         shape.extrect(tree, scale)
+    }
+
+    pub fn set_view(&mut self, zoom: f32, x: f32, y: f32) {
+        self.viewbox.set_all(zoom, x, y);
     }
 }

@@ -7,31 +7,63 @@ use std::collections::{HashMap, HashSet};
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
+impl Tile {
+    pub fn from(x: i32, y: i32) -> Self {
+        Tile(x, y)
+    }
+    pub fn x(&self) -> i32 {
+        self.0
+    }
+    pub fn y(&self) -> i32 {
+        self.1
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
 impl TileRect {
+    pub fn x1(&self) -> i32 {
+        self.0
+    }
+
+    pub fn y1(&self) -> i32 {
+        self.1
+    }
+
+    pub fn x2(&self) -> i32 {
+        self.2
+    }
+
+    pub fn y2(&self) -> i32 {
+        self.3
+    }
+
     pub fn width(&self) -> i32 {
-        self.2 - self.0
+        self.x2() - self.x1()
     }
 
     pub fn height(&self) -> i32 {
-        self.3 - self.1
+        self.y2() - self.y1()
     }
 
     pub fn center_x(&self) -> i32 {
-        self.0 + self.width() / 2
+        self.x1() + self.width() / 2
     }
 
     pub fn center_y(&self) -> i32 {
-        self.1 + self.height() / 2
+        self.y1() + self.height() / 2
     }
 
     pub fn contains(&self, tile: &Tile) -> bool {
-        tile.0 >= self.0 && tile.1 >= self.1 && tile.0 <= self.2 && tile.1 <= self.3
+        tile.x() >= self.x1()
+            && tile.y() >= self.y1()
+            && tile.x() <= self.x2()
+            && tile.y() <= self.y2()
     }
 }
 
+#[derive(Debug)]
 pub struct TileViewbox {
     pub visible_rect: TileRect,
     pub interest_rect: TileRect,
