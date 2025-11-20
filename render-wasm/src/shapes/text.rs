@@ -189,6 +189,7 @@ impl TextContentLayout {
  * Check if the current x,y (in paragraph relative coordinates) is inside
  * the paragraph
  */
+#[allow(dead_code)]
 fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> bool {
     if y < 0.0 || y > paragraph.height() {
         return false;
@@ -693,7 +694,28 @@ impl TextContent {
         (fallback_width, fallback_height)
     }
 
-    pub fn intersect_position(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
+    pub fn intersect_position_in_shape(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
+        let rect = shape.selrect;
+        let mut matrix = Matrix::new_identity();
+        let center = shape.center();
+        let Some(inv_transform) = &shape.transform.invert() else {
+            return false;
+        };
+        matrix.pre_translate(center);
+        matrix.pre_concat(inv_transform);
+        matrix.pre_translate(-center);
+
+        let result = matrix.map_point((x_pos, y_pos));
+
+        let x_pos = result.x;
+        let y_pos = result.y;
+
+        x_pos >= rect.x() && x_pos <= rect.right() && y_pos >= rect.y() && y_pos <= rect.bottom()
+    }
+
+    // Leave this function for future use in the upcoming render editor
+    #[allow(dead_code)]
+    pub fn intersect_position_in_text(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
         let rect = self.content_rect(&shape.selrect, shape.vertical_align);
         let mut matrix = Matrix::new_identity();
         let center = shape.center();
