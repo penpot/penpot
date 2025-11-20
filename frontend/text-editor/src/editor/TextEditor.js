@@ -23,6 +23,13 @@ import { isLineBreak } from "./content/dom/LineBreak.js";
 import LayoutType from "./layout/LayoutType.js";
 
 /**
+ * @typedef {Object} TextEditorOptions
+ * @property {CSSStyleDeclaration|Object.<string,*>} [styleDefaults]
+ * @property {SelectionControllerDebug} [debug]
+ * @property {boolean} [allowHTMLPaste=false]
+ */
+
+/**
  * Text Editor.
  */
 export class TextEditor extends EventTarget {
@@ -73,6 +80,8 @@ export class TextEditor extends EventTarget {
    * `beforeinput` and `input` have different `data` when
    * characters are deleted when the input type is
    * `insertCompositionText`.
+   *
+   * @type {boolean}
    */
   #fixInsertCompositionText = false;
 
@@ -88,6 +97,7 @@ export class TextEditor extends EventTarget {
    *
    * @param {HTMLElement} element
    * @param {HTMLCanvasElement} canvas
+   * @param {TextEditorOptions} [options]
    */
   constructor(element, canvas, options) {
     super();
@@ -578,14 +588,26 @@ export class TextEditor extends EventTarget {
   }
 }
 
-export function createRootFromHTML(html, style = undefined) {
-  const fragment = mapContentFragmentFromHTML(html, style || undefined);
+/**
+ *
+ * @param {string} html
+ * @param {*} style
+ * @param {boolean} allowHTMLPaste
+ * @returns {Root}
+ */
+export function createRootFromHTML(html, style = undefined, allowHTMLPaste = undefined) {
+  const fragment = mapContentFragmentFromHTML(html, style || undefined, allowHTMLPaste || undefined);
   const root = createRoot([], style);
   root.replaceChildren(fragment);
   resetInertElement();
   return root;
 }
 
+/**
+ *
+ * @param {string} string
+ * @returns {Root}
+ */
 export function createRootFromString(string) {
   const fragment = mapContentFragmentFromString(string);
   const root = createRoot([]);

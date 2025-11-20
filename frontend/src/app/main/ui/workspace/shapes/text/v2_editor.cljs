@@ -83,7 +83,8 @@
           default-font))
 
         options
-        #js {:styleDefaults style-defaults}
+        #js {:styleDefaults style-defaults
+             :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")}
 
         instance
         (dwt/create-editor editor-node canvas-node options)

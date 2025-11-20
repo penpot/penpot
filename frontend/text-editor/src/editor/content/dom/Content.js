@@ -167,9 +167,21 @@ export function htmlToText(html) {
  *
  * @param {string} html
  * @param {CSSStyleDeclaration} [styleDefaults]
+ * @param {boolean} [allowHTMLPaste=false]
  * @returns {DocumentFragment}
  */
-export function mapContentFragmentFromHTML(html, styleDefaults) {
+export function mapContentFragmentFromHTML(html, styleDefaults, allowHTMLPaste) {
+  if (allowHTMLPaste) {
+    try {
+      const parser = new DOMParser()
+      const document = parser.parseFromString(html, "text/html");
+      return mapContentFragmentFromDocument(document, styleDefaults);
+    } catch (error) {
+      console.error("Couldn't parse HTML", html, error);
+      const plainText = htmlToText(html);
+      return mapContentFragmentFromString(plainText, styleDefaults);
+    }
+  }
   const plainText = htmlToText(html);
   return mapContentFragmentFromString(plainText, styleDefaults);
 }

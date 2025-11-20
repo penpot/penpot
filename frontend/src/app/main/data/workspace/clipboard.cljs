@@ -42,9 +42,11 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.main.streams :as ms]
    [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
@@ -949,7 +951,7 @@
     ptk/WatchEvent
     (watch [_ state  _]
       (let [style   (deref refs/workspace-clipboard-style)
-            root    (dwtxt/create-root-from-html html style)
+            root    (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))
             text    (.-textContent root)
             content (tc/dom->cljs root)]
         (when (types.text/valid-content? content)
