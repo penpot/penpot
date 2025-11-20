@@ -4538,16 +4538,11 @@ msgstr "Enterprise plan"
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Enterprise plan (trial)"
 
-<<<<<<< HEAD
 #: src/app/main/ui/dashboard/subscription.cljs:84
 msgid "subscription.dashboard.power-up.professional.bottom-button"
 msgstr "Power up!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:83
-#, markdown
-=======
-#: src/app/main/ui/dashboard/subscription.cljs:64
->>>>>>> 8dc459b382 (:sparkles: Add improvements payment flow)
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr "Get extra storage, file recovery and more for your teams."
 
