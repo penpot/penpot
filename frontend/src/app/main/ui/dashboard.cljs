@@ -20,6 +20,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.dashboard.deleted :refer [deleted-section*]]
    [app.main.ui.dashboard.files :refer [files-section*]]
    [app.main.ui.dashboard.fonts :refer [fonts-page* font-providers-page*]]
    [app.main.ui.dashboard.import]
@@ -29,6 +30,7 @@
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.dashboard.team :refer [team-settings-page* team-members-page* team-invitations-page* webhooks-page*]]
    [app.main.ui.dashboard.templates :refer [templates-section*]]
+   [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.plugins]
@@ -84,6 +86,9 @@
     [:div {:class (stl/css :dashboard-content)
            :on-click clear-selected-fn
            :ref container}
+
+     [:& progress-widget {:operation :restore}]
+
      (case section
        :dashboard-recent
        (when (seq projects)
@@ -139,6 +144,11 @@
 
        :dashboard-settings
        [:> team-settings-page* {:team team :profile profile}]
+
+       :dashboard-deleted
+       [:> deleted-section* {:team team
+                             :projects projects
+                             :profile profile}]
 
        nil)]))
 

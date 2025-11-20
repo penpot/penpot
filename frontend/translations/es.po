@@ -8277,3 +8277,111 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "dashboard.labels.recent"
+msgstr "Recientes"
+
+msgid "dashboard.labels.deleted"
+msgstr "Eliminados"
+
+msgid "dashboard.deleted.restore-all"
+msgstr "Restaurar todo"
+
+msgid "dashboard.deleted.clear"
+msgstr "Vaciar papelera"
+
+msgid "dashboard.restore-file"
+msgstr "Restaurar archivo"
+
+msgid "dashboard.delete-file"
+msgstr "Eliminar archivo"
+
+msgid "dashboard.deleted.restore-project"
+msgstr "Restaurar proyecto"
+
+msgid "dashboard.deleted.delete-project"
+msgstr "Eliminar proyecto"
+
+msgid "dashboard.deleted.info-text"
+msgstr "Los archivos eliminados permanecerán en la papelera durante"
+
+msgid "dashboard.deleted.info-days"
+msgstr " %s días. "
+
+msgid "dashboard.deleted.info-text2"
+msgstr "Después de eso, serán eliminados permanentemente."
+
+msgid "dashboard.deleted.restore-text"
+msgstr "Si cambias de opinión, puedes restaurarlos o eliminarlos permanentemente desde el menú de cada archivo."
+
+msgid "dashboard.deleted.delete-forever"
+msgstr "Eliminar para siempre"
+
+msgid "restore-modal.restore-all.title"
+msgstr "Restaurar todos los proyectos y archivos"
+
+msgid "restore-modal.restore-all.description"
+msgstr "Vas a restaurar todos tus proyectos y archivos. Esto puede tardar un poco."
+
+msgid "restore-modal.restore-file.title"
+msgstr "Restaurar archivo"
+
+msgid "restore-modal.restore-file.description"
+msgstr "Vas a restaurar %s."
+
+msgid "restore-modal.restore-project.title"
+msgstr "Restaurar proyecto"
+
+msgid "restore-modal.restore-project.description"
+msgstr "Vas a restaurar el proyecto %s y todos los archivos que contiene."
+
+msgid "delete-forever-modal.title"
+msgstr "Eliminar para siempre"
+
+msgid "delete-forever-modal.delete-all.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre todos tus proyectos y archivos eliminados? Esta es una acción irreversible."
+
+msgid "delete-forever-modal.delete-file.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre %s? Esta es una acción irreversible."
+
+msgid "delete-forever-modal.delete-project.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre el proyecto %s? Vas a eliminarlo para siempre junto con todos los archivos que contiene. Esta es una acción irreversible."
+
+msgid "restore-modal.success-restore-immediately"
+msgstr "%s ha sido restaurado correctamente."
+
+msgid "delete-forever-modal.success-delete-immediately"
+msgstr "%s ha sido eliminado correctamente."
+
+msgid "restore-modal.error-restore-files"
+msgstr "Hubo un error al restaurar los archivos."
+
+msgid "restore-modal.error-restore-file"
+msgstr "Hubo un error al restaurar el archivo %s."
+
+msgid "restore-modal.error-restore-project"
+msgstr "Hubo un error al restaurar el proyecto %s y sus archivos."
+
+msgid "restore-modal.normal-progress-label"
+msgstr "Restaurando archivos…"
+
+msgid "restore-modal.failed-progress-label"
+msgstr "Falló la restauración"
+
+msgid "restore-modal.slow-progress-label"
+msgstr "Restauración lenta"
+
+msgid "restore-modal.complete-process-label"
+msgstr "Restauración completada"
+
+msgid "progress-widget.default-normal-progress-label"
+msgstr "Procesando…"
+
+msgid "progress-widget.default-failed-progress-label"
+msgstr "Falló el procesamiento"
+
+msgid "progress-widget.default-slow-progress-label"
+msgstr "Procesamiento lento"
+
+msgid "progress-widget.default-complete-progress-label"
+msgstr "Procesamiento completado"

@@ -64,7 +64,8 @@
     ["/fonts"                :dashboard-fonts]
     ["/fonts/providers"      :dashboard-font-providers]
     ["/libraries"            :dashboard-libraries]
-    ["/files"                :dashboard-files]]
+    ["/files"                :dashboard-files]
+    ["/deleted" :dashboard-deleted]]
 
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-legacy-team-members]

@@ -21,6 +21,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
@@ -76,7 +77,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (reduce (fn [state {:keys [id] :as project}]
-                (update-in state [:projects id] merge project))
+                  ;; Replace completely instead of merge to ensure deleted-at is removed
+                (assoc-in state [:projects id] project))
               state
               projects))))
 
@@ -151,6 +153,34 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-builtin-templates)
            (rx/map builtin-templates-fetched)))))
+
+;; --- EVENT: deleted-files
+
+(defn- deleted-files-fetched
+  [files]
+  (ptk/reify ::deleted-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [now (ct/now)
+            filtered-files (filterv (fn [file]
+                                      (let [will-be-deleted-at (:will-be-deleted-at file)]
+                                        (or (nil? will-be-deleted-at)
+                                            (ct/is-after? will-be-deleted-at now))))
+                                    files)
+            files (d/index-by :id filtered-files)]
+        (-> state
+            (assoc :deleted-files files)
+            (update :files d/merge files))))))
+
+(defn fetch-deleted-files
+  ([] (fetch-deleted-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-deleted-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-deleted-files {:team-id team-id})
+              (rx/map deleted-files-fetched)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Selection
@@ -656,3 +686,156 @@
     :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dcm/team-membership-change msg)
     nil))
+
+
+;; --- Delete files immediately
+
+(defn delete-files-immediately
+  [{:keys [team-id ids] :as params}]
+  (assert (uuid? team-id))
+  (assert (set? ids))
+  (assert (every? uuid? ids))
+
+  (ptk/reify ::delete-files-immediately
+    ev/Event
+    (-data [_]
+      {:team-id team-id
+       :num-files (count ids)})
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/cmd! :permanently-delete-team-files {:team-id team-id :ids ids})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+;; --- Restore deleted files immediately
+
+(defn- initialize-restore-status
+  [files]
+  (ptk/reify ::init-restore-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [restore-state {:in-progress true
+                           :healthy? true
+                           :error false
+                           :progress 0
+                           :widget-visible true
+                           :detail-visible true
+                           :files files
+                           :last-update (ct/now)
+                           :cmd :restore-files}]
+        (assoc state :restore restore-state)))))
+
+(defn- update-restore-status
+  [{:keys [index total] :as data}]
+  (ptk/reify ::upd-restore-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [time-diff (ct/diff-ms (get-in state [:restore :last-update]) (ct/now))
+            healthy?  (< time-diff 6000)]
+        (update state :restore assoc
+                :progress index
+                :total total
+                :last-update (ct/now)
+                :healthy? healthy?)))))
+
+(defn- complete-restore-status
+  []
+  (ptk/reify ::comp-restore-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [total (get-in state [:restore :total])]
+        (update state :restore assoc
+                :in-progress false
+                :progress total  ; Ensure progress equals total on completion
+                :last-update (ct/now))))))
+
+(defn- error-restore-status
+  [error]
+  (ptk/reify ::err-restore-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :restore assoc
+              :in-progress false
+              :error error
+              :last-update (ct/now)
+              :healthy? false))))
+
+(defn toggle-restore-detail-visibility
+  []
+  (ptk/reify ::toggle-restore-detail
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:restore :detail-visible] not))))
+
+(defn retry-last-restore
+  []
+  (ptk/reify ::retry-restore
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Reset restore state for retry - actual retry will be handled by UI
+      (if (get state :restore)
+        (update state :restore assoc :error false :in-progress false)
+        state))))
+
+(defn clear-restore-state
+  []
+  (ptk/reify ::clear-restore
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :restore))))
+
+(defn- projects-restored
+  [team-id]
+  (ptk/reify ::projects-restored
+    ptk/WatchEvent
+    (watch [_ _ _]
+      ;; Refetch projects to get the updated state without deleted-at
+      (rx/of (fetch-projects team-id)))))
+
+(defn restore-files-immediately
+  [{:keys [team-id ids] :as params}]
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (set? ids))
+  (dm/assert! (every? uuid? ids))
+
+  (ptk/reify ::restore-files-immediately
+    ev/Event
+    (-data [_]
+      {:team-id team-id
+       :num-files (count ids)})
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)
+            files (mapv #(hash-map :id %) ids)]
+
+        (rx/merge
+         (rx/of (initialize-restore-status files))
+
+         (->> (rp/cmd! ::sse/restore-deleted-team-files {:team-id team-id :ids ids})
+              (rx/tap (fn [event]
+                        (let [payload (sse/get-payload event)
+                              type    (sse/get-type event)]
+                          (when (and payload (= type "progress"))
+                            (let [{:keys [index total]} payload]
+                              (when (and index total)
+                                ;; Dispatch progress update
+                                (st/emit! (update-restore-status {:index index :total total}))))))))
+              (rx/filter sse/end-of-stream?)
+              (rx/map sse/get-payload)
+              (rx/tap on-success)
+              (rx/mapcat (fn [_]
+                           (rx/of (complete-restore-status)
+                                  (projects-restored team-id))))
+              (rx/catch (fn [error]
+                          (rx/concat
+                           (rx/of (error-restore-status (ex-message error)))
+                           (on-error error)))))
+
+         (rx/of (ptk/data-event ::restore-start {:total (count ids)})))))))

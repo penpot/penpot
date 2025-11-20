@@ -87,6 +87,9 @@
    {:stream? true
     :form-data? true}
 
+   ::sse/restore-deleted-team-files
+   {:stream? true}
+
    :export-binfile {:response-type :blob}
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
