@@ -82,6 +82,11 @@ services:
       - 9000:9000
       - 9001:9001
 
+    networks:
+      default:
+        aliases:
+          - minio
+
   postgres:
     image: postgres:16.8
     command: postgres -c config_file=/etc/postgresql.conf

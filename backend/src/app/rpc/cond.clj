@@ -39,9 +39,8 @@
 (defn- encode
   [s]
   (-> s
-      bh/blake2b-256
-      bc/bytes->b64u
-      bc/bytes->str))
+      (bh/blake2b-256)
+      (bc/bytes->b64-str true)))
 
 (defn- fmt-key
   [s]

@@ -50,23 +50,27 @@
            (db/tx-run! cfg handler request)))))})
 
 (defmethod ig/init-key ::routes
-  [_ cfg]
-  ["" {:middleware [[mw/shared-key-auth (cf/get :management-api-shared-key)]
-                    [default-system cfg]
-                    [transaction]]}
-   ["/authenticate"
-    {:handler authenticate
-     :allowed-methods #{:post}}]
+  [_ {:keys [::setup/props] :as cfg}]
 
-   ["/get-customer"
-    {:handler get-customer
-     :transaction true
-     :allowed-methods #{:post}}]
+  (let [management-key (or (cf/get :management-api-key)
+                           (get props :management-key))]
 
-   ["/update-customer"
-    {:handler update-customer
-     :allowed-methods #{:post}
-     :transaction true}]])
+    ["" {:middleware [[mw/shared-key-auth management-key]
+                      [default-system cfg]
+                      [transaction]]}
+     ["/authenticate"
+      {:handler authenticate
+       :allowed-methods #{:post}}]
+
+     ["/get-customer"
+      {:handler get-customer
+       :transaction true
+       :allowed-methods #{:post}}]
+
+     ["/update-customer"
+      {:handler update-customer
+       :allowed-methods #{:post}
+       :transaction true}]]))
 
 ;; ---- HELPERS
 

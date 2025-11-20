@@ -39,7 +39,7 @@
         fullname (str "Demo User " sem)
 
         password (-> (bn/random-bytes 16)
-                     (bc/bytes->b64u)
+                     (bc/bytes->b64 true)
                      (bc/bytes->str))
 
         params   {:email email
