@@ -168,6 +168,8 @@
    :enable-google-fonts-provider
    :enable-component-thumbnails
    :enable-render-wasm-dpr
+   :enable-token-color
+   :enable-inspect-styles
    :enable-feature-fdata-objects-map])
 
 (defn parse
