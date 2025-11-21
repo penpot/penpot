@@ -120,7 +120,6 @@
     :terms-and-privacy-checkbox
     ;; Only for developtment.
     :tiered-file-data-storage
-    :token-units
     :token-base-font-size
     :token-color
     :token-shadow
@@ -169,7 +168,6 @@
    :enable-google-fonts-provider
    :enable-component-thumbnails
    :enable-render-wasm-dpr
-   :enable-token-units
    :enable-feature-fdata-objects-map])
 
 (defn parse
