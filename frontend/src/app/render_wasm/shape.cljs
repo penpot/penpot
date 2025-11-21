@@ -14,6 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
+   [app.render-wasm.svg-fills :as svg-fills]
    [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
@@ -162,7 +163,8 @@
         (api/set-shape-transform v)
 
         :fills
-        (into [] (api/set-shape-fills id v false))
+        (let [fills (svg-fills/resolve-shape-fills shape)]
+          (into [] (api/set-shape-fills id fills false)))
 
         :strokes
         (into [] (api/set-shape-strokes id v false))
@@ -221,7 +223,7 @@
 
         :svg-attrs
         (when (cfh/path-shape? shape)
-          (api/set-shape-path-attrs v))
+          (api/set-shape-svg-attrs v))
 
         :masked-group
         (when (cfh/mask-shape? shape)

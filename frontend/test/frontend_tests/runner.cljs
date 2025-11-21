@@ -11,6 +11,7 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
@@ -39,6 +40,7 @@
    'frontend-tests.logic.groups-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.svg-fills-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
