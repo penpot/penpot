@@ -89,7 +89,7 @@
 (defn init
   "Return a initialized webworker instance."
   [path on-error]
-  (let [instance (js/Worker. path)
+  (let [instance (js/Worker. path #js {:type "module"})
         bus     (rx/subject)
         worker  (Worker. instance (rx/to-observable bus))
 
