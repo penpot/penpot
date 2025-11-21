@@ -355,7 +355,7 @@ pub extern "C" fn intersect_position_in_shape(
             return false;
         };
         if let Type::Text(content) = &shape.shape_type {
-            return content.intersect_position_in_shape(shape, x_pos, y_pos);
+            return content.intersect_position_in_text(shape, x_pos, y_pos);
         }
     });
     false
