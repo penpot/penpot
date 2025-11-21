@@ -266,10 +266,6 @@
                                 typography-token-keys
                                 #{:line-height}))
 
-;; TODO: Created to extract the font-size feature from the typography feature flag.
-;; Delete this once the typography feature flag is removed.
-(def ff-typography-keys (set/difference typography-keys font-size-keys))
-
 (def ^:private schema:number
   (-> (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
                         schema:rotation])

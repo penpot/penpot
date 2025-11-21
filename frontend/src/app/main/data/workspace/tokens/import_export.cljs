@@ -8,7 +8,6 @@
   (:require
    [app.common.json :as json]
    [app.common.path-names :as cpn]
-   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.notifications :as ntf]
@@ -66,11 +65,8 @@
                                                       ;; Filter out FF token-types
                                                       {:process-token-type
                                                        (fn [dtcg-token-type]
-                                                         (if (or
-                                                              (and (not (contains? cf/flags :token-units))
-                                                                   (= dtcg-token-type "number"))
-                                                              (and (not (contains? cf/flags :token-typography-types))
-                                                                   (contains? ctt/ff-typography-keys dtcg-token-type)))
+                                                         (if (and (not (contains? cf/flags :token-units))
+                                                                  (= dtcg-token-type "number"))
                                                            nil
                                                            dtcg-token-type))})}
     (catch js/Error e

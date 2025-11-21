@@ -123,7 +123,6 @@
     :token-units
     :token-base-font-size
     :token-color
-    :token-typography-types
     :token-typography-composite
     :token-shadow
     :transit-readable-response
@@ -172,7 +171,6 @@
    :enable-component-thumbnails
    :enable-render-wasm-dpr
    :enable-token-units
-   :enable-token-typography-types
    :enable-token-typography-composite
    :enable-feature-fdata-objects-map])
 
