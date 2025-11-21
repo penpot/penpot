@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-21 05:51+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"PO-Revision-Date: 2025-11-22 10:51+0000\n"
+"Last-Translator: Keunes <keunes@mailbox.org>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -7270,7 +7270,7 @@ msgstr "Plakken"
 
 #: src/app/main/ui/workspace/context_menu.cljs:233
 msgid "workspace.shape.menu.paste-props"
-msgstr "Eigenschappen plekken"
+msgstr "Eigenschappen plakken"
 
 #: src/app/main/ui/workspace/context_menu.cljs:441
 msgid "workspace.shape.menu.path"
