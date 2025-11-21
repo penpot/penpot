@@ -34,6 +34,7 @@
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.svg-fills :as svg-fills]
    ;; FIXME: rename; confunsing name
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
@@ -463,7 +464,7 @@
                 (h/call wasm/internal-module "_add_shape_stroke_fill")))))
         strokes))
 
-(defn set-shape-path-attrs
+(defn set-shape-svg-attrs
   [attrs]
   (let [style (:style attrs)
         ;; Filter to only supported attributes
@@ -902,13 +903,7 @@
         ;; inherited by child nodes and emulates the behavior of
         ;; standard SVG, where a node without an explicit fill
         ;; defaults to black.
-        fills        (let [base-fills (get shape :fills)]
-                       (if (and ^boolean (contains? shape :svg-attrs)
-                                ^boolean (or ^boolean (= :svg-raw type)
-                                             ^boolean (= :group type))
-                                ^boolean (empty? base-fills))
-                         [{:fill-color "#000000" :fill-opacity 1}]
-                         base-fills))
+        fills        (svg-fills/resolve-shape-fills shape)
 
         strokes      (if (= type :group)
                        [] (get shape :strokes))
@@ -948,9 +943,9 @@
     (when (and (some? content)
                (or (= type :path)
                    (= type :bool)))
-      (when (some? svg-attrs)
-        (set-shape-path-attrs svg-attrs))
       (set-shape-path-content content))
+    (when (some? svg-attrs)
+      (set-shape-svg-attrs svg-attrs))
     (when (and (some? content) (= type :svg-raw))
       (set-shape-svg-raw-content (get-static-markup shape)))
     (when (some? shadows) (set-shape-shadows shadows))
