@@ -70,7 +70,6 @@ penpot on-premise you will need to apply the same changes on your own
 
 ### :bug: Bugs fixed
 
-- Ensure imported SVG shapes keep default fill when updating renders
 - Fix text line-height values are wrong [Taiga #12252](https://tree.taiga.io/project/penpot/issue/12252)
 - Fix an error translation [Taiga #12402](https://tree.taiga.io/project/penpot/issue/12402)
 - Fix pan cursor not disabling viewport guides [Github #6985](https://github.com/penpot/penpot/issues/6985)
