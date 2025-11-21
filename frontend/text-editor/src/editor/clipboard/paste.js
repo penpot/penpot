@@ -17,7 +17,7 @@ import {
  * @param {DataTransfer} clipboardData
  * @returns {DocumentFragment}
  */
-function getFormattedFragmentFromClipboardData(clipboardData) {
+function getFormattedFragmentFromClipboardData(selectionController, clipboardData) {
   return mapContentFragmentFromHTML(
     clipboardData.getData("text/html"),
     selectionController.currentStyle,
@@ -30,7 +30,7 @@ function getFormattedFragmentFromClipboardData(clipboardData) {
  * @param {DataTransfer} clipboardData
  * @returns {DocumentFragment}
  */
-function getPlainFragmentFromClipboardData(clipboardData) {
+function getPlainFragmentFromClipboardData(selectionController, clipboardData) {
   return mapContentFragmentFromString(
     clipboardData.getData("text/plain"),
     selectionController.currentStyle,
@@ -44,11 +44,11 @@ function getPlainFragmentFromClipboardData(clipboardData) {
  * @param {DataTransfer} clipboardData
  * @returns {DocumentFragment|null}
  */
-function getFragmentFromClipboardData(clipboardData) {
+function getFragmentFromClipboardData(selectionController, clipboardData) {
   if (clipboardData.types.includes("text/html")) {
-    return getFormattedFragmentFromClipboardData(clipboardData)
+    return getFormattedFragmentFromClipboardData(selectionController, clipboardData)
   } else if (clipboardData.types.includes("text/plain")) {
-    return getPlainFragmentFromClipboardData(clipboardData)
+    return getPlainFragmentFromClipboardData(selectionController, clipboardData)
   }
   return null
 }
@@ -71,9 +71,9 @@ export function paste(event, editor, selectionController) {
 
   let fragment = null;
   if (editor?.options?.allowHTMLPaste) {
-    fragment = getFragmentFromClipboardData(event.clipboardData);
+    fragment = getFragmentFromClipboardData(selectionController, event.clipboardData);
   } else {
-    fragment = getPlainFragmentFromClipboardData(event.clipboardData);
+    fragment = getPlainFragmentFromClipboardData(selectionController, event.clipboardData);
   }
 
   if (!fragment) {
