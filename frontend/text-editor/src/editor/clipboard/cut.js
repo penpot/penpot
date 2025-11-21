@@ -15,5 +15,6 @@
  *
  * @param {ClipboardEvent} event
  * @param {TextEditor} editor
+ * @param {SelectionController} selectionController
  */
-export function cut(event, editor) {}
+export function cut(event, editor, selectionController) {}
