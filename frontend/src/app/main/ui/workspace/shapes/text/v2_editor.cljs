@@ -321,7 +321,7 @@
                     "bottom" (- y (- height (:height selrect)))
                     "center" (- y (/ (- height (:height selrect)) 2))
                     y)]
-            [(assoc selrect :y y :width (:width selrect) :height (:height selrect)) transform])
+            [(assoc selrect :y y :width (:width selrect) :height (max height (:height selrect))) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)

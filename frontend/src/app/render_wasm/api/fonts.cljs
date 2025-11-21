@@ -26,6 +26,8 @@
   (l/derived :fonts st/state))
 
 (def ^:private default-font-size 14)
+(def ^:private default-line-height 1.2)
+(def ^:private default-letter-spacing 0.0)
 
 (defn- google-font-id->uuid
   [font-id]
@@ -220,6 +222,26 @@
         100
         :else
         400))))
+
+(defn serialize-line-height
+  ([line-height]
+   (serialize-line-height line-height default-line-height))
+  ([line-height default-value]
+   (cond
+     (number? line-height)
+     line-height
+
+     (string? line-height)
+     (or (d/parse-double line-height) default-value))))
+
+(defn serialize-letter-spacing
+  [letter-spacing]
+  (cond
+    (number? letter-spacing)
+    letter-spacing
+
+    (string? letter-spacing)
+    (or (d/parse-double letter-spacing) default-letter-spacing)))
 
 (defn store-font
   [shape-id font]
