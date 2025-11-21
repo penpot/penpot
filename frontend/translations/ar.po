@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-21 05:51+0000\n"
+"PO-Revision-Date: 2025-11-22 10:51+0000\n"
 "Last-Translator: jonnysemon <jonnysemon@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
@@ -2687,7 +2687,7 @@ msgstr "توزيع المسافات الأفقية (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:48
 msgid "workspace.align.hleft"
-msgstr "محاذاة لليسار (%s)"
+msgstr "محاذاة للشمال (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:64
 msgid "workspace.align.hright"
@@ -2695,7 +2695,7 @@ msgstr "محاذاة لليمين (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:97
 msgid "workspace.align.vbottom"
-msgstr "محاذاة للأسفل  (%s)"
+msgstr "محاذاة للأسفل (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:89
 msgid "workspace.align.vcenter"
@@ -2707,7 +2707,7 @@ msgstr "توزيع التباعد الرئسي (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:81
 msgid "workspace.align.vtop"
-msgstr "محاذاة أعلى (%s)"
+msgstr "محاذاة لأعلى (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs:172
 msgid "workspace.assets.add-library"
@@ -2752,12 +2752,12 @@ msgstr "انسخ الأصل"
 
 #: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:439
 msgid "workspace.assets.edit"
-msgstr "التحرير"
+msgstr "عدّل"
 
 #: src/app/main/ui/workspace/sidebar/assets/graphics.cljs:386, src/app/main/ui/workspace/sidebar/assets.cljs:152
 #, unused
 msgid "workspace.assets.graphics"
-msgstr "رسومات"
+msgstr "رسوميات"
 
 #: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:625, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:448
 msgid "workspace.assets.group"
@@ -2777,7 +2777,7 @@ msgstr "أدر المكتبة"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:307
 msgid "workspace.assets.not-found"
-msgstr "الأصل غير موجود"
+msgstr "لا يوجد أصول"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:113
 msgid "workspace.assets.open-library"
@@ -2785,15 +2785,15 @@ msgstr "افتح ملف المكتبة"
 
 #: src/app/main/ui/workspace/context_menu.cljs:685, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:616, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:434
 msgid "workspace.assets.rename"
-msgstr "إعادة تسمية"
+msgstr "أعد التسمية"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:142
 msgid "workspace.assets.rename-group"
-msgstr "إعادة تسمية المجموعة"
+msgstr "أعد تسمية المجموعة"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs:183
 msgid "workspace.assets.search"
-msgstr "الخث عن أصل"
+msgstr "ابحث عن أصول"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 #, unused
@@ -2826,7 +2826,7 @@ msgstr "الحجم"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
 msgid "workspace.assets.typography.font-style"
-msgstr "نوع الخط"
+msgstr "اسلوب الخط"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
@@ -2874,7 +2874,7 @@ msgstr "تعطيل التركيز"
 
 #: src/app/main/ui/workspace/context_menu.cljs:394
 msgid "workspace.focus.focus-on"
-msgstr "تشغيل التركيز"
+msgstr "فعّل التركيز"
 
 #, unused
 msgid "workspace.focus.selection"
@@ -2894,65 +2894,65 @@ msgstr "إبطال المحاذاة الدينماكية"
 
 #: src/app/main/ui/workspace/main_menu.cljs:228
 msgid "workspace.header.menu.disable-scale-content"
-msgstr "Disable proportional scale"
+msgstr "عطّل المقياس التناسبي"
 
 #: src/app/main/ui/workspace/header.cljs
 #, unused
 msgid "workspace.header.menu.disable-scale-text"
-msgstr "إبطال المقياس النسبي"
+msgstr "عطّل المقياس النسبي"
 
 #: src/app/main/ui/workspace/main_menu.cljs:259
 msgid "workspace.header.menu.disable-snap-guides"
-msgstr "إبطال الفرقعة للخ\\وط الإرشادية"
+msgstr "عطّل المحاذاة إلى الخطوط الإرشادية"
 
 #: src/app/main/ui/workspace/main_menu.cljs:289
 msgid "workspace.header.menu.disable-snap-pixel-grid"
-msgstr "إبطال الفرقعة للبكسل"
+msgstr "عطّل المحاذاة للبكسل"
 
 #: src/app/main/ui/workspace/main_menu.cljs:275
 msgid "workspace.header.menu.enable-dynamic-alignment"
-msgstr "تككين المحاذاة الدينماكية"
+msgstr "فعِّل المحاذاة الدينماكية"
 
 #: src/app/main/ui/workspace/main_menu.cljs:229
 msgid "workspace.header.menu.enable-scale-content"
-msgstr "تمكين المقياس النسبي"
+msgstr "فعِّل المقياس النسبي"
 
 #: src/app/main/ui/workspace/header.cljs
 #, unused
 msgid "workspace.header.menu.enable-scale-text"
-msgstr "تمكين نص المقياس"
+msgstr "فعِّل نص المقياس"
 
 #: src/app/main/ui/workspace/main_menu.cljs:260
 msgid "workspace.header.menu.enable-snap-guides"
-msgstr "الفرقعة للخطوط الإرشادية"
+msgstr "محاذاة إلى الخطوط الإرشادية"
 
 #: src/app/main/ui/workspace/main_menu.cljs:290
 msgid "workspace.header.menu.enable-snap-pixel-grid"
-msgstr "تمكين الفرقعة للبكسل"
+msgstr "فعِّل المحاذاة للبكسل"
 
 #: src/app/main/ui/workspace/main_menu.cljs:422
 msgid "workspace.header.menu.hide-artboard-names"
-msgstr "إخفاء أسماء البورد"
+msgstr "أخفِ أسماء اللوحة"
 
 #: src/app/main/ui/workspace/main_menu.cljs:393
 msgid "workspace.header.menu.hide-palette"
-msgstr "إخفاء لون اللوحة"
+msgstr "أخفِ لون اللوحة"
 
 #: src/app/main/ui/workspace/main_menu.cljs:434
 msgid "workspace.header.menu.hide-pixel-grid"
-msgstr "إخفاء تشبيك اللوحة"
+msgstr "أخفِ تشبيك البكسل"
 
 #: src/app/main/ui/workspace/main_menu.cljs:360
 msgid "workspace.header.menu.hide-rules"
-msgstr "إخفاء المسطرات"
+msgstr "أخفِ المسطرات"
 
 #: src/app/main/ui/workspace/main_menu.cljs:407
 msgid "workspace.header.menu.hide-textpalette"
-msgstr "إخفاء لوحة أسلوب خط"
+msgstr "أخفِ لوحة الخطوط"
 
 #: src/app/main/ui/workspace/main_menu.cljs:905
 msgid "workspace.header.menu.option.edit"
-msgstr "التحرير"
+msgstr "عدّل"
 
 #: src/app/main/ui/workspace/main_menu.cljs:894
 msgid "workspace.header.menu.option.file"
@@ -2968,19 +2968,19 @@ msgstr "التفضيلات"
 
 #: src/app/main/ui/workspace/main_menu.cljs:916
 msgid "workspace.header.menu.option.view"
-msgstr "المنظر"
+msgstr "العرض"
 
 #: src/app/main/ui/workspace/main_menu.cljs:506
 msgid "workspace.header.menu.redo"
-msgstr "إعادة"
+msgstr "أعد"
 
 #: src/app/main/ui/workspace/main_menu.cljs:477
 msgid "workspace.header.menu.select-all"
-msgstr "حدد الجميع"
+msgstr "حدّد الكل"
 
 #: src/app/main/ui/workspace/main_menu.cljs:423
 msgid "workspace.header.menu.show-artboard-names"
-msgstr "أظهر أسماء البورد"
+msgstr "أظهر أسماء اللوحة"
 
 #: src/app/main/ui/workspace/main_menu.cljs:394
 msgid "workspace.header.menu.show-palette"
@@ -2988,7 +2988,7 @@ msgstr "أظهر لون اللوحة"
 
 #: src/app/main/ui/workspace/main_menu.cljs:435
 msgid "workspace.header.menu.show-pixel-grid"
-msgstr "Show pixel grid"
+msgstr "أظهر شبكة البكسل"
 
 #: src/app/main/ui/workspace/main_menu.cljs:361
 msgid "workspace.header.menu.show-rules"
@@ -3000,11 +3000,11 @@ msgstr "أظهر لوخة أسلوب الخط"
 
 #: src/app/main/ui/workspace/main_menu.cljs:492
 msgid "workspace.header.menu.undo"
-msgstr "الإلغاء"
+msgstr "ارجع"
 
 #: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:95
 msgid "workspace.header.reset-zoom"
-msgstr "إعادة ضبط"
+msgstr "صفّر"
 
 #: src/app/main/ui/workspace/left_header.cljs:126
 msgid "workspace.header.save-error"
@@ -3012,11 +3012,11 @@ msgstr "خطأ في حفظ الملف"
 
 #: src/app/main/ui/workspace/left_header.cljs:125
 msgid "workspace.header.saved"
-msgstr "تم الحفظ"
+msgstr "حُفظ"
 
 #: src/app/main/ui/workspace/left_header.cljs:123, src/app/main/ui/workspace/left_header.cljs:124
 msgid "workspace.header.saving"
-msgstr "حفظ الملف"
+msgstr "الحفظ"
 
 #: src/app/main/ui/workspace/right_header.cljs:48, src/app/main/ui/workspace/right_header.cljs:53
 #, unused
@@ -3033,19 +3033,19 @@ msgstr "تكبير"
 
 #: src/app/main/ui/viewer/header.cljs:109
 msgid "workspace.header.zoom-fill"
-msgstr "مقياس الملأ"
+msgstr "ملء - تغيير الحجم لملء"
 
 #: src/app/main/ui/viewer/header.cljs:102
 msgid "workspace.header.zoom-fit"
-msgstr "تقليص المقياس للتناسب"
+msgstr "احتواء - تصغير للاحتواء"
 
 #: src/app/main/ui/workspace/right_header.cljs:98
 msgid "workspace.header.zoom-fit-all"
-msgstr "التكبير لتناسب الجميع"
+msgstr "التكبير لتناسب الكل"
 
 #: src/app/main/ui/viewer/header.cljs:116
 msgid "workspace.header.zoom-full-screen"
-msgstr "تكبير الشاشة"
+msgstr "ملء الشاشة"
 
 #: src/app/main/ui/workspace/right_header.cljs:105
 msgid "workspace.header.zoom-selected"
