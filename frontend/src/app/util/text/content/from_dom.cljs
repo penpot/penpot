@@ -38,16 +38,21 @@
 
 (defn get-attrs-from-styles
   [element attrs defaults]
-  (reduce (fn [acc key]
-            (let [style (.-style element)]
-              (if (contains? styles/mapping key)
-                (let [style-name (styles/get-style-name-as-css-variable key)
-                      [_ style-decode] (get styles/mapping key)
-                      value (style-decode (.getPropertyValue style style-name))]
-                  (assoc acc key (if (empty? value) (get defaults key) value)))
-                (let [style-name (styles/get-style-name key)
-                      value (styles/normalize-attr-value key (.getPropertyValue style style-name))]
-                  (assoc acc key (if (empty? value) (get defaults key) value)))))) {} attrs))
+  (let [attrs (or attrs [])
+        value-empty? (fn [v]
+                       (or (nil? v)
+                           (and (string? v) (empty? v))
+                           (and (coll? v) (empty? v))))]
+    (reduce (fn [acc key]
+              (let [style (.-style element)
+                    value (if (contains? styles/mapping key)
+                            (let [style-name (styles/get-style-name-as-css-variable key)
+                                  [_ style-decode] (get styles/mapping key)]
+                              (style-decode (.getPropertyValue style style-name)))
+                            (let [style-name (styles/get-style-name key)]
+                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
+                (assoc acc key (if (value-empty? value) (get defaults key) value))))
+            {} attrs)))
 
 (defn get-inline-styles
   [element]
