@@ -1786,6 +1786,17 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0018-remove-unneeded-objects-from-components"
+  [data _]
+  ;; Some components have an `:objects` attribute, despite not being
+  ;; deleted. This migration removes it.
+  (letfn [(check-component [component]
+            (if (and (not (:deleted component))
+                     (contains? component :objects))
+              (dissoc component :objects)
+              component))]
+    (d/update-when data :components check-component)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1860,4 +1871,5 @@
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
          "0016-copy-fills-from-position-data-to-text-node"
-         "0017-fix-layout-flex-dir"]))
+         "0017-fix-layout-flex-dir"
+         "0018-remove-unneeded-objects-from-components"]))
