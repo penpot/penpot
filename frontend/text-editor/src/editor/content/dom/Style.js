@@ -13,6 +13,19 @@ const DEFAULT_FONT_SIZE_VALUE = parseFloat(DEFAULT_FONT_SIZE);
 const DEFAULT_LINE_HEIGHT = "1.2";
 const DEFAULT_FONT_WEIGHT = "400";
 
+/** Sanitizes font-family values to be quoted, so it handles multi-word font names
+ * with numbers like "Font Awesome 7 Free"
+ *
+ * @param {string} value
+ */
+export function sanitizeFontFamily(value) {
+  if (value && value.length > 0 && !value.startsWith('"')) {
+    return `"${value}"`;
+  } else {
+    return value;
+  }
+}
+
 /**
  * Merges two style declarations. `source` -> `target`.
  *
@@ -25,7 +38,7 @@ export function mergeStyleDeclarations(target, source) {
   // for (const styleName of source) {
   for (let index = 0; index < source.length; index++) {
     const styleName = source.item(index);
-    const styleValue = source.getPropertyValue(styleName);
+    let styleValue = source.getPropertyValue(styleName);
     target.setProperty(styleName, styleValue);
   }
   return target;
@@ -122,11 +135,14 @@ export function getComputedStylePolyfill(element) {
       if (currentValue) {
         const priority = currentElement.style.getPropertyPriority(styleName);
         if (priority === "important") {
-          const newValue = currentElement.style.getPropertyValue(styleName);
+          let newValue = currentElement.style.getPropertyValue(styleName);
           inertElement.style.setProperty(styleName, newValue);
         }
       } else {
-        const newValue = currentElement.style.getPropertyValue(styleName);
+        let newValue = currentElement.style.getPropertyValue(styleName);
+        if (styleName === "font-family") {
+          newValue = sanitizeFontFamily(newValue);
+        }
         inertElement.style.setProperty(styleName, newValue);
       }
     }
@@ -210,10 +226,16 @@ export function setStyle(element, styleName, styleValue, styleUnit) {
     typeof styleValue !== "string" &&
     typeof styleValue !== "number"
   ) {
-    if (styleName === "--fills" && styleValue === null) debugger;
     element.style.setProperty(styleName, JSON.stringify(styleValue));
   } else {
-    element.style.setProperty(styleName, styleValue + (styleUnit ?? ""));
+    if (styleName === "font-family") {
+      styleValue = sanitizeFontFamily(styleValue);
+    }
+
+    element.style.setProperty(
+      styleName,
+      styleValue + (styleUnit ? styleUnit : ""),
+    );
   }
   return element;
 }
@@ -289,15 +311,20 @@ export function getStyle(element, styleName, styleUnit) {
  * @returns {HTMLElement}
  */
 export function setStylesFromObject(element, allowedStyles, styleObject) {
-  for (const [styleName, styleUnit] of allowedStyles) {
-    if (!(styleName in styleObject)) {
-      continue;
+  if (element.tagName === "SPAN")
+    for (const [styleName, styleUnit] of allowedStyles) {
+      if (!(styleName in styleObject)) {
+        continue;
+      }
+      let styleValue = styleObject[styleName];
+      if (styleName === "font-family") {
+        styleValue = sanitizeFontFamily(styleValue);
+      }
+
+      if (styleValue) {
+        setStyle(element, styleName, styleValue, styleUnit);
+      }
     }
-    const styleValue = styleObject[styleName];
-    if (styleValue) {
-      setStyle(element, styleName, styleValue, styleUnit);
-    }
-  }
   return element;
 }
 

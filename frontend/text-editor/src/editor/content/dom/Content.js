@@ -75,26 +75,43 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
         currentParagraph = createParagraph(undefined, currentStyle);
       }
     }
-    const textSpan = createTextSpan(new Text(currentNode.nodeValue), currentStyle);
+    const textSpan = createTextSpan(
+      new Text(currentNode.nodeValue),
+      currentStyle,
+    );
     const fontSize = textSpan.style.getPropertyValue("font-size");
     if (!fontSize) {
       console.warn("font-size", fontSize);
-      textSpan.style.setProperty("font-size", styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE);
+      textSpan.style.setProperty(
+        "font-size",
+        styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE,
+      );
     }
     const fontFamily = textSpan.style.getPropertyValue("font-family");
     if (!fontFamily) {
       console.warn("font-family", fontFamily);
-      textSpan.style.setProperty("font-family", styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY);
+      const fontFamilyValue =
+        styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY;
+      const quotedFontFamily = fontFamilyValue.startsWith('"')
+        ? fontFamilyValue
+        : `"${fontFamilyValue}"`;
+      textSpan.style.setProperty("font-family", quotedFontFamily);
     }
     const fontWeight = textSpan.style.getPropertyValue("font-weight");
     if (!fontWeight) {
       console.warn("font-weight", fontWeight);
-      textSpan.style.setProperty("font-weight", styleDefaults?.getPropertyValue("font-weight") ?? DEFAULT_FONT_WEIGHT)
+      textSpan.style.setProperty(
+        "font-weight",
+        styleDefaults?.getPropertyValue("font-weight") ?? DEFAULT_FONT_WEIGHT,
+      );
     }
-    const fills = textSpan.style.getPropertyValue('--fills');
+    const fills = textSpan.style.getPropertyValue("--fills");
     if (!fills) {
       console.warn("fills", fills);
-      textSpan.style.setProperty("--fills", styleDefaults?.getPropertyValue("--fills") ?? DEFAULT_FILLS);
+      textSpan.style.setProperty(
+        "--fills",
+        styleDefaults?.getPropertyValue("--fills") ?? DEFAULT_FILLS,
+      );
     }
 
     currentParagraph.appendChild(textSpan);
