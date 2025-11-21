@@ -59,6 +59,7 @@
     :not-head-copy-not-allowed
     :not-component-not-allowed
     :component-nil-objects-not-allowed
+    :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
     :invalid-text-touched
     :misplaced-slot
@@ -648,6 +649,13 @@
                     "Component main not allowed inside other component"
                     main-instance file component-page))))
 
+(defn- check-not-objects
+  [component file]
+  (when (d/not-empty? (:objects component))
+    (report-error :non-deleted-component-cannot-have-objects
+                  "A non-deleted component cannot have shapes inside"
+                  component file nil)))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -656,7 +664,8 @@
                   "Objects list cannot be nil"
                   component file nil))
   (when-not (:deleted component)
-    (check-main-inside-main component file))
+    (check-main-inside-main component file)
+    (check-not-objects component file))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
