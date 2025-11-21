@@ -123,7 +123,6 @@
     :token-units
     :token-base-font-size
     :token-color
-    :token-typography-composite
     :token-shadow
     :transit-readable-response
     :user-feedback
@@ -171,7 +170,6 @@
    :enable-component-thumbnails
    :enable-render-wasm-dpr
    :enable-token-units
-   :enable-token-typography-composite
    :enable-feature-fdata-objects-map])
 
 (defn parse
