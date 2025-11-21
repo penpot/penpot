@@ -60,7 +60,7 @@
      :cljs (uuid (impl/v4))))
 
 (defn custom
-  "Generate a uuid using directly the given number (specified as two long integers)"
+  "Generate a uuid using directly the given number (specified as one or two long integers)"
   ([low] #?(:clj (UUID. 0 low) :cljs (uuid (impl/custom 0 low))))
   ([high low] #?(:clj (UUID. high low) :cljs (uuid (impl/custom high low)))))
 

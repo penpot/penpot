@@ -177,8 +177,11 @@
       (thc/instantiate-component component-label copy-root-label copy-root-params)))
 
 (defn add-nested-component
-  [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label
-   & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params]}]
+  [file
+   component1-label main1-root-label main1-child-label
+   component2-label main2-root-label nested-head-label
+   & {:keys [component1-params root1-params main1-child-params
+             component2-params main2-root-params nested-head-params]}]
   ;; Generated shape tree:
   ;; {:main1-root-label} [:name Frame1]      # [Component :component1-label]
   ;;     :main1-child-label [:name Rect1]
@@ -204,8 +207,13 @@
                           component2-params)))
 
 (defn add-nested-component-with-copy
-  [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label copy2-root-label
-   & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params copy2-root-params]}]
+  [file
+   component1-label main1-root-label main1-child-label
+   component2-label main2-root-label nested-head-label
+   copy2-root-label
+   & {:keys [component1-params root1-params main1-child-params
+             component2-params main2-root-params nested-head-params
+             copy2-root-params]}]
   ;; Generated shape tree:
   ;; {:main1-root-label} [:name Frame1]      # [Component :component1-label]
   ;;     :main1-child-label [:name Rect1]
@@ -231,6 +239,102 @@
                             :main2-root-params main2-root-params
                             :nested-head-params nested-head-params)
       (thc/instantiate-component component2-label copy2-root-label copy2-root-params)))
+
+(defn add-two-levels-nested-component
+  [file
+   component1-label main1-root-label main1-child-label
+   component2-label main2-root-label nested-head1-label
+   component3-label main3-root-label nested-head2-label nested-subhead2-label
+   & {:keys [component1-params root1-params main1-child-params
+             component2-params main2-root-params nested-head1-params
+             component3-params main3-root-params nested-head2-params]}]
+  ;; Generated shape tree:
+  ;; {:main1-root-label} [:name Frame1]            # [Component :component1-label]
+  ;;     :main1-child-label [:name Rect1]
+  ;;
+  ;; {:main2-root-label} [:name Frame2]            # [Component :component2-label]
+  ;;     :nested-head1-label [:name Frame1]        @--> [Component :component1-label] :main1-root-label
+  ;;         <no-label> [:name Rect1]              ---> :main1-child-label
+  ;;
+  ;; {:main3-root-label} [:name Frame3]            # [Component :component3-label]
+  ;;     :nested-head2-label [:name Frame2]        @--> [Component :component2-label] :main2-root-label
+  ;;         :nested-subhead2-label [:name Frame1] @--> [Component :component1-label] :main1-root-label
+  ;;             <no-label> [:name Rect1]          ---> :main1-child-label
+  (-> file
+      (add-simple-component component1-label
+                            main1-root-label
+                            main1-child-label
+                            :component-params component1-params
+                            :root-params root1-params
+                            :child-params main1-child-params)
+      (add-frame main2-root-label (merge {:name "Frame2"}
+                                         main2-root-params))
+      (thc/instantiate-component component1-label
+                                 nested-head1-label
+                                 (assoc nested-head1-params
+                                        :parent-label main2-root-label))
+      (thc/make-component component2-label
+                          main2-root-label
+                          component2-params)
+      (add-frame main3-root-label (merge {:name "Frame3"}
+                                         main3-root-params))
+      (thc/instantiate-component component2-label
+                                 nested-head2-label
+                                 (assoc nested-head2-params
+                                        :parent-label main3-root-label
+                                        :children-labels [nested-subhead2-label]))
+      (thc/make-component component3-label
+                          main3-root-label
+                          component3-params)))
+
+(defn add-two-levels-nested-component-with-copy
+  [file
+   component1-label main1-root-label main1-child-label
+   component2-label main2-root-label nested-head1-label
+   component3-label main3-root-label nested-head2-label nested-subhead2-label
+   copy2-root-label
+   & {:keys [component1-params root1-params main1-child-params
+             component2-params main2-root-params nested-head1-params
+             component3-params main3-root-params nested-head2-params
+             copy2-root-params]}]
+  ;; Generated shape tree:
+  ;; {:main1-root-label} [:name Frame1]            # [Component :component1-label]
+  ;;     :main1-child-label [:name Rect1]
+  ;;
+  ;; {:main2-root-label} [:name Frame2]            # [Component :component2-label]
+  ;;     :nested-head1-label [:name Frame1]        @--> [Component :component1-label] :main1-root-label
+  ;;         <no-label> [:name Rect1]              ---> :main1-child-label
+  ;;
+  ;; {:main3-root-label} [:name Frame3]            # [Component :component3-label]
+  ;;     :nested-head2-label [:name Frame2]        @--> [Component :component2-label] :main2-root-label
+  ;;         :nested-subhead2-label [:name Frame1] @--> [Component :component1-label] :main1-root-label
+  ;;             <no-label> [:name Rect1]          ---> :main1-child-label
+  ;;
+  ;; :copy2-label [:name Frame3]                   #--> [Component :component3-label] :main3-root-label
+  ;;     <no-label> [:name Frame2]                 @--> [Component :component2-label] :nested-head2-label
+  ;;         <no-label> [:name Frame1]             @--> [Component :component1-label] :nested-subhead2-label
+  ;;             <no-label> [:name Rect1]          ---> <no-label>
+  (-> file
+      (add-two-levels-nested-component component1-label
+                                       main1-root-label
+                                       main1-child-label
+                                       component2-label
+                                       main2-root-label
+                                       nested-head1-label
+                                       component3-label
+                                       main3-root-label
+                                       nested-head2-label
+                                       nested-subhead2-label
+                                       :component1-params component1-params
+                                       :root1-params root1-params
+                                       :main1-child-params main1-child-params
+                                       :component2-params component2-params
+                                       :main2-root-params main2-root-params
+                                       :nested-head1-params nested-head1-params
+                                       :component3-params component3-params
+                                       :main3-root-params main3-root-params
+                                       :nested-head2-params nested-head2-params)
+      (thc/instantiate-component component3-label copy2-root-label copy2-root-params)))
 
 ;; ----- Getters
 
@@ -276,13 +380,16 @@
                      file-id))]
     (thf/apply-changes file changes :validate? false)))
 
-(defn swap-component
+(defn swap-component-
   "Swap the specified shape by the component specified by component-tag"
-  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label]}]
+  [file shape component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library]}]
   (let [page    (if page-label
                   (thf/get-page file page-label)
                   (thf/current-page file))
-        libraries {(:id  file) file}
+        libraries (cond-> {(:id file) file}
+                    (some? library)
+                    (assoc (:id library) library))
+        library   (or library file)
 
         orig-shapes (when keep-touched? (cfh/get-children-with-self (:objects page) (:id shape)))
 
@@ -290,10 +397,10 @@
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
                                      shape
-                                     (:data file)
+                                     (:data library)
                                      page
                                      libraries
-                                     (->  (thc/get-component file component-tag)
+                                     (->  (thc/get-component library component-tag)
                                           :id)
                                      0
                                      nil
@@ -314,18 +421,27 @@
           (thf/validate-file!))
       file')))
 
-(defn swap-component-in-shape [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
-  (swap-component file (ths/get-shape file shape-tag :page-label page-label) component-tag :page-label page-label :propagate-fn propagate-fn))
+(defn swap-component-in-shape
+  [file shape-tag component-tag & {:keys [page-label propagate-fn keep-touched? new-shape-label library]}]
+  (swap-component- file (ths/get-shape file shape-tag :page-label page-label)
+                   component-tag
+                   :page-label page-label
+                   :propagate-fn propagate-fn
+                   :keep-touched? keep-touched?
+                   :new-shape-label new-shape-label
+                   :library library))
 
-(defn swap-component-in-first-child [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
+(defn swap-component-in-first-child
+  [file shape-tag component-tag & {:keys [page-label propagate-fn library]}]
   (let [first-child-id (->> (ths/get-shape file shape-tag :page-label page-label)
                             :shapes
                             first)]
-    (swap-component file
-                    (ths/get-shape-by-id file first-child-id :page-label page-label)
-                    component-tag
-                    :page-label page-label
-                    :propagate-fn propagate-fn)))
+    (swap-component- file
+                     (ths/get-shape-by-id file first-child-id :page-label page-label)
+                     component-tag
+                     :page-label page-label
+                     :propagate-fn propagate-fn
+                     :library library)))
 
 (defn update-color
   "Update the first fill color for the shape identified by shape-tag"
