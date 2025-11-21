@@ -25,6 +25,8 @@
 (def ^:private fonts
   (l/derived :fonts st/state))
 
+(def ^:private default-font-size 14)
+
 (defn- google-font-id->uuid
   [font-id]
   (let [font (fonts/get-font-data font-id)]
@@ -181,6 +183,15 @@
           (uuid/parse no-prefix))))
     (catch :default _e
       uuid/zero)))
+
+(defn serialize-font-size
+  [font-size]
+  (cond
+    (number? font-size)
+    font-size
+
+    (string? font-size)
+    (or (d/parse-double font-size) default-font-size)))
 
 (defn serialize-font-weight
   [font-weight]

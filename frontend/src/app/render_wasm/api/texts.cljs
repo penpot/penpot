@@ -56,7 +56,9 @@
         text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
         text-transform  (sr/translate-text-transform (get paragraph :text-transform))
         line-height     (get paragraph :line-height 1.2)
-        letter-spacing  (get paragraph :letter-spacing)]
+        line-height     (if (not (number? line-height)) 1.2 line-height)
+        letter-spacing  (get paragraph :letter-spacing)
+        letter-spacing  (if (not (number? letter-spacing)) 0.0 letter-spacing)]
 
     (-> offset
         (mem/write-u8 dview text-align)
@@ -77,10 +79,17 @@
     (reduce (fn [offset span]
               (let [font-style  (sr/translate-font-style (get span :font-style "normal"))
                     font-size   (get span :font-size paragraph-font-size)
+                    font-size   (f/serialize-font-size font-size)
+
                     line-height  (get span :line-height paragraph-line-height)
+                    line-height  (if (not (number? line-height)) 1.2 line-height)
+
                     letter-spacing (get span :letter-spacing 0.0)
+                    letter-spacing (if (not (number? letter-spacing)) 0.0 letter-spacing)
+
                     font-weight (get span :font-weight paragraph-font-weight)
                     font-weight (f/serialize-font-weight font-weight)
+
                     font-id     (f/normalize-font-id (get span :font-id "sourcesanspro"))
                     font-family (hash (get span :font-family "sourcesanspro"))
 
