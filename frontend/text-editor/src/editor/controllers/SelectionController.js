@@ -789,7 +789,6 @@ export class SelectionController extends EventTarget {
     if (this.#savedSelection) {
       return this.#savedSelection.focusNode;
     }
-    if (!this.#focusNode) console.trace("focusNode", this.#focusNode);
     return this.#focusNode;
   }
 

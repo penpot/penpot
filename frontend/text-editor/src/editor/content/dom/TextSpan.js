@@ -115,7 +115,6 @@ export function createTextSpan(textOrLineBreak, styles, attrs) {
     textOrLineBreak instanceof Text &&
     textOrLineBreak.nodeValue.length === 0
   ) {
-    console.trace("nodeValue", textOrLineBreak.nodeValue);
     throw new TypeError("Invalid text span child, cannot be an empty text");
   }
 
@@ -182,7 +181,6 @@ export function createVoidTextSpan(styles) {
  * @returns {HTMLSpanElement}
  */
 export function setTextSpanStyles(element, styles) {
-  console.log("setTextSpanStyles styles", element, styles);
   return setStyles(element, STYLES, styles);
 }
 
