@@ -694,6 +694,7 @@ impl TextContent {
         (fallback_width, fallback_height)
     }
 
+    #[allow(dead_code)]
     pub fn intersect_position_in_shape(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
         let rect = shape.selrect;
         let mut matrix = Matrix::new_identity();
@@ -713,8 +714,6 @@ impl TextContent {
         x_pos >= rect.x() && x_pos <= rect.right() && y_pos >= rect.y() && y_pos <= rect.bottom()
     }
 
-    // Leave this function for future use in the upcoming render editor
-    #[allow(dead_code)]
     pub fn intersect_position_in_text(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
         let rect = self.content_rect(&shape.selrect, shape.vertical_align);
         let mut matrix = Matrix::new_identity();
