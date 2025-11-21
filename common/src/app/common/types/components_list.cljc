@@ -60,6 +60,9 @@
                                        (some? objects)
                                        (assoc :objects objects)
 
+                                       (nil? objects)
+                                       (dissoc :objects)
+
                                        (some? modified-at)
                                        (assoc :modified-at modified-at)
 
