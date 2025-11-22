@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-21 05:51+0000\n"
+"PO-Revision-Date: 2025-11-23 12:51+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -7925,3 +7925,44 @@ msgstr "Y"
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:52, src/app/main/ui/workspace/tokens/management/create/form.cljs:80
 msgid "errors.field-max-length"
 msgstr "Jāsatur ne vairāk par %s rakstzīmēm."
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "Atlasīti %s uzaicinājumi"
+msgstr[1] "Atlasīts %s uzaicinājums"
+msgstr[2] "Atlasīti %s uzaicinājumi"
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "Lūgums aprakstīt atgriezeniskās saites iemeslu"
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "Citi veidi, kā ar mums sazināties"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"Ja atgriezeniskā saite ir kaut kas, kas saistīts ar datni vai projektu, šeit "
+"ir pievienojama Penpot saite:"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Sazināties ar mums"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+msgid "feedback.type"
+msgstr "Veids"
+
+#: src/app/main/ui/settings/feedback.cljs:115
+msgid "feedback.type.doubt"
+msgstr "Šaubas"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "Ierosinājums"
+
+#: src/app/main/ui/settings/feedback.cljs:114
+msgid "feedback.type.issue"
+msgstr "Sarežģījums"
