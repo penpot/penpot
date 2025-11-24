@@ -333,6 +333,22 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :component-id-mismatch
+  [_ {:keys [shape page-id args] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ; Set the component-id and component-file to the ones of the near main
+          (log/debug :hint (str "  -> set component-id to " (:component-id args)))
+          (log/debug :hint (str "  -> set component-file to " (:component-file args)))
+          (assoc shape
+                 :component-id (:component-id args)
+                 :component-file (:component-file args)))]
+
+    (log/dbg :hint "repairing shape :component-id-mismatch" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :ref-shape-is-head
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape
