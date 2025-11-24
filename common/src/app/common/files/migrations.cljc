@@ -1777,6 +1777,28 @@
               component))]
     (d/update-when data :components check-component)))
 
+(defmethod migrate-data "0018-sync-component-id-with-near-main"
+  [data _]
+  (letfn [(fix-shape [page shape]
+            (if (and (ctk/subcopy-head? shape)
+                     (nil? (ctk/get-swap-slot shape)))
+              (let [file {:id (:id data) :data data}
+                    libs (some-> (:libs data) deref)
+                    ref-shape  (ctf/find-ref-shape file page libs shape {:include-deleted? true :with-context? true})]
+                (if (and (some? ref-shape)
+                         (or (not= (:component-id shape) (:component-id ref-shape))
+                             (not= (:component-file shape) (:component-file ref-shape))))
+                  (assoc shape
+                         :component-id (:component-id ref-shape)
+                         :component-file (:component-file ref-shape))
+                  shape))
+              shape))
+
+          (update-page [page]
+            (d/update-when page :objects d/update-vals (partial fix-shape page)))]
+    (-> data
+        (update :pages-index d/update-vals update-page))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1850,4 +1872,6 @@
          "0014-clear-components-nil-objects"
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
-         "0016-copy-fills-from-position-data-to-text-node"]))
+         "0016-copy-fills-from-position-data-to-text-node"
+         "0017-remove-unneeded-objects-from-components"
+         "0018-sync-component-id-with-near-main"]))
