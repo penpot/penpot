@@ -1769,6 +1769,23 @@
     (pcb/update-shapes changes [(:id dest-shape)] ctk/unhead-shape {:ignore-touched true})
     changes))
 
+(defn- check-swapped-main
+  [changes dest-shape origin-shape]
+  ;; Only for direct updates (from main to copy). Check if the main shape
+  ;; has been swapped. If so, the new component-id and component-file must
+  ;; be put into the copy.
+  (if (and (= (:shape-ref dest-shape) (:id origin-shape))
+           (ctk/instance-head? dest-shape)
+           (ctk/instance-head? origin-shape)
+           (or (not= (:component-id dest-shape) (:component-id origin-shape))
+               (not= (:component-file dest-shape) (:component-file origin-shape))))
+    (pcb/update-shapes changes [(:id dest-shape)]
+                       #(assoc %
+                               :component-id (:component-id origin-shape)
+                               :component-file (:component-file origin-shape))
+                       {:ignore-touched true})
+    changes))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1810,6 +1827,8 @@
             (add-update-attr-changes dest-shape container roperations uoperations)
             :always
             (check-detached-main dest-shape origin-shape)
+            :always
+            (check-swapped-main dest-shape origin-shape)
             :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
