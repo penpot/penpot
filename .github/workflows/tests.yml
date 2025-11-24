@@ -15,7 +15,11 @@ on:
       - staging
 
 concurrency:
+<<<<<<< HEAD
   group: ${{ github.event.pull_request.number || github.ref }}
+=======
+  group: ${{ github.ref }}
+>>>>>>> 553b73a83 (:recycle: Replace CircleCI with Github Actions (#7789))
   cancel-in-progress: true
 
 jobs:
@@ -89,6 +93,7 @@ jobs:
         run: |
           yarn run lint:scss;
 
+<<<<<<< HEAD
   test-render-wasm:
     name: "Render WASM Tests"
     runs-on: ubuntu-24.04
@@ -157,6 +162,52 @@ jobs:
     runs-on: ubuntu-24.04
     container: penpotapp/devenv:latest
 
+=======
+  test-backend:
+    name: "Backend Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    services:
+      postgres:
+        image: postgres:17
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: penpot_test
+          POSTGRES_PASSWORD: penpot_test
+          POSTGRES_DB: penpot_test
+
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:9
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
+          PENPOT_TEST_DATABASE_USERNAME: penpot_test
+          PENPOT_TEST_DATABASE_PASSWORD: penpot_test
+          PENPOT_TEST_REDIS_URI: "redis://redis/1"
+
+        run: |
+          clojure -M:dev:test --reporter kaocha.report/documentation
+
+  test-library:
+    name: "Library Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+>>>>>>> 553b73a83 (:recycle: Replace CircleCI with Github Actions (#7789))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
