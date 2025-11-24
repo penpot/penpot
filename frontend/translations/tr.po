@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-22 10:51+0000\n"
+"PO-Revision-Date: 2025-11-25 16:51+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -8443,3 +8443,18 @@ msgstr "Bu yolda zaten bir token var: %s"
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Ad en az 1 karakterden oluşmalıdır"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Büyümemize yardım edin ve deneme sürenizi kolaylaştırın"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Deneme süresi sona erdikten sonra aboneliğinizin sorunsuz bir şekilde devam "
+"etmesi ve açık kaynaklı projemizi desteklemeye devam etmek için şimdi ödeme "
+"bilgilerinizi ekleyin. Henüz herhangi bir ücret alınmayacaktır."
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Şimdilik atlayın ve deneme sürümünü başlatın"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Ödeme bilgilerini ekleyin"
