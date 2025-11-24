@@ -53,6 +53,8 @@ environment variable is also required on exporter. So if you are using
 penpot on-premise you will need to apply the same changes on your own
 `docker-compose.yaml` file.
 
+We have removed the Minio server from the `docker/images/docker-compose.yml`
+example. It's still usable as before, we just removed the example.
 
 ### :rocket: Epics and highlights
 
