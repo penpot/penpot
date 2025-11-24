@@ -148,8 +148,8 @@ jobs:
           yarn run build:bundle;
           yarn run test;
 
-  test-integration:
-    name: "Integration Tests"
+  test-integration-1:
+    name: "Integration Tests 1/4"
     runs-on: ubuntu-24.04
     container: penpotapp/devenv:latest
 
@@ -176,7 +176,124 @@ jobs:
         working-directory: ./frontend
         run: |
           yarn run playwright install chromium --with-deps
-          yarn run test:e2e -x --workers=2 --reporter=list
+          yarn run test:e2e -x --workers=2 --reporter=list --shard="1/4"
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-2:
+    name: "Integration Tests 2/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install
+          yarn run build:app:assets
+          yarn run build:app
+          yarn run build:app:libs
+
+      - name: Build WASM
+        working-directory: "./render-wasm"
+        run: |
+          ./build release
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          yarn run playwright install chromium --with-deps
+          yarn run test:e2e -x --workers=2 --reporter=list --shard "2/4"
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-3:
+    name: "Integration Tests 3/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install
+          yarn run build:app:assets
+          yarn run build:app
+          yarn run build:app:libs
+
+      - name: Build WASM
+        working-directory: "./render-wasm"
+        run: |
+          ./build release
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          yarn run playwright install chromium --with-deps
+          yarn run test:e2e -x --workers=2 --reporter=list --shard "3/4"
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-4:
+    name: "Integration Tests 3/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install
+          yarn run build:app:assets
+          yarn run build:app
+          yarn run build:app:libs
+
+      - name: Build WASM
+        working-directory: "./render-wasm"
+        run: |
+          ./build release
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          yarn run playwright install chromium --with-deps
+          yarn run test:e2e -x --workers=2 --reporter=list --shard "4/4"
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
