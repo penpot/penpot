@@ -739,7 +739,7 @@
 
             (d/nilv align-self 0)
             is-absolute
-            (d/nilv z-index))))
+            (d/nilv z-index 0))))
 
 (defn clear-layout
   []

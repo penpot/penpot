@@ -332,6 +332,7 @@ fn propagate_reflow(
         }
         _ => {
             // Other shapes don't have to be reflown
+            reflow_parent = true;
         }
     }
 
