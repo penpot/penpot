@@ -115,6 +115,11 @@ services:
     volumes:
       - "valkey_data:/data"
 
+    networks:
+      default:
+        aliases:
+          - redis
+
   mailer:
     image: sj26/mailcatcher:latest
     restart: always
@@ -122,6 +127,12 @@ services:
       - '1025'
     ports:
       - "1080:1080"
+
+    networks:
+      default:
+        aliases:
+          - mailer
+
 
   # https://github.com/rroemhild/docker-test-openldap
   ldap:
@@ -136,3 +147,9 @@ services:
       nofile:
         soft: 1024
         hard: 1024
+
+    networks:
+      default:
+        aliases:
+          - ldap
+
