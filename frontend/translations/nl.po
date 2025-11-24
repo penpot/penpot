@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-14 17:08+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2025-11-22 10:51+0000\n"
+"Last-Translator: Keunes <keunes@mailbox.org>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -2252,7 +2252,7 @@ msgstr "Inactief"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:114
 msgid "labels.info"
-msgstr "Informatie"
+msgstr "Info"
 
 #: src/app/main/ui/dashboard/fonts.cljs:428
 msgid "labels.installed-fonts"
@@ -4759,7 +4759,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Je bent %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:440
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Je hebt ons gesteund met dit abonnement sinds: %s"
 
@@ -7271,7 +7270,7 @@ msgstr "Plakken"
 
 #: src/app/main/ui/workspace/context_menu.cljs:233
 msgid "workspace.shape.menu.paste-props"
-msgstr "Eigenschappen plekken"
+msgstr "Eigenschappen plakken"
 
 #: src/app/main/ui/workspace/context_menu.cljs:441
 msgid "workspace.shape.menu.path"
@@ -7800,7 +7799,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "De dekking moet tussen 0 en 100% of 0 en 1 zijn (bijv. 50% of 0,5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Oorspronkelijke waarde: %s"
 
@@ -7826,7 +7824,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Referentie fouten: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:102, src/app/main/ui/workspace/tokens/management/create/form_input_token.cljs:109, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Opgeloste waarde: %s"
 
@@ -7902,7 +7899,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Lijst met thema's"
 
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:194, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:195, src/app/main/ui/workspace/tokens/management/create/form.cljs:629, src/app/main/ui/workspace/tokens/management/create/form.cljs:630
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beschrijving"
 
@@ -8309,3 +8305,172 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:52, src/app/main/ui/workspace/tokens/management/create/form.cljs:80
+msgid "errors.field-max-length"
+msgstr "Mag maximaal %s tekens bevatten."
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "Beschrijf de reden van je feedback"
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "Andere manieren om contact met ons op te nemen"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"Als de feedback verband houdt met een bestand of een project, voeg dan hier "
+"de penpotlink toe:"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Contact opnemen"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+msgid "feedback.type"
+msgstr "Type"
+
+#: src/app/main/ui/settings/feedback.cljs:115
+msgid "feedback.type.doubt"
+msgstr "Twijfel"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "Idee"
+
+#: src/app/main/ui/settings/feedback.cljs:114
+msgid "feedback.type.issue"
+msgstr "Probleem"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "Voorbeeld van de vulafbeelding van de vorm"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Kies kleurruimte"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Contact opnemen met ondersteuning"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Contact opnemen"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "Kaleidos © 2019-heden"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "%1 downloaden"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Er is iets ergs gebeurd."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"Je kunt de bewerking opnieuw proberen of contact opnemen met de "
+"ondersteuning om de fout te melden."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+msgid "labels.switch"
+msgstr "Schakelaar"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Inschakelen!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Extra opslag, bestandsherstel en meer voor jouw teams."
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "Aanbevolen"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 uitnodiging geselecteerd"
+msgstr[1] "%s uitnodigingen geselecteerd"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:264
+msgid "workspace.options.more-token-colors"
+msgstr "Met kleurtokens"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1339
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Lettergrootte of {alias}"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Ongeldig schaduwtype: alleen 'innerShadow' of 'dropShadow' worden "
+"geaccepteerd"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1084
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Schaduw toevoegen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:981, src/app/main/ui/workspace/tokens/management/create/form.cljs:982
+msgid "workspace.tokens.shadow-blur"
+msgstr "Vervanging"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "Schaduwonscherpte moet groter zijn dan of gelijk zijn aan 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+msgid "workspace.tokens.shadow-color"
+msgstr "Kleur"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:990, src/app/main/ui/workspace/tokens/management/create/form.cljs:991
+msgid "workspace.tokens.shadow-inset"
+msgstr "Inzet"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1091
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Schaduw verwijderen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:984, src/app/main/ui/workspace/tokens/management/create/form.cljs:985
+msgid "workspace.tokens.shadow-spread"
+msgstr "Spreiding"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "Schaduwspreiding moet groter zijn dan of gelijk zijn aan 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+msgid "workspace.tokens.shadow-title"
+msgstr "Schaduwen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:975, src/app/main/ui/workspace/tokens/management/create/form.cljs:976
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:978, src/app/main/ui/workspace/tokens/management/create/form.cljs:979
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:52
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "Er bestaat al een thema met deze naam"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:44, src/app/main/ui/workspace/tokens/management/create/form.cljs:70
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "Er bestaat al een token op het pad: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Naam moet minimaal 1 teken zijn"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "CSS-code kopiëren naar klembord"
