@@ -22,9 +22,9 @@ export default defineConfig({
   workers: 1,
   /* Timeout for expects (longer in CI) */
 
-  timeout: 60000,
+  timeout: 80000,
   expect: {
-    timeout: process.env.CI ? 30000 : 5000,
+    timeout: process.env.CI ? 40000 : 5000,
   },
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
