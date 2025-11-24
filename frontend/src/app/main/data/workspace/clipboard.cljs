@@ -254,6 +254,10 @@
 (declare ^:private paste-svg-text)
 (declare ^:private paste-shapes)
 
+(def ^:private default-options
+  #js {:decodeTransit t/decode-str
+       :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
+
 (defn create-paste-from-blob
   [in-viewport?]
   (fn [blob]
@@ -290,7 +294,7 @@
   (ptk/reify ::paste-from-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (clipboard/from-navigator)
+      (->> (clipboard/from-navigator default-options)
            (rx/mapcat default-paste-from-blob)
            (rx/take 1)))))
 
@@ -308,7 +312,7 @@
         ;; we forbid that scenario so the default behaviour is executed
         (if is-editing?
           (rx/empty)
-          (->> (clipboard/from-synthetic-clipboard-event event)
+          (->> (clipboard/from-synthetic-clipboard-event event default-options)
                (rx/mapcat (create-paste-from-blob in-viewport?))))))))
 
 (defn copy-selected-svg
@@ -478,7 +482,7 @@
                       (js/console.error "Clipboard error:" cause))
                     (rx/empty)))]
 
-          (->> (clipboard/from-navigator)
+          (->> (clipboard/from-navigator default-options)
                (rx/mapcat #(.text %))
                (rx/map decode-entry)
                (rx/take 1)

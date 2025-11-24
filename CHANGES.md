@@ -71,6 +71,7 @@ example. It's still usable as before, we just removed the example.
 - Add new shape validation mechanism for shapes [Github #7696](https://github.com/penpot/penpot/pull/7696)
 - Apply color tokens from sidebar [Taiga #11353](https://tree.taiga.io/project/penpot/us/11353)
 - Display tokens in the inspect tab [Taiga #9313](https://tree.taiga.io/project/penpot/us/9313)
+- Refactor clipboard behavior to assess some minor inconsistencies and make pasting binary data faster. [Taiga #12571](https://tree.taiga.io/project/penpot/task/12571)
 
 ### :bug: Bugs fixed
 
@@ -85,6 +86,7 @@ example. It's still usable as before, we just removed the example.
 - Fix shortcut conflict in text editor (increase/decrease font size vs word selection)
 - Fix problem with plugins generating code for pages different than current one [Taiga #12312](https://tree.taiga.io/project/penpot/issue/12312)
 - Fix input confirmation behavior is not uniform [Taiga #12294](https://tree.taiga.io/project/penpot/issue/12294)
+- Fix copy/pasting application/transit+json [Taiga #12721](https://tree.taiga.io/project/penpot/issue/12721)
 
 ## 2.11.1
 

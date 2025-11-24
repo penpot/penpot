@@ -18,47 +18,56 @@
    "image/svg+xml"])
 
 (def ^:private default-options
-  #js {:decodeTransit t/decode-str})
+  #js {:decodeTransit t/decode-str
+       :allowHTMLPaste false})
 
 (defn- from-data-transfer
   "Get clipboard stream from DataTransfer instance"
-  [data-transfer]
-  (->> (rx/from (impl/fromDataTransfer data-transfer default-options))
-       (rx/mapcat #(rx/from %))))
+  ([data-transfer]
+   (from-data-transfer data-transfer default-options))
+  ([data-transfer options]
+   (->> (rx/from (impl/fromDataTransfer data-transfer options))
+        (rx/mapcat #(rx/from %)))))
 
 (defn from-navigator
-  []
-  (->> (rx/from (impl/fromNavigator default-options))
-       (rx/mapcat #(rx/from %))))
+  ([]
+   (from-navigator default-options))
+  ([options]
+   (->> (rx/from (impl/fromNavigator options))
+        (rx/mapcat #(rx/from %)))))
 
 (defn from-clipboard-event
   "Get clipboard stream from clipboard event"
-  [event]
-  (let [cdata (.-clipboardData ^js event)]
-    (from-data-transfer cdata)))
+  ([event]
+   (from-clipboard-event event default-options))
+  ([event options]
+   (let [cdata (.-clipboardData ^js event)]
+     (from-data-transfer cdata options))))
 
 (defn from-synthetic-clipboard-event
   "Get clipboard stream from syntetic clipboard event"
-  [event]
-  (let [target
-        (dom/get-target event)
+  ([event options]
+   (let [target
+         (dom/get-target event)
 
-        content-editable?
-        (dom/is-content-editable? target)
+         content-editable?
+         (dom/is-content-editable? target)
 
-        is-input?
-        (= (dom/get-tag-name target) "INPUT")]
+         is-input?
+         (= (dom/get-tag-name target) "INPUT")]
 
     ;; ignore when pasting into an editable control
-    (when-not (or content-editable? is-input?)
-      (-> event
-          (dom/event->browser-event)
-          (from-clipboard-event)))))
+     (when-not (or content-editable? is-input?)
+       (-> event
+           (dom/event->browser-event)
+           (from-clipboard-event options))))))
 
 (defn from-drop-event
   "Get clipboard stream from drop event"
-  [event]
-  (from-data-transfer (.-dataTransfer ^js event)))
+  ([event]
+   (from-drop-event event default-options))
+  ([event options]
+   (from-data-transfer (.-dataTransfer ^js event) options)))
 
 ;; FIXME: rename to `write-text`
 (defn to-clipboard
