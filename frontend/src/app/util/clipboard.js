@@ -27,6 +27,7 @@ const exclusiveTypes = [
 /**
  * @typedef {Object} ClipboardSettings
  * @property {Function} [decodeTransit]
+ * @property {boolean} [allowHTMLPaste]
  */
 
 /**
@@ -38,9 +39,7 @@ const exclusiveTypes = [
  */
 function parseText(text, options) {
   options = options || {};
-
   const decodeTransit = options["decodeTransit"];
-
   if (decodeTransit) {
     try {
       decodeTransit(text);
@@ -58,17 +57,84 @@ function parseText(text, options) {
 }
 
 /**
+ * Filters ClipboardItem types
+ *
+ * @param {ClipboardSettings} options
+ * @returns {Function<AllowedTypesFilterFunction>}
+ */
+function filterAllowedTypes(options) {
+  /**
+   * @param {string} type
+   * @returns {boolean}
+   */
+  return function filter(type) {
+    if (
+      (!("allowHTMLPaste" in options) || !options["allowHTMLPaste"]) &&
+      type === "text/html"
+    ) {
+      return false;
+    }
+    return allowedTypes.includes(type);
+  };
+}
+
+/**
+ * Filters DataTransferItems
+ *
+ * @param {ClipboardSettings} options
+ * @returns {Function<AllowedTypesFilterFunction>}
+ */
+function filterAllowedItems(options) {
+  /**
+   * @param {DataTransferItem}
+   * @returns {boolean}
+   */
+  return function filter(item) {
+    if (
+      (!("allowHTMLPaste" in options) || !options["allowHTMLPaste"]) &&
+      item.type === "text/html"
+    ) {
+      return false;
+    }
+    return allowedTypes.includes(item.type);
+  };
+}
+
+/**
+ * Sorts ClipboardItem types
+ *
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function sortTypes(a, b) {
+  return allowedTypes.indexOf(a) - allowedTypes.indexOf(b);
+}
+
+/**
+ * Sorts DataTransferItems
+ *
+ * @param {DataTransferItem} a
+ * @param {DataTransferItem} b
+ * @returns {number}
+ */
+function sortItems(a, b) {
+  return allowedTypes.indexOf(a.type) - allowedTypes.indexOf(b.type);
+}
+
+/**
  *
  * @param {ClipboardSettings} [options]
  * @returns {Promise<Array<Blob>>}
  */
 export async function fromNavigator(options) {
+  options = options || {};
   const items = await navigator.clipboard.read();
   return Promise.all(
     Array.from(items).map(async (item) => {
       const itemAllowedTypes = Array.from(item.types)
-        .filter((type) => allowedTypes.includes(type))
-        .sort((a, b) => allowedTypes.indexOf(a) - allowedTypes.indexOf(b));
+        .filter(filterAllowedTypes(options))
+        .sort(sortTypes);
 
       if (
         itemAllowedTypes.length === 1 &&
@@ -96,12 +162,11 @@ export async function fromNavigator(options) {
  * @returns {Promise<Array<Blob>>}
  */
 export async function fromDataTransfer(dataTransfer, options) {
+  options = options || {};
   const items = await Promise.all(
     Array.from(dataTransfer.items)
-      .filter((item) => allowedTypes.includes(item.type))
-      .sort(
-        (a, b) => allowedTypes.indexOf(a.type) - allowedTypes.indexOf(b.type),
-      )
+      .filter(filterAllowedItems(options))
+      .sort(sortItems)
       .map(async (item) => {
         if (item.kind === "file") {
           return Promise.resolve(item.getAsFile());
