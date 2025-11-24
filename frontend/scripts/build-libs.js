@@ -33,7 +33,7 @@ const config = {
   bundle: true,
   format: "iife",
   banner: {
-    js: '"use strict";',
+    js: '"use strict"; var global = globalThis;',
   },
   outfile: "resources/public/js/libs.js",
   plugins: [fixReactVirtualized, rebuildNotify],

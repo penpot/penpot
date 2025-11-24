@@ -12,7 +12,6 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
-   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as tk]
    [app.main.constants :refer [size-presets]]
@@ -112,7 +111,7 @@
                                                 (tr "settings.multiple") "--")
                                  :class (stl/css :numeric-input-measures)
                                  :applied-token (get applied-tokens name)
-                                 :tokens tokens
+                                 :tokens (if (delay? tokens) @tokens tokens)
                                  :align align
                                  :on-detach on-detach-attr
                                  :value (get values name)})]
@@ -295,27 +294,24 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (binding [cts/*wasm-sync* true]
-             (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                       (udw/update-dimensions ids attr value)))))
+           (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                     (udw/update-dimensions ids attr value))))
 
         on-size-change
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids shapes)
          (fn [value attr]
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (binding [cts/*wasm-sync* true]
-                 (run! #(do-size-change value attr) shapes)))
+               (run! #(do-size-change value attr) shapes))
              (do
                (let [resolved-value (:resolved-value (first value))]
                  (st/emit! (udw/trigger-bounding-box-cloaking ids)
                            (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
-                 (binding [cts/*wasm-sync* true]
-                   (run! #(do-size-change resolved-value attr) shapes)))))))
+                                               :shape-ids ids}))
+                 (run! #(do-size-change resolved-value attr) shapes))))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -337,16 +333,14 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (binding [cts/*wasm-sync* true]
-                 (run! #(do-position-change %1 value attr) shapes)))
+               (run! #(do-position-change %1 value attr) shapes))
              (do
                (let [resolved-value (:resolved-value (first value))]
                  (st/emit! (udw/trigger-bounding-box-cloaking ids)
                            (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
-                 (binding [cts/*wasm-sync* true]
-                   (run! #(do-position-change %1 resolved-value attr) shapes)))))))
+                                               :shape-ids ids}))
+                 (run! #(do-position-change %1 resolved-value attr) shapes))))))
 
         ;; ROTATION
         do-rotation-change
@@ -362,16 +356,14 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (binding [cts/*wasm-sync* true]
-                 (run! #(do-rotation-change value) shapes)))
+               (run! #(do-rotation-change value) shapes))
              (do
                (let [resolved-value (:resolved-value (first value))]
                  (st/emit! (udw/trigger-bounding-box-cloaking ids)
                            (dwta/toggle-token {:token (first value)
                                                :attrs #{:rotation}
-                                               :shapes shapes}))
-                 (binding [cts/*wasm-sync* true]
-                   (run! #(do-rotation-change resolved-value) shapes)))))))
+                                               :shape-ids ids}))
+                 (run! #(do-rotation-change resolved-value) shapes))))))
 
         on-width-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :width))

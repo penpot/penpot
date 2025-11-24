@@ -310,3 +310,23 @@
    the real name of the shape joined by the properties values separated by '/'"
   [variant]
   (cpn/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
+
+(def ^:private boolean-pairs
+  [["on" "off"]
+   ["yes" "no"]
+   ["true" "false"]])
+
+(defn find-boolean-pair
+  "Given a vector, return a map that contains the boolean equivalency if the values match
+   with any of the boolean pairs. Returns nil if none match."
+  [[a b :as v]]
+  (let [a' (-> a str/trim str/lower)
+        b' (-> b str/trim str/lower)]
+    (when (= (count v) 2)
+      (some (fn [[t f]]
+              (cond (and (= a' t)
+                         (= b' f)) {a true b false}
+                    (and (= b' t)
+                         (= a' f)) {b true a false}
+                    :else nil))
+            boolean-pairs))))

@@ -98,7 +98,6 @@
              (doseq [id ids]
                (wasm.api/use-shape id)
                (wasm.api/set-shape-blend-mode value)
-               (wasm.api/update-shape-tiles)
                (wasm.api/request-render "preview-blend-mode")))
 
            (st/emit! (dw/trigger-bounding-box-cloaking ids))

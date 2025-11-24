@@ -8,8 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.fills :as types.fills]
+   [app.config :as cfg]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
+   [app.util.color :as uc]
    [rumext.v2 :as mf]))
 
 (defn- get-applied-tokens-in-shape
@@ -32,28 +34,50 @@
   (and (= (:resolved-value resolved-token) (:color color-type))
        (= 0 idx)))
 
-(mf/defc fill-panel*
-  [{:keys [shapes resolved-tokens color-space]}]
-  [:div {:class (stl/css :fill-panel)}
-   (for [shape shapes]
-     [:div {:key (:id shape) :class "fill-shape"}
-      (for [[idx fill] (map-indexed vector (:fills shape))]
-        (let [property :background
-              color-type (types.fills/fill->color fill) ;; can be :color, :gradient or :image
-              property-name (cmm/get-css-rule-humanized property)
-              resolved-token (get-resolved-token shape resolved-tokens)
-              has-token (has-token? resolved-token color-type idx)]
+(defn- generate-fill-shorthand
+  [shape color-space]
+  (reduce
+   (fn [acc fill]
+     (let [color (types.fills/fill->color fill)
+           prefix (if (:color color) "background-color: " "background-image: ")
+           value (cond
+                   (or (:color color) (:gradient color)) (uc/color->format->background color (keyword color-space))
+                   (:image color) (str "url('" (cfg/resolve-file-media (:image color)) "')")
+                   :else "")
+           full-value (str prefix value ";")]
+       (if (empty? acc)
+         full-value
+         (str acc " " full-value))))
+   ""
+   (:fills shape)))
 
-          (if (:color color-type)
-            [:> color-properties-row* {:key idx
-                                       :term property-name
-                                       :color color-type
-                                       :token (when has-token resolved-token)
-                                       :format color-space
-                                       :copiable true}]
-            (if (or (:gradient color-type) (:image color-type))
+(mf/defc fill-panel*
+  [{:keys [shapes resolved-tokens color-space on-fill-shorthand]}]
+  (let [shorthand* (mf/use-state #(generate-fill-shorthand (first shapes) color-space))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (mf/deps shorthand on-fill-shorthand shapes)
+     (fn []
+       (reset! shorthand* (generate-fill-shorthand (first shapes) color-space))
+       (on-fill-shorthand {:panel :fill
+                           :property shorthand})))
+    [:div {:class (stl/css :fill-panel)}
+     (for [shape shapes]
+       [:div {:key (:id shape) :class (stl/css :fill-shape)}
+        (for [[idx fill] (map-indexed vector (:fills shape))]
+          (let [property :background
+                color-type (types.fills/fill->color fill) ;; can be :color, :gradient or :image
+                property-name (cmm/get-css-rule-humanized property)
+                resolved-token (get-resolved-token shape resolved-tokens)
+                has-token (has-token? resolved-token color-type idx)]
+            (if (:color color-type)
               [:> color-properties-row* {:key idx
                                          :term property-name
                                          :color color-type
+                                         :token (when has-token resolved-token)
+                                         :format color-space
                                          :copiable true}]
-              [:span "background-image"]))))])])
+              [:> color-properties-row* {:key idx
+                                         :term property-name
+                                         :color color-type
+                                         :copiable true}])))])]))

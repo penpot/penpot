@@ -11,6 +11,7 @@
    [app.common.time :as ct]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.project :as dpj]
@@ -244,7 +245,10 @@
         [:div {:class (stl/css-case :project-actions true
                                     :pinned-project (:is-pinned project))}
          (when-not (:is-default project)
-           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+           [:> pin-button* {:class (stl/css :pin-button)
+                            :is-pinned (:is-pinned project)
+                            :on-click toggle-pin
+                            :tab-index 0}])
 
          (when ^boolean can-edit
            [:button {:class (stl/css :add-file-btn)
@@ -314,6 +318,7 @@
   (let [projects
         (mf/with-memo [projects]
           (->> projects
+               (remove :deleted-at)
                (sort-by :modified-at)
                (reverse)))
 
@@ -351,6 +356,8 @@
     (mf/with-effect [team-id]
       (st/emit! (dd/fetch-recent-files team-id)
                 (dd/clear-selected-files)))
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-projects)
 
     (when (seq projects)
       [:*

@@ -11,24 +11,28 @@
    [app.common.data :as d]
    [app.common.pprint :as pp]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.auth.login :refer [login-methods]]
+   [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -61,7 +65,7 @@
       [:div {:class (stl/css :container)} children]]
 
      [:div {:class (stl/css :deco-after2)}
-      [:span (tr "labels.copyright")]
+      [:span (tr "labels.copyright-period")]
       deprecated-icon/logo-error-screen
       [:span (tr "not-found.made-with-love")]]]))
 
@@ -71,7 +75,8 @@
    [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
    [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
 
-(mf/defc login-dialog*
+(mf/defc login-modal*
+  {::mf/private true}
   []
   (let [current-section  (mf/use-state :login)
         user-email       (mf/use-state "")
@@ -132,9 +137,9 @@
          [:*
           [:div {:class (stl/css :logo-title)} (tr "labels.login")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.free")]
-          [:& login-methods {:on-recovery-request set-section-recovery
+          [:> login-dialog* {:on-recovery-request set-section-recovery
                              :on-success-callback success-login
-                             :params {:save-login-redirect true}}]
+                             :handle-redirect true}]
           [:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
@@ -355,6 +360,19 @@
   (let [report-uri (mf/use-ref nil)
         on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
 
+        support-contact-click
+        (mf/use-fn
+         (mf/deps on-reset report)
+         (fn []
+           (tm/schedule on-reset)
+           (let [error-report-id (uuid/next)
+                 error-href (rt/get-current-href)]
+             (set! errors/last-report {:id error-report-id :content report})
+             (st/emit!
+              (rt/nav :settings-feedback {:type "issue"
+                                          :error-report-id error-report-id
+                                          :error-href error-href})))))
+
         on-download
         (mf/use-fn
          (fn [event]
@@ -364,6 +382,7 @@
 
     (mf/with-effect [report]
       (when (some? report)
+        (set! errors/last-report report)
         (let [report (wapi/create-blob report "text/plain")
               uri    (wapi/create-uri report)]
           (mf/set-ref-val! report-uri uri)
@@ -372,11 +391,23 @@
 
     [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
-     [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
+
+     [:div {:class (stl/css :desc-message)}
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-first")]
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
+
      (when (some? report)
-       [:a {:on-click on-download} "Download report.txt"])
-     [:div {:class (stl/css :sign-info)}
-      [:button {:on-click on-reset} (tr "labels.retry")]]]))
+       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+
+     [:div {:class (stl/css :buttons-container)}
+      [:> button* {:variant "secondary"
+                   :type "button"
+                   :class (stl/css :support-btn)
+                   :on-click support-contact-click} (tr "labels.contact-support")]
+      [:> button* {:variant "primary"
+                   :type "button"
+                   :class (stl/css :retry-btn)
+                   :on-click on-reset} (tr "labels.retry")]]]))
 
 (defn- load-info
   "Load exception page info"
@@ -424,6 +455,7 @@
                                    :path (get route :path)
                                    :report report
                                    :params params}))))
+
     (case type
       :not-found
       [:> not-found* {}]
@@ -528,7 +560,7 @@
           :is-dashboard dashboard?
           :is-viewer view?
           :profile profile}
-         [:> login-dialog* {}]]
+         [:> login-modal* {}]]
         (when (get info :loaded false)
           (if request-access?
             [:> context-wrapper* {:is-workspace workspace?

@@ -23,7 +23,7 @@
    [okulary.core :as l]
    [promesa.core :as p]))
 
-(log/set-level! :debug)
+(log/set-level! :warn)
 
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2025.05.19.json"))

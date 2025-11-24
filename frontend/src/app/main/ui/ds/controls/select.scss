@@ -58,14 +58,24 @@
 
 .variant-ghost {
   --select-background-color: transparent;
+  --select-text-color: var(--color-foreground-secondary);
+
   inline-size: fit-content;
+  padding-inline: var(--sp-xxs);
 
   & .arrow {
     margin-inline-start: var(--sp-xs);
   }
 
+  &:is(:hover, [aria-expanded="true"]) {
+    --select-text-color: var(--color-foreground-primary);
+    --select-icon-color: var(--color-foreground-primary);
+  }
+
   &:is(:focus-visible, :disabled) {
     --select-background-color: transparent;
+    --select-text-color: var(--color-foreground-primary);
+    --select-icon-color: var(--color-foreground-primary);
   }
 }
 

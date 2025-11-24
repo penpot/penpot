@@ -9,6 +9,7 @@ const typographyIds = typography.sort();
 export default {
   title: "Foundations/Typography/Heading",
   component: Components.Heading,
+
   argTypes: {
     level: {
       options: [1, 2, 3, 4, 5, 6],
@@ -19,10 +20,11 @@ export default {
       control: { type: "select" },
     },
   },
+
   parameters: {
     controls: { exclude: ["children", "theme", "style"] },
-    backgrounds: { default: "light" },
   },
+
   args: {
     children: "Lorem ipsum",
     theme: "light",
@@ -31,9 +33,16 @@ export default {
       background: "var(--color-background-primary)",
     },
   },
+
   render: ({ style, children, theme, ...args }) => (
     <Heading {...args}>{children}</Heading>
   ),
+
+  globals: {
+    backgrounds: {
+      value: "light",
+    },
+  },
 };
 
 export const AnyHeading = {

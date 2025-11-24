@@ -104,7 +104,7 @@
   position: absolute;
   right: 0;
   top: deprecated.$s-44;
-  width: deprecated.$s-276;
+  width: var(--right-sidebar-width);
   height: calc(100vh - deprecated.$s-48);
   z-index: deprecated.$z-index-10;
   background-color: var(--panel-background-color);

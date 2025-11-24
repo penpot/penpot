@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("Has title", async ({ page }) => {
-  await page.route("**/api/rpc/command/get-profile", (route) => {
+  await page.route("**/api/main/methods/get-profile", (route) => {
     route.fulfill({
       status: 200,
       contentType: "application/transit+json",

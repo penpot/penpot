@@ -33,7 +33,9 @@
     :login-with-ldap
     ;; Uses any generic authentication provider that implements OIDC protocol as credentials.
     :login-with-oidc
-    ;; Allows registration with Open ID
+    ;; Enables custom SSO flow
+    :login-with-custom-sso
+    ;; Allows registration with OIDC (takes effect only when general `registration` is disabled)
     :oidc-registration
     ;; This logs to console the invitation tokens. It's useful in case the SMTP is not configured.
     :log-invitation-tokens})
@@ -118,18 +120,15 @@
     :terms-and-privacy-checkbox
     ;; Only for developtment.
     :tiered-file-data-storage
-    :token-units
     :token-base-font-size
     :token-color
-    :token-typography-types
-    :token-typography-composite
+    :token-shadow
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
     :v2-migration
     :webhooks
     ;; TODO: deprecate this flag and consolidate the code
-    :export-file-v3
     :render-wasm-dpr
     :hide-release-modal
     :subscriptions
@@ -169,9 +168,8 @@
    :enable-google-fonts-provider
    :enable-component-thumbnails
    :enable-render-wasm-dpr
-   :enable-token-units
-   :enable-token-typography-types
-   :enable-token-typography-composite
+   :enable-token-color
+   :enable-inspect-styles
    :enable-feature-fdata-objects-map])
 
 (defn parse

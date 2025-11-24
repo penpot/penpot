@@ -38,18 +38,21 @@
   [changes variant-id pos]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)]
-    (reduce (fn [changes component]
-              (let [props   (:variant-properties component)
-                    props   (d/remove-at-index props pos)
-                    main-id (:main-instance-id component)
-                    name    (ctv/properties-to-name props)]
-                (-> changes
-                    (pcb/update-component (:id component) #(assoc % :variant-properties props)
-                                          {:apply-changes-local-library? true})
-                    (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-            changes
-            related-components)))
+        related-components (cfv/find-variant-components data objects variant-id)
+        props              (-> related-components first :variant-properties)]
+    (if (and (seq props) (<= 0 pos) (< pos (count props)))
+      (reduce (fn [changes component]
+                (let [props   (:variant-properties component)
+                      props   (d/remove-at-index props pos)
+                      main-id (:main-instance-id component)
+                      name    (ctv/properties-to-name props)]
+                  (-> changes
+                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
+                                            {:apply-changes-local-library? true})
+                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
+              changes
+              related-components)
+      changes)))
 
 
 (defn generate-update-property-value

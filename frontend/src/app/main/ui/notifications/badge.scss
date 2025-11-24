@@ -19,7 +19,8 @@
   height: fit-content;
   min-width: deprecated.$s-80;
   width: fit-content;
-  padding: 0;
+  padding-block: 0;
+  padding-inline: var(--sp-xs);
   margin: 0;
   border: deprecated.$s-1 solid var(--badge-notification-border-color);
   border-radius: deprecated.$br-8;

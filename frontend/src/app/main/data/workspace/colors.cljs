@@ -1122,16 +1122,20 @@
         ref-id     (:stroke-color-ref-id stroke)
 
         colors     (-> libraries
-                       (get ref-file)
+                       (get ref-id)
                        (get :data)
                        (ctl/get-colors))
+        shared?    (contains? colors ref-id)
+        has-color? (:stroke-color stroke)
 
-        is-shared? (contains? colors ref-id)
-        has-color? (or (:stroke-color stroke)
-                       (:stroke-color-gradient stroke))
-        attrs      (cond-> (clr/stroke->color stroke)
-                     (not (or is-shared? (= ref-file file-id)))
-                     (dissoc :ref-id :ref-file))]
+        base-attrs (cond-> (clr/stroke->color stroke)
+                     (not (or shared? (= ref-file file-id)))
+                     (dissoc :ref-file :ref-id))
+
+        attrs      (cond-> base-attrs
+                     (:has-token-applied stroke)
+                     (assoc :has-token-applied true
+                            :token-name (:token-name stroke)))]
 
     (when has-color?
       {:attrs attrs
@@ -1139,7 +1143,25 @@
        :shape-id (:shape-id stroke)
        :index (:index stroke)})))
 
-(defn- shadow->color-att
+(defn- shadow->color-attr
+  "Given a stroke map enriched with :shape-id, :index, and optionally
+     :has-token-applied / :token-name, returns a color attribute map.
+  
+     If :has-token-applied is true, adds token metadata to :attrs:
+       {:has-token-applied true
+        :token-name <token-name>}
+  
+     Args:
+     - stroke: map with stroke info, including :shape-id and :index
+     - file-id: current file UUID
+     - libraries: map of shared color libraries
+  
+     Returns:
+     A map like:
+     {:attrs {...color data...}
+      :prop :stroke
+      :shape-id <uuid>
+      :index <int>}"
   [shadow file-id libraries]
   (let [color    (get shadow :color)
         ref-file (get color :ref-file)
@@ -1187,6 +1209,24 @@
          (map #(text->color-att % file-id libraries)))))
 
 (defn- fill->color-att
+  "Given a fill map enriched with :shape-id, :index, and optionally
+   :has-token-applied / :token-name, returns a color attribute map.
+
+   If :has-token-applied is true, adds token metadata to :attrs:
+     {:has-token-applied true
+      :token-name <token-name>}
+
+   Args:
+   - fill: map with fill info, including :shape-id and :index
+   - file-id: current file UUID
+   - libraries: map of shared color libraries
+
+   Returns:
+   A map like:
+   {:attrs {...color data...}
+    :prop :fill
+    :shape-id <uuid>
+    :index <int>}"
   [fill file-id libraries]
   (let [ref-file   (:fill-color-ref-file fill)
         ref-id     (:fill-color-ref-id fill)
@@ -1198,9 +1238,15 @@
         shared?    (contains? colors ref-id)
         has-color? (or (:fill-color fill)
                        (:fill-color-gradient fill))
-        attrs      (cond-> (types.fills/fill->color fill)
+
+        base-attrs (cond-> (types.fills/fill->color fill)
                      (not (or shared? (= ref-file file-id)))
-                     (dissoc :ref-file :ref-id))]
+                     (dissoc :ref-file :ref-id))
+
+        attrs      (cond-> base-attrs
+                     (:has-token-applied fill)
+                     (assoc :has-token-applied true
+                            :token-name (:token-name fill)))]
 
     (when has-color?
       {:attrs attrs
@@ -1209,21 +1255,55 @@
        :index (:index fill)})))
 
 (defn extract-all-colors
+  "Extracts color information from a list of shapes, including fills, strokes, and shadows.
+     If a shape has applied tokens of type :fill or :stroke-color, the first fill or stroke
+     will include extra attributes in its :attrs map:
+       {:has-token-applied true
+        :token-name <token-name>}
+  
+     Args:
+     - shapes: vector of shape maps
+     - file-id: current file UUID
+     - libraries: map of shared color libraries
+  
+     Returns:
+     A vector of color attribute maps with metadata for each shape."
   [shapes file-id libraries]
   (reduce
    (fn [result shape]
-     (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
-           stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
-           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
+     (let [applied-tokens (:applied-tokens shape)
+           applied-fill   (get applied-tokens :fill)
+           applied-stroke (get applied-tokens :stroke-color)
+           fills          (:fills shape)
+           strokes        (:strokes shape)
+           shadows        (:shadow shape)
+           shape-id       (:id shape)
+
+           fills* (map-indexed
+                   (fn [index fill]
+                     (cond-> (assoc fill :shape-id shape-id :index index)
+                       (and (zero? index) applied-fill)
+                       (assoc :has-token-applied true
+                              :token-name applied-fill)))
+                   fills)
+
+           strokes* (map-indexed
+                     (fn [index stroke]
+                       (cond-> (assoc stroke :shape-id shape-id :index index)
+                         (and (zero? index) applied-stroke)
+                         (assoc :has-token-applied true
+                                :token-name applied-stroke)))
+                     strokes)
+
+           shadows* (map-indexed #(assoc %2 :shape-id shape-id :index %1) shadows)]
        (if (= :text (:type shape))
          (-> result
-             (into (keep #(stroke->color-att % file-id libraries)) stroke-obj)
-             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)
+             (into (keep #(stroke->color-att % file-id libraries)) strokes*)
+             (into (map #(shadow->color-attr % file-id libraries)) shadows*)
              (into (extract-text-colors shape file-id libraries)))
-
          (-> result
-             (into (keep #(fill->color-att % file-id libraries)) fill-obj)
-             (into (keep #(stroke->color-att % file-id libraries)) stroke-obj)
-             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)))))
+             (into (keep #(fill->color-att % file-id libraries)) fills*)
+             (into (keep #(stroke->color-att % file-id libraries)) strokes*)
+             (into (map #(shadow->color-attr % file-id libraries)) shadows*)))))
    []
    shapes))

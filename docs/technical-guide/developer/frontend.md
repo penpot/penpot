@@ -217,7 +217,7 @@ repository:
 
 ```bash
 # cd <repo>/frontend
-yarn run validate-translations
+yarn run translations
 ```
 
 At Penpot core team we maintain manually the english and spanish .po files. All

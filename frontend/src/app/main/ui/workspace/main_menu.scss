@@ -9,7 +9,7 @@
 .menu {
   @extend .menu-dropdown;
   top: deprecated.$s-48;
-  left: calc(var(--width, deprecated.$s-256) - deprecated.$s-16);
+  left: calc(var(--right-sidebar-width, deprecated.$s-256) - deprecated.$s-16);
   width: deprecated.$s-192;
   margin: 0;
 }
@@ -61,7 +61,7 @@
 
 .sub-menu {
   @extend .menu-dropdown;
-  left: calc(var(--width, deprecated.$s-256) + deprecated.$s-180);
+  left: calc(var(--right-sidebar-width, deprecated.$s-256) + deprecated.$s-180);
   width: deprecated.$s-192;
   min-width: calc(deprecated.$s-272 - deprecated.$s-2);
   width: 110%;

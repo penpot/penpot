@@ -7,19 +7,18 @@
 (ns app.main.ui.workspace.shapes.text.text-edition-outline
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (mf/defc text-edition-outline
   [{:keys [shape zoom modifiers]}]
   (if (features/active-feature? @st/state "render-wasm/v1")
-    (let [transform (gsh/transform-str shape)
-          {:keys [id x y grow-type]} shape
-          {:keys [width height]} (if (= :fixed grow-type) shape (wasm.api/get-text-dimensions id))]
+    (let [selrect-transform (mf/deref refs/workspace-selrect)
+          [{:keys [x y width height]} transform] (dsh/get-selrect selrect-transform shape)]
       [:rect.main.viewport-selrect
        {:x x
         :y y

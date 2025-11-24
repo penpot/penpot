@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "./ds/typography.scss" as t;
 
 .exception-layout {
   width: 100%;
@@ -133,13 +134,25 @@
 }
 
 .main-message {
-  @include deprecated.bigTitleTipography;
+  @include t.use-typography("title-large");
   color: var(--color-foreground-primary);
 }
 
 .desc-message {
-  @include deprecated.bigTitleTipography;
+  @include t.use-typography("title-large");
   color: var(--color-foreground-secondary);
+}
+
+.desc-text {
+  @include t.use-typography("title-large");
+  color: var(--color-foreground-secondary);
+  margin-block-end: 0;
+}
+
+.download-link {
+  @include t.use-typography("code-font");
+  color: var(--color-foreground-primary);
+  text-transform: lowercase;
 }
 
 .sign-info {
@@ -318,7 +331,7 @@
 
     hr {
       margin: deprecated.$s-20 0;
-      border-top: solid deprecated.$s-1 var(--modal-separator-backogrund-color);
+      border-top: solid deprecated.$s-1 var(--modal-separator-background-color);
     }
 
     .separator {
@@ -333,5 +346,13 @@
 
 .login-container {
   width: 100%;
-  background-color: red;
+  background-color: var(--color-background-error);
+}
+
+.buttons-container {
+  display: flex;
+
+  .retry-btn {
+    margin-inline-start: var(--sp-xxl);
+  }
 }

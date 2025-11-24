@@ -5,11 +5,10 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set-content {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
   height: deprecated.$s-32;
   margin-bottom: deprecated.$s-8;
   .select {

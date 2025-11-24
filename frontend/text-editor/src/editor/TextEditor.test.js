@@ -29,14 +29,14 @@ describe("TextEditor", () => {
     const textEditor = new TextEditor(document.createElement("div"));
     textEditor.root = textEditor.createRoot([
       textEditor.createParagraph([
-        textEditor.createInlineFromString("Hello, World!"),
+        textEditor.createTextSpanFromString("Hello, World!"),
       ]),
-      textEditor.createParagraph([textEditor.createInlineFromString("")]),
+      textEditor.createParagraph([textEditor.createTextSpanFromString("")]),
       textEditor.createParagraph([
-        textEditor.createInlineFromString("¡Hola, Mundo!"),
+        textEditor.createTextSpanFromString("¡Hola, Mundo!"),
       ]),
       textEditor.createParagraph([
-        textEditor.createInlineFromString("Hallo, Welt!"),
+        textEditor.createTextSpanFromString("Hallo, Welt!"),
       ]),
     ]);
     expect(textEditor).toBeInstanceOf(TextEditor);
@@ -76,7 +76,7 @@ describe("TextEditor", () => {
     const textEditor = new TextEditor(textEditorElement);
     textEditor.root = textEditor.createRoot([
       textEditor.createParagraph([
-        textEditor.createInlineFromString("Hello, World!"),
+        textEditor.createTextSpanFromString("Hello, World!"),
       ]),
     ]);
     expect(textEditor).toBeInstanceOf(TextEditor);

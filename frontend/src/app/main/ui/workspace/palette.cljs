@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
+   [app.main.constants :refer [left-sidebar-default-width]]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
@@ -37,10 +38,10 @@
 
 (defn calculate-palette-padding [rulers?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
-        left-sidebar-size      (-> (dom/get-data left-sidebar "size")
+        left-sidebar-size      (-> (dom/get-data left-sidebar "left-sidebar-width")
                                    (d/parse-integer))
         rulers-width           (if rulers? 22 0)
-        min-left-sidebar-width 318
+        min-left-sidebar-width left-sidebar-default-width
         left-padding           4
         calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)]
 

@@ -1,0 +1,2182 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "plugins/runtime",
+      "design-tokens/v1",
+      "variants/v1",
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "render-wasm/v1",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~ueba8fa2e-4140-8084-8005-448635d7a724",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "New File 4",
+  "~:revn": 112,
+  "~:modified-at": "~m1761647475453",
+  "~:vern": 0,
+  "~:id": "~u4732f3e3-7a1a-807e-8006-ff76066e631d",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": [
+      "legacy-2",
+      "legacy-3",
+      "legacy-5",
+      "legacy-6",
+      "legacy-7",
+      "legacy-8",
+      "legacy-9",
+      "legacy-10",
+      "legacy-11",
+      "legacy-12",
+      "legacy-13",
+      "legacy-14",
+      "legacy-16",
+      "legacy-17",
+      "legacy-18",
+      "legacy-19",
+      "legacy-25",
+      "legacy-26",
+      "legacy-27",
+      "legacy-28",
+      "legacy-29",
+      "legacy-31",
+      "legacy-32",
+      "legacy-33",
+      "legacy-34",
+      "legacy-36",
+      "legacy-37",
+      "legacy-38",
+      "legacy-39",
+      "legacy-40",
+      "legacy-41",
+      "legacy-42",
+      "legacy-43",
+      "legacy-44",
+      "legacy-45",
+      "legacy-46",
+      "legacy-47",
+      "legacy-48",
+      "legacy-49",
+      "legacy-50",
+      "legacy-51",
+      "legacy-52",
+      "legacy-53",
+      "legacy-54",
+      "legacy-55",
+      "legacy-56",
+      "legacy-57",
+      "legacy-59",
+      "legacy-62",
+      "legacy-65",
+      "legacy-66",
+      "legacy-67",
+      "0001-remove-tokens-from-groups",
+      "0002-normalize-bool-content-v2",
+      "0002-clean-shape-interactions",
+      "0003-fix-root-shape",
+      "0003-convert-path-content-v2",
+      "0004-clean-shadow-color",
+      "0005-deprecate-image-type",
+      "0006-fix-old-texts-fills",
+      "0008-fix-library-colors-v4",
+      "0009-clean-library-colors",
+      "0009-add-partial-text-touched-flags",
+      "0010-fix-swap-slots-pointing-non-existent-shapes",
+      "0011-fix-invalid-text-touched-flags",
+      "0012-fix-position-data",
+      "0013-fix-component-path",
+      "0013-clear-invalid-strokes-and-fills",
+      "0014-fix-tokens-lib-duplicate-ids",
+      "0014-clear-components-nil-objects"
+    ]
+  },
+  "~:version": 67,
+  "~:project-id": "~ueba8fa2e-4140-8084-8005-448635da32b4",
+  "~:created-at": "~m1761218115001",
+  "~:backend": "legacy-db",
+  "~:data": {
+    "~:pages": [
+      "~u4732f3e3-7a1a-807e-8006-ff76066e631e"
+    ],
+    "~:pages-index": {
+      "~u4732f3e3-7a1a-807e-8006-ff76066e631e": {
+        "~:objects": {
+          "~u00000000-0000-0000-0000-000000000000": {
+            "~#shape": {
+              "~:y": 0,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Root Frame",
+              "~:width": 0.01,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.01
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0.01
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u00000000-0000-0000-0000-000000000000",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 0,
+              "~:proportion": 1,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 0,
+                  "~:y": 0,
+                  "~:width": 0.01,
+                  "~:height": 0.01,
+                  "~:x1": 0,
+                  "~:y1": 0,
+                  "~:x2": 0.01,
+                  "~:y2": 0.01
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#FFFFFF",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 0.01,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u4c0c14a2-498a-80b9-8007-05d95610598f",
+                "~u4c0c14a2-498a-80b9-8007-05d956105992",
+                "~u4c0c14a2-498a-80b9-8007-05d956105994",
+                "~u4c0c14a2-498a-80b9-8007-05d956105996",
+                "~u0ae05ee2-98e5-8097-8007-00802f748d0f",
+                "~ud816a747-c6fa-8005-8006-ffa56576e28e",
+                "~uc9348056-5090-8016-8006-ff760a55bce0",
+                "~uc9348056-5090-8016-8006-ff760a55bce1",
+                "~uc9348056-5090-8016-8006-ff760a55bce2",
+                "~uc9348056-5090-8016-8006-ff760a55bce3",
+                "~u42797f0c-cd4d-80fd-8006-ff7c81651cd2"
+              ]
+            }
+          },
+          "~u0ae05ee2-98e5-8097-8007-00802f748d11": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAADOdkxE+5JJRAMAAAAlz0ZEqY5RRCsPOkTPW1FElGs0REPRWEQDAAAAalY0REftWEThPjREoQ1ZRBcmNERbMFlEAwAAABlTOkTl0FJE3+xGRF27UkRioExEfWVLRAMAAABnp1BECx5RRIKQV0QJAFZEYT1fRHWbWEQDAAAAjlFfRJNnWETCQl9EAStYRPpVX0Sh91dEAwAAAFd0X0ShQldEDaFfRBmYVkSpzl9EO+pVRAMAAADDeWBELV5TREoxYUSNolBEiy9fRIPZSkQDAAAAwARfRKNfSkRpvl5Ed+xJRKtfXkT/f0lEAwAAAN4ZYESJO09EeW9fRCEEUkRp0F5EiZ1URAMAAADKpF5ED1RVRP95XkQLB1ZE6lxeRBnFVkQDAAAAmEpeRPX6VkSwWF5EhzpXRGhFXkQHcVdEAwAAAJztVkRttFRELlFQRFGUT0TOdkxE+5JJRAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAGEEzRF03WkQDAAAAbm8zREXGWUQRiTNERUdZRM2HM0TLtFhEAwAAAFSLM0QJKVdE2j4zRCXpVUST7zJEiZ1URAMAAAB9UDJEIQRSRB6mMUSJO09ESmAzRP9/SUQDAAAAjgEzRHfsSURDuzJEo19KRGuQMkSD2UpEAwAAALqOMESNolBEQUYxRC1eU0RO8TFEO+pVRAMAAAAtRDJEKyZXRB2UMkTrVlhEa5AyROnPWUQDAAAAl5IyRCG0WkSMSTJExWZbRJXRMUTb/ltEAwAAAB/ZMUTZDVxEDkAyRL+GW0RTsTJEG/JaRAMAAACQ4TJEy7JaRK0TM0QPcVpEGEEzRF03WkQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              "~:name": "Shadow-Mask",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 709.000024606158,
+                    "~:y": 806.000016754209
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 898.000004780172,
+                    "~:y": 806.000016754209
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 898.000004780172,
+                    "~:y": 879.999971962692
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 709.000024606158,
+                    "~:y": 879.999971962692
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:center": {
+                "~#point": {
+                  "~:x": 712.502830148685,
+                  "~:y": 1273.97838944562
+                }
+              },
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 4475,
+                  "~:f": 13
+                }
+              },
+              "~:id": "~u0ae05ee2-98e5-8097-8007-00802f748d11",
+              "~:parent-id": "~u0ae05ee2-98e5-8097-8007-00802f748d0f",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 4497.08919644205,
+                  "~:y": 61.0049,
+                  "~:width": 188.827193754712,
+                  "~:height": 74.2069863637553,
+                  "~:x1": 4497.08919644205,
+                  "~:y1": 61.0049,
+                  "~:x2": 4685.91639019676,
+                  "~:y2": 135.211886363755
+                }
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 709.000024606158,
+                  "~:y": 806.000016754209,
+                  "~:width": 188.999980174014,
+                  "~:height": 73.9999552084835,
+                  "~:x1": 709.000024606158,
+                  "~:y1": 806.000016754209,
+                  "~:x2": 898.000004780172,
+                  "~:y2": 879.999971962692
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#000000",
+                  "~:fill-opacity": 0.16078432
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u0ae05ee2-98e5-8097-8007-00802f748d10": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 0.999999999194003,
+                  "~:b": -2.64697796016969e-23,
+                  "~:c": -2.9778502051909e-23,
+                  "~:d": 0.999999999211734,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~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"
+              },
+              "~:name": "Shape",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill": "none"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 687.000030517578,
+                    "~:y": 758.000026702881
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.005705329775,
+                    "~:y": 758.000026702881
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.005705329775,
+                    "~:y": 1036.12386848365
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 687.000030517578,
+                    "~:y": 1036.12386848365
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:center": {
+                "~#point": {
+                  "~:x": 712.502874239018,
+                  "~:y": 1327.93191715412
+                }
+              },
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.000000000806,
+                  "~:b": 3.30872245021211e-23,
+                  "~:c": 2.9778502051909e-23,
+                  "~:d": 1.00000000078827,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 4475,
+                  "~:f": 13
+                }
+              },
+              "~:id": "~u0ae05ee2-98e5-8097-8007-00802f748d10",
+              "~:parent-id": "~u0ae05ee2-98e5-8097-8007-00802f748d0f",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 4475.00000000364,
+                  "~:y": 13,
+                  "~:width": 233.005674812198,
+                  "~:height": 278.123841780764,
+                  "~:x1": 4475.00000000364,
+                  "~:y1": 13,
+                  "~:x2": 4708.00567481584,
+                  "~:y2": 291.123841780764
+                }
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 687.000030517578,
+                  "~:y": 758.000026702881,
+                  "~:width": 233.005674812197,
+                  "~:height": 278.123841780764,
+                  "~:x1": 687.000030517578,
+                  "~:y1": 758.000026702881,
+                  "~:x2": 920.005705329775,
+                  "~:y2": 1036.12386848365
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~ud816a747-c6fa-8005-8006-ffa56576e28e": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAACUJk9E/78IRAIAAAAAAAAAAAAAAAAAAAAAAAAARks+RLCGPUQCAAAAAAAAAAAAAAAAAAAAAAAAACsNa0QnRh1EAgAAAAAAAAAAAAAAAAAAAAAAAAD9PzNEJ0YdRAIAAAAAAAAAAAAAAAAAAAAAAAAA6QFgRLCGPUQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+              },
+              "~:name": "svg-polygon",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fillRule": "evenodd"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 717,
+                    "~:y": 547
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 940.205915893361,
+                    "~:y": 547
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 940.205915893361,
+                    "~:y": 758.104518632358
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 717,
+                    "~:y": 758.104518632358
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~ud816a747-c6fa-8005-8006-ffa56576e28e",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 102,
+                  "~:y": 0,
+                  "~:width": 96,
+                  "~:height": 90,
+                  "~:x1": 102,
+                  "~:y1": 0,
+                  "~:x2": 198,
+                  "~:y2": 90
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-color": "#ff0000",
+                  "~:stroke-opacity": 1,
+                  "~:stroke-width": 5,
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner"
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 717,
+                  "~:y": 547,
+                  "~:width": 223.205915893361,
+                  "~:height": 211.104518632358,
+                  "~:x1": 717,
+                  "~:y1": 547,
+                  "~:x2": 940.205915893361,
+                  "~:y2": 758.104518632358
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#62d10b",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d95610598f": {
+            "~#shape": {
+              "~:y": 932.999954550034,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Graphics / Solid / gem.svg",
+              "~:width": 85.9999515116215,
+              "~:type": "~:group",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 762.000043265266,
+                    "~:y": 932.999954550034
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 847.999994776888,
+                    "~:y": 932.999954550034
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 847.999994776888,
+                    "~:y": 1036.99998470998
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 762.000043265266,
+                    "~:y": 1036.99998470998
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:exports": [
+                {
+                  "~:type": "~:svg",
+                  "~:suffix": "",
+                  "~:scale": 1
+                }
+              ],
+              "~:layout-item-v-sizing": "~:fix",
+              "~:constraints-v": "~:scale",
+              "~:constraints-h": "~:scale",
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d95610598f",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 762.000043265266,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 762.000043265266,
+                  "~:y": 932.999954550034,
+                  "~:width": 85.9999515116215,
+                  "~:height": 104.00003015995,
+                  "~:x1": 762.000043265266,
+                  "~:y1": 932.999954550034,
+                  "~:x2": 847.999994776888,
+                  "~:y2": 1036.99998470998
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": false,
+              "~:height": 104.00003015995,
+              "~:flip-y": false,
+              "~:shapes": [
+                "~u4c0c14a2-498a-80b9-8007-05d956105990"
+              ]
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105992": {
+            "~#shape": {
+              "~:y": 1095.99998134318,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:index": 1,
+              "~:name": "Group - no svg",
+              "~:width": 171.999930211738,
+              "~:type": "~:group",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 749.000032888887,
+                    "~:y": 1095.99998134318
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.999963100625,
+                    "~:y": 1095.99998134318
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.999963100625,
+                    "~:y": 1248.99998756293
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 749.000032888887,
+                    "~:y": 1248.99998756293
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105992",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 749.000032888887,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 749.000032888887,
+                  "~:y": 1095.99998134318,
+                  "~:width": 171.999930211738,
+                  "~:height": 153.000006219747,
+                  "~:x1": 749.000032888887,
+                  "~:y1": 1095.99998134318,
+                  "~:x2": 920.999963100625,
+                  "~:y2": 1248.99998756293
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": false,
+              "~:height": 153.000006219747,
+              "~:flip-y": false,
+              "~:shapes": [
+                "~u4c0c14a2-498a-80b9-8007-05d956105993"
+              ]
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105993": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAABoDUVEKmmJRAMAAAAobkVEwCeJRPUIRkQAAIlEW6xGRAAAiUQCAAAAAAAAAAAAAAAAAAAAAAAAAGHUWkQAAIlEAwAAAMh3W0QAAIlElRJcRKkmiURVc1xEKmmJRAIAAAAAAAAAAAAAAAAAAAAAAAAAWNtlRM7Ij0QDAAAAi21mRJkrkER/XmZE9bOQRBi7ZUQzD5FEAgAAAAAAAAAAAAAAAAAAAAAAAAASP1JEO8ubRAMAAAAs3FFE5wCcRJFSUUQEIJxEXsBQRAQgnEQDAAAALC5QRAQgnESRpE9E5wCcRKtBT0Q7y5tEAgAAAAAAAAAAAAAAAAAAAAAAAAClxTtEMw+RRAMAAAAYIDtE9bOQRDITO0SZK5BEZaU7RM7Ij0QCAAAAAAAAAAAAAAAAAAAAAAAAAGgNRUQqaYlEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAKUlIRHIUi0QDAAAANgJIREgvi0Tc7kdEll+LRAIcSEQphYtEAgAAAAAAAAAAAAAAAAAAAAAAAAAd7kxEZIePRAIAAAAAAAAAAAAAAAAAAAAAAAAATJFARGULkEQDAAAAJzlARJQOkERZ9D9EJzSQRFn0P0RFYZBEAwAAAFn0P0RjjpBEJzlARN6ykERMkUBEJbeQRAIAAAAAAAAAAAAAAAAAAAAAAAAAUbFQROZikUQDAAAA7LlQROZikUSsxFBE5mKRREXNUETmYpFEAgAAAAAAAAAAAAAAAAAAAAAAAABK7WBEJbeQRAMAAABwRWFE9bOQRD2KYURjjpBEPYphREVhkEQDAAAAPYphRCc0kERwRWFErA+QRErtYERlC5BEAgAAAAAAAAAAAAAAAAAAAAAAAACgklREZoiPRAIAAAAAAAAAAAAAAAAAAAAAAAAAu2RZRECGi0QDAAAA4ZFZRK5gi0SHfllESC+LRJQ3WUSJFYtEAwAAAKHwWES1+4pEu41YRBEAi0SHUVhERSCLRAIAAAAAAAAAAAAAAAAAAAAAAAAAXsBQROI2j0QCAAAAAAAAAAAAAAAAAAAAAAAAADYvSUQuH4tEAwAAAALzSET6/opEHJBIRLP6ikQpSUhEchSLRAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 749.000032888887,
+                    "~:y": 1095.99998134318
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.999963100625,
+                    "~:y": 1095.99998134318
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.999963100625,
+                    "~:y": 1248.99998756293
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 749.000032888887,
+                    "~:y": 1248.99998756293
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105993",
+              "~:parent-id": "~u4c0c14a2-498a-80b9-8007-05d956105992",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": -0.015998707497255,
+                  "~:y": 24,
+                  "~:width": 511.997475772526,
+                  "~:height": 456.1,
+                  "~:x1": -0.015998707497255,
+                  "~:y1": 24,
+                  "~:x2": 511.981477065028,
+                  "~:y2": 480.1
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 749.000032888887,
+                  "~:y": 1095.99998134318,
+                  "~:width": 171.999930211738,
+                  "~:height": 153.000006219747,
+                  "~:x1": 749.000032888887,
+                  "~:y1": 1095.99998134318,
+                  "~:x2": 920.999963100625,
+                  "~:y2": 1248.99998756293
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105990": {
+            "~#shape": {
+              "~:y": 932.999954550034,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Board",
+              "~:width": 85.9999515116215,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 762.000043265266,
+                    "~:y": 932.999954550034
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 847.999994776888,
+                    "~:y": 932.999954550034
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 847.999994776888,
+                    "~:y": 1036.99998470998
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 762.000043265266,
+                    "~:y": 1036.99998470998
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:r3": 0,
+              "~:constraints-v": "~:scale",
+              "~:constraints-h": "~:scale",
+              "~:r1": 0,
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105990",
+              "~:parent-id": "~u4c0c14a2-498a-80b9-8007-05d95610598f",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 762.000043265266,
+              "~:proportion": 1,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 762.000043265266,
+                  "~:y": 932.999954550034,
+                  "~:width": 85.9999515116215,
+                  "~:height": 104.00003015995,
+                  "~:x1": 762.000043265266,
+                  "~:y1": 932.999954550034,
+                  "~:x2": 847.999994776888,
+                  "~:y2": 1036.99998470998
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#B1B2B5",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 104.00003015995,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u4c0c14a2-498a-80b9-8007-05d956105991"
+              ]
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105991": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAADRrTtEAHNmRAMAAADQzTxEAO1kRJyaPkQAAGREAoFARAAAZEQCAAAAAAAAAAAAAAAAAAAAAAAAAP+AfEQAAGREAwAAAGNnfkQAAGREGhqARIDmZEQaqoBEAHNmRAIAAAAAAAAAAAAAAAAAAAAAAAAAGaqORIE5hkQDAAAAsYOPRAFgh0RLbY9EgfaIRBl6jkSBBopEAgAAAAAAAAAAAAAAAAAAAAAAAAA19GJEggaqRAMAAADNzWFEgqaqRDU0YERCA6tEA4FeREIDq0QDAAAAz81cREIDq0Q3NFtEgqaqRM8NWkSCBqpEAgAAAAAAAAAAAAAAAAAAAAAAAADSDSBEgQaKRAMAAAAFIR5EgfaIRJ/6HUQBYIdE0q0fRIE5hkQCAAAAAAAAAAAAAAAAAAAAAAAAANGtO0QAc2ZEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAz01FRIBmcEQDAAAAm3pERIAGcUQBQUREgCZyRGfHRESABnNEAgAAAAAAAAAAAAAAAAAAAAAAAAADIVNEgXaFRAIAAAAAAAAAAAAAAAAAAAAAAAAAN1QuRAEAh0QDAAAA0k0tRIEJh0QEgSxEgXmHRASBLEQBAIhEAwAAAASBLESBhohE0k0tREHziEQ3VC5EAQCJRAIAAAAAAAAAAAAAAAAAAAAAAAAAN1ReRAEAi0QDAAAAz21eRAEAi0TPjV5EAQCLRGenXkQBAItEAgAAAAAAAAAAAAAAAAAAAAAAAACyU4dEAQCJRAMAAADm1odEgfaIREw9iESBhohETD2IRAEAiEQDAAAATD2IRIF5h0Tm1odEwQyHRLJTh0QBAIdEAgAAAAAAAAAAAAAAAAAAAAAAAAAB4WlEgXmFRAIAAAAAAAAAAAAAAAAAAAAAAAAAmTp4RAANc0QDAAAAAcF4RAAtckRlh3hEgAZxRDW0d0QAbXBEAwAAAAHhdkQA029Embp1RADtb0RlB3VEAK1wRAIAAAAAAAAAAAAAAAAAAAAAAAAAA4FeRIGGhEQCAAAAAAAAAAAAAAAAAAAAAAAAAJv6R0SApnBEAwAAAGdHR0SA5m9EASFGRADNb0TPTUVEgGZwRAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 634.000009763648,
+                    "~:y": 912.000036892255
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1145.99693622248,
+                    "~:y": 912.000036892255
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1145.99693622248,
+                    "~:y": 1368.10014563497
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 634.000009763648,
+                    "~:y": 1368.10014563497
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:constraints-v": "~:top",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:constraints-h": "~:left",
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105991",
+              "~:parent-id": "~u4c0c14a2-498a-80b9-8007-05d956105990",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": -0.015998707497255,
+                  "~:y": 24,
+                  "~:width": 511.997475772526,
+                  "~:height": 456.1,
+                  "~:x1": -0.015998707497255,
+                  "~:y1": 24,
+                  "~:x2": 511.981477065028,
+                  "~:y2": 480.1
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u4c0c14a2-498a-80b9-8007-05d956105990",
+              "~:strokes": [],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 634.000009763648,
+                  "~:y": 912.000036892255,
+                  "~:width": 511.996926458828,
+                  "~:height": 456.100108742714,
+                  "~:x1": 634.000009763648,
+                  "~:y1": 912.000036892255,
+                  "~:x2": 1145.99693622248,
+                  "~:y2": 1368.10014563497
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105996": {
+            "~#shape": {
+              "~:y": 953.999939524329,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:index": 1,
+              "~:name": "Group",
+              "~:width": 51.0000002384186,
+              "~:type": "~:group",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 571.999962133859,
+                    "~:y": 953.999939524329
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 622.999962372278,
+                    "~:y": 953.999939524329
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 622.999962372278,
+                    "~:y": 1001.99988516489
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 571.999962133859,
+                    "~:y": 1001.99988516489
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105996",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 571.999962133859,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 571.999962133859,
+                  "~:y": 953.999939524329,
+                  "~:width": 51.0000002384186,
+                  "~:height": 47.999945640564,
+                  "~:x1": 571.999962133859,
+                  "~:y1": 953.999939524329,
+                  "~:x2": 622.999962372278,
+                  "~:y2": 1001.99988516489
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": false,
+              "~:height": 47.999945640564,
+              "~:flip-y": false,
+              "~:shapes": [
+                "~u4c0c14a2-498a-80b9-8007-05d956105997"
+              ]
+            }
+          },
+          "~uc9348056-5090-8016-8006-ff760a55bce2": {
+            "~#shape": {
+              "~:y": null,
+              "~:stroke-cap-start": "~:round",
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:index": null,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAACgBtEAEBLRAIAAAAAAAAAAAAAAAAAAAAAAAAAAoAbRADAV0Q="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill": "none",
+                "~:strokeLinecap": "round",
+                "~:strokeLinejoin": "round"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 621.999997442874,
+                    "~:y": 813.000011676151
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 622.055645037657,
+                    "~:y": 813.000011676151
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 622.055645037657,
+                    "~:y": 862.999969855948
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 621.999997442874,
+                    "~:y": 862.999969855948
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:stroke-cap-end": "~:round",
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~uc9348056-5090-8016-8006-ff760a55bce2",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 18,
+                  "~:y": 7,
+                  "~:width": 0.01,
+                  "~:height": 9,
+                  "~:x1": 18,
+                  "~:y1": 7,
+                  "~:x2": 18.01,
+                  "~:y2": 16
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-color": "#000000",
+                  "~:stroke-opacity": 1,
+                  "~:stroke-width": 10,
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner"
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 621.999997442874,
+                  "~:y": 813.000011676151,
+                  "~:width": 0.0556475947835224,
+                  "~:height": 49.9999581797965,
+                  "~:x1": 621.999997442874,
+                  "~:y1": 813.000011676151,
+                  "~:x2": 622.055645037657,
+                  "~:y2": 862.999969855948
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105997": {
+            "~#shape": {
+              "~:y": 953.999939524329,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Rectangle",
+              "~:width": 51.0000002384186,
+              "~:type": "~:rect",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 571.999962133859,
+                    "~:y": 953.999939524329
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 622.999962372278,
+                    "~:y": 953.999939524329
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 622.999962372278,
+                    "~:y": 1001.99988516489
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 571.999962133859,
+                    "~:y": 1001.99988516489
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105997",
+              "~:parent-id": "~u4c0c14a2-498a-80b9-8007-05d956105996",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 571.999962133859,
+              "~:proportion": 1,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 571.999962133859,
+                  "~:y": 953.999939524329,
+                  "~:width": 51.0000002384186,
+                  "~:height": 47.999945640564,
+                  "~:x1": 571.999962133859,
+                  "~:y1": 953.999939524329,
+                  "~:x2": 622.999962372278,
+                  "~:y2": 1001.99988516489
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 47.999945640564,
+              "~:flip-y": null
+            }
+          },
+          "~uc9348056-5090-8016-8006-ff760a55bce3": {
+            "~#shape": {
+              "~:y": null,
+              "~:stroke-cap-start": "~:round",
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:index": null,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAACwBVEAIBSRAIAAAAAAAAAAAAAAAAAAAAAAAAAAkAbRABAWEQCAAAAAAAAAAAAAAAAAAAAAAAAAALAIEQAgFJE"
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill": "none",
+                "~:strokeLinecap": "round",
+                "~:strokeLinejoin": "round"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 599.000015020354,
+                    "~:y": 842.000017004857
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 643.000027656538,
+                    "~:y": 842.000017004857
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 643.000027656538,
+                    "~:y": 865.000028441938
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 599.000015020354,
+                    "~:y": 865.000028441938
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:stroke-cap-end": "~:round",
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~uc9348056-5090-8016-8006-ff760a55bce3",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 14,
+                  "~:y": 12,
+                  "~:width": 8,
+                  "~:height": 4,
+                  "~:x1": 14,
+                  "~:y1": 12,
+                  "~:x2": 22,
+                  "~:y2": 16
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-color": "#000000",
+                  "~:stroke-opacity": 1,
+                  "~:stroke-width": 10,
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner"
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 599.000015020354,
+                  "~:y": 842.000017004857,
+                  "~:width": 44.0000126361838,
+                  "~:height": 23.0000114370807,
+                  "~:x1": 599.000015020354,
+                  "~:y1": 842.000017004857,
+                  "~:x2": 643.000027656538,
+                  "~:y2": 865.000028441938
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105994": {
+            "~#shape": {
+              "~:y": 1094.99997425023,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Graphics - SVG",
+              "~:width": 171.999991246594,
+              "~:type": "~:group",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 508.000014168975,
+                    "~:y": 1094.99997425023
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 680.000005415569,
+                    "~:y": 1094.99997425023
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 680.000005415569,
+                    "~:y": 1247.99998046997
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 508.000014168975,
+                    "~:y": 1247.99998046997
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:exports": [
+                {
+                  "~:type": "~:svg",
+                  "~:suffix": "",
+                  "~:scale": 1
+                }
+              ],
+              "~:layout-item-v-sizing": "~:fix",
+              "~:constraints-v": "~:scale",
+              "~:constraints-h": "~:scale",
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105994",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 508.000014168975,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 508.000014168975,
+                  "~:y": 1094.99997425023,
+                  "~:width": 171.999991246594,
+                  "~:height": 153.000006219747,
+                  "~:x1": 508.000014168975,
+                  "~:y1": 1094.99997425023,
+                  "~:x2": 680.000005415569,
+                  "~:y2": 1247.99998046997
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": false,
+              "~:height": 153.000006219747,
+              "~:flip-y": false,
+              "~:shapes": [
+                "~u4c0c14a2-498a-80b9-8007-05d956105995"
+              ]
+            }
+          },
+          "~uc9348056-5090-8016-8006-ff760a55bce0": {
+            "~#shape": {
+              "~:y": null,
+              "~:stroke-cap-start": "~:round",
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:index": null,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAADAAhEAcBTRAIAAAAAAAAAAAAAAAAAAAAAAAAAAwAPRAHAU0Q="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill": "none",
+                "~:strokeLinecap": "round",
+                "~:strokeLinejoin": "round"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 543.999999094532,
+                    "~:y": 847.000034938226
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 572.000037645983,
+                    "~:y": 847.000034938226
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 572.000037645983,
+                    "~:y": 847.055682537931
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 543.999999094532,
+                    "~:y": 847.055682537931
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:stroke-cap-end": "~:round",
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~uc9348056-5090-8016-8006-ff760a55bce0",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 3.5,
+                  "~:y": 13,
+                  "~:width": 6,
+                  "~:height": 0.01,
+                  "~:x1": 3.5,
+                  "~:y1": 13,
+                  "~:x2": 9.5,
+                  "~:y2": 13.01
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-color": "#000000",
+                  "~:stroke-opacity": 1,
+                  "~:stroke-width": 10,
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner"
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 543.999999094532,
+                  "~:y": 847.000034938226,
+                  "~:width": 28.0000385514509,
+                  "~:height": 0.0556475997042298,
+                  "~:x1": 543.999999094532,
+                  "~:y1": 847.000034938226,
+                  "~:x2": 572.000037645983,
+                  "~:y2": 847.055682537931
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u4c0c14a2-498a-80b9-8007-05d956105995": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAABozQhEKkmJRAMAAAAoLglEwAeJRPXICUQA4IhEXGwKRADgiEQCAAAAAAAAAAAAAAAAAAAAAAAAAGKUHkQA4IhEAwAAAMk3H0QA4IhEltIfRKkGiURWMyBEKkmJRAIAAAAAAAAAAAAAAAAAAAAAAAAAWZspRM6oj0QDAAAAjC0qRJkLkER/HipE9ZOQRBl7KUQz75BEAgAAAAAAAAAAAAAAAAAAAAAAAAAT/xVEO6ubRAMAAAAsnBVE5+CbRJISFUQEAJxEX4AURAQAnEQDAAAALO4TRAQAnESSZBNE5+CbRKsBE0Q7q5tEAgAAAAAAAAAAAAAAAAAAAAAAAABKC/9DM++QRAMAAAAwwP1D9ZOQRGSm/UOZC5BEysr+Q86oj0QCAAAAAAAAAAAAAAAAAAAAAAAAAGjNCEQqSYlEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAKQkMRHL0ikQDAAAANsILREgPi0TcrgtElj+LRAPcC0QoZYtEAgAAAAAAAAAAAAAAAAAAAAAAAAAerhBEZGePRAIAAAAAAAAAAAAAAAAAAAAAAAAATVEERGXrj0QDAAAAJ/kDRJTuj0RatANEJhSQRFq0A0RFQZBEAwAAAFq0A0RjbpBEJ/kDRN6SkERNUQREJZeQRAIAAAAAAAAAAAAAAAAAAAAAAAAAUnEUROVCkUQDAAAA7HkUROVCkUSshBRE5UKRREWNFETlQpFEAgAAAAAAAAAAAAAAAAAAAAAAAABKrSREJZeQRAMAAABxBSVE9ZOQRD5KJURjbpBEPkolREVBkEQDAAAAPkolRCYUkERxBSVEq++PREqtJERl649EAgAAAAAAAAAAAAAAAAAAAAAAAACgUhhEZmiPRAIAAAAAAAAAAAAAAAAAAAAAAAAAvCQdREBmi0QDAAAA4lEdRK1Ai0SIPh1ESA+LRJX3HESJ9YpEAwAAAKKwHES124pEu00cRBHgikSIERxERQCLRAIAAAAAAAAAAAAAAAAAAAAAAAAAX4AUROIWj0QCAAAAAAAAAAAAAAAAAAAAAAAAADbvDEQu/4pEAwAAAAOzDET63opEHFAMRLPaikQpCQxEcvSKRAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 508.000014168975,
+                    "~:y": 1094.99997425023
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 680.000005415569,
+                    "~:y": 1094.99997425023
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 680.000005415569,
+                    "~:y": 1247.99998046997
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 508.000014168975,
+                    "~:y": 1247.99998046997
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u4c0c14a2-498a-80b9-8007-05d956105995",
+              "~:parent-id": "~u4c0c14a2-498a-80b9-8007-05d956105994",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": -0.015998707497255,
+                  "~:y": 24,
+                  "~:width": 511.997475772526,
+                  "~:height": 456.1,
+                  "~:x1": -0.015998707497255,
+                  "~:y1": 24,
+                  "~:x2": 511.981477065028,
+                  "~:y2": 480.1
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 508.000014168975,
+                  "~:y": 1094.99997425023,
+                  "~:width": 171.999991246594,
+                  "~:height": 153.000006219747,
+                  "~:x1": 508.000014168975,
+                  "~:y1": 1094.99997425023,
+                  "~:x2": 680.000005415569,
+                  "~:y2": 1247.99998046997
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~uc9348056-5090-8016-8006-ff760a55bce1": {
+            "~#shape": {
+              "~:y": null,
+              "~:stroke-cap-start": "~:round",
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:index": null,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAACAAVEAMBXRAIAAAAAAAAAAAAAAAAAAAAAAAAAAkALRABAS0QCAAAAAAAAAAAAAAAAAAAAAAAAAAKAEUQAwFdE"
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill": "none",
+                "~:strokeLinecap": "round",
+                "~:strokeLinejoin": "round"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 532.000012233906,
+                    "~:y": 813.000011676151
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 581.999986425961,
+                    "~:y": 813.000011676151
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 581.999986425961,
+                    "~:y": 862.999969855948
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 532.000012233906,
+                    "~:y": 862.999969855948
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:stroke-cap-end": "~:round",
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~uc9348056-5090-8016-8006-ff760a55bce1",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 2,
+                  "~:y": 7,
+                  "~:width": 9,
+                  "~:height": 9,
+                  "~:x1": 2,
+                  "~:y1": 7,
+                  "~:x2": 11,
+                  "~:y2": 16
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-color": "#000000",
+                  "~:stroke-opacity": 1,
+                  "~:stroke-width": 10,
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner"
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 532.000012233906,
+                  "~:y": 813.000011676151,
+                  "~:width": 49.9999741920556,
+                  "~:height": 49.9999581797965,
+                  "~:x1": 532.000012233906,
+                  "~:y1": 813.000011676151,
+                  "~:x2": 581.999986425961,
+                  "~:y2": 862.999969855948
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u0ae05ee2-98e5-8097-8007-00802f748d0f": {
+            "~#shape": {
+              "~:y": 758.000026702881,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Group-with-fills",
+              "~:width": 233.005674812197,
+              "~:type": "~:group",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 687.000030517578,
+                    "~:y": 758.000026702881
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.005705329775,
+                    "~:y": 758.000026702881
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 920.005705329775,
+                    "~:y": 1036.12386848365
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 687.000030517578,
+                    "~:y": 1036.12386848365
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 4475,
+                  "~:f": 13
+                }
+              },
+              "~:id": "~u0ae05ee2-98e5-8097-8007-00802f748d0f",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 4473.98860978118,
+                  "~:y": 12.7111548396726,
+                  "~:width": 233.119261878014,
+                  "~:height": 280.600650192349,
+                  "~:x1": 4473.98860978118,
+                  "~:y1": 12.7111548396726,
+                  "~:x2": 4707.10787165919,
+                  "~:y2": 293.311805032022
+                }
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 687.000030517578,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 687.000030517578,
+                  "~:y": 758.000026702881,
+                  "~:width": 233.005674812197,
+                  "~:height": 278.123841780764,
+                  "~:x1": 687.000030517578,
+                  "~:y1": 758.000026702881,
+                  "~:x2": 920.005705329775,
+                  "~:y2": 1036.12386848365
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#000000",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": false,
+              "~:height": 278.123841780764,
+              "~:flip-y": false,
+              "~:shapes": [
+                "~u0ae05ee2-98e5-8097-8007-00802f748d10",
+                "~u0ae05ee2-98e5-8097-8007-00802f748d11"
+              ]
+            }
+          },
+          "~u42797f0c-cd4d-80fd-8006-ff7c81651cd2": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAACc5hBE/78IRAIAAAAAAAAAAAAAAAAAAAAAAAAARQsARLCGPUQCAAAAAAAAAAAAAAAAAAAAAAAAADXNLEQnRh1EAgAAAAAAAAAAAAAAAAAAAAAAAAD4/+lDJ0YdRAIAAAAAAAAAAAAAAAAAAAAAAAAA7MEhRLCGPUQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+              },
+              "~:name": "svg-polygon",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 468.000003562829,
+                    "~:y": 546.999999120513
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 691.206278507297,
+                    "~:y": 546.999999120513
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 691.206278507297,
+                    "~:y": 758.104517752871
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 468.000003562829,
+                    "~:y": 758.104517752871
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:svg-transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u42797f0c-cd4d-80fd-8006-ff7c81651cd2",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:svg-viewbox": {
+                "~#rect": {
+                  "~:x": 2,
+                  "~:y": 0,
+                  "~:width": 96,
+                  "~:height": 90,
+                  "~:x1": 2,
+                  "~:y1": 0,
+                  "~:x2": 98,
+                  "~:y2": 90
+                }
+              },
+              "~:svg-defs": {
+
+              },
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-color": "#ff0000",
+                  "~:stroke-opacity": 1,
+                  "~:stroke-width": 5,
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner"
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 468.000003562829,
+                  "~:y": 546.999999120513,
+                  "~:width": 223.206274944468,
+                  "~:height": 211.104518632358,
+                  "~:x1": 468.000003562829,
+                  "~:y1": 546.999999120513,
+                  "~:x2": 691.206278507297,
+                  "~:y2": 758.104517752871
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#62d10b",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          }
+        },
+        "~:id": "~u4732f3e3-7a1a-807e-8006-ff76066e631e",
+        "~:name": "Page 1"
+      }
+    },
+    "~:id": "~u4732f3e3-7a1a-807e-8006-ff76066e631d",
+    "~:options": {
+      "~:components-v2": true,
+      "~:base-font-size": "16px"
+    }
+  }
+}

@@ -37,17 +37,23 @@
          (not= (str/slice v -2) "px"))
     (str v "px")
 
+    (and (= k :font-family) (seq v))
+    (str/quote v)
+
     :else
     v))
 
 (defn normalize-attr-value
-  "This function strips units from attr values"
+  "This function strips units from attr values and un-scapes font-family"
   [k v]
   (cond
     (and (or (= k :font-size)
              (= k :letter-spacing))
          (= (str/slice v -2) "px"))
     (str/slice v 0 -2)
+
+    (= k :font-family)
+    (str/unquote v)
 
     :else
     v))

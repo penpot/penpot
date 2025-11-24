@@ -1,4 +1,4 @@
-use super::{RenderState, Shape, SurfaceId};
+use super::{filters, RenderState, Shape, SurfaceId};
 use crate::{
     math::Rect,
     shapes::{
@@ -33,8 +33,8 @@ pub fn stroke_paragraph_builder_group_from_text(
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for leaf in paragraph.children().iter() {
-            let text_paint: skia_safe::Handle<_> = merge_fills(leaf.fills(), *bounds);
+        for span in paragraph.children().iter() {
+            let text_paint: skia_safe::Handle<_> = merge_fills(span.fills(), *bounds);
             let stroke_paints = get_text_stroke_paints(
                 stroke,
                 bounds,
@@ -43,7 +43,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                 remove_stroke_alpha,
             );
 
-            let text: String = leaf.apply_text_transform();
+            let text: String = span.apply_text_transform();
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
@@ -51,9 +51,13 @@ pub fn stroke_paragraph_builder_group_from_text(
                     ParagraphBuilder::new(&paragraph_style, fonts)
                 });
                 let stroke_paint = stroke_paint.clone();
-                let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
-                let stroke_style =
-                    leaf.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha);
+                let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
+                let stroke_style = span.to_stroke_style(
+                    &stroke_paint,
+                    fallback_fonts,
+                    remove_alpha,
+                    paragraph.line_height(),
+                );
                 builder.push_style(&stroke_style);
                 builder.add_text(&text);
             }
@@ -164,35 +168,71 @@ pub fn render(
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
 ) {
-    let render_canvas = if let Some(rs) = render_state {
-        rs.surfaces.canvas(surface_id.unwrap_or(SurfaceId::Fills))
-    } else if let Some(c) = canvas {
-        c
-    } else {
-        return;
-    };
+    if let Some(render_state) = render_state {
+        let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
 
+        if let Some(blur_filter) = blur {
+            let bounds = blur_filter.compute_fast_bounds(shape.selrect);
+            if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
+                let blur_filter_clone = blur_filter.clone();
+                if filters::render_with_filter_surface(
+                    render_state,
+                    bounds,
+                    target_surface,
+                    |state, temp_surface| {
+                        let temp_canvas = state.surfaces.canvas(temp_surface);
+                        render_text_on_canvas(
+                            temp_canvas,
+                            shape,
+                            paragraph_builders,
+                            shadow,
+                            Some(&blur_filter_clone),
+                        );
+                    },
+                ) {
+                    return;
+                }
+            }
+        }
+
+        let canvas = render_state.surfaces.canvas(target_surface);
+        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
+        return;
+    }
+
+    if let Some(canvas) = canvas {
+        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
+    }
+}
+
+fn render_text_on_canvas(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
+) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
         let blur_layer = SaveLayerRec::default().paint(&blur_paint);
-        render_canvas.save_layer(&blur_layer);
+        canvas.save_layer(&blur_layer);
     }
 
     if let Some(shadow_paint) = shadow {
         let layer_rec = SaveLayerRec::default().paint(shadow_paint);
-        render_canvas.save_layer(&layer_rec);
-        draw_text(render_canvas, shape, paragraph_builders);
-        render_canvas.restore();
+        canvas.save_layer(&layer_rec);
+        draw_text(canvas, shape, paragraph_builders);
+        canvas.restore();
     } else {
-        draw_text(render_canvas, shape, paragraph_builders);
+        draw_text(canvas, shape, paragraph_builders);
     }
 
     if blur.is_some() {
-        render_canvas.restore();
+        canvas.restore();
     }
 
-    render_canvas.restore();
+    canvas.restore();
 }
 
 fn draw_text(
@@ -200,52 +240,47 @@ fn draw_text(
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
 ) {
-    // Width
-    let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
-        text_content.width()
-    } else {
-        shape.width()
-    };
-
-    // Height
-    let container_height = shape.selrect().height();
-    let total_content_height =
-        calculate_all_paragraphs_height(paragraph_builder_groups, paragraph_width);
+    let text_content = shape.get_text_content();
+    let selrect_width = shape.selrect().width();
+    let text_width = text_content.get_width(selrect_width);
+    let text_height = text_content.get_height(selrect_width);
+    let selrect_height = shape.selrect().height();
     let mut global_offset_y = match shape.vertical_align() {
-        VerticalAlign::Center => (container_height - total_content_height) / 2.0,
-        VerticalAlign::Bottom => container_height - total_content_height,
+        VerticalAlign::Center => (selrect_height - text_height) / 2.0,
+        VerticalAlign::Bottom => selrect_height - text_height,
         _ => 0.0,
     };
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
+    let mut normalized_line_height = text_content.normalized_line_height();
+
     for paragraph_builder_group in paragraph_builder_groups {
         let mut group_offset_y = global_offset_y;
         let group_len = paragraph_builder_group.len();
 
-        for paragraph_builder in paragraph_builder_group.iter_mut() {
+        for (paragraph_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut paragraph = paragraph_builder.build();
-            paragraph.layout(paragraph_width);
-            let paragraph_height = paragraph.height();
+            paragraph.layout(text_width);
             let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
             paragraph.paint(canvas, xy);
+
+            let line_metrics = paragraph.get_line_metrics();
+            if paragraph_index == group_len - 1 {
+                if line_metrics.is_empty() {
+                    group_offset_y += normalized_line_height;
+                } else {
+                    normalized_line_height = paragraph.ideographic_baseline();
+                    group_offset_y += paragraph.ideographic_baseline() * line_metrics.len() as f32;
+                }
+            }
 
             for line_metrics in paragraph.get_line_metrics().iter() {
                 render_text_decoration(canvas, &paragraph, paragraph_builder, line_metrics, xy);
             }
-
-            if group_len == 1 {
-                group_offset_y += paragraph_height;
-            }
         }
 
-        if group_len > 1 {
-            let mut first_paragraph = paragraph_builder_group[0].build();
-            first_paragraph.layout(paragraph_width);
-            global_offset_y += first_paragraph.height();
-        } else {
-            global_offset_y = group_offset_y;
-        }
+        global_offset_y = group_offset_y;
     }
 }
 
@@ -285,12 +320,21 @@ fn calculate_decoration_metrics(
             .abs()
             .max(font_metrics.x_height.abs());
         let min_thickness = (font_size * 0.06).max(1.0);
-        let thickness = font_metrics
-            .underline_thickness()
-            .unwrap_or(1.0)
+
+        // Magic numbers for line thickness partially based on Chromium
+        // (see https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/render_text.cc
+        let raw_font_size = style_metric.text_style.font_size();
+        let thickness_factor = raw_font_size.powf(0.4) * 6.0 / 18.0;
+
+        let thickness = (font_metrics.underline_thickness().unwrap_or(1.0) * thickness_factor)
             .max(min_thickness);
+
         if style_metric.text_style.decoration().ty == TextDecoration::UNDERLINE {
-            let y = line_baseline + font_metrics.underline_position().unwrap_or(thickness);
+            // Same gap from baseline to underline as in Chromium
+            // (see https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/render_text.cc
+            let gap_scaling = raw_font_size * 1.0 / 9.0;
+            let y = line_baseline + gap_scaling;
+
             max_underline_thickness = max_underline_thickness.max(thickness);
             underline_y = Some(y);
         }
@@ -338,7 +382,7 @@ fn render_text_decoration(
     let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
         calculate_decoration_metrics(&style_metrics, line_baseline);
 
-    // Draw decorations per segment (text leaf)
+    // Draw decorations per segment (text span)
     for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
         let text_style = &style_metric.text_style;
         let style_end = style_metrics
@@ -411,6 +455,7 @@ fn render_text_decoration(
     }
 }
 
+#[allow(dead_code)]
 fn calculate_total_paragraphs_height(paragraphs: &mut [ParagraphBuilder], width: f32) -> f32 {
     paragraphs
         .iter_mut()
@@ -422,6 +467,7 @@ fn calculate_total_paragraphs_height(paragraphs: &mut [ParagraphBuilder], width:
         .sum()
 }
 
+#[allow(dead_code)]
 fn calculate_all_paragraphs_height(
     paragraph_groups: &mut [Vec<ParagraphBuilder>],
     width: f32,

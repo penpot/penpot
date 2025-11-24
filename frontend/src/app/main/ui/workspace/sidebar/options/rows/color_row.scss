@@ -146,7 +146,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  block-size: $sz-28;
+  block-size: $sz-32;
   padding: 0 var(--sp-xxs) 0 var(--sp-s);
   border-radius: $br-8 0 0 $br-8;
   background-color: transparent;
@@ -300,8 +300,12 @@
   @include textEllipsis;
   color: var(--token-color-wrapper-foreground-color);
   block-size: $sz-32;
-  display: flex;
-  align-items: center;
+  line-height: $sz-32;
+}
+
+.token-tooltip {
+  min-width: 0;
+  inline-size: inherit;
 }
 
 .token-name-tooltip {

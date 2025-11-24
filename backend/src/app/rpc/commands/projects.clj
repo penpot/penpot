@@ -70,7 +70,27 @@
 
 ;; --- QUERY: Get projects
 
-(declare get-projects)
+(def ^:private sql:projects
+  "SELECT p.*,
+          coalesce(tpp.is_pinned, false) as is_pinned,
+          (SELECT count(*) FROM file AS f
+            WHERE f.project_id = p.id
+              AND f.deleted_at is null) AS count,
+          (SELECT count(*) FROM file AS f
+            WHERE f.project_id = p.id) AS total_count
+     FROM project AS p
+    INNER JOIN team AS t ON (t.id = p.team_id)
+     LEFT JOIN team_project_profile_rel AS tpp
+            ON (tpp.project_id = p.id AND
+                tpp.team_id = p.team_id AND
+                tpp.profile_id = ?)
+    WHERE p.team_id = ?
+      AND t.deleted_at is null
+    ORDER BY p.modified_at DESC")
+
+(defn get-projects
+  [conn profile-id team-id]
+  (db/exec! conn [sql:projects profile-id team-id]))
 
 (def ^:private schema:get-projects
   [:map {:title "get-projects"}
@@ -78,32 +98,11 @@
 
 (sv/defmethod ::get-projects
   {::doc/added "1.18"
+   ::doc/changes [["2.12" "This endpoint now return deleted but recoverable projects"]]
    ::sm/params schema:get-projects}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (teams/check-read-permissions! conn profile-id team-id)
-    (get-projects conn profile-id team-id)))
-
-(def sql:projects
-  "select p.*,
-          coalesce(tpp.is_pinned, false) as is_pinned,
-          (select count(*) from file as f
-            where f.project_id = p.id
-              and deleted_at is null) as count
-     from project as p
-    inner join team as t on (t.id = p.team_id)
-     left join team_project_profile_rel as tpp
-            on (tpp.project_id = p.id and
-                tpp.team_id = p.team_id and
-                tpp.profile_id = ?)
-    where p.team_id = ?
-      and p.deleted_at is null
-      and t.deleted_at is null
-    order by p.modified_at desc")
-
-(defn get-projects
-  [conn profile-id team-id]
-  (db/exec! conn [sql:projects profile-id team-id]))
+  [cfg {:keys [::rpc/profile-id team-id]}]
+  (teams/check-read-permissions! cfg profile-id team-id)
+  (get-projects cfg profile-id team-id))
 
 ;; --- QUERY: Get all projects
 
@@ -170,12 +169,19 @@
 ;; --- MUTATION: Create Project
 
 (defn- create-project
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
-  (let [project (teams/create-project conn params)]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at profile-id team-id] :as params}]
+  (assert (ct/inst? request-at) "expect request-at assigned")
+  (let [params    (-> params
+                      (assoc :created-at request-at)
+                      (assoc :modified-at request-at))
+        project   (teams/create-project conn params)
+        timestamp (::rpc/request-at params)]
     (teams/create-project-role conn profile-id (:id project) :owner)
     (db/insert! conn :team-project-profile-rel
                 {:project-id (:id project)
                  :profile-id profile-id
+                 :created-at timestamp
+                 :modified-at timestamp
                  :team-id team-id
                  :is-pinned false})
     (assoc project :is-pinned false)))

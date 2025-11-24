@@ -7,7 +7,9 @@
 (ns app.config
   (:refer-clojure :exclude [get])
   (:require
-   ["process" :as process]
+   ["node:buffer" :as buffer]
+   ["node:crypto" :as crypto]
+   ["node:process" :as process]
    [app.common.data :as d]
    [app.common.flags :as flags]
    [app.common.schema :as sm]
@@ -21,13 +23,14 @@
    :host "localhost"
    :http-server-port 6061
    :http-server-host "0.0.0.0"
-   :tempdir "/tmp/penpot-exporter"
+   :tempdir "/tmp/penpot"
    :redis-uri "redis://redis/0"})
 
-(def ^:private
-  schema:config
+(def ^:private schema:config
   [:map {:title "config"}
+   [:secret-key :string]
    [:public-uri {:optional true} ::sm/uri]
+   [:management-api-key {:optional true} :string]
    [:host {:optional true} :string]
    [:tenant {:optional true} :string]
    [:flags {:optional true} [::sm/set :keyword]]
@@ -93,3 +96,10 @@
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+(def management-key
+  (or (c/get config :management-api-key)
+      (let [secret-key  (c/get config :secret-key)
+            derived-key (crypto/hkdfSync "blake2b512" secret-key, "management" "" 32)]
+        (-> (.from buffer/Buffer derived-key)
+            (.toString "base64url")))))

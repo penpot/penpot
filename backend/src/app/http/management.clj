@@ -13,7 +13,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.http.access-token :refer [get-token]]
+   [app.http.middleware :as mw]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
@@ -31,20 +31,6 @@
 (defmethod ig/assert-key ::routes
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool"))
-
-(def ^:private auth
-  {:name ::auth
-   :compile
-   (fn [_ _]
-     (fn [handler shared-key]
-       (if shared-key
-         (fn [request]
-           (let [token (get-token request)]
-             (if (= token shared-key)
-               (handler request)
-               {::yres/status 403})))
-         (fn [_ _]
-           {::yres/status 403}))))})
 
 (def ^:private default-system
   {:name ::default-system
@@ -64,23 +50,27 @@
            (db/tx-run! cfg handler request)))))})
 
 (defmethod ig/init-key ::routes
-  [_ cfg]
-  ["" {:middleware [[auth (cf/get :management-api-shared-key)]
-                    [default-system cfg]
-                    [transaction]]}
-   ["/authenticate"
-    {:handler authenticate
-     :allowed-methods #{:post}}]
+  [_ {:keys [::setup/props] :as cfg}]
 
-   ["/get-customer"
-    {:handler get-customer
-     :transaction true
-     :allowed-methods #{:post}}]
+  (let [management-key (or (cf/get :management-api-key)
+                           (get props :management-key))]
 
-   ["/update-customer"
-    {:handler update-customer
-     :allowed-methods #{:post}
-     :transaction true}]])
+    ["" {:middleware [[mw/shared-key-auth management-key]
+                      [default-system cfg]
+                      [transaction]]}
+     ["/authenticate"
+      {:handler authenticate
+       :allowed-methods #{:post}}]
+
+     ["/get-customer"
+      {:handler get-customer
+       :transaction true
+       :allowed-methods #{:post}}]
+
+     ["/update-customer"
+      {:handler update-customer
+       :allowed-methods #{:post}
+       :transaction true}]]))
 
 ;; ---- HELPERS
 

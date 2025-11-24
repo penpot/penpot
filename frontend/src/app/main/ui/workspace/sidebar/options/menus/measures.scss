@@ -5,20 +5,20 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set {
   display: grid;
-  margin-bottom: var(--sp-s);
-  // NOTE: this does not follow the 8-column grid and the size is not normalized,
-  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
-  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  grid-template-columns:
+    var(--grid-exception-input-width) /* first input block */
+    var(--grid-exception-input-width) /* second input block */
+    var(--sp-xxxl); /* action button */
   gap: var(--sp-xs);
+  margin-bottom: var(--sp-s);
 }
 
 .presets {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
   grid-column: 1 / -1;
 }
 
@@ -188,6 +188,7 @@
   @extend .button-icon;
 }
 
+// TODO: Add a proper variable to this sizing
 .numeric-input-measures {
-  --dropdown-width: 247px;
+  --dropdown-width: var(--7-columns-dropdown-width);
 }

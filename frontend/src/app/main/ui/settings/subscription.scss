@@ -72,10 +72,15 @@
 }
 
 .plan-card {
-  border: $b-1 solid var(--color-foreground-secondary);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: var(--sp-s);
   margin-block-start: var(--sp-l);
   padding: var(--sp-l);
+}
+
+.plan-card-highlight {
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-accent-select);
 }
 
 .plan-card-header {
@@ -142,7 +147,7 @@
   @include t.use-typography("body-medium");
   @include deprecated.buttonStyle;
   align-items: center;
-  color: var(--color-accent-tertiary);
+  color: var(--color-accent-primary);
   display: flex;
   margin-block-start: var(--sp-m);
   text-align: left;
@@ -152,7 +157,7 @@
   @extend .button-icon;
   height: var(--sp-l);
   width: var(--sp-l);
-  stroke: var(--color-accent-tertiary);
+  stroke: var(--color-accent-primary);
   margin-inline-start: var(--sp-xs);
 }
 
@@ -162,6 +167,10 @@
 
 .bottom-link {
   margin-block-start: var(--sp-xs);
+}
+
+.bottom-button {
+  margin-block-start: var(--sp-xl);
 }
 
 .modal-overlay {

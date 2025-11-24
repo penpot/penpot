@@ -1,0 +1,173 @@
+name: "CI: Tests"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - develop
+      - staging
+
+jobs:
+  # lint:
+  #   name: "Code Linter"
+  #   runs-on: ubuntu-24.04
+  #   container: penpotapp/devenv:latest
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Check clojure code format
+  #       run: |
+  #         corepack enable;
+  #         corepack install;
+  #         yarn install
+  #         yarn run fmt:clj:check
+
+  # test-common:
+  #   name: "Common Tests"
+  #   runs-on: ubuntu-24.04
+  #   container: penpotapp/devenv:latest
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Run tests on JVM
+  #       working-directory: ./common
+  #       run: |
+  #         clojure -M:dev:test
+
+  #     - name: Run tests on NODE
+  #       working-directory: ./common
+  #       run: |
+  #         corepack enable;
+  #         corepack install;
+  #         yarn install;
+  #         yarn run test;
+
+  # test-frontend:
+  #   name: "Frontend Tests"
+  #   runs-on: ubuntu-24.04
+  #   container: penpotapp/devenv:latest
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Unit Tests
+  #       working-directory: ./frontend
+  #       run: |
+  #         corepack enable;
+  #         corepack install;
+  #         yarn install;
+  #         yarn run test;
+
+  #     - name: Component Tests
+  #       working-directory: ./frontend
+  #       run: |
+  #           yarn run playwright install chromium --with-deps;
+  #           yarn run build:storybook
+
+  #           npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+  #             "npx http-server storybook-static --port 6006 --silent" \
+  #             "npx wait-on tcp:6006 && yarn test:storybook"
+
+  #     - name: Check SCSS Format
+  #       working-directory: ./frontend
+  #       run: |
+  #         yarn run lint:scss;
+
+  # test-backend:
+  #   name: "Backend Tests"
+  #   runs-on: ubuntu-24.04
+  #   container: penpotapp/devenv:latest
+
+  #   services:
+  #     postgres:
+  #       image: postgres:17
+  #       # Provide the password for postgres
+  #       env:
+  #         POSTGRES_USER: penpot_test
+  #         POSTGRES_PASSWORD: penpot_test
+  #         POSTGRES_DB: penpot_test
+
+  #       # Set health checks to wait until postgres has started
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+
+  #     redis:
+  #       image: valkey/valkey:9
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  # test-library:
+  #   name: "Library Tests"
+  #   runs-on: ubuntu-24.04
+  #   container: penpotapp/devenv:latest
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Run tests
+  #       working-directory: ./library
+  #       run: |
+  #         corepack enable;
+  #         corepack install;
+  #         yarn install;
+  #         yarn run build:bundle;
+  #         yarn run test;
+
+  test-integration:
+    name: "Integration Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install
+          yarn run build:app:assets
+          yarn run build:app
+          yarn run build:app:libs
+
+      - name: Build WASM
+        working-directory: "./render-wasm"
+        run: |
+          ./build release
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          yarn run playwright install chromium --with-deps
+          yarn run test:e2e -x --workers=1 --reporter=line
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3

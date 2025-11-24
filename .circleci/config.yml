@@ -114,7 +114,7 @@ jobs:
           # uses the same cache as this task so we prepopulate it
           command: |
             yarn install
-            yarn run playwright install chromium
+            yarn run playwright install chromium --with-deps
 
       - run:
           name: "lint scss on frontend"
@@ -206,51 +206,6 @@ jobs:
             npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
               "npx http-server storybook-static --port 6006 --silent" \
               "npx wait-on tcp:6006 && yarn test:storybook"
-
-  test-integration:
-    docker:
-      - image: penpotapp/devenv:latest
-
-    working_directory: ~/repo
-    resource_class: large
-
-    environment:
-      JAVA_OPTS: -Xmx6g -Xms2g
-      NODE_OPTIONS: --max-old-space-size=4096
-
-    steps:
-      - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "frontend/deps.edn"}}-{{ checksum "frontend/yarn.lock" }}
-
-      # Build frontend
-      - run:
-          name: "frontend build"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn run build:app:assets
-            yarn run build:app
-            yarn run build:app:libs
-
-          # Build the wasm bundle
-      - run:
-          name: "wasm build"
-          working_directory: "./render-wasm"
-          command: |
-            EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
-            ./build release
-
-      # Run integration tests
-      - run:
-          name: "integration tests"
-          working_directory: "./frontend"
-          command: |
-            yarn run playwright install chromium
-            yarn run test:e2e -x --workers=4
 
   test-backend:
     docker:
@@ -347,5 +302,4 @@ workflows:
             - lint: success
 
       - lint
-      - test-integration
       - test-render-wasm

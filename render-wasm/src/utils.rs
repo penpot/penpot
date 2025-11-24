@@ -36,3 +36,25 @@ pub fn get_fallback_fonts() -> &'static HashSet<String> {
 pub fn get_font_collection() -> &'static FontCollection {
     with_state_mut!(state, { state.font_collection() })
 }
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum Browser {
+    Firefox = 0,
+    Chrome = 1,
+    Safari = 2,
+    Edge = 3,
+    Unknown = 4,
+}
+
+impl From<u8> for Browser {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Browser::Firefox,
+            1 => Browser::Chrome,
+            2 => Browser::Safari,
+            3 => Browser::Edge,
+            _ => Browser::Unknown,
+        }
+    }
+}

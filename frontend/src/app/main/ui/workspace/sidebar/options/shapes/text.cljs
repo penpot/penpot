@@ -129,14 +129,15 @@
      [:> measures-menu*
       {:ids ids
        :type type
-       :applied-tokens applied-tokens
        :values measure-values
+       :applied-tokens applied-tokens
        :shapes shapes}]
 
      [:& layout-container-menu
       {:type type
        :ids ids
        :values layout-container-values
+       :applied-tokens applied-tokens
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
@@ -168,13 +169,11 @@
       {:ids ids
        :type type
        :values fill-values
-       :shapes shapes
        :applied-tokens applied-tokens}]
 
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values
-                      :shapes shapes
                       :disable-stroke-style true
                       :applied-tokens applied-tokens}]
 

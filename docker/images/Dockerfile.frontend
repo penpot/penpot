@@ -12,13 +12,13 @@ RUN set -ex; \
     mkdir -p /etc/nginx/overrides/location.d/;
 
 ARG BUNDLE_PATH="./bundle-frontend/"
-ADD $BUNDLE_PATH /var/www/app/
-ADD ./files/config.js /var/www/app/js/config.js
-ADD ./files/nginx.conf.template /tmp/nginx.conf.template
-ADD ./files/nginx-resolvers.conf.template /tmp/resolvers.conf.template
-ADD ./files/nginx-mime.types /etc/nginx/mime.types
-ADD ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf
-ADD ./files/nginx-entrypoint.sh /entrypoint.sh
+COPY $BUNDLE_PATH /var/www/app/
+COPY ./files/config.js /var/www/app/js/config.js
+COPY ./files/nginx.conf.template /tmp/nginx.conf.template
+COPY ./files/nginx-resolvers.conf.template /tmp/resolvers.conf.template
+COPY ./files/nginx-mime.types /etc/nginx/mime.types
+COPY ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf
+COPY ./files/nginx-entrypoint.sh /entrypoint.sh
 
 RUN chown -R 1001:0 /var/cache/nginx; \
     chmod -R g+w /var/cache/nginx; \

@@ -515,7 +515,7 @@
             deprecated-icon/menu]]
 
           [:div {:class (stl/css :info-row)}
-           [:span {:class (stl/css :info-label)}  (tr "labels.variant")]
+           [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-style")]
            [:span {:class (stl/css :info-content)} (:font-variant-id typography)]]
 
           [:div {:class (stl/css :info-row)}

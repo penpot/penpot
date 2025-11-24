@@ -54,7 +54,6 @@ volumes:
   penpot_postgres_v15:
   penpot_assets:
   # penpot_traefik:
-  # penpot_minio:
 
 services:
   ## Traefik service declaration example. Consider using it if you are going to expose
@@ -155,13 +154,12 @@ services:
       PENPOT_ASSETS_STORAGE_BACKEND: assets-fs
       PENPOT_STORAGE_ASSETS_FS_DIRECTORY: /opt/data/assets
 
-      ## Also can be configured to to use a S3 compatible storage
-      ## service like MiniIO. Look below for minio service setup.
+      ## Also can be configured to to use a S3 compatible storage.
 
       # AWS_ACCESS_KEY_ID: <KEY_ID>
       # AWS_SECRET_ACCESS_KEY: <ACCESS_KEY>
       # PENPOT_ASSETS_STORAGE_BACKEND: assets-s3
-      # PENPOT_STORAGE_ASSETS_S3_ENDPOINT: http://penpot-minio:9000
+      # PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <ENDPOINT>
       # PENPOT_STORAGE_ASSETS_S3_BUCKET: <BUKET_NAME>
 
       ## Telemetry. When enabled, a periodical process will send anonymous data about this
@@ -262,22 +260,3 @@ services:
       - "1080:1080"
     networks:
       - penpot
-
-  ## Example configuration of MiniIO (S3 compatible object storage service); If you don't
-  ## have preference, then just use filesystem, this is here just for the completeness.
-
-  # minio:
-  #   image: "minio/minio:latest"
-  #   command: minio server /mnt/data --console-address ":9001"
-  #   restart: always
-  #
-  #   volumes:
-  #     - "penpot_minio:/mnt/data"
-  #
-  #   environment:
-  #     - MINIO_ROOT_USER=minioadmin
-  #     - MINIO_ROOT_PASSWORD=minioadmin
-  #
-  #   ports:
-  #     - 9000:9000
-  #     - 9001:9001

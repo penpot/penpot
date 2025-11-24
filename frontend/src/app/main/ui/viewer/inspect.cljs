@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.constants :refer [right-sidebar-default-width right-sidebar-default-max-width]]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -70,7 +71,7 @@
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move]
          set-right-size :set-size
          right-size :size}
-        (use-resize-hook :code 276 276 768 :x true :right)
+        (use-resize-hook :code right-sidebar-default-width right-sidebar-default-width right-sidebar-default-max-width :x true :right)
 
         handle-change-section
         (mf/use-callback
@@ -81,7 +82,7 @@
         (mf/use-callback
          (mf/deps right-size)
          (fn []
-           (set-right-size (if (> right-size 276) 276 768))))]
+           (set-right-size (if (> right-size right-sidebar-default-width) right-sidebar-default-width right-sidebar-default-max-width))))]
 
     (mf/use-effect on-mount)
 
@@ -106,7 +107,7 @@
                                  :not-expand (not can-be-expanded?)
                                  :expanded can-be-expanded?)
 
-            :style #js {"--width" (when can-be-expanded? (dm/str right-size "px"))}}
+            :style #js {"--right-sidebar-width" (when can-be-expanded? (dm/str right-size "px"))}}
       (when can-be-expanded?
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-pointer-down

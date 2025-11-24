@@ -7,6 +7,7 @@
  (ns app.render-wasm.serializers
    (:require
     [app.common.data :as d]
+    [app.common.data.macros :as dm]
     [app.common.uuid :as uuid]
     [app.render-wasm.wasm :as wasm]
     [cuerdas.core :as str]))
@@ -62,6 +63,24 @@
         default (unchecked-get values "rect")]
     (d/nilv (unchecked-get values (d/name type)) default)))
 
+(defn translate-stroke-linecap
+  [stroke-linecap]
+  (let [values (unchecked-get wasm/serializers "stroke-linecap")
+        default (unchecked-get values "butt")]
+    (d/nilv (unchecked-get values (d/name stroke-linecap)) default)))
+
+(defn translate-stroke-linejoin
+  [stroke-linejoin]
+  (let [values (unchecked-get wasm/serializers "stroke-linejoin")
+        default (unchecked-get values "miter")]
+    (d/nilv (unchecked-get values (d/name stroke-linejoin)) default)))
+
+(defn translate-fill-rule
+  [fill-rule]
+  (let [values (unchecked-get wasm/serializers "fill-rule")
+        default (unchecked-get values "nonzero")]
+    (d/nilv (unchecked-get values (d/name fill-rule)) default)))
+
 (defn translate-stroke-style
   [stroke-style]
   (let [values (unchecked-get wasm/serializers "stroke-style")
@@ -76,12 +95,13 @@
 
 (defn serialize-path-attrs
   [svg-attrs]
-  (reduce
-   (fn [acc [key value]]
-     (str/concat
+  (reduce-kv
+   (fn [acc key value]
+     (dm/str
       acc
       (str/kebab key) "\0"
-      value "\0")) "" svg-attrs))
+      value "\0")) ""
+   svg-attrs))
 
 (defn translate-blend-mode
   [blend-mode]
@@ -244,3 +264,13 @@
       "regular" (unchecked-get values "normal")
       "italic" (unchecked-get values "italic")
       default)))
+
+(defn translate-browser
+  [browser]
+  (case browser
+    :firefox 0
+    :chrome 1
+    :safari 2
+    :edge 3
+    :unknown 4
+    4))

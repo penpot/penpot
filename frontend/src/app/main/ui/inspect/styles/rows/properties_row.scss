@@ -53,6 +53,12 @@
   color: var(--title-value);
 }
 
+.tooltip-token-resolved-values {
+  padding: var(--sp-xs) 0 var(--sp-xs) var(--sp-m);
+  margin: 0;
+  list-style-type: disc;
+}
+
 .tooltip-token-wrapper {
   inline-size: 100%;
 }

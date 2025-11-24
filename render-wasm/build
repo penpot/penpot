@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
+
 set -x
 
 _BUILD_NAME="${_BUILD_NAME:-render_wasm}"

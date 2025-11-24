@@ -14,16 +14,16 @@ mod view;
 mod wapi;
 mod wasm;
 
-use indexmap::IndexSet;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
+use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
-pub(crate) static mut STATE: Option<Box<State>> = None;
+pub(crate) static mut STATE: Option<Box<State<'static>>> = None;
 
 #[macro_export]
 macro_rules! with_state_mut {
@@ -57,6 +57,9 @@ macro_rules! with_current_shape_mut {
             STATE.as_mut()
         }
         .expect("Got an invalid state pointer");
+
+        $state.touch_current();
+
         if let Some($shape) = $state.current_shape_mut() {
             $block
         }
@@ -77,7 +80,20 @@ macro_rules! with_current_shape {
     };
 }
 
-/// This is called from JS after the WebGL context has been created.
+#[macro_export]
+macro_rules! with_state_mut_current_shape {
+    ($state:ident, |$shape:ident: &Shape| $block:block) => {
+        let $state = unsafe {
+            #[allow(static_mut_refs)]
+            STATE.as_mut()
+        }
+        .expect("Got an invalid state pointer");
+        if let Some($shape) = $state.current_shape() {
+            $block
+        }
+    };
+}
+
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
     let state_box = Box::new(State::new(width, height));
@@ -87,16 +103,22 @@ pub extern "C" fn init(width: i32, height: i32) {
 }
 
 #[no_mangle]
-pub extern "C" fn clean_up() {
-    unsafe { STATE = None }
-    mem::free_bytes();
+pub extern "C" fn set_browser(browser: u8) {
+    with_state_mut!(state, {
+        state.set_browser(browser);
+    });
 }
 
 #[no_mangle]
-pub extern "C" fn clear_drawing_cache() {
+pub extern "C" fn clean_up() {
     with_state_mut!(state, {
-        state.rebuild_tiles();
+        // Cancel the current animation frame if it exists so
+        // it won't try to render without context
+        let render_state = state.render_state_mut();
+        render_state.cancel_animation_frame();
     });
+    unsafe { STATE = None }
+    mem::free_bytes();
 }
 
 #[no_mangle]
@@ -113,13 +135,14 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
         state.set_background_color(color);
-        state.rebuild_tiles();
+        state.rebuild_tiles_shallow();
     });
 }
 
 #[no_mangle]
 pub extern "C" fn render(_: i32) {
     with_state_mut!(state, {
+        state.rebuild_touched_tiles();
         state
             .start_render_loop(performance::get_time())
             .expect("Error rendering");
@@ -127,8 +150,30 @@ pub extern "C" fn render(_: i32) {
 }
 
 #[no_mangle]
+pub extern "C" fn render_sync() {
+    with_state_mut!(state, {
+        state.rebuild_tiles();
+        state
+            .render_sync(performance::get_time())
+            .expect("Error rendering");
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) {
+    with_state_mut!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        state.rebuild_tiles_from(Some(&id));
+        state
+            .render_sync_shape(&id, performance::get_time())
+            .expect("Error rendering");
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn render_from_cache(_: i32) {
     with_state_mut!(state, {
+        state.render_state.cancel_animation_frame();
         state.render_from_cache();
     });
 }
@@ -173,16 +218,20 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state_mut!(state, {
         let render_state = state.render_state_mut();
-        render_state.viewbox.set_all(zoom, x, y);
-        with_state_mut!(state, {
-            // We can have renders in progress
-            state.render_state.cancel_animation_frame();
-            if state.render_state.options.is_profile_rebuild_tiles() {
-                state.rebuild_tiles();
-            } else {
-                state.rebuild_tiles_shallow();
-            }
-        });
+        render_state.set_view(zoom, x, y);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_view_end() {
+    with_state_mut!(state, {
+        // We can have renders in progress
+        state.render_state.cancel_animation_frame();
+        if state.render_state.options.is_profile_rebuild_tiles() {
+            state.rebuild_tiles();
+        } else {
+            state.rebuild_tiles_shallow();
+        }
     });
 }
 
@@ -239,8 +288,8 @@ pub extern "C" fn set_shape_masked_group(masked: bool) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
-    with_state_mut!(state, {
-        state.set_selrect_for_current_shape(left, top, right, bottom);
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_selrect(left, top, right, bottom);
     });
 }
 
@@ -273,27 +322,151 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     });
 }
 
-#[no_mangle]
-pub extern "C" fn set_children() {
-    let bytes = mem::bytes_or_empty();
-
-    let entries: IndexSet<Uuid> = bytes
-        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    let mut deleted = IndexSet::new();
+fn set_children_set(entries: Vec<Uuid>) {
+    let mut deleted = Vec::new();
+    let mut parent_id = None;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        parent_id = Some(shape.id);
         (_, deleted) = shape.compute_children_differences(&entries);
         shape.children = entries.clone();
     });
 
     with_state_mut!(state, {
+        let Some(parent_id) = parent_id else {
+            return;
+        };
+
         for id in deleted {
-            state.delete_shape(id);
+            state.delete_shape_children(parent_id, id);
         }
     });
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_0() {
+    let entries = vec![];
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_1(a1: u32, b1: u32, c1: u32, d1: u32) {
+    let entries = vec![uuid_from_u32_quartet(a1, b1, c1, d1)];
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_2(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+) {
+    let entries = vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+    ];
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_3(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+    a3: u32,
+    b3: u32,
+    c3: u32,
+    d3: u32,
+) {
+    let entries = vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+        uuid_from_u32_quartet(a3, b3, c3, d3),
+    ];
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_4(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+    a3: u32,
+    b3: u32,
+    c3: u32,
+    d3: u32,
+    a4: u32,
+    b4: u32,
+    c4: u32,
+    d4: u32,
+) {
+    let entries = vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+        uuid_from_u32_quartet(a3, b3, c3, d3),
+        uuid_from_u32_quartet(a4, b4, c4, d4),
+    ];
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_5(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+    a3: u32,
+    b3: u32,
+    c3: u32,
+    d3: u32,
+    a4: u32,
+    b4: u32,
+    c4: u32,
+    d4: u32,
+    a5: u32,
+    b5: u32,
+    c5: u32,
+    d5: u32,
+) {
+    let entries = vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+        uuid_from_u32_quartet(a3, b3, c3, d3),
+        uuid_from_u32_quartet(a4, b4, c4, d4),
+        uuid_from_u32_quartet(a5, b5, c5, d5),
+    ];
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children() {
+    let bytes = mem::bytes_or_empty();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    set_children_set(entries);
 
     if !bytes.is_empty() {
         mem::free_bytes();
@@ -301,10 +474,10 @@ pub extern "C" fn set_children() {
 }
 
 #[no_mangle]
-pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
+pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32, is_thumbnail: bool) -> bool {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        state.render_state().has_image(&id)
+        state.render_state().has_image(&id, is_thumbnail)
     })
 }
 
@@ -362,11 +535,7 @@ pub extern "C" fn get_selection_rect() -> *mut u8 {
     with_state_mut!(state, {
         let bbs: Vec<_> = entries
             .iter()
-            .flat_map(|id| {
-                let default = Matrix::default();
-                let modifier = state.modifiers.get(id).unwrap_or(&default);
-                state.shapes.get(id).map(|b| b.bounds().transform(modifier))
-            })
+            .flat_map(|id| state.shapes.get(id).map(|b| b.bounds()))
             .collect();
 
         let result_bound = if bbs.len() == 1 {
@@ -405,6 +574,8 @@ pub extern "C" fn set_structure_modifiers() {
         .collect();
 
     with_state_mut!(state, {
+        let mut structure = HashMap::new();
+        let mut scale_content = HashMap::new();
         for entry in entries {
             match entry.entry_type {
                 StructureEntryType::ScaleContent => {
@@ -412,18 +583,23 @@ pub extern "C" fn set_structure_modifiers() {
                         continue;
                     };
                     for id in shape.all_children(&state.shapes, true, true) {
-                        state.scale_content.insert(id, entry.value);
+                        scale_content.insert(id, entry.value);
                     }
                 }
                 _ => {
-                    state.structure.entry(entry.parent).or_insert_with(Vec::new);
-                    state
-                        .structure
+                    structure.entry(entry.parent).or_insert_with(Vec::new);
+                    structure
                         .get_mut(&entry.parent)
                         .expect("Parent not found for entry")
                         .push(entry);
                 }
             }
+        }
+        if !scale_content.is_empty() {
+            state.shapes.set_scale_content(scale_content);
+        }
+        if !structure.is_empty() {
+            state.shapes.set_structure(structure);
         }
     });
 
@@ -433,9 +609,7 @@ pub extern "C" fn set_structure_modifiers() {
 #[no_mangle]
 pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
-        state.structure.clear();
-        state.scale_content.clear();
-        state.modifiers.clear();
+        state.shapes.clean_all();
     });
 }
 
@@ -463,18 +637,16 @@ pub extern "C" fn set_modifiers() {
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
-    with_state_mut!(state, {
-        for entry in entries {
-            state.modifiers.insert(entry.id, entry.transform);
-        }
-        state.rebuild_modifier_tiles();
-    });
-}
+    let mut modifiers = HashMap::new();
+    let mut ids = Vec::<Uuid>::new();
+    for entry in entries {
+        modifiers.insert(entry.id, entry.transform);
+        ids.push(entry.id);
+    }
 
-#[no_mangle]
-pub extern "C" fn update_shape_tiles() {
     with_state_mut!(state, {
-        state.update_tile_for_current_shape();
+        state.set_modifiers(modifiers);
+        state.rebuild_modifier_tiles(ids);
     });
 }
 

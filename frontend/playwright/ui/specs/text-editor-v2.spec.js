@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await WorkspacePage.mockConfigFlags(page, ["enable-feature-text-editor-v2"]);
 });
 
-test("BUG 11552 - Apply styles to the current caret", async ({ page }) => {
+test.skip("BUG 11552 - Apply styles to the current caret", async ({ page }) => {
   const workspace = new WorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-11552.json");

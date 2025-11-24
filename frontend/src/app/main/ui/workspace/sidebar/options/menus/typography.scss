@@ -6,8 +6,6 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 
-$width-settings-bar: deprecated.$s-276;
-
 .typography-entry {
   display: flex;
   flex-direction: row;
@@ -204,12 +202,12 @@ $width-settings-bar: deprecated.$s-276;
     display: grid;
     grid-template-columns: 50% 50%;
     height: deprecated.$s-32;
-    --calcualted-width: calc(var(--width) - deprecated.$s-48);
+    --calculated-width: calc(var(--right-sidebar-width) - deprecated.$s-48);
     padding-left: deprecated.$s-2;
     .info-label {
       @include deprecated.bodySmallTypography;
       @include deprecated.textEllipsis;
-      width: calc(var(--calcualted-width) / 2);
+      width: calc(var(--calculated-width) / 2);
       padding-top: deprecated.$s-8;
       color: var(--assets-item-name-foreground-color);
     }
@@ -217,7 +215,7 @@ $width-settings-bar: deprecated.$s-276;
       @include deprecated.bodySmallTypography;
       @include deprecated.textEllipsis;
       padding-top: deprecated.$s-8;
-      width: calc(var(--calcualted-width) / 2);
+      width: calc(var(--calculated-width) / 2);
       color: var(--assets-item-name-foreground-color-hover);
     }
   }
@@ -250,7 +248,7 @@ $width-settings-bar: deprecated.$s-276;
 
 .text-options {
   @include deprecated.flexColumn;
-  max-width: calc(var(--width, $width-settings-bar) - deprecated.$s-16);
+  max-width: var(--options-width);
 
   &:not(.text-options-full-size) {
     position: relative;

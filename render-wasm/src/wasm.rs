@@ -7,4 +7,5 @@ pub mod paths;
 pub mod shadows;
 pub mod shapes;
 pub mod strokes;
+pub mod svg_attrs;
 pub mod text;

@@ -426,7 +426,7 @@
                       (dom/prevent-default event)
                       (when (fn? on-submit)
                         (on-submit form event))))]
-    [:& (mf/provider form-ctx) {:value form}
+    [:> (mf/provider form-ctx) {:value form}
      [:form {:class class :on-submit on-submit'} children]]))
 
 (defn- conj-dedup

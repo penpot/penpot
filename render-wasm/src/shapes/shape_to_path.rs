@@ -1,22 +1,13 @@
-use skia_safe::Matrix;
-
-use super::{Corners, Path, Segment, Shape, StructureEntry, Type};
+use super::{Corners, Path, Segment, Shape, Type};
 use crate::math;
 
 use crate::shapes::text_paths::TextPaths;
-use crate::state::ShapesPool;
-use crate::uuid::Uuid;
-use std::collections::HashMap;
+use crate::state::ShapesPoolRef;
 
 const BEZIER_CIRCLE_C: f32 = 0.551_915_05;
 
 pub trait ToPath {
-    fn to_path(
-        &self,
-        shapes: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) -> Path;
+    fn to_path(&self, shapes: ShapesPoolRef) -> Path;
 }
 
 enum CornerType {
@@ -180,34 +171,26 @@ fn transform_segments(segments: Vec<Segment>, shape: &Shape) -> Vec<Segment> {
 }
 
 impl ToPath for Shape {
-    fn to_path(
-        &self,
-        shapes: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) -> Path {
-        let shape = self.transformed(modifiers.get(&self.id));
-        match shape.shape_type {
+    fn to_path(&self, shapes: ShapesPoolRef) -> Path {
+        match &self.shape_type {
             Type::Frame(ref frame) => {
-                let children = shape.modified_children_ids(structure.get(&shape.id), true);
-                let mut result = Path::new(rect_segments(&shape, frame.corners));
-                for id in children {
-                    let Some(shape) = shapes.get(&id) else {
+                let mut result = Path::new(rect_segments(self, frame.corners));
+                for id in self.children_ids_iter(true) {
+                    let Some(shape) = shapes.get(id) else {
                         continue;
                     };
-                    result = join_paths(result, shape.to_path(shapes, modifiers, structure));
+                    result = join_paths(result, shape.to_path(shapes));
                 }
                 result
             }
 
             Type::Group(_) => {
-                let children = shape.modified_children_ids(structure.get(&shape.id), true);
                 let mut result = Path::default();
-                for id in children {
-                    let Some(shape) = shapes.get(&id) else {
+                for id in self.children_ids_iter(true) {
+                    let Some(shape) = shapes.get(id) else {
                         continue;
                     };
-                    result = join_paths(result, shape.to_path(shapes, modifiers, structure));
+                    result = join_paths(result, shape.to_path(shapes));
                 }
                 // Force closure of the group path
                 let mut segments = result.segments().clone();
@@ -215,13 +198,13 @@ impl ToPath for Shape {
                 Path::new(segments)
             }
 
-            Type::Bool(bool_data) => bool_data.path,
+            Type::Bool(bool_data) => bool_data.path.clone(),
 
-            Type::Rect(ref rect) => Path::new(rect_segments(&shape, rect.corners)),
+            Type::Rect(ref rect) => Path::new(rect_segments(self, rect.corners)),
 
-            Type::Path(path_data) => path_data,
+            Type::Path(path_data) => path_data.clone(),
 
-            Type::Circle => Path::new(circle_segments(&shape)),
+            Type::Circle => Path::new(circle_segments(self)),
 
             Type::SVGRaw(_) => Path::default(),
 
@@ -232,7 +215,7 @@ impl ToPath for Shape {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
 
-                Path::new(transform_segments(result.segments().clone(), &shape))
+                Path::new(transform_segments(result.segments().clone(), self))
             }
         }
     }

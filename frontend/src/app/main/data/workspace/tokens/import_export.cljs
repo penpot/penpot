@@ -8,9 +8,8 @@
   (:require
    [app.common.json :as json]
    [app.common.path-names :as cpn]
-   [app.common.types.token :as ctt]
+
    [app.common.types.tokens-lib :as ctob]
-   [app.config :as cf]
    [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.errors :as wte]
@@ -62,17 +61,7 @@
   [decoded-json file-name]
   (try
     {:tokens-lib (ctob/parse-decoded-json decoded-json file-name)
-     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json
-                                                      ;; Filter out FF token-types
-                                                      {:process-token-type
-                                                       (fn [dtcg-token-type]
-                                                         (if (or
-                                                              (and (not (contains? cf/flags :token-units))
-                                                                   (= dtcg-token-type "number"))
-                                                              (and (not (contains? cf/flags :token-typography-types))
-                                                                   (contains? ctt/ff-typography-keys dtcg-token-type)))
-                                                           nil
-                                                           dtcg-token-type))})}
+     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json {})}
     (catch js/Error e
       (let [err (or (extract-name-error e)
                     (wte/error-ex-info :error.import/invalid-json-data decoded-json e))]

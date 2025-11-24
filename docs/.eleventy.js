@@ -81,6 +81,9 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy("css");
   eleventyConfig.addPassthroughCopy("js");
 
+  // Redirects (for Cloudflare)
+  eleventyConfig.addPassthroughCopy({"_redirects": "_redirects" });
+
   /* Markdown Overrides */
   let markdownLibrary = markdownIt({
     html: true,

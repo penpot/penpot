@@ -160,6 +160,38 @@ Stroke styles are serialized as `u8`:
 | 3     | Mixed  |
 | \_    | Solid  |
 
+## Fill rules
+
+Fill rules are serialized as `u8`
+
+| Value | Field   |
+| ----- | ------  |
+| 0     | Nonzero |
+| 1     | Evenodd |
+| \_    | Nonzero |
+
+## Stroke linecaps
+
+Stroke linecaps are serialized as `u8`
+
+| Value | Field  |
+| ----- | ------ |
+| 0     | Butt   |
+| 1     | Round  |
+| 2     | Square |
+| \_    | Butt   |
+
+## Stroke linejoins
+
+Stroke linejoins are serialized as `u8`
+
+| Value | Field  |
+| ----- | ------ |
+| 0     | Miter  |
+| 1     | Round  |
+| 2     | Bevel  |
+| \_    | Miter  |
+
 ## Bool Operations
 
 Bool operations (`bool-type`) are serialized as `u8`:

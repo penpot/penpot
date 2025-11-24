@@ -25,6 +25,15 @@
    :min-inline-size :layout-item-min-w ;; :min-width
    })
 
+(defn- has-margin?
+  [shape]
+  (let [margin (:layout-item-margin shape)
+        margin-keys [:m1 :m2 :m3 :m4]]
+    (some (fn [key]
+            (and (contains? margin key)
+                 (not= 0 (get margin key))))
+          margin-keys)))
+
 (defn- get-applied-margins-in-shape
   [shape-tokens property]
   (if-let [margin-prop (get shape-prop->margin-prop property)]
@@ -38,12 +47,40 @@
           token (get resolved-tokens applied-tokens-in-shape)]
       token)))
 
+(defn- generate-layout-element-shorthand
+  [shapes objects]
+  (let [shape (first shapes)
+        shorthand-margin (when (and (= (count shapes) 1) (has-margin? shape))
+                           (css/get-css-property objects shape :margin))
+        shorthand-grow (when (and (= (count shapes) 1)
+                                  (ctl/flex-layout-immediate-child? objects shape))
+                         (if-let [flex-value (css/get-css-value objects shape :flex)]
+                           flex-value
+                           0))
+        shorthand-basis 0 ;; Default-value. Currently not supported in the UI
+        shorthand-shrink (when (and (= (count shapes) 1)
+                                    (ctl/flex-layout-immediate-child? objects shape))
+                           (if-let [flex-shrink-value (css/get-css-value objects shape :flex-shrink)]
+                             flex-shrink-value
+                             0))
+        shorthand-flex (dm/str "flex: " shorthand-grow " " shorthand-basis " " shorthand-shrink ";")
+        shorthand (dm/str  shorthand-margin " " shorthand-flex)]
+    shorthand))
+
 (mf/defc layout-element-panel*
-  [{:keys [shapes objects resolved-tokens layout-element-properties]}]
-  (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))]
+  [{:keys [shapes objects resolved-tokens layout-element-properties on-layout-element-shorthand]}]
+  (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
+        shorthand* (mf/use-state #(generate-layout-element-shorthand shapes objects))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (mf/deps shorthand on-layout-element-shorthand shapes objects)
+     (fn []
+       (reset! shorthand* (generate-layout-element-shorthand shapes objects))
+       (on-layout-element-shorthand {:panel :layout-element
+                                     :property shorthand})))
     [:div {:class (stl/css :layout-element-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "layout-element-shape"}
+       [:div {:key (:id shape) :class (stl/css :layout-element-shape)}
         (for [property layout-element-properties]
           (when-let [value (css/get-css-value objects shape property)]
             (let [property-name (cmm/get-css-rule-humanized property)

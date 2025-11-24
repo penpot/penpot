@@ -66,9 +66,9 @@
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
   (->> modifiers
-       (filter #(contains? selected (:id %)))
+       (filter #(contains? selected (first %)))
        (reduce
-        (fn [objects {:keys [id transform]}]
+        (fn [objects [id transform]]
           (update objects id gsh/apply-transform transform))
         objects)))
 
@@ -113,8 +113,7 @@
         objects-modified
         (mf/with-memo
           [base-objects wasm-modifiers]
-          (binding [cts/*wasm-sync* false]
-            (apply-modifiers-to-selected selected base-objects wasm-modifiers)))
+          (apply-modifiers-to-selected selected base-objects wasm-modifiers))
 
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
@@ -160,6 +159,8 @@
                                  (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
+        prev-zoom         (mf/use-ref zoom)
+
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
@@ -296,8 +297,9 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)))))
+                         (let [init? (wasm.api/init-canvas-context canvas)]
+                           (reset! canvas-init? init?)
+                           (when-not init? (js/alert "WebGL not supported")))))))
         (fn []
           (wasm.api/clear-canvas))))
 
@@ -311,7 +313,6 @@
             (wasm.api/set-shape-text-content edition content)
             (let [dimension (wasm.api/get-text-dimensions)]
               (st/emit! (dwt/resize-text-editor edition dimension))
-              (wasm.api/clear-drawing-cache)
               (wasm.api/request-render "content"))))))
 
     (mf/with-effect [vport]
@@ -324,7 +325,7 @@
 
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
-        (wasm.api/initialize base-objects zoom vbox background)
+        (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
 
     (mf/with-effect [focus]
@@ -335,7 +336,8 @@
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-box zoom vbox)))
+        (wasm.api/set-view-box (mf/ref-val prev-zoom) zoom vbox))
+      (mf/set-ref-val! prev-zoom zoom))
 
     (mf/with-effect [background]
       (when (and @canvas-init? initialized?)
@@ -431,6 +433,7 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
+                                      :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
                                           :ref text-editor-ref}]))

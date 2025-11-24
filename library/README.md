@@ -58,14 +58,14 @@ Build the library:
 Login on npm:
 
 ```bash
-yarn npm login
+npm login
 ```
 
 Publish on npm:
 
 
 ```bash
-yarn npm publish --access public
+npm publish --access public
 ```
 
 ## License

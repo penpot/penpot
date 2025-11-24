@@ -248,14 +248,6 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
-  await workspacePage.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=e179d9df-de35-80bf-8005-2861e849b3f7",
-    "workspace/get-file-fragment-9066-1.json",
-  );
-  await workspacePage.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=e179d9df-de35-80bf-8005-2861e849785e",
-    "workspace/get-file-fragment-9066-2.json",
-  );
 
   await workspacePage.mockRPC(
     "update-file?id=*",

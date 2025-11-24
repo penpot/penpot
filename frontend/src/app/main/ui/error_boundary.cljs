@@ -34,6 +34,7 @@
           ;; very small amount of time, so we debounce for 100ms for
           ;; avoid duplicate and redundant reports
           (gfn/debounce (fn [error info]
+                          (js/console.log "Cause stack: \n" (.-stack error))
                           (js/console.error
                            "Component trace: \n"
                            (unchecked-get info "componentStack")

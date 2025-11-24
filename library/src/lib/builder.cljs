@@ -11,6 +11,7 @@
    [app.common.files.builder :as fb]
    [app.common.json :as json]
    [app.common.schema :as sm]
+   [app.common.types.tokens-lib :refer [read-multi-set-dtcg]]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]))
 
@@ -262,6 +263,15 @@
                        :name (get fmedia :name)
                        :mtype (get fmedia :mtype)}]
             (json/->js (d/without-nils image))))))
+
+    :addTokensLib
+    (fn [data]
+      (try
+        (let [tlib (read-multi-set-dtcg data)]
+          (swap! state fb/add-tokens-lib tlib)
+          nil)
+        (catch :default cause
+          (handle-exception cause))))
 
     :genId
     (fn []

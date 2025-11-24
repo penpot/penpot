@@ -11,12 +11,21 @@
   --title-padding: var(--sp-s);
   --title-color: var(--color-foreground-primary);
   --arrow-color: var(--color-foreground-secondary);
+  --box-border-color: var(--color-background-primary);
+
+  // TODO: this must be a custom property in the design system
+  --lowEmphasis-background: #121214;
 
   padding-block: var(--sp-s);
+  padding-inline: var(--sp-m);
+  background-color: var(--lowEmphasis-background);
+
+  border-block-end: 2px solid var(--box-border-color);
 }
 
 .disclosure-header {
   display: flex;
+  align-items: center;
   gap: var(--title-gap);
   padding-block: var(--title-padding);
 }
@@ -35,7 +44,6 @@
 
 .panel-title {
   @include use-typography("headline-small");
-  text-transform: capitalize;
   flex: 1;
   color: var(--title-color);
 }

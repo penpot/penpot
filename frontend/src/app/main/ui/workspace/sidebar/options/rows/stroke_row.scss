@@ -6,6 +6,7 @@
 
 @use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .stroke-data {
   display: flex;
@@ -30,10 +31,8 @@
 }
 
 .stroke-options {
-  display: grid;
+  @include sidebar.option-grid-structure;
   align-items: center;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
 }
 
 .stroke-width-input {

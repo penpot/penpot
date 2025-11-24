@@ -63,6 +63,7 @@
    ctt/text-case-keys dwta/update-text-case
    ctt/text-decoration-keys dwta/update-text-decoration
    ctt/typography-token-keys dwta/update-typography
+   ctt/shadow-keys dwta/update-shadow
    #{:line-height} dwta/update-line-height
 
    ;; Layout

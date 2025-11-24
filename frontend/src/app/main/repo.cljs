@@ -77,6 +77,9 @@
    {:query-params [:file-id :revn]
     :form-data? true}
 
+   ::sse/export-binfile
+   {:stream? true}
+
    ::sse/clone-template
    {:stream? true}
 
@@ -115,7 +118,7 @@
 
         request
         {:method method
-         :uri (u/join cf/public-uri "api/rpc/command/" nid)
+         :uri (u/join cf/public-uri "api/main/methods/" nid)
          :credentials "include"
          :headers {"accept" "application/transit+json,text/event-stream,*/*"
                    "x-external-session-id" (cf/external-session-id)
@@ -171,9 +174,8 @@
   (send! id params nil))
 
 (defmethod cmd! :login-with-oidc
-  [_ {:keys [provider] :as params}]
-  (let [uri    (u/join cf/public-uri "api/auth/oauth/" (d/name provider))
-        params (dissoc params :provider)]
+  [_ params]
+  (let [uri (u/join cf/public-uri "api/auth/oidc")]
     (->> (http/send! {:method :post
                       :uri uri
                       :credentials "include"
@@ -207,7 +209,7 @@
 (defmethod cmd! ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
-                    :uri  (u/join cf/public-uri "api/rpc/command/" (name id))
+                    :uri  (u/join cf/public-uri "api/main/methods/" (name id))
                     :credentials "include"
                     :headers {"x-external-session-id" (cf/external-session-id)
                               "x-event-origin" (::ev/origin (meta params))}

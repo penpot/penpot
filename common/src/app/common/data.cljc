@@ -1048,6 +1048,12 @@
             (into [elem])
             (into (subvec without-elem insert-pos)))))))
 
+(defn invert-map
+  "Returns a map with keys and values swapped.
+   If the input map has duplicate values, later entries overwrite earlier ones."
+  [m]
+  (into {} (map (fn [[k v]] [v k]) m)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

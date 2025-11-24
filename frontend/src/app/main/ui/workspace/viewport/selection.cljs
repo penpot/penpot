@@ -15,6 +15,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
@@ -25,7 +26,6 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def rotation-handler-size 20)
@@ -327,23 +327,11 @@
              :style {:fill (if (dbg/enabled? :handlers) "yellow" "none")
                      :stroke-width 0}}]]))
 
-(def workspace-selrect-transform
-  (l/derived :workspace-selrect st/state))
-
-(defn get-selrect
-  [selrect-transform shape]
-  (if (some? selrect-transform)
-    (let [{:keys [center width height transform]} selrect-transform]
-      [(gsh/center->rect center width height)
-       (gmt/transform-in center transform)])
-    [(dm/get-prop shape :selrect)
-     (gsh/transform-matrix shape)]))
-
 (mf/defc controls-selection*
   [{:keys [shape zoom color on-move-selected on-context-menu disabled]}]
-  (let [selrect-transform (mf/deref workspace-selrect-transform)
+  (let [selrect-transform (mf/deref refs/workspace-selrect)
         transform-type    (mf/deref refs/current-transform)
-        [selrect transform] (get-selrect selrect-transform shape)]
+        [selrect transform] (dsh/get-selrect selrect-transform shape)]
 
     (when (and (some? selrect)
                (not (or (= transform-type :move)
@@ -360,7 +348,7 @@
 (mf/defc controls-handlers*
   {::mf/private true}
   [{:keys [shape zoom color on-resize on-rotate disabled]}]
-  (let [selrect-transform (mf/deref workspace-selrect-transform)
+  (let [selrect-transform (mf/deref refs/workspace-selrect)
         transform-type (mf/deref refs/current-transform)
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
@@ -368,7 +356,7 @@
         layout         (mf/deref refs/workspace-layout)
         scale-text?    (contains? layout :scale-text)
 
-        [selrect transform] (get-selrect selrect-transform shape)
+        [selrect transform] (dsh/get-selrect selrect-transform shape)
 
         rotation       (-> (gpt/point 1 0)
                            (gpt/transform (:transform shape))
@@ -381,6 +369,7 @@
                            (and flip-y (not flip-x)))]
 
     (when (and (not ^boolean read-only?)
+               (not (:blocked shape))
                (not (or (= transform-type :move)
                         (= transform-type :rotate))))
 

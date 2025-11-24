@@ -3,7 +3,6 @@
   (:require
    [app.common.data :as d]
    [app.common.types.shape.layout :as ctsl]
-   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
@@ -23,21 +22,13 @@
 (def ref:token-type-open-status
   (l/derived (l/key :open-status-by-type) refs/workspace-tokens))
 
-(defn- remove-keys [m ks]
-  (d/removem (comp ks key) m))
-
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
-  tokens exist for that type. Sort each group alphabetically (by their type).
-  If `:token-units` is not in cf/flags, number tokens are excluded."
+  tokens exist for that type. Sort each group alphabetically (by their type)."
   [tokens-by-type]
-  (let [token-units? (contains? cf/flags :token-units)
-        token-typography-composite-types? (contains? cf/flags :token-typography-composite)
-        token-typography-types? (contains? cf/flags :token-typography-types)
+  (let [token-shadow? (contains? cf/flags :token-shadow)
         all-types (cond-> dwta/token-properties
-                    (not token-units?) (dissoc :number)
-                    (not token-typography-composite-types?) (remove-keys ctt/typography-token-keys)
-                    (not token-typography-types?) (remove-keys ctt/ff-typography-keys))
+                    (not token-shadow?) (dissoc :shadow))
         all-types (-> all-types keys seq)]
     (loop [empty  #js []
            filled #js []
@@ -145,6 +136,7 @@
          [:> token-group* {:key (name type)
                            :is-open (get open-status type false)
                            :type type
+                           :selected-ids selected
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens

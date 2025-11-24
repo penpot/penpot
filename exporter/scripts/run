@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $0);
+source $SCRIPT_DIR/../../backend/scripts/_env;
+
+exec node target/app.js

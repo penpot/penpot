@@ -124,7 +124,7 @@
 
 (mf/defc box-shadow-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/box-shadow}
+   ::mf/register-as :tokens/shadow}
   [properties]
   [:& token-update-create-modal properties])
 

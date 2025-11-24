@@ -24,7 +24,7 @@ function tryOffset(offset) {
  * @throws {TypeError}
  */
 function tryString(str) {
-  if (typeof str !== "string") throw new TypeError("Invalid string");
+  if (typeof str !== "string") throw new TypeError(`Invalid string ${str}`);
 }
 
 /**
@@ -101,4 +101,67 @@ export function removeSlice(str, start, end) {
   tryOffset(start);
   tryOffset(end);
   return str.slice(0, start) + str.slice(end);
+}
+
+/**
+ * Finds the start of the previous word from the given offset.
+ * Word boundaries are defined by whitespace and punctuation.
+ *
+ * @param {string} str
+ * @param {number} offset
+ * @returns {number}
+ */
+export function findPreviousWordBoundary(str, offset) {
+  if (str == null) {
+    return 0;
+  }
+
+  tryString(str);
+  tryOffset(offset);
+
+  if (offset === 0) {
+    return 0;
+  }
+
+  // Start from the character before the cursor
+  let pos = offset - 1;
+
+  // Skip any whitespace characters
+  while (pos >= 0 && /\s/.test(str[pos])) {
+    pos--;
+  }
+
+  // If we're now at a non-word character, skip all non-word characters
+  if (pos >= 0 && /\W/.test(str[pos]) && !/\s/.test(str[pos])) {
+    while (pos >= 0 && /\W/.test(str[pos]) && !/\s/.test(str[pos])) {
+      pos--;
+    }
+  }
+  // Otherwise, skip all word characters
+  else if (pos >= 0 && /\w/.test(str[pos])) {
+    while (pos >= 0 && /\w/.test(str[pos])) {
+      pos--;
+    }
+  }
+
+  return pos + 1;
+}
+
+/**
+ * Removes a word backward from specified offset.
+ *
+ * @param {string} str
+ * @param {number} offset
+ * @returns {string}
+ */
+export function removeWordBackward(str, offset) {
+  if (str == null) {
+    return "";
+  }
+
+  tryString(str);
+  tryOffset(offset);
+
+  const wordStart = findPreviousWordBoundary(str, offset);
+  return str.slice(0, wordStart) + str.slice(offset);
 }

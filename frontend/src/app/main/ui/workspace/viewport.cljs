@@ -147,6 +147,8 @@
         [viewport-ref on-viewport-ref]
         (create-viewport-ref)
 
+        canvas-ref        (mf/use-ref nil)
+
         ;; VARS
         disable-paste     (mf/use-var false)
         in-viewport?      (mf/use-var false)
@@ -259,7 +261,7 @@
         show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
 
-        disabled-guides?         (or drawing-tool transform path-drawing? path-editing?)
+        disabled-guides?         (or drawing-tool transform path-drawing? path-editing? @space? @mod?)
 
         single-select?           (= (count selected-shapes) 1)
 
@@ -440,6 +442,7 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
+                                      :canvas-ref canvas-ref
                                       :modifiers modifiers}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
                                           :modifiers modifiers}]))

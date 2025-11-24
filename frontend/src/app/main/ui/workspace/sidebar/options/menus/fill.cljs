@@ -56,20 +56,17 @@
              n-vals  (unchecked-get n-props "values")
              o-fills (get o-vals :fills)
              n-fills (get n-vals :fills)
-             o-objects (get o-vals :objects)
-             n-objects (get n-vals :objects)
              o-applied-tokens (get o-vals :applied-tokens)
              n-applied-tokens (get n-vals :applied-tokens)
              o-hide  (get o-vals :hide-fill-on-export)
              n-hide  (get n-vals :hide-fill-on-export)]
          (and (identical? o-hide n-hide)
               (identical? o-applied-tokens n-applied-tokens)
-              (identical? o-fills n-fills)
-              (identical? o-objects n-objects)))))
+              (identical? o-fills n-fills)))))
 
 (mf/defc fill-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values applied-tokens shapes objects]}]
+  [{:keys [ids type values applied-tokens]}]
 
   (let [fills          (get values :fills)
         hide-on-export (get values :hide-fill-on-export false)
@@ -175,25 +172,13 @@
 
         on-token-change
         (mf/use-fn
-         (mf/deps shapes objects)
+         (mf/deps ids)
          (fn [_ token]
-           (let [expanded-shapes
-                 (if (= 1 (count shapes))
-                   (let [shape (first shapes)]
-                     (if (= (:type shape) :group)
-                       (keep objects (:shapes shape))
-                       [shape]))
-
-                   (mapcat (fn [shape]
-                             (if (= (:type shape) :group)
-                               (keep objects (:shapes shape))
-                               [shape]))
-                           shapes))]
-
-             (st/emit!
-              (dwta/toggle-token {:token token
-                                  :attrs #{:fill}
-                                  :shapes expanded-shapes})))))
+           (st/emit!
+            (dwta/toggle-token {:token token
+                                :attrs #{:fill}
+                                :shape-ids ids
+                                :expand-with-children true}))))
 
         on-detach-token
         (mf/use-fn
@@ -256,7 +241,9 @@
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus
-                               :applied-token fill-token-applied
+                               :applied-token (if (= index 0)
+                                                fill-token-applied
+                                                nil)
                                :on-token-change on-token-change
                                :origin :fill
                                :select-on-focus (not disable-drag?)

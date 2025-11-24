@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-
 use crate::math::{Matrix, Point, Rect};
 
-use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
+use crate::shapes::{
+    Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs, Type,
+};
 use skia_safe::{self as skia, ImageFilter, RRect};
 
-use super::{RenderState, SurfaceId};
+use super::{filters, RenderState, SurfaceId};
 use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
@@ -17,7 +17,7 @@ fn draw_stroke_on_rect(
     rect: &Rect,
     selrect: &Rect,
     corners: &Option<Corners>,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -53,7 +53,7 @@ fn draw_stroke_on_circle(
     stroke: &Stroke,
     rect: &Rect,
     selrect: &Rect,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -130,7 +130,7 @@ pub fn draw_stroke_on_path(
     path: &Path,
     selrect: &Rect,
     path_transform: Option<&Matrix>,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -217,7 +217,7 @@ fn handle_stroke_caps(
     selrect: &Rect,
     canvas: &skia::Canvas,
     is_open: bool,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     blur: Option<&ImageFilter>,
     antialias: bool,
@@ -378,6 +378,7 @@ fn draw_image_stroke_in_container(
     stroke: &Stroke,
     image_fill: &ImageFill,
     antialias: bool,
+    surface_id: SurfaceId,
 ) {
     let scale = render_state.get_scale();
     let image = render_state.images.get(&image_fill.id());
@@ -386,10 +387,10 @@ fn draw_image_stroke_in_container(
     }
 
     let size = image.unwrap().dimensions();
-    let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
+    let canvas = render_state.surfaces.canvas(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
-    let svg_attrs = &shape.svg_attrs;
+    let svg_attrs = shape.svg_attrs.as_ref();
 
     // Save canvas and layer state
     let mut pb = skia::Paint::default();
@@ -523,20 +524,106 @@ pub fn render(
     shadow: Option<&ImageFilter>,
     antialias: bool,
 ) {
+    render_internal(
+        render_state,
+        shape,
+        stroke,
+        surface_id,
+        shadow,
+        antialias,
+        false,
+    );
+}
+
+/// Internal function to render a stroke with support for offscreen blur rendering.
+///
+/// # Parameters
+/// - `render_state`: The rendering state containing surfaces and context.
+/// - `shape`: The shape to render the stroke for.
+/// - `stroke`: The stroke configuration (width, fill, style, etc.).
+/// - `surface_id`: Optional target surface ID. Defaults to `SurfaceId::Strokes` if `None`.
+/// - `shadow`: Optional shadow filter to apply to the stroke.
+/// - `antialias`: Whether to use antialiasing for rendering.
+/// - `bypass_filter`:
+///   - If `false`, attempts to use offscreen filter surface for blur effects.
+///   - If `true`, renders directly to the target surface (used for recursive calls to avoid infinite loops when rendering into the filter surface).
+///
+/// # Behavior
+/// When `bypass_filter` is `false` and the shape has a blur filter:
+/// 1. Calculates bounds including stroke width and cap margins.
+/// 2. Attempts to render into an offscreen filter surface at unscaled coordinates.
+/// 3. If successful, composites the result back to the target surface and returns early.
+/// 4. If the offscreen render fails or `bypass_filter` is `true`, renders directly to the target
+///    surface using the appropriate drawing function for the shape type.
+///
+/// The recursive call with `bypass_filter=true` ensures that when rendering into the filter
+/// surface, we don't attempt to create another filter surface, avoiding infinite recursion.
+#[allow(clippy::too_many_arguments)]
+fn render_internal(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    stroke: &Stroke,
+    surface_id: Option<SurfaceId>,
+    shadow: Option<&ImageFilter>,
+    antialias: bool,
+    bypass_filter: bool,
+) {
+    if !bypass_filter {
+        if let Some(image_filter) = shape.image_filter(1.) {
+            // We have to calculate the bounds considering the stroke and the cap margins.
+            let mut content_bounds = shape.selrect;
+            let stroke_margin = stroke.bounds_width(shape.is_open());
+            if stroke_margin > 0.0 {
+                content_bounds.inset((-stroke_margin, -stroke_margin));
+            }
+            let cap_margin = stroke.cap_bounds_margin();
+            if cap_margin > 0.0 {
+                content_bounds.inset((-cap_margin, -cap_margin));
+            }
+            let bounds = image_filter.compute_fast_bounds(content_bounds);
+
+            let target = surface_id.unwrap_or(SurfaceId::Strokes);
+            if filters::render_with_filter_surface(
+                render_state,
+                bounds,
+                target,
+                |state, temp_surface| {
+                    render_internal(
+                        state,
+                        shape,
+                        stroke,
+                        Some(temp_surface),
+                        shadow,
+                        antialias,
+                        true,
+                    );
+                },
+            ) {
+                return;
+            }
+        }
+    }
+
     let scale = render_state.get_scale();
-    let canvas = render_state
-        .surfaces
-        .canvas(surface_id.unwrap_or(surface_id.unwrap_or(SurfaceId::Strokes)));
+    let target_surface = surface_id.unwrap_or(SurfaceId::Strokes);
+    let canvas = render_state.surfaces.canvas(target_surface);
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
-    let svg_attrs = &shape.svg_attrs;
+    let svg_attrs = shape.svg_attrs.as_ref();
 
     if !matches!(shape.shape_type, Type::Text(_))
         && shadow.is_none()
         && matches!(stroke.fill, Fill::Image(_))
     {
         if let Fill::Image(image_fill) = &stroke.fill {
-            draw_image_stroke_in_container(render_state, shape, stroke, image_fill, antialias);
+            draw_image_stroke_in_container(
+                render_state,
+                shape,
+                stroke,
+                image_fill,
+                antialias,
+                target_surface,
+            );
         }
     } else {
         match &shape.shape_type {
@@ -603,7 +690,7 @@ pub fn render_text_paths(
         .surfaces
         .canvas(surface_id.unwrap_or(SurfaceId::Strokes));
     let selrect = &shape.selrect;
-    let svg_attrs = &shape.svg_attrs;
+    let svg_attrs = shape.svg_attrs.as_ref();
     let mut paint: skia_safe::Handle<_> =
         stroke.to_text_stroked_paint(false, selrect, svg_attrs, scale, antialias);
 

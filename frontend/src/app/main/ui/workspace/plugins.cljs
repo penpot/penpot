@@ -79,6 +79,7 @@
 
      [:> button* {:class (stl/css :open-button)
                   :variant "secondary"
+                  :type "button"
                   :on-click handle-open-click
                   :title (when-not can-open? (tr "workspace.plugins.error.need-editor"))
                   :disabled (not can-open?)} (tr "workspace.plugins.button-open")]

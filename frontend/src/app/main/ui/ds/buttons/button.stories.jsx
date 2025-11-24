@@ -28,6 +28,7 @@ export default {
     children: "Lorem ipsum",
     disabled: false,
     variant: undefined,
+    type: "button",
   },
   parameters: {
     controls: { exclude: ["children"] },

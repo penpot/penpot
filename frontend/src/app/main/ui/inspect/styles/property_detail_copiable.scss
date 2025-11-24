@@ -12,23 +12,6 @@
   --detail-color: var(--color-foreground-primary);
   --button-min-inline-size: #{$sz-154};
   --button-min-block-size: #{$sz-36};
-}
-
-.property-detail-text {
-  color: var(--detail-color);
-}
-
-.property-detail-text-token {
-  @include use-typography("code-font");
-  --detail-color: var(--color-token-foreground);
-
-  line-height: 1.4;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.property-detail-copiable {
   --button-border-radius: #{$br-4};
   --button-background: none;
 
@@ -68,4 +51,21 @@
 
 .property-detail-icon {
   display: none;
+}
+
+:where(.property-detail-text, .property-detail-text-token) {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.property-detail-text {
+  color: var(--detail-color);
+}
+
+.property-detail-text-token {
+  @include use-typography("code-font");
+  --detail-color: var(--color-token-foreground);
+
+  line-height: 1.4;
 }

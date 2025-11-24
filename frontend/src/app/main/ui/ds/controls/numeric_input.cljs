@@ -25,6 +25,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.simple-math :as smt]
+   [app.util.timers :as ts]
    [cuerdas.core :as str]
    [goog.events :as events]
    [rumext.v2 :as mf]
@@ -382,7 +383,11 @@
            (reset! focused-id* nil)
            (reset! is-open* false)
            (reset! token-applied* name)
-           (apply-token value name)))
+           (apply-token value name)
+           (ts/schedule-on-idle
+            (fn []
+              (when token-wrapper-ref
+                (dom/focus! (mf/ref-val token-wrapper-ref)))))))
 
         on-option-click
         (mf/use-fn
@@ -416,14 +421,16 @@
          (fn [event]
            (let [target    (dom/get-related-target event)
                  self-node (mf/ref-val wrapper-ref)]
+
              (when-not (dom/is-child? self-node target)
                (reset! filter-id* "")
                (reset! focused-id* nil)
                (reset! is-open* false)))
+
            (when (mf/ref-val dirty-ref)
-             (apply-value (mf/ref-val raw-value*))
-             (when (fn? on-blur)
-               (on-blur event)))))
+             (apply-value (mf/ref-val raw-value*)))
+           (when (fn? on-blur)
+             (on-blur event))))
 
         on-key-down
         (mf/use-fn
@@ -560,9 +567,11 @@
                (reset! token-applied* nil)
                (reset! selected-id* nil)
                (reset! focused-id* nil)
-               (dom/focus! (mf/ref-val ref))
                (when on-detach
-                 (on-detach token))))))
+                 (on-detach token))
+               (ts/schedule-on-idle
+                (fn []
+                  (dom/focus! (mf/ref-val ref))))))))
 
         on-token-key-down
         (mf/use-fn
@@ -656,6 +665,7 @@
                               :label label
                               :value token-value
                               :on-click open-dropdown-token
+                              :on-focus on-focus
                               :on-token-key-down on-token-key-down
                               :disabled disabled
                               :on-blur on-blur

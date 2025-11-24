@@ -1,37 +1,69 @@
+use crate::render::Surfaces;
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
-use indexmap::IndexSet;
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
+impl Tile {
+    pub fn from(x: i32, y: i32) -> Self {
+        Tile(x, y)
+    }
+    pub fn x(&self) -> i32 {
+        self.0
+    }
+    pub fn y(&self) -> i32 {
+        self.1
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
 impl TileRect {
+    pub fn x1(&self) -> i32 {
+        self.0
+    }
+
+    pub fn y1(&self) -> i32 {
+        self.1
+    }
+
+    pub fn x2(&self) -> i32 {
+        self.2
+    }
+
+    pub fn y2(&self) -> i32 {
+        self.3
+    }
+
     pub fn width(&self) -> i32 {
-        self.2 - self.0
+        self.x2() - self.x1()
     }
 
     pub fn height(&self) -> i32 {
-        self.3 - self.1
+        self.y2() - self.y1()
     }
 
     pub fn center_x(&self) -> i32 {
-        self.0 + self.width() / 2
+        self.x1() + self.width() / 2
     }
 
     pub fn center_y(&self) -> i32 {
-        self.1 + self.height() / 2
+        self.y1() + self.height() / 2
     }
 
     pub fn contains(&self, tile: &Tile) -> bool {
-        tile.0 >= self.0 && tile.1 >= self.1 && tile.0 <= self.2 && tile.1 <= self.3
+        tile.x() >= self.x1()
+            && tile.y() >= self.y1()
+            && tile.x() <= self.x2()
+            && tile.y() <= self.y2()
     }
 }
 
+#[derive(Debug)]
 pub struct TileViewbox {
     pub visible_rect: TileRect,
     pub interest_rect: TileRect,
@@ -114,7 +146,7 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
 
 // This structure is usseful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
-    grid: HashMap<Tile, IndexSet<Uuid>>,
+    grid: HashMap<Tile, HashSet<Uuid>>,
     index: HashMap<Uuid, HashSet<Tile>>,
 }
 
@@ -126,13 +158,13 @@ impl TileHashMap {
         }
     }
 
-    pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
+    pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&HashSet<Uuid>> {
         self.grid.get(&tile)
     }
 
     pub fn remove_shape_at(&mut self, tile: Tile, id: Uuid) {
         if let Some(shapes) = self.grid.get_mut(&tile) {
-            shapes.shift_remove(&id);
+            shapes.remove(&id);
         }
 
         if let Some(tiles) = self.index.get_mut(&id) {
@@ -176,7 +208,7 @@ impl PendingTiles {
         }
     }
 
-    pub fn update(&mut self, tile_viewbox: &TileViewbox) {
+    pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
         self.list.clear();
 
         let columns = tile_viewbox.interest_rect.width();
@@ -226,6 +258,17 @@ impl PendingTiles {
             current += 1;
         }
         self.list.reverse();
+
+        // Create a new list where the cached tiles go first
+        let iter1 = self
+            .list
+            .iter()
+            .filter(|t| surfaces.has_cached_tile_surface(**t));
+        let iter2 = self
+            .list
+            .iter()
+            .filter(|t| !surfaces.has_cached_tile_surface(**t));
+        self.list = iter1.chain(iter2).copied().collect();
     }
 
     pub fn pop(&mut self) -> Option<Tile> {

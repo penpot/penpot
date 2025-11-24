@@ -122,6 +122,7 @@
       {:type type
        :ids [(:id shape)]
        :values layout-container-values
+       :applied-tokens applied-tokens
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
@@ -147,16 +148,12 @@
         {:type type
          :ids fill-ids
          :values fill-values
-         :shapes shapes
-         :objects objects
          :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type
                         :ids stroke-ids
                         :values stroke-values
-                        :shapes shapes
-                        :objects objects
                         :applied-tokens stroke-tokens}])
 
      [:> color-selection-menu*

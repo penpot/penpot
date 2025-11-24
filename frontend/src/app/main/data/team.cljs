@@ -20,8 +20,8 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.util.clipboard :as clipboard]
    [app.util.storage :as storage]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
    [potok.v2.core :as ptk]))
@@ -417,7 +417,7 @@
              (rx/map (fn [fragment]
                        (assoc cf/public-uri :fragment fragment)))
              (rx/tap (fn [uri]
-                       (wapi/write-to-clipboard (str uri))))
+                       (clipboard/to-clipboard (str uri))))
              (rx/tap on-success)
              (rx/ignore)
              (rx/catch on-error))))))

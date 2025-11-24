@@ -17,7 +17,7 @@
   [{:keys [shapes objects]}]
   [:div {:class (stl/css :blur-panel)}
    (for [shape shapes]
-     [:div {:key (:id shape) :class "blur-shape"}
+     [:div {:key (:id shape) :class (stl/css :blur-shape)}
       (let [property :filter
             value (css/get-css-value objects shape property)
             property-name (cmm/get-css-rule-humanized property)

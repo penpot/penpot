@@ -57,6 +57,7 @@ jobs:
         id: vars
         run: |
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
       - name: Build bundle
         env:
@@ -76,14 +77,17 @@ jobs:
 
       - name: Upload Penpot bundle to S3
         run: |
-          aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip
+          aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip --metadata bundle-version=${{ steps.vars.outputs.bundle_version }}
 
       - name: Notify Mattermost
         if: failure()
         uses: mattermost/action-mattermost-notify@master
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
           TEXT: |
-            ❌ *[PENPOT] Error during the execution of the job*
+            ❌ 📦 *[PENPOT] Error building penpot bundles.*
             📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
+               Bundle version: `${{ steps.vars.outputs.bundle_version }}`
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
