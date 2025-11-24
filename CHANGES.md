@@ -69,6 +69,8 @@ example. It's still usable as before, we just removed the example.
 - Make the file export process more reliable [Taiga #12555](https://tree.taiga.io/project/penpot/us/12555)
 - Add auth flow changes [Taiga #12333](https://tree.taiga.io/project/penpot/us/12333)
 - Add new shape validation mechanism for shapes [Github #7696](https://github.com/penpot/penpot/pull/7696)
+- Apply color tokens from sidebar [Taiga #11353](https://tree.taiga.io/project/penpot/us/11353)
+- Display tokens in the inspect tab [Taiga #9313](https://tree.taiga.io/project/penpot/us/9313)
 
 ### :bug: Bugs fixed
 

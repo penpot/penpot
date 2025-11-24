@@ -94,10 +94,6 @@ const setupTypographyTokensFile = async (page, options = {}) => {
   return setupTokensFile(page, {
     file: "workspace/get-file-typography-tokens.json",
     fileFragment: "workspace/get-file-fragment-typography-tokens.json",
-    flags: [
-      "enable-token-typography-types",
-      "enable-token-typography-composite",
-    ],
     ...options,
   });
 };
@@ -974,42 +970,9 @@ test.describe("Tokens: Themes modal", () => {
 });
 
 test.describe("Tokens: Apply token", () => {
-  // When deleting the "enable-token-color" flag, permanently remove this test.
-  test("User applies color token to a shape without tokens on design-tab", async ({
-    page,
-  }) => {
-    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
-
-    await page.getByRole("tab", { name: "Layers" }).click();
-
-    await workspacePage.layers
-      .getByTestId("layer-row")
-      .filter({ hasText: "Button" })
-      .click();
-
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
-
-    await tokensSidebar
-      .getByRole("button")
-      .filter({ hasText: "Color" })
-      .click();
-
-    await tokensSidebar
-      .getByRole("button", { name: "colors.black" })
-      .click({ button: "right" });
-    await tokenContextMenuForToken.getByText("Fill").click();
-
-    const inputColor = workspacePage.page.getByRole("textbox", {
-      name: "Color",
-    });
-    await expect(inputColor).toHaveValue("000000");
-  });
-
   test("User applies color token to a shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page, { flags: ["enable-token-color"] });
+      await setupTokensFile(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 

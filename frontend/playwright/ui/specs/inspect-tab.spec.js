@@ -126,6 +126,12 @@ const openInspectTab = async (workspacePage) => {
   await workspacePage.page.waitForTimeout(500);
 };
 
+/**
+ * @typedef {'hex' | 'rgba' | 'hsla'} ColorSpace
+ *
+ * @param {WorkspacePage} workspacePage - The workspace page instance
+ * @param {ColorSpace} colorSpace - The color space to select
+ */
 const selectColorSpace = async (workspacePage, colorSpace) => {
   const sidebar = workspacePage.page.getByTestId("right-sidebar");
   const colorSpaceSelector = sidebar.getByLabel("Select color space");
