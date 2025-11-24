@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-18 13:52+0000\n"
+"PO-Revision-Date: 2025-11-25 16:51+0000\n"
 "Last-Translator: Anton Palmqvist <apq@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2257,7 +2257,7 @@ msgstr "Layout"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:799
 msgid "labels.learning-center"
-msgstr "Utbildningscentrum"
+msgstr "Utbildningscenter"
 
 #: src/app/main/ui/workspace/main_menu.cljs:168
 msgid "labels.libraries-and-templates"
@@ -8264,3 +8264,183 @@ msgstr "Autosparade versioner sparas i %s dagar."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicka för att stänga bana"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Något dåligt hände."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr "Du kan försöka igen eller kontakta supporten för att anmäla felet."
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:52, src/app/main/ui/workspace/tokens/management/create/form.cljs:80
+msgid "errors.field-max-length"
+msgstr "Får innehålla högst %s tecken."
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "Vänligen beskriv orsaken till din feedback"
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "Andra sätt att kontakta oss"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"Om feedbacken är relaterad till en fil eller ett projekt, lägg till Penpot-"
+"länken här:"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Kontakta oss"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+msgid "feedback.type"
+msgstr "Typ"
+
+#: src/app/main/ui/settings/feedback.cljs:115
+msgid "feedback.type.doubt"
+msgstr "Betvivel"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "Idé"
+
+#: src/app/main/ui/settings/feedback.cljs:114
+msgid "feedback.type.issue"
+msgstr "Problem"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "Förhandsgranskning av formens ifyllnadsbild"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Välj färgrymd"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "Kopiera CSS-förkortning till urklipp"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Kontakta support"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Kontakta oss"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "Kaleidos © 2019-nutid"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "Ladda ner %s"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+msgid "labels.switch"
+msgstr "Växla"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Ladda!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Få extra lagringsutrymme, filåterställning och mer för dina team."
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Hjälp oss att växa och gör din provperiod enklare"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Lägg till betalningsuppgifter så att din prenumeration ska fortsätta fungera "
+"efter provperioden och för att stödja vårt projekt med öppen källkod. Du "
+"kommer inte att debiteras ännu."
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Hoppa över för tillfället och starta provperioden"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Lägg till betalningsuppgifter"
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "Rekommenderad"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 inbjudan vald"
+msgstr[1] "%s inbjudningar valda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:264
+msgid "workspace.options.more-token-colors"
+msgstr "Fler färg-tokens"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1339
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Teckenstorlek eller {alias}"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Ogiltig skuggningstyp: endast 'innerShadow' eller 'dropShadow' accepteras"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1084
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Lägg till skugga"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:981, src/app/main/ui/workspace/tokens/management/create/form.cljs:982
+msgid "workspace.tokens.shadow-blur"
+msgstr "Oskärpa"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "Skuggningsoskärpan måste vara större än eller lika med 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+msgid "workspace.tokens.shadow-color"
+msgstr "Färg"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:990, src/app/main/ui/workspace/tokens/management/create/form.cljs:991
+msgid "workspace.tokens.shadow-inset"
+msgstr "Infälld"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1091
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Ta bort skugga"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:984, src/app/main/ui/workspace/tokens/management/create/form.cljs:985
+msgid "workspace.tokens.shadow-spread"
+msgstr "Spridning"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "Skuggningsspridning måste vara större än eller lika med 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+msgid "workspace.tokens.shadow-title"
+msgstr "Skuggning"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:975, src/app/main/ui/workspace/tokens/management/create/form.cljs:976
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:978, src/app/main/ui/workspace/tokens/management/create/form.cljs:979
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:52
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "Ett tema med detta namn finns redan"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:44, src/app/main/ui/workspace/tokens/management/create/form.cljs:70
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "En token finns redan på denna sökväg: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Namnet måste innehålla minst 1 tecken"
