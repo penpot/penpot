@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-22 10:51+0000\n"
-"Last-Translator: Keunes <keunes@mailbox.org>\n"
+"PO-Revision-Date: 2025-11-25 16:51+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -8474,3 +8474,18 @@ msgstr "Naam moet minimaal 1 teken zijn"
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS-code kopiëren naar klembord"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Help ons groeien en maak je proefperiode eenvoudiger"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Voeg nu je betalingsgegevens toe om je abonnement na de proefperiode soepel "
+"te laten verlopen en ons open-sourceproject te blijven ondersteunen. Er "
+"worden nog geen kosten in rekening gebracht."
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Nu overslaan en proefperiode starten"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Betalingsgegevens toevoegen"
