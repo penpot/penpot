@@ -153,8 +153,8 @@
                       (fn []
                         (if frame
                           (wasm.api/render-sync-shape (:id frame))
-                          (wasm.api/render-sync))
-
+                          (wasm.api/render-sync)))
+                      (fn []
                         (-> (.convertToBlob canvas)
                             (p/then
                              (fn [blob]

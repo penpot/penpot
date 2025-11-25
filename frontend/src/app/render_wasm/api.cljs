@@ -1015,8 +1015,8 @@
 
 (defn set-objects
   ([objects]
-   (set-objects objects nil))
-  ([objects render-callback]
+   (set-objects objects nil nil))
+  ([objects on-render on-complete]
    (perf/begin-measure "set-objects")
    (let [shapes        (into [] (vals objects))
          total-shapes  (count shapes)
@@ -1031,8 +1031,10 @@
                       (into full-acc full)))
              {:thumbnails thumbnails-acc :full full-acc}))]
      (perf/end-measure "set-objects")
-     (process-pending shapes thumbnails full render-callback
+     (process-pending shapes thumbnails full on-render
                       (fn []
+                        (when on-complete
+                          (on-complete))
                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
 
 (defn clear-focus-mode
@@ -1161,15 +1163,15 @@
 
 (defn initialize-viewport
   ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background nil))
-  ([base-objects zoom vbox background callback]
+   (initialize-viewport base-objects zoom vbox background nil nil))
+  ([base-objects zoom vbox background on-render on-complete]
    (let [rgba         (sr-clr/hex->u32argb background 1)
          shapes       (into [] (vals base-objects))
          total-shapes (count shapes)]
      (h/call wasm/internal-module "_set_canvas_background" rgba)
      (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
      (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback))))
+     (set-objects base-objects on-render on-complete))))
 
 (def ^:private default-context-options
   #js {:antialias false
