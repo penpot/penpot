@@ -128,11 +128,12 @@
 
 (defn update-text-rect!
   [id]
-  (mw/emit!
-   {:cmd :index/update-text-rect
-    :page-id (:current-page-id @st/state)
-    :shape-id id
-    :dimensions (get-text-dimensions id)}))
+  (when wasm/context-initialized?
+    (mw/emit!
+     {:cmd :index/update-text-rect
+      :page-id (:current-page-id @st/state)
+      :shape-id id
+      :dimensions (get-text-dimensions id)})))
 
 
 (defn- ensure-text-content
@@ -198,70 +199,71 @@
 (defn set-shape-children
   [children]
   (perf/begin-measure "set-shape-children")
-  (case (count children)
-    0
-    (h/call wasm/internal-module "_set_children_0")
+  (let [children (into [] (filter uuid?) children)]
+    (case (count children)
+      0
+      (h/call wasm/internal-module "_set_children_0")
 
-    1
-    (let [[c1] children
-          c1 (uuid/get-u32 c1)]
-      (h/call wasm/internal-module "_set_children_1"
-              (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)))
+      1
+      (let [[c1] children
+            c1 (uuid/get-u32 c1)]
+        (h/call wasm/internal-module "_set_children_1"
+                (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)))
 
-    2
-    (let [[c1 c2] children
-          c1 (uuid/get-u32 c1)
-          c2 (uuid/get-u32 c2)]
-      (h/call wasm/internal-module "_set_children_2"
-              (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
-              (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)))
+      2
+      (let [[c1 c2] children
+            c1 (uuid/get-u32 c1)
+            c2 (uuid/get-u32 c2)]
+        (h/call wasm/internal-module "_set_children_2"
+                (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
+                (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)))
 
-    3
-    (let [[c1 c2 c3] children
-          c1 (uuid/get-u32 c1)
-          c2 (uuid/get-u32 c2)
-          c3 (uuid/get-u32 c3)]
-      (h/call wasm/internal-module "_set_children_3"
-              (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
-              (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)
-              (aget c3 0) (aget c3 1) (aget c3 2) (aget c3 3)))
+      3
+      (let [[c1 c2 c3] children
+            c1 (uuid/get-u32 c1)
+            c2 (uuid/get-u32 c2)
+            c3 (uuid/get-u32 c3)]
+        (h/call wasm/internal-module "_set_children_3"
+                (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
+                (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)
+                (aget c3 0) (aget c3 1) (aget c3 2) (aget c3 3)))
 
-    4
-    (let [[c1 c2 c3 c4] children
-          c1 (uuid/get-u32 c1)
-          c2 (uuid/get-u32 c2)
-          c3 (uuid/get-u32 c3)
-          c4 (uuid/get-u32 c4)]
-      (h/call wasm/internal-module "_set_children_4"
-              (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
-              (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)
-              (aget c3 0) (aget c3 1) (aget c3 2) (aget c3 3)
-              (aget c4 0) (aget c4 1) (aget c4 2) (aget c4 3)))
+      4
+      (let [[c1 c2 c3 c4] children
+            c1 (uuid/get-u32 c1)
+            c2 (uuid/get-u32 c2)
+            c3 (uuid/get-u32 c3)
+            c4 (uuid/get-u32 c4)]
+        (h/call wasm/internal-module "_set_children_4"
+                (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
+                (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)
+                (aget c3 0) (aget c3 1) (aget c3 2) (aget c3 3)
+                (aget c4 0) (aget c4 1) (aget c4 2) (aget c4 3)))
 
-    5
-    (let [[c1 c2 c3 c4 c5] children
-          c1 (uuid/get-u32 c1)
-          c2 (uuid/get-u32 c2)
-          c3 (uuid/get-u32 c3)
-          c4 (uuid/get-u32 c4)
-          c5 (uuid/get-u32 c5)]
-      (h/call wasm/internal-module "_set_children_5"
-              (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
-              (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)
-              (aget c3 0) (aget c3 1) (aget c3 2) (aget c3 3)
-              (aget c4 0) (aget c4 1) (aget c4 2) (aget c4 3)
-              (aget c5 0) (aget c5 1) (aget c5 2) (aget c5 3)))
+      5
+      (let [[c1 c2 c3 c4 c5] children
+            c1 (uuid/get-u32 c1)
+            c2 (uuid/get-u32 c2)
+            c3 (uuid/get-u32 c3)
+            c4 (uuid/get-u32 c4)
+            c5 (uuid/get-u32 c5)]
+        (h/call wasm/internal-module "_set_children_5"
+                (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3)
+                (aget c2 0) (aget c2 1) (aget c2 2) (aget c2 3)
+                (aget c3 0) (aget c3 1) (aget c3 2) (aget c3 3)
+                (aget c4 0) (aget c4 1) (aget c4 2) (aget c4 3)
+                (aget c5 0) (aget c5 1) (aget c5 2) (aget c5 3)))
 
-    ;; Dynamic call for children > 5
-    (let [heap   (mem/get-heap-u32)
-          size   (mem/get-alloc-size children UUID-U8-SIZE)
-          offset (mem/alloc->offset-32 size)]
-      (reduce
-       (fn [offset id]
-         (mem.h32/write-uuid offset heap id))
-       offset
-       children)
-      (h/call wasm/internal-module "_set_children")))
+      ;; Dynamic call for children > 5
+      (let [heap   (mem/get-heap-u32)
+            size   (mem/get-alloc-size children UUID-U8-SIZE)
+            offset (mem/alloc->offset-32 size)]
+        (reduce
+         (fn [offset id]
+           (mem.h32/write-uuid offset heap id))
+         offset
+         children)
+        (h/call wasm/internal-module "_set_children"))))
   (perf/end-measure "set-shape-children")
   nil)
 
@@ -1031,8 +1033,9 @@
                       (into full-acc full)))
              {:thumbnails thumbnails-acc :full full-acc}))]
      (perf/end-measure "set-objects")
-     (process-pending shapes thumbnails full render-callback
+     (process-pending shapes thumbnails full noop-fn
                       (fn []
+                        (when render-callback (render-callback))
                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
 
 (defn clear-focus-mode
