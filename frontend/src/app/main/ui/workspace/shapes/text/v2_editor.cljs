@@ -313,15 +313,17 @@
           (let [{:keys [height]} (wasm.api/get-text-dimensions shape-id)
                 selrect-transform (mf/deref refs/workspace-selrect)
                 [selrect transform] (dsh/get-selrect selrect-transform shape)
-
+                selrect-height (:height selrect)
+                max-height (max height selrect-height)
                 valign (-> shape :content :vertical-align)
-
                 y (:y selrect)
-                y (case valign
-                    "bottom" (- y (- height (:height selrect)))
-                    "center" (- y (/ (- height (:height selrect)) 2))
+                y (if (> height selrect-height)
+                    (case valign
+                      "bottom" (- y (- height selrect-height))
+                      "center" (- y (/ (- height selrect-height) 2))
+                      "top"    y)
                     y)]
-            [(assoc selrect :y y :width (:width selrect) :height (max height (:height selrect))) transform])
+            [(assoc selrect :y y :width (:width selrect) :height max-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
