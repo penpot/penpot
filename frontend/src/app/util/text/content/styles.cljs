@@ -38,7 +38,7 @@
     (str v "px")
 
     (and (= k :font-family) (seq v))
-    (str/quote v)
+    (str/concat (str/quote v) ", var(--fallback-families)")
 
     :else
     v))
@@ -53,7 +53,7 @@
     (str/slice v 0 -2)
 
     (= k :font-family)
-    (str/unquote v)
+    (str/unquote (str/replace v ", var(--fallback-families)" ""))
 
     :else
     v))

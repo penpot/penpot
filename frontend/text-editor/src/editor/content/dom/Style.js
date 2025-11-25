@@ -19,10 +19,14 @@ const DEFAULT_FONT_WEIGHT = "400";
  * @param {string} value
  */
 export function sanitizeFontFamily(value) {
-  if (value && value.length > 0 && !value.startsWith('"')) {
-    return `"${value}"`;
-  } else {
+  if (!value || value === "") {
+    return "var(--fallback-families)";
+  } else if (value.endsWith(" var(--fallback-families)")) {
     return value;
+  } else if (value.startsWith('"')) {
+    return `${value}, var(--fallback-families)`;
+  } else {
+    return `"${value}", var(--fallback-families)`;
   }
 }
 

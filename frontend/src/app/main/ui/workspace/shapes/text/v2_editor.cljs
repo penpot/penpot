@@ -33,6 +33,7 @@
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn get-contrast-color [background-color]
@@ -268,7 +269,7 @@
     "bottom" "flex-end"
     nil))
 
-;;
+
 ;; Text Editor Wrapper
 ;; This is an SVG element that wraps the HTML editor.
 ;;
@@ -280,6 +281,11 @@
   [{:keys [shape modifiers canvas-ref] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
+        fallback-fonts (wasm.api/get-fallback-fonts (:content shape) false)
+        fallback-families (map (fn [font]
+                                 (let [lang (str/replace (:font-id font) #"gfont\-noto\-sans\-" "")
+                                       lang (if (>= (count lang) 3) (str/capital lang) (str/upper lang))]
+                                   (str/concat "\"Noto Sans " lang "\""))) fallback-fonts)
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 
@@ -341,7 +347,8 @@
           render-wasm?
           (obj/merge!
            #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")})
+                "--editor-container-height" (dm/str height "px")
+                "--fallback-families" (dm/str (str/join ", " fallback-families))})
 
           (not render-wasm?)
           (obj/merge!

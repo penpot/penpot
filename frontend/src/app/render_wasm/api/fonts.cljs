@@ -266,6 +266,12 @@
 
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
+;; FIXME: This is a temporary function to load the fallback fonts for the editor.
+;; Once we render the editor content within wasm, we can remove this function.
+(defn load-fallback-fonts-for-editor!
+  [fonts]
+  (doseq [font fonts]
+    (fonts/ensure-loaded! (:font-id font) (:font-variant-id font))))
 
 (defn store-fonts
   [shape-id fonts]

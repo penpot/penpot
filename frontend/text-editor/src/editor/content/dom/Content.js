@@ -13,6 +13,7 @@ import {
   isLikeParagraph,
 } from "./Paragraph.js";
 import { isDisplayBlock, normalizeStyles } from "./Style.js";
+import { sanitizeFontFamily } from "./Style.js";
 
 const DEFAULT_FONT_SIZE = "14px";
 const DEFAULT_FONT_WEIGHT = 400;
@@ -87,16 +88,16 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
         styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE,
       );
     }
-    const fontFamily = textSpan.style.getPropertyValue("font-family");
+    let fontFamily = textSpan.style.getPropertyValue("font-family");
     if (!fontFamily) {
       console.warn("font-family", fontFamily);
-      const fontFamilyValue =
+      fontFamily =
         styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY;
-      const quotedFontFamily = fontFamilyValue.startsWith('"')
-        ? fontFamilyValue
-        : `"${fontFamilyValue}"`;
-      textSpan.style.setProperty("font-family", quotedFontFamily);
     }
+
+    fontFamily = sanitizeFontFamily(fontFamily);
+    textSpan.style.setProperty("font-family", fontFamily);
+
     const fontWeight = textSpan.style.getPropertyValue("font-weight");
     if (!fontWeight) {
       console.warn("font-weight", fontWeight);
@@ -144,18 +145,29 @@ export function htmlToText(html) {
   tmp.innerHTML = html;
 
   const blockTags = [
-    "P", "DIV", "SECTION", "ARTICLE", "HEADER", "FOOTER",
-    "UL", "OL", "LI", "TABLE", "TR", "TD", "TH", "PRE"
+    "P",
+    "DIV",
+    "SECTION",
+    "ARTICLE",
+    "HEADER",
+    "FOOTER",
+    "UL",
+    "OL",
+    "LI",
+    "TABLE",
+    "TR",
+    "TD",
+    "TH",
+    "PRE",
   ];
 
   function walk(node) {
     let text = "";
 
-    node.childNodes.forEach(child => {
+    node.childNodes.forEach((child) => {
       if (child.nodeType === Node.TEXT_NODE) {
         text += child.textContent;
       } else if (child.nodeType === Node.ELEMENT_NODE) {
-
         if (child.tagName === "BR") {
           text += "\n";
         }
@@ -178,7 +190,6 @@ export function htmlToText(html) {
   return result.trim();
 }
 
-
 /**
  * Maps any HTML into a valid content DOM element.
  *
@@ -187,10 +198,14 @@ export function htmlToText(html) {
  * @param {boolean} [allowHTMLPaste=false]
  * @returns {DocumentFragment}
  */
-export function mapContentFragmentFromHTML(html, styleDefaults, allowHTMLPaste) {
+export function mapContentFragmentFromHTML(
+  html,
+  styleDefaults,
+  allowHTMLPaste,
+) {
   if (allowHTMLPaste) {
     try {
-      const parser = new DOMParser()
+      const parser = new DOMParser();
       const document = parser.parseFromString(html, "text/html");
       return mapContentFragmentFromDocument(document, styleDefaults);
     } catch (error) {
