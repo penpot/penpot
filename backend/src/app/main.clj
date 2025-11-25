@@ -323,7 +323,7 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
-    :app.nitrate/instance (ig/ref :app.nitrate/instance)
+    :app.nitrate/client (ig/ref :app.nitrate/client)
     ::wrk/executor       (ig/ref ::wrk/netty-executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
@@ -340,7 +340,7 @@
     ::email/blacklist    (ig/ref ::email/blacklist)
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
-   :app.nitrate/instance
+   :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)}
 
    :app.rpc/management-methods
@@ -352,6 +352,7 @@
     ::sto/storage        (ig/ref ::sto/storage)
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
+    :app.nitrate/client (ig/ref :app.nitrate/client)
     ::rds/client         (ig/ref ::rds/client)
     ::setup/props        (ig/ref ::setup/props)}
 
