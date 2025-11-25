@@ -25,48 +25,6 @@ RUN set -ex; \
         binutils \
         build-essential autoconf libtool pkg-config
 
-
-################################################################################
-## IMAGE MAGICK
-################################################################################
-
-FROM base AS build-imagemagick
-
-ENV IMAGEMAGICK_VERSION=7.1.1-47 \
-    DEBIAN_FRONTEND=noninteractive
-
-RUN set -ex; \
-    apt-get -qq update; \
-    apt-get -qq upgrade; \
-    apt-get -qqy --no-install-recommends install \
-        libltdl-dev \
-        libpng-dev \
-        libjpeg-dev \
-        libtiff-dev \
-        libwebp-dev \
-        libopenexr-dev \
-        libfftw3-dev \
-        libzip-dev \
-        liblcms2-dev \
-        liblzma-dev \
-        libzstd-dev \
-        libheif-dev \
-        librsvg2-dev \
-    ; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    curl -LfsSo /tmp/magick.tar.gz https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IMAGEMAGICK_VERSION}.tar.gz; \
-    mkdir -p /tmp/magick; \
-    cd /tmp/magick; \
-    tar -xf /tmp/magick.tar.gz --strip-components=1; \
-    ./configure  --prefix=/opt/imagick; \
-    make -j 2; \
-    make install; \
-    rm -rf /opt/imagick/lib/libMagick++*; \
-    rm -rf /opt/imagick/include; \
-    rm -rf /opt/imagick/share;
-
 ################################################################################
 ## NODE SETUP
 ################################################################################
@@ -385,7 +343,7 @@ ENV LANG='C.UTF-8' \
     RUSTUP_HOME="/opt/rustup" \
     PATH="/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=build-imagemagick /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
