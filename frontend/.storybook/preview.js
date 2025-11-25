@@ -1,5 +1,10 @@
 import { withThemeByClassName } from "@storybook/addon-themes";
 
+
+import Components from "@target/components";
+import translations from "@public/translation.en.js";
+Components.setDefaultTranslations(translations);
+
 import '../resources/public/css/ds.css';
 
 export const decorators = [

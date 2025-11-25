@@ -6,7 +6,6 @@
 
 (ns app.main.ui.ds
   (:require
-   [app.config :as cf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
@@ -44,8 +43,6 @@
    [app.util.i18n :as i18n]
    [rumext.v2 :as mf]))
 
-(i18n/init! cf/translations)
-
 (def default
   "A export used for storybook"
   (mf/object
@@ -80,6 +77,11 @@
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*
+
+    :set-default-translations
+    (fn [data]
+      (i18n/set-translations "en" data))
+
     ;; meta / misc
     :meta
     {:icons (clj->js (sort icon-list))
