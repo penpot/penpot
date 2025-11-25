@@ -53,11 +53,16 @@
           (assoc :profile-id id)
           (assoc :profile profile)))
 
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile (:profile state)]
+        (->> (rx/from (i18n/set-locale (:lang profile)))
+             (rx/ignore))))
+
     ptk/EffectEvent
     (effect [_ state _]
       (let [profile (:profile state)]
         (swap! storage/user assoc :profile profile)
-        (i18n/set-locale! (:lang profile))
         (plugins.register/init)))))
 
 (def profile-fetched?

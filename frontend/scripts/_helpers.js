@@ -257,7 +257,7 @@ const markedOptions = {
 
 marked.use(markedOptions);
 
-async function readTranslations() {
+export async function compileTranslations() {
   const langs = [
     "ar",
     "ca",
@@ -294,9 +294,10 @@ async function readTranslations() {
     ["uk", "ukr_UA"],
     "ha",
   ];
-  const result = {};
 
   for (let lang of langs) {
+    const result = {};
+
     let filename = `${lang}.po`;
     if (l.isArray(lang)) {
       filename = `${lang[1]}.po`;
@@ -315,11 +316,6 @@ async function readTranslations() {
     for (let key of Object.keys(trdata)) {
       if (key === "") continue;
       const comments = trdata[key].comments || {};
-
-      if (l.isNil(result[key])) {
-        result[key] = {};
-      }
-
       const isMarkdown = l.includes(comments.flag, "markdown");
 
       const msgs = trdata[key].msgstr;
@@ -329,9 +325,9 @@ async function readTranslations() {
           message = marked.parseInline(message);
         }
 
-        result[key][lang] = message;
+        result[key] = message;
       } else {
-        result[key][lang] = msgs.map((item) => {
+        result[key] = msgs.map((item) => {
           if (isMarkdown) {
             return marked.parseInline(item);
           } else {
@@ -340,22 +336,12 @@ async function readTranslations() {
         });
       }
     }
+
+    const esm = `export default ${JSON.stringify(result, null, 0)};\n`;
+    const outputDir = "resources/public/js/";
+    const outputFile = ph.join(outputDir, "translation." + lang + ".js");
+    await fs.writeFile(outputFile, esm);
   }
-
-  return result;
-}
-
-function filterTranslations(translations, langs = [], keyFilter) {
-  const filteredEntries = Object.entries(translations)
-    .filter(([translationKey, _]) => keyFilter(translationKey))
-    .map(([translationKey, value]) => {
-      const langEntries = Object.entries(value).filter(([lang, _]) =>
-        langs.includes(lang),
-      );
-      return [translationKey, Object.fromEntries(langEntries)];
-    });
-
-  return Object.fromEntries(filteredEntries);
 }
 
 async function generateSvgSprite(files, prefix) {
@@ -407,14 +393,6 @@ async function generateTemplates() {
   const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
-  let translations = await readTranslations();
-  const storybookTranslations = JSON.stringify(
-    filterTranslations(translations, ["en"], (key) =>
-      key.startsWith("labels."),
-    ),
-  );
-  translations = JSON.stringify(translations);
-
   const manifest = await readShadowManifest();
   let content;
 
@@ -440,7 +418,6 @@ async function generateTemplates() {
     "resources/templates/index.mustache",
     {
       manifest: manifest,
-      translations: JSON.stringify(translations),
       isDebug,
     },
     partials,
@@ -468,7 +445,6 @@ async function generateTemplates() {
     "resources/templates/preview-head.mustache",
     {
       manifest: manifest,
-      translations: JSON.stringify(storybookTranslations),
     },
     partials,
   );
@@ -476,14 +452,12 @@ async function generateTemplates() {
 
   content = await renderTemplate("resources/templates/render.mustache", {
     manifest: manifest,
-    translations: JSON.stringify(translations),
   });
 
   await fs.writeFile("./resources/public/render.html", content);
 
   content = await renderTemplate("resources/templates/rasterizer.mustache", {
     manifest: manifest,
-    translations: JSON.stringify(translations),
   });
 
   await fs.writeFile("./resources/public/rasterizer.html", content);

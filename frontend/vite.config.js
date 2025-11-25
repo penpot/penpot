@@ -47,6 +47,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@target": resolve(__dirname, "./target/storybook"),
+      "@public": resolve(__dirname, "./resources/public/js/"),
     },
   },
 });

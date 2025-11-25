@@ -52,6 +52,7 @@ await fs.mkdir("./resources/public/css/", { recursive: true });
 await compileSassAll();
 await h.copyAssets();
 await h.copyWasmPlayground();
+await h.compileTranslations();
 await h.compileSvgSprites();
 await h.compileTemplates();
 await h.compilePolyfills();
@@ -81,7 +82,7 @@ h.watch("resources/templates", null, async function (path) {
 log.info("watch: translations (~)");
 h.watch("translations", null, async function (path) {
   log.info("changed:", path);
-  await h.compileTemplates();
+  await h.compileTranslations();
 });
 
 log.info("watch: assets (~)");
