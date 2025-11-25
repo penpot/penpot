@@ -42,8 +42,9 @@
   {::doc/added "2.12"
    ::sm/params schema:authenticate-params
    ::sm/result schema:profile}
-  [cfg {:keys [token]}]
-  (let [token      (str/replace-first token #"^auth-token=" "")
+  [cfg {:keys [token] :as params}]
+  (let [_ (prn params)
+        token      (str/replace-first token #"^auth-token=" "")
         claims     (tokens/verify cfg {:token token :iss "authentication"})
         profile-id (:uid claims)
         profile    (profile/get-profile cfg profile-id)]
@@ -60,7 +61,8 @@
      JOIN team_profile_rel AS tpr ON t.id = tpr.team_id
     WHERE tpr.profile_id = ?
       AND tpr.is_owner = 't'
-      AND t.is_default = 'f';")
+      AND t.is_default = 'f'
+      AND t.deleted_at is null;")
 
 (def ^:private schema:team
   [:map
