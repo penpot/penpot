@@ -48,11 +48,7 @@
   com.sun.mail/jakarta.mail {:mvn/version "2.0.2"}
   org.la4j/la4j {:mvn/version "0.6.0"}
 
-  ;; exception printing
-  fipp/fipp {:mvn/version "0.6.29"}
-
   me.flowthing/pp {:mvn/version "2024-11-13.77"}
-
 
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}
