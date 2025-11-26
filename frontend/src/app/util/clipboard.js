@@ -67,15 +67,17 @@ function filterAllowedTypes(options) {
    * @param {string} type
    * @returns {boolean}
    */
-  return function filter(type) {
+  function filter(type) {
     if (
       (!("allowHTMLPaste" in options) || !options["allowHTMLPaste"]) &&
-      type === "text/html"
+        type === "text/html"
     ) {
       return false;
     }
     return allowedTypes.includes(type);
   };
+
+  return filter;
 }
 
 /**
@@ -85,19 +87,22 @@ function filterAllowedTypes(options) {
  * @returns {Function<AllowedTypesFilterFunction>}
  */
 function filterAllowedItems(options) {
+
   /**
    * @param {DataTransferItem}
    * @returns {boolean}
    */
-  return function filter(item) {
+  function filter(item) {
     if (
       (!("allowHTMLPaste" in options) || !options["allowHTMLPaste"]) &&
-      item.type === "text/html"
+        item.type === "text/html"
     ) {
       return false;
     }
     return allowedTypes.includes(item.type);
   };
+
+  return filter;
 }
 
 /**
