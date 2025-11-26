@@ -2815,13 +2815,15 @@
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
 
-        ;; If there is an alt-duplication of a variant, change its parent to root
-        ;; so the copy is made as a child of root
+        ;; If there is an alt-duplication we change to root
+        ;; For variants so the copy is made as a child of root
         ;; This is because inside a variant-container can't be a copy
+        ;; For other shape this way the layout won't be changed when duplicated
+        ;; and if you move outside the layout will not change
         shapes  (map (fn [shape]
-                       (if (and alt-duplication? (ctk/is-variant? shape))
-                         (assoc shape :parent-id uuid/zero :frame-id nil)
-                         shape))
+                       (cond-> shape
+                         alt-duplication?
+                         (assoc :parent-id uuid/zero :frame-id uuid/zero)))
                      shapes)
 
 
