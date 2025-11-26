@@ -60,10 +60,10 @@
 (defn render-thumbnail
   [file-id revn]
   (if (features/active-feature? @st/state "render-wasm/v1")
-    (->> (mw/ask! {:cmd :thumbnails/generate-for-file-wasm
-                   :revn revn
-                   :file-id file-id
-                   :width thumbnail-width}))
+    (mw/ask! {:cmd :thumbnails/generate-for-file-wasm
+              :revn revn
+              :file-id file-id
+              :width thumbnail-width})
     (->> (mw/ask! {:cmd :thumbnails/generate-for-file
                    :revn revn
                    :file-id file-id

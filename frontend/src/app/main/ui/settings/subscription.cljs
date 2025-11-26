@@ -83,74 +83,101 @@
    ::mf/register-as :management-dialog}
   [{:keys [subscription-type current-subscription editors subscribe-to-trial]}]
 
-  (let [unlimited-modal-step* (mf/use-state 1)
-        unlimited-modal-step  (deref unlimited-modal-step*)
-        subscription-name (if subscribe-to-trial
-                            (if (= subscription-type "unlimited")
-                              (tr "subscription.settings.unlimited-trial")
-                              (tr "subscription.settings.enterprise-trial"))
-                            (case subscription-type
-                              "professional" (tr "subscription.settings.professional")
-                              "unlimited" (tr "subscription.settings.unlimited")
-                              "enterprise" (tr "subscription.settings.enterprise")))
-        min-editors                (if (seq editors) (count editors) 1)
-        initial                    (mf/with-memo [min-editors]
-                                     {:min-members min-editors})
-        form                       (fm/use-form :schema (schema:seats-form min-editors)
-                                                :initial initial)
-        submit-in-progress*        (mf/use-state false)
-        subscribe-to-unlimited     (mf/use-fn
-                                    (mf/deps form)
-                                    (fn [add-payment-details]
-                                      (when (not @submit-in-progress*)
-                                        (let [data (:clean-data @form)
-                                              return-url (-> (rt/get-current-href) (rt/encode-url))
-                                              href (if add-payment-details
-                                                     (dm/str "payments/subscriptions/create?type=unlimited&show=true&quantity=" (:min-members data) "&returnUrl=" return-url)
-                                                     (dm/str "payments/subscriptions/create?type=unlimited&show=false&quantity=" (:min-members data) "&returnUrl=" return-url))]
-                                          (reset! submit-in-progress* true)
-                                          (reset! form nil)
-                                          (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                                           :type "unlimited"
-                                                                           :quantity (:min-members data)})
-                                                    (rt/nav-raw :href href))))))
+  (let [unlimited-modal-step*
+        (mf/use-state 1)
 
-        subscribe-to-enterprise   (mf/use-fn
-                                   (fn []
-                                     (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                                      :type "enterprise"}))
-                                     (let [return-url (-> (rt/get-current-href) (rt/encode-url))
-                                           href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
-                                       (st/emit! (rt/nav-raw :href href)))))
+        unlimited-modal-step
+        (deref unlimited-modal-step*)
 
-        handle-accept-dialog       (mf/use-fn
-                                    (fn []
-                                      (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                                                       ::ev/origin "settings"
-                                                                       :section "subscription-management-modal"}))
-                                      (let [current-href (rt/get-current-href)
-                                            returnUrl (js/encodeURIComponent current-href)
-                                            href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
-                                        (st/emit! (rt/nav-raw :href href)))
-                                      (modal/hide!)))
-        handle-close-dialog        (mf/use-fn
-                                    (fn []
-                                      (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
-                                      (modal/hide!)))
+        subscription-name
+        (if subscribe-to-trial
+          (if (= subscription-type "unlimited")
+            (tr "subscription.settings.unlimited-trial")
+            (tr "subscription.settings.enterprise-trial"))
+          (case subscription-type
+            "professional" (tr "subscription.settings.professional")
+            "unlimited" (tr "subscription.settings.unlimited")
+            "enterprise" (tr "subscription.settings.enterprise")))
 
-        handle-unlimited-modal-step (mf/use-fn
-                                     (mf/deps unlimited-modal-step)
-                                     (fn []
-                                       (if (= unlimited-modal-step 1)
-                                         (reset! unlimited-modal-step* 2)
-                                         (reset! unlimited-modal-step* 1))))
+        min-editors
+        (if (seq editors) (count editors) 1)
 
-        show-editors-list*         (mf/use-state false)
-        show-editors-list          (deref show-editors-list*)
-        handle-click               (mf/use-fn
-                                    (fn [event]
-                                      (dom/stop-propagation event)
-                                      (swap! show-editors-list* not)))]
+        initial
+        (mf/with-memo [min-editors]
+          {:min-members min-editors})
+
+        form
+        (fm/use-form :schema (schema:seats-form min-editors)
+                     :initial initial)
+
+        form-data-min-editors
+        (-> @form :clean-data :min-members)
+
+        submit-in-progress*
+        (mf/use-state false)
+
+        subscribe-to-unlimited
+        (mf/use-fn
+         (mf/deps form-data-min-editors)
+         (fn [add-payment-details]
+           (when (not @submit-in-progress*)
+             (let [return-url (-> (rt/get-current-href) (rt/encode-url))
+                   href (if add-payment-details
+                          (dm/str "payments/subscriptions/create?type=unlimited&show=true&quantity=" form-data-min-editors "&returnUrl=" return-url)
+                          (dm/str "payments/subscriptions/create?type=unlimited&show=false&quantity=" form-data-min-editors "&returnUrl=" return-url))]
+               (reset! submit-in-progress* true)
+               (reset! form nil)
+               (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
+                                                :type "unlimited"
+                                                :quantity form-data-min-editors})
+                         (rt/nav-raw :href href))))))
+
+        subscribe-to-enterprise
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
+                                            :type "enterprise"}))
+           (let [return-url (-> (rt/get-current-href) (rt/encode-url))
+                 href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
+             (st/emit! (rt/nav-raw :href href)))))
+
+        handle-accept-dialog
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
+                                            ::ev/origin "settings"
+                                            :section "subscription-management-modal"}))
+           (let [current-href (rt/get-current-href)
+                 returnUrl (js/encodeURIComponent current-href)
+                 href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
+             (st/emit! (rt/nav-raw :href href)))
+           (modal/hide!)))
+
+        handle-close-dialog
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
+           (modal/hide!)))
+
+        handle-unlimited-modal-step
+        (mf/use-fn
+         (mf/deps unlimited-modal-step)
+         (fn []
+           (if (= unlimited-modal-step 1)
+             (reset! unlimited-modal-step* 2)
+             (reset! unlimited-modal-step* 1))))
+
+        show-editors-list*
+        (mf/use-state false)
+
+        show-editors-list
+        (deref show-editors-list*)
+
+        handle-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-editors-list* not)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -246,7 +273,7 @@
                [:input
                 {:class (stl/css :cancel-button)
                  :type "button"
-                 :value (tr "ubscription.settings.management-dialog.step-2-skip-button")
+                 :value (tr "subscription.settings.management-dialog.step-2-skip-button")
                  :on-click #(subscribe-to-unlimited false)}]
 
                [:input

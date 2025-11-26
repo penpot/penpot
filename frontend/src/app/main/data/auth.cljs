@@ -195,7 +195,9 @@
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rx/of (logged-in (with-meta profile {::ev/source "login-with-token"})))
+      (->> (dp/on-fetch-profile-success profile)
+           (rx/map (fn [profile]
+                     (logged-in (with-meta profile {::ev/source "login-with-token"}))))
            ;; NOTE: we need this to be asynchronous because the effect
            ;; should be called before proceed with the login process
            (rx/observe-on :async)))))

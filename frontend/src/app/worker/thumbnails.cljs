@@ -13,6 +13,7 @@
    [app.common.logging :as log]
    [app.common.types.color :as cc]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.render :as render]
@@ -125,58 +126,75 @@
 
 (def thumbnail-aspect-ratio (/ 2 3))
 
-(defmethod impl/handler :thumbnails/generate-for-file-wasm
-  [{:keys [file-id revn width] :as message} _]
+(defn render-canvas-blob
+  [canvas width height background-color]
+  (-> (.convertToBlob canvas)
+      (p/then
+       (fn [blob]
+         (rds/renderToStaticMarkup
+          (mf/element
+           svg-wrapper
+           #js {:data-uri (blob->uri blob)
+                :width width
+                :height height
+                :background background-color}))))))
 
+(defn process-wasm-thumbnail
+  [{:keys [id file-id revn width] :as message}]
   (->> (rx/from @init-wasm)
        (rx/mapcat #(request-data-for-thumbnail file-id revn false))
        (rx/mapcat
         (fn [{:keys [page] :as file}]
           (rx/create
            (fn [subs]
-             (try
-               (let [background-color (or (:background page) cc/canvas)
-                     height (* width thumbnail-aspect-ratio)
-                     canvas (js/OffscreenCanvas. width height)
-                     init? (wasm.api/init-canvas-context canvas)]
-                 (if init?
-                   (let [objects (:objects page)
-                         frame (some->> page :thumbnail-frame-id (get objects))
-                         vbox (if frame
-                                (-> (gsb/get-object-bounds objects frame)
-                                    (grc/fix-aspect-ratio thumbnail-aspect-ratio))
-                                (render/calculate-dimensions objects thumbnail-aspect-ratio))
-                         zoom (/ width (:width vbox))]
+             (let [background-color (or (:background page) cc/canvas)
+                   height (* width thumbnail-aspect-ratio)
+                   canvas (js/OffscreenCanvas. width height)
+                   init? (wasm.api/init-canvas-context canvas)]
+               (if init?
+                 (let [objects (:objects page)
+                       frame (some->> page :thumbnail-frame-id (get objects))
+                       vbox (if frame
+                              (-> (gsb/get-object-bounds objects frame)
+                                  (grc/fix-aspect-ratio thumbnail-aspect-ratio))
+                              (render/calculate-dimensions objects thumbnail-aspect-ratio))
+                       zoom (/ width (:width vbox))]
 
-                     (wasm.api/initialize-viewport
-                      objects zoom vbox background-color
-                      (fn []
-                        (if frame
-                          (wasm.api/render-sync-shape (:id frame))
-                          (wasm.api/render-sync))
+                   (wasm.api/initialize-viewport
+                    objects zoom vbox background-color
+                    (fn []
+                      (if frame
+                        (wasm.api/render-sync-shape (:id frame))
+                        (wasm.api/render-sync))
 
-                        (-> (.convertToBlob canvas)
-                            (p/then
-                             (fn [blob]
-                               (let [data
-                                     (rds/renderToStaticMarkup
-                                      (mf/element
-                                       svg-wrapper
-                                       #js {:data-uri (blob->uri blob)
-                                            :width width
-                                            :height height
-                                            :background background-color}))]
-                                 (rx/push! subs {:data data :file-id file-id :revn revn}))))
-                            (p/catch #(do (.error js/console %)
-                                          (rx/error! subs %)))
-                            (p/finally #(rx/end! subs))))))
+                      (-> (render-canvas-blob canvas width height background-color)
+                          (p/then #(rx/push! subs {:id id :data % :file-id file-id :revn revn}))
+                          (p/catch #(rx/error! subs %))
+                          (p/finally #(rx/end! subs))))))
 
-                   (do (rx/error! subs "Error loading webgl context")
-                       (rx/end! subs)))
+                 (rx/end! subs))
 
-                 nil)
+               nil)))))))
 
-               (catch :default err
-                 (.error js/console err)
-                 (rx/error! subs err)
-                 (rx/end! subs)))))))))
+(defonce thumbs-subject (rx/subject))
+
+(defonce thumbs-stream
+  (->> thumbs-subject
+       (rx/mapcat process-wasm-thumbnail)
+       (rx/share)))
+
+(defmethod impl/handler :thumbnails/generate-for-file-wasm
+  [message _]
+  (rx/create
+   (fn [subs]
+     (let [id (uuid/next)
+           sid
+           (->> thumbs-stream
+                (rx/filter #(= id (:id %)))
+                (rx/subs!
+                 #(do
+                    (rx/push! subs %)
+                    (rx/end! subs))))]
+       (rx/push! thumbs-subject (assoc message :id id))
+
+       #(rx/dispose! sid)))))

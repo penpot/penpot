@@ -1679,7 +1679,7 @@ Will return a value that matches this schema:
        ["id" {:optional true} :string]
        ["name" :string]
        ["description" :string]
-       ["isSource" :boolean]
+       ["isSource" {:optional true} :boolean]
        ["selectedTokenSets"
         [:map-of :string [:enum "enabled" "disabled"]]]]]]
     ["$metadata" {:optional true}
