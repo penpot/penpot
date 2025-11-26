@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-23 12:51+0000\n"
+"PO-Revision-Date: 2025-11-28 05:00+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -8419,3 +8419,31 @@ msgstr "Esiste già un tema con questo nome"
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:44, src/app/main/ui/workspace/tokens/management/create/form.cljs:70
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "Un token con questo nome esiste già nel percorso: %s"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Qualcosa è andato storto."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"Puoi riprovare l’operazione oppure contattare il supporto per segnalare "
+"l’errore."
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Potenzia!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Ottieni spazio aggiuntivo, recupero dei file e altro ancora per i tuoi team."
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Aiutaci a crescere e rendi la tua prova ancora più semplice"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Aggiungi subito i tuoi dati di pagamento per mantenere attiva la "
+"sottoscrizione dopo il periodo di prova e continuare a supportare il nostro "
+"progetto open-source. Non ti verrà ancora addebitato nulla."
