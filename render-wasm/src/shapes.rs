@@ -908,7 +908,7 @@ impl Shape {
 
                 match (mask_rect, content_rect) {
                     (Some(mut mask), Some(content)) => {
-                        if mask.intersect(&content) {
+                        if mask.intersect(content) {
                             rect.join(mask);
                         }
                     }
@@ -1527,20 +1527,27 @@ mod tests {
         let mask_id = Uuid::new_v4();
         let content_id = Uuid::new_v4();
 
-        let group = pool.add_shape(group_id);
-        group.set_shape_type(Type::Group(Group { masked: true }));
-        group.children = vec![mask_id, content_id];
+        {
+            let group = pool.add_shape(group_id);
+            group.set_shape_type(Type::Group(Group { masked: true }));
+            group.children = vec![mask_id, content_id];
+        }
 
-        let mask = pool.add_shape(mask_id);
-        mask.set_shape_type(Type::Rect(Rect::default()));
-        mask.set_selrect(0.0, 0.0, 50.0, 50.0);
-        mask.set_parent(group_id);
+        {
+            let mask = pool.add_shape(mask_id);
+            mask.set_shape_type(Type::Rect(Rect::default()));
+            mask.set_selrect(0.0, 0.0, 50.0, 50.0);
+            mask.set_parent(group_id);
+        }
 
-        let content = pool.add_shape(content_id);
-        content.set_shape_type(Type::Rect(Rect::default()));
-        content.set_selrect(-10.0, -10.0, 110.0, 110.0);
-        content.set_parent(group_id);
+        {
+            let content = pool.add_shape(content_id);
+            content.set_shape_type(Type::Rect(Rect::default()));
+            content.set_selrect(-10.0, -10.0, 110.0, 110.0);
+            content.set_parent(group_id);
+        }
 
+        let group = pool.get(&group_id).expect("group should exist");
         let extrect = group.calculate_extrect(&pool, 1.0);
 
         assert_eq!(extrect.left, 0.0);

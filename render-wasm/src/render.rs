@@ -645,14 +645,12 @@ impl RenderState {
             if frame_has_blur && shape_has_blur {
                 shape.to_mut().set_blur(None);
             }
-        } else {
-            if !frame_has_blur {
-                if let Some(blur) = self.combined_layer_blur(shape.blur) {
-                    shape.to_mut().set_blur(Some(blur));
-                }
-            } else if shape_has_blur {
-                shape.to_mut().set_blur(None);
+        } else if !frame_has_blur {
+            if let Some(blur) = self.combined_layer_blur(shape.blur) {
+                shape.to_mut().set_blur(Some(blur));
             }
+        } else if shape_has_blur {
+            shape.to_mut().set_blur(None);
         }
 
         let center = shape.center();
