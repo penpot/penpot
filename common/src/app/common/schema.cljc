@@ -8,6 +8,8 @@
   (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
+   #?(:clj [malli.dev.pretty :as mdp])
+   #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
@@ -19,8 +21,6 @@
    [clojure.core :as c]
    [cuerdas.core :as str]
    [malli.core :as m]
-   [malli.dev.pretty :as mdp]
-   [malli.dev.virhe :as v]
    [malli.error :as me]
    [malli.generator :as mg]
    [malli.registry :as mr]
@@ -245,27 +245,30 @@
                                      :level (d/nilv level 8)
                                      :length (d/nilv length 12)})))))
 
-(defmethod v/-format ::schemaless-explain
-  [_ explanation printer]
-  {:body [:group
-          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]})
+#?(:clj
+   (defmethod v/-format ::schemaless-explain
+     [_ explanation printer]
+     {:body [:group
+             (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+             (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]}))
 
-(defmethod v/-format ::explain
-  [_ {:keys [schema] :as explanation} printer]
-  {:body [:group
-          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
-          (v/-block "Schema" (v/-visit schema printer) printer)]})
+#?(:clj
+   (defmethod v/-format ::explain
+     [_ {:keys [schema] :as explanation} printer]
+     {:body [:group
+             (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+             (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+             (v/-block "Schema" (v/-visit schema printer) printer)]}))
 
-(defn pretty-explain
-  "A helper that allows print a console-friendly output for the
-  explain; should not be used for other purposes"
-  [explain & {:keys [variant message]
-              :or {variant ::explain
-                   message "Validation Error"}}]
-  (let [explain (fn [] (me/with-error-messages explain))]
-    ((mdp/prettifier variant message explain default-options))))
+#?(:clj
+   (defn pretty-explain
+     "A helper that allows print a console-friendly output for the explain;
+  should not be used for other purposes"
+     [explain & {:keys [variant message]
+                 :or {variant ::explain
+                      message "Validation Error"}}]
+     (let [explain (fn [] (me/with-error-messages explain))]
+       ((mdp/prettifier variant message explain default-options)))))
 
 (defmacro ignoring
   [expr]
