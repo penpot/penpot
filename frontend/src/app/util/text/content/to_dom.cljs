@@ -137,16 +137,15 @@
     :style (get-paragraph-styles paragraph)}
    (mapv #(create-inline % paragraph) (:children paragraph))))
 
+
 (defn create-root
   [root]
   (let [root-styles (get-root-styles root)
-        paragraphs (get-in root [:children 0 :children])
-        filtered-paragraphs (->> paragraphs
-                                 (map-indexed vector)
-                                 (mapv second))]
+        paragraphs (get-in root [:children 0 :children])]
     (create-element
      "div"
      {:id (or (:key root) (create-random-key))
       :data {:itype "root"}
       :style root-styles}
-     (mapv create-paragraph filtered-paragraphs))))
+     ;; Always preserve all paragraphs, including empty ones
+     (mapv create-paragraph paragraphs))))
