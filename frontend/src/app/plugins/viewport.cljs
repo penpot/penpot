@@ -7,7 +7,7 @@
 (ns app.plugins.viewport
   (:require
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.store :as st]
@@ -37,10 +37,10 @@
        (let [new-x (obj/get value "x")
              new-y (obj/get value "y")]
          (cond
-           (not (us/safe-number? new-x))
+           (not (sm/valid-safe-number? new-x))
            (u/display-not-valid :center-x new-x)
 
-           (not (us/safe-number? new-y))
+           (not (sm/valid-safe-number? new-y))
            (u/display-not-valid :center-y new-y)
 
            :else
@@ -62,7 +62,7 @@
      :set
      (fn [value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :zoom value)
 
          :else
