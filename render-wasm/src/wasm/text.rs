@@ -291,9 +291,10 @@ pub extern "C" fn set_shape_text_content() {
     let bytes = mem::bytes();
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let raw_text_data = RawParagraph::try_from(&bytes).unwrap();
-        shape
-            .add_paragraph(raw_text_data.into())
-            .expect("Failed to add paragraph");
+
+        if let Err(_) = shape.add_paragraph(raw_text_data.into()) {
+            println!("Error with set_shape_text_content on {:?}", shape.id);
+        }
     });
     mem::free_bytes();
 }
