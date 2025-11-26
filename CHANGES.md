@@ -12,6 +12,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix problem when drag+duplicate a full grid [Taiga #12565](https://tree.taiga.io/project/penpot/issue/12565)
+
 
 ## 2.12.0 (Unreleased)
 
