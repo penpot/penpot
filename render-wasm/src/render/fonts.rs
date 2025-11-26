@@ -21,7 +21,7 @@ pub struct FontStore {
     font_mgr: FontMgr,
     font_provider: textlayout::TypefaceFontProvider,
     font_collection: textlayout::FontCollection,
-    debug_font: Font,
+    pub debug_font: Font,
     fallback_fonts: HashSet<String>,
 }
 

@@ -1,0 +1,8 @@
+[package]
+name = "text_editor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+skia-safe = { version = "0.87.0", default-features = false, features = ["gl"] }
+wasm-bindgen = "0.2"

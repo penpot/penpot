@@ -650,6 +650,38 @@ pub extern "C" fn set_modifiers() {
     });
 }
 
+#[no_mangle]
+pub extern "C" fn handle_keydown(key_ptr: *const std::os::raw::c_char) {
+    if key_ptr.is_null() {
+        return;
+    }
+    
+    let key = unsafe { 
+        match std::ffi::CStr::from_ptr(key_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return,  // Invalid UTF-8, skip
+        }
+    };
+    
+    with_state_mut!(state, {
+        state.render_state.text_editor.handle_keydown(key);
+    });
+    render_sync();
+}
+
+#[no_mangle]
+pub extern "C" fn handle_mousedown(x: f32, y: f32) {
+    // Basic sanity checks
+    if !x.is_finite() || !y.is_finite() {
+        return;
+    }
+    
+    with_state_mut!(state, {
+        state.render_state.text_editor.handle_mousedown(x, y);
+    });
+    render_sync();
+}
+
 fn main() {
     #[cfg(target_arch = "wasm32")]
     init_gl!();

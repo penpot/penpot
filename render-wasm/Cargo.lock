@@ -432,6 +432,7 @@ dependencies = [
  "indexmap",
  "macros",
  "skia-safe",
+ "text_editor",
  "uuid",
 ]
 
@@ -575,6 +576,14 @@ dependencies = [
  "filetime",
  "libc",
  "xattr",
+]
+
+[[package]]
+name = "text_editor"
+version = "0.1.0"
+dependencies = [
+ "skia-safe",
+ "wasm-bindgen",
 ]
 
 [[package]]

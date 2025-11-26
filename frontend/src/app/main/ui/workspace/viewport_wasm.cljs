@@ -216,6 +216,18 @@
         on-frame-leave    (actions/on-frame-leave frame-hover)
         on-frame-select   (actions/on-frame-select selected read-only?)
 
+        ;; Text Editor Event Handlers
+        on-text-keydown   (fn [event]
+                            (when (and text-editing? (.-key event))
+                              (.preventDefault event)
+                              (wasm.api/handle-text-keydown (.-key event))))
+        on-text-mousedown (fn [event]
+                            (when text-editing?
+                              (let [rect (.getBoundingClientRect (.-currentTarget event))
+                                    x (- (.-clientX event) (.-left rect))
+                                    y (- (.-clientY event) (.-top rect))]
+                                (wasm.api/handle-text-mousedown x y))))
+
         disable-events?          (contains? layout :comments)
         show-comments?           (= drawing-tool :comments)
         show-cursor-tooltip?     tooltip
@@ -231,8 +243,9 @@
 
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
-        show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+        ;; show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
 
+        show-text-editor?        false
         hover-grid?              (and (some? @hover-top-frame-id)
                                       (ctl/grid-layout? objects @hover-top-frame-id))
 
@@ -419,7 +432,9 @@
        :on-pointer-enter on-pointer-enter
        :on-pointer-leave on-pointer-leave
        :on-pointer-move  on-pointer-move
-       :on-pointer-up    on-pointer-up}
+       :on-pointer-up    on-pointer-up
+       :on-key-down      on-text-keydown
+       :on-mouse-down    on-text-mousedown}
 
       [:defs
        ;; This clip is so the handlers are not over the rulers

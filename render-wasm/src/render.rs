@@ -215,6 +215,7 @@ pub(crate) struct RenderState {
     pub options: RenderOptions,
     pub surfaces: Surfaces,
     pub fonts: FontStore,
+    pub text_editor: ::text_editor::TextEditor,
     pub viewbox: Viewbox,
     pub cached_viewbox: Viewbox,
     pub cached_target_snapshot: Option<skia::Image>,
@@ -288,12 +289,14 @@ impl RenderState {
 
         let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
+        let text_editor = ::text_editor::TextEditor::new(fonts.debug_font.clone());
 
         RenderState {
             gpu_state: gpu_state.clone(),
             options: RenderOptions::default(),
             surfaces,
             fonts,
+            text_editor,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
             cached_target_snapshot: None,
@@ -915,6 +918,8 @@ impl RenderState {
 
             ui::render(self, shapes);
             debug::render_wasm_label(self);
+
+            self.text_editor.render(self.surfaces.canvas(SurfaceId::Target));
 
             self.flush_and_submit();
         }
@@ -1790,6 +1795,8 @@ impl RenderState {
 
         ui::render(self, tree);
         debug::render_wasm_label(self);
+
+        self.text_editor.render(self.surfaces.canvas(SurfaceId::Target));
 
         Ok(())
     }

@@ -1212,6 +1212,7 @@
 
 (defn init-canvas-context
   [canvas]
+
   (let [gl      (unchecked-get wasm/internal-module "GL")
         flags   (debug-flags)
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
@@ -1257,6 +1258,19 @@
   []
   (h/call wasm/internal-module "_hide_grid")
   (request-render "clear-grid"))
+
+;; Text Editor Functions
+(defn handle-text-keydown
+  [key]
+  (when (and wasm/internal-module key)
+    (h/call wasm/internal-module "_handle_keydown" key)
+    (request-render "text-editor-keydown")))
+
+(defn handle-text-mousedown
+  [x y]
+  (when (and wasm/internal-module x y)
+    (h/call wasm/internal-module "_handle_mousedown" x y)
+    (request-render "text-editor-mousedown")))
 
 (defn get-grid-coords
   [position]

@@ -32,6 +32,7 @@ skia-safe = { version = "0.87.0", default-features = false, features = [
   "binary-cache",
   "webp",
 ] }
+text_editor = { path = "src/text_editor" }
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [profile.release]
