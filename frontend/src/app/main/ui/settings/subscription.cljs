@@ -64,19 +64,24 @@
                :on-click cta-link-with-icon} cta-text-with-icon
       [:> icon* {:icon-id "open-link"
                  :size "s"}]])
-   (when (and cta-link cta-text (not show-button-cta)) [:button {:class (stl/css-case :cta-button true
-                                                                                      :bottom-link (not (and cta-link-trial cta-text-trial)))
-                                                                 :on-click cta-link} cta-text])
-   (when (and cta-link cta-text show-button-cta) [:> button* {:variant "primary"
-                                                              :type "button"
-                                                              :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
-                                                              :on-click cta-link} cta-text])
-   (when (and cta-link-trial cta-text-trial) [:button {:class (stl/css :cta-button :bottom-link)
-                                                       :on-click cta-link-trial} cta-text-trial])])
+   (when (and cta-link cta-text (not show-button-cta))
+     [:button {:class (stl/css-case :cta-button true
+                                    :bottom-link (not (and cta-link-trial cta-text-trial)))
+               :on-click cta-link} cta-text])
+   (when (and cta-link cta-text show-button-cta)
+     [:> button* {:variant "primary"
+                  :type "button"
+                  :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
+                  :on-click cta-link} cta-text])
+   (when (and cta-link-trial cta-text-trial)
+     [:button {:class (stl/css :cta-button :bottom-link)
+               :on-click cta-link-trial} cta-text-trial])])
+
 (defn schema:seats-form [min-editors]
   [:map {:title "SeatsForm"}
    [:min-members [::sm/number {:min min-editors
-                               :max 9999}]]])
+                               :max 9999}]]
+   [:redirect-to-payment-details :boolean]])
 
 (mf/defc subscribe-management-dialog
   {::mf/register modal/components
@@ -104,32 +109,30 @@
 
         initial
         (mf/with-memo [min-editors]
-          {:min-members min-editors})
+          {:min-members min-editors
+           :redirect-to-payment-details false})
 
         form
         (fm/use-form :schema (schema:seats-form min-editors)
                      :initial initial)
 
-        form-data-min-editors
-        (-> @form :clean-data :min-members)
-
-        submit-in-progress*
-        (mf/use-state false)
+        submit-in-progress
+        (mf/use-ref false)
 
         subscribe-to-unlimited
         (mf/use-fn
-         (mf/deps form-data-min-editors)
-         (fn [add-payment-details]
-           (when (not @submit-in-progress*)
-             (let [return-url (-> (rt/get-current-href) (rt/encode-url))
-                   href (if add-payment-details
-                          (dm/str "payments/subscriptions/create?type=unlimited&show=true&quantity=" form-data-min-editors "&returnUrl=" return-url)
-                          (dm/str "payments/subscriptions/create?type=unlimited&show=false&quantity=" form-data-min-editors "&returnUrl=" return-url))]
-               (reset! submit-in-progress* true)
+         (fn [min-members add-payment-details?]
+           (when-not (mf/ref-val submit-in-progress)
+             (mf/set-ref-val! submit-in-progress true)
+             (let [return-url (-> (rt/get-current-href)
+                                  (rt/encode-url))
+                   href       (dm/str "payments/subscriptions/create?type=unlimited&show="
+                                      add-payment-details? "&quantity="
+                                      min-members "&returnUrl=" return-url)]
                (reset! form nil)
                (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
                                                 :type "unlimited"
-                                                :quantity form-data-min-editors})
+                                                :quantity min-members})
                          (rt/nav-raw :href href))))))
 
         subscribe-to-enterprise
@@ -144,9 +147,9 @@
         handle-accept-dialog
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                            ::ev/origin "settings"
-                                            :section "subscription-management-modal"}))
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "settings"
+                                :section "subscription-management-modal"}))
            (let [current-href (rt/get-current-href)
                  returnUrl (js/encodeURIComponent current-href)
                  href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
@@ -159,14 +162,6 @@
            (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
            (modal/hide!)))
 
-        handle-unlimited-modal-step
-        (mf/use-fn
-         (mf/deps unlimited-modal-step)
-         (fn []
-           (if (= unlimited-modal-step 1)
-             (reset! unlimited-modal-step* 2)
-             (reset! unlimited-modal-step* 1))))
-
         show-editors-list*
         (mf/use-state false)
 
@@ -177,7 +172,24 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! show-editors-list* not)))]
+           (swap! show-editors-list* not)))
+
+        on-submit
+        (mf/use-fn
+         (mf/deps current-subscription unlimited-modal-step*)
+         (fn [form]
+           (let [clean-data  (get @form :clean-data)
+                 min-members (get clean-data :min-members)
+                 redirect?   (get clean-data :redirect-to-payment-details)]
+             (if (or (contains? #{"unpaid" "canceled"} (:status current-subscription))
+                     (= @unlimited-modal-step* 2))
+               (subscribe-to-unlimited min-members redirect?)
+               (swap! unlimited-modal-step* inc)))))
+
+        on-add-payments-click
+        (mf/use-fn
+         (fn []
+           (swap! form update :data assoc :redirect-to-payment-details true)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -207,7 +219,8 @@
                 [:li {:key (dm/str (:id editor)) :class (stl/css :team-name)} "- " (:name editor)])]])])
 
        (when (and
-              (or (and (= subscription-type "professional") (contains? #{"unlimited" "enterprise"} (:type current-subscription)))
+              (or (and (= subscription-type "professional")
+                       (contains? #{"unlimited" "enterprise"} (:type current-subscription)))
                   (and (= subscription-type "unlimited") (= (:type current-subscription) "enterprise")))
               (not (contains? #{"unpaid" "canceled"} (:status current-subscription)))
               (not subscribe-to-trial))
@@ -216,7 +229,7 @@
 
        (if (and (= subscription-type "unlimited")
                 (or subscribe-to-trial (contains? #{"unpaid" "canceled"} (:status current-subscription))))
-         [:& fm/form {:on-submit handle-unlimited-modal-step
+         [:& fm/form {:on-submit on-submit
                       :class (stl/css :seats-form)
                       :form form}
           (when (= unlimited-modal-step 1)
@@ -259,7 +272,9 @@
                  :on-click handle-close-dialog}]
 
                [:> fm/submit-button*
-                {:label (tr "labels.continue")
+                {:label (if (contains? #{"unpaid" "canceled"} (:status current-subscription))
+                          (tr "subscription.settings.subscribe")
+                          (tr "labels.continue"))
                  :class (stl/css :primary-button)}]]]])
 
           (when (= unlimited-modal-step 2)
@@ -272,15 +287,14 @@
 
                [:input
                 {:class (stl/css :cancel-button)
-                 :type "button"
-                 :value (tr "subscription.settings.management-dialog.step-2-skip-button")
-                 :on-click #(subscribe-to-unlimited false)}]
+                 :type "submit"
+                 :value (tr "subscription.settings.management-dialog.step-2-skip-button")}]
 
                [:input
                 {:class (stl/css :primary-button)
-                 :type "button"
+                 :type "submit"
                  :value (tr "subscription.settings.management-dialog.step-2-add-payment-button")
-                 :on-click #(subscribe-to-unlimited true)}]]]])]
+                 :on-click on-add-payments-click}]]]])]
 
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}
