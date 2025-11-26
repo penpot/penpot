@@ -383,6 +383,15 @@ impl RenderState {
         Self::blur_from_variance(total)
     }
 
+    fn frame_clip_layer_blur(shape: &Shape) -> Option<Blur> {
+        match shape.shape_type {
+            Type::Frame(_) if shape.clip() => shape.blur.filter(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.
+            }),
+            _ => None,
+        }
+    }
+
     /// Runs `f` with `ignore_nested_blurs` temporarily forced to `true`.
     /// Certain off-screen passes (e.g. shadow masks) must render shapes without
     /// inheriting ancestor blur. This helper guarantees the flag is restored.
@@ -629,10 +638,20 @@ impl RenderState {
 
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+        let frame_has_blur = Self::frame_clip_layer_blur(&shape).is_some();
+        let shape_has_blur = shape.blur.is_some();
 
-        if !self.ignore_nested_blurs {
-            if let Some(blur) = self.combined_layer_blur(shape.blur) {
-                shape.to_mut().set_blur(Some(blur));
+        if self.ignore_nested_blurs {
+            if frame_has_blur && shape_has_blur {
+                shape.to_mut().set_blur(None);
+            }
+        } else {
+            if !frame_has_blur {
+                if let Some(blur) = self.combined_layer_blur(shape.blur) {
+                    shape.to_mut().set_blur(Some(blur));
+                }
+            } else if shape_has_blur {
+                shape.to_mut().set_blur(None);
             }
         }
 
@@ -1081,6 +1100,16 @@ impl RenderState {
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
 
+        if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+            let scale = self.get_scale();
+            let sigma = frame_blur.value * scale;
+            if let Some(filter) =
+                skia::image_filters::blur((sigma, sigma), None, None, None)
+            {
+                paint.set_image_filter(filter);
+            }
+        }
+
         // When we're rendering the mask shape we need to set a special blend mode
         // called 'destination-in' that keeps the drawn content within the mask.
         // @see https://skia.org/docs/user/api/skblendmode_overview/
@@ -1389,7 +1418,7 @@ impl RenderState {
         let mut iteration = 0;
         let mut is_empty = true;
 
-        while let Some(mut node_render_state) = self.pending_nodes.pop() {
+        while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
             let visited_children = node_render_state.visited_children;
             let visited_mask = node_render_state.visited_mask;
@@ -1632,6 +1661,9 @@ impl RenderState {
             }
 
             match element.shape_type {
+                Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                    self.nested_blurs.push(None);
+                }
                 Type::Frame(_) | Type::Group(_) => {
                     self.nested_blurs.push(element.blur);
                 }
