@@ -125,47 +125,40 @@
    [:embed {:optional true} :boolean]
    [:skip-children {:optional true} :boolean]
    [:object-id
-    [:or
-     ::sm/uuid
-     ::sm/coll-of-uuid]]])
+    [:or [::sm/set ::sm/uuid] ::sm/uuid]]])
 
-(def ^:private render-objects-decoder
-  (sm/lazy-decoder schema:render-objects
-                   sm/string-transformer))
-
-(def ^:private render-objects-validator
-  (sm/lazy-validator schema:render-objects))
+(def ^:private coerce-render-objects-params
+  (sm/coercer schema:render-objects))
 
 (defn- render-objects
   [params]
-  (let [{:keys [file-id page-id embed share-id object-id skip-children] :as params} (render-objects-decoder params)]
-    (if-not (render-objects-validator params)
-      (do
-        (js/console.error "invalid arguments")
-        (sm/pretty-explain schema:render-objects params)
-        nil)
+  (try
+    (let [{:keys [file-id page-id embed share-id object-id skip-children] :as params}
+          (coerce-render-objects-params params)]
+      (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
+      (if (uuid? object-id)
+        (mf/html
+         [:& object-svg
+          {:file-id file-id
+           :page-id page-id
+           :share-id share-id
+           :object-id object-id
+           :embed embed
+           :skip-children skip-children}])
 
-      (do
-        (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
-
-        (if (uuid? object-id)
-          (mf/html
-           [:& object-svg
-            {:file-id file-id
-             :page-id page-id
-             :share-id share-id
-             :object-id object-id
-             :embed embed
-             :skip-children skip-children}])
-
-          (mf/html
-           [:& objects-svg
-            {:file-id file-id
-             :page-id page-id
-             :share-id share-id
-             :object-ids (into #{} object-id)
-             :embed embed
-             :skip-children skip-children}]))))))
+        (mf/html
+         [:& objects-svg
+          {:file-id file-id
+           :page-id page-id
+           :share-id share-id
+           :object-ids (into #{} object-id)
+           :embed embed
+           :skip-children skip-children}])))
+    (catch :default cause
+      (when-let [explain (-> cause ex-data ::sm/explain)]
+        (js/console.log "Unexpected error")
+        (js/console.log (sm/humanize-explain explain)))
+      (mf/html [:span "Unexpected error:" (ex-message cause)]))))
 
 ;; ---- COMPONENTS SPRITE
 
@@ -242,39 +235,37 @@
    [:embed {:optional true} :boolean]
    [:component-id {:optional true} ::sm/uuid]])
 
-(def ^:private render-components-decoder
-  (sm/lazy-decoder schema:render-components
-                   sm/string-transformer))
-
-(def ^:private render-components-validator
-  (sm/lazy-validator schema:render-components))
+(def ^:private coerce-render-components-params
+  (sm/coercer schema:render-components))
 
 (defn render-components
   [params]
-  (let [{:keys [file-id component-id embed] :as params} (render-components-decoder params)]
-    (if-not (render-components-validator params)
-      (do
-        (js/console.error "invalid arguments")
-        (sm/pretty-explain schema:render-components params)
-        nil)
+  (try
+    (let [{:keys [file-id component-id embed] :as params}
+          (coerce-render-components-params params)]
 
-      (do
-        (st/emit! (ptk/reify ::initialize-render-components
-                    ptk/WatchEvent
-                    (watch [_ _ stream]
-                      (rx/merge
-                       (rx/of (fetch-team :file-id file-id))
+      (st/emit! (ptk/reify ::initialize-render-components
+                  ptk/WatchEvent
+                  (watch [_ _ stream]
+                    (rx/merge
+                     (rx/of (fetch-team :file-id file-id))
 
-                       (->> stream
-                            (rx/filter (ptk/type? ::team-fetched))
-                            (rx/observe-on :async)
-                            (rx/map (constantly params))
-                            (rx/map fetch-components-bundle))))))
+                     (->> stream
+                          (rx/filter (ptk/type? ::team-fetched))
+                          (rx/observe-on :async)
+                          (rx/map (constantly params))
+                          (rx/map fetch-components-bundle))))))
 
-        (mf/html
-         [:& components-svg
-          {:component-id component-id
-           :embed embed}])))))
+      (mf/html
+       [:& components-svg
+        {:component-id component-id
+         :embed embed}]))
+
+    (catch :default cause
+      (when-let [explain (-> cause ex-data ::sm/explain)]
+        (js/console.log "Unexpected error")
+        (js/console.log (sm/humanize-explain explain)))
+      (mf/html [:span "Unexpected error:" (ex-message cause)]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETUP

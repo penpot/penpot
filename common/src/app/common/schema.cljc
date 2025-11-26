@@ -299,6 +299,13 @@
                                   ::explain explain}))))
         value))))
 
+(defn coercer
+  [schema & {:as opts}]
+  (let [decode-fn (decoder schema json-transformer)
+        check-fn  (check-fn schema opts)]
+    (fn [data]
+      (-> data decode-fn check-fn))))
+
 (defn check
   "A helper intended to be used on assertions for validate/check the
   schema over provided data. Raises an assertion exception.
