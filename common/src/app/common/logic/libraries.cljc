@@ -18,7 +18,6 @@
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.path-names :as cpn]
-   [app.common.spec :as us]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -35,8 +34,7 @@
    [app.common.types.typography :as cty]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
-   [clojure.set :as set]
-   [clojure.spec.alpha :as s]))
+   [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -473,10 +471,10 @@
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
   [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (s/assert #{:colors :components :typographies} asset-type)
-  (s/assert (s/nilable ::us/uuid) asset-id)
-  (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid library-id)
+  (assert (contains? #{:colors :components :typographies} asset-type))
+  (assert (or (nil? asset-id) (uuid? asset-id)))
+  (assert (uuid? file-id))
+  (assert (uuid? library-id))
 
   (container-log :info asset-id
                  :msg "Sync file with library"
@@ -510,10 +508,10 @@
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
   [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (s/assert #{:colors :components :typographies} asset-type)
-  (s/assert (s/nilable ::us/uuid) asset-id)
-  (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid library-id)
+  (assert (contains? #{:colors :components :typographies} asset-type))
+  (assert (or (nil? asset-id) (uuid? asset-id)))
+  (assert (uuid? file-id))
+  (assert (uuid? library-id))
 
   (container-log :info asset-id
                  :msg "Sync local components with library"

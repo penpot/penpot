@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.types.profile :refer [schema:profile]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -484,7 +483,7 @@
 
 (defn delete-access-token
   [{:keys [id] :as params}]
-  (us/assert! ::us/uuid id)
+  (assert (uuid? id))
   (ptk/reify ::delete-access-token
     ptk/WatchEvent
     (watch [_ _ _]

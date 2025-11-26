@@ -1003,6 +1003,9 @@
 (def valid-safe-number?
   (lazy-validator ::safe-number))
 
+(def valid-safe-int?
+  (lazy-validator ::safe-int))
+
 (def valid-text?
   (validator ::text))
 
