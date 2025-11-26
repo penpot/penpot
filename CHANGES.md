@@ -13,6 +13,7 @@
 ### :bug: Bugs fixed
 
 - Fix problem when drag+duplicate a full grid [Taiga #12565](https://tree.taiga.io/project/penpot/issue/12565)
+- Fix problem when pasting elements in reverse flex layout [Taiga #12460](https://tree.taiga.io/project/penpot/issue/12460)
 
 
 ## 2.12.0 (Unreleased)
