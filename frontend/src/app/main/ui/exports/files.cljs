@@ -82,7 +82,7 @@
          (mf/deps team-id selected files)
          (fn []
            (swap! state* assoc :status :exporting)
-           (->> (fexp/export-files :files files :type type)
+           (->> (fexp/export-files :files files :type selected)
                 (rx/subs!
                  (fn [{:keys [file-id error filename uri] :as result}]
                    (if error
