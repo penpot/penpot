@@ -1,7 +1,8 @@
 From: {{profile.fullname}} <{{profile.email}}> / {{profile.id}}
 Subject: {{feedback-subject}}
 Type: {{feedback-type}}
-{%- if feedback-error-href %}
+
+{% if feedback-error-href %}
 HREF: {{feedback-error-href}}
 {% endif -%}
 
