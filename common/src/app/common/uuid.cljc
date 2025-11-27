@@ -122,12 +122,16 @@
    (defn get-u32
      "A cached variant of get-unsigned-parts"
      [this]
-     (let [buffer (unchecked-get this "__u32_buffer")]
-       (if (nil? buffer)
-         (let [buffer (get-unsigned-parts this)]
-           (unchecked-set this "__u32_buffer" buffer)
-           buffer)
-         buffer))))
+     (if (some? this)
+       (let [buffer (unchecked-get this "__u32_buffer")]
+         (if (nil? buffer)
+           (let [buffer (get-unsigned-parts this)]
+             (unchecked-set this "__u32_buffer" buffer)
+             buffer)
+           buffer))
+       (do
+         (js/console.warn "get-u32 called with null UUID")
+         nil))))
 
 #?(:clj
    (defn hash-int
