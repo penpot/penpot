@@ -83,6 +83,7 @@
         (mf/spread-props  props  {:on-change on-change
                                   :default-value value
                                   :hint-message (:message hint)
+                                  :variant "comfortable"
                                   :hint-type (:type hint)})
 
         props

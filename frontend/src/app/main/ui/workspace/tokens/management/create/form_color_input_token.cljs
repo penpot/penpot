@@ -205,6 +205,7 @@
                                   ;; TODO: Review this value vs default-value
                                   :value (or value "")
                                   :hint-message (:message hint)
+                                  :variant "comfortable"
                                   :slot-start swatch
                                   :hint-type (:type hint)})
 
