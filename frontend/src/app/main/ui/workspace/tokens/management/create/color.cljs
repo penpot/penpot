@@ -32,6 +32,12 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- token-value-error-fn
+  [{:keys [value]}]
+  (when (or (str/empty? value)
+            (str/blank? value))
+    (tr "workspace.tokens.empty-input")))
+
 (defn- make-schema
   [tokens-tree]
   (sm/schema
@@ -44,7 +50,7 @@
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
         #(not (cft/token-name-path-exists? % tokens-tree))]]]
 
-     [:value ::sm/text]
+     [:value [::sm/text {:error/fn token-value-error-fn}]]
 
      [:resolved-value ::sm/any]
 
