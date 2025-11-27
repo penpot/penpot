@@ -173,12 +173,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpot/draft-js-wrapper@workspace:.":
+"@penpot/draft-js@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@penpot/draft-js-wrapper@workspace:."
+  resolution: "@penpot/draft-js@workspace:."
   dependencies:
     draft-js: "penpot/draft-js.git#4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0"
     esbuild: "npm:^0.24.0"
+    immutable: "npm:^5.1.4"
   peerDependencies:
     react: ">=0.17.0"
     react-dom: ">=0.17.0"
@@ -317,6 +318,13 @@ __metadata:
     setimmediate: "npm:^1.0.5"
     ua-parser-js: "npm:^1.0.35"
   checksum: 10c0/66d0a2fc9a774f9066e35ac2ac4bf1245931d27f3ac287c7d47e6aa1fc152b243c2109743eb8f65341e025621fb51a12038fadb9fd8fda2e3ddae04ebab06f91
+  languageName: node
+  linkType: hard
+
+"immutable@npm:^5.1.4":
+  version: 5.1.4
+  resolution: "immutable@npm:5.1.4"
+  checksum: 10c0/f1c98382e4cde14a0b218be3b9b2f8441888da8df3b8c064aa756071da55fbed6ad696e5959982508456332419be9fdeaf29b2e58d0eadc45483cc16963c0446
   languageName: node
   linkType: hard
 
