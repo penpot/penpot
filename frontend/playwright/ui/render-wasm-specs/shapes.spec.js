@@ -258,6 +258,22 @@ test("Renders a file with nested frames with inherited blur", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with nested clipping frames", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-frame-nested-clipping.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "44471494-966a-8178-8006-c5bd93f0fe72",
+    pageId: "44471494-966a-8178-8006-c5bd93f0fe73",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a clipped frame with a large blur drop shadow", async ({
   page,
 }) => {

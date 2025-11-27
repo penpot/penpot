@@ -38,30 +38,18 @@
         (features/use-feature "render-wasm/v1")
 
         has-invalid-shapes?
-        (if render-wasm-enabled?
-          false
-          (some (fn [shape]
-                  (or (cfh/frame-shape? shape)
-                      (cfh/text-shape? shape)))
-                shapes-with-children))
+        (some (if render-wasm-enabled?
+                cfh/frame-shape?
+                #(or (cfh/frame-shape? %) (cfh/text-shape? %)))
+              shapes-with-children)
 
         head-not-group-like?
         (and (= 1 total-selected)
              (not is-group?)
              (not is-bool?))
 
-        disabled-bool-btns
-        (if render-wasm-enabled?
-          false
-          (or (zero? total-selected)
-              has-invalid-shapes?
-              head-not-group-like?))
-
-        disabled-flatten
-        (if render-wasm-enabled?
-          false
-          (or (zero? total-selected)
-              has-invalid-shapes?))
+        disabled-bool-btns (or (zero? total-selected) has-invalid-shapes? head-not-group-like?)
+        disabled-flatten   (or (zero? total-selected) has-invalid-shapes?)
 
         on-change
         (mf/use-fn

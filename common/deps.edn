@@ -17,7 +17,7 @@
   org.slf4j/slf4j-api {:mvn/version "2.0.17"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.40"}
 
-  selmer/selmer {:mvn/version "1.12.62"}
+  selmer/selmer {:mvn/version "1.12.69"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.13"}
@@ -48,11 +48,7 @@
   com.sun.mail/jakarta.mail {:mvn/version "2.0.2"}
   org.la4j/la4j {:mvn/version "0.6.0"}
 
-  ;; exception printing
-  fipp/fipp {:mvn/version "0.6.29"}
-
   me.flowthing/pp {:mvn/version "2024-11-13.77"}
-
 
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}

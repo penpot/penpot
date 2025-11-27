@@ -292,7 +292,7 @@ pub extern "C" fn set_shape_text_content() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let raw_text_data = RawParagraph::try_from(&bytes).unwrap();
 
-        if let Err(_) = shape.add_paragraph(raw_text_data.into()) {
+        if shape.add_paragraph(raw_text_data.into()).is_err() {
             println!("Error with set_shape_text_content on {:?}", shape.id);
         }
     });

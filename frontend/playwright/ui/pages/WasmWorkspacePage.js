@@ -42,7 +42,7 @@ export class WasmWorkspacePage extends WorkspacePage {
   }
 
   async waitForFirstRenderWithoutUI() {
-    await waitForFirstRender();
+    await this.waitForFirstRender();
     await this.hideUI();
   }
 

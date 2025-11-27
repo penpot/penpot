@@ -885,19 +885,50 @@ impl Shape {
         scale: f32,
     ) -> Bounds {
         let mut rect = bounds.to_rect();
-        let include_children = match self.shape_type {
-            Type::Group(_) => true,
-            Type::Frame(_) => !self.clip_content,
-            _ => false,
-        };
 
-        if include_children {
-            for child_id in self.children_ids_iter(false) {
-                if let Some(child_shape) = shapes_pool.get(child_id) {
-                    let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
-                    rect.join(child_extrect);
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => {
+                let mut mask_rect: Option<math::Rect> = None;
+                let mut content_rect: Option<math::Rect> = None;
+
+                for (index, child_id) in self.children.iter().enumerate() {
+                    if let Some(child_shape) = shapes_pool.get(child_id) {
+                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+
+                        if index == 0 {
+                            mask_rect = Some(child_extrect);
+                        } else {
+                            match content_rect.as_mut() {
+                                Some(r) => r.join(child_extrect),
+                                None => content_rect = Some(child_extrect),
+                            }
+                        }
+                    }
+                }
+
+                match (mask_rect, content_rect) {
+                    (Some(mut mask), Some(content)) => {
+                        if mask.intersect(content) {
+                            rect.join(mask);
+                        }
+                    }
+                    (Some(mask), None) | (None, Some(mask)) => {
+                        rect.join(mask);
+                    }
+                    (None, None) => {}
                 }
             }
+
+            Type::Group(_) | Type::Frame(_) if !self.clip_content => {
+                for child_id in self.children_ids_iter(false) {
+                    if let Some(child_shape) = shapes_pool.get(child_id) {
+                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+                        rect.join(child_extrect);
+                    }
+                }
+            }
+
+            _ => {}
         }
 
         Bounds::from_rect(&rect)
@@ -1426,6 +1457,7 @@ impl Shape {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::state::ShapesPool;
 
     fn any_shape() -> Shape {
         Shape::new(Uuid::nil())
@@ -1484,5 +1516,43 @@ mod tests {
 
         assert_eq!(shape.selrect().width(), 20.0);
         assert_eq!(shape.selrect().height(), 20.0);
+    }
+
+    #[test]
+    fn masked_group_extrect_matches_mask_intersection() {
+        let mut pool = ShapesPool::new();
+        pool.initialize(3);
+
+        let group_id = Uuid::new_v4();
+        let mask_id = Uuid::new_v4();
+        let content_id = Uuid::new_v4();
+
+        {
+            let group = pool.add_shape(group_id);
+            group.set_shape_type(Type::Group(Group { masked: true }));
+            group.children = vec![mask_id, content_id];
+        }
+
+        {
+            let mask = pool.add_shape(mask_id);
+            mask.set_shape_type(Type::Rect(Rect::default()));
+            mask.set_selrect(0.0, 0.0, 50.0, 50.0);
+            mask.set_parent(group_id);
+        }
+
+        {
+            let content = pool.add_shape(content_id);
+            content.set_shape_type(Type::Rect(Rect::default()));
+            content.set_selrect(-10.0, -10.0, 110.0, 110.0);
+            content.set_parent(group_id);
+        }
+
+        let group = pool.get(&group_id).expect("group should exist");
+        let extrect = group.calculate_extrect(&pool, 1.0);
+
+        assert_eq!(extrect.left, 0.0);
+        assert_eq!(extrect.top, 0.0);
+        assert_eq!(extrect.right, 50.0);
+        assert_eq!(extrect.bottom, 50.0);
     }
 }

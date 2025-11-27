@@ -475,9 +475,9 @@
                   (dissoc :style)
                   (merge style)
                   (select-keys allowed-keys))
-        fill-rule       (or (-> attrs :fill-rule sr/translate-fill-rule) (-> attrs :fillRule sr/translate-fill-rule))
-        stroke-linecap  (or (-> attrs :stroke-linecap sr/translate-stroke-linecap) (-> attrs :strokeLinecap sr/translate-stroke-linecap))
-        stroke-linejoin (or (-> attrs :stroke-linejoin sr/translate-stroke-linejoin) (-> attrs :strokeLinejoin sr/translate-stroke-linejoin))
+        fill-rule       (-> (or (:fill-rule attrs) (:fillRule attrs)) sr/translate-fill-rule)
+        stroke-linecap  (-> (or (:stroke-linecap attrs) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
+        stroke-linejoin (-> (or (:stroke-linejoin attrs) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
         fill-none       (= "none" (-> attrs :fill))]
     (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
 
