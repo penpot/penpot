@@ -17,7 +17,7 @@
   org.slf4j/slf4j-api {:mvn/version "2.0.17"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.40"}
 
-  selmer/selmer {:mvn/version "1.12.62"}
+  selmer/selmer {:mvn/version "1.12.69"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.13"}
