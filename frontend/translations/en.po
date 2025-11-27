@@ -1853,7 +1853,7 @@ msgstr "Select a shape, board or group to inspect their properties and code"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
 msgid "inspect.layer-info"
-msgstr "Select inspect tab"
+msgstr "Layer info"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.multiple-selected"
