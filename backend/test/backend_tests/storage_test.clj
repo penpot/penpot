@@ -318,3 +318,35 @@
     ;; check that we have all no objects
     (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
       (t/is (= 0 (count rows))))))
+
+(t/deftest tempfile-bucket-test
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content1 (sto/content "content1")
+        now      (ct/now)
+
+        object1  (sto/put-object! storage {::sto/content content1
+                                           ::sto/touched-at (ct/plus now {:minutes 1})
+                                           :bucket "tempfile"
+                                           :content-type "text/plain"})]
+
+
+    (binding [ct/*clock* (clock/fixed now)]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+
+    (binding [ct/*clock* (clock/fixed (ct/plus now {:minutes 1}))]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+
+
+    (binding [ct/*clock* (clock/fixed (ct/plus now {:hours 1}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 0 (:deleted res)))))
+
+    (binding [ct/*clock* (clock/fixed (ct/plus now {:hours 2}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 0 (:deleted res)))))))
