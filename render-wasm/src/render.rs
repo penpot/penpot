@@ -40,6 +40,71 @@ const NODE_BATCH_THRESHOLD: i32 = 10;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+fn clip_stack_bounds(stack: &ClipStack) -> Option<Rect> {
+    let mut accumulated: Option<Rect> = None;
+
+    for (rect, _corners, transform) in stack {
+        let (mapped, _) = transform.map_rect(*rect);
+        accumulated = Some(match accumulated {
+            Some(mut current) => {
+                if !current.intersect(&mapped) {
+                    return Some(Rect::new_empty());
+                }
+                current
+            }
+            None => mapped,
+        });
+    }
+
+    accumulated
+}
+
+fn compute_alignment_correction(bounds: Rect, clip: Rect, max_shift: f32) -> (f32, f32) {
+    if clip.is_empty() || max_shift <= 0.0 {
+        return (0.0, 0.0);
+    }
+
+    let mut correction = (0.0, 0.0);
+    let clamped = max_shift.max(0.0);
+
+    let overflow_right = bounds.right() - clip.right();
+    if overflow_right > 0.0 {
+        correction.0 = -overflow_right.min(clamped);
+    }
+
+    let overflow_left = clip.left() - bounds.left();
+    if overflow_left > 0.0 {
+        correction.0 = overflow_left.min(clamped);
+    }
+
+    let overflow_bottom = bounds.bottom() - clip.bottom();
+    if overflow_bottom > 0.0 {
+        correction.1 = -overflow_bottom.min(clamped);
+    }
+
+    let overflow_top = clip.top() - bounds.top();
+    if overflow_top > 0.0 {
+        correction.1 = overflow_top.min(clamped);
+    }
+
+    correction
+}
+
+fn offset_clip_stack(stack: &ClipStack, offset: (f32, f32)) -> ClipStack {
+    stack
+        .iter()
+        .map(|(rect, corners, transform)| {
+            let mut adjusted_rect = *rect;
+            adjusted_rect.offset((offset.0, offset.1));
+
+            let mut adjusted_transform = *transform;
+            adjusted_transform.post_translate(offset);
+
+            (adjusted_rect, *corners, adjusted_transform)
+        })
+        .collect()
+}
+
 pub struct NodeRenderState {
     pub id: Uuid,
     // We use this bool to keep that we've traversed all the children inside this node.
@@ -1329,6 +1394,20 @@ impl RenderState {
         // Account for the shadow offset so the temporary surface fully contains the shifted blur.
         bounds.offset(world_offset);
 
+        let mut shadow_clip_bounds = clip_bounds.clone();
+
+        if let Some(clip_limit) = clip_bounds
+            .as_ref()
+            .and_then(|stack| clip_stack_bounds(stack))
+        {
+            let correction = compute_alignment_correction(bounds, clip_limit, shadow.blur);
+            if correction != (0.0, 0.0) {
+                bounds.offset(correction);
+                shadow_clip_bounds = shadow_clip_bounds
+                    .map(|stack| offset_clip_stack(&stack, correction));
+            }
+        }
+
         let filter_result =
             filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
                 {
@@ -1345,7 +1424,7 @@ impl RenderState {
                 state.with_nested_blurs_suppressed(|state| {
                     state.render_shape(
                         &plain_shape,
-                        clip_bounds,
+                        shadow_clip_bounds.clone(),
                         temp_surface,
                         temp_surface,
                         temp_surface,
