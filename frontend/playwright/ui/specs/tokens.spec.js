@@ -499,7 +499,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await valueField.fill("");
     // TODO: We need to fix this translation
     await expect(
-      tokensUpdateCreateModal.getByText("Empty field"),
+      tokensUpdateCreateModal.getByText("Token value cannot be empty"),
     ).toBeVisible();
     await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
     await expect(valueField).toHaveValue(/^#[A-Fa-f\d]+$/);

@@ -38,7 +38,8 @@
     (str v "px")
 
     (and (= k :font-family) (seq v))
-    (str/quote v)
+    ;; pick just first family, avoid quoting twice, and add var(--fallback-families)
+    (str/concat (str/quote (str/unquote (first (str/split v ",")))) ", var(--fallback-families)")
 
     :else
     v))
@@ -53,7 +54,7 @@
     (str/slice v 0 -2)
 
     (= k :font-family)
-    (str/unquote v)
+    (str/unquote (str/replace v ", var(--fallback-families)" ""))
 
     :else
     v))

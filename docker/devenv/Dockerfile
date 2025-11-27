@@ -65,7 +65,7 @@ RUN set -eux; \
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.2.1565
+ENV CLOJURE_VERSION=1.12.3.1577
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
