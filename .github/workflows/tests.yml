@@ -8,8 +8,6 @@ on:
   pull_request:
     types:
       - opened
-      - edited
-      - reopened
       - synchronize
   push:
     branches:
@@ -90,6 +88,30 @@ jobs:
         working-directory: ./frontend
         run: |
           yarn run lint:scss;
+
+  test-render-wasm:
+    name: "Render WASM Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Format
+        working-directory: ./render-wasm
+        run: |
+          cargo fmt --check
+
+      - name: Lint
+        working-directory: ./render-wasm
+        run: |
+          ./lint
+
+      - name: Test
+        working-directory: ./render-wasm
+        run: |
+          ./test
 
   test-backend:
     name: "Backend Tests"
