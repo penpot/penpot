@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
+  "packageManager": "yarn@4.12.0+sha512.f45ab632439a67f8bc759bf32ead036a1f413287b9042726b7cc4818b7b49e14e9423ba49b18f9e06ea4941c1ad062385b1d8760a8d5091a1a31e5f6219afca8",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
@@ -16,9 +16,9 @@
     "date-fns": "^4.1.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
-    "ioredis": "^5.8.1",
-    "playwright": "^1.55.1",
-    "raw-body": "^3.0.1",
+    "ioredis": "^5.8.2",
+    "playwright": "^1.57.0",
+    "raw-body": "^3.0.2",
     "source-map-support": "^0.5.21",
     "svgo": "penpot/svgo#v3.1",
     "xml-js": "^1.6.11",
