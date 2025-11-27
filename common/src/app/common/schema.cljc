@@ -919,7 +919,7 @@
   :pred #(and (string? %) (not (str/blank? %)))
   :property-pred
   (fn [{:keys [min max] :as props}]
-    (if (seq props)
+    (if (or min max)
       (fn [value]
         (let [size (count value)]
           (cond
