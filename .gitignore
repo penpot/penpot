@@ -80,3 +80,4 @@ node_modules
 /playwright/.cache/
 /render-wasm/target/
 /**/.yarn/*
+/.pnpm-store
