@@ -266,6 +266,12 @@
 
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
+;; FIXME: This is a temporary function to load the fallback fonts for the editor.
+;; Once we render the editor content within wasm, we can remove this function.
+(defn load-fallback-fonts-for-editor!
+  [fonts]
+  (doseq [font fonts]
+    (fonts/ensure-loaded! (:font-id font) (:font-variant-id font))))
 
 (defn store-fonts
   [shape-id fonts]
@@ -277,7 +283,8 @@
                :font-variant-id "regular"
                :style 0
                :weight 400
-               :is-emoji true}))
+               :is-emoji true
+               :is-fallback true}))
 
 (def noto-fonts
   {:japanese    {:font-id "gfont-noto-sans-jp"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}

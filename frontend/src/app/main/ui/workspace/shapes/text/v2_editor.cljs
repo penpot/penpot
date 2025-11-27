@@ -33,6 +33,7 @@
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn get-contrast-color [background-color]
@@ -268,7 +269,12 @@
     "bottom" "flex-end"
     nil))
 
-;;
+(defn- font-family-from-font-id [font-id]
+  (if (str/includes? font-id "gfont-noto-sans")
+    (let [lang (str/replace font-id #"gfont\-noto\-sans\-" "")]
+      (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
+    "Noto Color Emoji"))
+
 ;; Text Editor Wrapper
 ;; This is an SVG element that wraps the HTML editor.
 ;;
@@ -280,6 +286,10 @@
   [{:keys [shape modifiers canvas-ref] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
+
+        fallback-fonts (wasm.api/fonts-from-text-content (:content shape) false)
+        fallback-families (map (fn [font]
+                                 (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 
@@ -341,7 +351,8 @@
           render-wasm?
           (obj/merge!
            #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")})
+                "--editor-container-height" (dm/str height "px")
+                "--fallback-families" (dm/str (str/join ", " fallback-families))})
 
           (not render-wasm?)
           (obj/merge!

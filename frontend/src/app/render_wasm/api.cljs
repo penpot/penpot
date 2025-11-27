@@ -785,19 +785,10 @@
                     hidden)))
         shadows))
 
-(defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
-  [shape-id content]
-
-  (h/call wasm/internal-module "_clear_shape_text")
-
-  (set-shape-vertical-align (get content :vertical-align))
-
+(defn fonts-from-text-content [content fallback-fonts-only?]
   (let [paragraph-set (first (get content :children))
         paragraphs    (get paragraph-set :children)
-        fonts         (fonts/get-content-fonts content)
         total         (count paragraphs)]
-
     (loop [index  0
            emoji? false
            langs  #{}]
@@ -814,20 +805,36 @@
                   emoji? (if emoji? emoji? (t/contains-emoji? text))
                   langs  (t/collect-used-languages langs text)]
 
-              (t/write-shape-text spans paragraph text)
+              ;; FIXME: this should probably be somewhere else
+              (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
+
               (recur (inc index)
                      emoji?
                      langs))))
 
         (let [updated-fonts
-              (-> fonts
+              (-> #{}
                   (cond-> ^boolean emoji? (f/add-emoji-font))
                   (f/add-noto-fonts langs))
-              result (f/store-fonts shape-id updated-fonts)]
+              fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
-          (h/call wasm/internal-module "_update_shape_text_layout")
+          (if fallback-fonts-only? updated-fonts fallback-fonts))))))
 
-          result)))))
+(defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  [shape-id content]
+
+  (h/call wasm/internal-module "_clear_shape_text")
+
+  (set-shape-vertical-align (get content :vertical-align))
+
+  (let [fonts         (fonts/get-content-fonts content)
+        fallback-fonts (fonts-from-text-content content true)
+        all-fonts (concat fonts fallback-fonts)
+        result (f/store-fonts shape-id all-fonts)]
+    (f/load-fallback-fonts-for-editor! fallback-fonts)
+    (h/call wasm/internal-module "_update_shape_text_layout")
+    result))
 
 (defn set-shape-grow-type
   [grow-type]
