@@ -283,7 +283,8 @@
                :font-variant-id "regular"
                :style 0
                :weight 400
-               :is-emoji true}))
+               :is-emoji true
+               :is-fallback true}))
 
 (def noto-fonts
   {:japanese    {:font-id "gfont-noto-sans-jp"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}

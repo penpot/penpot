@@ -269,6 +269,11 @@
     "bottom" "flex-end"
     nil))
 
+(defn- font-family-from-font-id [font-id]
+  (if (str/includes? font-id "gfont-noto-sans")
+    (let [lang (str/replace font-id #"gfont\-noto\-sans\-" "")]
+      (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
+    "Noto Color Emoji"))
 
 ;; Text Editor Wrapper
 ;; This is an SVG element that wraps the HTML editor.
@@ -281,11 +286,10 @@
   [{:keys [shape modifiers canvas-ref] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
-        fallback-fonts (wasm.api/get-fallback-fonts (:content shape) false)
+
+        fallback-fonts (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
-                                 (let [lang (str/replace (:font-id font) #"gfont\-noto\-sans\-" "")
-                                       lang (if (>= (count lang) 3) (str/capital lang) (str/upper lang))]
-                                   (str/concat "\"Noto Sans " lang "\""))) fallback-fonts)
+                                 (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 

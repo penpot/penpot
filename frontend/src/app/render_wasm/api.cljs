@@ -785,7 +785,7 @@
                     hidden)))
         shadows))
 
-(defn get-fallback-fonts [content write-text-content?]
+(defn fonts-from-text-content [content fallback-fonts-only?]
   (let [paragraph-set (first (get content :children))
         paragraphs    (get paragraph-set :children)
         total         (count paragraphs)]
@@ -806,7 +806,7 @@
                   langs  (t/collect-used-languages langs text)]
 
               ;; FIXME: this should probably be somewhere else
-              (when write-text-content? (t/write-shape-text spans paragraph text))
+              (when fallback-fonts-only? (t/write-shape-text spans paragraph text))
 
               (recur (inc index)
                      emoji?
@@ -818,7 +818,7 @@
                   (f/add-noto-fonts langs))
               fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
-          fallback-fonts)))))
+          (if fallback-fonts-only? updated-fonts fallback-fonts))))))
 
 (defn set-shape-text-content
   "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
@@ -829,7 +829,7 @@
   (set-shape-vertical-align (get content :vertical-align))
 
   (let [fonts         (fonts/get-content-fonts content)
-        fallback-fonts (get-fallback-fonts content true)
+        fallback-fonts (fonts-from-text-content content true)
         all-fonts (concat fonts fallback-fonts)
         result (f/store-fonts shape-id all-fonts)]
     (f/load-fallback-fonts-for-editor! fallback-fonts)

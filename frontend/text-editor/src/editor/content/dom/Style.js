@@ -19,6 +19,23 @@ const DEFAULT_FONT_WEIGHT = "400";
  * @param {string} value
  */
 export function sanitizeFontFamily(value) {
+  // NOTE: This is a fix for a bug introduced earlier that have might modified the font-family in the model
+  // adding extra double quotes.
+  if (value && value.startsWith('""')) {
+    //remove the first and last quotes
+    value = value.slice(1).replace(/"([^"]*)$/, "$1");
+
+    // remove quotes from font-family in 1-word font-families
+    // and repeated values
+    value = [
+      ...new Set(
+        value
+          .split(", ")
+          .map((x) => (x.includes(" ") ? x : x.replace(/"/g, ""))),
+      ),
+    ].join(", ");
+  }
+
   if (!value || value === "") {
     return "var(--fallback-families)";
   } else if (value.endsWith(" var(--fallback-families)")) {
