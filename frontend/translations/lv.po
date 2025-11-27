@@ -1819,7 +1819,7 @@ msgstr "Jāatlasa apveids, plātne vai kopa, lai apskatītu to īpašības un ko
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
 msgid "inspect.layer-info"
-msgstr "Atlasīt izpētīšanas cilni"
+msgstr "Slāņa informācija"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.multiple-selected"
