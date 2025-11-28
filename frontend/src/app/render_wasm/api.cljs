@@ -1246,9 +1246,15 @@
 
 (defn clear-canvas
   []
-  ;; TODO: perform corresponding cleaning
-  (set! wasm/context-initialized? false)
-  (h/call wasm/internal-module "_clean_up"))
+  (try
+    ;; TODO: perform corresponding cleaning
+    (set! wasm/context-initialized? false)
+    (h/call wasm/internal-module "_clean_up")
+
+    ;; If this calls panics we don't want to crash. This happens sometimes
+    ;; with hot-reload in develop
+    (catch :default error
+      (.error js/console error))))
 
 (defn show-grid
   [id]
