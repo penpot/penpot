@@ -31,6 +31,7 @@
 .tool-windows {
   block-size: 100%;
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: var(--sp-s);
 }
 
@@ -149,7 +150,6 @@
 }
 
 .inspect-content {
-  flex: 1;
   overflow: hidden;
 }
 
@@ -157,6 +157,5 @@
   --tabs-nav-padding-inline-start: 0;
   --tabs-nav-padding-inline-end: var(--sp-m);
 
-  block-size: calc(100vh - px2rem(200)); // TODO: Fix this hardcoded value
   overflow: auto;
 }
