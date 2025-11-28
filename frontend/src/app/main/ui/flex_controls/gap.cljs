@@ -16,6 +16,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -31,6 +33,7 @@
   (let [resizing             (mf/use-var nil)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
+        last-pos             (mf/use-var nil)
         negate?              (:resize-negate? rect-data)
         axis                 (:resize-axis rect-data)
 
@@ -43,32 +46,47 @@
            (reset! start (dom/get-client-position event))
            (reset! original-value (:initial-value rect-data))))
 
-        on-lost-pointer-capture
+        calc-modifiers
         (mf/use-fn
          (mf/deps frame-id gap-type gap)
+         (fn [pos]
+           (let [delta      (-> (gpt/to-vec @start pos)
+                                (cond-> negate? gpt/negate)
+                                (get axis))
+                 val            (int (max (+ @original-value (/ delta zoom)) 0))
+                 layout-gap (assoc gap gap-type val)]
+             [val (dwm/create-modif-tree [frame-id] (ctm/change-property (ctm/empty) :layout-gap layout-gap))])))
+
+        on-lost-pointer-capture
+        (mf/use-fn
+         (mf/deps calc-modifiers)
          (fn [event]
            (dom/release-pointer event)
+
+           (when (and (features/active-feature? @st/state "render-wasm/v1") (= @resizing gap-type))
+             (let [[_ modifiers]  (calc-modifiers @last-pos)]
+               (st/emit! (dwm/apply-wasm-modifiers modifiers)
+                         (dwt/finish-transform))))
+
            (reset! resizing nil)
            (reset! start nil)
            (reset! original-value 0)
-           (st/emit! (dwm/apply-modifiers))))
+           (when (not (features/active-feature? @st/state "render-wasm/v1"))
+             (st/emit! (dwm/apply-modifiers)))))
 
         on-pointer-move
         (mf/use-fn
-         (mf/deps frame-id gap-type gap)
+         (mf/deps calc-modifiers)
          (fn [event]
            (let [pos (dom/get-client-position event)]
+             (reset! last-pos pos)
              (reset! mouse-pos (point->viewport pos))
              (when (= @resizing gap-type)
-               (let [delta      (-> (gpt/to-vec @start pos)
-                                    (cond-> negate? gpt/negate)
-                                    (get axis))
-                     val            (int (max (+ @original-value (/ delta zoom)) 0))
-                     layout-gap (assoc gap gap-type val)
-                     modifiers  (dwm/create-modif-tree [frame-id] (ctm/change-property (ctm/empty) :layout-gap layout-gap))]
-
+               (let [[val modifiers]  (calc-modifiers pos)]
                  (reset! hover-value val)
-                 (st/emit! (dwm/set-modifiers modifiers)))))))]
+                 (if (features/active-feature? @st/state "render-wasm/v1")
+                   (st/emit! (dwm/set-wasm-modifiers modifiers))
+                   (st/emit! (dwm/set-modifiers modifiers))))))))]
 
     [:g.gap-rect
      [:rect.info-area

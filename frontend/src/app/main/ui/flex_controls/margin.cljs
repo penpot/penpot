@@ -9,6 +9,8 @@
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -22,6 +24,7 @@
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
+        last-pos             (mf/use-var nil)
         negate?              (true? (:resize-negate? rect-data))
         axis                 (:resize-axis rect-data)
 
@@ -34,15 +37,51 @@
            (reset! start (dom/get-client-position event))
            (reset! original-value (:initial-value rect-data))))
 
+        calc-modifiers
+        (mf/use-fn
+         (fn [pos]
+           (let [delta
+                 (-> (gpt/to-vec @start pos)
+                     (cond-> negate? gpt/negate)
+                     (get axis))
+
+                 val
+                 (int (max (+ @original-value (/ delta zoom)) 0))
+
+                 layout-item-margin
+                 (cond
+                   hover-all? (assoc margin :m1 val :m2 val :m3 val :m4 val)
+                   hover-v?   (assoc margin :m1 val :m3 val)
+                   hover-h?   (assoc margin :m2 val :m4 val)
+                   :else      (assoc margin margin-num val))
+
+                 layout-item-margin-type
+                 (if (= (:m1 margin) (:m2 margin) (:m3 margin) (:m4 margin)) :simple :multiple)]
+
+             [val
+              (dwm/create-modif-tree
+               [shape-id]
+               (-> (ctm/empty)
+                   (ctm/change-property  :layout-item-margin layout-item-margin)
+                   (ctm/change-property  :layout-item-margin-type layout-item-margin-type)))])))
+
         on-lost-pointer-capture
         (mf/use-fn
          (mf/deps shape-id margin-num margin)
          (fn [event]
            (dom/release-pointer event)
+
+           (when (features/active-feature? @st/state "render-wasm/v1")
+             (let [[_ modifiers]  (calc-modifiers @last-pos)]
+               (st/emit! (dwm/apply-wasm-modifiers modifiers)
+                         (dwt/finish-transform))))
+
            (reset! resizing? false)
            (reset! start nil)
            (reset! original-value 0)
-           (st/emit! (dwm/apply-modifiers))))
+
+           (when (not (features/active-feature? @st/state "render-wasm/v1"))
+             (st/emit! (dwm/apply-modifiers)))))
 
         on-pointer-move
         (mf/use-fn
@@ -50,23 +89,13 @@
          (fn [event]
            (let [pos (dom/get-client-position event)]
              (reset! mouse-pos (point->viewport pos))
+             (reset! last-pos pos)
              (when @resizing?
-               (let [delta          (-> (gpt/to-vec @start pos)
-                                        (cond-> negate? gpt/negate)
-                                        (get axis))
-                     val            (int (max (+ @original-value (/ delta zoom)) 0))
-                     layout-item-margin (cond
-                                          hover-all? (assoc margin :m1 val :m2 val :m3 val :m4 val)
-                                          hover-v?   (assoc margin :m1 val :m3 val)
-                                          hover-h?   (assoc margin :m2 val :m4 val)
-                                          :else      (assoc margin margin-num val))
-                     layout-item-margin-type (if (= (:m1 margin) (:m2 margin) (:m3 margin) (:m4 margin)) :simple :multiple)
-                     modifiers      (dwm/create-modif-tree [shape-id]
-                                                           (-> (ctm/empty)
-                                                               (ctm/change-property  :layout-item-margin layout-item-margin)
-                                                               (ctm/change-property  :layout-item-margin-type layout-item-margin-type)))]
+               (let [[val modifiers] (calc-modifiers pos)]
                  (reset! hover-value val)
-                 (st/emit! (dwm/set-modifiers modifiers)))))))]
+                 (if (features/active-feature? @st/state "render-wasm/v1")
+                   (st/emit! (dwm/set-wasm-modifiers modifiers))
+                   (st/emit! (dwm/set-modifiers modifiers))))))))]
 
     [:rect.margin-rect
      {:x (:x rect-data)
