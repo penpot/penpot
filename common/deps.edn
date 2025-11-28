@@ -29,7 +29,6 @@
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
   integrant/integrant {:mvn/version "1.0.0"}
 
-  funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2026.415"}
   funcool/promesa
   {:git/sha "46048fc0d4bf5466a2a4121f5d52aefa6337f2e8"
