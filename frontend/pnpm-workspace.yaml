@@ -1,0 +1,6 @@
+patchedDependencies:
+  '@zip.js/zip.js': patches/@zip.js__zip.js.patch
+
+
+shamefullyHoist: true
+recursiveInstall: true
