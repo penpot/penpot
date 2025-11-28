@@ -6,11 +6,11 @@
 
 (ns app.util.code-highlight
   (:require
-   ["@penpot/hljs" :as hljs]
+   ["highlight.js" :as hljs]
    [app.util.dom :as dom]))
 
 (defn highlight!
   {:lazy-loadable true}
   [node]
   (dom/set-data! node "highlighted" nil)
-  (hljs/highlightElement node))
+  (.highlightElement hljs/default node))
