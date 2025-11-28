@@ -3,6 +3,6 @@
 set -ex
 corepack enable;
 corepack install;
-yarn install;
-yarn run playwright install chromium --with-deps;
-yarn run test:e2e -x --workers=2 --reporter=list "$@";
+pnpm install;
+pnpm run playwright install chromium --with-deps;
+pnpm run test:e2e -x --workers=2 --reporter=list "$@";

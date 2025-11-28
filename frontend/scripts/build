@@ -21,19 +21,19 @@ set -ex
 
 corepack enable;
 corepack install || exit 1;
-yarn install || exit 1;
+pnpm install || exit 1;
 
 rm -rf resources/public;
 rm -rf target/dist;
 
-yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
+pnpm run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
 
 if [ "$INCLUDE_WASM" = "yes" ];  then
-    yarn run build:wasm || exit 1;
+    pnpm run build:wasm || exit 1;
 fi
 
-yarn run build:app:libs || exit 1;
-yarn run build:app:assets || exit 1;
+pnpm run build:app:libs || exit 1;
+pnpm run build:app:assets || exit 1;
 
 mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/
@@ -50,6 +50,6 @@ fi
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
     # build storybook
-    yarn run build:storybook || exit 1;
+    pnpm run build:storybook || exit 1;
     rsync -avr storybook-static/ target/dist/storybook-static;
 fi

@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.12.0+sha512.f45ab632439a67f8bc759bf32ead036a1f413287b9042726b7cc4818b7b49e14e9423ba49b18f9e06ea4941c1ad062385b1d8760a8d5091a1a31e5f6219afca8",
+  "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
@@ -30,9 +30,9 @@
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
     "watch:app": "clojure -M:dev:shadow-cljs watch main",
-    "watch": "yarn run clear:shadow-cache && yarn run watch:app",
+    "watch": "pnpm run clear:shadow-cache && pnpm run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",
-    "build": "yarn run clear:shadow-cache && yarn run build:app",
+    "build": "pnpm run clear:shadow-cache && pnpm run build:app",
     "fmt:clj:check": "cljfmt check --parallel=false src/",
     "fmt:clj": "cljfmt fix --parallel=true src/",
     "lint:clj": "clj-kondo --parallel --lint src/"

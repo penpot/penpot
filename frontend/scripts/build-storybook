@@ -15,7 +15,6 @@ echo $PATH
 set -ex
 
 corepack enable;
-corepack install || exit 1;
-yarn install || exit 1;
-
-yarn run build:storybook || exit 1;
+corepack install;
+pnpm install;
+pnpm run build:storybook;

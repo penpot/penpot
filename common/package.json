@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.9.2+sha512.1fc009bc09d13cfd0e19efa44cbfc2b9cf6ca61482725eb35bbc5e257e093ebf4130db6dfe15d604ff4b79efd8e1e8e99b25fa7d0a6197c9f9826358d4d65c3c",
+  "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
   "type": "module",
   "repository": {
     "type": "git",
@@ -14,18 +14,12 @@
     "concurrently": "^9.1.2",
     "nodemon": "^3.1.10",
     "source-map-support": "^0.5.21",
-    "ws": "^8.18.2"
-  },
-  "dependencies": {
+    "ws": "^8.18.2",
     "date-fns": "^4.1.0"
   },
   "scripts": {
-    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
-    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
-    "lint:clj": "clj-kondo --parallel=true --lint src/",
-    "lint": "yarn run lint:clj",
     "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
-    "test": "yarn run build:test && node target/tests/test.js"
+    "test": "pnpm run build:test && node target/tests/test.js"
   }
 }

@@ -3,11 +3,11 @@
 set -ex
 corepack enable;
 corepack install;
-yarn install;
 
-yarn run playwright install chromium --with-deps;
-yarn run build:storybook
+pnpm install;
+pnpm run playwright install chromium --with-deps;
+pnpm run build:storybook
 
-exec npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-    "npx http-server storybook-static --port 6006 --silent" \
-    "npx wait-on tcp:6006 && yarn test:storybook"
+exec pnpx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+    "pnpx http-server storybook-static --port 6006 --silent" \
+    "pnpx wait-on tcp:6006 && pnpm test:storybook"

@@ -5,17 +5,16 @@ set -ex
 export CURRENT_VERSION=$1;
 export NODE_ENV=production;
 
+rm -rf target;
+
 corepack enable;
-corepack install || exit 1;
-yarn install || exit 1;
-rm -rf target
+corepack install;
 
-# Build the application
-yarn run build;
+pnpm install;
+pnpm run build;
 
-# Copy package*.json files
-cp ../.yarnrc.yml target/;
-cp yarn.lock target/;
+cp pnpm-lock.yaml target/;
+cp pnpm-workspace.yaml target/;
 cp package.json target/;
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js;
