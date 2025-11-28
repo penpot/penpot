@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -ex
+corepack enable;
+corepack install;
+yarn install;
+
+yarn run build:bundle;
+yarn run test;
