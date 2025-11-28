@@ -360,7 +360,7 @@ test("Renders a file with texts with paragraphs and breaking lines", async ({
     id: "a5f238bd-dd8a-8164-8007-1bc3481eaf05",
     pageId: "a5f238bd-dd8a-8164-8007-1bc3481eaf06",
   });
-  await workspace.waitForFirstRender();
+  await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
