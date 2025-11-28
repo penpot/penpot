@@ -141,7 +141,20 @@ impl NodeRenderState {
 
         match &element.shape_type {
             Type::Frame(_) => {
-                let bounds = element.get_selrect_shadow_bounds(shadow);
+                let mut bounds = element.get_selrect_shadow_bounds(shadow);
+                let blur_inset = (shadow.blur * 2.).max(0.0);
+                if blur_inset > 0.0 {
+                    let max_inset_x = (bounds.width() * 0.5).max(0.0);
+                    let max_inset_y = (bounds.height() * 0.5).max(0.0);
+                    // Clamp the inset so we never shrink more than half of the width/height;
+                    // otherwise the rect could end up inverted on small frames.
+                    let inset_x = blur_inset.min(max_inset_x);
+                    let inset_y = blur_inset.min(max_inset_y);
+                    if inset_x > 0.0 || inset_y > 0.0 {
+                        bounds.inset((inset_x, inset_y));
+                    }
+                }
+
                 let mut transform = element.transform;
                 transform.post_translate(element.center());
                 transform.pre_translate(-element.center());
