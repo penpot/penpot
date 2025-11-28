@@ -8,6 +8,11 @@
   metosin/reitit-core {:mvn/version "0.9.1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
+  funcool/tubax
+  {:git/tag "v2025.11.28"
+   :git/sha "2d9a986"
+   :git/url "https://github.com/funcool/tubax.git"}
+
   funcool/potok2
   {:git/tag "v2.2"
    :git/sha "0f7e15a"
