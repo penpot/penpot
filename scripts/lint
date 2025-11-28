@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -ex
+
+cljfmt check --parallel=true \
+       common/src/ \
+       common/test/ \
+       frontend/src/ \
+       frontend/test/ \
+       backend/src/ \
+       backend/test/ \
+       exporter/src/ \
+       library/src;
+
+clj-kondo --parallel=true --lint common/src;
+clj-kondo --parallel=true --lint frontend/src;
+clj-kondo --parallel=true --lint backend/src;
+clj-kondo --parallel=true --lint exporter/src/;
+clj-kondo --parallel=true --lint library/src;

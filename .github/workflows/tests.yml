@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   lint:
-    name: "Code Linter"
+    name: "Linter"
     runs-on: ubuntu-24.04
     container: penpotapp/devenv:latest
 
@@ -30,10 +30,7 @@ jobs:
 
       - name: Check clojure code format
         run: |
-          corepack enable;
-          corepack install;
-          yarn install
-          yarn run fmt:clj:check
+          ./scripts/lint
 
   test-common:
     name: "Common Tests"
@@ -52,10 +49,7 @@ jobs:
       - name: Run tests on NODE
         working-directory: ./common
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run test;
+          ./scripts/test
 
   test-frontend:
     name: "Frontend Tests"
@@ -69,25 +63,12 @@ jobs:
       - name: Unit Tests
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run test;
+          ./scripts/test
 
       - name: Component Tests
         working-directory: ./frontend
         run: |
-            yarn run playwright install chromium --with-deps;
-            yarn run build:storybook
-
-            npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-              "npx http-server storybook-static --port 6006 --silent" \
-              "npx wait-on tcp:6006 && yarn test:storybook"
-
-      - name: Check SCSS Format
-        working-directory: ./frontend
-        run: |
-          yarn run lint:scss;
+          ./scripts/test-components
 
   test-render-wasm:
     name: "Render WASM Tests"
@@ -164,11 +145,7 @@ jobs:
       - name: Run tests
         working-directory: ./library
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run build:bundle;
-          yarn run test;
+          ./scripts/test
 
   build-integration:
     name: "Build Integration Bundle"
@@ -210,11 +187,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run playwright install chromium --with-deps;
-          yarn run test:e2e -x --workers=2 --reporter=list --shard="1/4";
+          ./scripts/test-e2e --shard="1/4";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
@@ -244,11 +217,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run playwright install chromium --with-deps;
-          yarn run test:e2e -x --workers=2 --reporter=list --shard "2/4";
+          ./scripts/test-e2e --shard="2/4";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
@@ -278,11 +247,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run playwright install chromium --with-deps;
-          yarn run test:e2e -x --workers=2 --reporter=list --shard "3/4";
+          ./scripts/test-e2e --shard="3/4";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
@@ -294,7 +259,7 @@ jobs:
           retention-days: 3
 
   test-integration-4:
-    name: "Integration Tests 3/4"
+    name: "Integration Tests 4/4"
     runs-on: ubuntu-24.04
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -312,11 +277,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install;
-          yarn run playwright install chromium --with-deps;
-          yarn run test:e2e -x --workers=2 --reporter=list --shard "4/4";
+          ./scripts/test-e2e --shard="4/4";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
