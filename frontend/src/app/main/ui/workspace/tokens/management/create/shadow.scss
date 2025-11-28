@@ -1,0 +1,95 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+
+.form-wrapper {
+  width: $sz-384;
+  position: relative;
+}
+
+.token-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.inputs-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
+  padding-inline-start: var(--sp-m);
+}
+
+.input-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.input-row-reference {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
+  padding-inline-start: var(--sp-m);
+}
+
+.title-bar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--sp-xs);
+}
+
+.title {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+}
+
+.form-modal-title {
+  @include t.use-typography("headline-medium");
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: var(--sp-m);
+  padding-block-start: var(--sp-s);
+}
+
+.with-delete {
+  grid-template-columns: 1fr auto auto;
+}
+
+.warning-name-change-notification-wrapper {
+  margin-block-start: var(--sp-l);
+}
+
+.delete-btn {
+  justify-self: start;
+}
+
+.visible-label {
+  @include t.use-typography("headline-small");
+  color: var(--color-foreground-secondary);
+  line-height: $sz-32;
+}
+
+.select-wrapper {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}

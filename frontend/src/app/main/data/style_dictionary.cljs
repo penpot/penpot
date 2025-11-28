@@ -389,35 +389,42 @@
 (defn- parse-sd-token-shadow-value
   "Parses shadow value and validates it."
   [value]
-  (cond
-    ;; Reference value (string)
-    (string? value) {:value value}
+  (let [missing-references
+        (when (string? value)
+          (seq (cto/find-token-value-references value)))]
+    (cond
+      missing-references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+       :references missing-references}
+
+      (string? value)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-shadow value)]}
 
     ;; Empty value
-    (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
+      (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
 
     ;; Invalid value
-    (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
+      (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
 
     ;; Array of shadows
-    :else
-    (let [converted (js->clj value :keywordize-keys true)
+      :else
+      (let [converted (js->clj value :keywordize-keys true)
           ;; Parse each shadow with its index
-          parsed-shadows (map-indexed
-                          (fn [idx shadow-map]
-                            (parse-single-shadow shadow-map idx))
-                          converted)
+            parsed-shadows (map-indexed
+                            (fn [idx shadow-map]
+                              (parse-single-shadow shadow-map idx))
+                            converted)
 
           ;; Collect all errors from all shadows
-          all-errors (mapcat :errors parsed-shadows)
+            all-errors (mapcat :errors parsed-shadows)
 
           ;; Collect all values from shadows that have values
-          all-values (into [] (keep :value parsed-shadows))]
+            all-values (into [] (keep :value parsed-shadows))]
 
-      (if (seq all-errors)
-        {:errors all-errors
-         :value all-values}
-        {:value all-values}))))
+        (if (seq all-errors)
+          {:errors all-errors
+           :value all-values}
+          {:value all-values})))))
 
 (defn collect-shadow-errors [token shadow-index]
   (group-by :shadow-key

@@ -43,6 +43,7 @@
     :stroke-width "stroke-size"
     :dimensions "expand"
     :sizing "expand"
+    :shadow "drop-shadow"
     "add"))
 
 (mf/defc token-group*

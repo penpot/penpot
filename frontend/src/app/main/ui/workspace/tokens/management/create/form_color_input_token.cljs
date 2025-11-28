@@ -7,12 +7,15 @@
 (ns app.main.ui.workspace.tokens.management.create.form-color-input-token
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as color]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as cl]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.workspace.tokens.format :as dwtf]
+   [app.main.refs :as refs]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.forms :as fc]
@@ -22,6 +25,7 @@
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn- resolve-value
@@ -115,13 +119,29 @@
         value
         (get-in @form [:data input-name] "")
 
-        hex (if (tinycolor/valid-color value)
-              (tinycolor/->hex-string (tinycolor/valid-color value))
-              "#8f9da3")
+        color-resolved
+        (get-in @form [:data :color-result] "")
 
-        alpha (if (tinycolor/valid-color value)
-                (tinycolor/alpha (tinycolor/valid-color value))
-                1)
+
+        valid-color (or (tinycolor/valid-color value)
+                        (tinycolor/valid-color color-resolved))
+
+        profile     (mf/deref refs/profile)
+
+        default-bullet-color
+        (case (:theme profile)
+          "light"
+          color/background-quaternary-light
+          color/background-quaternary)
+        hex
+        (if valid-color
+          (tinycolor/->hex-string (tinycolor/valid-color valid-color))
+          default-bullet-color)
+
+        alpha
+        (if (tinycolor/valid-color valid-color)
+          (tinycolor/alpha (tinycolor/valid-color valid-color))
+          1)
 
         resolve-stream
         (mf/with-memo [token]
@@ -222,11 +242,189 @@
                                       (if error
                                         (do
                                           (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                          (swap! form assoc-in [:data :color-result] "")
                                           (reset! hint* {:message error :type "error"}))
-                                        (let [message (tr "workspace.tokens.resolved-value" value)]
+                                        (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))]
                                           (swap! form update :extra-errors dissoc input-name)
+                                          (swap! form assoc-in [:data :color-result] value)
                                           (reset! hint* {:message message :type "hint"}))))))))]
 
+        (fn []
+          (rx/dispose! subs))))
+
+    [:*
+     [:> input* props]
+
+     (when color-ramp-open?
+       [:> ramp* {:color value :on-change on-change-value}])]))
+
+(defn- on-composite-indexed-input-token-change
+  ([form field index value]
+   (on-composite-indexed-input-token-change form field index value false))
+  ([form field index value trim?]
+   (letfn [(clean-errors [errors]
+             (-> errors
+                 (dissoc field)
+                 (not-empty)))]
+     (swap! form (fn [state]
+                   (-> state
+                       (assoc-in [:data :value :shadows index field] (if trim? (str/trim value) value))
+                       (update :errors clean-errors)
+                       (update :extra-errors clean-errors)))))))
+
+(mf/defc color-input-indexed*
+  [{:keys [name tokens token index] :rest props}]
+
+  (let [form       (mf/use-ctx fc/context)
+        input-name name
+
+        error
+        (get-in @form [:errors :value :shadows index input-name])
+
+        value
+        (get-in @form [:data :value :shadows index input-name] "")
+
+        color-resolved
+        (get-in @form [:data :value :shadows index :color-result] "")
+
+        valid-color (or (tinycolor/valid-color value)
+                        (tinycolor/valid-color color-resolved))
+        profile     (mf/deref refs/profile)
+
+        default-bullet-color
+        (case (:theme profile)
+          "light"
+          color/background-quaternary-light
+          color/background-quaternary)
+
+        hex
+        (if valid-color
+          (tinycolor/->hex-string (tinycolor/valid-color valid-color))
+          default-bullet-color)
+
+        alpha
+        (if (tinycolor/valid-color valid-color)
+          (tinycolor/alpha (tinycolor/valid-color valid-color))
+          1)
+
+        resolve-stream
+        (mf/with-memo [token]
+          (if-let [value (get-in token [:value :shadows index input-name])]
+            (rx/behavior-subject value)
+            (rx/subject)))
+
+        hint*
+        (mf/use-state {})
+
+        hint
+        (deref hint*)
+
+        color-ramp-open* (mf/use-state false)
+        color-ramp-open? (deref color-ramp-open*)
+
+        on-click-swatch
+        (mf/use-fn
+         (mf/deps color-ramp-open?)
+         (fn []
+           (let [open? (not color-ramp-open?)]
+             (reset! color-ramp-open* open?))))
+
+        swatch
+        (mf/html
+         [:> swatch*
+          {:background {:color hex :opacity alpha}
+           :show-tooltip false
+           :data-testid "token-form-color-bullet"
+           :class (stl/css :slot-start)
+           :on-click on-click-swatch}])
+
+        on-change-value
+        (mf/use-fn
+         (mf/deps resolve-stream input-name value index)
+         (fn [hex alpha]
+           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
+                 prev-input-color (some-> value
+                                          (tinycolor/valid-color))
+                  ;; If the input is a reference we will take the format from the computed value
+                 prev-computed-color (when-not prev-input-color
+                                       (some-> value (tinycolor/valid-color)))
+                 prev-format (some-> (or prev-input-color prev-computed-color)
+                                     (tinycolor/color-format))
+                 to-rgba? (and
+                           (< alpha 1)
+                           (or (= prev-format "hex") (not prev-format)))
+                 to-hex? (and (not prev-format) (= alpha 1))
+                 format (cond
+                          to-rgba? "rgba"
+                          to-hex? "hex"
+                          prev-format prev-format
+                          :else "hex")
+                 color-value (-> (tinycolor/valid-color hex)
+                                 (tinycolor/set-alpha (or alpha 1))
+                                 (tinycolor/->string format))]
+             (when (not= value color-value)
+               (on-composite-indexed-input-token-change form input-name index color-value true)
+               (rx/push! resolve-stream color-value)))))
+
+        on-change
+        (mf/use-fn
+         (mf/deps resolve-stream input-name index)
+         (fn [event]
+           (let [raw-value (-> event dom/get-target dom/get-input-value)
+                 value (if (tinycolor/hex-without-hash-prefix? raw-value)
+                         (dm/str "#" raw-value)
+                         raw-value)]
+             (on-composite-indexed-input-token-change form input-name index value true)
+             (rx/push! resolve-stream value))))
+
+        props
+        (mf/spread-props props   {:on-change on-change
+                                  :value (or value "")
+                                  :hint-message (:message hint)
+                                  :slot-start swatch
+                                  :hint-type (:type hint)})
+
+        props
+        (if error
+          (mf/spread-props props {:hint-type "error"
+                                  :hint-message (:message error)})
+          props)]
+
+    (mf/with-effect [resolve-stream tokens token input-name index]
+      (let [subs (->> resolve-stream
+                      (rx/debounce 300)
+                      (rx/mapcat (partial resolve-value tokens token))
+                      (rx/map (fn [result]
+                                (d/update-when result :error
+                                               (fn [error]
+                                                 (assoc error :message ((:error/fn error) (:error/value error)))))))
+
+                      (rx/subs!
+                       (fn [{:keys [error value]}]
+                         (cond
+                           (and error (str/empty? (:error/value error)))
+                           (do
+                             (swap! form update-in [:errors :value :shadows index] dissoc input-name)
+                             (swap! form update-in [:data :value :shadows index] dissoc input-name)
+                             (swap! form assoc-in [:data :value :shadows index :color-result] "")
+                             (swap! form update :extra-errors dissoc :value)
+                             (reset! hint* {}))
+
+                           (some? error)
+                           (let [error' (:message error)]
+                             (swap! form assoc-in  [:extra-errors :value :shadows index input-name] {:message error'})
+                             (swap! form assoc-in [:data :value :shadows index :color-result] "")
+                             (reset! hint* {:message error' :type "error"}))
+
+                           :else
+                           (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
+                                 input-value (get-in @form [:data :value :shadows index input-name] "")]
+                             (swap! form update :errors dissoc :value)
+                             (swap! form update :extra-errors dissoc :value)
+                             (swap! form assoc-in [:data :value :shadows index :color-result] (dwtf/format-token-value value))
+                             (if (= input-value (str value))
+                               (reset! hint* {})
+                               (reset! hint* {:message message :type "hint"})))))))]
         (fn []
           (rx/dispose! subs))))
 

@@ -167,7 +167,9 @@
                   :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
-       (tr "workspace.tokens.create-token" token-type)]
+       (if (= action "edit")
+         (tr "workspace.tokens.edit-token" token-type)
+         (tr "workspace.tokens.create-token" token-type))]
 
       [:div {:class (stl/css :input-row)}
        [:> fc/form-input* {:id "token-name"

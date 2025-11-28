@@ -40,6 +40,7 @@
    [app.main.ui.workspace.tokens.management.create.font-family :as font-family]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token* token-value-hint*]]
+   [app.main.ui.workspace.tokens.management.create.shadow :as shadow]
    [app.main.ui.workspace.tokens.management.create.text-case :as text-case]
    [app.main.ui.workspace.tokens.management.create.typography :as typography]
    [app.util.dom :as dom]
@@ -133,8 +134,9 @@
   [check-token-empty-value check-self-reference])
 
 (defn- default-validate-token
-  "Validates a token by confirming a list of `validator` predicates and resolving the token using `tokens` with StyleDictionary.
-  Returns rx stream of either a valid resolved token or an errors map.
+  "Validates a token by confirming a list of `validator` predicates and
+  resolving the token using `tokens` with StyleDictionary.  Returns rx
+  stream of either a valid resolved token or an errors map.
 
   Props:
   token-name, token-value, token-description: Values from the form inputs
@@ -232,25 +234,26 @@
         (default-validate-token))))
 
 (defn- validate-shadow-token
-  [{:keys [token-value] :as props}]
+  [{:keys [token-value] :as params}]
   (cond
     ;; Entering form without a value - show no error just resolve nil
     (nil? token-value) (rx/of nil)
     ;; Validate refrence string
-    (cto/shadow-composite-token-reference? token-value) (default-validate-token props)
+    (cto/shadow-composite-token-reference? token-value) (default-validate-token params)
     ;; Validate composite token
     :else
-    (-> props
-        (update :token-value (fn [value]
-                               (->> (or value [])
-                                    (mapv (fn [shadow]
-                                            (d/update-when shadow :inset #(cond
-                                                                            (boolean? %) %
-                                                                            (= "true" %) true
-                                                                            :else false)))))))
-        (assoc :validators [check-empty-shadow-token
-                            check-shadow-token-self-reference])
-        (default-validate-token))))
+    (let [params (-> params
+                     (update :token-value (fn [value]
+                                            (->> (or value [])
+                                                 (mapv (fn [shadow]
+                                                         (d/update-when shadow :inset #(cond
+                                                                                         (boolean? %) %
+                                                                                         (= "true" %) true
+                                                                                         :else false)))))))
+                     (assoc :validators [check-empty-shadow-token
+                                         check-shadow-token-self-reference]))]
+
+      (default-validate-token params))))
 
 (defn- use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -1440,12 +1443,13 @@
                                 :tokens-tree-in-selected-set tokens-tree-in-selected-set
                                 :token token})
         font-family-props (mf/spread-props props {:validate-token validate-font-family-token})
-        typography-props (mf/spread-props props {:validate-token validate-typography-token})]
+        typography-props (mf/spread-props props {:validate-token validate-typography-token})
+        shadow-props (mf/spread-props props {:validate-token validate-shadow-token})]
 
     (case token-type
       :color [:> color/form* props]
       :typography [:> typography/form* typography-props]
-      :shadow [:> shadow-form* props]
+      :shadow [:> shadow/form* shadow-props]
       :font-family [:> font-family/form* font-family-props]
       :text-case [:> text-case/form* props]
       :text-decoration [:> text-decoration-form* props]
