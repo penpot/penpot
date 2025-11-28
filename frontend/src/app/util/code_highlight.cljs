@@ -6,7 +6,7 @@
 
 (ns app.util.code-highlight
   (:require
-   ["@penpot/hljs" :as hljs]
+   ["highlight.js$default" :as hljs]
    [app.util.dom :as dom]))
 
 (defn highlight!
