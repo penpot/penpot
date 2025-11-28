@@ -1350,9 +1350,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpot/draft-js@portal:./vendor/draft-js::locator=frontend%40workspace%3A.":
+"@penpot/draft-js@portal:./packages/draft-js::locator=frontend%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "@penpot/draft-js@portal:./vendor/draft-js::locator=frontend%40workspace%3A."
+  resolution: "@penpot/draft-js@portal:./packages/draft-js::locator=frontend%40workspace%3A."
   dependencies:
     draft-js: "penpot/draft-js.git#4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0"
     immutable: "npm:^5.1.4"
@@ -1362,9 +1362,9 @@ __metadata:
   languageName: node
   linkType: soft
 
-"@penpot/mousetrap@portal:./vendor/mousetrap::locator=frontend%40workspace%3A.":
+"@penpot/mousetrap@portal:./packages/mousetrap::locator=frontend%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "@penpot/mousetrap@portal:./vendor/mousetrap::locator=frontend%40workspace%3A."
+  resolution: "@penpot/mousetrap@portal:./packages/mousetrap::locator=frontend%40workspace%3A."
   languageName: node
   linkType: soft
 
@@ -4356,8 +4356,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "frontend@workspace:."
   dependencies:
-    "@penpot/draft-js": "portal:./vendor/draft-js"
-    "@penpot/mousetrap": "portal:./vendor/mousetrap"
+    "@penpot/draft-js": "portal:./packages/draft-js"
+    "@penpot/mousetrap": "portal:./packages/mousetrap"
     "@penpot/plugins-runtime": "npm:1.3.2"
     "@penpot/svgo": "penpot/svgo#v3.1"
     "@penpot/text-editor": "portal:./text-editor"
