@@ -59,18 +59,19 @@ pub extern "C" fn set_layout_child_data(
     is_absolute: bool,
     z_index: i32,
 ) {
-    let h_sizing = RawSizing::from(h_sizing);
-    let v_sizing = RawSizing::from(v_sizing);
-    let max_h = if has_max_h { Some(max_h) } else { None };
-    let min_h = if has_min_h { Some(min_h) } else { None };
-    let max_w = if has_max_w { Some(max_w) } else { None };
-    let min_w = if has_min_w { Some(min_w) } else { None };
-
-    let raw_align_self = align::RawAlignSelf::from(align_self);
-
-    let align_self = raw_align_self.try_into().ok();
-
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        let h_sizing = RawSizing::from(h_sizing);
+        let v_sizing = RawSizing::from(v_sizing);
+
+        let max_h = if has_max_h { Some(max_h) } else { None };
+        let min_h = if has_min_h { Some(min_h) } else { None };
+        let max_w = if has_max_w { Some(max_w) } else { None };
+        let min_w = if has_min_w { Some(min_w) } else { None };
+
+        let raw_align_self = align::RawAlignSelf::from(align_self);
+
+        let align_self = raw_align_self.try_into().ok();
+
         shape.set_flex_layout_child_data(
             margin_top,
             margin_right,
