@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import SafeGuard from '~/editor/controllers/SafeGuard';
+import SafeGuard from '../../controllers/SafeGuard.js';
 
 /**
  * Iterator direction.
