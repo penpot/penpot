@@ -16,7 +16,9 @@ export const {
   RichTextEditorUtil,
   SelectionState,
   convertFromRaw,
-  convertToRaw
+  convertToRaw,
+  EditorBlock,
+  Editor
 } = pkg;
 
 import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor.js';
