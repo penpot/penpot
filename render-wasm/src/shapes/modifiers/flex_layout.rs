@@ -655,7 +655,11 @@ pub fn reflow_flex_layout(
                 .iter()
                 .map(|track| {
                     let nshapes = usize::max(track.shapes.len(), 1);
-                    track.shapes.iter().map(|s| s.main_size).sum::<f32>()
+                    track
+                        .shapes
+                        .iter()
+                        .map(|s| s.margin_main_start + s.margin_main_end + s.main_size)
+                        .sum::<f32>()
                         + (nshapes as f32 - 1.0) * layout_axis.gap_main
                 })
                 .reduce(f32::max)
