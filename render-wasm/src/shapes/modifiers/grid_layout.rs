@@ -792,6 +792,9 @@ pub fn reflow_grid_layout(
         }
 
         result.push_back(Modifier::transform_propagate(child.id, transform));
+        if child.has_layout() {
+            result.push_back(Modifier::reflow(child.id));
+        }
     }
 
     if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
