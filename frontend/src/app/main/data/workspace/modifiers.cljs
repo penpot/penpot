@@ -649,7 +649,7 @@
             (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
 
             ids
-            (into [] xf:without-uuid-zero (keys transforms))
+            (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
             update-shape
             (fn [shape]
