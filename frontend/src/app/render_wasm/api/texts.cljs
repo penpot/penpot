@@ -80,7 +80,7 @@
                     font-size   (f/serialize-font-size font-size)
 
                     line-height     (f/serialize-line-height (get span :line-height) paragraph-line-height)
-                    letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))
+                    letter-spacing  (f/serialize-letter-spacing (get span :letter-spacing))
 
                     font-weight (get span :font-weight paragraph-font-weight)
                     font-weight (f/serialize-font-weight font-weight)
