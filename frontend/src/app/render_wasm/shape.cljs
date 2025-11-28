@@ -291,7 +291,8 @@
             (api/set-grid-layout-data shape)
 
             (ctl/flex-layout? shape)
-            (api/set-flex-layout shape)))
+            (api/set-flex-layout shape))
+          (api/set-layout-child shape))
 
         ;; Property not in WASM
         nil))))

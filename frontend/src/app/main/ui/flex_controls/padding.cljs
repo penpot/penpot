@@ -9,6 +9,8 @@
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -23,6 +25,7 @@
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
+        last-pos             (mf/use-var nil)
         negate?              (true? (:resize-negate? rect-data))
         axis                 (:resize-axis rect-data)
 
@@ -35,41 +38,65 @@
            (reset! start (dom/get-client-position event))
            (reset! original-value (:initial-value rect-data))))
 
+        calc-modifiers
+        (mf/use-fn
+         (mf/deps frame-id padding-num padding hover-all? hover-v? hover-h?)
+         (fn [pos]
+           (let [delta
+                 (-> (gpt/to-vec @start pos)
+                     (cond-> negate? gpt/negate)
+                     (get axis))
+
+                 val
+                 (int (max (+ @original-value (/ delta zoom)) 0))
+
+                 layout-padding
+                 (cond
+                   hover-all? (assoc padding :p1 val :p2 val :p3 val :p4 val)
+                   hover-v?   (assoc padding :p1 val :p3 val)
+                   hover-h?   (assoc padding :p2 val :p4 val)
+                   :else      (assoc padding padding-num val))
+
+
+                 layout-padding-type
+                 (if (= (:p1 padding) (:p2 padding) (:p3 padding) (:p4 padding)) :simple :multiple)]
+             [val
+              (dwm/create-modif-tree [frame-id]
+                                     (-> (ctm/empty)
+                                         (ctm/change-property  :layout-padding layout-padding)
+                                         (ctm/change-property  :layout-padding-type layout-padding-type)))])))
+
         on-lost-pointer-capture
         (mf/use-fn
-         (mf/deps frame-id padding-num padding)
+         (mf/deps calc-modifiers)
          (fn [event]
            (dom/release-pointer event)
+
+           (when (features/active-feature? @st/state "render-wasm/v1")
+             (let [[_ modifiers]  (calc-modifiers @last-pos)]
+               (st/emit! (dwm/apply-wasm-modifiers modifiers)
+                         (dwt/finish-transform))))
+
            (reset! resizing? false)
            (reset! start nil)
            (reset! original-value 0)
-           (st/emit! (dwm/apply-modifiers))))
+
+           (when (not (features/active-feature? @st/state "render-wasm/v1"))
+             (st/emit! (dwm/apply-modifiers)))))
 
         on-pointer-move
         (mf/use-fn
-         (mf/deps frame-id padding-num padding hover-all? hover-v? hover-h?)
+         (mf/deps calc-modifiers)
          (fn [event]
            (let [pos (dom/get-client-position event)]
              (reset! mouse-pos (point->viewport pos))
+             (reset! last-pos pos)
              (when @resizing?
-               (let [delta               (-> (gpt/to-vec @start pos)
-                                             (cond-> negate? gpt/negate)
-                                             (get axis))
-                     val                 (int (max (+ @original-value (/ delta zoom)) 0))
-                     layout-padding      (cond
-                                           hover-all? (assoc padding :p1 val :p2 val :p3 val :p4 val)
-                                           hover-v?   (assoc padding :p1 val :p3 val)
-                                           hover-h?   (assoc padding :p2 val :p4 val)
-                                           :else      (assoc padding padding-num val))
-
-
-                     layout-padding-type (if (= (:p1 padding) (:p2 padding) (:p3 padding) (:p4 padding)) :simple :multiple)
-                     modifiers           (dwm/create-modif-tree [frame-id]
-                                                                (-> (ctm/empty)
-                                                                    (ctm/change-property  :layout-padding layout-padding)
-                                                                    (ctm/change-property  :layout-padding-type layout-padding-type)))]
+               (let [[val modifiers] (calc-modifiers pos)]
                  (reset! hover-value val)
-                 (st/emit! (dwm/set-modifiers modifiers)))))))]
+                 (if (features/active-feature? @st/state "render-wasm/v1")
+                   (st/emit! (dwm/set-wasm-modifiers modifiers))
+                   (st/emit! (dwm/set-modifiers modifiers))))))))]
 
     [:g.padding-rect
      [:rect.info-area

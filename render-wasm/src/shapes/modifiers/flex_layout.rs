@@ -54,15 +54,6 @@ struct LayoutAxis {
 }
 
 impl LayoutAxis {
-    fn main_space(&self) -> f32 {
-        self.main_size - self.padding_main_start - self.padding_main_end
-    }
-    fn across_space(&self) -> f32 {
-        self.across_size - self.padding_across_start - self.padding_across_end
-    }
-}
-
-impl LayoutAxis {
     fn new(
         shape: &Shape,
         layout_bounds: &Bounds,
@@ -100,6 +91,13 @@ impl LayoutAxis {
                 is_auto_across: shape.is_layout_horizontal_auto(),
             }
         }
+    }
+
+    fn main_space(&self) -> f32 {
+        self.main_size - self.padding_main_start - self.padding_main_end
+    }
+    fn across_space(&self) -> f32 {
+        self.across_size - self.padding_across_start - self.padding_across_end
     }
 }
 
@@ -624,6 +622,9 @@ pub fn reflow_flex_layout(
             }
 
             result.push_back(Modifier::transform_propagate(child.id, transform));
+            if child.has_layout() {
+                result.push_back(Modifier::reflow(child.id));
+            }
 
             shape_anchor = next_anchor(
                 layout_data,
@@ -654,7 +655,11 @@ pub fn reflow_flex_layout(
                 .iter()
                 .map(|track| {
                     let nshapes = usize::max(track.shapes.len(), 1);
-                    track.shapes.iter().map(|s| s.main_size).sum::<f32>()
+                    track
+                        .shapes
+                        .iter()
+                        .map(|s| s.margin_main_start + s.margin_main_end + s.main_size)
+                        .sum::<f32>()
                         + (nshapes as f32 - 1.0) * layout_axis.gap_main
                 })
                 .reduce(f32::max)
