@@ -7753,6 +7753,10 @@ msgstr "Invalid token value: only none, underline and strike-through are accepte
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Invalid value: must reference a composite typography token."
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Invalid value: must reference a composite shadow token."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Invalid token value: %s"
@@ -7869,6 +7873,10 @@ msgstr "Reference is not valid or is not in any active set"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
 msgid "workspace.tokens.reference-composite"
 msgstr "Enter a token typography alias"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Enter a token shadow alias"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused

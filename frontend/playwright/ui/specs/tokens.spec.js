@@ -1239,8 +1239,12 @@ test.describe("Tokens: Apply token", () => {
       // Fill in the shadow values
       const offsetXInput = firstShadowFields.getByLabel("X");
       const offsetYInput = firstShadowFields.getByLabel("Y");
-      const blurInput = firstShadowFields.getByLabel("Blur");
-      const spreadInput = firstShadowFields.getByLabel("Spread");
+      const blurInput = firstShadowFields.getByRole("textbox", {
+        name: "Blur",
+      });
+      const spreadInput = firstShadowFields.getByRole("textbox", {
+        name: "Spread",
+      });
 
       await offsetXInput.fill("2");
       await offsetYInput.fill("2");
@@ -1261,9 +1265,10 @@ test.describe("Tokens: Apply token", () => {
       await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
 
       // Verify that a color value was set
-      const colorInput = firstShadowFields.getByLabel("Color");
-      const firstColorValue = await colorInput.inputValue();
-      await expect(firstColorValue).toMatch(/^rgb(.*)$/);
+      const colorInput = firstShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
+      await expect(colorInput).toHaveValue(/^rgb(.*)$/);
 
       // Wait for validation to complete
       await expect(
@@ -1281,11 +1286,15 @@ test.describe("Tokens: Apply token", () => {
       const firstShadowFields = tokensUpdateCreateModal.getByTestId(
         "shadow-input-fields-0",
       );
-      const colorInput = firstShadowFields.getByLabel("Color");
+      const colorInput = firstShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
       const firstColorValue = await colorInput.inputValue();
 
       // User adds a second shadow
-      const addButton = firstShadowFields.getByTestId("shadow-add-button-0");
+      const addButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Add Shadow",
+      });
       await addButton.click();
 
       const secondShadowFields = tokensUpdateCreateModal.getByTestId(
@@ -1294,8 +1303,7 @@ test.describe("Tokens: Apply token", () => {
       await expect(secondShadowFields).toBeVisible();
 
       // User adds a third shadow
-      const addButton2 = secondShadowFields.getByTestId("shadow-add-button-1");
-      await addButton2.click();
+      await addButton.click();
 
       const thirdShadowFields = tokensUpdateCreateModal.getByTestId(
         "shadow-input-fields-2",
@@ -1305,9 +1313,15 @@ test.describe("Tokens: Apply token", () => {
       // User adds values for the third shadow
       const thirdOffsetXInput = thirdShadowFields.getByLabel("X");
       const thirdOffsetYInput = thirdShadowFields.getByLabel("Y");
-      const thirdBlurInput = thirdShadowFields.getByLabel("Blur");
-      const thirdSpreadInput = thirdShadowFields.getByLabel("Spread");
-      const thirdColorInput = thirdShadowFields.getByLabel("Color");
+      const thirdBlurInput = thirdShadowFields.getByRole("textbox", {
+        name: "Blur",
+      });
+      const thirdSpreadInput = thirdShadowFields.getByRole("textbox", {
+        name: "Spread",
+      });
+      const thirdColorInput = thirdShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
 
       await thirdOffsetXInput.fill("10");
       await thirdOffsetYInput.fill("10");
@@ -1316,15 +1330,13 @@ test.describe("Tokens: Apply token", () => {
       await thirdColorInput.fill("#FF0000");
 
       // User removes the 2nd shadow
-      const removeButton2 = secondShadowFields.getByTestId(
-        "shadow-remove-button-1",
-      );
+      const removeButton2 = secondShadowFields.getByRole("button", {
+        name: "Remove Shadow",
+      });
       await removeButton2.click();
 
-      // Verify second shadow is removed
-      await expect(
-        secondShadowFields.getByTestId("shadow-add-button-3"),
-      ).not.toBeVisible();
+      // Verify that we have only two shadow fields
+      await expect(thirdShadowFields).not.toBeVisible();
 
       // Verify that the first shadow kept its values
       const firstOffsetXValue = await firstShadowFields
@@ -1334,13 +1346,13 @@ test.describe("Tokens: Apply token", () => {
         .getByLabel("Y")
         .inputValue();
       const firstBlurValue = await firstShadowFields
-        .getByLabel("Blur")
+        .getByRole("textbox", { name: "Blur" })
         .inputValue();
       const firstSpreadValue = await firstShadowFields
-        .getByLabel("Spread")
+        .getByRole("textbox", { name: "Spread" })
         .inputValue();
       const firstColorValueAfter = await firstShadowFields
-        .getByLabel("Color")
+        .getByRole("textbox", { name: "Color" })
         .inputValue();
 
       await expect(firstOffsetXValue).toBe("2");
@@ -1349,7 +1361,7 @@ test.describe("Tokens: Apply token", () => {
       await expect(firstSpreadValue).toBe("0");
       await expect(firstColorValueAfter).toBe(firstColorValue);
 
-      // Verify that the third shadow (now second) kept its values
+      // Verify that the second kept its values (after shadow 3)
       // After removing index 1, the third shadow becomes the second shadow at index 1
       const newSecondShadowFields = tokensUpdateCreateModal.getByTestId(
         "shadow-input-fields-1",
@@ -1363,13 +1375,13 @@ test.describe("Tokens: Apply token", () => {
         .getByLabel("Y")
         .inputValue();
       const secondBlurValue = await newSecondShadowFields
-        .getByLabel("Blur")
+        .getByRole("textbox", { name: "Blur" })
         .inputValue();
       const secondSpreadValue = await newSecondShadowFields
-        .getByLabel("Spread")
+        .getByRole("textbox", { name: "Spread" })
         .inputValue();
       const secondColorValue = await newSecondShadowFields
-        .getByLabel("Color")
+        .getByRole("textbox", { name: "Color" })
         .inputValue();
 
       await expect(secondOffsetXValue).toBe("10");
@@ -1386,7 +1398,9 @@ test.describe("Tokens: Apply token", () => {
       const newSecondShadowFields = tokensUpdateCreateModal.getByTestId(
         "shadow-input-fields-1",
       );
-      const colorInput = firstShadowFields.getByLabel("Color");
+      const colorInput = firstShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
       const firstColorValue = await colorInput.inputValue();
 
       // Switch to reference tab
@@ -1414,13 +1428,13 @@ test.describe("Tokens: Apply token", () => {
         .getByLabel("Y")
         .inputValue();
       const restoredFirstBlur = await firstShadowFields
-        .getByLabel("Blur")
+        .getByRole("textbox", { name: "Blur" })
         .inputValue();
       const restoredFirstSpread = await firstShadowFields
-        .getByLabel("Spread")
+        .getByRole("textbox", { name: "Spread" })
         .inputValue();
       const restoredFirstColor = await firstShadowFields
-        .getByLabel("Color")
+        .getByRole("textbox", { name: "Color" })
         .inputValue();
 
       await expect(restoredFirstOffsetX).toBe("2");
@@ -1437,13 +1451,13 @@ test.describe("Tokens: Apply token", () => {
         .getByLabel("Y")
         .inputValue();
       const restoredSecondBlur = await newSecondShadowFields
-        .getByLabel("Blur")
+        .getByRole("textbox", { name: "Blur" })
         .inputValue();
       const restoredSecondSpread = await newSecondShadowFields
-        .getByLabel("Spread")
+        .getByRole("textbox", { name: "Spread" })
         .inputValue();
       const restoredSecondColor = await newSecondShadowFields
-        .getByLabel("Color")
+        .getByRole("textbox", { name: "Color" })
         .inputValue();
 
       await expect(restoredSecondOffsetX).toBe("10");

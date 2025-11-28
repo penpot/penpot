@@ -24,7 +24,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-
 (defn- resolve-value
   [tokens prev-token value]
   (let [token
@@ -117,7 +116,6 @@
 
         props
         (mf/spread-props props   {:on-change on-change
-                                  ;; TODO: Review this value vs default-value
                                   :value (or value "")
                                   :hint-message (:message hint)
                                   :slot-end font-selector-button
@@ -242,7 +240,6 @@
 
         props
         (mf/spread-props props   {:on-change on-change
-                                  ;; TODO: Review this value vs default-value
                                   :value (or value "")
                                   :hint-message (:message hint)
                                   :slot-end font-selector-button
