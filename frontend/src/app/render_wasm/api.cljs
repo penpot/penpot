@@ -20,7 +20,6 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -828,7 +827,7 @@
 
   (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (fonts/get-content-fonts content)
+  (let [fonts         (f/get-content-fonts content)
         fallback-fonts (fonts-from-text-content content true)
         all-fonts (concat fonts fallback-fonts)
         result (f/store-fonts shape-id all-fonts)]

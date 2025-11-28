@@ -342,8 +342,8 @@
         (fn [result {:keys [font-id] :as node}]
           (let [current-font
                 (if (some? font-id)
-                  (select-keys node [:font-id :font-variant-id])
-                  (select-keys txt/default-typography [:font-id :font-variant-id]))]
+                  (select-keys node [:font-id :font-variant-id :font-weight :font-style])
+                  (select-keys txt/default-typography [:font-id :font-variant-id :font-weight :font-style]))]
             (conj result current-font)))
         #{})))
 
