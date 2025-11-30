@@ -2441,11 +2441,13 @@
                (ctk/get-swap-slot))
           (constantly false))
 
+        ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
+        ;; mask property as part of the sanitization check on generate-delete-shapes, passing "ignore-mask" to prevent this
         [all-parents changes]
         (-> changes
             (cls/generate-delete-shapes
              file page objects (d/ordered-set (:id shape))
-             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn}))
+             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn :ignore-mask true}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]

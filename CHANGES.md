@@ -8,6 +8,8 @@
 
 ### :heart: Community contributions (Thank you!)
 
+- Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)
+
 ### :sparkles: New features & Enhancements
 
 ### :bug: Bugs fixed
