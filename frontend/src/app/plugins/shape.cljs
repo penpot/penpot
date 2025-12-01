@@ -1034,8 +1034,8 @@
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (cfh/path-shape? shape))
-                 (u/display-not-valid :makeMask (:type shape))
+                 (and (not (cfh/path-shape? shape)) (not (cfh/bool-shape? shape)))
+                 (u/display-not-valid :toD (:type shape))
 
                  :else
                  (.toString (:content shape)))))
@@ -1488,13 +1488,37 @@
 
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
-            {:name "content"
+            {:name "commands"
+             :get #(-> % u/proxy->shape :content format/format-path-content)
+             :set
+             (fn [_ value]
+               (let [segments (parser/parse-commands value)]
+                 (cond
+                   (not (r/check-permission plugin-id "content:write"))
+                   (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+
+                   (not (sm/validate path/schema:segments segments))
+                   (u/display-not-valid :content segments)
+
+                   :else
+                   (let [selrect (path/calc-selrect segments)
+                         content (path/from-plain segments)
+                         points  (grc/rect->points selrect)]
+                     (st/emit! (dwsh/update-shapes
+                                [id]
+                                (fn [shape]
+                                  (-> shape
+                                      (assoc :content content)
+                                      (assoc :selrect selrect)
+                                      (assoc :points points)))))))))}
+            {:name "d"
              :get #(-> % u/proxy->shape :content str)
              :set
              (fn [_ value]
-               (let [segments (if (string? value)
-                                (svg.path/parse value)
-                                value)]
+               (let [segments
+                     (if (string? value)
+                       (svg.path/parse value)
+                       value)]
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
                    (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
@@ -1514,4 +1538,7 @@
                                                      (-> shape
                                                          (assoc :content content)
                                                          (assoc :selrect selrect)
-                                                         (assoc :points points)))))))))}))))))
+                                                         (assoc :points points)))))))))}
+            {:name "content"
+             :get #(.-d %)
+             :set (fn [self value] (set! (.-d self) value))}))))))

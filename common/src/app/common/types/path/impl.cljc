@@ -565,6 +565,9 @@
 (def check-content
   (sm/check-fn schema:content))
 
+(def decode-segments
+  (sm/lazy-decoder schema:segments sm/json-transformer))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTRUCTORS & PREDICATES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
