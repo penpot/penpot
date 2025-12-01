@@ -1,0 +1,4 @@
+localhost:3449 {
+    tls internal
+    reverse_proxy localhost:4449
+}
