@@ -26,6 +26,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -418,17 +419,17 @@
      [:& radio-buttons {:selected text-transform
                         :on-change handle-change
                         :name "text-transform"}
-      [:& radio-button {:icon deprecated-icon/text-uppercase
+      [:& radio-button {:icon i/text-uppercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.uppercase")
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
-      [:& radio-button {:icon deprecated-icon/text-mixed
+      [:& radio-button {:icon i/text-mixed
                         :type "checkbox"
                         :value "capitalize"
                         :title (tr "inspect.attributes.typography.text-transform.capitalize")
                         :id "text-transform-capitalize"}]
-      [:& radio-button {:icon deprecated-icon/text-lowercase
+      [:& radio-button {:icon i/text-lowercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.lowercase")
                         :value "lowercase"

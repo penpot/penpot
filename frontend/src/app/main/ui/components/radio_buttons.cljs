@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -46,7 +47,7 @@
                      :disabled disabled)}
 
      (if (some? icon)
-       [:span {:class icon-class} icon]
+       [:> icon* {:icon-id icon :class icon-class :aria-hidden true}]
        [:span {:class (stl/css :title-name)} value])
 
      [:input {:id id

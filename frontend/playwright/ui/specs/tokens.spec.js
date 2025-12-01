@@ -303,7 +303,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.pressSequentially(".changed");
 
-    await tokensUpdateCreateModal.getByRole("button", {name: "Save"}).click();
+    await tokensUpdateCreateModal.getByRole("button", { name: "Save" }).click();
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
@@ -1070,6 +1070,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Fill in values for all fields and verify they persist when switching tabs
     await fontSizeField.fill("16");
+    await expect(saveButton).toBeEnabled();
 
     const fontWeightField = tokensUpdateCreateModal.getByLabel(/Font Weight/i);
     const letterSpacingField =

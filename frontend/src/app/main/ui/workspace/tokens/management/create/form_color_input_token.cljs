@@ -22,7 +22,6 @@
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [clojure.core :as c]
    [rumext.v2 :as mf]))
 
 (defn- resolve-value
@@ -105,9 +104,6 @@
   (let [form       (mf/use-ctx fc/context)
         input-name name
 
-        resolved-input-name
-        (mf/with-memo [input-name]
-          (keyword (str "resolved-" (c/name input-name))))
 
         touched?
         (and (contains? (:data @form) input-name)
@@ -119,15 +115,12 @@
         value
         (get-in @form [:data input-name] "")
 
-        resolved-value
-        (get-in @form [:data resolved-input-name] "")
-
-        hex (if (tinycolor/valid-color resolved-value)
-              (tinycolor/->hex-string (tinycolor/valid-color resolved-value))
+        hex (if (tinycolor/valid-color value)
+              (tinycolor/->hex-string (tinycolor/valid-color value))
               "#8f9da3")
 
-        alpha (if (tinycolor/valid-color resolved-value)
-                (tinycolor/alpha (tinycolor/valid-color resolved-value))
+        alpha (if (tinycolor/valid-color value)
+                (tinycolor/alpha (tinycolor/valid-color value))
                 1)
 
         resolve-stream
@@ -224,16 +217,15 @@
                                                (fn [error]
                                                  ((:error/fn error) (:error/value error))))))
                       (rx/subs! (fn [{:keys [error value]}]
-                                  (if error
-                                    (do
-                                      (swap! form assoc-in [:errors input-name] {:message error})
-                                      (swap! form assoc-in [:errors resolved-input-name] {:message error})
-                                      (swap! form update :data dissoc resolved-input-name)
-                                      (reset! hint* {:message error :type "error"}))
-                                    (let [message (tr "workspace.tokens.resolved-value" value)]
-                                      (swap! form update :errors dissoc input-name resolved-input-name)
-                                      (swap! form update :data assoc resolved-input-name value)
-                                      (reset! hint* {:message message :type "hint"}))))))]
+                                  (let [touched? (get-in @form [:touched input-name])]
+                                    (when touched?
+                                      (if error
+                                        (do
+                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                          (reset! hint* {:message error :type "error"}))
+                                        (let [message (tr "workspace.tokens.resolved-value" value)]
+                                          (swap! form update :extra-errors dissoc input-name)
+                                          (reset! hint* {:message message :type "hint"}))))))))]
 
         (fn []
           (rx/dispose! subs))))

@@ -645,19 +645,19 @@
                [:& radio-buttons {:selected (d/name direction)
                                   :on-change change-direction
                                   :name "animation-direction"}
-                [:& radio-button {:icon deprecated-icon/column
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :right)
                                   :value "right"
                                   :id "animation-right"}]
-                [:& radio-button {:icon deprecated-icon/column
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :left)
                                   :id "animation-left"
                                   :value "left"}]
-                [:& radio-button {:icon deprecated-icon/column
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :down)
                                   :id "animation-down"
                                   :value "down"}]
-                [:& radio-button {:icon deprecated-icon/column
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :up)
                                   :id "animation-up"
                                   :value "up"}]]]])

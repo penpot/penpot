@@ -42,7 +42,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
    [app.util.debug :as dbg]
@@ -798,10 +797,10 @@
         [:& radio-buttons {:selected (if (:listing-thumbs? filters) "grid" "list")
                            :on-change toggle-list-style
                            :name "swap-listing-style"}
-         [:& radio-button {:icon deprecated-icon/view-as-list
+         [:& radio-button {:icon i/view-as-list
                            :value "list"
                            :id "swap-opt-list"}]
-         [:& radio-button {:icon deprecated-icon/flex-grid
+         [:& radio-button {:icon i/flex-grid
                            :value "grid"
                            :id "swap-opt-grid"}]]]
 
