@@ -831,7 +831,8 @@
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
         (let [instance (:workspace-editor state)
-              attrs-to-override (some-> (editor.v2/getCurrentStyle instance) (styles/get-styles-from-style-declaration))
+              attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
+                                        (styles/get-styles-from-style-declaration))
               overriden-attrs (merge attrs-to-override attrs)
               styles  (styles/attrs->styles overriden-attrs)]
           (editor.v2/applyStylesToSelection instance styles))))))
