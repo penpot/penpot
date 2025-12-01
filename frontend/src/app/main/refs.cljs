@@ -372,6 +372,9 @@
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
 
+(def workspace-wasm-modifiers
+  (l/derived :workspace-wasm-modifiers st/state))
+
 (def ^:private workspace-modifiers-with-objects
   (l/derived
    (fn [state]
