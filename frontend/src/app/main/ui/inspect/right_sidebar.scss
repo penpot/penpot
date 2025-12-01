@@ -124,8 +124,7 @@
 .inspect-tab-switcher-label {
   @include use-typography("body-medium");
   color: var(--color-foreground-primary);
-  flex: 0;
-  min-inline-size: fit-content;
+  flex: 0 1 40%;
 }
 
 .inspect-tab-switcher-controls {

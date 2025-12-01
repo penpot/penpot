@@ -267,3 +267,4 @@
    (-> (stp/convert-to-path shape objects)
        (update :content impl/path-data))))
 
+(dm/export impl/decode-segments)
