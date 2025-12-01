@@ -25,7 +25,6 @@
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -601,11 +600,11 @@
                [:& radio-buttons {:selected (d/name direction)
                                   :on-change change-direction
                                   :name "animation-direction"}
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon i/row
                                   :icon-class (stl/css :right)
                                   :value "right"
                                   :id "animation-right"}]
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon i/row-reverse
                                   :icon-class (stl/css :left)
                                   :id "animation-left"
                                   :value "left"}]
@@ -613,7 +612,7 @@
                                   :icon-class (stl/css :down)
                                   :id "animation-down"
                                   :value "down"}]
-                [:& radio-button {:icon i/column
+                [:& radio-button {:icon i/column-reverse
                                   :icon-class (stl/css :up)
                                   :id "animation-up"
                                   :value "up"}]]]])

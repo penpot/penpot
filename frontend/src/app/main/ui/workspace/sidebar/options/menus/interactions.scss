@@ -6,6 +6,7 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
 @use "ds/typography.scss" as t;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
@@ -87,7 +88,7 @@
 .prototype-pill {
   display: flex;
   align-items: center;
-  gap: $b-1;
+  gap: px2rem(1);
   border-radius: $br-8;
   padding: var(--sp-s) var(--sp-m);
   block-size: $sz-32;
@@ -213,15 +214,6 @@
 
 .interaction-row-radio {
   grid-column: 4 / span 5;
-  .right svg {
-    transform: rotate(-90deg);
-  }
-  .left svg {
-    transform: rotate(90deg);
-  }
-  .up svg {
-    transform: rotate(180deg);
-  }
 }
 
 .interaction-row-position {

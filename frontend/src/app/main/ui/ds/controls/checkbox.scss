@@ -55,16 +55,16 @@
   color: var(--input-checkbox-foreground-color);
   background-color: var(--input-checkbox-background-color);
 
-  &:global(.disabled) {
+  &.disabled {
     border: 0;
   }
 
-  &:global(.checked) {
+  &.checked {
     --input-checkbox-border-color: var(--input-checkbox-border-color-checked);
     --input-checkbox-foreground-color: var(--input-checkbox-foreground-color-checked);
     --input-checkbox-background-color: var(--input-checkbox-background-color-checked);
 
-    &:global(.disabled) {
+    &.disabled {
       --input-checkbox-foreground-color: var(--input-checkbox-foreground-color-disabled);
       --input-checkbox-background-color: var(--input-checkbox-background-color-disabled);
     }
