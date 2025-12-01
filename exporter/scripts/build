@@ -18,4 +18,15 @@ cp ../.yarnrc.yml target/;
 cp yarn.lock target/;
 cp package.json target/;
 
+cat <<EOF | tee target/setup
+#/usr/bin/env bash
+set -e;
+corepack enable;
+corepack install;
+yarn install
+yarn run playwright install chromium;
+EOF
+
+chmod +x target/setup;
+
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js;
