@@ -320,10 +320,12 @@
 
         [{:keys [x y width height]} transform]
         (if render-wasm?
-          (let [{:keys [height]} (wasm.api/get-text-dimensions shape-id)
+          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
                 selrect-transform (mf/deref refs/workspace-selrect)
                 [selrect transform] (dsh/get-selrect selrect-transform shape)
                 selrect-height (:height selrect)
+                selrect-width (:width selrect)
+                max-width (max width selrect-width)
                 max-height (max height selrect-height)
                 valign (-> shape :content :vertical-align)
                 y (:y selrect)
@@ -333,7 +335,7 @@
                       "center" (- y (/ (- height selrect-height) 2))
                       "top"    y)
                     y)]
-            [(assoc selrect :y y :width (:width selrect) :height max-height) transform])
+            [(assoc selrect :y y :width max-width :height max-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
