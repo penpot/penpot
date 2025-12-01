@@ -113,7 +113,9 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
-    ./setup; \
+    corepack install; \
+    yarn install; \
+    yarn run playwright install chromium; \
     rm -rf /opt/penpot/.yarn
 
 CMD ["node", "app.js"]
