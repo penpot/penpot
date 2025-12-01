@@ -1,0 +1,29 @@
+{
+    auto_https off
+}
+
+localhost:3449 {
+   reverse_proxy localhost:4449
+   tls /home/selfsigned.crt /home/selfsigned.key
+
+   log {
+     format console
+     output file /home/penpot/penpot/logs/caddy.access.log {
+       roll_size 10MB # Create new file when size exceeds 10MB
+       roll_keep 5 # Keep at most 5 rolled files
+       roll_keep_for 14d # Delete files older than 14 days
+     }
+   }
+}
+
+http://localhost:3450 {
+   reverse_proxy localhost:4449
+   log {
+     format console
+     output file /home/penpot/penpot/logs/caddy.access.log {
+       roll_size 10MB # Create new file when size exceeds 10MB
+       roll_keep 5 # Keep at most 5 rolled files
+       roll_keep_for 14d # Delete files older than 14 days
+     }
+   }
+}

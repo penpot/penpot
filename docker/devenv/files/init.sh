@@ -2,4 +2,6 @@
 
 set -e
 nginx
-tail -f /dev/null
+mkdir -p penpot/logs
+caddy start -c /home/Caddyfile
+tail -f /dev/null;
