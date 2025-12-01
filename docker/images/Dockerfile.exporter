@@ -113,7 +113,7 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
-    ./setup \
+    ./setup; \
     rm -rf /opt/penpot/.yarn
 
 CMD ["node", "app.js"]
