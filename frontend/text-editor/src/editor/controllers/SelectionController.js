@@ -1939,11 +1939,21 @@ export class SelectionController extends EventTarget {
         const textSpan = this.startTextSpan;
         const midText = startNode.splitText(startOffset);
         const endText = midText.splitText(endOffset - startOffset);
-        const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
-        textSpan.after(midTextSpan);
-        if (endText.length > 0) {
-          const endTextSpan = createTextSpan(endText, textSpan.style);
-          midTextSpan.after(endTextSpan);
+
+        // Only create text span if midText is not empty
+        if (midText.nodeValue && midText.nodeValue.length > 0) {
+          const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
+          textSpan.after(midTextSpan);
+          if (endText.length > 0) {
+            const endTextSpan = createTextSpan(endText, textSpan.style);
+            midTextSpan.after(endTextSpan);
+          }
+        } else {
+          // If midText is empty, just create endTextSpan if needed
+          if (endText.length > 0) {
+            const endTextSpan = createTextSpan(endText, textSpan.style);
+            textSpan.after(endTextSpan);
+          }
         }
 
         // NOTE: This is necessary because sometimes
@@ -1996,7 +2006,8 @@ export class SelectionController extends EventTarget {
         // new text span.
         if (
           this.#textNodeIterator.currentNode === startNode &&
-          startOffset > 0
+          startOffset > 0 &&
+          startOffset < (startNode.nodeValue?.length || 0)
         ) {
           const newTextSpan = splitTextSpan(textSpan, startOffset);
           setTextSpanStyles(newTextSpan, newStyles);
@@ -2018,7 +2029,8 @@ export class SelectionController extends EventTarget {
           // If we're at end node
         } else if (
           this.#textNodeIterator.currentNode === endNode &&
-          endOffset < endNode.nodeValue.length
+          endOffset < endNode.nodeValue.length &&
+          endOffset > 0
         ) {
           const newTextSpan = splitTextSpan(textSpan, endOffset);
           setTextSpanStyles(textSpan, newStyles);
