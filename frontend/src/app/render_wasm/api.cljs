@@ -1297,12 +1297,7 @@
     (mem/free)
     content))
 
-(defn- calculate-bool*
-  [bool-type]
-  (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
-      (mem/->offset-32)))
-
-(defn calculate-bool
+(defn calculate-bool*
   [bool-type ids]
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
         heap   (mem/get-heap-u32)
@@ -1313,7 +1308,10 @@
             offset
             (rseq ids))
 
-    (let [offset  (calculate-bool* bool-type)
+    (let [offset
+          (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+              (mem/->offset-32))
+
           length  (aget heap offset)
           data    (mem/slice heap
                              (+ offset 1)
@@ -1322,6 +1320,29 @@
       (mem/free)
       content)))
 
+(defn calculate-bool
+  [shape objects]
+
+  ;; We need to be able to calculate the boolean data but we cannot
+  ;; depend on the serialization flow.
+  ;; start_temp_object / end_temp_object create a new shapes_pool
+  ;; temporary and then we serialize the objects needed to calculate the
+  ;; boolean object.
+  ;; After the content is returned we discard that temporary context
+  (h/call wasm/internal-module "_start_temp_objects")
+
+  (let [bool-type (get shape :bool-type)
+        ids (get shape :shapes)
+        all-children
+        (->> ids
+             (mapcat #(cfh/get-children-with-self objects %)))]
+    (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+    (run! (partial set-object objects) all-children)
+
+    (let [content (-> (calculate-bool* bool-type ids)
+                      (path.impl/path-data))]
+      (h/call wasm/internal-module "_end_temp_objects")
+      content)))
 
 (defn init-wasm-module
   [module]
