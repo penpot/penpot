@@ -323,7 +323,7 @@
        (rx/subs! #(api/request-render "set-wasm-attrs"))))
 
 ;; `conj` empty set initialization
-(def conj* (fnil conj #{}))
+(def conj* (fnil conj (d/ordered-set)))
 
 (defn- impl-assoc
   [self k v]
