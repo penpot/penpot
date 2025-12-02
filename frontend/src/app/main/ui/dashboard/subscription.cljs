@@ -151,14 +151,16 @@
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-type]}]
-  [:span {:class (stl/css :subscription-icon)
-          :title (if (= subscription-type "unlimited")
-                   (tr "subscription.dashboard.power-up.unlimited-plan")
-                   (tr "subscription.dashboard.power-up.enterprise-plan"))
-          :data-testid "subscription-icon"}
-   (case subscription-type
-     "unlimited" i/character-u
-     "enterprise" i/character-e)])
+  [:span {:class (stl/css :subscription-icon-wrapper)}
+   [:> icon* {:icon-id (case subscription-type
+                        "unlimited" i/character-u
+                        "enterprise" i/character-e)
+             :class (stl/css :subscription-icon)
+             :size "s"
+             :title (if (= subscription-type "unlimited")
+                      (tr "subscription.dashboard.power-up.unlimited-plan")
+                      (tr "subscription.dashboard.power-up.enterprise-plan"))
+             :data-testid "subscription-icon"}]])
 
 (mf/defc main-menu-power-up*
   [{:keys [close-sub-menu]}]
