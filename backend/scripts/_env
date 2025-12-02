@@ -3,6 +3,7 @@
 export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
 export PENPOT_HOST=devenv
+export PENPOT_PUBLIC_URI=https://localhost:3449
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
