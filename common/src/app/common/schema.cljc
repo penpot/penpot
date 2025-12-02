@@ -304,7 +304,7 @@
 
 (defn coercer
   [schema & {:as opts}]
-  (let [decode-fn (decoder schema json-transformer)
+  (let [decode-fn (lazy-decoder schema json-transformer)
         check-fn  (check-fn schema opts)]
     (fn [data]
       (-> data decode-fn check-fn))))
