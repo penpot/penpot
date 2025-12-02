@@ -39,8 +39,8 @@
    [rumext.v2 :as mf]))
 
 (def ^:private default-token-shadow
-  {:offsetX "4"
-   :offsetY "4"
+  {:offset-x "4"
+   :offset-y "4"
    :blur "4"
    :spread "0"})
 
@@ -59,10 +59,10 @@
         color-token (get-subtoken token index :color composite-type)
         color-token (hooks/use-equal-memo color-token)
 
-        offset-x-token (get-subtoken token index :offsetX composite-type)
+        offset-x-token (get-subtoken token index :offset-x composite-type)
         offset-x-token (hooks/use-equal-memo offset-x-token)
 
-        offset-y-token (get-subtoken token index :offsetY composite-type)
+        offset-y-token (get-subtoken token index :offset-y composite-type)
         offset-y-token (hooks/use-equal-memo offset-y-token)
 
         blur-token (get-subtoken token index :blur composite-type)
@@ -110,7 +110,7 @@
         {:aria-label (tr "workspace.tokens.shadow-x")
          :icon i/character-x
          :placeholder (tr "workspace.tokens.shadow-x")
-         :name :offsetX
+         :name :offset-x
          :token offset-x-token
          :index index
          :composite-type composite-type
@@ -121,7 +121,7 @@
         {:aria-label (tr "workspace.tokens.shadow-y")
          :icon i/character-y
          :placeholder (tr "workspace.tokens.shadow-y")
-         :name :offsetY
+         :name :offset-y
          :token offset-y-token
          :index index
          :composite-type composite-type
@@ -198,8 +198,8 @@
        [:shadow {:optinal true}
         [:vector
          [:map
-          [:offsetX {:optional true} [:maybe :string]]
-          [:offsetY {:optional true} [:maybe :string]]
+          [:offset-x {:optional true} [:maybe :string]]
+          [:offset-y {:optional true} [:maybe :string]]
           [:blur {:optional true} [:maybe :string]]
           [:spread {:optional true} [:maybe :string]]
           [:color {:optional true} [:maybe :string]]
@@ -231,9 +231,9 @@
              valid-composite-shadow?
              (and (seq shadows)
                   (every?
-                   (fn [{:keys [offsetX offsetY blur spread color]}]
-                     (and (not (str/blank? offsetX))
-                          (not (str/blank? offsetY))
+                   (fn [{:keys [offset-x offset-y blur spread color]}]
+                     (and (not (str/blank? offset-x))
+                          (not (str/blank? offset-y))
                           (not (str/blank? blur))
                           (not (str/blank? spread))
                           (not (str/blank? color))))
