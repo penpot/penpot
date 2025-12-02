@@ -655,6 +655,26 @@ pub extern "C" fn set_modifiers() {
     });
 }
 
+#[no_mangle]
+pub extern "C" fn start_temp_objects() {
+    unsafe {
+        #[allow(static_mut_refs)]
+        let mut state = STATE.take().expect("Got an invalid state pointer");
+        state = Box::new(state.start_temp_objects());
+        STATE = Some(state);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn end_temp_objects() {
+    unsafe {
+        #[allow(static_mut_refs)]
+        let mut state = STATE.take().expect("Got an invalid state pointer");
+        state = Box::new(state.end_temp_objects());
+        STATE = Some(state);
+    }
+}
+
 fn main() {
     #[cfg(target_arch = "wasm32")]
     init_gl!();
