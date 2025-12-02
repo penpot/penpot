@@ -102,7 +102,8 @@
                   {:origin it
                    :redo-changes changes
                    :undo-changes []
-                   :save-undo? false})))))))
+                   :save-undo? false
+                   :ignore-wasm? true})))))))
 
 ;; FIXME: would be nice to not execute this code twice per page in the
 ;; same working session, maybe some local memoization can improve that
@@ -119,4 +120,5 @@
                   {:origin it
                    :redo-changes changes
                    :undo-changes []
-                   :save-undo? false})))))))
+                   :save-undo? false
+                   :ignore-wasm? true})))))))
