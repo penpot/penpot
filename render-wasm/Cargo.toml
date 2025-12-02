@@ -25,7 +25,7 @@ gl = "0.14.0"
 glam = "0.24.2"
 indexmap = "2.7.1"
 macros = { path = "macros" }
-skia-safe = { version = "0.87.0", default-features = false, features = [
+skia-safe = { version = "0.90.0", default-features = false, features = [
   "gl",
   "svg",
   "textlayout",

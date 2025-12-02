@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# By default we use WASM as the BUILD_TARGET
+export BUILD_TARGET=${BUILD_TARGET:-"wasm"}
+. ./_common
+
 if [ "$NODE_ENV" = "production" ];  then
     export _BUILD_MODE="release";
 else

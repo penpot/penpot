@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+load_skia_env() {
+  if [ -f ./_skia_env ]; then
+    . ./_skia_env
+    if [ -z "${SKIA_BINARIES_URL}" ] && [ ! -z "${SKIA_BINARIES_WASM_URL}" ] && [ $1 == "wasm" ]; then
+      export SKIA_BINARIES_URL=${SKIA_BINARIES_WASM_URL}
+    elif [ -z "${SKIA_BINARIES_URL}" ] && [ ! -z "${SKIA_BINARIES_LINUX_URL}" ] && [ $1 == "linux" ]; then
+      export SKIA_BINARIES_URL=${SKIA_BINARIES_LINUX_URL}
+    fi
+  fi
+}
+
+load_skia_env ${BUILD_TARGET}
