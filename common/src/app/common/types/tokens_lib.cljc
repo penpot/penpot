@@ -1575,10 +1575,10 @@ Will return a value that matches this schema:
                          (if (map? shadow)
                            (let [legacy-shadow-type (get "type" shadow)]
                              (-> shadow
-                                 (set/rename-keys {"x" :offsetX
-                                                   "offsetX" :offsetX
-                                                   "y" :offsetY
-                                                   "offsetY" :offsetY
+                                 (set/rename-keys {"x" :offset-x
+                                                   "offsetX" :offset-x
+                                                   "y" :offset-y
+                                                   "offsetY" :offset-y
                                                    "blur" :blur
                                                    "spread" :spread
                                                    "color" :color
@@ -1589,7 +1589,7 @@ Will return a value that matches this schema:
                                                    (= "false" %) false
                                                    (= legacy-shadow-type "innerShadow") true
                                                    :else false))
-                                 (select-keys [:offsetX :offsetY :blur :spread :color :inset])))
+                                 (select-keys [:offset-x :offset-y :blur :spread :color :inset])))
                            shadow))]
     (cond
       ;; Reference value - keep as string
@@ -1860,8 +1860,8 @@ Will return a value that matches this schema:
     (mapv (fn [shadow]
             (if (map? shadow)
               (-> shadow
-                  (set/rename-keys {:offsetX "offsetX"
-                                    :offsetY "offsetY"
+                  (set/rename-keys {:offset-x "offsetX"
+                                    :offset-y "offsetY"
                                     :blur "blur"
                                     :spread "spread"
                                     :color "color"

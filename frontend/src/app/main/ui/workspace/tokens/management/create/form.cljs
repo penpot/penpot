@@ -211,7 +211,7 @@
 
 (defn- check-empty-shadow-token [token]
   (when (or (empty? (:value token))
-            (some (fn [shadow] (not-every? #(contains? shadow %) [:offsetX :offsetY :blur :spread :color]))
+            (some (fn [shadow] (not-every? #(contains? shadow %) [:offset-x :offset-y :blur :spread :color]))
                   (:value token)))
     (wte/get-error-code :error.token/empty-input)))
 
@@ -940,10 +940,10 @@
 
 (def ^:private shadow-inputs
   #(d/ordered-map
-    :offsetX
+    :offset-x
     {:label (tr "workspace.tokens.shadow-x")
      :placeholder (tr "workspace.tokens.shadow-x")}
-    :offsetY
+    :offset-y
     {:label (tr "workspace.tokens.shadow-y")
      :placeholder (tr "workspace.tokens.shadow-y")}
     :blur

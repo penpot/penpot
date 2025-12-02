@@ -368,8 +368,8 @@
   (let [add-keyed-errors (fn [shadow-result k errors]
                            (update shadow-result :errors concat
                                    (map #(assoc % :shadow-key k :shadow-index shadow-index) errors)))
-        parsers {:offsetX parse-sd-token-general-value
-                 :offsetY parse-sd-token-general-value
+        parsers {:offset-x parse-sd-token-general-value
+                 :offset-y parse-sd-token-general-value
                  :blur parse-sd-token-shadow-blur
                  :spread parse-sd-token-shadow-spread
                  :color parse-sd-token-color-value
