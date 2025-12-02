@@ -2,7 +2,7 @@
 
 set -ex
 
-cljfmt --parallel=true \
+cljfmt --parallel=true fix \
        common/src/ \
        common/test/ \
        frontend/src/ \
