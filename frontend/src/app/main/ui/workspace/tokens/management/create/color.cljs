@@ -23,7 +23,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
-   [app.main.ui.workspace.tokens.management.create.form-color-input-token :refer [form-color-input-token*]]
+   [app.main.ui.workspace.tokens.management.create.color-input-token :refer [color-input-token*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -188,7 +188,7 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-color-input-token*
+       [:> color-input-token*
         {:placeholder (tr "workspace.tokens.token-value-enter")
          :label (tr "workspace.tokens.token-value")
          :name :value

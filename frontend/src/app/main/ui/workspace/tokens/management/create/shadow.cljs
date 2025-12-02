@@ -27,9 +27,9 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as forms]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.tokens.management.create.form-color-input-token :refer [color-input-indexed*]]
-   [app.main.ui.workspace.tokens.management.create.form-input-token :refer [form-input-token-composite* form-input-token-indexed*]]
-   [app.main.ui.workspace.tokens.management.create.form-select-token :refer [select-composite*]]
+   [app.main.ui.workspace.tokens.management.create.color-input-token :refer [color-input-token-indexed*]]
+   [app.main.ui.workspace.tokens.management.create.input-token :refer [input-token-composite* input-token-indexed*]]
+   [app.main.ui.workspace.tokens.management.create.select-token :refer [select-composite*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -38,13 +38,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-;; TODO: Review if code has this implementation
-(defn vec-remove
-  "remove elem in coll"
-  [pos coll]
-  (into (subvec coll 0 pos) (subvec coll (inc pos))))
-
-;; TODO: Put this in a common file, and use ir for shadow option menu as well
 (def ^:private default-token-shadow
   {:offsetX "4"
    :offsetY "4"
@@ -52,30 +45,30 @@
    :spread "0"})
 
 (defn get-subtoken
-  [token index prop]
-  (let [value (get-in token [:value :shadows index prop])]
+  [token index prop composite-type]
+  (let [value (get-in token [:value composite-type index prop])]
     (d/without-nils
      {:type  (if (= prop :color) :color :number)
       :value value})))
 
 (mf/defc shadow-formset*
-  [{:keys [index token tokens remove-shadow-block show-button] :as props}]
-  (let [inset-token (get-subtoken token index :inset)
+  [{:keys [index token tokens remove-shadow-block show-button composite-type] :as props}]
+  (let [inset-token (get-subtoken token index :inset composite-type)
         inset-token (hooks/use-equal-memo inset-token)
 
-        color-token (get-subtoken token index :color)
+        color-token (get-subtoken token index :color composite-type)
         color-token (hooks/use-equal-memo color-token)
 
-        offset-x-token (get-subtoken token index :offsetX)
+        offset-x-token (get-subtoken token index :offsetX composite-type)
         offset-x-token (hooks/use-equal-memo offset-x-token)
 
-        offset-y-token (get-subtoken token index :offsetY)
+        offset-y-token (get-subtoken token index :offsetY composite-type)
         offset-y-token (hooks/use-equal-memo offset-y-token)
 
-        blur-token (get-subtoken token index :blur)
+        blur-token (get-subtoken token index :blur composite-type)
         blur-token (hooks/use-equal-memo blur-token)
 
-        spread-token (get-subtoken token index :spreadX)
+        spread-token (get-subtoken token index :spreadX composite-type)
         spread-token (hooks/use-equal-memo spread-token)
 
         on-button-click
@@ -93,6 +86,7 @@
                              :token inset-token
                              :tokens tokens
                              :index index
+                             :composite-type composite-type
                              :name :inset}]
       (when show-button
         [:> icon-button* {:variant "ghost"
@@ -102,74 +96,82 @@
                           :icon i/remove}])]
      [:div {:class (stl/css :inputs-wrapper)}
       [:div {:class (stl/css :input-row)}
-       [:> color-input-indexed*
+       [:> color-input-token-indexed*
         {:placeholder (tr "workspace.tokens.token-value-enter")
          :aria-label (tr "workspace.tokens.color")
          :name :color
          :token color-token
+         :composite-type composite-type
          :index index
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input-token-indexed*
+       [:> input-token-indexed*
         {:aria-label (tr "workspace.tokens.shadow-x")
          :icon i/character-x
          :placeholder (tr "workspace.tokens.shadow-x")
          :name :offsetX
          :token offset-x-token
          :index index
+         :composite-type composite-type
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input-token-indexed*
+       [:> input-token-indexed*
         {:aria-label (tr "workspace.tokens.shadow-y")
          :icon i/character-y
          :placeholder (tr "workspace.tokens.shadow-y")
          :name :offsetY
          :token offset-y-token
          :index index
+         :composite-type composite-type
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input-token-indexed*
+       [:> input-token-indexed*
         {:aria-label (tr "workspace.tokens.shadow-blur")
          :placeholder (tr "workspace.tokens.shadow-blur")
          :name :blur
-         :slot-start (mf/html [:span {:class (stl/css :visible-label)} "Blur:"])
+         :slot-start (mf/html [:span {:class (stl/css :visible-label)}
+                               (str (tr "workspace.tokens.shadow-blur") ":")])
          :token blur-token
          :index index
+         :composite-type composite-type
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> form-input-token-indexed*
+       [:> input-token-indexed*
         {:aria-label (tr "workspace.tokens.shadow-spread")
          :placeholder (tr "workspace.tokens.shadow-spread")
          :name :spread
-         :slot-start (mf/html [:span {:class (stl/css :visible-label)} "Spread:"])
+         :slot-start (mf/html [:span {:class (stl/css :visible-label)}
+                               (str (tr "workspace.tokens.shadow-spread") ":")])
          :token spread-token
+         :composite-type composite-type
          :index index
          :tokens tokens}]]]]))
 
 (mf/defc composite-form*
-  [{:keys [token tokens remove-shadow-block] :as props}]
+  [{:keys [token tokens remove-shadow-block composite-type] :as props}]
   (let [form
         (mf/use-ctx forms/context)
 
         length
-        (-> form deref :data :value :shadows count)]
+        (-> form deref :data :value composite-type count)]
 
     (for [index (range length)]
       [:> shadow-formset* {:key index
                            :index index
                            :token token
                            :tokens tokens
+                           :composite-type composite-type
                            :remove-shadow-block remove-shadow-block
                            :show-button (> length 1)}])))
 
 (mf/defc reference-form*
   [{:keys [token tokens] :as props}]
   [:div {:class (stl/css :input-row-reference)}
-   [:> form-input-token-composite*
+   [:> input-token-composite*
     {:placeholder (tr "workspace.tokens.reference-composite-shadow")
      :aria-label (tr "labels.reference")
      :icon i/drop-shadow
@@ -193,10 +195,9 @@
 
      [:value
       [:map
-       [:shadows {:optinal true}
+       [:shadow {:optinal true}
         [:vector
          [:map
-          ;; TODO: cambiar offsetX por offset-x
           [:offsetX {:optional true} [:maybe :string]]
           [:offsetY {:optional true} [:maybe :string]]
           [:blur {:optional true} [:maybe :string]]
@@ -225,7 +226,7 @@
        (let [reference  (get value :reference)
              ref-valid? (and reference (not (str/blank? reference)))
 
-             shadows (get value :shadows)
+             shadows (get value :shadow)
              ;; To be a valid shadow it must contain one on each valid values
              valid-composite-shadow?
              (and (seq shadows)
@@ -245,6 +246,9 @@
 
   (let [active-tab* (mf/use-state #(if (cft/is-reference? token) :reference :composite))
         active-tab (deref active-tab*)
+
+        composite-type :shadow
+
         token
         (mf/with-memo [token]
           (or token
@@ -252,16 +256,17 @@
                 (cond
                   (string? value)
                   {:value {:reference value
-                           :shadows   []}
+                           :shadow   []}
                    :type :shadow}
 
                   (vector? value)
                   {:value {:reference nil
-                           :shadows   value}
+                           :shadow   value}
                    :type :shadow})
+
                 {:type :shadow
                  :value {:reference nil
-                         :shadows   [default-token-shadow]}})))
+                         :shadow   [default-token-shadow]}})))
 
         token-type
         (get token :type)
@@ -270,10 +275,6 @@
         (dwta/get-token-properties token)
 
         token-title (str/lower (:title token-properties))
-
-        ;; TODO: review
-        show-button* (mf/use-state false)
-        show-button (deref show-button*)
 
         tokens
         (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -299,15 +300,15 @@
                 (cond
                   (string? raw-value)
                   {:reference raw-value
-                   :shadows   []}
+                   :shadow   []}
 
                   (vector? raw-value)
                   {:reference nil
-                   :shadows   raw-value}
+                   :shadow   raw-value}
 
                   :else
                   {:reference nil
-                   :shadows   [default-token-shadow]})]
+                   :shadow   [default-token-shadow]})]
 
             {:name        (:name token "")
              :description (:description token "")
@@ -358,18 +359,20 @@
 
         on-add-shadow-block
         (mf/use-fn
+         (mf/deps composite-type)
          (fn []
-           (swap! form  update-in [:data :value :shadows] conj default-token-shadow)))
+           (swap! form  update-in [:data :value composite-type] conj default-token-shadow)))
 
         remove-shadow-block
         (mf/use-fn
+         (mf/deps composite-type)
          (fn [index event]
            (dom/prevent-default event)
-           (swap! form update-in [:data :value :shadows] #(vec-remove index %))))
+           (swap! form update-in [:data :value composite-type] #(d/remove-at-index % index))))
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type active-tab)
+         (mf/deps validate-token token tokens token-type active-tab composite-type)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
@@ -377,7 +380,7 @@
 
              (->> (validate-token {:token-value (if (= active-tab :reference)
                                                   (:reference value)
-                                                  (:shadows value))
+                                                  (composite-type value))
                                    :token-name name
                                    :token-description description
                                    :prev-token token
@@ -446,7 +449,7 @@
         [:> composite-form* {:token token
                              :tokens tokens
                              :remove-shadow-block remove-shadow-block
-                             :show-button show-button}]
+                             :composite-type composite-type}]
 
         [:> reference-form* {:token token
                              :tokens tokens}])

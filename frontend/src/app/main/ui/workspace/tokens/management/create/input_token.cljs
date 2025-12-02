@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.form-input-token
+(ns app.main.ui.workspace.tokens.management.create.input-token
   (:require
    [app.common.data :as d]
    [app.common.types.tokens-lib :as ctob]
@@ -39,7 +39,7 @@
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
 
-(mf/defc form-input-token*
+(mf/defc input-token*
   [{:keys [name tokens token] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
@@ -126,7 +126,7 @@
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
-(mf/defc form-input-token-composite*
+(mf/defc input-token-composite*
   [{:keys [name tokens token] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
@@ -214,34 +214,34 @@
     [:> input* props]))
 
 (defn- on-composite-indexed-input-token-change
-  ([form field index value]
-   (on-composite-indexed-input-token-change form field index value false))
-  ([form field index value trim?]
+  ([form field index value composite-type]
+   (on-composite-indexed-input-token-change form field index value composite-type false))
+  ([form field index value composite-type trim?]
    (letfn [(clean-errors [errors]
              (-> errors
                  (dissoc field)
                  (not-empty)))]
      (swap! form (fn [state]
                    (-> state
-                       (assoc-in [:data :value :shadows index field] (if trim? (str/trim value) value))
+                       (assoc-in [:data :value composite-type index field] (if trim? (str/trim value) value))
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
-(mf/defc form-input-token-indexed*
-  [{:keys [name tokens token index] :rest props}]
+(mf/defc input-token-indexed*
+  [{:keys [name tokens token index composite-type] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
 
         error
-        (get-in @form [:errors :value :shadows index input-name])
+        (get-in @form [:errors :value composite-type index input-name])
 
         value-from-form
-        (get-in @form [:data :value :shadows index input-name] "")
+        (get-in @form [:data :value composite-type index input-name] "")
 
         resolve-stream
         (mf/with-memo [token index input-name]
-          (if-let [value (get-in token [:value :shadows index input-name])]
+          (if-let [value (get-in token [:value composite-type index input-name])]
             (rx/behavior-subject value)
             (rx/subject)))
 
@@ -256,7 +256,7 @@
          (mf/deps resolve-stream input-name index)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-input-value)]
-             (on-composite-indexed-input-token-change form input-name index value true)
+             (on-composite-indexed-input-token-change form input-name index value composite-type true)
              (rx/push! resolve-stream value))))
 
         props
@@ -276,7 +276,7 @@
           (mf/spread-props props {:hint-formated true})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index]
+    (mf/with-effect [resolve-stream tokens token input-name index composite-type]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token))
@@ -290,19 +290,19 @@
                          (cond
                            (and error (str/empty? (:error/value error)))
                            (do
-                             (swap! form update-in [:errors :value :shadows index] dissoc input-name)
-                             (swap! form update-in [:data :value :shadows index] dissoc input-name)
+                             (swap! form update-in [:errors :value composite-type index] dissoc input-name)
+                             (swap! form update-in [:data :value composite-type index] dissoc input-name)
                              (swap! form update :extra-errors dissoc :value)
                              (reset! hint* {}))
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value :shadows index input-name] {:message error'})
+                             (swap! form assoc-in  [:extra-errors :value composite-type index input-name] {:message error'})
                              (reset! hint* {:message error' :type "error"}))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
-                                 input-value (get-in @form [:data :value :shadows index input-name] "")]
+                                 input-value (get-in @form [:data :value composite-type index input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
                              (if (= input-value (str value))
