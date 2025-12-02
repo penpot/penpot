@@ -257,7 +257,7 @@
                 (filter (if clip-children?
                           (comp overlaps-parent? :clip-parents)
                           (constantly true)))
-                (map :id))
+                (keep :id))
           result)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
