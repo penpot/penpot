@@ -395,6 +395,8 @@ COPY files/tmux.conf      /root/.tmux.conf
 COPY files/sudoers        /etc/sudoers
 
 COPY files/Caddyfile           /home/
+COPY files/selfsigned.crt      /home/
+COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh
 COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
 COPY files/entrypoint.sh       /home/entrypoint.sh
