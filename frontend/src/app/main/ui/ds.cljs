@@ -9,6 +9,7 @@
    [app.config :as cf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
@@ -62,6 +63,7 @@
     :RawSvg raw-svg*
     :Select select*
     :Switch switch*
+    :Checkbox checkbox*
     :Combobox combobox*
     :Text text*
     :TabSwitcher tab-switcher*

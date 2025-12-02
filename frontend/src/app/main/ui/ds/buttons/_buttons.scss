@@ -11,12 +11,18 @@
 %base-button {
   --button-bg-color: initial;
   --button-fg-color: initial;
+
   --button-hover-bg-color: initial;
   --button-hover-fg-color: initial;
+
   --button-active-bg-color: initial;
+  --button-active-fg-color: initial;
+
   --button-disabled-bg-color: initial;
   --button-disabled-fg-color: initial;
+
   --button-border-color: var(--button-bg-color);
+
   --button-focus-inner-ring-color: initial;
   --button-focus-outer-ring-color: initial;
 
@@ -38,8 +44,10 @@
     --button-fg-color: var(--button-hover-fg-color);
   }
 
-  &:active {
+  &:active,
+  &[aria-pressed="true"] {
     --button-bg-color: var(--button-active-bg-color);
+    --button-fg-color: var(--button-active-fg-color);
   }
 
   &:focus-visible {
@@ -63,6 +71,7 @@
   --button-hover-fg-color: var(--color-background-secondary);
 
   --button-active-bg-color: var(--color-accent-tertiary);
+  --button-active-fg-color: var(--color-background-secondary);
 
   --button-disabled-bg-color: var(--color-accent-primary-muted);
   --button-disabled-fg-color: var(--color-background-secondary);
@@ -72,7 +81,8 @@
   --button-focus-inner-ring-color: var(--color-background-secondary);
   --button-focus-outer-ring-color: var(--color-accent-primary);
 
-  &:active {
+  &:active,
+  &[aria-pressed="true"] {
     box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgba(0, 0, 0, 0.2);
   }
 }
@@ -85,6 +95,7 @@
   --button-hover-fg-color: var(--color-accent-primary);
 
   --button-active-bg-color: var(--color-background-quaternary);
+  --button-active-fg-color: var(--color-accent-primary);
 
   --button-disabled-bg-color: transparent;
   --button-disabled-fg-color: var(--color-foreground-secondary);
@@ -103,6 +114,7 @@
   --button-hover-fg-color: var(--color-accent-primary);
 
   --button-active-bg-color: var(--color-background-quaternary);
+  --button-active-fg-color: var(--color-accent-primary);
 
   --button-disabled-bg-color: transparent;
   --button-disabled-fg-color: var(--color-accent-primary-muted);
@@ -121,6 +133,7 @@
   --button-hover-fg-color: var(--color-foreground-primary);
 
   --button-active-bg-color: var(--color-accent-error);
+  --button-active-fg-color: var(--color-foreground-primary);
 
   --button-disabled-bg-color: var(--color-background-error);
   --button-disabled-fg-color: var(--color-accent-error);
@@ -130,7 +143,8 @@
   --button-focus-inner-ring-color: var(--color-background-primary);
   --button-focus-outer-ring-color: var(--color-accent-primary);
 
-  &:active {
+  &:active,
+  &[aria-pressed="true"] {
     box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgba(0, 0, 0, 0.2);
   }
 }
