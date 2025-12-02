@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as doc]
    [app.tokens :as tokens]
@@ -32,7 +33,8 @@
   [:map
    [:id ::sm/uuid]
    [:name :string]
-   [:email :string]])
+   [:email :string]
+   [:photo-url :string]])
 
 (sv/defmethod ::authenticate
   "Authenticate an user by token
@@ -51,7 +53,8 @@
     ;; TODO Manage bad token
     {:id (get profile :id)
      :name (get profile :fullname)
-     :email (get profile :email)}))
+     :email (get profile :email)
+     :photo-url (files/resolve-public-uri (get profile :photo-id))}))
 
 ;; ---- API: get-teams
 
