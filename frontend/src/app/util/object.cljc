@@ -4,12 +4,17 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
+#_:clj-kondo/ignore
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
   (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify class])
   #?(:cljs (:require-macros [app.util.object]))
   (:require
-   [clojure.core :as c]))
+   [app.common.json :as json]
+   [app.common.schema :as sm]
+   [clojure.core :as c]
+   [cuerdas.core :as str]
+   [rumext.v2.util :as mfu]))
 
 #?(:cljs
    (defn array?
@@ -138,55 +143,139 @@
 
        ~constructor-sym)))
 
-(defmacro add-properties!
-  "Adds properties to an object using `.defineProperty`"
-  [rsym & properties]
-  (let [rsym       (with-meta rsym {:tag 'js})
-        getf-sym   (with-meta (gensym (str rsym "-get-fn-")) {:tag 'js})
-        setf-sym   (with-meta (gensym (str rsym "-set-fn-")) {:tag 'js})
-        this-sym   (with-meta (gensym (str rsym "-this-")) {:tag 'js})
-        target-sym (with-meta (gensym (str rsym "-target-")) {:tag 'js})]
-    `(let [~target-sym ~rsym]
-       ;; Creates the `.defineProperty` per property
-       ~@(for [params properties
-               :let [pname    (c/get params :name)
-                     get-expr (c/get params :get)
-                     set-expr (c/get params :set)
-                     this?    (c/get params :this true)
-                     enum?    (c/get params :enumerable true)
-                     conf?    (c/get params :configurable)
-                     writ?    (c/get params :writable)]]
-           `(let [~@(concat
-                     (when get-expr
-                       [getf-sym get-expr])
-                     (when set-expr
-                       [setf-sym set-expr]))]
-              (.defineProperty
-               js/Object
-               ~target-sym
-               ~pname
-               (cljs.core/js-obj
-                ~@(concat
-                   ["enumerable" (boolean enum?)]
+#?(:clj
+   (defmacro add-properties!
+     "Adds properties to an object using `.defineProperty`"
+     [rsym & properties]
+     (let [rsym       (with-meta rsym {:tag 'js})
 
-                   (when conf?
-                     ["configurable" true])
+           this-sym   (with-meta (gensym (str rsym "-this-")) {:tag 'js})
+           target-sym (with-meta (gensym (str rsym "-target-")) {:tag 'js})
 
-                   (when (some? writ?)
-                     ["writable" true])
+           make-sym
+           (fn [pname prefix]
+             (-> (gensym (str "prop-" prefix "-" (str/slug pname) "-"))
+                 (with-meta {:tag 'js})))
 
-                   (when get-expr
-                     (if this?
-                       ["get" `(fn [] (cljs.core/this-as ~this-sym (~getf-sym ~this-sym)))]
-                       ["get" getf-sym]))
+           make-sym
+           (memoize make-sym)
 
-                   (when set-expr
-                     (if this?
-                       ["set" `(fn [v#] (cljs.core/this-as ~this-sym (~setf-sym ~this-sym v#)))]
-                       ["set" setf-sym])))))))
+           bindings
+           (->> properties
+                (mapcat (fn [params]
+                          (let [pname    (c/get params :name)
+                                get-expr (c/get params :get)
+                                set-expr (c/get params :set)
+                                fn-expr  (c/get params :fn)
+                                schema-n (c/get params :schema)
+                                wrap     (c/get params :wrap)
+                                schema-1 (c/get params :schema-1)
+                                this?    (c/get params :this false)
 
-       ;; Returns the object
-       ~target-sym)))
+                                fn-sym
+                                (-> (gensym (str "internal-fn-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
+                                coercer-sym
+                                (-> (gensym (str "coercer-fn-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
+                                wrap-sym
+                                (-> (gensym (str "wrap-fn-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))]
+
+                            (concat
+                             (when wrap
+                               [wrap-sym wrap])
+
+                             (when get-expr
+                               [(make-sym pname "get-fn")
+                                (if this?
+                                  `(fn []
+                                     (let [~this-sym (~'js* "this")
+                                           ~fn-sym ~get-expr]
+                                       (.call ~fn-sym ~this-sym ~this-sym)))
+                                  get-expr)])
+
+                             (when set-expr
+                               [(make-sym pname "set-fn")
+                                (if this?
+                                  `(fn [v#]
+                                     (let [~this-sym (~'js* "this")
+                                           ~fn-sym ~set-expr]
+                                       (.call ~fn-sym ~this-sym ~this-sym v#)))
+                                  set-expr)])
+
+                             (when fn-expr
+                               (concat
+                                (when schema-1
+                                  [coercer-sym `(sm/coercer ~schema-1)])
+                                (when schema-n
+                                  [coercer-sym `(sm/coercer ~schema-n)])
+
+                                [(make-sym pname "get-fn")
+                                 `(fn []
+                                    (let [~this-sym (~'js* "this")
+                                          ~fn-sym   ~fn-expr
+                                          ~fn-sym   ~(if this?
+                                                       `(.bind ~fn-sym ~this-sym ~this-sym)
+                                                       `(.bind ~fn-sym ~this-sym))
+
+                                          ~@(if schema-1
+                                              [fn-sym `(fn* [param#]
+                                                            (let [param# (json/->clj param#)
+                                                                  param# (~coercer-sym param#)]
+                                                              (~fn-sym param#)))]
+                                              [])
+                                          ~@(if schema-n
+                                              [fn-sym `(fn* []
+                                                            (let [params# (into-array (cljs.core/js-arguments))
+                                                                  params# (mfu/bean params#)
+                                                                  params# (~coercer-sym params#)]
+                                                              (apply ~fn-sym params#)))]
+                                              [])
+                                          ~@(if wrap
+                                              [fn-sym `(~wrap-sym ~fn-sym)]
+                                              [])]
+
+                                      ~fn-sym))])))))))]
+
+       `(let [~target-sym ~rsym
+              ~@bindings]
+          ;; Creates the `.defineProperty` per property
+          ~@(for [params properties
+                  :let [pname    (c/get params :name)
+                        get-expr (c/get params :get)
+                        set-expr (c/get params :set)
+                        fn-expr  (c/get params :fn)
+                        enum?    (c/get params :enumerable true)
+                        conf?    (c/get params :configurable)
+                        writ?    (c/get params :writable)]]
+              `(.defineProperty
+                js/Object
+                ~target-sym
+                ~pname
+                (cljs.core/js-obj
+                 ~@(concat
+                    ["enumerable" (boolean enum?)]
+
+                    (when conf?
+                      ["configurable" true])
+
+                    (when (some? writ?)
+                      ["writable" true])
+
+                    (when (or get-expr)
+                      ["get" (make-sym pname "get-fn")])
+
+                    (when fn-expr
+                      ["get" (make-sym pname "get-fn")])
+
+                    (when set-expr
+                      ["set" (make-sym pname "set-fn")])))))
+
+          ;; Returns the object
+          ~target-sym))))
 
 (defn- collect-properties
   [params]
@@ -218,17 +307,20 @@
         (let [definition (first params)]
           (if (some? definition)
             (let [definition (if (map? definition)
-                               (c/merge {:this false} (assoc definition :name (name ckey)))
+                               (c/merge {:wrap (:wrap tmeta)} definition)
                                (-> {:enumerable false}
                                    (c/merge (meta definition))
-                                   (assoc :name (name ckey))
-                                   (assoc :this false)
-                                   (assoc :get `(fn [] ~definition))))]
+                                   (assoc :wrap (:wrap tmeta))
+                                   (assoc :fn definition)
+                                   (dissoc :get :set)))
+                  definition (assoc definition :name (name ckey))]
+
               (recur (rest params)
                      (conj props definition)
                      defs
                      :start
                      nil))
+
             (let [hint (str "expected property definition for: " curr)]
               (throw (ex-info hint {:key curr})))))
 
@@ -270,23 +362,30 @@
   on demand with the ability to assign protocol implementations and
   custom properties"
   [& params]
-  (let [[tmeta properties definitions] (collect-properties params)
-        obj-sym    (gensym "obj-")]
-    `(let [~obj-sym (cljs.core/js-obj)]
-       (add-properties! ~obj-sym
-                        ~@(when-let [tname (:name tmeta)]
-                            [`{:name ~'js/Symbol.toStringTag
-                               :this false
-                               :enumerable false
-                               :get (fn [] ~tname)}
-                             `{:name type-symbol
-                               :this false
-                               :enumerable false
-                               :get (fn [] ~tname)}])
-                        ~@properties)
-       (let [~obj-sym ~(if-let [definitions (seq definitions)]
-                         `(cljs.core/specify! ~obj-sym
-                            ~@(mapcat (fn [[k v]] (cons k v)) definitions))
-                         obj-sym)]
+  (let [[tmeta properties definitions]
+        (collect-properties params)
 
-         (cljs.core/specify! ~obj-sym)))))
+        f-sym
+        (gensym "to-string-")
+
+        type-name
+        (or (c/get tmeta :name) (str (gensym "anonymous")))
+
+        obj-sym
+        (gensym "obj-")]
+
+    `(let [~obj-sym (cljs.core/js-obj)
+           ~f-sym   (fn [] ~type-name)]
+       (add-properties! ~obj-sym
+                        {:name ~'js/Symbol.toStringTag
+                         :enumerable false
+                         :get ~f-sym}
+                        {:name (js/Symbol.for "penpot.reify:type")
+                         :enumerable false
+                         :get ~f-sym}
+                        ~@properties)
+
+       ~(if-let [definitions (seq definitions)]
+          `(cljs.core/specify! ~obj-sym
+             ~@(mapcat (fn [[k v]] (cons k v)) definitions))
+          obj-sym))))
