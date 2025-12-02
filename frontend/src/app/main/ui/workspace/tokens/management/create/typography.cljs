@@ -26,7 +26,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as forms]
    [app.main.ui.workspace.tokens.management.create.combobox-token-fonts :refer [font-picker-composite-combobox*]]
-   [app.main.ui.workspace.tokens.management.create.form-input-token :refer [form-input-token-composite*]]
+   [app.main.ui.workspace.tokens.management.create.input-token :refer [input-token-composite*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -97,7 +97,7 @@
         :token font-family-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> form-input-token-composite*
+      [:> input-token-composite*
        {:aria-label "Font Size"
         :icon i/text-font-size
         :placeholder (tr "workspace.tokens.font-size-value-enter")
@@ -105,7 +105,7 @@
         :token font-size-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> form-input-token-composite*
+      [:> input-token-composite*
        {:aria-label "Font Weight"
         :icon i/text-font-weight
         :placeholder (tr "workspace.tokens.font-weight-value-enter")
@@ -113,7 +113,7 @@
         :token font-weight-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> form-input-token-composite*
+      [:> input-token-composite*
        {:aria-label "Line Height"
         :icon i/text-lineheight
         :placeholder (tr "workspace.tokens.line-height-value-enter")
@@ -121,7 +121,7 @@
         :token line-height-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> form-input-token-composite*
+      [:> input-token-composite*
        {:aria-label "Letter Spacing"
         :icon i/text-letterspacing
         :placeholder (tr "workspace.tokens.letter-spacing-value-enter-composite")
@@ -129,7 +129,7 @@
         :token letter-spacing-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> form-input-token-composite*
+      [:> input-token-composite*
        {:aria-label "Text Case"
         :icon i/text-mixed
         :placeholder (tr "workspace.tokens.text-case-value-enter")
@@ -137,7 +137,7 @@
         :token text-case-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> form-input-token-composite*
+      [:> input-token-composite*
        {:aria-label "Text Decoration"
         :icon i/text-underlined
         :placeholder (tr "workspace.tokens.text-decoration-value-enter")
@@ -148,7 +148,7 @@
 (mf/defc reference-form*
   [{:keys [token tokens] :as props}]
   [:div {:class (stl/css :input-row)}
-   [:> form-input-token-composite*
+   [:> input-token-composite*
     {:placeholder (tr "workspace.tokens.reference-composite")
      :aria-label (tr "labels.reference")
      :icon i/text-typography
