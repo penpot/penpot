@@ -284,9 +284,9 @@
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [s          (schema s)
-        validator* (delay (m/validator s))
-        explainer* (delay (m/explainer s))
+  (let [s          (delay (schema s))
+        validator* (delay (m/validator @s))
+        explainer* (delay (m/explainer @s))
         hint       (or ^boolean hint "check error")
         type       (or ^boolean type :assertion)
         code       (or ^boolean code :data-validation)]
