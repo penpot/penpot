@@ -330,6 +330,10 @@ fn set_children_set(entries: Vec<Uuid>) {
         parent_id = Some(shape.id);
         (_, deleted) = shape.compute_children_differences(&entries);
         shape.children = entries.clone();
+
+        for id in entries {
+            state.touch_shape(id);
+        }
     });
 
     with_state_mut!(state, {
@@ -339,6 +343,7 @@ fn set_children_set(entries: Vec<Uuid>) {
 
         for id in deleted {
             state.delete_shape_children(parent_id, id);
+            state.touch_shape(id);
         }
     });
 }
