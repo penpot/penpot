@@ -53,7 +53,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.11-typography-token.gif"
+        [:img {:src "images/features/2.12-tokens-sidebar.gif"
                :class (stl/css :start-image)
                :border "0"
                :alt "Better tokens visibility"}]
@@ -92,7 +92,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.11-variants.gif"
+        [:img {:src "images/features/2.12-variants.gif"
                :class (stl/css :start-image)
                :border "0"
                :alt "Simpler boolean variants"}]
@@ -129,7 +129,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.11-menu.gif"
+        [:img {:src "images/features/2.12-export-pdf.gif"
                :class (stl/css :start-image)
                :border "0"
                :alt "Smarter PDF export"}]
