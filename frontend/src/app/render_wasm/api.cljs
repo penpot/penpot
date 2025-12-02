@@ -1042,6 +1042,7 @@
      (process-pending shapes thumbnails full noop-fn
                       (fn []
                         (when render-callback (render-callback))
+                        (render-finish)
                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
 
 (defn clear-focus-mode
