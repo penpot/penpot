@@ -66,16 +66,16 @@
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
            "Design systems should be both powerful and effortless to use. This release brings tokens closer to where you work, making them easier to apply and easier to understand."]
-          
+
           [:span {:class (stl/css :feature-title)}
            "Apply color tokens right from the sidebar"]
-          
+
           [:p {:class (stl/css :feature-content)}
            "Your color tokens now appear directly in the properties sidebar, making it faster to apply or unapply tokens from the design tab. No more digging: now you can use tokens within your design flow."]
 
           [:span {:class (stl/css :feature-title)}
            "See token names in the Inspect panel"]
-          
+
           [:p {:class (stl/css :feature-content)}
            "Developers now get a clearer context during handoff. The Inspect panel shows the actual token used in your design, in a similar way to how styles are displayed. This small detail reduces ambiguity, aligns everyone on the same language, and strengthens collaboration across the team."]]
 
