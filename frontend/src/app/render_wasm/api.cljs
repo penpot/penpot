@@ -59,6 +59,9 @@
 
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
+(def ^:const DEBOUNCE_DELAY_MS 100)
+(def ^:const THROTTLE_DELAY_MS 10)
+
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
 
@@ -873,10 +876,10 @@
   (letfn [(do-render [ts]
             (h/call wasm/internal-module "_set_view_end")
             (render ts))]
-    (fns/debounce do-render 100)))
+    (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
-  (fns/throttle render 10))
+  (fns/throttle render THROTTLE_DELAY_MS))
 
 (defn set-view-box
   [prev-zoom zoom vbox]
