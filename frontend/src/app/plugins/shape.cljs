@@ -217,7 +217,7 @@
                   (u/display-not-valid :name value)
 
                   :else
-                  (st/emit! (dw/end-rename-shape id value)))))}
+                  (st/emit! (dw/rename-shape-or-variant file-id page-id id value)))))}
 
            :blocked
            {:this true
