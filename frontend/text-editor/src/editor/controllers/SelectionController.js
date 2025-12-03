@@ -1974,7 +1974,7 @@ export class SelectionController extends EventTarget {
       // the styles are applied to the current caret
       else if (
         this.startOffset === this.endOffset &&
-        this.endOffset === endNode.nodeValue.length
+        this.endOffset === endNode.nodeValue?.length
       ) {
         const newTextSpan = createVoidTextSpan(newStyles);
         this.endTextSpan.after(newTextSpan);
@@ -2026,14 +2026,14 @@ export class SelectionController extends EventTarget {
           (this.#textNodeIterator.currentNode !== startNode &&
             this.#textNodeIterator.currentNode !== endNode) ||
           (this.#textNodeIterator.currentNode === endNode &&
-            endOffset === endNode.nodeValue.length)
+            endOffset === endNode.nodeValue?.length)
         ) {
           setTextSpanStyles(textSpan, newStyles);
 
           // If we're at end node
         } else if (
           this.#textNodeIterator.currentNode === endNode &&
-          endOffset < endNode.nodeValue.length &&
+          endOffset < endNode.nodeValue?.length &&
           endOffset > 0
         ) {
           const newTextSpan = splitTextSpan(textSpan, endOffset);
