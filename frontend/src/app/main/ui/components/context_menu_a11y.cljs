@@ -14,6 +14,7 @@
    [app.main.ui.components.dropdown :refer [dropdown-content*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
+   [app.util.globals :as ug]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
@@ -53,14 +54,13 @@
 (def ^:private valid-option?
   (sm/lazy-validator schema:option))
 
-(mf/defc context-menu*
-  [{:keys [show on-close options selectable selected
+(mf/defc context-menu-inner*
+  [{:keys [on-close options selectable selected
            top left fixed min-width origin width]
     :as props}]
 
   (assert (every? valid-option? options) "expected valid options")
   (assert (fn? on-close) "missing `on-close` prop")
-  (assert (boolean? show) "missing `show` prop")
   (assert (vector? options) "missing `options` prop")
 
   (let [width          (d/nilv width "initial")
@@ -80,14 +80,15 @@
         offset-x       (get state :offset-x)
         offset-y       (get state :offset-y)
         levels         (get state :levels)
+        internal-id    (mf/use-id)
 
         on-local-close
         (mf/use-fn
          (mf/deps on-close)
          (fn []
-           (swap! state* assoc :levels [{:parent nil
-                                         :options options}])
-           (on-close)))
+           (swap! state* assoc :levels [{:parent nil :options options}])
+           (when (fn? on-close)
+             (on-close))))
 
         props
         (mf/spread-props props {:on-close on-local-close})
@@ -216,11 +217,22 @@
       (swap! state* assoc :levels [{:parent nil
                                     :options options}]))
 
+    (mf/with-effect [internal-id]
+      (ug/dispatch! (ug/event "penpot:context-menu:open" #js {:id internal-id})))
+
+    (mf/with-effect [internal-id on-local-close]
+      (letfn [(on-event [event]
+                (when-let [detail (unchecked-get event "detail")]
+                  (when (not= internal-id (unchecked-get detail "id"))
+                    (on-local-close event))))]
+        (ug/listen "penpot:context-menu:open" on-event)
+        (partial ug/unlisten "penpot:context-menu:open" on-event)))
+
     (mf/with-effect [ids]
       (tm/schedule-on-idle
        #(dom/focus! (dom/get-element (first ids)))))
 
-    (when (and show (some? levels))
+    (when (some? levels)
       [:> dropdown-content* props
        (let [level   (peek levels)
              options (:options level)
@@ -229,7 +241,7 @@
          [:div {:class (stl/css-case
                         :is-selectable selectable
                         :context-menu true
-                        :is-open show
+                        :is-open true
                         :fixed fixed)
                 :style {:top (+ top offset-y)
                         :left (+ left offset-x)}
@@ -241,7 +253,7 @@
                 :role "menu"
                 :ref check-menu-offscreen}
 
-           (when-let [parent (:parent level)]
+           (when parent
              [:*
               [:li {:id "go-back-sub-option"
                     :class (stl/css :context-menu-item)
@@ -256,7 +268,7 @@
 
               [:li {:class (stl/css :separator)}]])
 
-           (for [[index option] (d/enumerate (:options level))]
+           (for [[index option] (d/enumerate options)]
              (let [name        (:name option)
                    id          (:id option)
                    sub-options (:options option)
@@ -297,3 +309,12 @@
                            :data-testid id}
                        name
                        [:span {:class (stl/css :submenu-icon)} deprecated-icon/arrow]])]))))]])])))
+
+(mf/defc context-menu*
+  {::mf/private true}
+  [{:keys [show] :as props}]
+
+  (assert (boolean? show) "expected `show` prop to be a boolean")
+
+  (when ^boolean show
+    [:> context-menu-inner* props]))
