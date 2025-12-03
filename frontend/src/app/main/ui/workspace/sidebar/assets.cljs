@@ -56,9 +56,8 @@
                (update file :data dissoc :pages-index))
              refs/file))
 
-(mf/defc assets-local-library
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc assets-local-library*
+  {::mf/private true}
   [{:keys [filters]}]
   (let [file (mf/deref ref:local-library)]
     [:> file-library*
@@ -209,5 +208,5 @@
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
         [:*
-         [:& assets-local-library {:filters filters}]
+         [:> assets-local-library* {:filters filters}]
          [:> assets-libraries* {:filters filters}]]]]]]))
