@@ -15,10 +15,15 @@
 
 .modal-container {
   @extend .modal-container-base;
+  display: grid;
+  gap: deprecated.$s-24;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-.modal-header {
-  margin-bottom: deprecated.$s-24;
+.list-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: 100%;
 }
 
 .modal-title {
@@ -32,12 +37,16 @@
 
 .modal-content {
   @include deprecated.bodySmallTypography;
-  margin-bottom: deprecated.$s-24;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: deprecated.$s-24;
 }
 
 .element-list {
   @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
+  overflow-y: scroll;
+  margin-block: 0;
 }
 
 .action-buttons {
@@ -53,6 +62,10 @@
   &.danger {
     @extend .modal-danger-btn;
   }
+}
+
+.modal-scd-msg {
+  margin-block: 0;
 }
 
 .modal-scd-msg,
