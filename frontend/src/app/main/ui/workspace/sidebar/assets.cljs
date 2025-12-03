@@ -68,7 +68,7 @@
       :filters filters}]))
 
 (defn- toggle-values
-  [v [a b]]
+  [v a b]
   (if (= v a) b a))
 
 (mf/defc assets-toolbox*
@@ -97,7 +97,7 @@
         (mf/use-fn
          (mf/deps ordering)
          (fn []
-           (let [new-value (toggle-values ordering [:asc :desc])]
+           (let [new-value (toggle-values ordering :asc :desc)]
              (swap! filters* assoc :ordering new-value)
              (dwa/set-current-assets-ordering! new-value))))
 
@@ -105,7 +105,7 @@
         (mf/use-fn
          (mf/deps list-style)
          (fn []
-           (let [new-value (toggle-values list-style [:thumbs :list])]
+           (let [new-value (toggle-values list-style :thumbs :list)]
              (swap! filters* assoc :list-style new-value)
              (dwa/set-current-assets-list-style! new-value))))
 
