@@ -35,13 +35,25 @@ goog.scope(function () {
     };
   }
 
-  self.event = function(...args) {
-    return new CustomEvent(...args);
+  self.event = function(name, detail) {
+    const options = {};
+    if (detail !== undefined) {
+      options.detail = detail;
+    }
+    return new CustomEvent(name, options);
   };
 
   self.dispatch_BANG_ = function(...args) {
     self.document.dispatchEvent(...args);
   };
+
+  self.listen = function(...args) {
+    self.document.addEventListener(...args);
+  };
+
+  self.unlisten = function(...args) {
+    self.document.removeEventListener(...args);
+  }
 
   self.window = (function () {
     if (typeof goog.global.window !== "undefined") {
