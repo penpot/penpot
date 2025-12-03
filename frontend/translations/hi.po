@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"PO-Revision-Date: 2025-12-04 10:00+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi "
-"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
+"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
+"hi/>\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -4321,7 +4321,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:202
 msgid "subscription.settings.management.dialog.payment-explanation"
-msgstr "(अभी कोई भुगतान नहीं किया जाएगा)"
+msgstr "परीक्षण के बाद शुल्क लिया जाएगा। अभी क्रेडिट कार्ड की आवश्यकता नहीं है।"
 
 #: src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:199
 #, markdown
@@ -4383,9 +4383,8 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "आप %s हैं!"
 
 #: src/app/main/ui/settings/subscription.cljs:440
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "आप इस योजना के साथ %s से हमारा समर्थन कर रहे हैं"
+msgstr "आप इस योजना में हमारा समर्थन तब से कर रहे हैं: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:472, src/app/main/ui/settings/subscription.cljs:488
 msgid "subscription.settings.try-it-free"
@@ -7169,7 +7168,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "अपारदर्शिता 0 और 100% या 0 और 1 (जैसे 50% या 0.5) के बीच होनी चाहिए।"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "मूल मान: %s"
 
@@ -7191,9 +7189,8 @@ msgid "workspace.tokens.reference-error"
 msgstr "संदर्भ त्रुटियाँ: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:102, src/app/main/ui/workspace/tokens/management/create/form_input_token.cljs:109, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
-msgstr "समाधानित मान: %s"
+msgstr "हल किया गया मान: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:272
 msgid "workspace.tokens.save-theme"
@@ -7259,7 +7256,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "थीम्स सूची"
 
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:194, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:195, src/app/main/ui/workspace/tokens/management/create/form.cljs:629, src/app/main/ui/workspace/tokens/management/create/form.cljs:630
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "वर्णन"
 
@@ -7628,3 +7624,825 @@ msgstr "स्वतः सहेजे गए संस्करण %s दि�
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "पथ बंद करने के लिए क्लिक करें"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:107
+msgid "color-row.token-color-row.deleted-token"
+msgstr "यह token मौजूद नहीं है या हटा दिया गया है।"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr "कोई रंग tokens उपलब्ध नहीं है। सक्रिय सेट/थीम देखें या नए टोकन जोड़ें।"
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "आप निम्न आमंत्रणों को हटाने जा रहे हैं:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "आप निम्नलिखित को पुनः निमंत्रण भेजने जा रहे हैं:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "निमंत्रण हटाएँ"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "निमंत्रण पुनः भेजें"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "भूमिका के अनुसार क्रमबद्ध करें"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "स्थिति के अनुसार क्रमबद्ध करें"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "सक्रिय सेट या थीम में कोई लागू tokens नहीं।"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:100
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "कोई मेल नहीं मिले।"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:650, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:140
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "token सूची खोलें"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:135
+msgid "ds.inputs.token-field.detach-token"
+msgstr "token अलग करें"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:41, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "यह token किसी भी सक्रिय सेट में नहीं है या इसका मान अमान्य है।"
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "ईमेल आमंत्रण से मेल नहीं खाता।"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:52, src/app/main/ui/workspace/tokens/management/create/form.cljs:80
+msgid "errors.field-max-length"
+msgstr "इसमें अधिकतम %s वर्ण होने चाहिए।"
+
+#: src/app/main/ui/dashboard/team.cljs:853
+msgid "errors.max-quote-reached"
+msgstr "|"
+
+#: src/app/main/errors.cljs:167
+msgid "errors.only-creator-can-lock"
+msgstr "केवल संस्करण निर्माता ही इसे लॉक कर सकता है"
+
+#: src/app/main/errors.cljs:175
+msgid "errors.only-creator-can-unlock"
+msgstr "केवल संस्करण निर्माता ही इसे अनलॉक कर सकता है"
+
+#: src/app/main/errors.cljs:183
+msgid "errors.version-already-locked"
+msgstr "यह संस्करण पहले से ही लॉक है"
+
+#: src/app/main/errors.cljs:159
+msgid "errors.version-locked"
+msgstr "यह संस्करण लॉक है और इसे अन्य लोग हटा नहीं सकते"
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "कृपया अपनी प्रतिक्रिया का कारण बताएँ"
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "हमसे संपर्क करने के अन्य तरीके"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"यदि फीडबैक किसी फ़ाइल या प्रोजेक्ट से संबंधित है, तो यहां पेनपॉट लिंक जोड़ें:"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "हमसे संपर्क करें"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+msgid "feedback.type"
+msgstr "प्रकार"
+
+#: src/app/main/ui/settings/feedback.cljs:115
+msgid "feedback.type.doubt"
+msgstr "संदेह"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "विचार"
+
+#: src/app/main/ui/settings/feedback.cljs:114
+msgid "feedback.type.issue"
+msgstr "मुद्दा"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "आकृति की भरण छवि का पूर्वावलोकन"
+
+#, unused
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "स्ट्राइकथ्रू"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+msgid "inspect.attributes.typography.text-transform.capitalize"
+msgstr "प्रमुख अक्षर करना"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "रंग स्थान चुनें"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:166
+msgid "inspect.layer-info"
+msgstr "निरीक्षण टैब चुनें"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.active-sets"
+msgstr "सक्रिय सेट"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.active-themes"
+msgstr "सक्रिय थीम"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "CSS शॉर्टहैंड को क्लिपबोर्ड पर कॉपी करें"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:51
+msgid "inspect.tabs.styles.copy-to-clipboard"
+msgstr "क्लिपबोर्ड पर कॉपी करें"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.geometry-panel"
+msgstr "आकार & स्थिति"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.toggle-style"
+msgstr "टॉगल पैनल %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.token-panel"
+msgstr "Token सेट और थीम"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:60
+msgid "inspect.tabs.styles.token-resolved-value"
+msgstr "हल किया गया मान:"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.variants-panel"
+msgstr "भिन्न गुण"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1044
+msgid "labels.about-penpot"
+msgstr "पेनपोट के बारे में"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "धुंधला"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:423
+msgid "labels.color"
+msgstr "रंग"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1031
+msgid "labels.community-contributions"
+msgstr "समुदाय & योगदान"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "labels.computed"
+msgstr "परिकलित"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "समर्थन से संपर्क करें"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "हमसे संपर्क करें"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "कैलिडोस © 2019-वर्तमान"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "%s डाउनलोड करें"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "भरना"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1020
+msgid "labels.help-learning"
+msgstr "मदद & सीखना"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "कुछ बुरा हुआ।"
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"आप ऑपरेशन पुनः प्रयास कर सकते हैं या त्रुटि की रिपोर्ट करने के लिए समर्थन से संपर्क कर सकते हैं"
+"।"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "लेआउट"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:799
+msgid "labels.learning-center"
+msgstr "अध्ययन केन्द्र"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:209
+msgid "labels.lock"
+msgstr "ताला"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:628
+msgid "labels.mixed-values"
+msgstr "मिश्रित"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:879
+msgid "labels.penpot-changelog"
+msgstr "पेनपॉट चेंजलॉग"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:805
+msgid "labels.penpot-hub"
+msgstr "पेनपॉट हब"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:752
+msgid "labels.pinned-projects"
+msgstr "पिन किए गए प्रोजेक्ट"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:667
+msgid "labels.reference"
+msgstr "संदर्भ"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "पुन: भेजें"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "छाया"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:731
+msgid "labels.sources"
+msgstr "स्त्रोत"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "स्ट्रोक"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:134
+msgid "labels.styles"
+msgstr "शैलियों"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+msgid "labels.switch"
+msgstr "बदलना"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "मूलपाठ"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1452
+msgid "labels.typography"
+msgstr "अक्षर विन्यास"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:203
+msgid "labels.unlock"
+msgstr "अनलॉक"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1028
+msgid "labels.variant"
+msgstr "रूपांतर"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:873
+msgid "labels.version-notes"
+msgstr "संस्करण %s नोट्स"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "दृश्यता"
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "आमंत्रण सफलतापूर्वक हटा दिया गया"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "घटक/संस्करण बनाएं"
+
+#: src/app/main/ui/dashboard/subscription.cljs:109
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "एंटरप्राइज़ योजना (परीक्षण)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "शक्तिप्रापक!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"अपनी टीमों के लिए अतिरिक्त संग्रहण, फ़ाइल पुनर्प्राप्ति और बहुत कुछ प्राप्त करें।"
+
+#: src/app/main/ui/dashboard/subscription.cljs:101
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"अपनी सभी टीमों के लिए एक निश्चित कीमत पर असीमित स्टोरेज, विस्तारित फ़ाइल रिकवरी और "
+"असीमित एडिटर प्राप्त करें। [एंटरप्राइज़ प्लान देखें।|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:194
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"आपकी स्वामित्व वाली टीमों में %s संपादक हैं, जबकि आपकी व्यावसायिक योजना 8 तक को कवर "
+"करती है।"
+
+#: src/app/main/ui/dashboard/subscription.cljs:202
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"कृपया ज़्यादा एडिटर, स्टोरेज और फ़ाइल रिकवरी के लिए अभी अनलिमिटेड या एंटरप्राइज़ में "
+"अपग्रेड करें। [अभी सब्सक्राइब करें।|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:197
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"आपकी टीम बढ़ती जा रही है! आपकी अनलिमिटेड योजना में %s संपादकों तक की सेवाएँ शामिल हैं, "
+"लेकिन अब आपके पास %s हैं।"
+
+#: src/app/main/ui/dashboard/subscription.cljs:205
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"कृपया अपनी वर्तमान संपादक संख्या से मेल खाने के लिए अभी अपग्रेड करें। [अभी सदस्यता लें"
+"।|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:182
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"आपकी स्वामित्व वाली टीमों के केवल नए संपादक ही भविष्य के बिलिंग में शामिल होंगे। 25+ "
+"संपादकों के लिए अभी भी $175/माह का एक समान शुल्क लागू है।"
+
+#: src/app/main/ui/dashboard/subscription.cljs:178
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "असीमित योजना के दौरान लोगों को आमंत्रित करना"
+
+#: src/app/main/ui/settings/subscription.cljs:53
+msgid "subscription.settings.editors"
+msgstr "(x %s संपादक)"
+
+#: src/app/main/ui/settings/subscription.cljs:418, src/app/main/ui/settings/subscription.cljs:428, src/app/main/ui/settings/subscription.cljs:486
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90-दिन के ऑटोसेव संस्करण और फ़ाइल पुनर्प्राप्ति"
+
+#: src/app/main/ui/settings/subscription.cljs:419, src/app/main/ui/settings/subscription.cljs:429, src/app/main/ui/settings/subscription.cljs:487
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "फ्लैट मासिक बिल"
+
+#: src/app/main/ui/settings/subscription.cljs:417, src/app/main/ui/settings/subscription.cljs:427, src/app/main/ui/settings/subscription.cljs:485
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "असीमित भंडारण"
+
+#: src/app/main/ui/settings/subscription.cljs:154
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "वर्तमान में, आपकी टीम में %s व्यक्ति हैं जो संपादन कर सकते हैं।"
+msgstr[1] "वर्तमान में, आपकी टीम में %s लोग हैं जो संपादन कर सकते हैं।"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:112
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr " "
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:177
+msgid "inspect.tabs-switcher-label"
+msgstr " "
+
+#: src/app/main/ui/settings/subscription.cljs:156
+msgid "subscription.settings.management.dialog.editors"
+msgstr "संपादनकर्ता"
+
+#: src/app/main/ui/settings/subscription.cljs:163
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr "(स्वामी, व्यवस्थापक और संपादक। दर्शकों को संपादक नहीं माना जाएगा)"
+
+#: src/app/main/ui/settings/subscription.cljs:206
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"आप मौजूदा संपादकों की संख्या से कम संपादक नहीं सेट कर सकते। टीम सेटिंग में उन लोगों की "
+"भूमिका (संपादक/व्यवस्थापक से दर्शक) बदलें जो वास्तव में फ़ाइलें संपादित नहीं करते हैं।"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "हमें आगे बढ़ने में मदद करें और अपने परीक्षण को आसान बनाएं"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"परीक्षण अवधि के बाद अपनी सदस्यता को सुचारू रूप से जारी रखने और हमारे ओपन-सोर्स प्रोजेक्ट "
+"का समर्थन जारी रखने के लिए अभी अपनी भुगतान जानकारी जोड़ें। आपसे अभी कोई शुल्क नहीं लिया "
+"जाएगा।"
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "अभी छोड़ें और परीक्षण शुरू करें"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "भुगतान विवरण जोड़ें"
+
+#: src/app/main/ui/settings/subscription.cljs:209
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"सुझाव: आमंत्रणों से आगे रहने के लिए आप अभी अपनी सीटों की संख्या बढ़ा सकते हैं। 25+ संपादकों "
+"वाली टीमों में, आपको प्रति माह ₹175 का एकमुश्त शुल्क मिलेगा।"
+
+#: src/app/main/ui/settings/subscription.cljs:385, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "7-दिन का स्वतः सहेजा गया संस्करण और फ़ाइल पुनर्प्राप्ति"
+
+#: src/app/main/ui/settings/subscription.cljs:384, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10GB स्टोरेज"
+
+#: src/app/main/ui/settings/subscription.cljs:386, src/app/main/ui/settings/subscription.cljs:457
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "असीमित टीमें। आपकी स्वामित्व वाली टीमों में अधिकतम 8 संपादक।"
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "अनुशंसित"
+
+#: src/app/main/ui/settings/subscription.cljs:263
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "पेनपोट %s योजना चुनने के लिए धन्यवाद!"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:406, src/app/main/ui/settings/subscription.cljs:470
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "30-दिन का स्वतः सहेजा गया संस्करण और फ़ाइल पुनर्प्राप्ति"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:405, src/app/main/ui/settings/subscription.cljs:469
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25GB स्टोरेज"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:56
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "यदि आप इस सीमा को बढ़ाना चाहते हैं, तो हमें [%s](mailto) पर लिखें"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"यदि आप इस सीमा को बढ़ाना चाहते हैं, तो टीम के मालिक से संपर्क करें: [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:57
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"यदि आप इस सीमा को बढ़ाना चाहते हैं, तो [अपना प्लान अपग्रेड करें|target:self](%s)"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 आमंत्रण चयनित"
+msgstr[1] "%s आमंत्रण चयनित"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
+msgid "workspace.assets.component-group-options"
+msgstr "घटक समूह विकल्प"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427, src/app/main/ui/workspace/colorpicker.cljs:439
+msgid "workspace.colorpicker.color-tokens"
+msgstr "रंग टोकन"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
+msgid "workspace.component.swap.loop-error"
+msgstr "घटकों को अपने अंदर नहीं रखा जा सकता।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:498
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"कुछ प्रतियों को स्विच नहीं किया जा सका। घटकों को आपस में नेस्ट नहीं किया जा सकता।"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 रंग"
+msgstr[1] "%s रंग"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 घटक"
+msgstr[1] "%s घटक"
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "से जुड़ा"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 ग्राफ़िक"
+msgstr[1] "%s ग्राफ़िक्स"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 अक्षर विन्यास"
+msgstr[1] "%s अक्षर विन्यास"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:563
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "परस्पर विरोधी वेरिएंट का पता लगाएं"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:560
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"इस घटक में परस्पर विरोधी वैरिएंट हैं। सुनिश्चित करें कि प्रत्येक वैरिएंट में गुण मानों का एक "
+"विशिष्ट सेट हो।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1330
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "डुप्लिकेट वेरिएंट का पता लगाएँ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1327
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "कुछ वेरिएंट में समान गुण और मूल्य होते हैं"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:268
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"इन वेरिएंट के गुण और मान समान हैं। मानों को समायोजित करें ताकि उन्हें पुनर्प्राप्त किया जा सके"
+"।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:265
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"इस संस्करण के गुण और मान दूसरे संस्करण के समान हैं। मानों को समायोजित करें ताकि उन्हें "
+"पुनर्प्राप्त किया जा सके।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:271
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"इनमें से कुछ वेरिएंट के गुण और मान समान हैं। मानों को समायोजित करें ताकि उन्हें पुनर्प्राप्त "
+"किया जा सके।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:550
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"इस घटक के कुछ वेरिएंट अमान्य नामों वाले हैं। सुनिश्चित करें कि प्रत्येक वेरिएंट सही संरचना का "
+"पालन कर रहा है।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:553
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "अमान्य वेरिएंट का पता लगाएं"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"वेरिएंट के बीच स्विच करते समय परिवर्तनों को बनाए रखने के लिए, पेनपॉट उन परतों को जोड़ता "
+"है जो:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"इनमें से किसी भी परिवर्तन (जैसे, परत का नाम बदलना या समूह बनाना) से कनेक्शन टूट जाता है, "
+"लेकिन परिवर्तन को पूर्ववत करने से यह पुनः स्थापित हो जाएगा।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "एक ही नाम साझा करें।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "एक ही प्रकार के हैं।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr "आयत, दीर्घवृत्त, पथ और बूलियन ऑपरेशन एक ही प्रकार के माने जाते हैं।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "समान पदानुक्रम स्तर रखें।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "समूह, बोर्ड और लेआउट को समतुल्य माना जाता है।"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1034, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1278, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "वेरिएंट कैसे जुड़े रहते हैं"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:264
+msgid "workspace.options.more-token-colors"
+msgstr "अधिक रंग के टोकन"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "ब्राउज़र में डेटा संग्रहीत करें।"
+
+#: src/app/main/ui/workspace/context_menu.cljs:617, src/app/main/ui/workspace/sidebar/assets/components.cljs:634, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1095
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "वैरिएंट के रूप में संयोजित करें"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:636
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "घटकों को एक ही पृष्ठ पर होना आवश्यक है"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1145
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "वैरिएंट में कम से कम एक प्रॉपर्टी होनी चाहिए"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"पंक्ति की ऊँचाई फ़ॉन्ट आकार पर निर्भर करती है। हल किया गया मान प्राप्त करने के लिए फ़ॉन्ट "
+"आकार जोड़ें।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:581
+msgid "workspace.tokens.edit-token"
+msgstr "%s token संपादित करें"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1339
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "फ़ॉन्ट आकार या {उपनाम}"
+
+#: src/app/main/data/workspace/tokens/application.cljs:323
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"फ़ॉन्ट वज़न/शैली सेट करते समय त्रुटि हुई। यह फ़ॉन्ट शैली वर्तमान फ़ॉन्ट में मौजूद नहीं है"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1328, src/app/main/ui/workspace/tokens/management/create/form.cljs:1343
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "फ़ॉन्ट वज़न (300, बोल्ड इटैलिक...) या {उपनाम}"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "%s आयात करें"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "फ़ोल्डर"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "एकल JSON फ़ाइल"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ज़िप फ़ाइल"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:741
+msgid "workspace.tokens.individual-tokens"
+msgstr "व्यक्तिगत टोकन का प्रयोग करें"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"अमान्य फ़ॉन्ट भार मान: संख्यात्मक मान (100-950) या मानक नाम (पतला, हल्का, नियमित, "
+"बोल्ड, आदि) का उपयोग करें, वैकल्पिक रूप से उसके बाद 'इटैलिक' लिखें"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"अमान्य छाया प्रकार: केवल 'innerShadow' या 'dropShadow' स्वीकार किए जाते हैं"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"अमान्य token मान: केवल कोई नहीं, अपरकेस, लोअरकेस या कैपिटलाइज़ स्वीकार किए जाते हैं"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"अमान्य token मान: केवल कोई नहीं, रेखांकित और स्ट्राइक-थ्रू स्वीकार किए जाते हैं"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "अमान्य मान: एक संयुक्त टाइपोग्राफी token का संदर्भ होना चाहिए।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1351
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "अक्षर रिक्ति या {उपनाम}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1347
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "पंक्ति ऊँचाई (गुणक, पिक्सेल, %) या {उपनाम}"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.more-options"
+msgstr "विकल्प देखने के लिए राइट क्लिक करें"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "इस फ़ाइल में कोई टोकन, सेट या थीम नहीं मिला।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite"
+msgstr "token टाइपोग्राफी उपनाम दर्ज करें"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1084
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "छाया जोड़ें"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:981, src/app/main/ui/workspace/tokens/management/create/form.cljs:982
+msgid "workspace.tokens.shadow-blur"
+msgstr "धुंधला"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "छाया धुंधलापन 0 से अधिक या उसके बराबर होना चाहिए।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+msgid "workspace.tokens.shadow-color"
+msgstr "रंग"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:990, src/app/main/ui/workspace/tokens/management/create/form.cljs:991
+msgid "workspace.tokens.shadow-inset"
+msgstr "अंतर्भूत"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1091
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "छाया हटाएँ"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:984, src/app/main/ui/workspace/tokens/management/create/form.cljs:985
+msgid "workspace.tokens.shadow-spread"
+msgstr "फैलाना"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "छाया प्रसार 0 से अधिक या उसके बराबर होना चाहिए।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+msgid "workspace.tokens.shadow-title"
+msgstr "छायाएँ"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:975, src/app/main/ui/workspace/tokens/management/create/form.cljs:976
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:978, src/app/main/ui/workspace/tokens/management/create/form.cljs:979
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1316, src/app/main/ui/workspace/tokens/management/create/form.cljs:1355
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "कोई नहीं | अपरकेस | लोअरकेस | कैपिटलाइज़ या {उपनाम}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1322, src/app/main/ui/workspace/tokens/management/create/form.cljs:1359
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "कोई नहीं | रेखांकित | स्ट्राइक-थ्रू या {उपनाम}"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:52
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "इस नाम वाली थीम पहले से मौजूद है"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1277
+msgid "workspace.tokens.token-font-family-select"
+msgstr "फ़ॉन्ट परिवार चुनें"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1333
+msgid "workspace.tokens.token-font-family-value"
+msgstr "फॉन्ट परिवार"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1283, src/app/main/ui/workspace/tokens/management/create/form.cljs:1335
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "फ़ॉन्ट परिवार या अल्पविराम (,) द्वारा अलग किए गए फ़ॉन्ट की सूची"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:44, src/app/main/ui/workspace/tokens/management/create/form.cljs:70
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "पथ पर एक token पहले से मौजूद है: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "नाम कम से कम 1 अक्षर का होना चाहिए"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:47
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "आयात सफल रहा। कुछ टोकन शामिल नहीं किए गए।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:745
+msgid "workspace.tokens.use-reference"
+msgstr "एक संदर्भ का प्रयोग करें"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "अमान्य मान: % की अनुमति नहीं है।"
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "यह संस्करण %s द्वारा लॉक किया गया है और इसे संशोधित नहीं किया जा सकता"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "यह संस्करण आपके द्वारा लॉक किया गया है"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "लॉक किया गया संस्करण - केवल निर्माता ही इसे संशोधित कर सकता है"
