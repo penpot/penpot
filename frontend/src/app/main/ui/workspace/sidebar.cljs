@@ -27,7 +27,6 @@
    [app.main.ui.workspace.left-header :refer [left-header*]]
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
-   [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
    [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
@@ -44,18 +43,33 @@
 
 ;; --- Left Sidebar (Component)
 
-(defn- on-collapse-left-sidebar
-  []
-  (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+(def ^:private toggle-collapse-left-sidebar
+  (partial st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
 (mf/defc collapse-button*
+  {::mf/private true}
   []
   ;; NOTE: This custom button may be replace by an action button when this variant is designed
   [:button {:class (stl/css :collapse-sidebar-button)
-            :on-click on-collapse-left-sidebar}
+            :on-click toggle-collapse-left-sidebar}
    [:> icon* {:icon-id i/arrow
               :size "s"
               :aria-label (tr "workspace.sidebar.collapse")}]])
+
+(mf/defc collapsed-button*
+  {::mf/memo true
+   ::mf/private true}
+  []
+  [:div {:id "left-sidebar-aside"
+         :data-width "0"
+         :class (stl/css :collapsed-sidebar)}
+   [:div {:class (stl/css :collapsed-title)}
+    [:button {:class (stl/css :collapsed-button)
+              :title (tr "workspace.sidebar.expand")
+              :on-click toggle-collapse-left-sidebar}
+     [:> icon* {:icon-id i/arrow
+                :size "s"
+                :aria-label (tr "workspace.sidebar.expand")}]]]])
 
 (mf/defc layers-content*
   {::mf/private true
@@ -96,6 +110,7 @@
         [:div {:class (stl/css :resize-handle-horiz)}]])
 
      [:> layers-toolbox* {:size-parent width}]]))
+
 
 (mf/defc left-sidebar*
   {::mf/memo true}
@@ -161,7 +176,7 @@
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
               :data-testid "left-sidebar"
-              :data-left-sidebar-width (str width)
+              :data-width (str width)
               :class aside-class
               :style {:--left-sidebar-width (dm/str width "px")}}
 

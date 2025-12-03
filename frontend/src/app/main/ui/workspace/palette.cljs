@@ -39,7 +39,7 @@
 (defn- calculate-palette-style
   [rulers?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
-        left-sidebar-size      (-> (dom/get-data left-sidebar "left-sidebar-width")
+        left-sidebar-size      (-> (dom/get-data left-sidebar "width")
                                    (d/parse-integer))
         rulers-width           (if rulers? 22 0)
         min-left-sidebar-width left-sidebar-default-width

@@ -156,7 +156,7 @@
                        (let [{:keys [modal title]} (get dwta/token-properties :color)
                              window-size (dom/get-window-size)
                              left-sidebar (dom/get-element "left-sidebar-aside")
-                             x-size (dom/get-data left-sidebar "left-sidebar-width")
+                             x-size (dom/get-data left-sidebar "width")
                              modal-height 392
                              x (- (int x-size) 30)
                              y (- (/ (:height window-size) 2) (/ modal-height 2))]
