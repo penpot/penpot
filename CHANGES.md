@@ -88,6 +88,7 @@ example. It's still usable as before, we just removed the example.
 - Fix input confirmation behavior is not uniform [Taiga #12294](https://tree.taiga.io/project/penpot/issue/12294)
 - Fix copy/pasting application/transit+json [Taiga #12721](https://tree.taiga.io/project/penpot/issue/12721)
 - Fix problem with plugins content attribute [Plugins #209](https://github.com/penpot/penpot-plugins/issues/209)
+- Fix U and E icon displayed in project list [Taiga #12806](https://tree.taiga.io/project/penpot/issue/12806)
 
 ## 2.11.1
 

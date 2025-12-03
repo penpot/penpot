@@ -144,20 +144,20 @@
   padding: 0;
 }
 
-.subscription-icon {
-  @extend .button-icon;
+.subscription-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: var(--color-background-primary);
-  stroke: var(--color-foreground-secondary);
-  border-radius: 6px;
+  border-radius: $br-6;
   border: 1.75px solid var(--color-foreground-secondary);
-  stroke-width: 2.25px;
-  width: var(--sp-xl);
-  height: var(--sp-xl);
+  block-size: var(--sp-xl);
+  inline-size: var(--sp-xl);
+}
 
-  svg {
-    block-size: var(--sp-m);
-    inline-size: var(--sp-m);
-  }
+.subscription-icon {
+  stroke: var(--color-foreground-secondary);
+  stroke-width: 2.25px;
 }
 
 .menu-item {
