@@ -61,6 +61,7 @@ example. It's still usable as before, we just removed the example.
 ### :heart: Community contributions (Thank you!)
 
 - Ensure consistent snap behavior across all zoom levels [Github #7774](https://github.com/penpot/penpot/pull/7774) by [@Tokytome](https://github.com/Tokytome)
+- Fix crash in token grid view due to tooltip validation (by @dfelinto) [Github #7887](https://github.com/penpot/penpot/pull/7887)
 
 ### :sparkles: New features & Enhancements
 
