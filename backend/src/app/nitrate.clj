@@ -98,7 +98,7 @@
 
 (def ^:private schema:organization
   [:map
-   [:id ::sm/int]
+   [:id ::sm/text]
    [:name ::sm/text]])
 
 
