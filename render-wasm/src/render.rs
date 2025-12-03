@@ -34,9 +34,9 @@ pub use fonts::*;
 pub use images::*;
 
 // This is the extra are used for tile rendering.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
-const NODE_BATCH_THRESHOLD: i32 = 10;
+const NODE_BATCH_THRESHOLD: i32 = 3;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -1734,6 +1734,7 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
+
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
@@ -1807,17 +1808,21 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
+                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
+                            .iter()
+                            .enumerate()
+                            .map(|(i, id)| (*id, i))
+                            .collect();
+
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
                             .iter()
-                            .filter(|id| root_ids.contains(id))
+                            .filter(|id| root_ids_map.contains_key(id))
                             .copied()
                             .collect();
 
                         // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| {
-                            root_ids.iter().position(|x| x == id).unwrap_or(usize::MAX)
-                        });
+                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -1834,6 +1839,7 @@ impl RenderState {
                 should_stop = true;
             }
         }
+
         self.render_in_progress = false;
 
         self.surfaces.gc();

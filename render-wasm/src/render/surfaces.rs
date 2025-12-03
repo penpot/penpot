@@ -8,8 +8,8 @@ use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SI
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::{HashMap, HashSet};
 
-const TEXTURES_CACHE_CAPACITY: usize = 512;
-const TEXTURES_BATCH_DELETE: usize = 32;
+const TEXTURES_CACHE_CAPACITY: usize = 1024;
+const TEXTURES_BATCH_DELETE: usize = 256;
 // This is the amount of extra space we're going to give to all the surfaces to render shapes.
 // If it's too big it could affect performance.
 const TILE_SIZE_MULTIPLIER: i32 = 2;

@@ -88,6 +88,7 @@ impl TileViewbox {
     }
 
     pub fn is_visible(&self, tile: &Tile) -> bool {
+        // TO CHECK self.interest_rect.contains(tile)
         self.visible_rect.contains(tile)
     }
 }
