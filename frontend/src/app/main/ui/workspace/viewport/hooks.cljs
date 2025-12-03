@@ -59,6 +59,12 @@
 
     (mf/with-effect [drawing-tool drawing-path?]
       (let [key (events/listen js/window EventType.POINTERDOWN on-pointer-down)]
+
+        ;; We need to disable workspace paste when we on comments
+        (if (= drawing-tool :comments)
+          (mf/set-ref-val! disable-paste-ref true)
+          (mf/set-ref-val! disable-paste-ref false))
+
         #(events/unlistenByKey key)))
 
     (mf/with-layout-effect [on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?]

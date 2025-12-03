@@ -522,18 +522,22 @@
                        :blobs (seq files)}]
            (st/emit! (dwm/upload-media-workspace params))))))))
 
+(def ^:private invalid-paste-targets
+  #{"INPUT" "TEXTAREA"})
+
 (defn on-paste
   [disable-paste-ref in-viewport-ref read-only?]
   (mf/use-fn
    (mf/deps read-only?)
    (fn [event]
-     ;; We disable the paste just after mouse-up of a middle button so
-     ;; when panning won't paste the content into the workspace
+     ;; We disable the paste when: 1. just after mouse-up of a middle
+     ;; button (so when panning won't paste the content into the
+     ;; workspace); 2. when we paste content in an input on the
+     ;; sidebar
      (let [tag-name       (-> event dom/get-target dom/get-tag-name)
            disable-paste? (mf/ref-val disable-paste-ref)
            in-viewport?   (mf/ref-val in-viewport-ref)]
-
-       (when (and (not (#{"INPUT" "TEXTAREA"} tag-name))
+       (when (and (not (contains? invalid-paste-targets tag-name))
                   (not disable-paste?)
                   (not read-only?))
          (st/emit! (dw/paste-from-event event in-viewport?)))))))
