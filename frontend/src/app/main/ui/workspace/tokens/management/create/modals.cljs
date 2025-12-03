@@ -13,7 +13,7 @@
    [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon  :as i]
-   [app.main.ui.workspace.tokens.management.create.form :refer [form-wrapper*]]
+   [app.main.ui.workspace.tokens.management.create.form-wrapper :refer [form-wrapper*]]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))

@@ -13,7 +13,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.management.create.form :as token-form]
+   [app.main.ui.workspace.tokens.management.create.token-form-validators :as form-validator]
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
@@ -51,7 +51,7 @@
      :set
      (fn [_ value]
        (let [tokens-lib (u/locate-tokens-lib file-id)
-             errors     (token-form/validate-token-name
+             errors     (form-validator/validate-token-name
                          (ctob/get-tokens tokens-lib set-id)
                          value)]
          (cond

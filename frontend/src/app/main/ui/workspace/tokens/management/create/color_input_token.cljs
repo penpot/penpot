@@ -259,33 +259,33 @@
        [:> ramp* {:color value :on-change on-change-value}])]))
 
 (defn- on-composite-indexed-input-token-change
-  ([form field index value composite-type]
-   (on-composite-indexed-input-token-change form field index value composite-type false))
-  ([form field index value composite-type trim?]
+  ([form field index value indexed-type]
+   (on-composite-indexed-input-token-change form field index value indexed-type false))
+  ([form field index value indexed-type trim?]
    (letfn [(clean-errors [errors]
              (-> errors
                  (dissoc field)
                  (not-empty)))]
      (swap! form (fn [state]
                    (-> state
-                       (assoc-in [:data :value composite-type index field] (if trim? (str/trim value) value))
+                       (assoc-in [:data :value indexed-type index field] (if trim? (str/trim value) value))
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
 (mf/defc color-input-token-indexed*
-  [{:keys [name tokens token index composite-type] :rest props}]
+  [{:keys [name tokens token index indexed-type] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
 
         error
-        (get-in @form [:errors :value composite-type index input-name])
+        (get-in @form [:errors :value indexed-type index input-name])
 
         value
-        (get-in @form [:data :value composite-type index input-name] "")
+        (get-in @form [:data :value indexed-type index input-name] "")
 
         color-resolved
-        (get-in @form [:data :value composite-type index :color-result] "")
+        (get-in @form [:data :value indexed-type index :color-result] "")
 
         valid-color (or (tinycolor/valid-color value)
                         (tinycolor/valid-color color-resolved))
@@ -309,7 +309,7 @@
 
         resolve-stream
         (mf/with-memo [token]
-          (if-let [value (get-in token [:value composite-type index input-name])]
+          (if-let [value (get-in token [:value indexed-type index input-name])]
             (rx/behavior-subject value)
             (rx/subject)))
 
@@ -363,7 +363,7 @@
                                  (tinycolor/set-alpha (or alpha 1))
                                  (tinycolor/->string format))]
              (when (not= value color-value)
-               (on-composite-indexed-input-token-change form input-name index color-value composite-type true)
+               (on-composite-indexed-input-token-change form input-name index color-value indexed-type true)
                (rx/push! resolve-stream color-value)))))
 
         on-change
@@ -374,7 +374,7 @@
                  value (if (tinycolor/hex-without-hash-prefix? raw-value)
                          (dm/str "#" raw-value)
                          raw-value)]
-             (on-composite-indexed-input-token-change form input-name index value composite-type true)
+             (on-composite-indexed-input-token-change form input-name index value indexed-type true)
              (rx/push! resolve-stream value))))
 
         props
@@ -390,7 +390,7 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index composite-type]
+    (mf/with-effect [resolve-stream tokens token input-name index indexed-type]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token))
@@ -404,24 +404,24 @@
                          (cond
                            (and error (str/empty? (:error/value error)))
                            (do
-                             (swap! form update-in [:errors :value composite-type index] dissoc input-name)
-                             (swap! form update-in [:data :value composite-type index] dissoc input-name)
-                             (swap! form assoc-in [:data :value composite-type index :color-result] "")
+                             (swap! form update-in [:errors :value indexed-type index] dissoc input-name)
+                             (swap! form update-in [:data :value indexed-type index] dissoc input-name)
+                             (swap! form assoc-in [:data :value indexed-type index :color-result] "")
                              (swap! form update :extra-errors dissoc :value)
                              (reset! hint* {}))
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value composite-type index input-name] {:message error'})
-                             (swap! form assoc-in [:data :value composite-type index :color-result] "")
+                             (swap! form assoc-in  [:extra-errors :value indexed-type index input-name] {:message error'})
+                             (swap! form assoc-in [:data :value indexed-type index :color-result] "")
                              (reset! hint* {:message error' :type "error"}))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
-                                 input-value (get-in @form [:data :value composite-type index input-name] "")]
+                                 input-value (get-in @form [:data :value indexed-type index input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (swap! form assoc-in [:data :value composite-type index :color-result] (dwtf/format-token-value value))
+                             (swap! form assoc-in [:data :value indexed-type index :color-result] (dwtf/format-token-value value))
                              (if (= input-value (str value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]

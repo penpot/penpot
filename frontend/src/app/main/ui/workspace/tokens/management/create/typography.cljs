@@ -11,29 +11,55 @@
    [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
-   [app.common.types.tokens-lib :as ctob]
-   [app.main.constants :refer [max-input-length]]
-   [app.main.data.modal :as modal]
-   [app.main.data.workspace.tokens.application :as dwta]
-   [app.main.data.workspace.tokens.library-edit :as dwtl]
-   [app.main.data.workspace.tokens.propagation :as dwtp]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
-   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.forms :as forms]
    [app.main.ui.workspace.tokens.management.create.combobox-token-fonts :refer [font-picker-composite-combobox*]]
+   [app.main.ui.workspace.tokens.management.create.form :as form]
    [app.main.ui.workspace.tokens.management.create.input-token :refer [input-token-composite*]]
-   [app.util.dom :as dom]
-   [app.util.forms :as fm]
+   [app.main.ui.workspace.tokens.management.create.token-form-validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
    [app.util.i18n :refer [tr]]
-   [app.util.keyboard :as k]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+;; VALIDATORS
+
+(defn- check-typography-token-self-reference
+  "Check token when any of the attributes in token value have a self-reference."
+  [token]
+  (let [token-name (:name token)
+        token-values (:value token)]
+    (some (fn [[k v]]
+            (when-let [err (case k
+                             :font-family (check-coll-self-reference token-name v)
+                             (check-self-reference token-name v))]
+              (assoc err :typography-key k)))
+          token-values)))
+
+(defn- check-empty-typography-token [token]
+  (when (empty? (:value token))
+    (wte/get-error-code :error.token/empty-input)))
+
+(defn- validate-typography-token
+  [{:keys [token-value] :as props}]
+  (cond
+    ;; Entering form without a value - show no error just resolve nil
+    (nil? token-value) (rx/of nil)
+    ;; Validate refrence string
+    (cto/typography-composite-token-reference? token-value) (default-validate-token props)
+    ;; Validate composite token
+    :else
+    (-> props
+        (update :token-value
+                (fn [v]
+                  (-> (or v {})
+                      (d/update-when :font-family #(if (string? %) (cto/split-font-family %) %)))))
+        (assoc :validators [check-empty-typography-token
+                            check-typography-token-self-reference])
+        (default-validate-token))))
+
+;; COMPONENTS
 
 (mf/defc composite-form*
   [{:keys [token tokens] :as props}]
@@ -65,7 +91,6 @@
              :value (get value :font-weight)}
             {:type :font-weight}))
 
-        ;; TODO: Review this type
         line-height-sub-token
         (mf/with-memo [token]
           (if-let [value (get token :value)]
@@ -156,6 +181,33 @@
      :token token
      :tokens tokens}]])
 
+(mf/defc tabs-wrapper*
+  [{:keys [token tokens active-tab on-toggle-tab] :rest props}]
+  [:*
+   [:div {:class (stl/css :title-bar)}
+    [:div {:class (stl/css :title)} (tr "labels.typography")]
+    [:& radio-buttons {:class (stl/css :listing-options)
+                       :selected (d/name active-tab)
+                       :on-change on-toggle-tab
+                       :name "reference-composite-tab"}
+     [:& radio-button {:icon i/layers
+                       :value "composite"
+                       :title (tr "workspace.tokens.individual-tokens")
+                       :id "composite-opt"}]
+     [:& radio-button {:icon i/tokens
+                       :value "reference"
+                       :title (tr "workspace.tokens.use-reference")
+                       :id "reference-opt"}]]]
+   [:div {:class (stl/css :inputs-wrapper)}
+    (if (= active-tab :composite)
+      [:> composite-form* {:token token
+                           :tokens tokens}]
+
+      [:> reference-form* {:token token
+                           :tokens tokens}])]])
+
+;; SCHEMA
+
 (defn- make-schema
   [tokens-tree active-tab]
   (sm/schema
@@ -217,40 +269,8 @@
          result))]]))
 
 (mf/defc form*
-  [{:keys [token validate-token action is-create selected-token-set-id tokens-tree-in-selected-set] :as props}]
-
-  (let [token
-        (mf/with-memo [token]
-          (or token {:type :typography}))
-
-        active-tab* (mf/use-state #(if (cft/is-reference? token) :reference :composite))
-        active-tab (deref active-tab*)
-
-        token-type
-        (get token :type)
-
-        token-properties
-        (dwta/get-token-properties token)
-
-        token-title (str/lower (:title token-properties))
-
-        tokens
-        (mf/deref refs/workspace-active-theme-sets-tokens)
-
-        tokens
-        (mf/with-memo [tokens token]
-          ;; Ensure that the resolved value uses the currently editing token
-          ;; even if the name has been overriden by a token with the same name
-          ;; in another set below.
-          (cond-> tokens
-            (and (:name token) (:value token))
-            (assoc (:name token) token)))
-
-        schema
-        (mf/with-memo [tokens-tree-in-selected-set active-tab]
-          (make-schema tokens-tree-in-selected-set active-tab))
-
-        initial
+  [{:keys [token] :as props}]
+  (let [initial
         (mf/with-memo [token]
           (let [value (:value token)
                 processed-value
@@ -276,154 +296,10 @@
             {:name        (:name token "")
              :value       processed-value
              :description (:description token "")}))
-
-        form
-        (fm/use-form :schema schema
-                     :initial initial)
-
-        warning-name-change?
-        (not= (get-in @form [:data :name])
-              (:name initial))
-
-        on-toggle-tab
-        (mf/use-fn
-         (mf/deps)
-         (fn [new-tab]
-           (let [new-tab (keyword new-tab)]
-             (reset! active-tab* new-tab))))
-
-        on-cancel
-        (mf/use-fn
-         (fn [e]
-           (dom/prevent-default e)
-           (modal/hide!)))
-
-        on-delete-token
-        (mf/use-fn
-         (mf/deps selected-token-set-id token)
-         (fn [e]
-           (dom/prevent-default e)
-           (modal/hide!)
-           (st/emit! (dwtl/delete-token selected-token-set-id (:id token)))))
-
-        handle-key-down-delete
-        (mf/use-fn
-         (mf/deps on-delete-token)
-         (fn [e]
-           (when (or (k/enter? e) (k/space? e))
-             (on-delete-token e))))
-
-        handle-key-down-cancel
-        (mf/use-fn
-         (mf/deps on-cancel)
-         (fn [e]
-           (when (or (k/enter? e) (k/space? e))
-             (on-cancel e))))
-
-        on-submit
-        (mf/use-fn
-         (mf/deps validate-token token tokens token-type)
-         (fn [form _event]
-           (let [name (get-in @form [:clean-data :name])
-                 description (get-in @form [:clean-data :description])
-                 value       (get-in @form [:clean-data :value])]
-
-             (->> (validate-token {:token-value (if (contains? value :reference)
-                                                  (get value :reference)
-                                                  value)
-                                   :token-name name
-                                   :token-description description
-                                   :prev-token token
-                                   :tokens tokens})
-                  (rx/subs!
-                   (fn [valid-token]
-                     (st/emit!
-                      (if is-create
-                        (dwtl/create-token (ctob/make-token {:name name
-                                                             :type token-type
-                                                             :value (:value valid-token)
-                                                             :description description}))
-
-                        (dwtl/update-token (:id token)
-                                           {:name name
-                                            :value (:value valid-token)
-                                            :description description}))
-                      (dwtp/propagate-workspace-tokens)
-                      (modal/hide))))))))]
-
-    [:> forms/form* {:class (stl/css :form-wrapper)
-                     :form form
-                     :on-submit on-submit}
-     [:div {:class (stl/css :token-rows)}
-
-      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
-       (if (= action "edit")
-         (tr "workspace.tokens.edit-token" token-type)
-         (tr "workspace.tokens.create-token" token-type))]
-
-      [:div {:class (stl/css :input-row)}
-       [:> forms/form-input* {:id "token-name"
-                              :name :name
-                              :label (tr "workspace.tokens.token-name")
-                              :placeholder (tr "workspace.tokens.enter-token-name" token-title)
-                              :max-length max-input-length
-                              :variant "comfortable"
-                              :auto-focus true}]
-
-       (when (and warning-name-change? (= action "edit"))
-         [:div {:class (stl/css :warning-name-change-notification-wrapper)}
-          [:> context-notification*
-           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
-
-      [:div {:class (stl/css :title-bar)}
-       [:div {:class (stl/css :title)} (tr "labels.typography")]
-       [:& radio-buttons {:class (stl/css :listing-options)
-                          :selected (d/name active-tab)
-                          :on-change on-toggle-tab
-                          :name "reference-composite-tab"}
-        [:& radio-button {:icon i/layers
-                          :value "composite"
-                          :title (tr "workspace.tokens.individual-tokens")
-                          :id "composite-opt"}]
-        [:& radio-button {:icon i/tokens
-                          :value "reference"
-                          :title (tr "workspace.tokens.use-reference")
-                          :id "reference-opt"}]]]
-      [:div {:class (stl/css :inputs-wrapper)}
-       (if (= active-tab :composite)
-         [:> composite-form* {:token token
-                              :tokens tokens}]
-
-         [:> reference-form* {:token token
-                              :tokens tokens}])]
-
-      [:div {:class (stl/css :input-row)}
-       [:> forms/form-input* {:id "token-description"
-                              :name :description
-                              :label (tr "workspace.tokens.token-description")
-                              :placeholder (tr "workspace.tokens.token-description")
-                              :max-length max-input-length
-                              :variant "comfortable"
-                              :is-optional true}]]
-
-      [:div {:class (stl/css-case :button-row true
-                                  :with-delete (= action "edit"))}
-       (when (= action "edit")
-         [:> button* {:on-click on-delete-token
-                      :on-key-down handle-key-down-delete
-                      :class (stl/css :delete-btn)
-                      :type "button"
-                      :icon i/delete
-                      :variant "secondary"}
-          (tr "labels.delete")])
-
-       [:> button* {:on-click on-cancel
-                    :on-key-down handle-key-down-cancel
-                    :type "button"
-                    :id "token-modal-cancel"
-                    :variant "secondary"}
-        (tr "labels.cancel")]
-
-       [:> forms/form-submit* {:variant "primary"
-                               :on-submit on-submit}
-        (tr "labels.save")]]]]))
+        props (mf/spread-props props {:initial initial
+                                      :make-schema make-schema
+                                      :token token
+                                      :validate-token validate-typography-token
+                                      :form-type :composite
+                                      :input-token-component tabs-wrapper*})]
+    [:> form/form* props]))

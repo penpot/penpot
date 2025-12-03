@@ -11,19 +11,19 @@
    [rumext.v2 :as mf]))
 
 (mf/defc select-composite*
-  [{:keys [name index composite-type] :rest props}]
+  [{:keys [name index indexed-type] :rest props}]
   (let [form       (mf/use-ctx fc/context)
         input-name name
 
         value
-        (get-in @form [:data :value composite-type index input-name] false)
+        (get-in @form [:data :value indexed-type index input-name] false)
 
         on-change
         (mf/use-fn
          (mf/deps input-name)
          (fn [type]
            (let [is-inner? (= type "inner")]
-             (swap! form assoc-in [:data :value composite-type index input-name] is-inner?))))
+             (swap! form assoc-in [:data :value indexed-type index input-name] is-inner?))))
 
         props (mf/spread-props props {:default-selected (if value "inner" "drop")
                                       :variant "ghost"
