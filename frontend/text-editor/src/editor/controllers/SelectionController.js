@@ -238,7 +238,11 @@ export class SelectionController extends EventTarget {
   #applyStylesFromElementToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
+      if (styleName === "--fills") {
+        continue;
+      }
       let styleValue = element.style.getPropertyValue(styleName);
+
       if (styleName === "font-family") {
         styleValue = sanitizeFontFamily(styleValue);
       }
