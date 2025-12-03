@@ -106,14 +106,14 @@
        (when (not= 0 count-libraries)
          (if (pos? (count references))
            [:*
-            [:div
-             (when (and (string? scd-msg) (not= scd-msg ""))
-               [:h3 {:class (stl/css :modal-scd-msg)} scd-msg])
-             [:ul {:class (stl/css :element-list)}
-              (for [[file-id file-name] references]
-                [:li {:class (stl/css :list-item)
-                      :key (dm/str file-id)}
-                 [:span "- " file-name]])]]
+            (when (and (string? scd-msg) (not= scd-msg ""))
+              [:p {:class (stl/css :modal-scd-msg)} scd-msg])
+
+            [:ul {:class (stl/css :element-list)}
+             (for [[file-id file-name] references]
+               [:li {:class (stl/css :list-item)
+                     :key (dm/str file-id)}
+                [:span "- " file-name]])]
             (when (and (string? hint) (not= hint ""))
               [:> context-notification* {:level :info
                                          :appearance :ghost}
