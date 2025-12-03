@@ -142,13 +142,6 @@ http {
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
-            location ~ ^/js/config.js$ {
-                add_header Cache-Control "no-store, no-cache, max-age=0" always;
-            }
-
-            location ~* \.(js|css|jpg|svg|png|mjs|map)$ {
-                add_header Cache-Control "max-age=604800" always; # 7 days
-            }
 
             location ~ ^/(/|css|fonts|images|js|wasm|mjs|map) {
             }
@@ -157,9 +150,7 @@ http {
                 return 301 " /404";
             }
 
-            add_header Last-Modified $date_gmt;
-            add_header Cache-Control "no-store, no-cache, max-age=0" always;
-            if_modified_since off;
+            add_header Cache-Control "public, must-revalidate, max-age=0";
             try_files $uri /index.html$is_args$args /index.html =404;
         }
     }
