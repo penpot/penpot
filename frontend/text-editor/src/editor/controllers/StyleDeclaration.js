@@ -81,6 +81,8 @@ export class StyleDeclaration {
       return this.setProperty(name, value);
     } else if (currentValue === "" && ["initial", "none"].includes(value)) {
       return this.setProperty(name, value);
+    } else if (currentValue !== value && name === "--fills") {
+      return this.setProperty(name, value);
     } else if (currentValue !== value) {
       return this.setProperty(name, "mixed");
     }

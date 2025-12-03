@@ -238,7 +238,11 @@ export class SelectionController extends EventTarget {
   #applyStylesFromElementToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
+      if (styleName === "--fills") {
+        continue;
+      }
       let styleValue = element.style.getPropertyValue(styleName);
+
       if (styleName === "font-family") {
         styleValue = sanitizeFontFamily(styleValue);
       }
@@ -1939,11 +1943,21 @@ export class SelectionController extends EventTarget {
         const textSpan = this.startTextSpan;
         const midText = startNode.splitText(startOffset);
         const endText = midText.splitText(endOffset - startOffset);
-        const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
-        textSpan.after(midTextSpan);
-        if (endText.length > 0) {
-          const endTextSpan = createTextSpan(endText, textSpan.style);
-          midTextSpan.after(endTextSpan);
+
+        // Only create text span if midText is not empty
+        if (midText.nodeValue && midText.nodeValue.length > 0) {
+          const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
+          textSpan.after(midTextSpan);
+          if (endText.length > 0) {
+            const endTextSpan = createTextSpan(endText, textSpan.style);
+            midTextSpan.after(endTextSpan);
+          }
+        } else {
+          // If midText is empty, just create endTextSpan if needed
+          if (endText.length > 0) {
+            const endTextSpan = createTextSpan(endText, textSpan.style);
+            textSpan.after(endTextSpan);
+          }
         }
 
         // NOTE: This is necessary because sometimes
@@ -1960,7 +1974,7 @@ export class SelectionController extends EventTarget {
       // the styles are applied to the current caret
       else if (
         this.startOffset === this.endOffset &&
-        this.endOffset === endNode.nodeValue.length
+        this.endOffset === endNode.nodeValue?.length
       ) {
         const newTextSpan = createVoidTextSpan(newStyles);
         this.endTextSpan.after(newTextSpan);
@@ -1996,7 +2010,8 @@ export class SelectionController extends EventTarget {
         // new text span.
         if (
           this.#textNodeIterator.currentNode === startNode &&
-          startOffset > 0
+          startOffset > 0 &&
+          startOffset < (startNode.nodeValue?.length || 0)
         ) {
           const newTextSpan = splitTextSpan(textSpan, startOffset);
           setTextSpanStyles(newTextSpan, newStyles);
@@ -2011,14 +2026,15 @@ export class SelectionController extends EventTarget {
           (this.#textNodeIterator.currentNode !== startNode &&
             this.#textNodeIterator.currentNode !== endNode) ||
           (this.#textNodeIterator.currentNode === endNode &&
-            endOffset === endNode.nodeValue.length)
+            endOffset === endNode.nodeValue?.length)
         ) {
           setTextSpanStyles(textSpan, newStyles);
 
           // If we're at end node
         } else if (
           this.#textNodeIterator.currentNode === endNode &&
-          endOffset < endNode.nodeValue.length
+          endOffset < endNode.nodeValue?.length &&
+          endOffset > 0
         ) {
           const newTextSpan = splitTextSpan(textSpan, endOffset);
           setTextSpanStyles(textSpan, newStyles);

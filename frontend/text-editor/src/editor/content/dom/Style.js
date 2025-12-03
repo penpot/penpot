@@ -339,13 +339,14 @@ export function setStylesFromObject(element, allowedStyles, styleObject) {
         continue;
       }
       let styleValue = styleObject[styleName];
+      if (!styleValue)
+        continue;
+
       if (styleName === "font-family") {
         styleValue = sanitizeFontFamily(styleValue);
       }
 
-      if (styleValue) {
-        setStyle(element, styleName, styleValue, styleUnit);
-      }
+      setStyle(element, styleName, styleValue, styleUnit);
     }
   return element;
 }
