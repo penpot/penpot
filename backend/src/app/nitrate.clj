@@ -18,8 +18,7 @@
    [integrant.core :as ig]))
 
 
-;; TODO Extract to env
-(def baseuri "http://localhost:3000")
+(def baseuri (cf/get :nitrate-backend-uri))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
