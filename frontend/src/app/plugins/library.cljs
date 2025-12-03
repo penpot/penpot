@@ -901,10 +901,10 @@
     (fn [pos value]
       (cond
         (not (nat-int? pos))
-        (u/display-not-valid :pos pos)
+        (u/display-not-valid :pos (str pos))
 
-        (not (string? name))
-        (u/display-not-valid :name name)
+        (not (string? value))
+        (u/display-not-valid :name value)
 
         :else
         (st/emit!
