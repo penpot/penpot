@@ -158,7 +158,7 @@
 (defn- store-font-id
   [shape-id font-data asset-id emoji? fallback?]
   (when asset-id
-    (let [uri (font-id->ttf-url (:font-id font-data) asset-id (:font-variant-id font-data) (:weight font-data) (:style font-data))
+    (let [uri (font-id->ttf-url (:font-id font-data) asset-id (:font-variant-id font-data) (:weight font-data) (:style-name font-data))
           id-buffer (uuid/get-u32 (:wasm-id font-data))
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (not= 0 (h/call wasm/internal-module "_is_font_uploaded"
@@ -200,7 +200,7 @@
         font-style-fallback (or (:font-style span) (:font-style paragraph))
         font-data (font-db-data font-id font-variant-id font-weight-fallback font-style-fallback)]
     (-> span
-        (assoc :font-variant-id (or (:name font-data) (:id font-data) font-variant-id)
+        (assoc :font-variant-id (or (:id font-data) (:id font-data) font-variant-id)
                :font-weight (or (:weight font-data) font-weight-fallback)
                :font-style (or (:style font-data) font-style-fallback)))))
 
@@ -212,7 +212,7 @@
         font-style-fallback (:font-style paragraph)
         font-data (font-db-data font-id font-variant-id font-weight-fallback font-style-fallback)]
     (-> paragraph
-        (assoc :font-variant-id (or (:name font-data) (:id font-data) font-variant-id)
+        (assoc :font-variant-id (or (:id font-data) (:id font-data) font-variant-id)
                :font-weight (or (:weight font-data) font-weight-fallback)
                :font-style (or (:style font-data) font-style-fallback)))))
 
@@ -284,24 +284,29 @@
   [shape-id font]
   (let [font-id (get font :font-id)
         font-variant-id (get font :font-variant-id)
+        normalized-variant-id (when font-variant-id
+                                (-> font-variant-id
+                                    (str/lower)
+                                    (str/replace #"\s+" "")))
         font-weight-fallback (or (get font :font-weight) 400)
         font-style-fallback (or (get font :font-style) "normal")
         emoji? (get font :is-emoji false)
         fallback? (get font :is-fallback false)
-        font-data (font-db-data font-id font-variant-id font-weight-fallback font-style-fallback)
+        font-data (font-db-data font-id normalized-variant-id font-weight-fallback font-style-fallback)
         wasm-id (font-id->uuid font-id)
         raw-weight (or (:weight font-data) font-weight-fallback)
         weight (serialize-font-weight raw-weight)
-        style (serialize-font-style (cond
-                                      (str/includes? font-variant-id "italic") "italic"
-                                      (str/includes? raw-weight "italic") "italic"
-                                      :else font-style-fallback))
-        variant-id (or (:name font-data) font-variant-id)
+        style (cond
+                (str/includes? (or normalized-variant-id "") "italic") "italic"
+                (str/includes? raw-weight "italic") "italic"
+                :else font-style-fallback)
+        variant-id (or (:id font-data) normalized-variant-id)
         asset-id (font-id->asset-id font-id variant-id raw-weight style)
         font-data {:wasm-id wasm-id
                    :font-id font-id
                    :font-variant-id variant-id
-                   :style style
+                   :style (serialize-font-style style)
+                   :style-name style
                    :weight weight}]
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
@@ -329,7 +334,7 @@
                   font-style-fallback (or font-style (:font-style txt/default-typography) "normal")
                   font-data (font-db-data resolved-font-id resolved-variant-id font-weight-fallback font-style-fallback)
                   font-ref {:font-id resolved-font-id
-                            :font-variant-id (or (:name font-data) (:id font-data) resolved-variant-id)
+                            :font-variant-id (or (:id font-data) (:name font-data) resolved-variant-id)
                             :font-weight (or (:weight font-data) font-weight-fallback)
                             :font-style (or (:style font-data) font-style-fallback)}]
               (conj result font-ref)))
