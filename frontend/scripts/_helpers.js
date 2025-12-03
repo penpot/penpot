@@ -188,36 +188,20 @@ async function readManifestFile() {
 
 async function readShadowManifest() {
   const ts = Date.now();
-  try {
-    const content = await readManifestFile();
 
-    const index = {
-      ts: ts,
-      config: "./js/config.js",
-      polyfills: "./js/polyfills.js",
-      worker_main: "./js/worker/main.js",
-      libs: "./js/libs.js",
-    };
+  const index = {
+    ts: ts,
+    config: "./js/config.js",
+    polyfills: "./js/polyfills.js",
+    main: "./js/main.js",
+    shared: "./js/shared.js",
+    render: "./js/render.js",
+    worker_main: "./js/worker/main.js",
+    rasterizer: "./js/rasterizer.js",
+    libs: "./js/libs.js",
+  };
 
-    for (let item of content) {
-      index[item.name] = "./js/" + item["output-name"] + "";
-    }
-
-    return index;
-  } catch (cause) {
-    const index = {
-      ts: ts,
-      config: "./js/config.js",
-      polyfills: "./js/polyfills.js",
-      main: "./js/main.js",
-      shared: "./js/shared.js",
-      worker_main: "./js/worker/main.js",
-      rasterizer: "./js/rasterizer.js",
-      libs: "./js/libs.js",
-    };
-
-    return index;
-  }
+  return index;
 }
 
 async function renderTemplate(path, context = {}, partials = {}) {
