@@ -25,10 +25,6 @@
    [cuerdas.core :as str]))
 
 ;; ---- API: authenticate
-(def ^:private schema:authenticate-params
-  [:map
-   [:token :string]])
-
 (def ^:private schema:profile
   [:map
    [:id ::sm/uuid]
@@ -37,20 +33,14 @@
    [:photo-url :string]])
 
 (sv/defmethod ::authenticate
-  "Authenticate an user by token
+  "Authenticate an user
      @api GET /authenticate
      @returns
        200 OK: Returns the authenticated user."
   {::doc/added "2.12"
-   ::sm/params schema:authenticate-params
    ::sm/result schema:profile}
-  [cfg {:keys [token] :as params}]
-  (let [_ (prn params)
-        token      (str/replace-first token #"^auth-token=" "")
-        claims     (tokens/verify cfg {:token token :iss "authentication"})
-        profile-id (:uid claims)
-        profile    (profile/get-profile cfg profile-id)]
-    ;; TODO Manage bad token
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (let [profile    (profile/get-profile cfg profile-id)]
     {:id (get profile :id)
      :name (get profile :fullname)
      :email (get profile :email)
@@ -102,11 +92,11 @@
      @returns
        200 OK"
   {::doc/added "2.12"
-   ::sm/params schema:notify-team-change}
+   ::sm/params schema:notify-team-change
+   ::rpc/auth false}
   [cfg {:keys [id organization-id organization-name]}]
   (when (contains? cf/flags :nitrate)
     (let [msgbus (::mbus/msgbus cfg)]
-      (prn "Team" id "has changed to org" organization-name "(" organization-id ")")
       (mbus/pub! msgbus
                  ;;TODO There is a bug on dashboard with teams notifications.
                  ;;For now we send it to uuid/zero instead of team-id
