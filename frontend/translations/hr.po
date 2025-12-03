@@ -541,7 +541,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"datoteke sa zajedničkim bibliotekama bit će uključene u izvoz, održavajući "
+"Datoteke sa zajedničkim bibliotekama bit će uključene u izvoz, održavajući "
 "njihovu poveznicu."
 
 #: src/app/main/ui/exports/files.cljs:165

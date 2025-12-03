@@ -370,7 +370,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"partekatutako liburutegiak dituzten fitxategiak esportazio paketean sartuko "
+"Partekatutako liburutegiak dituzten fitxategiak esportazio paketean sartuko "
 "dira eta loturak mantenduko dituzte."
 
 #: src/app/main/ui/exports/files.cljs:165

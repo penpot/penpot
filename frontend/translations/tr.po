@@ -583,7 +583,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"paylaşılan kütüphanelere sahip dosyalar, bağlantılarını koruyarak dışarı "
+"Paylaşılan kütüphanelere sahip dosyalar, bağlantılarını koruyarak dışarı "
 "aktarmaya dahil edilecek."
 
 #: src/app/main/ui/exports/files.cljs:165
