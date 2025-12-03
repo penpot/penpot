@@ -16,6 +16,7 @@
 
 - Fix problem when drag+duplicate a full grid [Taiga #12565](https://tree.taiga.io/project/penpot/issue/12565)
 - Fix problem when pasting elements in reverse flex layout [Taiga #12460](https://tree.taiga.io/project/penpot/issue/12460)
+- Fix wrong board size presets in Android [Taiga #12339](https://tree.taiga.io/project/penpot/issue/12339)
 
 
 ## 2.12.0 (Unreleased)

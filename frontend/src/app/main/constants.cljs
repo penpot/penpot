@@ -148,17 +148,17 @@
     :width 768
     :height 1024}
    {:name "Google Pixel 7 Pro"
-    :width 1440
-    :height 3120}
+    :width 412
+    :height 892}
    {:name "Google Pixel 6a/6"
-    :width 1080
-    :height 2400}
+    :width 412
+    :height 915}
    {:name "Google Pixel 4a/5"
     :width 393
     :height 851}
    {:name "Samsung Galaxy S22"
-    :width 1080
-    :height 2340}
+    :width 360
+    :height 780}
    {:name "Samsung Galaxy S20+"
     :width 384
     :height 854}
