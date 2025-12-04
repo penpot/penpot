@@ -590,7 +590,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"fișierele cu biblioteci partajate vor fi incluse în export, menținându-le "
+"Fișierele cu biblioteci partajate vor fi incluse în export, menținându-le "
 "legătura."
 
 #: src/app/main/ui/exports/files.cljs:165

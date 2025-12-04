@@ -138,9 +138,9 @@
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
 
-        ;; VARS
-        disable-paste     (mf/use-var false)
-        in-viewport?      (mf/use-var false)
+        ;; STATE REFS
+        disable-paste-ref (mf/use-ref false)
+        in-viewport-ref   (mf/use-ref false)
 
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
@@ -200,10 +200,10 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste)
+        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
 
-        on-pointer-enter  (actions/on-pointer-enter in-viewport?)
-        on-pointer-leave  (actions/on-pointer-leave in-viewport?)
+        on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
+        on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
         on-pointer-move   (actions/on-pointer-move move-stream)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected read-only?)
@@ -345,7 +345,7 @@
           (wasm.api/show-grid @hover-top-frame-id)
           (wasm.api/clear-grid))))
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
+    (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)

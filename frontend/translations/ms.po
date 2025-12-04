@@ -438,7 +438,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"fail dengan perpustakaan kongsi akan disertakan dalam eksport, mengekalkan "
+"Fail dengan perpustakaan kongsi akan disertakan dalam eksport, mengekalkan "
 "hubungannya."
 
 #: src/app/main/ui/exports/files.cljs:165

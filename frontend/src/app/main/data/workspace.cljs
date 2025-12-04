@@ -20,7 +20,9 @@
    [app.common.path-names :as cpn]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
@@ -551,7 +553,6 @@
                component-id (:component-id shape)
                undo-id (js/Symbol)]
 
-
            (when valid?
              (if (ctc/is-variant-container? shape)
                ;; Rename the full variant when it is a variant container
@@ -565,6 +566,43 @@
                 (when (and (some? component-id) (ctc/main-instance? shape))
                   (dwl/rename-component component-id clean-name))
                 (dwu/commit-undo-transaction undo-id))))))))))
+
+(defn rename-shape-or-variant
+  ([id name]
+   (rename-shape-or-variant nil nil id name))
+  ([file-id page-id id name]
+   (ptk/reify ::rename-shape-or-variant
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [file-id (d/nilv file-id (:current-file-id state))
+             page-id (d/nilv page-id (:current-page-id state))
+
+             file-data (dsh/lookup-file-data state file-id)
+             shape
+             (-> (dsh/lookup-page-objects state file-id page-id)
+                 (get id))
+
+             is-variant? (ctc/is-variant? shape)
+             variant-id (when is-variant? (:variant-id shape))
+             variant-name (when is-variant? (:variant-name shape))
+             component-id (:component-id shape)
+             component (ctkl/get-component file-data (:component-id shape))
+             variant-properties (:variant-properties component)]
+         (cond
+           (and variant-name (ctv/valid-properties-formula? name))
+           (rx/of (dwva/update-properties-names-and-values
+                   component-id variant-id variant-properties (ctv/properties-formula->map name))
+                  (dwva/remove-empty-properties variant-id)
+                  (dwva/update-error component-id))
+
+           variant-name
+           (rx/of (dwva/update-properties-names-and-values
+                   component-id variant-id variant-properties {})
+                  (dwva/remove-empty-properties variant-id)
+                  (dwva/update-error component-id name))
+
+           :else
+           (rx/of (end-rename-shape id name))))))))
 
 ;; --- Update Selected Shapes attrs
 

@@ -581,7 +581,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"arquivos com bibliotecas compartilhadas serão incluídos na exportação, "
+"Arquivos com bibliotecas compartilhadas serão incluídos na exportação, "
 "mantendo seu vínculo."
 
 #: src/app/main/ui/exports/files.cljs:165

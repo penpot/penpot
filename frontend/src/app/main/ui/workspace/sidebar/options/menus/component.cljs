@@ -687,7 +687,7 @@
                               (str/upper (tr "workspace.assets.local-library"))
                               (dm/get-in libraries [current-library-id :name]))
 
-        current-lib-data    (mf/with-memo [libraries]
+        current-lib-data    (mf/with-memo [libraries current-library-id]
                               (get-in libraries [current-library-id :data]))
 
         current-lib-counts  (mf/with-memo [current-lib-data]

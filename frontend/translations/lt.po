@@ -346,7 +346,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
+"Failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
 "susiejimą."
 
 #: src/app/main/ui/exports/files.cljs:165

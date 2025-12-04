@@ -67,7 +67,7 @@
   []
   (let [uagent (new ua/UAParser)]
     (merge
-     {:app-version (:full cf/version)
+     {:version (:full cf/version)
       :locale @i18n/locale}
      (let [browser (.getBrowser uagent)]
        {:browser (obj/get browser "name")

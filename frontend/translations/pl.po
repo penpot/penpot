@@ -372,7 +372,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"pliki z bibliotekami współdzielonymi zostaną uwzględnione w eksporcie, z "
+"Pliki z bibliotekami współdzielonymi zostaną uwzględnione w eksporcie, z "
 "zachowaniem ich powiązania."
 
 #: src/app/main/ui/exports/files.cljs:165
