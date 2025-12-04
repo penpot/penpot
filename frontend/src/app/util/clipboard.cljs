@@ -57,10 +57,11 @@
          (= (dom/get-tag-name target) "INPUT")]
 
     ;; ignore when pasting into an editable control
-     (when-not (or content-editable? is-input?)
+     (if-not (or content-editable? is-input?)
        (-> event
            (dom/event->browser-event)
-           (from-clipboard-event options))))))
+           (from-clipboard-event options))
+       (rx/empty)))))
 
 (defn from-drop-event
   "Get clipboard stream from drop event"
