@@ -8,7 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.forms :as fc]
@@ -137,6 +140,20 @@
 ;; -----------------------------------------------------------------------------
 
 
+(defn- resolve-value-tokenscript
+  [tokens prev-token value]
+  (let [result (ts/update-token tokens (assoc prev-token :value value))
+        token-result (.-resolved result)
+        linter-issues (map #(.-message %) (.-issues result))]
+    (rx/of
+     (cond
+       (first linter-issues) {:error (wte/error-with-value (first linter-issues) value)}
+       (ts/dependency-error? token-result) {:error (wte/error-with-value :error.style-dictionary/missing-reference (some->> (.-dependencyChain token-result)
+                                                                                                                            (seq)
+                                                                                                                            (rest)))}
+       (instance? js/Error token-result) {:error (wte/error-with-value :error.style-dictionary/invalid-token-value value)}
+       :else {:value token-result}))))
+
 (defn- resolve-value
   [tokens prev-token value]
   (let [token
@@ -207,7 +224,10 @@
 
     (mf/with-effect [resolve-stream tokens token input-name]
 
-      (let [subs (->> resolve-stream
+      (let [resolve-value (if (contains? cf/flags :tokenscript)
+                            resolve-value-tokenscript
+                            resolve-value)
+            subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token))
                       (rx/map (fn [result]

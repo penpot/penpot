@@ -13,6 +13,7 @@
    [app.common.files.tokens :as cft]
    [app.common.path-names :as cpn]
    [app.common.types.token :as ctt]
+   [app.config :as cf]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.data.workspace.tokens.format :as dwtf]
@@ -177,6 +178,8 @@
   [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
   (let [{:keys [name value errors type]} token
 
+        resolved-token (get (:name token) active-theme-tokens)
+
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (cft/is-reference? token)
         contains-path? (str/includes? name ".")
@@ -209,8 +212,10 @@
         is-viewer? (not can-edit?)
 
         ref-not-in-active-set
-        (and is-reference?
-             (not (contains-reference-value? value active-theme-tokens)))
+        (if (contains? cf/flags :tokenscript)
+          (seq (:errors resolved-token))
+          (and is-reference?
+               (not (contains-reference-value? value active-theme-tokens))))
 
         no-valid-value (seq errors)
 
@@ -220,9 +225,8 @@
 
         color
         (when (cft/color-token? token)
-          (let [theme-token (get active-theme-tokens name)]
-            (or (dwtc/resolved-token-bullet-color theme-token)
-                (dwtc/resolved-token-bullet-color token))))
+          (or (dwtc/resolved-token-bullet-color resolved-token)
+              (dwtc/resolved-token-bullet-color token)))
 
         status-icon? (contains? token-types-with-status-icon type)
 

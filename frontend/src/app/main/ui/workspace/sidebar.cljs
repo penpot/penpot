@@ -9,10 +9,15 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.constants :refer [right-sidebar-default-width right-sidebar-default-max-width left-sidebar-default-max-width left-sidebar-default-width]]
+   [app.config :as cf]
+   [app.main.constants :refer [left-sidebar-default-max-width
+                               left-sidebar-default-width
+                               right-sidebar-default-max-width
+                               right-sidebar-default-width]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -369,6 +374,12 @@
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
 
+        tokenscript? (contains? cf/flags :tokenscript)
+
+        tokenscript-resolved-active-tokens
+        (mf/with-memo [tokens-lib tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens)))
+
         resolved-active-tokens
         (sd/use-resolved-tokens* active-tokens)]
 
@@ -380,7 +391,9 @@
                           :page-id page-id
                           :tokens-lib tokens-lib
                           :active-tokens active-tokens
-                          :resolved-active-tokens resolved-active-tokens}])
+                          :resolved-active-tokens (if (contains? cf/flags :tokenscript)
+                                                    tokenscript-resolved-active-tokens
+                                                    resolved-active-tokens)}])
      [:> right-sidebar* {:section section
                          :selected selected
                          :drawing-tool drawing-tool
