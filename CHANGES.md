@@ -91,6 +91,7 @@ example. It's still usable as before, we just removed the example.
 - Fix problem with plugins content attribute [Plugins #209](https://github.com/penpot/penpot-plugins/issues/209)
 - Fix U and E icon displayed in project list [Taiga #12806](https://tree.taiga.io/project/penpot/issue/12806)
 - Fix unpublish library modal not scrolling a long file list [Taiga #12285](https://tree.taiga.io/project/penpot/issue/12285)
+- Fix incorrect interaction betwen hower and scroll on assets sidebar [Taiga #12389](https://tree.taiga.io/project/penpot/issue/12389)
 
 ## 2.11.1
 
