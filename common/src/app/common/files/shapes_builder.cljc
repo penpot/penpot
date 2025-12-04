@@ -82,6 +82,113 @@
 (declare create-svg-children)
 (declare parse-svg-element)
 
+(defn- process-gradient-stops
+  "Processes gradient stops to extract stop-color and stop-opacity from style attributes
+   and convert them to direct attributes. This ensures stops with style='stop-color:#...;stop-opacity:1'
+   are properly converted to stop-color and stop-opacity attributes."
+  [stops]
+  (mapv (fn [stop]
+          (let [stop-attrs (:attrs stop)
+                stop-style (get stop-attrs :style)
+                ;; Parse style if it's a string using csvg/parse-style utility
+                parsed-style (when (and (string? stop-style) (seq stop-style))
+                               (csvg/parse-style stop-style))
+                ;; Extract stop-color and stop-opacity from style
+                style-stop-color (when parsed-style (:stop-color parsed-style))
+                style-stop-opacity (when parsed-style (:stop-opacity parsed-style))
+                ;; Merge: use direct attributes first, then style values as fallback
+                final-attrs (cond-> stop-attrs
+                              (and style-stop-color (not (contains? stop-attrs :stop-color)))
+                              (assoc :stop-color style-stop-color)
+
+                              (and style-stop-opacity (not (contains? stop-attrs :stop-opacity)))
+                              (assoc :stop-opacity style-stop-opacity)
+
+                              ;; Remove style attribute if we've extracted its values
+                              (or style-stop-color style-stop-opacity)
+                              (dissoc :style))]
+            (assoc stop :attrs final-attrs)))
+        stops))
+
+(defn- resolve-gradient-href
+  "Resolves xlink:href references in gradients by merging the referenced gradient's
+   stops and attributes with the referencing gradient. This ensures gradients that
+   reference other gradients (like linearGradient3550 referencing linearGradient3536)
+   inherit the stops from the base gradient.
+   
+   According to SVG spec, when a gradient has xlink:href:
+   - It inherits all attributes from the referenced gradient
+   - It inherits all stops from the referenced gradient
+   - The referencing gradient's attributes override the base ones
+   - If the referencing gradient has stops, they replace the base stops
+   
+   Returns the defs map with all gradient href references resolved."
+  [defs]
+  (letfn [(resolve-gradient [gradient-id gradient-node defs visited]
+            (if (contains? visited gradient-id)
+              (do
+                #?(:cljs (js/console.warn "[resolve-gradient] Circular reference detected for" gradient-id)
+                   :clj nil)
+                gradient-node)  ;; Avoid circular references
+              (let [attrs (:attrs gradient-node)
+                    href-id (or (:href attrs) (:xlink:href attrs))
+                    href-id (when (and (string? href-id) (pos? (count href-id)))
+                              (subs href-id 1))  ;; Remove leading #
+
+                    base-gradient (when (and href-id (contains? defs href-id))
+                                    (get defs href-id))
+
+                    resolved-base (when base-gradient (resolve-gradient href-id base-gradient defs (conj visited gradient-id)))]
+
+                (if resolved-base
+                  ;; Merge: base gradient attributes + referencing gradient attributes
+                  ;; Use referencing gradient's stops if present, otherwise use base stops
+                  (let [base-attrs (:attrs resolved-base)
+                        ref-attrs (:attrs gradient-node)
+
+                        ;; Start with base attributes (without id), then merge with ref attributes
+                        ;; This ensures ref attributes override base ones
+                        base-attrs-clean (dissoc base-attrs :id)
+                        ref-attrs-clean (dissoc ref-attrs :href :xlink:href :id)
+
+                        ;; Special handling for gradientTransform: if both have it, combine them
+                        base-transform (get base-attrs :gradientTransform)
+                        ref-transform (get ref-attrs :gradientTransform)
+                        combined-transform (cond
+                                             (and base-transform ref-transform)
+                                             (str base-transform " " ref-transform)  ;; Apply base first, then ref
+                                             :else (or ref-transform base-transform))
+
+                        ;; Merge attributes: base first, then ref (ref overrides)
+                        merged-attrs (-> (d/deep-merge base-attrs-clean ref-attrs-clean)
+                                         (cond-> combined-transform
+                                           (assoc :gradientTransform combined-transform)))
+
+                        ;; If referencing gradient has content (stops), use it; otherwise use base content
+                        final-content (if (seq (:content gradient-node))
+                                        (:content gradient-node)
+                                        (:content resolved-base))
+
+                        ;; Process stops to extract stop-color and stop-opacity from style attributes
+                        processed-content (process-gradient-stops final-content)
+
+                        result {:tag (:tag gradient-node)
+                                :attrs (assoc merged-attrs :id gradient-id)
+                                :content processed-content}]
+                    result)
+                  ;; Process stops even for gradients without references to extract style attributes
+                  (let [processed-content (process-gradient-stops (:content gradient-node))]
+                    (assoc gradient-node :content processed-content))))))]
+    (let [gradient-tags #{:linearGradient :radialGradient}
+          result (reduce-kv
+                  (fn [acc id node]
+                    (if (contains? gradient-tags (:tag node))
+                      (assoc acc id (resolve-gradient id node defs #{}))
+                      (assoc acc id node)))
+                  {}
+                  defs)]
+      result)))
+
 (defn create-svg-shapes
   ([svg-data pos objects frame-id parent-id selected center?]
    (create-svg-shapes (uuid/next) svg-data pos objects frame-id parent-id selected center?))
@@ -111,6 +218,9 @@
              (csvg/fix-default-values)
              (csvg/fix-percents)
              (csvg/extract-defs))
+
+         ;; Resolve gradient href references in all defs before processing shapes
+         def-nodes (resolve-gradient-href def-nodes)
 
          ;; In penpot groups have the size of their children. To
          ;; respect the imported svg size and empty space let's create
@@ -142,12 +252,23 @@
          (reduce (partial create-svg-children objects selected frame-id root-id svg-data)
                  [unames []]
                  (d/enumerate (->> (:content svg-data)
-                                   (mapv #(csvg/inherit-attributes root-attrs %)))))]
+                                   (mapv #(csvg/inherit-attributes root-attrs %)))))
 
-     [root-shape children])))
+         ;; Collect all defs from children and merge into root shape
+         all-defs-from-children (reduce (fn [acc child]
+                                          (if-let [child-defs (:svg-defs child)]
+                                            (merge acc child-defs)
+                                            acc))
+                                        {}
+                                        children)
+
+         ;; Merge defs from svg-data and children into root shape
+         root-shape-with-defs (assoc root-shape :svg-defs (merge def-nodes all-defs-from-children))]
+
+     [root-shape-with-defs children])))
 
 (defn create-raw-svg
-  [name frame-id {:keys [x y width height offset-x offset-y]} {:keys [attrs] :as data}]
+  [name frame-id {:keys [x y width height offset-x offset-y defs] :as svg-data} {:keys [attrs] :as data}]
   (let [props (csvg/attrs->props attrs)
         vbox  (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
@@ -160,10 +281,11 @@
       :y y
       :content data
       :svg-attrs props
-      :svg-viewbox vbox})))
+      :svg-viewbox vbox
+      :svg-defs defs})))
 
 (defn create-svg-root
-  [id frame-id parent-id {:keys [name x y width height offset-x offset-y attrs]}]
+  [id frame-id parent-id {:keys [name x y width height offset-x offset-y attrs defs] :as svg-data}]
   (let [props (-> (dissoc attrs :viewBox :view-box :xmlns)
                   (d/without-keys csvg/inheritable-props)
                   (csvg/attrs->props))]
@@ -177,7 +299,8 @@
       :height height
       :x (+ x offset-x)
       :y (+ y offset-y)
-      :svg-attrs props})))
+      :svg-attrs props
+      :svg-defs defs})))
 
 (defn create-svg-children
   [objects selected frame-id parent-id svg-data [unames children] [_index svg-element]]
@@ -198,7 +321,7 @@
 
 
 (defn create-group
-  [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
+  [name frame-id {:keys [x y width height offset-x offset-y defs] :as svg-data} {:keys [attrs]}]
   (let [transform (csvg/parse-transform (:transform attrs))
         attrs     (-> attrs
                       (d/without-keys csvg/inheritable-props)
@@ -214,7 +337,8 @@
       :height height
       :svg-transform transform
       :svg-attrs attrs
-      :svg-viewbox vbox})))
+      :svg-viewbox vbox
+      :svg-defs defs})))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
@@ -523,6 +647,21 @@
                  :else (dm/str tag))]
     (dm/str "svg-" suffix)))
 
+(defn- filter-valid-def-references
+  "Filters out false positive references that are not valid def IDs.
+   Filters out:
+   - Colors in style attributes (hex colors like #f9dd67)
+   - Style fragments that contain CSS keywords (like stop-opacity)
+   - References that don't exist in defs"
+  [ref-ids defs]
+  (let [is-style-fragment? (fn [ref-id]
+                             (or (clr/hex-color-string? (str "#" ref-id))
+                                 (str/includes? ref-id ";")  ;; Contains CSS separator
+                                 (str/includes? ref-id "stop-opacity")  ;; CSS keyword
+                                 (str/includes? ref-id "stop-color")))]  ;; CSS keyword
+    (->> ref-ids
+         (remove is-style-fragment?)  ;; Filter style fragments and hex colors
+         (filter #(contains? defs %)))))  ;; Only existing defs
 
 (defn parse-svg-element
   [frame-id svg-data {:keys [tag attrs hidden] :as element} unames]
@@ -534,7 +673,11 @@
   (let [name         (or (:id attrs) (tag->name tag))
         att-refs     (csvg/find-attr-references attrs)
         defs         (get svg-data :defs)
-        references   (csvg/find-def-references defs att-refs)
+        valid-refs   (filter-valid-def-references att-refs defs)
+        all-refs     (csvg/find-def-references defs valid-refs)
+        ;; Filter the final result to ensure all references are valid defs
+        ;; This prevents false positives from style attributes in gradient stops
+        references   (filter-valid-def-references all-refs defs)
 
         href-id      (or (:href attrs) (:xlink:href attrs) " ")
         href-id      (if (and (string? href-id)
