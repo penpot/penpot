@@ -1,4 +1,4 @@
-(ns app.main.ui.workspace.tokens.management.create.token-form-validators
+(ns app.main.ui.workspace.tokens.management.forms.validators
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cft]

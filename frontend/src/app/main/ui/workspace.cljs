@@ -35,7 +35,7 @@
    [app.main.ui.workspace.tokens.export.modal]
    [app.main.ui.workspace.tokens.import]
    [app.main.ui.workspace.tokens.import.modal]
-   [app.main.ui.workspace.tokens.management.create.modals]
+   [app.main.ui.workspace.tokens.management.forms.modals]
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
    [app.main.ui.workspace.viewport :refer [viewport*]]

@@ -59,9 +59,15 @@
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the value is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (if-let [tc (tinycolor/valid-color value)]
-    {:value value :unit (tinycolor/color-format tc)}
-    {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
+  (let [missing-references (seq (cto/find-token-value-references value))]
+    (if-let [tc (tinycolor/valid-color value)]
+      {:value value :unit (tinycolor/color-format tc)}
+      (cond
+        missing-references
+        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+         :references missing-references}
+        :else
+        {:errors [(wte/error-with-value :error.token/invalid-color value)]}))))
 
 (defn- numeric-string? [s]
   (and (string? s)
@@ -120,7 +126,7 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (cto/find-token-value-references value))
+  (let [missing-references? (seq (seq (cto/find-token-value-references value)))
         parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (cto/find-token-value-references value))]

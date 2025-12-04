@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.typography
+(ns app.main.ui.workspace.tokens.management.forms.typography
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -14,10 +14,9 @@
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.workspace.tokens.management.create.combobox-token-fonts :refer [font-picker-composite-combobox*]]
-   [app.main.ui.workspace.tokens.management.create.form :as form]
-   [app.main.ui.workspace.tokens.management.create.input-token :refer [input-token-composite*]]
-   [app.main.ui.workspace.tokens.management.create.token-form-validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
+   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
+   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -114,7 +113,7 @@
 
     [:*
      [:div {:class (stl/css :input-row)}
-      [:> font-picker-composite-combobox*
+      [:> token.controls/composite-fonts-combobox*
        {:icon i/text-font-family
         :placeholder (tr "workspace.tokens.token-font-family-value-enter")
         :aria-label  (tr "workspace.tokens.token-font-family-value")
@@ -122,7 +121,7 @@
         :token font-family-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> input-token-composite*
+      [:> token.controls/input-composite*
        {:aria-label "Font Size"
         :icon i/text-font-size
         :placeholder (tr "workspace.tokens.font-size-value-enter")
@@ -130,7 +129,7 @@
         :token font-size-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> input-token-composite*
+      [:> token.controls/input-composite*
        {:aria-label "Font Weight"
         :icon i/text-font-weight
         :placeholder (tr "workspace.tokens.font-weight-value-enter")
@@ -138,7 +137,7 @@
         :token font-weight-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> input-token-composite*
+      [:> token.controls/input-composite*
        {:aria-label "Line Height"
         :icon i/text-lineheight
         :placeholder (tr "workspace.tokens.line-height-value-enter")
@@ -146,7 +145,7 @@
         :token line-height-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> input-token-composite*
+      [:> token.controls/input-composite*
        {:aria-label "Letter Spacing"
         :icon i/text-letterspacing
         :placeholder (tr "workspace.tokens.letter-spacing-value-enter-composite")
@@ -154,7 +153,7 @@
         :token letter-spacing-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> input-token-composite*
+      [:> token.controls/input-composite*
        {:aria-label "Text Case"
         :icon i/text-mixed
         :placeholder (tr "workspace.tokens.text-case-value-enter")
@@ -162,7 +161,7 @@
         :token text-case-sub-token
         :tokens tokens}]]
      [:div {:class (stl/css :input-row)}
-      [:> input-token-composite*
+      [:> token.controls/input-composite*
        {:aria-label "Text Decoration"
         :icon i/text-underlined
         :placeholder (tr "workspace.tokens.text-decoration-value-enter")
@@ -173,7 +172,7 @@
 (mf/defc reference-form*
   [{:keys [token tokens] :as props}]
   [:div {:class (stl/css :input-row)}
-   [:> input-token-composite*
+   [:> token.controls/input-composite*
     {:placeholder (tr "workspace.tokens.reference-composite")
      :aria-label (tr "labels.reference")
      :icon i/text-typography
@@ -182,13 +181,13 @@
      :tokens tokens}]])
 
 (mf/defc tabs-wrapper*
-  [{:keys [token tokens active-tab on-toggle-tab] :rest props}]
+  [{:keys [token tokens tab toggle] :rest props}]
   [:*
    [:div {:class (stl/css :title-bar)}
     [:div {:class (stl/css :title)} (tr "labels.typography")]
     [:& radio-buttons {:class (stl/css :listing-options)
-                       :selected (d/name active-tab)
-                       :on-change on-toggle-tab
+                       :selected (d/name tab)
+                       :on-change toggle
                        :name "reference-composite-tab"}
      [:& radio-button {:icon i/layers
                        :value "composite"
@@ -199,7 +198,7 @@
                        :title (tr "workspace.tokens.use-reference")
                        :id "reference-opt"}]]]
    [:div {:class (stl/css :inputs-wrapper)}
-    (if (= active-tab :composite)
+    (if (= tab :composite)
       [:> composite-form* {:token token
                            :tokens tokens}]
 
@@ -299,7 +298,7 @@
         props (mf/spread-props props {:initial initial
                                       :make-schema make-schema
                                       :token token
-                                      :validate-token validate-typography-token
-                                      :form-type :composite
-                                      :input-token-component tabs-wrapper*})]
-    [:> form/form* props]))
+                                      :validator validate-typography-token
+                                      :type :composite
+                                      :input-component tabs-wrapper*})]
+    [:> generic/form* props]))

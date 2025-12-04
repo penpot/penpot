@@ -4,13 +4,27 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.select-token
+(ns app.main.ui.workspace.tokens.management.forms.controls.select
   (:require
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.forms :as fc]
    [rumext.v2 :as mf]))
 
-(mf/defc select-composite*
+;; --- Select Input (Indexed) --------------------------------------------------
+;;
+;; This input type is part of the indexed system, used for fields that exist
+;; inside an array of maps stored in a subfield of :value.
+;;
+;; - Writes to a nested location:
+;;       [:value <subfield> <index> <field>]
+;; - Each item in the array has its own select input, independent of others.
+;; - Validation ensures the selected value is valid for that field.
+;; - Changing one item does not affect the other items in the array.
+;; - Ideal for properties with predefined options (boolean, enum, etc.) where
+;;   multiple instances exist.
+
+
+(mf/defc select-indexed*
   [{:keys [name index indexed-type] :rest props}]
   (let [form       (mf/use-ctx fc/context)
         input-name name

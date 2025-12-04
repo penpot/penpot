@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.form
+(ns app.main.ui.workspace.tokens.management.forms.generic-form
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.files.tokens :as cft]
@@ -23,8 +23,8 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
-   [app.main.ui.workspace.tokens.management.create.input-token :refer [input-token*]]
-   [app.main.ui.workspace.tokens.management.create.token-form-validators :refer [default-validate-token]]
+   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -41,13 +41,13 @@
 
 
 (defn get-value-for-validator
-  [active-tab value indexed-type form-type]
+  [active-tab value value-subfield form-type]
 
   (case form-type
     :indexed
     (if (= active-tab :reference)
       (:reference value)
-      (indexed-type value))
+      (value-subfield value))
 
     :composite
     (if (= active-tab :reference)
@@ -81,25 +81,25 @@
 
 (mf/defc form*
   [{:keys [token
-           validate-token
+           validator
            action
            is-create
            selected-token-set-id
            tokens-tree-in-selected-set
            token-type
            make-schema
-           input-token-component
+           input-component
            initial
-           form-type
-           indexed-type
+           type
+           value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema          (or make-schema default-make-schema)
-        input-token-component (or input-token-component input-token*)
+  (let [make-schema           (or make-schema default-make-schema)
+        input-component (or input-component token.controls/input*)
+        validate-token (or validator default-validate-token)
+
         active-tab* (mf/use-state #(if (cft/is-reference? token) :reference :composite))
         active-tab (deref active-tab*)
-
-        validate-token (or validate-token default-validate-token)
 
         on-toggle-tab
         (mf/use-fn
@@ -178,12 +178,12 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type indexed-type form-type active-tab)
+         (mf/deps validate-token token tokens token-type value-subfield type active-tab)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
-                 value-for-validation (get-value-for-validator active-tab value indexed-type form-type)]
+                 value-for-validation (get-value-for-validator active-tab value value-subfield type)]
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -230,15 +230,16 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-token-component
+       [:> input-component
         {:placeholder (or input-value-placeholder (tr "workspace.tokens.token-value-enter"))
          :label (tr "workspace.tokens.token-value")
          :name :value
          :form form
          :token token
          :tokens tokens
-         :active-tab active-tab
-         :on-toggle-tab on-toggle-tab}]]
+         :tab active-tab
+         :subfield value-subfield
+         :toggle on-toggle-tab}]]
 
       [:div {:class (stl/css :input-row)}
        [:> fc/form-input* {:id "token-description"

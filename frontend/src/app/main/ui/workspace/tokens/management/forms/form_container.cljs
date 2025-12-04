@@ -4,21 +4,21 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.form-wrapper
+(ns app.main.ui.workspace.tokens.management.forms.form-container
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.tokens.management.create.color :as color]
-   [app.main.ui.workspace.tokens.management.create.font-family :as font-family]
-   [app.main.ui.workspace.tokens.management.create.form :refer [form*]]
-   [app.main.ui.workspace.tokens.management.create.shadow :as shadow]
-   [app.main.ui.workspace.tokens.management.create.typography :as typography]
+   [app.main.ui.workspace.tokens.management.forms.color :as color]
+   [app.main.ui.workspace.tokens.management.forms.font-family :as font-family]
+   [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
+   [app.main.ui.workspace.tokens.management.forms.shadow :as shadow]
+   [app.main.ui.workspace.tokens.management.forms.typography :as typography]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc form-wrapper*
+(mf/defc form-container*
   [{:keys [token token-type] :rest props}]
   (let [token-type
         (or (:type token) token-type)
@@ -47,7 +47,7 @@
       :typography [:> typography/form* props]
       :shadow [:> shadow/form* props]
       :font-family [:> font-family/form* props]
-      :text-case [:> form* text-case-props]
-      :text-decoration [:> form* text-decoration-props]
-      :font-weight [:> form* font-weight-props]
-      [:> form* props])))
+      :text-case [:> generic/form* text-case-props]
+      :text-decoration [:> generic/form* text-decoration-props]
+      :font-weight [:> generic/form* font-weight-props]
+      [:> generic/form* props])))

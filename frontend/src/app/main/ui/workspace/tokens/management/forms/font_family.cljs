@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.font-family
+(ns app.main.ui.workspace.tokens.management.forms.font-family
   (:require
    [app.common.types.token :as cto]
    [app.main.data.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.management.create.combobox-token-fonts :refer [font-picker-combobox*]]
-   [app.main.ui.workspace.tokens.management.create.form :as form]
-   [app.main.ui.workspace.tokens.management.create.token-form-validators :refer [check-coll-self-reference default-validate-token]]
+   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
+   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference default-validate-token]]
    [rumext.v2 :as mf]))
 
 (defn- check-font-family-token-self-reference [token]
@@ -35,6 +35,6 @@
             {:type token-type}))
         props (mf/spread-props props {:token token
                                       :token-type token-type
-                                      :validate-token validate-font-family-token
-                                      :input-token-component font-picker-combobox*})]
-    [:> form/form* props]))
+                                      :validator validate-font-family-token
+                                      :input-component token.controls/fonts-combobox*})]
+    [:> generic/form* props]))

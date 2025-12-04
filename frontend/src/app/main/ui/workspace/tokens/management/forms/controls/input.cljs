@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.input-token
+(ns app.main.ui.workspace.tokens.management.forms.controls.input
   (:require
    [app.common.data :as d]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.format :as dwtf]
-   [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.forms :as fc]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
@@ -18,6 +18,124 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+;; -----------------------------------------------------------------------------
+;; WHY WE HAVE THREE INPUT TYPES: INPUT, COMPOSITE, AND INDEXED
+;;
+;; Our token editor supports multiple token categories (colors, distances,
+;; shadows, typography, etc.). Each category stores its data inside the token’s
+;; :value field, but not all tokens have the same internal structure. To keep the
+;; UI consistent and predictable, we define three input architectures:
+;;
+;; 1) INPUTS
+;;    ----------------------------------------------------------
+;;    Used for tokens where the entire :value is just a single,
+;;    atomic field. Examples:
+;;      - :distance    → a number or a reference
+;;      - :text-case   → one of {none, uppercase, lowercase, capitalize}
+;;      - :color       → a single color value or a reference
+;;
+;;    Characteristics:
+;;      * The input writes directly to :value.
+;;      * Validation logic is simple because :value is a single unit.
+;;      * Switching to "reference mode" simply replaces :value.
+;;
+;;    Data shape example:
+;;      {:value "16px"}
+;;      {:value "{spacing.sm}"}
+;;
+;;
+;; 2) COMPOSITE INPUTS
+;;    ----------------------------------------------------------
+;;    Used when the token contains a set of *named fields* inside :value.
+;;    The UI must write into a specific subfield inside the :value map.
+;;
+;;    Example: typography tokens
+;;      {:value {:font-family "Inter"
+;;               :font-weight 600
+;;               :letter-spacing -0.5
+;;               :line-height 1.4}}
+;;
+;;    Why this type exists:
+;;      * Each input (font-family, weight, spacing, etc.) maps to a specific
+;;        key inside :value.
+;;      * The UI must update these fields individually without replacing the
+;;        entire value.
+;;      * Validation rules apply per-field.
+;;
+;;    In practice:
+;;      - The component knows which subfield to update.
+;;      - The form accumulates multiple fields into a single map under :value.
+;;
+;;
+;; 3) INDEXED INPUTS
+;;    ----------------------------------------------------------
+;;    Used for tokens where the :value can be in TWO possible shapes:
+;;      A) A direct reference to another token
+;;      B) A list (array/vector) of maps describing multiple structured items
+;;
+;;    Main example: shadow tokens
+;;
+;;      ;; Option A — reference mode
+;;      {:value {:reference "{shadow.soft}"}}
+;;
+;;      ;; Option B — full definition mode
+;;      {:value {:shadow
+;;               [{:color "#0003"
+;;                 :offset-x 4
+;;                 :offset-y 6
+;;                 :blur 12
+;;                 :spread 0
+;;                 :inset? false}
+;;
+;;                {:color "rgba(0,0,0,0.1)"
+;;                 :offset-x 0
+;;                 :offset-y 1
+;;                 :blur 3
+;;                 :spread 0
+;;                 :inset? false}]}}
+;;
+;;    Why this type exists:
+;;      * The UI must handle multiple items (indexed layers).
+;;      * Each layer has its own internal fields (color, offsets, blur, etc.).
+;;      * The user can add/remove layers dynamically.
+;;      * Reference mode must disable/remove the structured mode.
+;;      * Both shapes are valid, but they cannot coexist at the same time.
+;;
+;;    Indexed inputs therefore need:
+;;      * A tab system ("Shadow" vs "Reference")
+;;      * Clear logic to ensure :shadow XOR :reference
+;;      * Repetition UI (add/remove layer groups)
+;;
+;;
+;; SUMMARY
+;; -----------------------------------------------------------------------------
+;; - Plain inputs operate on :value itself.
+;; - Composite inputs operate on a map stored under :value, writing into
+;;   predefined keys.
+;; - Indexed inputs operate on either:
+;;       • a reference stored in :value :reference, or
+;;       • an array of structured items stored in :value :shadow (or similar),
+;;   but never both at the same time.
+;;
+;; This 3-tiered input system keeps the editor flexible, predictable,
+;; and compatible with the many different token types supported by the app.
+;; -----------------------------------------------------------------------------
+
+;;
+;; Summary:
+;; -------
+;; - `input*` → single flat value tokens
+;; - `input-composite*` → structured tokens with multiple named fields
+;;                        (e.g. typography tokens with font-family,
+;;                         font-weight, letter-spacing, line-height…)
+;; - `input-indexed*` → array-based tokens where each entry is a map
+;;                      (e.g. multiple shadow layers)
+;;
+;; This separation ensures each form input mirrors the actual structure of the
+;; token data model, keeping validation and updates correctly scoped.
+;; -----------------------------------------------------------------------------
+
 
 (defn- resolve-value
   [tokens prev-token value]
@@ -39,7 +157,7 @@
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
 
-(mf/defc input-token*
+(mf/defc input*
   [{:keys [name tokens token] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
@@ -110,11 +228,11 @@
         (fn []
           (rx/dispose! subs))))
 
-    [:> input* props]))
+    [:> ds/input* props]))
 
-(defn- on-composite-input-token-change
+(defn- on-composite-input-change
   ([form field value]
-   (on-composite-input-token-change form field value false))
+   (on-composite-input-change form field value false))
   ([form field value trim?]
    (letfn [(clean-errors [errors]
              (-> errors
@@ -126,7 +244,7 @@
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
-(mf/defc input-token-composite*
+(mf/defc input-composite*
   [{:keys [name tokens token] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
@@ -155,7 +273,7 @@
          (mf/deps resolve-stream input-name)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-input-value)]
-             (on-composite-input-token-change form input-name value true)
+             (on-composite-input-change form input-name value true)
              (rx/push! resolve-stream value))))
 
         props
@@ -205,43 +323,41 @@
                              (swap! form update :extra-errors dissoc :value)
                              (if (= input-value (str value))
                                (reset! hint* {})
-                               (reset! hint* {:message message :type "hint"})))))
-                       (fn [cause]
-                         (js/console.log "MUU" cause))))]
+                               (reset! hint* {:message message :type "hint"})))))))]
         (fn []
           (rx/dispose! subs))))
 
-    [:> input* props]))
+    [:> ds/input* props]))
 
-(defn- on-composite-indexed-input-token-change
-  ([form field index value indexed-type]
-   (on-composite-indexed-input-token-change form field index value indexed-type false))
-  ([form field index value indexed-type trim?]
+(defn- on-indexed-input-change
+  ([form field index value value-subfield]
+   (on-indexed-input-change form field index value value-subfield false))
+  ([form field index value value-subfield trim?]
    (letfn [(clean-errors [errors]
              (-> errors
                  (dissoc field)
                  (not-empty)))]
      (swap! form (fn [state]
                    (-> state
-                       (assoc-in [:data :value indexed-type index field] (if trim? (str/trim value) value))
+                       (assoc-in [:data :value value-subfield index field] (if trim? (str/trim value) value))
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
-(mf/defc input-token-indexed*
-  [{:keys [name tokens token index indexed-type] :rest props}]
+(mf/defc input-indexed*
+  [{:keys [name tokens token index value-subfield] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
 
         error
-        (get-in @form [:errors :value indexed-type index input-name])
+        (get-in @form [:errors :value value-subfield index input-name])
 
         value-from-form
-        (get-in @form [:data :value indexed-type index input-name] "")
+        (get-in @form [:data :value value-subfield index input-name] "")
 
         resolve-stream
         (mf/with-memo [token index input-name]
-          (if-let [value (get-in token [:value indexed-type index input-name])]
+          (if-let [value (get-in token [:value value-subfield index input-name])]
             (rx/behavior-subject value)
             (rx/subject)))
 
@@ -256,7 +372,7 @@
          (mf/deps resolve-stream input-name index)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-input-value)]
-             (on-composite-indexed-input-token-change form input-name index value indexed-type true)
+             (on-indexed-input-change form input-name index value value-subfield true)
              (rx/push! resolve-stream value))))
 
         props
@@ -276,7 +392,7 @@
           (mf/spread-props props {:hint-formated true})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index indexed-type]
+    (mf/with-effect [resolve-stream tokens token input-name index value-subfield]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token))
@@ -290,19 +406,19 @@
                          (cond
                            (and error (str/empty? (:error/value error)))
                            (do
-                             (swap! form update-in [:errors :value indexed-type index] dissoc input-name)
-                             (swap! form update-in [:data :value indexed-type index] dissoc input-name)
+                             (swap! form update-in [:errors :value value-subfield index] dissoc input-name)
+                             (swap! form update-in [:data :value value-subfield index] dissoc input-name)
                              (swap! form update :extra-errors dissoc :value)
                              (reset! hint* {}))
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value indexed-type index input-name] {:message error'})
+                             (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
                              (reset! hint* {:message error' :type "error"}))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
-                                 input-value (get-in @form [:data :value indexed-type index input-name] "")]
+                                 input-value (get-in @form [:data :value value-subfield index input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
                              (if (= input-value (str value))
@@ -311,4 +427,4 @@
         (fn []
           (rx/dispose! subs))))
 
-    [:> input* props]))
+    [:> ds/input* props]))

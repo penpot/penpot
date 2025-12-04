@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.shadow
+(ns app.main.ui.workspace.tokens.management.forms.shadow
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -17,11 +17,9 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as forms]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.tokens.management.create.color-input-token :refer [color-input-token-indexed*]]
-   [app.main.ui.workspace.tokens.management.create.form :as form]
-   [app.main.ui.workspace.tokens.management.create.input-token :refer [input-token-composite* input-token-indexed*]]
-   [app.main.ui.workspace.tokens.management.create.select-token :refer [select-composite*]]
-   [app.main.ui.workspace.tokens.management.create.token-form-validators :refer [check-self-reference default-validate-token]]
+   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
+   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-self-reference default-validate-token]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -75,30 +73,30 @@
    :spread "0"})
 
 (defn get-subtoken
-  [token index prop indexed-type]
-  (let [value (get-in token [:value indexed-type index prop])]
+  [token index prop value-subfield]
+  (let [value (get-in token [:value value-subfield index prop])]
     (d/without-nils
      {:type  (if (= prop :color) :color :number)
       :value value})))
 
 (mf/defc shadow-formset*
-  [{:keys [index token tokens remove-shadow-block show-button indexed-type] :as props}]
-  (let [inset-token (get-subtoken token index :inset indexed-type)
+  [{:keys [index token tokens remove-shadow-block show-button value-subfield] :as props}]
+  (let [inset-token (get-subtoken token index :inset value-subfield)
         inset-token (hooks/use-equal-memo inset-token)
 
-        color-token (get-subtoken token index :color indexed-type)
+        color-token (get-subtoken token index :color value-subfield)
         color-token (hooks/use-equal-memo color-token)
 
-        offset-x-token (get-subtoken token index :offset-x indexed-type)
+        offset-x-token (get-subtoken token index :offset-x value-subfield)
         offset-x-token (hooks/use-equal-memo offset-x-token)
 
-        offset-y-token (get-subtoken token index :offset-y indexed-type)
+        offset-y-token (get-subtoken token index :offset-y value-subfield)
         offset-y-token (hooks/use-equal-memo offset-y-token)
 
-        blur-token (get-subtoken token index :blur indexed-type)
+        blur-token (get-subtoken token index :blur value-subfield)
         blur-token (hooks/use-equal-memo blur-token)
 
-        spread-token (get-subtoken token index :spreadX indexed-type)
+        spread-token (get-subtoken token index :spread value-subfield)
         spread-token (hooks/use-equal-memo spread-token)
 
         on-button-click
@@ -110,14 +108,14 @@
     [:div {:class (stl/css :shadow-block)
            :data-testid (str "shadow-input-fields-" index)}
      [:div {:class (stl/css :select-wrapper)}
-      [:> select-composite* {:options [{:id "drop" :label "drop shadow" :icon i/drop-shadow}
-                                       {:id "inner" :label "inner shadow" :icon i/inner-shadow}]
-                             :aria-label (tr "workspace.tokens.shadow-inset")
-                             :token inset-token
-                             :tokens tokens
-                             :index index
-                             :indexed-type indexed-type
-                             :name :inset}]
+      [:> token.controls/select-indexed* {:options [{:id "drop" :label "drop shadow" :icon i/drop-shadow}
+                                                    {:id "inner" :label "inner shadow" :icon i/inner-shadow}]
+                                          :aria-label (tr "workspace.tokens.shadow-inset")
+                                          :token inset-token
+                                          :tokens tokens
+                                          :index index
+                                          :value-subfield value-subfield
+                                          :name :inset}]
       (when show-button
         [:> icon-button* {:variant "ghost"
                           :type "button"
@@ -126,39 +124,39 @@
                           :icon i/remove}])]
      [:div {:class (stl/css :inputs-wrapper)}
       [:div {:class (stl/css :input-row)}
-       [:> color-input-token-indexed*
+       [:> token.controls/indexed-color-input*
         {:placeholder (tr "workspace.tokens.token-value-enter")
          :aria-label (tr "workspace.tokens.color")
          :name :color
          :token color-token
-         :indexed-type indexed-type
+         :value-subfield value-subfield
          :index index
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-token-indexed*
+       [:> token.controls/input-indexed*
         {:aria-label (tr "workspace.tokens.shadow-x")
          :icon i/character-x
          :placeholder (tr "workspace.tokens.shadow-x")
          :name :offset-x
          :token offset-x-token
          :index index
-         :indexed-type indexed-type
+         :value-subfield value-subfield
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-token-indexed*
+       [:> token.controls/input-indexed*
         {:aria-label (tr "workspace.tokens.shadow-y")
          :icon i/character-y
          :placeholder (tr "workspace.tokens.shadow-y")
          :name :offset-y
          :token offset-y-token
          :index index
-         :indexed-type indexed-type
+         :value-subfield value-subfield
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-token-indexed*
+       [:> token.controls/input-indexed*
         {:aria-label (tr "workspace.tokens.shadow-blur")
          :placeholder (tr "workspace.tokens.shadow-blur")
          :name :blur
@@ -166,42 +164,42 @@
                                (str (tr "workspace.tokens.shadow-blur") ":")])
          :token blur-token
          :index index
-         :indexed-type indexed-type
+         :value-subfield value-subfield
          :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-token-indexed*
+       [:> token.controls/input-indexed*
         {:aria-label (tr "workspace.tokens.shadow-spread")
          :placeholder (tr "workspace.tokens.shadow-spread")
          :name :spread
          :slot-start (mf/html [:span {:class (stl/css :visible-label)}
                                (str (tr "workspace.tokens.shadow-spread") ":")])
          :token spread-token
-         :indexed-type indexed-type
+         :value-subfield value-subfield
          :index index
          :tokens tokens}]]]]))
 
 (mf/defc composite-form*
-  [{:keys [token tokens remove-shadow-block indexed-type] :as props}]
+  [{:keys [token tokens remove-shadow-block value-subfield] :as props}]
   (let [form
         (mf/use-ctx forms/context)
 
         length
-        (-> form deref :data :value indexed-type count)]
+        (-> form deref :data :value value-subfield count)]
 
     (for [index (range length)]
       [:> shadow-formset* {:key index
                            :index index
                            :token token
                            :tokens tokens
-                           :indexed-type indexed-type
+                           :value-subfield value-subfield
                            :remove-shadow-block remove-shadow-block
                            :show-button (> length 1)}])))
 
 (mf/defc reference-form*
   [{:keys [token tokens] :as props}]
   [:div {:class (stl/css :input-row-reference)}
-   [:> input-token-composite*
+   [:> token.controls/input-composite*
     {:placeholder (tr "workspace.tokens.reference-composite-shadow")
      :aria-label (tr "labels.reference")
      :icon i/drop-shadow
@@ -210,21 +208,19 @@
      :tokens tokens}]])
 
 (mf/defc tabs-wrapper*
-  [{:keys [token tokens form active-tab on-toggle-tab] :rest props}]
-  (let [indexed-type (get token :type)
-
-        on-add-shadow-block
+  [{:keys [token tokens form tab toggle subfield] :rest props}]
+  (let [on-add-shadow-block
         (mf/use-fn
-         (mf/deps indexed-type)
+         (mf/deps subfield)
          (fn []
-           (swap! form  update-in [:data :value indexed-type] conj default-token-shadow)))
+           (swap! form  update-in [:data :value subfield] conj default-token-shadow)))
 
         remove-shadow-block
         (mf/use-fn
-         (mf/deps indexed-type)
+         (mf/deps subfield)
          (fn [index event]
            (dom/prevent-default event)
-           (swap! form update-in [:data :value indexed-type] #(d/remove-at-index % index))))]
+           (swap! form update-in [:data :value subfield] #(d/remove-at-index % index))))]
 
     [:*
      [:div {:class (stl/css :title-bar)}
@@ -235,8 +231,8 @@
                         :on-click on-add-shadow-block
                         :icon i/add}]
       [:& radio-buttons {:class (stl/css :listing-options)
-                         :selected (d/name active-tab)
-                         :on-change on-toggle-tab
+                         :selected (d/name tab)
+                         :on-change toggle
                          :name "reference-composite-tab"}
        [:& radio-button {:icon i/layers
                          :value "composite"
@@ -247,11 +243,11 @@
                          :title (tr "workspace.tokens.use-reference")
                          :id "reference-opt"}]]]
 
-     (if (= active-tab :composite)
+     (if (= tab :composite)
        [:> composite-form* {:token token
                             :tokens tokens
                             :remove-shadow-block remove-shadow-block
-                            :indexed-type indexed-type}]
+                            :value-subfield subfield}]
 
        [:> reference-form* {:token token
                             :tokens tokens}])]))
@@ -318,31 +314,30 @@
 
          (or ref-valid? valid-composite-shadow?)))]]))
 
+(defn- make-default-value
+  [value]
+  (cond
+    (string? value)
+    {:reference value
+     :shadow   []}
+
+    (vector? value)
+    {:reference nil
+     :shadow   value}
+
+    :else
+    {:reference nil
+     :shadow   [default-token-shadow]}))
+
 (mf/defc form*
   [{:keys [token
            token-type] :as props}]
-
-  (let [default-value-generator
-        (fn [raw-value]
-          (cond
-            (string? raw-value)
-            {:reference raw-value
-             :shadow   []}
-
-            (vector? raw-value)
-            {:reference nil
-             :shadow   raw-value}
-
-            :else
-            {:reference nil
-             :shadow   [default-token-shadow]}))
-
-        token
+  (let [token
         (mf/with-memo [token]
           (or token
               (if-let [value (get token :value)]
                 {:type token-type
-                 :value (default-value-generator value)}
+                 :value (make-default-value value)}
 
                 {:type token-type
                  :value {:reference nil
@@ -350,7 +345,7 @@
         initial
         (mf/with-memo [token]
           (let [raw-value (:value token)
-                value (default-value-generator raw-value)]
+                value (make-default-value raw-value)]
 
             {:name        (:name token "")
              :description (:description token "")
@@ -360,8 +355,8 @@
                                       :token-type token-type
                                       :initial initial
                                       :make-schema make-schema
-                                      :form-type :indexed
-                                      :indexed-type :shadow
-                                      :input-token-component tabs-wrapper*
-                                      :validate-token validate-shadow-token})]
-    [:> form/form* props]))
+                                      :type :indexed
+                                      :value-subfield :shadow
+                                      :input-component tabs-wrapper*
+                                      :validator validate-shadow-token})]
+    [:> generic/form* props]))

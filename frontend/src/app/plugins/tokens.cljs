@@ -13,7 +13,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.management.create.token-form-validators :as form-validator]
+   [app.main.ui.workspace.tokens.management.forms.validators :as form-validator]
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]

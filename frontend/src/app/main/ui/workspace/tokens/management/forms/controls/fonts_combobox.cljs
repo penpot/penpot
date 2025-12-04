@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.combobox-token-fonts
+(ns app.main.ui.workspace.tokens.management.forms.controls.fonts-combobox
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
@@ -23,6 +23,30 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+;; --- Font Picker Inputs -------------------------------------------------------
+;;
+;; We provide two versions of the font picker: the normal (primitive) input and
+;; the composite input. Both allow selecting a font-family either by typing free
+;; text or by choosing from the list of fonts loaded in the application. Comma-
+;; separated values are treated as literal font-family lists.
+;;
+;; 1) Normal Font Picker (primitive)
+;;    - Used when the token’s value *is itself* a font-family (string) or a
+;;      reference to another token.
+;;    - The input writes directly to `:value`.
+;;    - Validation ensures the string is a valid font-family or a valid token
+;;      reference.
+;;
+;; 2) Composite Font Picker
+;;    - Used inside typography tokens, where `:value` is a map (e.g. contains
+;;      :font-family, :font-weight, :letter-spacing, etc.).
+;;    - The input writes to the specific subfield `[:value :font-family]`.
+;;    - Only this field is validated and updated—other typography fields remain
+;;      untouched.
+;;
+;; Both modes share the same UI behaviour, but differ in how they store and
+;; validate data within the form state.
 
 (defn- resolve-value
   [tokens prev-token value]
@@ -45,7 +69,7 @@
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
 
-(mf/defc font-picker-combobox*
+(mf/defc fonts-combobox*
   [{:keys [token tokens name] :rest props}]
   (let [form       (mf/use-ctx fc/context)
         input-name name
@@ -172,7 +196,7 @@
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
-(mf/defc font-picker-composite-combobox*
+(mf/defc composite-fonts-combobox*
   [{:keys [token tokens name] :rest props}]
   (let [form       (mf/use-ctx fc/context)
         input-name name

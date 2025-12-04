@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.color
+(ns app.main.ui.workspace.tokens.management.forms.color
   (:require
    [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
-   [app.main.ui.workspace.tokens.management.create.color-input-token :refer [color-input-token*]]
-   [app.main.ui.workspace.tokens.management.create.form :as form]
+   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -49,5 +49,5 @@
 (mf/defc form*
   [props]
   (let [props (mf/spread-props props {:make-schema make-schema
-                                      :input-token-component color-input-token*})]
-    [:> form/form* props]))
+                                      :input-component token.controls/color-input*})]
+    [:> generic/form* props]))

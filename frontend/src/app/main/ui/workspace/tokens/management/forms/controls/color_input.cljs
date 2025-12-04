@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.create.color-input-token
+(ns app.main.ui.workspace.tokens.management.forms.controls.color-input
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as color]
@@ -16,7 +16,7 @@
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
-   [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.colorpicker :as colorpicker]
@@ -27,6 +27,30 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+;; --- Color Inputs -------------------------------------------------------------
+;;
+;; The color input exists in two variants: the normal (primitive) input and the
+;; indexed input. Both support hex, rgb(), hsl(), named colors, opacity changes,
+;; color-picker selection, and token references.
+;;
+;; 1) Normal Color Input (primitive)
+;;    - Used when the token’s `:value` *is a single color* or a reference.
+;;    - Writes directly to `:value`.
+;;    - Validation ensures the color is in an accepted format or is a valid
+;;      color token reference.
+
+;; 2) Indexed Color Input
+;;    - Used when the token’s value stores an array of items (e.g. inside
+;;      shadows, where each shadow layer has its own :color field).
+;;    - The input writes to a nested subfield:
+;;         [:value <subfield> <index> :color]
+;;    - Only that specific color entry is validated.
+;;    - Other properties (offsets, blur, inset, etc.) remain untouched.
+;;
+;; Both variants provide identical color-picker and text-input behavior, but
+;; differ in how they persist the value within the form’s nested structure.
+
 
 (defn- resolve-value
   [tokens prev-token value]
@@ -102,7 +126,7 @@
        :on-finish-drag on-finish-drag
        :on-change on-change'}]]))
 
-(mf/defc color-input-token*
+(mf/defc color-input*
   [{:keys [name tokens token] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
@@ -253,39 +277,39 @@
           (rx/dispose! subs))))
 
     [:*
-     [:> input* props]
+     [:> ds/input* props]
 
      (when color-ramp-open?
        [:> ramp* {:color value :on-change on-change-value}])]))
 
-(defn- on-composite-indexed-input-token-change
-  ([form field index value indexed-type]
-   (on-composite-indexed-input-token-change form field index value indexed-type false))
-  ([form field index value indexed-type trim?]
+(defn- on-indexed-input-change
+  ([form field index value value-subfield]
+   (on-indexed-input-change form field index value value-subfield false))
+  ([form field index value value-subfield trim?]
    (letfn [(clean-errors [errors]
              (-> errors
                  (dissoc field)
                  (not-empty)))]
      (swap! form (fn [state]
                    (-> state
-                       (assoc-in [:data :value indexed-type index field] (if trim? (str/trim value) value))
+                       (assoc-in [:data :value value-subfield index field] (if trim? (str/trim value) value))
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
-(mf/defc color-input-token-indexed*
-  [{:keys [name tokens token index indexed-type] :rest props}]
+(mf/defc indexed-color-input*
+  [{:keys [name tokens token index value-subfield] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
 
         error
-        (get-in @form [:errors :value indexed-type index input-name])
+        (get-in @form [:errors :value value-subfield index input-name])
 
         value
-        (get-in @form [:data :value indexed-type index input-name] "")
+        (get-in @form [:data :value value-subfield index input-name] "")
 
         color-resolved
-        (get-in @form [:data :value indexed-type index :color-result] "")
+        (get-in @form [:data :value value-subfield index :color-result] "")
 
         valid-color (or (tinycolor/valid-color value)
                         (tinycolor/valid-color color-resolved))
@@ -309,7 +333,7 @@
 
         resolve-stream
         (mf/with-memo [token]
-          (if-let [value (get-in token [:value indexed-type index input-name])]
+          (if-let [value (get-in token [:value value-subfield index input-name])]
             (rx/behavior-subject value)
             (rx/subject)))
 
@@ -363,7 +387,7 @@
                                  (tinycolor/set-alpha (or alpha 1))
                                  (tinycolor/->string format))]
              (when (not= value color-value)
-               (on-composite-indexed-input-token-change form input-name index color-value indexed-type true)
+               (on-indexed-input-change form input-name index color-value value-subfield true)
                (rx/push! resolve-stream color-value)))))
 
         on-change
@@ -374,7 +398,7 @@
                  value (if (tinycolor/hex-without-hash-prefix? raw-value)
                          (dm/str "#" raw-value)
                          raw-value)]
-             (on-composite-indexed-input-token-change form input-name index value indexed-type true)
+             (on-indexed-input-change form input-name index value value-subfield true)
              (rx/push! resolve-stream value))))
 
         props
@@ -390,7 +414,7 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index indexed-type]
+    (mf/with-effect [resolve-stream tokens token input-name index value-subfield]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token))
@@ -404,24 +428,24 @@
                          (cond
                            (and error (str/empty? (:error/value error)))
                            (do
-                             (swap! form update-in [:errors :value indexed-type index] dissoc input-name)
-                             (swap! form update-in [:data :value indexed-type index] dissoc input-name)
-                             (swap! form assoc-in [:data :value indexed-type index :color-result] "")
+                             (swap! form update-in [:errors :value value-subfield index] dissoc input-name)
+                             (swap! form update-in [:data :value value-subfield index] dissoc input-name)
+                             (swap! form assoc-in [:data :value value-subfield index :color-result] "")
                              (swap! form update :extra-errors dissoc :value)
                              (reset! hint* {}))
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value indexed-type index input-name] {:message error'})
-                             (swap! form assoc-in [:data :value indexed-type index :color-result] "")
+                             (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
+                             (swap! form assoc-in [:data :value value-subfield index :color-result] "")
                              (reset! hint* {:message error' :type "error"}))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
-                                 input-value (get-in @form [:data :value indexed-type index input-name] "")]
+                                 input-value (get-in @form [:data :value value-subfield index input-name] "")]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (swap! form assoc-in [:data :value indexed-type index :color-result] (dwtf/format-token-value value))
+                             (swap! form assoc-in [:data :value value-subfield index :color-result] (dwtf/format-token-value value))
                              (if (= input-value (str value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
@@ -429,7 +453,7 @@
           (rx/dispose! subs))))
 
     [:*
-     [:> input* props]
+     [:> ds/input* props]
 
      (when color-ramp-open?
        [:> ramp* {:color value :on-change on-change-value}])]))
