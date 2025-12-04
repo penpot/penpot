@@ -24,7 +24,8 @@
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
-   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -775,29 +776,11 @@
      (when (= (count interactions) 0)
        [:div {:class (stl/css :section)}
         [:div {:class (stl/css :content)}
-         [:div {:class (stl/css :help)}
-
+         [:div {:class (stl/css :empty)}
           (when framed-shape?
-            [:div {:class (stl/css :help-group)}
-             [:div {:class (stl/css :help-icon)}
-              [:> icon* {:icon-id i/add
-                         :size "l"
-                         :class (stl/css :help-icon-inner)}]]
-             [:div {:class (stl/css :help-text)}
-              (tr "workspace.options.add-interaction")]])
-
-          [:div {:class (stl/css :help-group)}
-           [:div {:class (stl/css :help-icon)}
-            [:> icon* {:icon-id i/interaction
-                       :size "l"
-                       :class (stl/css :help-icon-inner)}]]
-           [:div {:class (stl/css :help-text)}
-            (tr "workspace.options.select-a-shape")]]
-
-          [:div {:class (stl/css :help-group)}
-           [:div {:class (stl/css :help-icon)}
-            [:> icon* {:icon-id i/play
-                       :size "l"
-                       :class (stl/css :help-icon-inner)}]]
-           [:div {:class (stl/css :help-text)}
-            (tr "workspace.options.use-play-button")]]]]])]))
+            [:> empty-state* {:icon i/add
+                              :text (tr "workspace.options.add-interaction")}])
+          [:> empty-state* {:icon i/interaction
+                            :text (tr "workspace.options.select-a-shape")}]
+          [:> empty-state* {:icon i/play
+                            :text (tr "workspace.options.use-play-button")}]]]])]))

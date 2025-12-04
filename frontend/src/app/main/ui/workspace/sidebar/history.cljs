@@ -12,6 +12,8 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
@@ -327,8 +329,8 @@
     [:div {:class (stl/css :history-toolbox)}
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
-        [:div {:class (stl/css :history-entry-empty-icon)} deprecated-icon/history]
-        [:div {:class (stl/css :history-entry-empty-msg)} (tr "workspace.undo.empty")]]
+        [:> empty-state* {:icon i/history
+                          :text (tr "workspace.undo.empty")}]]
        [:ul {:class (stl/css :history-entries)}
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
              [:& history-entry {:key (str "entry-" idx-entry)

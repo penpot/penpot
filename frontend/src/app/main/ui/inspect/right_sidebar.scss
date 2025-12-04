@@ -81,36 +81,14 @@
 .empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: $sz-40;
-  padding-top: $sz-24;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
 }
 
-.code-info,
-.help-info {
-  @include deprecated.flexColumn;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--sp-m);
-  margin-inline-end: var(--sp-s);
-}
-
-.placeholder-icon {
-  @extend .empty-icon;
-}
-
-.placeholder-label {
-  @include deprecated.bodySmallTypography;
-  text-align: center;
-  inline-size: px2rem(200);
-  color: var(--empty-message-foreground-color);
-}
-
-.more-info-btn {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
-  block-size: $sz-32;
-  padding: var(--sp-s) var(--sp-xxl);
+.empty-button {
+  display: flex;
+  justify-content: center;
 }
 
 .inspect-tab-switcher {
