@@ -774,7 +774,7 @@ test.describe("Tokens: Apply token", () => {
     await workspace.layers
       .getByTestId("layer-row")
       .nth(1)
-      .getByRole("button", { name: "Toggle layer" })
+      .getByTestId("toggle-content")
       .click();
 
     await workspace.layers.getByTestId("layer-row").nth(2).click();

@@ -116,5 +116,8 @@
     "watcher": "^2.3.1",
     "workerpool": "^9.3.2",
     "xregexp": "^5.1.2"
+  },
+  "dependencies": {
+    "@tokens-studio/tokenscript-interpreter": "^0.23.1"
   }
 }
