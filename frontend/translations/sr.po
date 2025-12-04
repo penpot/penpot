@@ -491,7 +491,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"датотеке са дељеним библиотекама ће бити укључене у извоз, одржавајући "
+"Датотеке са дељеним библиотекама ће бити укључене у извоз, одржавајући "
 "њихову повезаност."
 
 #: src/app/main/ui/exports/files.cljs:165

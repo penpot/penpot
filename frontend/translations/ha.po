@@ -430,7 +430,7 @@ msgstr "za ka iya fitar da kundi daya ko fiye ta hanyar tura taska. \"me \"*?"
 
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
-msgstr "manhajar tura kundi ta kunshi fitarwa, tattali mahaxarsu."
+msgstr "Manhajar tura kundi ta kunshi fitarwa, tattali mahaxarsu."
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"
