@@ -133,7 +133,7 @@
            (swap! shorthands* assoc (:panel shorthand) (:property shorthand))))]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
      ;;  TOKENS PANEL
-     (when (or active-themes active-sets)
+     (when (or (seq active-themes) (seq active-sets))
        [:li
         [:> style-box* {:panel :token}
          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
