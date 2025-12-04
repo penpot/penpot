@@ -18,11 +18,13 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -626,7 +628,9 @@
           (when-let [tokens (some-> (dsh/lookup-file-data state)
                                     (get :tokens-lib)
                                     (ctob/get-tokens-in-active-sets))]
-            (->> (sd/resolve-tokens tokens)
+            (->> (if (contains? cf/flags :tokenscript)
+                   (rx/of (ts/resolve-tokens tokens))
+                   (sd/resolve-tokens tokens))
                  (rx/mapcat
                   (fn [resolved-tokens]
                     (let [undo-id (js/Symbol)
@@ -644,6 +648,9 @@
                           any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
                           resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
+                          resolved-value (if (contains? cf/flags :tokenscript)
+                                           (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                           resolved-value)
                           tokenized-attributes (cft/attributes-map attributes token)
                           type (:type token)]
                       (rx/concat
