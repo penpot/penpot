@@ -7745,6 +7745,10 @@ msgstr ""
 "Invalid token value: only none, Uppercase, Lowercase or Capitalize are "
 "accepted"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr "Invalid token value: only text delimited by ',' allowed"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:85
 msgid "workspace.tokens.invalid-text-decoration-token-value"
 msgstr "Invalid token value: only none, underline and strike-through are accepted"
