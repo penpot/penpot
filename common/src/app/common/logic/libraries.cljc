@@ -12,8 +12,11 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.common :as gco]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
@@ -26,6 +29,7 @@
    [app.common.types.library :as ctl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path.segment :as segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
@@ -1876,6 +1880,44 @@
                    roperations'
                    uoperations')))))))
 
+(defn- set-path-new-values
+  [current-shape prev-shape transform]
+  (let [new-content   (segment/transform-content
+                       (:content current-shape)
+                       (gmt/transform-in (gpt/point 0 0) transform))
+        new-points    (-> (segment/content->selrect new-content)
+                          (grc/rect->points))
+        points-center (gco/points->center new-points)
+        new-selrect   (gsh/calculate-selrect new-points points-center)
+        shape         (assoc current-shape
+                             :content new-content
+                             :points new-points
+                             :selrect new-selrect)
+
+        prev-center   (segment/content-center (:content prev-shape))
+        delta         (gpt/subtract points-center (first new-points))
+        new-pos       (gpt/subtract prev-center delta)]
+    (gsh/absolute-move shape new-pos)))
+
+(defn- switch-path-change-value
+  [prev-shape           ;; The shape before the switch
+   current-shape        ;; The shape after the switch (a clean copy)
+   ref-shape            ;; The referenced shape on the main component
+                        ;; before the switch
+   attr]
+  (let [old-width (-> ref-shape :selrect :width)
+        new-width (-> prev-shape :selrect :width)
+
+        old-height (-> ref-shape :selrect :height)
+        new-height (-> prev-shape :selrect :height)
+
+        transform (-> (gpt/point (/ new-width old-width)
+                                 (/ new-height old-height))
+                      (gmt/scale-matrix))
+
+        shape     (set-path-new-values current-shape prev-shape transform)]
+    (get shape attr)))
+
 
 (defn- switch-text-change-value
   [prev-content         ;; The :content of the text before the switch
@@ -2027,6 +2069,10 @@
                (= :content attr)
                (touched attr-group))
 
+              path-change?
+              (and (= :path (:type current-shape))
+                   (contains? #{:points :selrect :content} attr))
+
               ;; position-data is a special case because can be affected by :geometry-group and :content-group
               ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
               ;; so it's calculated again
@@ -2054,6 +2100,12 @@
                                             (:content current-shape)
                                             (:content origin-ref-shape)
                                             touched)
+
+                  path-change?
+                  (switch-path-change-value previous-shape
+                                            current-shape
+                                            origin-ref-shape
+                                            attr)
 
                   :else
                   (get previous-shape attr)))
