@@ -362,7 +362,7 @@
        [:email ::sm/email]
        [:role [::sm/one-of ctt/valid-roles]]]]]
     [:team-id ::sm/uuid]
-    [:resend? ::sm/boolean]]
+    [:resend? {:optional true} ::sm/boolean]]
    [:fn (fn [attrs]
           (or (contains? attrs :emails)
               (contains? attrs :invitations)))]])
