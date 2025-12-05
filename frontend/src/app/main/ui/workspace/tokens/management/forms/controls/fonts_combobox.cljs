@@ -41,7 +41,7 @@
 ;; 2) Composite Font Picker
 ;;    - Used inside typography tokens, where `:value` is a map (e.g. contains
 ;;      :font-family, :font-weight, :letter-spacing, etc.).
-;;    - The input writes to the specific subfield `[:value :font-family]`.
+;;    - The input writes to the specific value-subfield `[:value :font-family]`.
 ;;    - Only this field is validated and updated—other typography fields remain
 ;;      untouched.
 ;;

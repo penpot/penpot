@@ -181,13 +181,13 @@
      :tokens tokens}]])
 
 (mf/defc tabs-wrapper*
-  [{:keys [token tokens tab toggle] :rest props}]
+  [{:keys [token tokens tab handle-toggle] :rest props}]
   [:*
    [:div {:class (stl/css :title-bar)}
     [:div {:class (stl/css :title)} (tr "labels.typography")]
     [:& radio-buttons {:class (stl/css :listing-options)
                        :selected (d/name tab)
-                       :on-change toggle
+                       :on-change handle-toggle
                        :name "reference-composite-tab"}
      [:& radio-button {:icon i/layers
                        :value "composite"

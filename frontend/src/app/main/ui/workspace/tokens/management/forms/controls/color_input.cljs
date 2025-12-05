@@ -43,8 +43,8 @@
 ;; 2) Indexed Color Input
 ;;    - Used when the token’s value stores an array of items (e.g. inside
 ;;      shadows, where each shadow layer has its own :color field).
-;;    - The input writes to a nested subfield:
-;;         [:value <subfield> <index> :color]
+;;    - The input writes to a nested value-subfield:
+;;         [:value <value-subfield> <index> :color]
 ;;    - Only that specific color entry is validated.
 ;;    - Other properties (offsets, blur, inset, etc.) remain untouched.
 ;;
@@ -436,19 +436,21 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
-                             (swap! form assoc-in [:data :value value-subfield index :color-result] "")
-                             (reset! hint* {:message error' :type "error"}))
+                             (do
+                               (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
+                               (swap! form assoc-in [:data :value value-subfield index :color-result] "")
+                               (reset! hint* {:message error' :type "error"})))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
                                  input-value (get-in @form [:data :value value-subfield index input-name] "")]
-                             (swap! form update :errors dissoc :value)
-                             (swap! form update :extra-errors dissoc :value)
-                             (swap! form assoc-in [:data :value value-subfield index :color-result] (dwtf/format-token-value value))
-                             (if (= input-value (str value))
-                               (reset! hint* {})
-                               (reset! hint* {:message message :type "hint"})))))))]
+                             (do
+                               (swap! form update :errors dissoc :value)
+                               (swap! form update :extra-errors dissoc :value)
+                               (swap! form assoc-in [:data :value value-subfield index :color-result] (dwtf/format-token-value value))
+                               (if (= input-value (str value))
+                                 (reset! hint* {})
+                                 (reset! hint* {:message message :type "hint"}))))))))]
         (fn []
           (rx/dispose! subs))))
 

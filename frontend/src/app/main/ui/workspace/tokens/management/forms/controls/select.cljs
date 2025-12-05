@@ -13,10 +13,10 @@
 ;; --- Select Input (Indexed) --------------------------------------------------
 ;;
 ;; This input type is part of the indexed system, used for fields that exist
-;; inside an array of maps stored in a subfield of :value.
+;; inside an array of maps stored in a value-subfield of :value.
 ;;
 ;; - Writes to a nested location:
-;;       [:value <subfield> <index> <field>]
+;;       [:value <value-subfield> <index> <field>]
 ;; - Each item in the array has its own select input, independent of others.
 ;; - Validation ensures the selected value is valid for that field.
 ;; - Changing one item does not affect the other items in the array.

@@ -230,16 +230,29 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-component
-        {:placeholder (or input-value-placeholder (tr "workspace.tokens.token-value-enter"))
-         :label (tr "workspace.tokens.token-value")
-         :name :value
-         :form form
-         :token token
-         :tokens tokens
-         :tab active-tab
-         :subfield value-subfield
-         :toggle on-toggle-tab}]]
+       (case type
+         :indexed
+         [:> input-component
+          {:token          token
+           :tokens         tokens
+           :tab            active-tab
+           :value-subfield value-subfield
+           :handle-toggle  on-toggle-tab}]
+
+         :composite
+         [:> input-component
+          {:token         token
+           :tokens        tokens
+           :tab           active-tab
+           :handle-toggle on-toggle-tab}]
+
+         [:> input-component
+          {:placeholder (or input-value-placeholder
+                            (tr "workspace.tokens.token-value-enter"))
+           :label       (tr "workspace.tokens.token-value")
+           :name        :value
+           :token       token
+           :tokens      tokens}])]
 
       [:div {:class (stl/css :input-row)}
        [:> fc/form-input* {:id "token-description"

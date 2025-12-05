@@ -48,7 +48,7 @@
 ;; 2) COMPOSITE INPUTS
 ;;    ----------------------------------------------------------
 ;;    Used when the token contains a set of *named fields* inside :value.
-;;    The UI must write into a specific subfield inside the :value map.
+;;    The UI must write into a specific value-subfield inside the :value map.
 ;;
 ;;    Example: typography tokens
 ;;      {:value {:font-family "Inter"
@@ -64,7 +64,7 @@
 ;;      * Validation rules apply per-field.
 ;;
 ;;    In practice:
-;;      - The component knows which subfield to update.
+;;      - The component knows which value-subfield to update.
 ;;      - The form accumulates multiple fields into a single map under :value.
 ;;
 ;;
