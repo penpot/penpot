@@ -23,28 +23,28 @@
 
     :util-highlight
     {:entries [app.util.code-highlight]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-auth
     {:entries [app.main.ui.auth
                app.main.ui.auth.verify-token]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-viewer
     {:entries [app.main.ui.viewer]
-     :depends-on #{:main :main-auth}}
+     :depends-on #{:shared :main-auth}}
 
     :main-workspace
     {:entries [app.main.ui.workspace]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-dashboard
     {:entries [app.main.ui.dashboard]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-settings
     {:entries [app.main.ui.settings]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :render
     {:entries [app.render]

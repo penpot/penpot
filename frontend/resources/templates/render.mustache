@@ -7,12 +7,14 @@
     <link rel="icon" href="images/favicon.png" />
 
     <script>
-      window.penpotVersion = "%version%";
+      globalThis.penpotVersion = "{{& version}}";
+      globalThis.penpotBuildDate = "{{& build_date}}";
     </script>
 
     {{# manifest}}
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
+    <script type="importmap">{{& importmap }}</script>
     {{/manifest}}
   </head>
   <body>
@@ -20,7 +22,7 @@
     {{# manifest}}
     <script type="module" src="{{& libs}}"></script>
     <script type="module">
-      import { init } from "{{& render}}";
+      import { init } from "{{& render_main}}";
       init();
     </script>
     {{/manifest}}
