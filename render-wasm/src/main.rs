@@ -163,6 +163,19 @@ pub extern "C" fn render_sync() {
 pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
+        state.use_shape(id);
+
+        // look for an existing root shape, and create it if missing
+        let mut was_root_missing = false;
+        if !state.shapes.has(&Uuid::nil()) {
+            state.shapes.add_shape(Uuid::nil());
+            was_root_missing = true;
+        }
+
+        if was_root_missing {
+            state.set_parent_for_current_shape(Uuid::nil());
+        }
+
         state.rebuild_tiles_from(Some(&id));
         state
             .render_sync_shape(&id, performance::get_time())
