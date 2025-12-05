@@ -83,7 +83,7 @@
 (def ^:private schema:notify-team-change
   [:map
    [:id ::sm/uuid]
-   [:organization-id ::sm/int]])
+   [:organization-id ::sm/text]])
 
 
 (sv/defmethod ::notify-team-change
