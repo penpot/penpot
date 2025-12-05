@@ -7674,6 +7674,10 @@ msgstr "Tipo de sombra no válida: solo se aceptan 'innerShadow' o 'dropShadow'"
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Valor no válido: debe hacer referencia a un token tipográfico compuesto."
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Valor no válido: debe hacer referencia a un token de sombra compuesto."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Valor de token no válido: %s"

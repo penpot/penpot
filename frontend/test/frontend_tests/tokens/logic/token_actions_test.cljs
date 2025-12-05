@@ -474,8 +474,8 @@
     (t/async
       done
       (let [shadow-token {:name "shadow.sm"
-                          :value [{:offsetX 10
-                                   :offsetY 10
+                          :value [{:offset-x 10
+                                   :offset-y 10
                                    :blur 10
                                    :spread 10
                                    :color "rgba(0,0,0,0.5)"

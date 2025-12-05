@@ -8,18 +8,16 @@
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 
-.form-wrapper {
-  width: $sz-384;
-  position: relative;
-}
-
-.token-rows {
+.inputs-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-l);
+  gap: var(--sp-m);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
+  padding-inline-start: var(--sp-m);
 }
 
 .input-row {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
@@ -30,29 +28,9 @@
   grid-template-columns: 1fr auto;
 }
 
-.form-modal-title {
-  @include t.use-typography("headline-medium");
+.title {
+  @include t.use-typography("body-small");
   color: var(--color-foreground-primary);
   display: flex;
   align-items: center;
-}
-
-.button-row {
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: end;
-  gap: var(--sp-m);
-  padding-block-start: var(--sp-s);
-}
-
-.with-delete {
-  grid-template-columns: 1fr auto auto;
-}
-
-.warning-name-change-notification-wrapper {
-  margin-block-start: var(--sp-l);
-}
-
-.delete-btn {
-  justify-self: start;
 }

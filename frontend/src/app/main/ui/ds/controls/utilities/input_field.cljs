@@ -53,10 +53,15 @@
                                                 "true")
                                 :aria-describedby (when has-hint
                                                     (str id "-hint"))
-                                :aria-labelledby tooltip-id
                                 :type (d/nilv type "text")
                                 :id id
                                 :max-length (d/nilv max-length max-input-length)})
+
+        props (if (and aria-label (not (some? icon)))
+                (mf/spread-props props
+                                 {:aria-label aria-label})
+                (mf/spread-props props
+                                 {:aria-labelledby tooltip-id}))
         inside-class (stl/css-case :input-wrapper true
                                    :has-hint has-hint
                                    :hint-type-hint (= hint-type "hint")
