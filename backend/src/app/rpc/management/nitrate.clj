@@ -20,9 +20,7 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as doc]
-   [app.tokens :as tokens]
-   [app.util.services :as sv]
-   [cuerdas.core :as str]))
+   [app.util.services :as sv]))
 
 ;; ---- API: authenticate
 (def ^:private schema:profile
