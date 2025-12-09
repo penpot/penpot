@@ -7,6 +7,7 @@ RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     mkdir -p /opt/data/assets; \
     chown -R penpot:penpot /opt/data; \
+    mkdir -p /etc/nginx/overrides/main.d/; \
     mkdir -p /etc/nginx/overrides/http.d/; \
     mkdir -p /etc/nginx/overrides/server.d/; \
     mkdir -p /etc/nginx/overrides/location.d/;
