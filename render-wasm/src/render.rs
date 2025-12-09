@@ -1479,8 +1479,11 @@ impl RenderState {
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
 
+                // Skip expensive drop shadow rendering in fast mode (during pan/zoom)
+                let skip_shadows = self.options.is_fast_mode();
+
                 // For text shapes, render drop shadow using text rendering logic
-                if !matches!(element.shape_type, Type::Text(_)) {
+                if !skip_shadows && !matches!(element.shape_type, Type::Text(_)) {
                     // Shadow rendering technique: Two-pass approach for proper opacity handling
                     //
                     // The shadow rendering uses a two-pass technique to ensure that overlapping

@@ -235,9 +235,20 @@ pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     });
 }
 
+/// Called at the start of pan/zoom interaction to enable fast rendering mode.
+/// In fast mode, expensive operations like shadows are skipped for better performance.
+#[no_mangle]
+pub extern "C" fn set_view_start() {
+    with_state_mut!(state, {
+        state.render_state.options.set_fast_mode(true);
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn set_view_end() {
     with_state_mut!(state, {
+        // Disable fast mode when interaction ends
+        state.render_state.options.set_fast_mode(false);
         // We can have renders in progress
         state.render_state.cancel_animation_frame();
         if state.render_state.options.is_profile_rebuild_tiles() {
