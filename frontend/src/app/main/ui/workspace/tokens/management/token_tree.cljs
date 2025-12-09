@@ -36,11 +36,14 @@
     [:li {:class (stl/css :folder-node)}
      [:> layer-button* {:label (:name node)
                         :expanded expanded
+                        :aria-expanded expanded
+                        :aria-controls (str "folder-children-" (:path node))
                         :is-expandable (:has-children node)
                         :on-toggle-expand swap-folder-expanded}]
      (when expanded
        (let [children-fn (:children-fn node)]
-         [:div {:class (stl/css :folder-children-wrapper)}
+         [:div {:class (stl/css :folder-children-wrapper)
+                :id (str "folder-children-" (:path node))}
           (when children-fn
             (let [children (children-fn)]
               (for [child children]
@@ -69,6 +72,7 @@
 (def ^:private schema:token-tree
   [:map
    [:tokens :any]
+   [:type :keyword]
    [:selected-shapes :any]
    [:is-selected-inside-layout {:optional true} :boolean]
    [:active-theme-tokens {:optional true} :any]

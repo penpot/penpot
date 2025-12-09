@@ -151,7 +151,7 @@
        (let [tokens (get tokens-by-type type)]
          [:> token-group* {:key (name type)
                            :tokens tokens
-                           :is-open (get open-status type false)
+                           :is-expanded (get open-status type false)
                            :type type
                            :selected-ids selected
                            :selected-shapes selected-shapes

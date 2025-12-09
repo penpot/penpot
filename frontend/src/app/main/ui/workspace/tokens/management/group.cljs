@@ -64,13 +64,13 @@
 
 (mf/defc token-group*
   {::mf/schema schema:token-group}
-  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib is-open selected-ids]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib is-expanded selected-ids]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
         editing-ref  (mf/deref refs/workspace-editor-state)
         not-editing? (empty? editing-ref)
 
-        is-open (d/nilv is-open false)
+        is-expanded (d/nilv is-expanded false)
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -95,8 +95,8 @@
 
         on-toggle-open-click
         (mf/use-fn
-         (mf/deps is-open type)
-         #(st/emit! (dwtl/set-token-type-section-open type (not is-open))))
+         (mf/deps is-expanded type)
+         #(st/emit! (dwtl/set-token-type-section-open type (not is-expanded))))
 
         on-popover-open-click
         (mf/use-fn
@@ -124,11 +124,14 @@
                (st/emit! (dwta/toggle-token {:token token
                                              :shape-ids selected-ids}))))))]
 
-    [:div {:class (stl/css :token-section-wrapper)}
+    [:div {:class (stl/css :token-section-wrapper)
+           :data-testid (dm/str "section-" (name type))}
      [:> layer-button* {:label title
-                        :expanded is-open
+                        :expanded is-expanded
                         :description (when expandable? (dm/str (count tokens)))
                         :is-expandable expandable?
+                        :aria-expanded is-expanded
+                        :aria-controls (dm/str "token-tree-" (name type))
                         :on-toggle-expand on-toggle-open-click
                         :icon (token-section-icon type)}
       (when can-edit?
@@ -138,8 +141,10 @@
                           :variant "ghost"
                           :on-click on-popover-open-click
                           :class (stl/css :token-section-icon)}])]
-     (when is-open
+     (when is-expanded
        [:> token-tree* {:tokens tokens
+                        :id (dm/str "token-tree-" (name type))
+                        :type type
                         :tokens-lib tokens-lib
                         :selected-shapes selected-shapes
                         :active-theme-tokens active-theme-tokens

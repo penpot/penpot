@@ -23,25 +23,27 @@
 
 (mf/defc layer-button*
   {::mf/schema schema:layer-button}
-  [{:keys [label description class is-expandable expanded icon on-toggle-expand children]}]
-  [:div {:class (stl/css :layer-button-wrapper)}
-   [:button {:class [class (stl/css-case :layer-button true
-                                         :layer-button--expandable is-expandable
-                                         :layer-button--expanded expanded)]
-             :type "button"
-             :on-click on-toggle-expand}
-    [:div {:class (stl/css :layer-button-content)}
-     (when is-expandable
-       (if expanded
-         [:> icon* {:icon-id i/arrow-down :class (stl/css :folder-node-icon)}]
-         [:> icon* {:icon-id i/arrow-right :class (stl/css :folder-node-icon)}]))
-     (when icon
-       [:> icon* {:icon-id icon :class (stl/css :layer-button-icon)}])
-     [:span {:class (stl/css :layer-button-name)}
-      label]
-     (when description
-       [:span {:class (stl/css :layer-button-description)}
-        description])
-     [:span {:class (stl/css :layer-button-quantity)}]]]
-   [:div {:class (stl/css :layer-button-actions)}
-    children]])
+  [{:keys [label description class is-expandable expanded icon on-toggle-expand children] :rest props}]
+  (let [button-props (mf/spread-props props
+                                      {:class [class (stl/css-case :layer-button true
+                                                                   :layer-button--expandable is-expandable
+                                                                   :layer-button--expanded expanded)]
+                                       :type "button"
+                                       :on-click on-toggle-expand})]
+    [:div {:class (stl/css :layer-button-wrapper)}
+     [:> "button" button-props
+      [:div {:class (stl/css :layer-button-content)}
+       (when is-expandable
+         (if expanded
+           [:> icon* {:icon-id i/arrow-down :class (stl/css :folder-node-icon)}]
+           [:> icon* {:icon-id i/arrow-right :class (stl/css :folder-node-icon)}]))
+       (when icon
+         [:> icon* {:icon-id icon :class (stl/css :layer-button-icon)}])
+       [:span {:class (stl/css :layer-button-name)}
+        label]
+       (when description
+         [:span {:class (stl/css :layer-button-description)}
+          description])
+       [:span {:class (stl/css :layer-button-quantity)}]]]
+     [:div {:class (stl/css :layer-button-actions)}
+      children]]))
