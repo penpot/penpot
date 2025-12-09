@@ -28,6 +28,7 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [position-data content] :as shape} (obj/get props "shape")
+        is-render? (mf/use-ctx ctx/is-render?)
         is-component? (mf/use-ctx ctx/is-component?)]
 
     (mf/with-memo [content]
@@ -41,5 +42,5 @@
       ;; Only use this for component preview, otherwise the dashboard thumbnails
       ;; will give a tainted canvas error because the `foreignObject` cannot be
       ;; rendered.
-      (and (nil? position-data) is-component?)
+      (and (nil? position-data) (or is-component? is-render?))
       [:> fo/text-shape props])))
