@@ -379,6 +379,23 @@
                           (->> (rx/from added)
                                (rx/map process-wasm-object)))))))
 
+              (when render-wasm?
+                (->> stream
+                     (rx/filter (ptk/type? :wasm/position-data))
+                     (rx/map deref)
+                     (rx/filter
+                      (fn [{:keys [position-data]}]
+                        (some? position-data)))
+                     (rx/map
+                      (fn [{:keys [id position-data]}]
+                        (prn "???" id position-data)
+                        (dwsh/update-shapes
+                         [id]
+                         (fn [shape]
+                           (.log js/console (clj->js shape))
+                           (assoc shape :position-data position-data))
+                         {:ignore-wasm? true})))))
+
               (->> stream
                    (rx/filter dch/commit?)
                    (rx/map deref)

@@ -7,6 +7,9 @@
 (ns app.render-wasm.api
   "A WASM based render API"
   (:require
+   [potok.v2.core :as ptk]
+   [app.main.data.helpers :as dsh]
+   [app.main.ui.shapes.text]
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -127,10 +130,18 @@
        (render ts)))))
 
 (declare get-text-dimensions)
+(declare calculate-position-data)
 
 (defn update-text-rect!
   [id]
   (when wasm/context-initialized?
+    (let [objects (dsh/lookup-page-objects @st/state)
+          shape (get objects id)
+          position-data (calculate-position-data shape)]
+      (.log js/console (:name shape) (clj->js position-data))
+      (st/emit!
+       (ptk/data-event :wasm/position-data {:id id :position-data position-data})))
+    
     (mw/emit!
      {:cmd :index/update-text-rect
       :page-id (:current-page-id @st/state)
@@ -988,10 +999,7 @@
        (run!
         (fn [id]
           (f/update-text-layout id)
-          (mw/emit! {:cmd :index/update-text-rect
-                     :page-id (:current-page-id @st/state)
-                     :shape-id id
-                     :dimensions (get-text-dimensions id)})))))
+          (update-text-rect! id)))))
 
 (defn process-pending
   ([shapes thumbnails full on-complete]
@@ -1346,6 +1354,58 @@
                       (path.impl/path-data))]
       (h/call wasm/internal-module "_end_temp_objects")
       content)))
+
+(def POSITION-DATA-U8-SIZE 36)
+(def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
+
+(defn calculate-position-data
+  [shape]
+  (use-shape (:id shape))
+  (let [heapf32 (mem/get-heap-f32)
+        heapu32 (mem/get-heap-u32)
+        offset (-> (h/call wasm/internal-module "_calc_position_data")
+                   (mem/->offset-32))
+        length (aget heapu32 offset)
+
+        max-offset (+ offset 1 (* length POSITION-DATA-U32-SIZE))
+
+        result
+        (loop [result (transient [])
+               offset (inc offset)]
+          (if (< offset max-offset)
+            (let [entry (dr/read-position-data-entry heapu32 heapf32 offset)]
+              (recur (conj! result entry)
+                     (+ offset POSITION-DATA-U32-SIZE)))
+            (persistent! result)))
+
+        result
+        (->> result
+             (mapv
+              (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
+                (let [content (:content shape)
+                      element (-> content :children
+                                  (get 0) :children ;; paragraph-set
+                                  (get paragraph) :children ;; paragraph
+                                  (get span))
+                      text (subs (:text element) start-pos end-pos)]
+                  
+                  {:x x
+                   :y y
+                   :width width
+                   :height height
+                   :direction       direction
+                   :font-family     (get element :font-family)
+                   :font-size       (get element :font-size)
+                   :font-weight     (get element :font-weight)
+                   :text-transform  (get element :text-transform)
+                   :text-decoration (get element :text-decoration)
+                   :letter-spacing  (get element :letter-spacing)
+                   :font-style      (get element :font-style)
+                   :fills           (get element :fills)
+                   :text            text}))))]
+    (mem/free)
+
+    result))
 
 (defn init-wasm-module
   [module]

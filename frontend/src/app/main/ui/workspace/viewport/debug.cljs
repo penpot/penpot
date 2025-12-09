@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.debug
   (:require
+   [app.render-wasm.api :as wasm.api]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -275,3 +276,29 @@
                      :y2 (:y end-p)
                      :style {:stroke "red"
                              :stroke-width (/ 1 zoom)}}]))]))))
+
+(mf/defc debug-text-position-data
+  {::mf/wrap-props false}
+  [props]
+  (let [objects            (unchecked-get props "objects")
+        zoom               (unchecked-get props "zoom")
+        selected-shapes    (unchecked-get props "selected-shapes")
+
+        selected-text
+        (when (and (= (count selected-shapes) 1) (= :text (-> selected-shapes first :type)))
+          (first selected-shapes))
+
+        position-data
+        (when selected-text
+          (wasm.api/calculate-position-data selected-text))]
+
+    (for [{:keys [x y width height]} position-data]
+      [:rect {:x x
+              :y y
+              :width width
+              :height height
+              :fill "none"
+              :strokeWidth 1
+              :stroke "red"}]
+
+         )))

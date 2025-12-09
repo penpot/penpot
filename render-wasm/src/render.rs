@@ -847,6 +847,8 @@ impl RenderState {
                             );
                         }
                     }
+
+                    // text::render_position_data(self, fills_surface_id, &shape, &text_content);
                 }
             }
             _ => {

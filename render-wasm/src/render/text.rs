@@ -4,6 +4,7 @@ use crate::{
     shapes::{
         merge_fills, set_paint_fill, ParagraphBuilderGroup, Stroke, StrokeKind, TextContent,
         VerticalAlign,
+        calc_position_data
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -503,6 +504,29 @@ pub fn render_as_path(
         canvas.draw_path(path, paint);
     }
 }
+
+#[allow(dead_code)]
+pub fn render_position_data(
+    render_state: &mut RenderState,
+    surface_id: SurfaceId,
+    shape: &Shape,
+    text_content: &TextContent
+) {
+    let position_data = calc_position_data(shape, text_content);
+    
+    let mut paint = skia::Paint::default();
+    paint.set_style(skia::PaintStyle::Stroke);
+    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+    paint.set_stroke_width(2.);
+
+    for pd in position_data {
+        let rect = Rect::from_xywh(pd.x, pd.y, pd.width, pd.height);
+        render_state.surfaces
+            .canvas(surface_id)
+            .draw_rect(rect, &paint);
+    }
+}
+
 
 // How to use it?
 // Type::Text(text_content) => {

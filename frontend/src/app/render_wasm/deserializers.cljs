@@ -45,4 +45,23 @@
      :center (gpt/point cx cy)
      :transform (gmt/matrix a b c d e f)}))
 
-
+(defn read-position-data-entry
+  [heapu32 heapf32 offset]
+  (let [paragraph (aget heapu32 (+ offset 0))
+        span      (aget heapu32 (+ offset 1))
+        start-pos (aget heapu32 (+ offset 2))
+        end-pos   (aget heapu32 (+ offset 3))
+        x         (aget heapf32 (+ offset 4))
+        y         (aget heapf32 (+ offset 5))
+        width     (aget heapf32 (+ offset 6))
+        height    (aget heapf32 (+ offset 7))
+        direction (aget heapu32 (+ offset 8))]
+    {:paragraph paragraph
+     :span      span
+     :start-pos start-pos
+     :end-pos   end-pos
+     :x         x
+     :y         y
+     :width     width
+     :height    height
+     :direction direction}))

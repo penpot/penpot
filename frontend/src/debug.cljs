@@ -6,6 +6,7 @@
 
 (ns debug
   (:require
+   [app.render-wasm.api :as wasm.api]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.repair :as cfr]
@@ -456,3 +457,10 @@
 (defn ^:export network-averages
   []
   (.log js/console (clj->js @http/network-averages)))
+
+(defn ^:export tmp
+  []
+  (let [objects (dsh/lookup-page-objects @st/state)
+        shape  (->> (get-selected @st/state) (first) (get objects))]
+    (wasm.api/calculate-position-data shape))
+  )
