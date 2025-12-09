@@ -10,6 +10,7 @@ RUN set -ex; \
     mkdir -p /etc/nginx/overrides/main.d/; \
     mkdir -p /etc/nginx/overrides/http.d/; \
     mkdir -p /etc/nginx/overrides/server.d/; \
+    mkdir -p /etc/nginx/overrides/assets.d/; \
     mkdir -p /etc/nginx/overrides/location.d/;
 
 ARG BUNDLE_PATH="./bundle-frontend/"
