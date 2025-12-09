@@ -584,7 +584,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"izguvē tiks iekļautas datnes ar koplietojamām bibliotēkām, saglabājot to "
+"Izguvē tiks iekļautas datnes ar koplietojamām bibliotēkām, saglabājot to "
 "sasaisti."
 
 #: src/app/main/ui/exports/files.cljs:165

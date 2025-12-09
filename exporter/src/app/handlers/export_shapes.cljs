@@ -74,7 +74,7 @@
          (p/fmap (fn [resource]
                    (assoc exchange :response/body resource)))
          (p/merr (fn [cause]
-                   (l/error :hint "unexpected error on export multiple"
+                   (l/error :hint "unexpected error on single export"
                             :cause cause)
                    (p/rejected cause))))))
 
@@ -94,7 +94,7 @@
                           (redis/pub! topic data))))
 
         on-error    (fn [cause]
-                      (l/error :hint "unexpected error on multiple exportation" :cause cause)
+                      (l/error :hint "unexpected error on multiple export" :cause cause)
                       (if wait
                         (p/rejected cause)
                         (redis/pub! topic {:type :export-update

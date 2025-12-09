@@ -542,7 +542,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"soubory se sdílenými knihovnami budou zahrnuty do exportu, čímž se zachová "
+"Soubory se sdílenými knihovnami budou zahrnuty do exportu, čímž se zachová "
 "jejich propojení."
 
 #: src/app/main/ui/exports/files.cljs:165

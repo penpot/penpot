@@ -573,7 +573,7 @@ msgstr ""
 
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
-msgstr "berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
+msgstr "Berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"

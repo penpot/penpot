@@ -17,8 +17,8 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
-   [app.main.ui.inspect.attributes :refer [attributes]]
-   [app.main.ui.inspect.code :refer [code]]
+   [app.main.ui.inspect.attributes :refer [attributes*]]
+   [app.main.ui.inspect.code :refer [code*]]
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
    [app.main.ui.inspect.styles :refer [styles-tab*]]
    [app.util.dom :as dom]
@@ -123,8 +123,7 @@
      (fn []
        (if (seq shapes)
          (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
-         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))
-       (reset! color-space* "hex")))
+         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))))
 
     [:aside {:class (stl/css-case :settings-bar-right true
                                   :viewer-code (= from :viewer))}
@@ -190,41 +189,41 @@
                                :libraries libraries
                                :file-id file-id}]
               :computed
-              [:& attributes {:color-space color-space
-                              :page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:color-space color-space
+                               :page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])]
            [:> tab-switcher* {:tabs tabs
                               :selected (name @section)
                               :on-change handle-change-tab
                               :class (stl/css :viewer-tab-switcher)}
             (case @section
               :info
-              [:& attributes {:page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])])]]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])])]]
 
        [:*
         [:div {:class (stl/css :empty)}

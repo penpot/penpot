@@ -56,9 +56,8 @@
                (update file :data dissoc :pages-index))
              refs/file))
 
-(mf/defc assets-local-library
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc assets-local-library*
+  {::mf/private true}
   [{:keys [filters]}]
   (let [file (mf/deref ref:local-library)]
     [:> file-library*
@@ -68,7 +67,7 @@
       :filters filters}]))
 
 (defn- toggle-values
-  [v [a b]]
+  [v a b]
   (if (= v a) b a))
 
 (mf/defc assets-toolbox*
@@ -97,7 +96,7 @@
         (mf/use-fn
          (mf/deps ordering)
          (fn []
-           (let [new-value (toggle-values ordering [:asc :desc])]
+           (let [new-value (toggle-values ordering :asc :desc)]
              (swap! filters* assoc :ordering new-value)
              (dwa/set-current-assets-ordering! new-value))))
 
@@ -105,7 +104,7 @@
         (mf/use-fn
          (mf/deps list-style)
          (fn []
-           (let [new-value (toggle-values list-style [:thumbs :list])]
+           (let [new-value (toggle-values list-style :thumbs :list)]
              (swap! filters* assoc :list-style new-value)
              (dwa/set-current-assets-list-style! new-value))))
 
@@ -209,5 +208,5 @@
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
         [:*
-         [:& assets-local-library {:filters filters}]
+         [:> assets-local-library* {:filters filters}]
          [:> assets-libraries* {:filters filters}]]]]]]))

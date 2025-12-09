@@ -582,7 +582,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"filer med delade bibliotek kommer att ingå i exporten, bibehåller deras "
+"Filer med delade bibliotek kommer att ingå i exporten, bibehåller deras "
 "koppling."
 
 #: src/app/main/ui/exports/files.cljs:165

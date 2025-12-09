@@ -577,7 +577,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"файли з спільними бібліотеками буде додано до експорту зі збереженням "
+"Файли з спільними бібліотеками буде додано до експорту зі збереженням "
 "зв'язків між ними."
 
 #: src/app/main/ui/exports/files.cljs:165

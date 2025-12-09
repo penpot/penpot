@@ -27,7 +27,7 @@
    [app.main.ui.workspace.coordinates :as coordinates]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
-   [app.main.ui.workspace.palette :refer [palette]]
+   [app.main.ui.workspace.palette :refer [palette*]]
    [app.main.ui.workspace.plugins]
    [app.main.ui.workspace.sidebar :refer [sidebar*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
@@ -84,8 +84,8 @@
         node-ref (use-resize-observer on-resize)]
     [:*
      (when (not ^boolean hide-ui?)
-       [:& palette {:layout layout
-                    :on-change-palette-size on-resize-palette}])
+       [:> palette* {:layout layout
+                     :on-change-size on-resize-palette}])
 
      [:section
       {:key (dm/str "workspace-" page-id)

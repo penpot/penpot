@@ -576,7 +576,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"files with shared libraries will be included in the export, maintaining "
+"Files with shared libraries will be included in the export, maintaining "
 "their linkage."
 
 #: src/app/main/ui/exports/files.cljs:165

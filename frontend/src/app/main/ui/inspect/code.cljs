@@ -96,7 +96,7 @@
                      embed-images? (replace-map images-data))]
     (str/format page-template style-code markup-code)))
 
-(mf/defc code
+(mf/defc code*
   [{:keys [shapes frame on-expand from]}]
   (let [style-type*    (mf/use-state "css")
         markup-type*   (mf/use-state "html")

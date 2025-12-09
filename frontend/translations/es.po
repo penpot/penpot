@@ -585,7 +585,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"ficheros con librerias compartidas se inclurán en el paquete de exportación "
+"Ficheros con librerias compartidas se inclurán en el paquete de exportación "
 "y mantendrán los enlaces."
 
 #: src/app/main/ui/exports/files.cljs:165
