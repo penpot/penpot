@@ -251,10 +251,15 @@ pub extern "C" fn set_view_end() {
         state.render_state.options.set_fast_mode(false);
         // We can have renders in progress
         state.render_state.cancel_animation_frame();
-        if state.render_state.options.is_profile_rebuild_tiles() {
-            state.rebuild_tiles();
-        } else {
-            state.rebuild_tiles_shallow();
+        // Only rebuild tile indices when zoom has changed.
+        // During pan-only operations, shapes stay in the same tiles
+        // because tile_size = 1/scale * TILE_SIZE (depends only on zoom).
+        if state.render_state.zoom_changed() {
+            if state.render_state.options.is_profile_rebuild_tiles() {
+                state.rebuild_tiles();
+            } else {
+                state.rebuild_tiles_shallow();
+            }
         }
     });
 }
