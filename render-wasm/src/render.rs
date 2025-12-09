@@ -2057,6 +2057,12 @@ impl RenderState {
         self.cached_viewbox.zoom() * self.options.dpr()
     }
 
+    /// Returns true if the zoom level has changed since the last cached viewbox.
+    /// Used to optimize pan-only operations where tile indices don't need to be rebuilt.
+    pub fn zoom_changed(&self) -> bool {
+        (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
+    }
+
     pub fn mark_touched(&mut self, uuid: Uuid) {
         self.touched_ids.insert(uuid);
     }
