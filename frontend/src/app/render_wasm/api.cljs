@@ -883,6 +883,9 @@
 
 (defn set-view-box
   [prev-zoom zoom vbox]
+  ;; Enable fast mode at the start of pan/zoom interaction
+  ;; This will be disabled when render-finish fires (after debounce delay)
+  (h/call wasm/internal-module "_set_view_start")
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
 
   (if (mth/close? prev-zoom zoom)
