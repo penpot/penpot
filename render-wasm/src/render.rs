@@ -928,6 +928,8 @@ impl RenderState {
     }
 
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
+        let _start = performance::begin_timed_log!("render_from_cache");
+        performance::begin_measure!("render_from_cache");
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -965,6 +967,8 @@ impl RenderState {
 
             self.flush_and_submit();
         }
+        performance::end_measure!("render_from_cache");
+        performance::end_timed_log!("render_from_cache", _start);
     }
 
     pub fn start_render_loop(
@@ -974,6 +978,7 @@ impl RenderState {
         timestamp: i32,
         sync_render: bool,
     ) -> Result<(), String> {
+        let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
 
@@ -1004,10 +1009,12 @@ impl RenderState {
         // FIXME - review debug
         // debug::render_debug_tiles_for_viewbox(self);
 
+        let _tile_start = performance::begin_timed_log!("tile_cache_update");
         performance::begin_measure!("tile_cache");
         self.pending_tiles
             .update(&self.tile_viewbox, &self.surfaces);
         performance::end_measure!("tile_cache");
+        performance::end_timed_log!("tile_cache_update", _tile_start);
 
         self.pending_nodes.clear();
         if self.pending_nodes.capacity() < tree.len() {
@@ -1031,6 +1038,7 @@ impl RenderState {
         }
 
         performance::end_measure!("start_render_loop");
+        performance::end_timed_log!("start_render_loop", _start);
         Ok(())
     }
 
@@ -2057,8 +2065,6 @@ impl RenderState {
         self.cached_viewbox.zoom() * self.options.dpr()
     }
 
-    /// Returns true if the zoom level has changed since the last cached viewbox.
-    /// Used to optimize pan-only operations where tile indices don't need to be rebuilt.
     pub fn zoom_changed(&self) -> bool {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
     }
