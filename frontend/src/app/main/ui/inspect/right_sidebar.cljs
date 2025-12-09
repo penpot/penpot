@@ -122,8 +122,7 @@
      (fn []
        (if (seq shapes)
          (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
-         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))
-       (reset! color-space* "hex")))
+         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))))
 
     [:aside {:class (stl/css-case :settings-bar-right true
                                   :viewer-code (= from :viewer))}
