@@ -16,8 +16,8 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.inspect.attributes :refer [attributes]]
-   [app.main.ui.inspect.code :refer [code]]
+   [app.main.ui.inspect.attributes :refer [attributes*]]
+   [app.main.ui.inspect.code :refer [code*]]
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
    [app.main.ui.inspect.styles :refer [styles-tab*]]
    [app.util.dom :as dom]
@@ -188,41 +188,41 @@
                                :libraries libraries
                                :file-id file-id}]
               :computed
-              [:& attributes {:color-space color-space
-                              :page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:color-space color-space
+                               :page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])]
            [:> tab-switcher* {:tabs tabs
                               :selected (name @section)
                               :on-change handle-change-tab
                               :class (stl/css :viewer-tab-switcher)}
             (case @section
               :info
-              [:& attributes {:page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])])]]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])])]]
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}
