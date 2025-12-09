@@ -326,6 +326,23 @@
                     :component-file (:component-file ref-shape)
                     :component-id (:component-id ref-shape)))))
 
+
+(defn- check-diff-comp-missing-slot
+  "Validate that if this shape points to a different component than its referenced shape, is has a swap slot"
+  [shape file page libraries]
+  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+    (when (and (some? ref-shape)
+               (not= (:component-id ref-shape) (:component-id shape))
+               (nil? (ctk/get-swap-slot shape)))
+      (report-error :missing-slot
+                    (str/ffmt "Referenced shape % points to a different component, so this shape must have been swapped. Should have swap slot" (:shape-ref shape))
+                    shape file page
+                    :swap-slot (or (ctk/get-swap-slot ref-shape) (:id ref-shape))
+                    :component-file (:component-file shape)
+                    :component-id (:component-id shape)
+                    :ref-component-file (:component-file ref-shape)
+                    :ref-component-id (:component-id ref-shape)))))
+
 (defn- check-empty-swap-slot
   "Validate that this shape does not have any swap slot."
   [shape file page]
@@ -418,8 +435,10 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
+  (check-diff-comp-missing-slot shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
+  ;; TODO library-exists is missing on the stack calls for items inside frames
   (when library-exists
     (check-component-ref shape file page libraries)
     (check-ref-is-head shape file page libraries))
