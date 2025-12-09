@@ -254,3 +254,19 @@
   [values]
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
+
+(defn wrap-errors
+  "Function wrapper to be used in plugin proxies methods to handle errors.
+   When an exception is thrown, a readable error message is output to the console
+   and the exception is captured."
+  [f]
+  (fn []
+    (let [args (js-arguments)]
+      (try
+        (.apply f nil args)
+        (catch :default cause
+          (display-not-valid (ex-message cause) (obj/stringify args))
+          (if-let [explain (-> cause ex-data ::sm/explain)]
+            (println (sm/humanize-explain explain))
+            (js/console.log (ex-data cause)))
+          nil)))))
