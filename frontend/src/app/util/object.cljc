@@ -106,6 +106,11 @@
           (identical? (.getPrototypeOf js/Object o)
                       (.-prototype js/Object)))))
 
+#?(:cljs
+   (defn stringify
+     [obj]
+     (js/JSON.stringify obj)))
+
 ;; EXPERIMENTAL: unsafe, does not checks and not validates the input,
 ;; should be improved over time, for now it works for define a class
 ;; extending js/Error that is more than enought for a first, quick and

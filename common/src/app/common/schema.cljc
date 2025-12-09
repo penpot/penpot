@@ -95,12 +95,12 @@
 (defn assoc-key
   "Add a key & value to a schema"
   [s k v]
-  (mu/assoc s k v))
+  (mu/assoc (schema s) k v))
 
 (defn dissoc-key
   "Remove a key from a schema"
   [s k]
-  (mu/dissoc s k))
+  (mu/dissoc (schema s) k))
 
 (defn ref?
   [s]

@@ -64,6 +64,21 @@
   [token-value]
   (string? token-value))
 
+(defn update-token-value-references
+  "Recursively update token references within a token value, supporting complex token values (maps, sequences, strings)."
+  [value old-name new-name]
+  (cond
+    (string? value)
+    (str/replace value
+                 (re-pattern (str "\\{" (str/replace old-name "." "\\.") "\\}"))
+                 (str "{" new-name "}"))
+    (map? value)
+    (d/update-vals value #(update-token-value-references % old-name new-name))
+    (sequential? value)
+    (mapv #(update-token-value-references % old-name new-name) value)
+    :else
+    value))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -628,34 +643,3 @@
     (when (font-weight-values weight)
       (cond-> {:weight weight}
         italic? (assoc :style "italic")))))
-
-;; review this
-(defn typography-composite-token-reference?
-  "Predicate if a typography composite token is a reference value - a string pointing to another reference token."
-  [token-value]
-  (string? token-value))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SHADOW
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn shadow-composite-token-reference?
-  "Predicate if a shadow composite token is a reference value - a string pointing to another reference token."
-  [token-value]
-  (string? token-value))
-
-(defn update-token-value-references
-  "Recursively update token references within a token value, supporting complex token values (maps, sequences, strings)."
-  [value old-name new-name]
-  (cond
-    (string? value)
-    (str/replace value
-                 (re-pattern (str "\\{" (str/replace old-name "." "\\.") "\\}"))
-                 (str "{" new-name "}"))
-    (map? value)
-    (d/update-vals value #(update-token-value-references % old-name new-name))
-    (sequential? value)
-    (mapv #(update-token-value-references % old-name new-name) value)
-    :else
-    value))
-;; end review this

@@ -114,7 +114,8 @@
 
 (defn token-set-proxy
   [plugin-id file-id id]
-  (obj/reify {:name "TokenSetProxy"}
+  (obj/reify {:name "TokenSetProxy"
+              :wrap u/wrap-errors}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -206,23 +207,20 @@
             (token-proxy plugin-id file-id id token-id)))))
 
     :addToken
-    (fn [attrs]
-      ;; review this
-      ;; value (case type
-      ;;         :font-family (ctob/convert-dtcg-font-family (js->clj value))
-      ;;         :typography (ctob/convert-dtcg-typography-composite (js->clj value))
-      ;;         :shadow (ctob/convert-dtcg-shadow-composite (js->clj value))
-      ;;         (js->clj value))]
-      ;; end review this
-      (let [schema (-> (sm/schema (cfo/make-token-schema
-                                   (-> (u/locate-tokens-lib file-id)
-                                       (ctob/get-tokens id))))
-                       (sm/dissoc-key :id)) ;; We don't allow plugins to set the id
-            attrs (u/coerce attrs schema :addToken "invalid token attrs")]
-        (when attrs
-          (let [token (ctob/make-token attrs)]
-            (st/emit! (dwtl/create-token id token))
-            (token-proxy plugin-id file-id (:id set) (:id token))))))
+    {:schema [:tuple (-> (cfo/make-token-schema
+                          (-> (u/locate-tokens-lib file-id)
+                              (ctob/get-tokens id)))
+                         (sm/dissoc-key :id))] ;; We don't allow plugins to set the id
+     :fn (fn [attrs]
+           (let [attrs (update attrs :value
+                               #(case (:type attrs)
+                                  :font-family (ctob/convert-dtcg-font-family %)
+                                  :typography (ctob/convert-dtcg-typography-composite %)
+                                  :shadow (ctob/convert-dtcg-shadow-composite %)
+                                  (vec %)))
+                 token (ctob/make-token attrs)]
+             (st/emit! (dwtl/create-token id token))
+             (token-proxy plugin-id file-id (:id set) (:id token))))}
 
     :duplicate
     (fn []
