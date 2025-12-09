@@ -430,6 +430,9 @@ msgstr "(copia)"
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
+msgid "dashboard.create-new-org"
+msgstr "Crear nueva organización"
+
 #: src/app/main/ui/workspace/main_menu.cljs:664
 msgid "dashboard.create-version-menu"
 msgstr "Guardar esta versión"
