@@ -32,6 +32,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.milestone :refer [milestone*]]
@@ -56,6 +57,7 @@
     :HintMessage hint-message*
     :InputWithMeta input-with-meta*
     :EmptyPlaceholder empty-placeholder*
+    :EmptyState empty-state*
     :Loader loader*
     :RawSvg raw-svg*
     :Select select*

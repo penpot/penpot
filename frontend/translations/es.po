@@ -1835,8 +1835,8 @@ msgstr ""
 "de Penpot"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Más información sobre la inspección"
+msgid "inspect.empty.more"
+msgstr "Más información"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

@@ -1844,8 +1844,8 @@ msgid "inspect.empty.help"
 msgstr "If you want to know more about design inspect visit Penpot's help center"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "More info about inspect"
+msgid "inspect.empty.more"
+msgstr "More info"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

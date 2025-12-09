@@ -18,6 +18,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -160,6 +161,5 @@
              :key (:page-id tgroup)}])]
 
         [:div {:class (stl/css :thread-group-placeholder)}
-         [:span {:class (stl/css :placeholder-icon)} deprecated-icon/comments]
-         [:span {:class (stl/css :placeholder-label)}
-          (tr "labels.no-comments-available")]])]]))
+         [:> empty-state* {:icon i/comments
+                           :text (tr "labels.no-comments-available")}]])]]))

@@ -33,6 +33,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
@@ -48,9 +49,6 @@
 
 (def ^:private add-icon
   (deprecated-icon/icon-xref :add (stl/css :add-icon)))
-
-(def ^:private library-icon
-  (deprecated-icon/icon-xref :library (stl/css :library-icon)))
 
 (defn- get-library-summary
   "Given a library data return a summary representation of this library"
@@ -493,9 +491,8 @@
      [:div {:class (stl/css :update-section)}
       (if (empty? libs-assets)
         [:div {:class (stl/css :section-list-empty)}
-         [:span {:class (stl/css :empty-state-icon)}
-          library-icon]
-         (tr "workspace.libraries.no-libraries-need-sync")]
+         [:> empty-state* {:icon i/library
+                           :text (tr "workspace.libraries.no-libraries-need-sync")}]]
         [:*
          [:div {:class (stl/css :section-title)} (tr "workspace.libraries.library-updates")]
 
