@@ -15,8 +15,7 @@ impl RenderOptions {
         self.flags & options::PROFILE_REBUILD_TILES == options::PROFILE_REBUILD_TILES
     }
 
-    /// Fast mode is enabled during interactive pan/zoom operations.
-    /// When active, expensive operations like shadows are skipped for better performance.
+    /// Use fast mode to enable / disable expensive operations
     pub fn is_fast_mode(&self) -> bool {
         self.flags & options::FAST_MODE == options::FAST_MODE
     }
