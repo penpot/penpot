@@ -254,7 +254,6 @@ const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
     })
     .first();
 
-  console.log(await typeSectionButton.getAttribute("aria-expanded"));
   const isSectionExpanded =
     await typeSectionButton.getAttribute("aria-expanded");
 

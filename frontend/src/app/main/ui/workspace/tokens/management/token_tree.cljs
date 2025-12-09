@@ -4,7 +4,6 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-
 (ns app.main.ui.workspace.tokens.management.token-tree
   (:require-macros [app.main.style :as stl])
   (:require
@@ -13,8 +12,6 @@
    [app.main.ui.ds.layers.layer-button :refer [layer-button*]]
    [app.main.ui.workspace.tokens.management.token-pill :refer [token-pill*]]
    [rumext.v2 :as mf]))
-
-
 
 (def ^:private schema:folder-node
   [:map
@@ -38,7 +35,7 @@
                         :expanded expanded
                         :aria-expanded expanded
                         :aria-controls (str "folder-children-" (:path node))
-                        :is-expandable (:has-children node)
+                        :is-expandable (not (:leaf node))
                         :on-toggle-expand swap-folder-expanded}]
      (when expanded
        (let [children-fn (:children-fn node)]
@@ -47,7 +44,7 @@
           (when children-fn
             (let [children (children-fn)]
               (for [child children]
-                (if (not (:is-leaf child))
+                (if (not (:leaf child))
                   [:ul {:class (stl/css :node-parent)}
                    [:> folder-node* {:key (:path child)
                                      :node child
@@ -72,7 +69,6 @@
 (def ^:private schema:token-tree
   [:map
    [:tokens :any]
-   [:type :keyword]
    [:selected-shapes :any]
    [:is-selected-inside-layout {:optional true} :boolean]
    [:active-theme-tokens {:optional true} :any]
@@ -94,7 +90,7 @@
        [:ul {:class (stl/css :node-parent)
              :key (:path node)
              :style {:--node-depth (inc (:depth node))}}
-        (if (:is-leaf node)
+        (if (:leaf node)
           (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
             [:> token-pill*
              {:token token

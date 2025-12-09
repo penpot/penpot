@@ -147,18 +147,16 @@ Some naming conventions:
    [{:name 'one'
      :path 'one'
      :depth 0
-     :is-leaf false
-     :has-children true
+     :leaf nil
      :children-fn (fn [] [{:name 'two'
                            :path 'one.two'
                            :depth 1
-                           :is-leaf false
-                           :has-children true
+                           :leaf nil
                            :children-fn (fn [] [{... :name 'three'} {... :name 'four'}])}
                           {:name 'five'
                            :path 'one.five'
                            :depth 1
-                           :is-leaf true
+                           :leaf {... :name 'five'}
                            ...}])}]"
 
 (defn- sort-by-children
@@ -209,9 +207,7 @@ Some naming conventions:
         node {:name segment-name
               :path current-path
               :depth depth
-              :is-leaf is-leaf?
               :leaf leaf-segment
-              :has-children (not is-leaf?)
               :children-fn (when-not is-leaf?
                              (fn []
                                (let [grouped-elements (sort-and-group-segments remaining-segments separator)]

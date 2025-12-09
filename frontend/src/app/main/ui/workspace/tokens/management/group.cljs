@@ -144,7 +144,6 @@
      (when is-expanded
        [:> token-tree* {:tokens tokens
                         :id (dm/str "token-tree-" (name type))
-                        :type type
                         :tokens-lib tokens-lib
                         :selected-shapes selected-shapes
                         :active-theme-tokens active-theme-tokens
