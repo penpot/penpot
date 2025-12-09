@@ -17,22 +17,25 @@
     <meta name="twitter:site" content="@penpotapp">
     <meta name="twitter:creator" content="@penpotapp">
     <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-    <link id="theme" href="css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link id="theme" href="css/main.css?version={{& version}}" rel="stylesheet" type="text/css" />
     {{#isDebug}}
-    <link href="css/debug.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link href="css/debug.css?version={{& version}}" rel="stylesheet" type="text/css" />
     {{/isDebug}}
 
     <link rel="icon" href="images/favicon.png" />
-    {{# manifest}}
-    <script>window.penpotWorkerURI="{{& worker_main}}"</script>
-    <script src="{{& config}}"></script>
-    <script src="{{& polyfills}}"></script>
-    {{/manifest}}
 
     <script type="module">
-      globalThis.penpotVersion = "%version%";
-      globalThis.penpotBuildDate = "%buildDate%";
+      globalThis.penpotVersion = "{{& version}}";
+      globalThis.penpotBuildDate = "{{& build_date}}";
+      globalThis.penpotWorkerURI = "{{& manifest.worker_main}}";
     </script>
+
+    {{# manifest}}
+    <script src="{{& config}}"></script>
+    <script src="{{& polyfills}}"></script>
+    <script type="importmap">{{& importmap }}</script>
+    {{/manifest}}
+
     <!--cookie-consent-->
   </head>
   <body>
@@ -45,7 +48,7 @@
     {{# manifest}}
     <script type="module" src="{{& libs}}"></script>
     <script type="module">
-      import { init } from "{{& main}}";
+      import { init } from "{{& app_main}}";
       init();
     </script>
     {{/manifest}}

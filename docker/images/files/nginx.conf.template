@@ -42,11 +42,11 @@ http {
     gzip_vary on;
     gzip_proxied any;
     gzip_static on;
-    gzip_comp_level 4;
+    gzip_comp_level 6;
     gzip_buffers 16 8k;
     gzip_http_version 1.1;
 
-    gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json image/svg+xml;
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json image/svg+xml application/wasm;
 
     proxy_buffer_size 16k;
     proxy_busy_buffers_size 24k; # essentially, proxy_buffer_size + 2 small buffers of 4k
@@ -142,15 +142,15 @@ http {
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
-
-            location ~ ^/(/|css|fonts|images|js|wasm|mjs|map) {
+            location ~* \.(js|css|jpg|png|svg|ttf|woff|woff2|wasm)$ {
+                add_header Cache-Control "public, max-age=604800" always; # 7 days
             }
 
             location ~ ^/[^/]+/(.*)$ {
                 return 301 " /404";
             }
 
-            add_header Cache-Control "public, must-revalidate, max-age=0";
+            add_header Cache-Control "no-store, no-cache, max-age=0" always;
             try_files $uri /index.html$is_args$args /index.html =404;
         }
     }

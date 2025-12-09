@@ -100,7 +100,7 @@
 
 (def init-wasm
   (delay
-    (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
+    (let [uri (cf/resolve-static-asset "js/render-wasm.js")]
       (-> (mod/import (str uri))
           (p/then #(wasm.api/init-wasm-module %))
           (p/then #(set! wasm/internal-module %))))))

@@ -28,6 +28,8 @@ export function startWorker() {
 }
 
 export const isDebug = process.env.NODE_ENV !== "production";
+export const CURRENT_VERSION = process.env.CURRENT_VERSION || "develop";
+export const BUILD_DATE = process.env.BUILD_DATE || "" + new Date();
 
 async function findFiles(basePath, predicate, options = {}) {
   predicate =
@@ -47,8 +49,7 @@ async function findFiles(basePath, predicate, options = {}) {
 function syncDirs(originPath, destPath) {
   const command = `rsync -ar --delete ${originPath} ${destPath}`;
 
-  return new Promise((resolve, reject) => {
-    proc.exec(command, (cause, stdout) => {
+  return new Promise((resolve, reject) => {proc.exec(command, (cause, stdout) => {
       if (cause) {
         reject(cause);
       } else {
@@ -187,18 +188,31 @@ async function readManifestFile() {
 }
 
 async function readShadowManifest() {
-  const ts = Date.now();
-
   const index = {
-    ts: ts,
-    config: "./js/config.js",
-    polyfills: "./js/polyfills.js",
-    main: "./js/main.js",
-    shared: "./js/shared.js",
-    render: "./js/render.js",
-    worker_main: "./js/worker/main.js",
-    rasterizer: "./js/rasterizer.js",
-    libs: "./js/libs.js",
+    app_main: "./js/main.js",
+    render_main: "./js/render.js",
+    rasterizer_main: "./js/rasterizer.js",
+
+    config: "./js/config.js?version=" + CURRENT_VERSION,
+    polyfills: "./js/polyfills.js?version=" + CURRENT_VERSION,
+    libs: "./js/libs.js?version=" + CURRENT_VERSION,
+    worker_main: "./js/worker/main.js?version=" + CURRENT_VERSION,
+
+    importmap: JSON.stringify({
+      "imports": {
+        "./js/shared.js": "./js/shared.js?version=" + CURRENT_VERSION,
+        "./js/main.js": "./js/main.js?version=" + CURRENT_VERSION,
+        "./js/render.js": "./js/render.js?version=" + CURRENT_VERSION,
+        "./js/render-wasm.js": "./js/render-wasm.js?version=" + CURRENT_VERSION,
+        "./js/rasterizer.js": "./js/rasterizer.js?version=" + CURRENT_VERSION,
+        "./js/main-dashboard.js": "./js/main-dashboard.js?version=" + CURRENT_VERSION,
+        "./js/main-auth.js": "./js/main-auth.js?version=" + CURRENT_VERSION,
+        "./js/main-viewer.js": "./js/main-viewer.js?version=" + CURRENT_VERSION,
+        "./js/main-settings.js": "./js/main-settings.js?version=" + CURRENT_VERSION,
+        "./js/main-workspace.js": "./js/main-workspace.js?version=" + CURRENT_VERSION,
+        "./js/util-highlight.js": "./js/util-highlight.js?version=" + CURRENT_VERSION
+      }
+    })
   };
 
   return index;
@@ -398,12 +412,16 @@ async function generateTemplates() {
     "../public/images/sprites/assets.svg": assetsSprite,
   };
 
+  const context = {
+    manifest: manifest,
+    version: CURRENT_VERSION,
+    build_date: BUILD_DATE,
+    isDebug,
+  };
+
   content = await renderTemplate(
     "resources/templates/index.mustache",
-    {
-      manifest: manifest,
-      isDebug,
-    },
+    context,
     partials,
   );
 
@@ -411,38 +429,30 @@ async function generateTemplates() {
 
   content = await renderTemplate(
     "resources/templates/challenge.mustache",
-    {},
+    context,
     partials,
   );
   await fs.writeFile("./resources/public/challenge.html", content);
 
   content = await renderTemplate(
     "resources/templates/preview-body.mustache",
-    {
-      manifest: manifest,
-    },
+    context,
     partials,
   );
   await fs.writeFile("./.storybook/preview-body.html", content);
 
   content = await renderTemplate(
     "resources/templates/preview-head.mustache",
-    {
-      manifest: manifest,
-    },
+    context,
     partials,
   );
   await fs.writeFile("./.storybook/preview-head.html", content);
 
-  content = await renderTemplate("resources/templates/render.mustache", {
-    manifest: manifest,
-  });
+  content = await renderTemplate("resources/templates/render.mustache", context);
 
   await fs.writeFile("./resources/public/render.html", content);
 
-  content = await renderTemplate("resources/templates/rasterizer.mustache", {
-    manifest: manifest,
-  });
+  content = await renderTemplate("resources/templates/rasterizer.mustache", context);
 
   await fs.writeFile("./resources/public/rasterizer.html", content);
 }

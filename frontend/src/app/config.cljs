@@ -190,5 +190,4 @@
 
 (defn resolve-static-asset
   [path]
-  (let [uri (u/join public-uri path)]
-    (assoc uri :query (dm/str "version=" (:full version)))))
+  (u/join public-uri path))

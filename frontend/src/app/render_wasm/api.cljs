@@ -1361,7 +1361,7 @@
 (defonce module
   (delay
     (if (exists? js/dynamicImport)
-      (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
+      (let [uri (cf/resolve-static-asset "js/render-wasm.js")]
         (->> (mod/import uri)
              (p/mcat init-wasm-module)
              (p/fmap

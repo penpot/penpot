@@ -38,15 +38,7 @@ fi
 yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
 
-sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./resources/public/index.html;
-sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./resources/public/render.html;
-sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./resources/public/rasterizer.html;
-sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./resources/public/index.html;
-sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./resources/public/rasterizer.html;
-
-if [ "$INCLUDE_WASM" = "yes" ];  then
-    sed -i "s/version=develop/version=$CURRENT_VERSION/g" ./resources/public/js/render_wasm.js;
-fi
+sed -i "s/render-wasm.js/render-wasm.js?version=$CURRENT_VERSION/g" ./resources/public/js/worker/main.js;
 
 rsync -avr resources/public/ target/dist/;
 
