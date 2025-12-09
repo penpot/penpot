@@ -280,8 +280,8 @@
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
-  [{:keys [team profile teams show-default-team allow-create] :rest props}]
-  (let [on-create-click
+  [{:keys [team profile teams show-default-team allow-create-teams allow-create-org] :rest props}]
+  (let [on-create-team-click
         (mf/use-fn #(st/emit! (modal/show :team-form {})))
 
         on-team-click
@@ -290,7 +290,13 @@
            (let [team-id (-> (dom/get-current-target event)
                              (dom/get-data "value")
                              (uuid/parse))]
-             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))]
+             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
+
+        on-create-org-click
+        (mf/use-fn
+         (fn []
+           ;; TODO update when org creation route is ready
+           (dom/open-new-window "localhost:3000/org/create")))]
 
     [:> dropdown-menu* props
 
@@ -323,12 +329,19 @@
         (when (= (:id team-item) (:id team))
           tick-icon)])
 
-     (when allow-create
+     (when allow-create-teams
        [:hr {:role "separator" :class (stl/css :team-separator)}]
-       [:> dropdown-menu-item* {:on-click    on-create-click
+       [:> dropdown-menu-item* {:on-click    on-create-team-click
                                 :class       (stl/css :team-dropdown-item :action)}
         [:span {:class (stl/css :icon-wrapper)} add-icon]
-        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-team")]])]))
+        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-team")]])
+
+     (when allow-create-org
+       [:hr {:role "separator" :class (stl/css :team-separator)}]
+       [:> dropdown-menu-item* {:on-click    on-create-org-click
+                                :class       (stl/css :team-dropdown-item :action)}
+        [:span {:class (stl/css :icon-wrapper)} add-icon]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]])]))
 
 (mf/defc team-options-dropdown*
   {::mf/private true}
@@ -542,7 +555,8 @@
                                    :profile profile
                                    :teams teams
                                    :show-default-team false
-                                   :allow-create false}]]))
+                                   :allow-create-teams false
+                                   :allow-create-org true}]]))
 
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
@@ -660,7 +674,8 @@
                                    :profile profile
                                    :teams teams
                                    :show-default-team true
-                                   :allow-create true}]
+                                   :allow-create-teams true
+                                   :allow-create-org false}]
 
      [:> team-options-dropdown* {:show show-team-options-menu?
                                  :on-close close-team-options-menu
