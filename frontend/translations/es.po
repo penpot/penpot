@@ -7671,6 +7671,14 @@ msgid "workspace.tokens.invalid-shadow-type-token-value"
 msgstr "Tipo de sombra no válida: solo se aceptan 'innerShadow' o 'dropShadow'"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr "Valor de token no válido: solo puedes referenciar tokens tipo font-family"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr "Valor de token no válido: solo none, underline y strike-through son aceptados"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Valor no válido: debe hacer referencia a un token tipográfico compuesto."
 

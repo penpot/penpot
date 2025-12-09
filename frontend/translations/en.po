@@ -7747,7 +7747,7 @@ msgstr ""
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
 msgid "workspace.tokens.invalid-font-family-token-value"
-msgstr "Invalid token value: only text delimited by ',' allowed"
+msgstr "Invalid token value: you can only reference a font-family token"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
 msgid "workspace.tokens.invalid-text-decoration-token-value"
