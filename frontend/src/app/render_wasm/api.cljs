@@ -1317,51 +1317,16 @@
       (mem/free)
       content)))
 
-
 (defn init-wasm-module
   [module]
   (let [default-fn (unchecked-get module "default")
-        serializers
-        #js
-         {:blur-type (unchecked-get module "RawBlurType")
-          :blend-mode (unchecked-get module "RawBlendMode")
-          :bool-type (unchecked-get module "RawBoolType")
-          :font-style (unchecked-get module "RawFontStyle")
-          :flex-direction (unchecked-get module "RawFlexDirection")
-          :grid-direction (unchecked-get module "RawGridDirection")
-          :grow-type (unchecked-get module "RawGrowType")
-          :align-items (unchecked-get module "RawAlignItems")
-          :align-self (unchecked-get module "RawAlignSelf")
-          :align-content (unchecked-get module "RawAlignContent")
-          :justify-items (unchecked-get module "RawJustifyItems")
-          :justify-content (unchecked-get module "RawJustifyContent")
-          :justify-self (unchecked-get module "RawJustifySelf")
-          :wrap-type (unchecked-get module "RawWrapType")
-          :grid-track-type (unchecked-get module "RawGridTrackType")
-          :shadow-style (unchecked-get module "RawShadowStyle")
-          :stroke-style (unchecked-get module "RawStrokeStyle")
-          :stroke-cap (unchecked-get module "RawStrokeCap")
-          :shape-type (unchecked-get module "RawShapeType")
-          :constraint-h (unchecked-get module "RawConstraintH")
-          :constraint-v (unchecked-get module "RawConstraintV")
-          :sizing (unchecked-get module "RawSizing")
-          :vertical-align (unchecked-get module "RawVerticalAlign")
-          :fill-data (unchecked-get module "RawFillData")
-          :text-align (unchecked-get module "RawTextAlign")
-          :text-direction (unchecked-get module "RawTextDirection")
-          :text-decoration (unchecked-get module "RawTextDecoration")
-          :text-transform (unchecked-get module "RawTextTransform")
-          :segment-data (unchecked-get module "RawSegmentData")
-          :stroke-linecap (unchecked-get module "RawStrokeLineCap")
-          :stroke-linejoin (unchecked-get module "RawStrokeLineJoin")
-          :fill-rule (unchecked-get module "RawFillRule")}]
-    (set! wasm/serializers serializers)
-    (default-fn)))
+        href       (cf/resolve-href "js/render-wasm.wasm")]
+    (default-fn #js {:locateFile (constantly href)})))
 
 (defonce module
   (delay
     (if (exists? js/dynamicImport)
-      (let [uri (cf/resolve-static-asset "js/render-wasm.js")]
+      (let [uri (cf/resolve-href "js/render-wasm.js")]
         (->> (mod/import uri)
              (p/mcat init-wasm-module)
              (p/fmap

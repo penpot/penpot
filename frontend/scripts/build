@@ -38,8 +38,6 @@ fi
 yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
 
-sed -i "s/render-wasm.js/render-wasm.js?version=$CURRENT_VERSION/g" ./resources/public/js/worker/main.js;
-
 rsync -avr resources/public/ target/dist/;
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
