@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-08 18:40+0000\n"
+"PO-Revision-Date: 2025-12-09 22:00+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -8281,3 +8281,33 @@ msgstr ""
 #: src/app/main/ui/dashboard/sidebar.cljs:799
 msgid "labels.learning-center"
 msgstr "Centre de formation"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Contact"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Sélectionner un espace de couleur"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Contacter l'assistance technique"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Contact"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Bénéficiez de stockage supplémentaire, de la récupération de fichiers et de "
+"bien plus encore pour vos équipes."
+
+#: src/app/main/ui/dashboard/subscription.cljs:101
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Bénéficiez d'un stockage illimité, de la récupération de fichier étendue et "
+"d'un nombre illimité d'éditeurs pour toutes vos équipes à un tarif fixe. "
+"[Consultez le forfait Entreprise.|target:self](%s)"
