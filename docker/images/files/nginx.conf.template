@@ -110,6 +110,8 @@ http {
             recursive_error_pages on;
             proxy_intercept_errors on;
             error_page 301 302 307 = @handle_redirect;
+
+            include /etc/nginx/overrides/assets.d/*.conf;
         }
 
         location /internal/assets {
