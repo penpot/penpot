@@ -18,6 +18,10 @@ const setupFile = async (workspacePage) => {
     fileId: "7b2da435-6186-815a-8007-0daa95d2f26d",
     pageId: "ce79274b-11ab-8088-8007-0487ad43f789",
   });
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
 };
 
 const shapeToLayerName = {

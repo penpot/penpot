@@ -18,6 +18,7 @@
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.globals :as glob]
    [beicon.v2.core :as rx]
@@ -76,11 +77,12 @@
                    (mth/ceil height) "px")}))))
 
     (when objects
-      [:& render/object-svg
-       {:objects objects
-        :object-id object-id
-        :embed embed
-        :skip-children skip-children}])))
+      [:& (mf/provider ctx/is-render?) {:value true}
+       [:& render/object-svg
+        {:objects objects
+         :object-id object-id
+         :embed embed
+         :skip-children skip-children}]])))
 
 (mf/defc objects-svg
   {::mf/wrap-props false}
@@ -88,12 +90,13 @@
   (when-let [objects (mf/deref ref:objects)]
     (for [object-id object-ids]
       (let [objects (render/adapt-objects-for-shape objects object-id)]
-        [:& render/object-svg
-         {:objects objects
-          :key (str object-id)
-          :object-id object-id
-          :embed embed
-          :skip-children skip-children}]))))
+        [:& (mf/provider ctx/is-render?) {:value true}
+         [:& render/object-svg
+          {:objects objects
+           :key (str object-id)
+           :object-id object-id
+           :embed embed
+           :skip-children skip-children}]]))))
 
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]

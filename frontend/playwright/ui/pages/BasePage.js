@@ -1,4 +1,27 @@
 export class BasePage {
+  /**
+   * Mocks multiple RPC calls in a single call.
+   *
+   * @param {Page} page
+   * @param {object<string, string>} paths
+   * @param {*} options
+   * @returns {Promise<void>}
+   */
+  static async mockRPCs(page, paths, options) {
+    for (const [path, jsonFilename] of Object.entries(paths)) {
+      await this.mockRPC(page, path, jsonFilename, options)
+    }
+  }
+
+  /**
+   * Mocks an RPC call using a file.
+   *
+   * @param {Page} page
+   * @param {string} path
+   * @param {string} jsonFilename
+   * @param {*} options
+   * @returns {Promise<void>}
+   */
   static async mockRPC(page, path, jsonFilename, options) {
     if (!page) {
       throw new TypeError("Invalid page argument. Must be a Playwright page.");
@@ -91,6 +114,10 @@ export class BasePage {
 
   get page() {
     return this.#page;
+  }
+
+  async mockRPCs(paths, options) {
+    return BasePage.mockRPCs(this.page, paths, options);
   }
 
   async mockRPC(path, jsonFilename, options) {

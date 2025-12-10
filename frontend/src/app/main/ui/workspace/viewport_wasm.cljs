@@ -54,14 +54,10 @@
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
-   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
-
-(def workspace-wasm-modifiers
-  (l/derived :workspace-wasm-modifiers st/state))
 
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
@@ -98,7 +94,7 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
-        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
+        wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 

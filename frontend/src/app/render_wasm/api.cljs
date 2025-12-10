@@ -20,7 +20,6 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -60,6 +59,9 @@
 (def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
 
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
+
+(def ^:const DEBOUNCE_DELAY_MS 100)
+(def ^:const THROTTLE_DELAY_MS 10)
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
@@ -829,7 +831,7 @@
 
   (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (fonts/get-content-fonts content)
+  (let [fonts         (f/get-content-fonts content)
         fallback-fonts (fonts-from-text-content content true)
         all-fonts (concat fonts fallback-fonts)
         result (f/store-fonts shape-id all-fonts)]
@@ -875,10 +877,10 @@
   (letfn [(do-render [ts]
             (h/call wasm/internal-module "_set_view_end")
             (render ts))]
-    (fns/debounce do-render 100)))
+    (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
-  (fns/throttle render 10))
+  (fns/throttle render THROTTLE_DELAY_MS))
 
 (defn set-view-box
   [prev-zoom zoom vbox]
@@ -1044,6 +1046,7 @@
      (process-pending shapes thumbnails full noop-fn
                       (fn []
                         (when render-callback (render-callback))
+                        (render-finish)
                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
 
 (defn clear-focus-mode
@@ -1247,9 +1250,15 @@
 
 (defn clear-canvas
   []
-  ;; TODO: perform corresponding cleaning
-  (set! wasm/context-initialized? false)
-  (h/call wasm/internal-module "_clean_up"))
+  (try
+    ;; TODO: perform corresponding cleaning
+    (set! wasm/context-initialized? false)
+    (h/call wasm/internal-module "_clean_up")
+
+    ;; If this calls panics we don't want to crash. This happens sometimes
+    ;; with hot-reload in develop
+    (catch :default error
+      (.error js/console error))))
 
 (defn show-grid
   [id]
@@ -1292,12 +1301,7 @@
     (mem/free)
     content))
 
-(defn- calculate-bool*
-  [bool-type]
-  (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
-      (mem/->offset-32)))
-
-(defn calculate-bool
+(defn calculate-bool*
   [bool-type ids]
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
         heap   (mem/get-heap-u32)
@@ -1308,7 +1312,10 @@
             offset
             (rseq ids))
 
-    (let [offset  (calculate-bool* bool-type)
+    (let [offset
+          (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+              (mem/->offset-32))
+
           length  (aget heap offset)
           data    (mem/slice heap
                              (+ offset 1)
@@ -1317,6 +1324,29 @@
       (mem/free)
       content)))
 
+(defn calculate-bool
+  [shape objects]
+
+  ;; We need to be able to calculate the boolean data but we cannot
+  ;; depend on the serialization flow.
+  ;; start_temp_object / end_temp_object create a new shapes_pool
+  ;; temporary and then we serialize the objects needed to calculate the
+  ;; boolean object.
+  ;; After the content is returned we discard that temporary context
+  (h/call wasm/internal-module "_start_temp_objects")
+
+  (let [bool-type (get shape :bool-type)
+        ids (get shape :shapes)
+        all-children
+        (->> ids
+             (mapcat #(cfh/get-children-with-self objects %)))]
+    (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+    (run! (partial set-object objects) all-children)
+
+    (let [content (-> (calculate-bool* bool-type ids)
+                      (path.impl/path-data))]
+      (h/call wasm/internal-module "_end_temp_objects")
+      content)))
 
 (defn init-wasm-module
   [module]

@@ -23,6 +23,7 @@
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -257,7 +258,8 @@
              (let [modifiers (calculate-drag-modifiers position)
                    modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
                (when on-clear-modifiers (on-clear-modifiers modifiers))
-               (st/emit! (dwm/apply-wasm-modifiers modif-tree)))
+               (st/emit! (dwm/apply-wasm-modifiers modif-tree)
+                         (dwt/finish-transform)))
              (st/emit! (dwm/apply-modifiers)))))
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
@@ -506,7 +508,8 @@
              (let [modifiers (calculate-modifiers position)
                    modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
                (when on-clear-modifiers (on-clear-modifiers))
-               (st/emit! (dwm/apply-wasm-modifiers modif-tree)))
+               (st/emit! (dwm/apply-wasm-modifiers modif-tree)
+                         (dwt/finish-transform)))
              (st/emit! (dwm/apply-modifiers)))
            (reset! start-size-before nil)
            (reset! start-size-after nil)))]

@@ -163,6 +163,19 @@ pub extern "C" fn render_sync() {
 pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
+        state.use_shape(id);
+
+        // look for an existing root shape, and create it if missing
+        let mut was_root_missing = false;
+        if !state.shapes.has(&Uuid::nil()) {
+            state.shapes.add_shape(Uuid::nil());
+            was_root_missing = true;
+        }
+
+        if was_root_missing {
+            state.set_parent_for_current_shape(Uuid::nil());
+        }
+
         state.rebuild_tiles_from(Some(&id));
         state
             .render_sync_shape(&id, performance::get_time())
@@ -330,6 +343,10 @@ fn set_children_set(entries: Vec<Uuid>) {
         parent_id = Some(shape.id);
         (_, deleted) = shape.compute_children_differences(&entries);
         shape.children = entries.clone();
+
+        for id in entries {
+            state.touch_shape(id);
+        }
     });
 
     with_state_mut!(state, {
@@ -339,6 +356,7 @@ fn set_children_set(entries: Vec<Uuid>) {
 
         for id in deleted {
             state.delete_shape_children(parent_id, id);
+            state.touch_shape(id);
         }
     });
 }
@@ -648,6 +666,26 @@ pub extern "C" fn set_modifiers() {
         state.set_modifiers(modifiers);
         state.rebuild_modifier_tiles(ids);
     });
+}
+
+#[no_mangle]
+pub extern "C" fn start_temp_objects() {
+    unsafe {
+        #[allow(static_mut_refs)]
+        let mut state = STATE.take().expect("Got an invalid state pointer");
+        state = Box::new(state.start_temp_objects());
+        STATE = Some(state);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn end_temp_objects() {
+    unsafe {
+        #[allow(static_mut_refs)]
+        let mut state = STATE.take().expect("Got an invalid state pointer");
+        state = Box::new(state.end_temp_objects());
+        STATE = Some(state);
+    }
 }
 
 fn main() {
