@@ -24,6 +24,8 @@
 
     <link rel="icon" href="images/favicon.png" />
 
+    <script type="importmap">{{& manifest.importmap }}</script>
+
     <script type="module">
       globalThis.penpotVersion = "{{& version}}";
       globalThis.penpotBuildDate = "{{& build_date}}";
@@ -33,7 +35,6 @@
     {{# manifest}}
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
-    <script type="importmap">{{& importmap }}</script>
     {{/manifest}}
 
     <!--cookie-consent-->
