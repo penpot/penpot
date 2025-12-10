@@ -253,11 +253,12 @@ fn draw_text(
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
-    let mut normalized_line_height = text_content.normalized_line_height();
+    let mut previous_line_height = text_content.normalized_line_height();
 
     for paragraph_builder_group in paragraph_builder_groups {
-        let mut group_offset_y = global_offset_y;
+        let group_offset_y = global_offset_y;
         let group_len = paragraph_builder_group.len();
+        let mut paragraph_offset_y = previous_line_height;
 
         for (paragraph_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut paragraph = paragraph_builder.build();
@@ -266,12 +267,13 @@ fn draw_text(
             paragraph.paint(canvas, xy);
 
             let line_metrics = paragraph.get_line_metrics();
+
             if paragraph_index == group_len - 1 {
                 if line_metrics.is_empty() {
-                    group_offset_y += normalized_line_height;
+                    paragraph_offset_y = paragraph.ideographic_baseline();
                 } else {
-                    normalized_line_height = paragraph.ideographic_baseline();
-                    group_offset_y += paragraph.ideographic_baseline() * line_metrics.len() as f32;
+                    paragraph_offset_y = paragraph.height();
+                    previous_line_height = paragraph.ideographic_baseline();
                 }
             }
 
@@ -280,7 +282,7 @@ fn draw_text(
             }
         }
 
-        global_offset_y = group_offset_y;
+        global_offset_y += paragraph_offset_y;
     }
 }
 

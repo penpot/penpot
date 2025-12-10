@@ -181,8 +181,8 @@ export async function watch(baseDir, predicate, callback) {
   });
 }
 
-async function readManifestFile() {
-  const manifestPath = "resources/public/js/manifest.json";
+async function readManifestFile(resource) {
+  const manifestPath = "resources/public/" + resource;
   let content = await fs.readFile(manifestPath, { encoding: "utf8" });
   return JSON.parse(content);
 }

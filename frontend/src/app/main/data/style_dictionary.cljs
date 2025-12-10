@@ -261,14 +261,19 @@
 
 (defn- parse-sd-token-font-family-value
   [value]
-  (let [missing-references (seq (some cto/find-token-value-references value))]
+  (let [value (-> (js->clj value) (flatten))
+        valid-font-family (or (string? value) (every? string? value))
+        missing-references (seq (some cto/find-token-value-references value))]
     (cond
+      (not valid-font-family)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-font-family value)]}
+
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
        :references missing-references}
 
       :else
-      {:value (-> (js->clj value) (flatten))})))
+      {:value value})))
 
 (defn parse-atomic-typography-value [token-type token-value]
   (case token-type
