@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
+   [app.common.path-names :as cpn]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -22,6 +23,7 @@
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-id)
@@ -460,12 +462,35 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-token-type-section-open
-  [token-type open?]
-  (ptk/reify ::set-token-type-section-open
+(defn clean-paths
+  []
+  (ptk/reify ::clean-paths
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-tokens :open-status-by-type] assoc token-type open?))))
+      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
+
+(defn toggle-path
+  [path]
+  (ptk/reify ::toggle-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-paths]
+                 (fn [paths]
+                   (let [paths (or paths [])]
+                     (if (some #(= % path) paths)
+                       (vec (remove #(or (= % path)
+                                         (str/starts-with? % (str path ".")))
+                                    paths))
+                       (let [split-path (cpn/split-path path :separator ".")
+                             partial-paths (reduce
+                                            (fn [acc segment]
+                                              (let [new-acc (if (empty? acc)
+                                                              segment
+                                                              (str (last acc) "." segment))]
+                                                (conj acc new-acc)))
+                                            []
+                                            split-path)]
+                         (into paths partial-paths)))))))))
 
 (defn assign-token-context-menu
   [{:keys [position] :as params}]

@@ -716,7 +716,7 @@
                              (remove str/empty?)
                              (remove nil?)
                              (distinct)
-                             (filter #(= (cpn/butlast-path %) (:path filters))))
+                             (filter #(= (cpn/butlast-path % "/") (:path filters))))
 
         groups              (when-not search?
                               (->> (sort (sequence xform components))
@@ -762,7 +762,7 @@
         on-go-back
         (mf/use-fn
          (mf/deps (:path filters))
-         #(swap! filters* assoc :path (cpn/butlast-path (:path filters))))
+         #(swap! filters* assoc :path (cpn/butlast-path (:path filters) "/")))
 
         on-enter-group
         (mf/use-fn #(swap! filters* assoc :path %))

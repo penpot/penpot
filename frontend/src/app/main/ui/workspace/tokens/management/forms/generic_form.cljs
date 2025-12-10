@@ -180,6 +180,7 @@
          (mf/deps validate-token token tokens token-type value-subfield type active-tab)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
+                 path (str (clojure.core/name token-type) "." name)
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield type)]
@@ -220,6 +221,7 @@
                                                {:name name
                                                 :value (:value valid-token)
                                                 :description description}))
+                          (dwtl/toggle-path path)
                           (dwtp/propagate-workspace-tokens)
                           (modal/hide!))))))))))]
 

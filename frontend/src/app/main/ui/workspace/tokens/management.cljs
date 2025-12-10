@@ -16,11 +16,7 @@
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
-
-(def ref:token-type-open-status
-  (l/derived (l/key :open-status-by-type) refs/workspace-tokens))
 
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
@@ -82,7 +78,6 @@
   [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
-        open-status     (mf/deref ref:token-type-open-status)
 
         selected-shapes
         (mf/with-memo [selected objects]
@@ -123,10 +118,6 @@
                                   tokens)]
             (ctob/group-by-type tokens)))
 
-
-
-
-
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))]
@@ -151,7 +142,6 @@
        (let [tokens (get tokens-by-type type)]
          [:> token-group* {:key (name type)
                            :tokens tokens
-                           :is-expanded (get open-status type false)
                            :type type
                            :selected-ids selected
                            :selected-shapes selected-shapes
