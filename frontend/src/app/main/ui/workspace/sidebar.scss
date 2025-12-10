@@ -22,7 +22,7 @@
   background-color: var(--panel-background-color);
   height: 100vh;
   max-height: 100vh;
-  z-index: deprecated.$z-index-1;
+  z-index: deprecated.$z-index-3;
 
   .resize-area {
     grid-area: resize;
