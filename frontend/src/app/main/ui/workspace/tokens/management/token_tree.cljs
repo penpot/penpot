@@ -87,19 +87,19 @@
                 (cpn/build-tree-root tokens separator)))]
     [:div {:class (stl/css :token-tree-wrapper)}
      (for [node tree]
-       [:ul {:class (stl/css :node-parent)
-             :key (:path node)
-             :style {:--node-depth (inc (:depth node))}}
-        (if (:leaf node)
-          (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
-            [:> token-pill*
-             {:token token
-              :selected-shapes selected-shapes
-              :is-selected-inside-layout is-selected-inside-layout
-              :active-theme-tokens active-theme-tokens
-              :on-click on-token-pill-click
-              :on-context-menu on-context-menu}])
+       (if (:leaf node)
+         (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
+           [:> token-pill*
+            {:token token
+             :selected-shapes selected-shapes
+             :is-selected-inside-layout is-selected-inside-layout
+             :active-theme-tokens active-theme-tokens
+             :on-click on-token-pill-click
+             :on-context-menu on-context-menu}])
           ;; Render segment folder
+         [:ul {:class (stl/css :node-parent)
+               :key (:path node)
+               :style {:--node-depth (inc (:depth node))}}
           [:> folder-node* {:node node
                             :selected-shapes selected-shapes
                             :is-selected-inside-layout is-selected-inside-layout
@@ -107,4 +107,4 @@
                             :on-token-pill-click on-token-pill-click
                             :on-context-menu on-context-menu
                             :tokens-lib tokens-lib
-                            :selected-token-set-id selected-token-set-id}])])]))
+                            :selected-token-set-id selected-token-set-id}]]))]))

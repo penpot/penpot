@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pprint :as pp]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -23,8 +24,11 @@
    [app.main.ui.workspace.tokens.management.token-tree :refer [token-tree*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ref:set-unfolded-token-path
+  (l/derived (l/key :unfolded-token-path) refs/workspace-tokens))
 
 (defn token-section-icon
   [type]
@@ -64,13 +68,16 @@
 
 (mf/defc token-group*
   {::mf/schema schema:token-group}
-  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib is-expanded selected-ids]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib selected-ids]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
+
+        unfolded-token-path (mf/deref ref:set-unfolded-token-path)
+
         editing-ref  (mf/deref refs/workspace-editor-state)
         not-editing? (empty? editing-ref)
 
-        is-expanded (d/nilv is-expanded false)
+        is-expanded (= unfolded-token-path [(name type)])
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -95,24 +102,27 @@
 
         on-toggle-open-click
         (mf/use-fn
-         (mf/deps is-expanded type)
-         #(st/emit! (dwtl/set-token-type-section-open type (not is-expanded))))
+         (mf/deps type is-expanded)
+         (fn []
+           (if is-expanded
+             (st/emit! (dwtl/set-unfolded-token-path []))
+             (st/emit! (dwtl/set-unfolded-token-path [(name type)])))))
 
         on-popover-open-click
         (mf/use-fn
          (mf/deps type title modal)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (dwtl/set-token-type-section-open type true)
-                     (let [pos (dom/get-client-position event)]
-                       (modal/show (:key modal)
-                                   {:x (:x pos)
-                                    :y (:y pos)
-                                    :position :right
-                                    :fields (:fields modal)
-                                    :title title
-                                    :action "create"
-                                    :token-type type})))))
+           (st/emit! #_(dwtl/set-token-type-section-open type true)
+            (let [pos (dom/get-client-position event)]
+              (modal/show (:key modal)
+                          {:x (:x pos)
+                           :y (:y pos)
+                           :position :right
+                           :fields (:fields modal)
+                           :title title
+                           :action "create"
+                           :token-type type})))))
 
         on-token-pill-click
         (mf/use-fn

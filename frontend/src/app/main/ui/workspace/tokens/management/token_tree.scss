@@ -8,6 +8,21 @@
 
 .token-tree-wrapper {
   padding-block-end: var(--sp-s);
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--sp-xs);
+
+  & .node-parent {
+    flex: 1 0 100%;
+
+    &:last-of-type {
+      margin-block-end: var(--sp-s);
+    }
+  }
+
+  & .token-pill {
+    flex: 0 0 auto;
+  }
 }
 
 .node-parent {

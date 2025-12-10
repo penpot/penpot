@@ -460,12 +460,12 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-token-type-section-open
-  [token-type open?]
-  (ptk/reify ::set-token-type-section-open
+(defn set-unfolded-token-path
+  [path]
+  (ptk/reify ::set-unfolded-token-path
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-tokens :open-status-by-type] assoc token-type open?))))
+      (update state :workspace-tokens assoc :unfolded-token-path path))))
 
 (defn assign-token-context-menu
   [{:keys [position] :as params}]
