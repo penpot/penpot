@@ -83,7 +83,7 @@
      :source-map-detail-level :all}}}
 
   :worker
-  {:target :esm
+  {:target :browser
    :output-dir "resources/public/js/worker/"
    :asset-path "/js/worker"
    :devtools {:browser-inject :main
@@ -94,6 +94,7 @@
    {:main
     {:entries [app.worker]
      :web-worker true
+     :prepend-js "importScripts('/js/worker/render.js');"
      :depends-on #{}}}
 
    :js-options
