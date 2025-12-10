@@ -15,6 +15,19 @@ impl RenderOptions {
         self.flags & options::PROFILE_REBUILD_TILES == options::PROFILE_REBUILD_TILES
     }
 
+    /// Use fast mode to enable / disable expensive operations
+    pub fn is_fast_mode(&self) -> bool {
+        self.flags & options::FAST_MODE == options::FAST_MODE
+    }
+
+    pub fn set_fast_mode(&mut self, enabled: bool) {
+        if enabled {
+            self.flags |= options::FAST_MODE;
+        } else {
+            self.flags &= !options::FAST_MODE;
+        }
+    }
+
     pub fn dpr(&self) -> f32 {
         self.dpr.unwrap_or(1.0)
     }

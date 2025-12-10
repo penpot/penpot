@@ -874,22 +874,37 @@
 
 (def render-finish
   (letfn [(do-render [ts]
+            (perf/begin-measure "render-finish")
             (h/call wasm/internal-module "_set_view_end")
-            (render ts))]
+            (render ts)
+            (perf/end-measure "render-finish"))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
-  (fns/throttle render THROTTLE_DELAY_MS))
+  (letfn [(do-render-pan [ts]
+            (perf/begin-measure "render-pan")
+            (render ts)
+            (perf/end-measure "render-pan"))]
+    (fns/throttle do-render-pan THROTTLE_DELAY_MS)))
 
 (defn set-view-box
   [prev-zoom zoom vbox]
-  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (let [is-pan (mth/close? prev-zoom zoom)]
+    (perf/begin-measure "set-view-box")
+    (h/call wasm/internal-module "_set_view_start")
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
 
-  (if (mth/close? prev-zoom zoom)
-    (do (render-pan)
-        (render-finish))
-    (do (h/call wasm/internal-module "_render_from_cache" 0)
-        (render-finish))))
+    (if is-pan
+      (do (perf/end-measure "set-view-box")
+          (perf/begin-measure "set-view-box::pan")
+          (render-pan)
+          (render-finish)
+          (perf/end-measure "set-view-box::pan"))
+      (do (perf/end-measure "set-view-box")
+          (perf/begin-measure "set-view-box::zoom")
+          (h/call wasm/internal-module "_render_from_cache" 0)
+          (render-finish)
+          (perf/end-measure "set-view-box::zoom")))))
 
 (defn set-object
   [objects shape]
