@@ -23,7 +23,7 @@ export function deleteContentBackward(event, editor, selectionController) {
   // If not is collapsed AKA is a selection, then
   // we removeSelected.
   if (!selectionController.isCollapsed) {
-    return selectionController.removeSelected({ direction: 'backward' });
+    return selectionController.removeSelected({ direction: "backward" });
   }
 
   // If we're in a text node and the offset is
@@ -32,18 +32,18 @@ export function deleteContentBackward(event, editor, selectionController) {
   if (selectionController.isTextFocus && selectionController.focusOffset > 0) {
     return selectionController.removeBackwardText();
 
-  // If we're in a text node but we're at the end of the
-  // paragraph, we should merge the current paragraph
-  // with the following paragraph.
+    // If we're in a text node but we're at the end of the
+    // paragraph, we should merge the current paragraph
+    // with the following paragraph.
   } else if (
     selectionController.isTextFocus &&
     selectionController.focusAtStart
   ) {
     return selectionController.mergeBackwardParagraph();
 
-  // If we're at an text span or a line break paragraph
-  // and there's more than one paragraph, then we should
-  // remove the next paragraph.
+    // If we're at an text span or a line break paragraph
+    // and there's more than one paragraph, then we should
+    // remove the next paragraph.
   } else if (
     selectionController.isTextSpanFocus ||
     selectionController.isLineBreakFocus

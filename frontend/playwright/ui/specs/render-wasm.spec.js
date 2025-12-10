@@ -51,7 +51,7 @@ test.skip("BUG 12164 - Crash when trying to fetch a missing font", async ({
     pageId: "2b7f0188-51a1-8193-8006-e05bad87b74d",
   });
 
-  await workspacePage.page.waitForTimeout(1000)
+  await workspacePage.page.waitForTimeout(1000);
   await workspacePage.waitForFirstRender();
 
   await expect(
