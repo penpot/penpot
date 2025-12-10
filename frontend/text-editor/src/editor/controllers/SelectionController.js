@@ -504,19 +504,12 @@ export class SelectionController extends EventTarget {
     if (!this.#savedSelection) return false;
 
     if (this.#savedSelection.anchorNode && this.#savedSelection.focusNode) {
-      if (this.#savedSelection.anchorNode === this.#savedSelection.focusNode) {
-        this.#selection.setPosition(
-          this.#savedSelection.focusNode,
-          this.#savedSelection.focusOffset,
-        );
-      } else {
-        this.#selection.setBaseAndExtent(
-          this.#savedSelection.anchorNode,
-          this.#savedSelection.anchorOffset,
-          this.#savedSelection.focusNode,
-          this.#savedSelection.focusOffset,
-        );
-      }
+      this.#selection.setBaseAndExtent(
+        this.#savedSelection.anchorNode,
+        this.#savedSelection.anchorOffset,
+        this.#savedSelection.focusNode,
+        this.#savedSelection.focusOffset,
+      );
     }
     this.#savedSelection = null;
     return true;
