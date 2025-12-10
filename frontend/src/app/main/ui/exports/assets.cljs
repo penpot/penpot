@@ -284,7 +284,7 @@
                      :on-click retry-last-export}
             (tr "workspace.options.retry")]
 
-           [:p {:class (stl/css :progress)}
+           [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 
         [:button {:class (stl/css :progress-close-button)
