@@ -333,7 +333,7 @@
                     (case valign
                       "bottom" (- y (- height selrect-height))
                       "center" (- y (/ (- height selrect-height) 2))
-                      "top"    y)
+                      y)
                     y)]
             [(assoc selrect :y y :width max-width :height max-height) transform])
 
