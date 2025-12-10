@@ -43,33 +43,38 @@ export class SelectionControllerDebug {
     this.#elements.isParagraphStart.checked =
       selectionController.isParagraphStart;
     this.#elements.isParagraphEnd.checked = selectionController.isParagraphEnd;
-    this.#elements.isTextSpanStart.checked = selectionController.isTextSpanStart;
+    this.#elements.isTextSpanStart.checked =
+      selectionController.isTextSpanStart;
     this.#elements.isTextSpanEnd.checked = selectionController.isTextSpanEnd;
     this.#elements.isTextAnchor.checked = selectionController.isTextAnchor;
     this.#elements.isTextFocus.checked = selectionController.isTextFocus;
     this.#elements.focusNode.value = this.getNodeDescription(
       selectionController.focusNode,
-      selectionController.focusOffset
+      selectionController.focusOffset,
     );
     this.#elements.focusOffset.value = selectionController.focusOffset;
     this.#elements.anchorNode.value = this.getNodeDescription(
       selectionController.anchorNode,
-      selectionController.anchorOffset
+      selectionController.anchorOffset,
     );
     this.#elements.anchorOffset.value = selectionController.anchorOffset;
     this.#elements.focusTextSpan.value = this.getNodeDescription(
-      selectionController.focusTextSpan
+      selectionController.focusTextSpan,
     );
     this.#elements.anchorTextSpan.value = this.getNodeDescription(
-      selectionController.anchorTextSpan
+      selectionController.anchorTextSpan,
     );
     this.#elements.focusParagraph.value = this.getNodeDescription(
-      selectionController.focusParagraph
+      selectionController.focusParagraph,
     );
     this.#elements.anchorParagraph.value = this.getNodeDescription(
-      selectionController.anchorParagraph
+      selectionController.anchorParagraph,
     );
-    this.#elements.startContainer.value = this.getNodeDescription(selectionController.startContainer);
-    this.#elements.endContainer.value = this.getNodeDescription(selectionController.endContainer);
+    this.#elements.startContainer.value = this.getNodeDescription(
+      selectionController.startContainer,
+    );
+    this.#elements.endContainer.value = this.getNodeDescription(
+      selectionController.endContainer,
+    );
   }
 }

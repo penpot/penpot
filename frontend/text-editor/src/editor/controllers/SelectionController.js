@@ -54,7 +54,7 @@ import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
 import { sanitizeFontFamily } from "../content/dom/Style.js";
-import StyleDeclaration from './StyleDeclaration.js';
+import StyleDeclaration from "./StyleDeclaration.js";
 
 /**
  * Supported options for the SelectionController.
@@ -280,11 +280,17 @@ export class SelectionController extends EventTarget {
     // FIXME: I don't like this approximation. Having to iterate nodes twice
     // is bad for performance. I think we need another way of "computing"
     // the cascade.
-    for (const textNode of this.#textNodeIterator.iterateFrom(startNode, endNode)) {
+    for (const textNode of this.#textNodeIterator.iterateFrom(
+      startNode,
+      endNode,
+    )) {
       const paragraph = textNode.parentElement.parentElement;
       this.#applyStylesFromElementToCurrentStyle(paragraph);
     }
-    for (const textNode of this.#textNodeIterator.iterateFrom(startNode, endNode)) {
+    for (const textNode of this.#textNodeIterator.iterateFrom(
+      startNode,
+      endNode,
+    )) {
       const textSpan = textNode.parentElement;
       this.#mergeStylesFromElementToCurrentStyle(textSpan);
     }
@@ -1132,10 +1138,7 @@ export class SelectionController extends EventTarget {
     const hasOnlyOneParagraph = fragment.children.length === 1;
     const forceTextSpan =
       fragment.firstElementChild?.dataset?.textSpan === "force";
-    if (
-      hasOnlyOneParagraph &&
-      forceTextSpan
-    ) {
+    if (hasOnlyOneParagraph && forceTextSpan) {
       // first text span
       const collapseNode = fragment.firstElementChild.firstElementChild;
       if (this.isTextSpanStart) {
@@ -1403,7 +1406,7 @@ export class SelectionController extends EventTarget {
       // the focus node is a <span>.
       if (isTextSpan(this.focusNode)) {
         this.focusNode.firstElementChild.replaceWith(textNode);
-      // the focus node is a <br>.
+        // the focus node is a <br>.
       } else {
         this.focusNode.replaceWith(textNode);
       }
@@ -1981,8 +1984,7 @@ export class SelectionController extends EventTarget {
         this.setSelection(newTextSpan.firstChild, 0, newTextSpan.firstChild, 0);
       }
       // The styles are applied to the paragraph
-      else
-      {
+      else {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
         // Apply styles to child text spans.

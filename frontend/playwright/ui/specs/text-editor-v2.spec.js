@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { Clipboard } from '../../helpers/Clipboard';
+import { Clipboard } from "../../helpers/Clipboard";
 import { WorkspacePage } from "../pages/WorkspacePage";
 
 const timeToWait = 100;
@@ -11,14 +11,14 @@ test.beforeEach(async ({ page, context }) => {
   await WorkspacePage.mockConfigFlags(page, ["enable-feature-text-editor-v2"]);
 });
 
-test.afterEach(async ({ context}) => {
+test.afterEach(async ({ context }) => {
   context.clearPermissions();
-})
+});
 
 test("Create a new text shape", async ({ page }) => {
   const initialText = "Lorem ipsum";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.goToWorkspace();
@@ -36,10 +36,7 @@ test("Create a new text shape from pasting text", async ({ page, context }) => {
     textEditor: true,
   });
   await workspace.setupEmptyFile();
-  await workspace.mockRPC(
-    "update-file?id=*",
-    "text-editor/update-file.json",
-  );
+  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
   await workspace.goToWorkspace();
 
   await Clipboard.writeText(page, textToPaste);
@@ -55,10 +52,13 @@ test("Create a new text shape from pasting text", async ({ page, context }) => {
   await workspace.textEditor.stopEditing();
 });
 
-test("Create a new text shape from pasting text using context menu", async ({ page, context }) => {
+test("Create a new text shape from pasting text using context menu", async ({
+  page,
+  context,
+}) => {
   const textToPaste = "Lorem ipsum";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.goToWorkspace();
@@ -72,11 +72,13 @@ test("Create a new text shape from pasting text using context menu", async ({ pa
   expect(textContent).toBe(textToPaste);
 
   await workspace.textEditor.stopEditing();
-})
+});
 
-test("Update an already created text shape by appending text", async ({ page }) => {
+test("Update an already created text shape by appending text", async ({
+  page,
+}) => {
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -94,7 +96,7 @@ test("Update an already created text shape by prepending text", async ({
   page,
 }) => {
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -112,7 +114,7 @@ test("Update an already created text shape by inserting text in between", async 
   page,
 }) => {
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -126,10 +128,13 @@ test("Update an already created text shape by inserting text in between", async 
   await workspace.textEditor.stopEditing();
 });
 
-test("Update a new text shape appending text by pasting text", async ({ page, context }) => {
+test("Update a new text shape appending text by pasting text", async ({
+  page,
+  context,
+}) => {
   const textToPaste = " dolor sit amet";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -147,11 +152,12 @@ test("Update a new text shape appending text by pasting text", async ({ page, co
 });
 
 test("Update a new text shape prepending text by pasting text", async ({
-  page, context
+  page,
+  context,
 }) => {
   const textToPaste = "Dolor sit amet ";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -173,7 +179,7 @@ test("Update a new text shape replacing (starting) text with pasted text", async
 }) => {
   const textToPaste = "Dolor sit amet";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -197,7 +203,7 @@ test("Update a new text shape replacing (ending) text with pasted text", async (
 }) => {
   const textToPaste = "dolor sit amet";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -221,7 +227,7 @@ test("Update a new text shape replacing (in between) text with pasted text", asy
 }) => {
   const textToPaste = "dolor sit amet";
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
@@ -244,14 +250,11 @@ test("Update text font size selecting a part of it (starting)", async ({
   page,
 }) => {
   const workspace = new WorkspacePage(page, {
-    textEditor: true
+    textEditor: true,
   });
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
-  await workspace.mockRPC(
-    "update-file?id=*",
-    "text-editor/update-file.json",
-  );
+  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
   await workspace.goToWorkspace();
   await workspace.clickLeafLayer("Lorem ipsum");
   await workspace.textEditor.startEditing();
@@ -280,7 +283,10 @@ test.skip("Update text line height selecting a part of it (starting)", async ({
   await workspace.textEditor.selectFromStart(5);
   await workspace.textEditor.changeLineHeight(1.4);
 
-  const lineHeight = await workspace.textEditor.waitForParagraphStyle(1, 'line-height');
+  const lineHeight = await workspace.textEditor.waitForParagraphStyle(
+    1,
+    "line-height",
+  );
   expect(lineHeight).toBe("1.4");
 
   const textContent = await workspace.textEditor.waitForTextSpanContent();

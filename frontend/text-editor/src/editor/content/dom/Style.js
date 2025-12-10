@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import StyleDeclaration from '../../controllers/StyleDeclaration.js';
+import StyleDeclaration from "../../controllers/StyleDeclaration.js";
 import { getFills } from "./Color.js";
 
 const DEFAULT_FONT_SIZE = "16px";
@@ -339,8 +339,7 @@ export function setStylesFromObject(element, allowedStyles, styleObject) {
         continue;
       }
       let styleValue = styleObject[styleName];
-      if (!styleValue)
-        continue;
+      if (!styleValue) continue;
 
       if (styleName === "font-family") {
         styleValue = sanitizeFontFamily(styleValue);
@@ -388,8 +387,10 @@ export function setStylesFromDeclaration(
  * @returns {HTMLElement}
  */
 export function setStyles(element, allowedStyles, styleObjectOrDeclaration) {
-  if (styleObjectOrDeclaration instanceof CSSStyleDeclaration
-   || styleObjectOrDeclaration instanceof StyleDeclaration) {
+  if (
+    styleObjectOrDeclaration instanceof CSSStyleDeclaration ||
+    styleObjectOrDeclaration instanceof StyleDeclaration
+  ) {
     return setStylesFromDeclaration(
       element,
       allowedStyles,

@@ -6,8 +6,7 @@ export function fromStyle(style) {
   const entry = Object.entries(this).find(([name, value]) =>
     name === fromStyleValue(style) ? value : 0,
   );
-  if (!entry)
-    return;
+  if (!entry) return;
 
   const [name] = entry;
   return name;

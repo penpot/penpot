@@ -24,19 +24,19 @@ export function start() {
  */
 export function update() {
   if (Date.now - startTime >= SAFE_GUARD_TIME) {
-    throw new Error('Safe guard timeout');
+    throw new Error("Safe guard timeout");
   }
 }
 
-let timeoutId = 0
+let timeoutId = 0;
 export function throwAfter(error, timeout = SAFE_GUARD_TIME) {
   timeoutId = setTimeout(() => {
-    throw error
-  }, timeout)
+    throw error;
+  }, timeout);
 }
 
 export function throwCancel() {
-  clearTimeout(timeoutId)
+  clearTimeout(timeoutId);
 }
 
 export default {

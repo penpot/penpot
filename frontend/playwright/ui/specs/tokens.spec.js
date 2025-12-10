@@ -303,7 +303,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.pressSequentially(".changed");
 
-    await tokensUpdateCreateModal.getByRole("button", {name: "Save"}).click();
+    await tokensUpdateCreateModal.getByRole("button", { name: "Save" }).click();
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
