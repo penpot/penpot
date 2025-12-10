@@ -77,7 +77,7 @@
      [:button {:class (stl/css :cta-button :bottom-link)
                :on-click cta-link-trial} cta-text-trial])])
 
-(defn schema:seats-form [min-editors]
+(defn- make-management-form-schema [min-editors]
   [:map {:title "SeatsForm"}
    [:min-members [::sm/number {:min min-editors
                                :max 9999}]]
@@ -87,7 +87,6 @@
   {::mf/register modal/components
    ::mf/register-as :management-dialog}
   [{:keys [subscription-type current-subscription editors subscribe-to-trial]}]
-
   (let [unlimited-modal-step*
         (mf/use-state 1)
 
@@ -112,9 +111,12 @@
           {:min-members min-editors
            :redirect-to-payment-details false})
 
+        schema
+        (mf/with-memo [min-editors]
+          (make-management-form-schema min-editors))
+
         form
-        (fm/use-form :schema (schema:seats-form min-editors)
-                     :initial initial)
+        (fm/use-form :schema schema :initial initial)
 
         submit-in-progress
         (mf/use-ref false)
@@ -334,11 +336,15 @@
         [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")}]]
 
        [:div {:class (stl/css :modal-end)}
-        [:div {:class (stl/css :modal-title)} (tr "subscription.settings.sucess.dialog.title" subscription-name)]
+        [:div {:class (stl/css :modal-title)}
+         (tr "subscription.settings.sucess.dialog.title" subscription-name)]
         (when (not= subscription-name "professional")
-          [:p {:class (stl/css :modal-text-large)} (tr "subscription.settings.success.dialog.thanks" subscription-name)])
-        [:p {:class (stl/css :modal-text-large)} (tr "subscription.settings.success.dialog.description")]
-        [:p {:class (stl/css :modal-text-large)} (tr "subscription.settings.sucess.dialog.footer")]
+          [:p {:class (stl/css :modal-text-large)}
+           (tr "subscription.settings.success.dialog.thanks" subscription-name)])
+        [:p {:class (stl/css :modal-text-large)}
+         (tr "subscription.settings.success.dialog.description")]
+        [:p {:class (stl/css :modal-text-large)}
+         (tr "subscription.settings.sucess.dialog.footer")]
 
         [:div {:class (stl/css :success-action-buttons)}
          [:input
@@ -418,7 +424,11 @@
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
 
-    (mf/with-effect [authenticated? show-subscription-success-modal? show-trial-subscription-modal? success-modal-is-trial? subscription]
+    (mf/with-effect [authenticated?
+                     show-subscription-success-modal?
+                     show-trial-subscription-modal?
+                     success-modal-is-trial?
+                     subscription]
       (when ^boolean authenticated?
         (cond
           ^boolean show-trial-subscription-modal?
