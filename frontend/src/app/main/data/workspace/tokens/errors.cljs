@@ -88,6 +88,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-font-weight
     :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
 
+   :error.style-dictionary/invalid-token-value-font-family
+   {:error/code :error.style-dictionary/invalid-token-value-font-family
+    :error/fn #(tr "workspace.tokens.invalid-font-family-token-value" %)}
+
    :error.style-dictionary/invalid-token-value-typography
    {:error/code :error.style-dictionary/invalid-token-value-typography
     :error/fn #(tr "workspace.tokens.invalid-token-value-typography" %)}
