@@ -16,6 +16,7 @@
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
@@ -234,20 +235,20 @@
 
     [:& radio-button
      {:value "fix"
-      :icon  deprecated-icon/fixed-width
+      :icon  i/fixed-width
       :title "Fix width"
       :id    "behaviour-h-fix"}]
 
     (when has-fill
       [:& radio-button
        {:value "fill"
-        :icon  deprecated-icon/fill-content
+        :icon  i/fill-content
         :title "Width 100%"
         :id    "behaviour-h-fill"}])
     (when is-auto
       [:& radio-button
        {:value "auto"
-        :icon  deprecated-icon/hug-content
+        :icon  i/hug-content
         :title "Fit content (Horizontal)"
         :id    "behaviour-h-auto"}])]])
 
@@ -268,7 +269,7 @@
 
     [:& radio-button
      {:value      "fix"
-      :icon       deprecated-icon/fixed-width
+      :icon       i/fixed-width
       :icon-class (stl/css :rotated)
       :title      "Fix height"
       :id         "behaviour-v-fix"}]
@@ -276,14 +277,14 @@
     (when has-fill
       [:& radio-button
        {:value      "fill"
-        :icon       deprecated-icon/fill-content
+        :icon       i/fill-content
         :icon-class (stl/css :rotated)
         :title      "Height 100%"
         :id         "behaviour-v-fill"}])
     (when is-auto
       [:& radio-button
        {:value      "auto"
-        :icon       deprecated-icon/hug-content
+        :icon       i/hug-content
         :icon-class (stl/css :rotated)
         :title      "Fit content (Vertical)"
         :id         "behaviour-v-auto"}])]])
