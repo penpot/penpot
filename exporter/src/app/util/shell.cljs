@@ -75,7 +75,8 @@
   [path]
   (->> (.stat fs/promises path)
        (p/fmap (fn [data]
-                 {:created-at (inst-ms (.-ctime ^js data))
+                 {:path path
+                  :created-at (inst-ms (.-ctime ^js data))
                   :size (.-size data)}))
        (p/merr (fn [_cause]
                  (p/resolved nil)))))

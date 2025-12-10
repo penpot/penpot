@@ -114,6 +114,7 @@ example. It's still usable as before, we just removed the example.
 - Fix unpublish library modal not scrolling a long file list [Taiga #12285](https://tree.taiga.io/project/penpot/issue/12285)
 - Fix incorrect interaction betwen hower and scroll on assets sidebar [Taiga #12389](https://tree.taiga.io/project/penpot/issue/12389)
 - Fix switch variants with paths [Taiga #12841](https://tree.taiga.io/project/penpot/issue/12841)
+- Fix referencing typography tokens on font-family tokens [Taiga #12492](https://tree.taiga.io/project/penpot/issue/12492)
 
 ## 2.11.1
 

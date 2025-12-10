@@ -107,12 +107,12 @@
                                     :on-progress on-progress)
 
         append      (fn [{:keys [filename path] :as resource}]
-                      (rsc/add-to-zip! zip path (str/replace filename sanitize-file-regex "_")))
+                      (rsc/add-to-zip zip path (str/replace filename sanitize-file-regex "_")))
 
         proc        (->> exports
                          (map (fn [export] (rd/render export append)))
                          (p/all)
-                         (p/fnly (fn [_] (.finalize zip)))
+                         (p/mcat (fn [_] (rsc/close-zip zip)))
                          (p/fmap (constantly resource))
                          (p/mcat (partial rsc/upload-resource auth-token))
                          (p/fmap (fn [resource]

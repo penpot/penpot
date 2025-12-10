@@ -11,6 +11,7 @@
    ["node:fs" :as fs]
    ["node:fs/promises" :as fsp]
    ["node:path" :as path]
+   ["undici" :as http]
    [app.common.exceptions :as ex]
    [app.common.transit :as t]
    [app.common.uri :as u]
@@ -53,30 +54,40 @@
     (.pipe zip out)
     zip))
 
-(defn add-to-zip!
+(defn add-to-zip
   [zip path name]
   (.file ^js zip path #js {:name name}))
 
-(defn close-zip!
+(defn close-zip
   [zip]
-  (.finalize ^js zip))
+  (p/create (fn [resolve]
+              (.on ^js zip "close" resolve)
+              (.finalize ^js zip))))
 
 (defn upload-resource
   [auth-token resource]
   (->> (fsp/readFile (:path resource))
        (p/fmap (fn [buffer]
+                 (js/console.log buffer)
                  (new js/Blob #js [buffer] #js {:type (:mtype resource)})))
        (p/mcat (fn [blob]
-                 (let [fdata (new js/FormData)
-                       uri   (-> (cf/get :public-uri)
-                                 (u/ensure-path-slash)
-                                 (u/join "api/management/methods/upload-tempfile")
-                                 (str))]
+                 (let [fdata  (new http/FormData)
+                       agent  (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
+                       headers #js {"X-Shared-Key" cf/management-key
+                                    "Authorization" (str "Bearer " auth-token)}
+
+                       request #js {:headers headers
+                                    :method "POST"
+                                    :body fdata
+                                    :dispatcher agent}
+                       uri     (-> (cf/get :public-uri)
+                                   (u/ensure-path-slash)
+                                   (u/join "api/management/methods/upload-tempfile")
+                                   (str))]
+
                    (.append fdata "content" blob (:filename resource))
-                   (js/fetch uri #js {:headers #js {"X-Shared-Key" cf/management-key
-                                                    "Authorization" (str "Bearer " auth-token)}
-                                      :method "POST"
-                                      :body fdata}))))
+                   (http/fetch uri request))))
+
        (p/mcat (fn [response]
                  (if (not= (.-status response) 200)
                    (ex/raise :type :internal
