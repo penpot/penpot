@@ -7,4 +7,5 @@ bb -i '(babashka.wait/wait-for-port "localhost" 9630)';
 bb -i '(babashka.wait/wait-for-path "target/app.js")';
 sleep 2;
 
+export NODE_TLS_REJECT_UNAUTHORIZED=0
 exec node target/app.js

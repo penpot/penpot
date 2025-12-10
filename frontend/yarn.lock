@@ -1226,16 +1226,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpot/svgo@penpot/svgo#v3.1":
+"@penpot/svgo@penpot/svgo#v3.2":
   version: 4.0.0
-  resolution: "@penpot/svgo@https://github.com/penpot/svgo.git#commit=a46262c12c0d967708395972c374eb2adead4180"
+  resolution: "@penpot/svgo@https://github.com/penpot/svgo.git#commit=8c9b0e32e9cb5f106085260bd9375f3c91a5010b"
   dependencies:
     "@trysound/sax": "npm:0.2.0"
     css-select: "npm:^5.1.0"
     css-tree: "npm:^3.1.0"
     csso: "npm:^5.0.5"
     lodash: "npm:^4.17.21"
-  checksum: 10c0/db5f81c99dec2765721d73b69bb30594869ebf657380dfb46709c79775b6c0dc1af678fe9fe51bbe2272a2c78d19c2694a12ec6578bcc41235fa4aff475c9416
+  checksum: 10c0/d7af2801451b97f8ffb17664147c609456f5bcc786c6d03b222546125260c0f268e750748311d61598e31f66610b00038d2b969635b1a15e5694647e19c6b63a
   languageName: node
   linkType: hard
 
@@ -4311,7 +4311,7 @@ __metadata:
     "@penpot/hljs": "portal:./vendor/hljs"
     "@penpot/mousetrap": "portal:./vendor/mousetrap"
     "@penpot/plugins-runtime": "npm:1.3.2"
-    "@penpot/svgo": "penpot/svgo#v3.1"
+    "@penpot/svgo": "penpot/svgo#v3.2"
     "@penpot/text-editor": "portal:./text-editor"
     "@playwright/test": "npm:1.52.0"
     "@storybook/addon-docs": "npm:10.0.4"

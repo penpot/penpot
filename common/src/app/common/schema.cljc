@@ -281,7 +281,20 @@
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [s          (schema s)
+  (let [s          #?(:clj
+                      (schema s)
+                      :cljs
+                      (try
+                        (schema s)
+                        (catch :default cause
+                          (let [data (ex-data cause)]
+                            (if (= :malli.core/invalid-schema (:type data))
+                              (throw (ex-info
+                                      (str "Invalid schema\n"
+                                           (pp/pprint-str (:data data)))
+                                      {}))
+                              (throw cause))))))
+
         validator* (delay (m/validator s))
         explainer* (delay (m/explainer s))
         hint       (or ^boolean hint "check error")
