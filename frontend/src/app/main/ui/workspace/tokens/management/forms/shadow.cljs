@@ -208,19 +208,20 @@
      :tokens tokens}]])
 
 (mf/defc tabs-wrapper*
-  [{:keys [token tokens form tab toggle subfield] :rest props}]
-  (let [on-add-shadow-block
+  [{:keys [token tokens tab handle-toggle value-subfield] :rest props}]
+  (let [form (mf/use-ctx forms/context)
+        on-add-shadow-block
         (mf/use-fn
-         (mf/deps subfield)
+         (mf/deps value-subfield)
          (fn []
-           (swap! form  update-in [:data :value subfield] conj default-token-shadow)))
+           (swap! form  update-in [:data :value value-subfield] conj default-token-shadow)))
 
         remove-shadow-block
         (mf/use-fn
-         (mf/deps subfield)
+         (mf/deps value-subfield)
          (fn [index event]
            (dom/prevent-default event)
-           (swap! form update-in [:data :value subfield] #(d/remove-at-index % index))))]
+           (swap! form update-in [:data :value value-subfield] #(d/remove-at-index % index))))]
 
     [:*
      [:div {:class (stl/css :title-bar)}
@@ -232,7 +233,7 @@
                         :icon i/add}]
       [:& radio-buttons {:class (stl/css :listing-options)
                          :selected (d/name tab)
-                         :on-change toggle
+                         :on-change handle-toggle
                          :name "reference-composite-tab"}
        [:& radio-button {:icon i/layers
                          :value "composite"
@@ -247,7 +248,7 @@
        [:> composite-form* {:token token
                             :tokens tokens
                             :remove-shadow-block remove-shadow-block
-                            :value-subfield subfield}]
+                            :value-subfield value-subfield}]
 
        [:> reference-form* {:token token
                             :tokens tokens}])]))
