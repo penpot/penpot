@@ -223,24 +223,30 @@
         circ              (* 2 Math/PI 12)
         pct               (- circ (* circ (/ progress total)))
 
-        pwidth (if error?
-                 280
-                 (/ (* progress 280) total))
-        color  (cond
-                 error?         clr/new-danger
-                 healthy?       (if is-default-theme?
-                                  clr/new-primary
-                                  clr/new-primary-light)
-                 (not healthy?) clr/new-warning)
+        pwidth
+        (if error?
+          280
+          (/ (* progress 280) total))
 
-        background-clr (if is-default-theme?
-                         clr/background-quaternary
-                         clr/background-quaternary-light)
-        title  (cond
-                 error?          (tr "workspace.options.exporting-object-error")
-                 complete?       (tr "workspace.options.exporting-complete")
-                 healthy?        (tr "workspace.options.exporting-object")
-                 (not healthy?)  (tr "workspace.options.exporting-object-slow"))
+        color
+        (cond
+          error?         clr/new-danger
+          healthy?       (if is-default-theme?
+                           clr/new-primary
+                           clr/new-primary-light)
+          (not healthy?) clr/new-warning)
+
+        background-clr
+        (if is-default-theme?
+          clr/background-quaternary
+          clr/background-quaternary-light)
+
+        title
+        (cond
+          error?          (tr "workspace.options.exporting-object-error")
+          complete?       (tr "workspace.options.exporting-complete")
+          healthy?        (tr "workspace.options.exporting-object")
+          (not healthy?)  (tr "workspace.options.exporting-object-slow"))
 
         retry-last-export
         (mf/use-fn #(st/emit! (de/retry-last-export)))
