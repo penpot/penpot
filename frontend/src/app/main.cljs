@@ -90,7 +90,10 @@
             (rx/map #(ws/initialize)))))))
 
 (defn ^:export init
-  []
+  [options]
+  (some-> (unchecked-get options "defaultTranslations")
+          (i18n/set-default-translations))
+
   (mw/init!)
   (i18n/init)
   (cur/init-styles)
