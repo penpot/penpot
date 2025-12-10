@@ -70,7 +70,6 @@
     (-> (.-language globals/navigator)
         (parse-locale))))
 
-
 ;; Set initial translation loading state as globaly stored variable;
 ;; this facilitates hot reloading
 (when-not (exists? (unchecked-get globals/global "penpotTranslations"))
@@ -94,14 +93,8 @@
 (def ^:dynamic *current-locale*
   (get-current))
 
-(defonce state
-  (l/atom {:render 0 :locale *current-locale*}))
-
-(defn- assign-current-locale
-  [state locale]
-  (-> state
-      (update :render inc)
-      (assoc :locale locale)))
+(defonce locale
+  (l/atom *current-locale*))
 
 (defn- get-translations
   "Get globaly stored mutable object with all loaded translations"
@@ -115,6 +108,10 @@
     (unchecked-set translations locale data)
     nil))
 
+(defn set-default-translations
+  [data]
+  (set-translations cf/default-language data))
+
 (defn- load
   [locale]
   (let [path (str "./translation." locale ".js?version=" (:full cf/version))]
@@ -123,15 +120,14 @@
          (p/fnly (fn [data cause]
                    (if cause
                      (js/console.error "unexpected error on fetching locale" cause)
-                     (do
-                       (set! *current-locale* locale)
-                       (set-translations locale data)
-                       (swap! state assign-current-locale locale))))))))
+                     (set-translations locale data)))))))
 
 (defn init
   "Initialize the i18n module"
   []
-  (load *current-locale*))
+  (load *current-locale*)
+  (when-not (= *current-locale* cf/default-language)
+    (load cf/default-language)))
 
 (defn set-locale
   [lname]
@@ -146,7 +142,10 @@
                         (recur (rest locales)))
                       cf/default-language))))]
 
-    (load lname)))
+    (->> (load lname)
+         (p/fnly (fn [_r _c]
+                   (set! *current-locale* lname)
+                   (reset! locale lname))))))
 
 (deftype C [val]
   IDeref
@@ -207,9 +206,7 @@
                   :className class
                   :on-click on-click}]))
 
-(add-watch state "common.time"
+(add-watch locale "common.time"
            (fn [_ _ pv cv]
-             (let [pv (get pv :locale)
-                   cv (get cv :locale)]
-               (when (not= pv cv)
-                 (ct/set-default-locale! cv)))))
+             (when (not= pv cv)
+               (ct/set-default-locale cv))))

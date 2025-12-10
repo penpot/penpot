@@ -98,9 +98,7 @@
 (def context
   (atom (d/without-nils (collect-context))))
 
-(add-watch i18n/state "events"
-           (fn [_ _ _ v]
-             (swap! context assoc :locale (get v :locale))))
+(add-watch i18n/locale "events" #(swap! context assoc :locale %4))
 
 ;; --- EVENT TRANSLATION
 

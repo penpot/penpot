@@ -187,7 +187,7 @@ async function readManifestFile(resource) {
   return JSON.parse(content);
 }
 
-async function readShadowManifest() {
+async function generateManifest() {
   const index = {
     app_main: "./js/main.js",
     render_main: "./js/render.js",
@@ -197,6 +197,7 @@ async function readShadowManifest() {
     polyfills: "./js/polyfills.js?version=" + CURRENT_VERSION,
     libs: "./js/libs.js?version=" + CURRENT_VERSION,
     worker_main: "./js/worker/main.js?version=" + CURRENT_VERSION,
+    default_translations: "./js/translation.en.js?version=" + CURRENT_VERSION,
 
     importmap: JSON.stringify({
       "imports": {
@@ -392,7 +393,7 @@ async function generateTemplates() {
   const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
-  const manifest = await readShadowManifest();
+  const manifest = await generateManifest();
   let content;
 
   const iconsSprite = await fs.readFile(

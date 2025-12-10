@@ -49,7 +49,9 @@
     <script type="module" src="{{& libs}}"></script>
     <script type="module">
       import { init } from "{{& app_main}}";
-      init();
+      import defaultTranslations from "{{& default_translations}}";
+
+      init({defaultTranslations});
     </script>
     {{/manifest}}
   </body>
