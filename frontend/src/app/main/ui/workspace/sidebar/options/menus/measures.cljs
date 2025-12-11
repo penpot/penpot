@@ -13,7 +13,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.token :as tk]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
@@ -26,13 +25,12 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :as deprecated-input]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :as set]
@@ -90,32 +88,6 @@
                  :else
                  shape)]
     (select-keys shape measure-attrs)))
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        tokens (mf/with-memo [tokens name]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input name))
-                       (not-empty))))
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
-
-        props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple (get values name)))
-                                                (tr "settings.multiple") "--")
-                                 :class (stl/css :numeric-input-measures)
-                                 :applied-token (get applied-tokens name)
-                                 :tokens (if (delay? tokens) @tokens tokens)
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :value (get values name)})]
-    [:> numeric-input* props]))
 
 (def ^:private xf:map-type (map :type))
 (def ^:private xf:mapcat-type-to-options (mapcat type->options))
@@ -444,10 +416,13 @@
              :on-detach on-detach-token
              :icon i/character-w
              :min 0.01
-             :name :width
+             :attr :width
              :property (tr "workspace.options.width")
-             :applied-tokens applied-tokens
-             :values values}]
+             :applied-token (get applied-tokens :width)
+             :placeholder (if (or (= :multiple (get applied-tokens :width))
+                                  (= :multiple (get values :width)))
+                            (tr "settings.multiple") "--")
+             :value (get values :width)}]
 
            [:> numeric-input-wrapper*
             {:disabled disabled-height-sizing?
@@ -455,11 +430,11 @@
              :on-detach on-detach-token
              :min 0.01
              :icon i/character-h
-             :name :height
+             :attr :height
              :align :right
              :property (tr "workspace.options.height")
-             :applied-tokens applied-tokens
-             :values values}]]
+             :applied-token (get applied-tokens :height)
+             :value (get values :height)}]]
 
           [:*
            [:div {:class (stl/css-case :width true
@@ -503,20 +478,26 @@
              :on-change on-pos-x-change
              :on-detach on-detach-token
              :icon i/character-x
-             :name :x
+             :attr :x
              :property (tr "workspace.options.x")
-             :applied-tokens applied-tokens
-             :values values}]
+             :applied-token (get applied-tokens :x)
+             :placeholder (if (or (= :multiple (get applied-tokens :x))
+                                  (= :multiple (get values :x)))
+                            (tr "settings.multiple") "--")
+             :value (get values :x)}]
            [:> numeric-input-wrapper*
             {:disabled disabled-position?
              :on-change on-pos-y-change
              :on-detach on-detach-token
              :icon i/character-y
-             :name :y
+             :attr :y
              :align :right
              :property (tr "workspace.options.y")
-             :applied-tokens applied-tokens
-             :values values}]]
+             :applied-token (get applied-tokens :y)
+             :placeholder (if (or (= :multiple (get applied-tokens :y))
+                                  (= :multiple (get values :y)))
+                            (tr "settings.multiple") "--")
+             :value (get values :y)}]]
 
           [:*
            [:div {:class (stl/css-case :x-position true
@@ -551,10 +532,13 @@
               :icon i/rotation
               :min -359
               :max 359
-              :name :rotation
+              :attr :rotation
               :property (tr "workspace.options.rotation")
-              :applied-tokens applied-tokens
-              :values values}]
+              :applied-token (get applied-tokens :rotation)
+              :placeholder (if (or (= :multiple (get applied-tokens :rotation))
+                                   (= :multiple (get values :rotation)))
+                             (tr "settings.multiple") "--")
+              :value (get values :rotation)}]
 
             [:div {:class (stl/css :rotation)
                    :title (tr "workspace.options.rotation")}

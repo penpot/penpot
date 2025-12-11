@@ -91,12 +91,10 @@
 
 .vertical-margin-wrapper {
   grid-column: 1;
-  --dropdown-width: var(--7-columns-dropdown-width);
 }
 
 .horizontal-margin-wrapper {
   grid-column: 2;
-  --dropdown-width: var(--7-columns-dropdown-width);
 }
 
 .margin-multiple {
@@ -115,37 +113,26 @@
 
 .top-margin,
 .top-margin-wrapper {
-  --dropdown-width: var(--7-columns-dropdown-width);
   grid-column: 1;
   grid-row: 1;
 }
 
 .bottom-margin,
 .bottom-margin-wrapper {
-  --dropdown-width: var(--7-columns-dropdown-width);
   grid-column: 2;
   grid-row: 1;
 }
 
 .left-margin,
 .left-margin-wrapper {
-  --dropdown-width: var(--7-columns-dropdown-width);
   grid-column: 1;
   grid-row: 2;
 }
 
 .right-margin,
 .right-margin-wrapper {
-  --dropdown-width: var(--7-columns-dropdown-width);
   grid-column: 2;
   grid-row: 2;
-}
-
-.min-w-wrapper,
-.max-w-wrapper,
-.min-h-wrapper,
-.max-h-wrapper {
-  --dropdown-width: var(--7-columns-dropdown-width);
 }
 
 .advanced-options {
