@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 
 _SCRIPT_DIR=$(dirname $0);
 pushd $_SCRIPT_DIR;

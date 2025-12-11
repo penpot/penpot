@@ -21,6 +21,7 @@
     "raw-body": "^3.0.1",
     "source-map-support": "^0.5.21",
     "svgo": "penpot/svgo#v3.1",
+    "undici": "^7.16.0",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.2"
   },

@@ -582,6 +582,7 @@ __metadata:
     raw-body: "npm:^3.0.1"
     source-map-support: "npm:^0.5.21"
     svgo: "penpot/svgo#v3.1"
+    undici: "npm:^7.16.0"
     ws: "npm:^8.18.3"
     xml-js: "npm:^1.6.11"
     xregexp: "npm:^5.1.2"
@@ -1510,6 +1511,13 @@ __metadata:
   version: 1.0.6
   resolution: "tsscmp@npm:1.0.6"
   checksum: 10c0/2f79a9455e7e3e8071995f98cdf3487ccfc91b760bec21a9abb4d90519557eafaa37246e87c92fa8bf3fef8fd30cfd0cc3c4212bb929baa9fb62494bfa4d24b2
+  languageName: node
+  linkType: hard
+
+"undici@npm:^7.16.0":
+  version: 7.16.0
+  resolution: "undici@npm:7.16.0"
+  checksum: 10c0/efd867792e9f233facf9efa0a087e2d9c3e4415c0b234061b9b40307ca4fa01d945fee4d43c7b564e1b80e0d519bcc682f9f6e0de13c717146c00a80e2f1fb0f
   languageName: node
   linkType: hard
 
