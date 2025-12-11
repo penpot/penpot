@@ -45,7 +45,7 @@
 .element-list {
   @include t.use-typography("body-large");
   color: var(--modal-text-foreground-color);
-  overflow-y: scroll;
+  overflow-y: auto;
   margin-block: 0;
 }
 
