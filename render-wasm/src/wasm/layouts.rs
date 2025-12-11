@@ -40,7 +40,7 @@ pub extern "C" fn clear_shape_layout() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_layout_child_data(
+pub extern "C" fn set_layout_data(
     margin_top: f32,
     margin_right: f32,
     margin_bottom: f32,

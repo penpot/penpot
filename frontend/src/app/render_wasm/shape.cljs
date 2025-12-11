@@ -269,7 +269,7 @@
          :layout-item-min-w
          :layout-item-absolute
          :layout-item-z-index)
-        (api/set-layout-child shape)
+        (api/set-layout-data shape)
 
         :layout-grid-rows
         (api/set-grid-layout-rows v)
@@ -299,7 +299,7 @@
 
             (ctl/flex-layout? shape)
             (api/set-flex-layout shape))
-          (api/set-layout-child shape))
+          (api/set-layout-data shape))
 
         ;; Property not in WASM
         nil))))
