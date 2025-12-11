@@ -415,24 +415,26 @@ pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
 
 const RAW_POSITION_DATA_SIZE: usize = size_of::<shapes::PositionData>();
 
-impl SerializableResult for shapes::PositionData {
-    type BytesType = [u8; RAW_POSITION_DATA_SIZE];
-
-    fn from_bytes(bytes: Self::BytesType) -> Self {
+impl From<[u8; RAW_POSITION_DATA_SIZE]> for shapes::PositionData {
+    fn from(bytes: [u8; RAW_POSITION_DATA_SIZE]) -> Self {
         unsafe { std::mem::transmute(bytes) }
     }
-    fn as_bytes(&self) -> Self::BytesType {
-        let ptr = self as *const shapes::PositionData as *const u8;
-        let bytes: &[u8] = unsafe { std::slice::from_raw_parts(ptr, RAW_POSITION_DATA_SIZE) };
-        let mut result = [0; RAW_POSITION_DATA_SIZE];
-        result.copy_from_slice(bytes);
-        result
+}
+
+impl From<shapes::PositionData> for [u8; RAW_POSITION_DATA_SIZE] {
+    fn from(value: shapes::PositionData) -> Self {
+        unsafe { std::mem::transmute(value) }
     }
+}
+
+impl SerializableResult for shapes::PositionData {
+    type BytesType = [u8; RAW_POSITION_DATA_SIZE];
 
     // The generic trait doesn't know the size of the array. This is why the
     // clone needs to be here even if it could be generic.
     fn clone_to_slice(&self, slice: &mut [u8]) {
-        slice.clone_from_slice(&self.as_bytes());
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
     }
 }
 

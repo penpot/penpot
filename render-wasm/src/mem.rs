@@ -57,10 +57,8 @@ pub fn bytes_or_empty() -> Vec<u8> {
     guard.take().unwrap_or_default()
 }
 
-pub trait SerializableResult {
+pub trait SerializableResult: From<Self::BytesType> + Into<Self::BytesType> {
     type BytesType;
-    fn from_bytes(bytes: Self::BytesType) -> Self;
-    fn as_bytes(&self) -> Self::BytesType;
     fn clone_to_slice(&self, slice: &mut [u8]);
 }
 

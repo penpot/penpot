@@ -1053,7 +1053,7 @@ impl TextSpan {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct PositionData {
     pub paragraph: u32,
     pub span: u32,
