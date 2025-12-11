@@ -340,9 +340,18 @@
           ; Set the component-id and component-file to the ones of the near main
           (log/debug :hint (str "  -> set component-id to " (:component-id args)))
           (log/debug :hint (str "  -> set component-file to " (:component-file args)))
-          (assoc shape
-                 :component-id (:component-id args)
-                 :component-file (:component-file args)))]
+          (cond-> shape
+            (some? (:component-id args))
+            (assoc :component-id (:component-id args))
+
+            (nil? (:component-id args))
+            (dissoc :component-id)
+
+            (some? (:component-file args))
+            (assoc :component-file (:component-file args))
+
+            (nil? (:component-file args))
+            (dissoc :component-file)))]
 
     (log/dbg :hint "repairing shape :component-id-mismatch" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
