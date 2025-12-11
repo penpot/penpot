@@ -9,6 +9,8 @@
 
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
+(defonce gl-context-handle nil)
+(defonce gl-context nil)
 (defonce serializers
   #js {:blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode
