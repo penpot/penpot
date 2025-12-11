@@ -211,9 +211,7 @@
   overflow-x: auto;
   overflow-y: overlay;
   scrollbar-gutter: stable;
-
-  .element-list {
-    width: var(--left-sidebar-width);
-    display: grid;
-  }
+}
+.element-list {
+  display: grid;
 }
