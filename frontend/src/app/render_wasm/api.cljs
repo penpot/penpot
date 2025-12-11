@@ -23,6 +23,7 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
+   [app.main.ui.shapes.text]
    [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.texts :as t]
@@ -1002,10 +1003,7 @@
        (run!
         (fn [id]
           (f/update-text-layout id)
-          (mw/emit! {:cmd :index/update-text-rect
-                     :page-id (:current-page-id @st/state)
-                     :shape-id id
-                     :dimensions (get-text-dimensions id)})))))
+          (update-text-rect! id)))))
 
 (defn process-pending
   ([shapes thumbnails full on-complete]
@@ -1360,6 +1358,59 @@
                       (path.impl/path-data))]
       (h/call wasm/internal-module "_end_temp_objects")
       content)))
+
+(def POSITION-DATA-U8-SIZE 36)
+(def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
+
+(defn calculate-position-data
+  [shape]
+  (when wasm/context-initialized?
+    (use-shape (:id shape))
+    (let [heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)
+          offset (-> (h/call wasm/internal-module "_calculate_position_data")
+                     (mem/->offset-32))
+          length (aget heapu32 offset)
+
+          max-offset (+ offset 1 (* length POSITION-DATA-U32-SIZE))
+
+          result
+          (loop [result (transient [])
+                 offset (inc offset)]
+            (if (< offset max-offset)
+              (let [entry (dr/read-position-data-entry heapu32 heapf32 offset)]
+                (recur (conj! result entry)
+                       (+ offset POSITION-DATA-U32-SIZE)))
+              (persistent! result)))
+
+          result
+          (->> result
+               (mapv
+                (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
+                  (let [content (:content shape)
+                        element (-> content :children
+                                    (get 0) :children ;; paragraph-set
+                                    (get paragraph) :children ;; paragraph
+                                    (get span))
+                        text (subs (:text element) start-pos end-pos)]
+
+                    {:x x
+                     :y (+ y height)
+                     :width width
+                     :height height
+                     :direction       (dr/translate-direction direction)
+                     :font-family     (get element :font-family)
+                     :font-size       (get element :font-size)
+                     :font-weight     (get element :font-weight)
+                     :text-transform  (get element :text-transform)
+                     :text-decoration (get element :text-decoration)
+                     :letter-spacing  (get element :letter-spacing)
+                     :font-style      (get element :font-style)
+                     :fills           (get element :fills)
+                     :text            text}))))]
+      (mem/free)
+
+      result)))
 
 (defn init-wasm-module
   [module]

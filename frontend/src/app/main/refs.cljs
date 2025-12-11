@@ -30,6 +30,9 @@
 (def profile
   (l/derived (l/key :profile) st/state))
 
+(def current-page-id
+  (l/derived (l/key :current-page-id) st/state))
+
 (def team
   (l/derived (fn [state]
                (let [team-id (:current-team-id state)
