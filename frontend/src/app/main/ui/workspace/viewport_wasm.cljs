@@ -647,6 +647,12 @@
                                     :hover-top-frame-id @hover-top-frame-id
                                     :zoom zoom}])
 
+       (when (dbg/enabled? :text-outline)
+         [:& wvd/debug-text-wasm-position-data
+          {:selected-shapes selected-shapes
+           :objects base-objects
+           :zoom zoom}])
+
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           (when-not text-editing?

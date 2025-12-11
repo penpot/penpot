@@ -9,7 +9,8 @@ mod options;
 mod shadows;
 mod strokes;
 mod surfaces;
-mod text;
+pub mod text;
+
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
