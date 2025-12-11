@@ -95,6 +95,7 @@ example. It's still usable as before, we just removed the example.
 - Fix switch variants with paths [Taiga #12841](https://tree.taiga.io/project/penpot/issue/12841)
 - Fix referencing typography tokens on font-family tokens [Taiga #12492](https://tree.taiga.io/project/penpot/issue/12492)
 - Fix horizontal scroll on layer panel [Taiga #12843](https://tree.taiga.io/project/penpot/issue/12843)
+- Fix unicode handling on email template abbreviation filter [Github #7966](https://github.com/penpot/penpot/pull/7966)
 
 ## 2.11.1
 
