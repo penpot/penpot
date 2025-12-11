@@ -54,12 +54,14 @@
   ([file] (validate-file! file {}))
   ([file libraries]
    (cfv/validate-file-schema! file)
-   (cfv/validate-file! file libraries)))
+   (cfv/validate-file! file libraries)
+   file))
 
 (defn apply-changes
-  [file changes]
+  [file changes & {:keys [validate?] :or {validate? true}}]
   (let [file' (ctf/update-file-data file #(cfc/process-changes % (:redo-changes changes) true))]
-    (validate-file! file')
+    (when validate?
+      (validate-file! file'))
     file'))
 
 (defn apply-undo-changes
