@@ -1775,7 +1775,7 @@
                      (contains? component :objects))
               (dissoc component :objects)
               component))]
-    (d/update-when data :components check-component)))
+    (d/update-when data :components d/update-vals check-component)))
 
 (defmethod migrate-data "0018-sync-component-id-with-near-main"
   [data _]
@@ -1788,9 +1788,18 @@
                 (if (and (some? ref-shape)
                          (or (not= (:component-id shape) (:component-id ref-shape))
                              (not= (:component-file shape) (:component-file ref-shape))))
-                  (assoc shape
-                         :component-id (:component-id ref-shape)
-                         :component-file (:component-file ref-shape))
+                  (cond-> shape
+                    (some? (:component-id ref-shape))
+                    (assoc :component-id (:component-id ref-shape))
+
+                    (nil? (:component-id ref-shape))
+                    (dissoc :component-id)
+
+                    (some? (:component-file ref-shape))
+                    (assoc :component-file (:component-file ref-shape))
+
+                    (nil? (:component-file ref-shape))
+                    (dissoc :component-file))
                   shape))
               shape))
 
@@ -1798,6 +1807,7 @@
             (d/update-when page :objects d/update-vals (partial fix-shape page)))]
     (-> data
         (update :pages-index d/update-vals update-page))))
+
 
 (def available-migrations
   (into (d/ordered-set)
