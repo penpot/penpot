@@ -75,7 +75,7 @@ function copy_artifacts {
 
     sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$CURRENT_VERSION/g" $DEST/$BUILD_NAME.js;
 
-    npx esbuild target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js \
+    yarn esbuild target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js \
         --log-level=error \
         --outfile=$DEST/worker/render.js \
         --platform=neutral \
