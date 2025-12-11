@@ -56,10 +56,9 @@
 
           (reset-all-overrides [file]
             (-> file
-                (tho/reset-overrides (ths/get-shape file :copy-simple-1))
-                (tho/reset-overrides (ths/get-shape file :copy-frame-composed-1))
-                (tho/reset-overrides (ths/get-shape file :composed-1-composed-2-copy))
-                (propagate-all-component-changes)))
+                (tho/reset-overrides (ths/get-shape file :copy-simple-1 :propagate-fn propagate-all-component-changes))
+                (tho/reset-overrides (ths/get-shape file :copy-frame-composed-1 :propagate-fn propagate-all-component-changes))
+                (tho/reset-overrides (ths/get-shape file :composed-1-composed-2-copy :propagate-fn propagate-all-component-changes))))
 
           (fill-colors [file]
             [(tho/bottom-fill-color file :frame-simple-1)
