@@ -7,5 +7,9 @@
 @use "ds/_utils.scss" as *;
 
 .styles-tab {
-  block-size: calc(100vh - px2rem(200)); // TODO: Fix this hardcoded value
+  block-size: calc(100vh - px2rem(140)); // TODO: Fix this hardcoded value
+}
+
+.styles-tab-workspace {
+  block-size: calc(100vh - px2rem(180)); // TODO: Fix this hardcoded value
 }

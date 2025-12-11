@@ -88,7 +88,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "inspect.attributes.stroke")
-         :class (stl/css :title-spacing-stroke)}]
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :stroke-attr-title)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]

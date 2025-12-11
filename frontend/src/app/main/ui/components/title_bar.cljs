@@ -53,6 +53,6 @@
 
 
 (mf/defc inspect-title-bar*
-  [{:keys [class title]}]
+  [{:keys [class title title-class]}]
   [:div {:class [(stl/css :title-bar) class]}
-   [:div {:class (stl/css :title-only :inspect-title)} title]])
+   [:div {:class [title-class (stl/css :title-only :inspect-title)]} title]])

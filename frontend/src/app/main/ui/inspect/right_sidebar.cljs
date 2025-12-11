@@ -185,6 +185,7 @@
               [:> styles-tab* {:color-space color-space
                                :objects objects
                                :shapes shapes
+                               :from from
                                :libraries libraries
                                :file-id file-id}]
               :computed
