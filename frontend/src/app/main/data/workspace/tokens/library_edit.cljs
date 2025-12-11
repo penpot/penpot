@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
+   [app.common.pprint :as pp]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -22,6 +23,7 @@
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-id)
@@ -460,78 +462,111 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-unfolded-token-path
+;; (defn toggle-path
+;;   [path]
+;;   (ptk/reify ::toggle-path
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (update-in state [:workspace-tokens :unfolded-token-paths]
+;;                  (fn [paths]
+;;                    (let [_ ((pp/pprint {:current-path path
+;;                                         :current-paths paths}))]
+;;                      (fnil conj [])
+;;                      path))))))
+(defn toggle-path
   [path]
-  (ptk/reify ::set-unfolded-token-path
+  (ptk/reify ::toggle-path
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-tokens assoc :unfolded-token-path path))))
+      (update-in state [:workspace-tokens :unfolded-token-paths]
+                 (fn [paths]
+                   (let [paths (or paths [])]
+                     (if (some #(= % path) paths)
+                       (vec (remove #(or (= % path)
+                                         (str/starts-with? % (str path ".")))
+                                    paths))
+                       (conj paths path))))))))
 
-(defn assign-token-context-menu
-  [{:keys [position] :as params}]
+;; (defn add-recent-color
+;;   [color]
+;;   (let [color (clr/check-color color)]
+;;     (ptk/reify ::add-recent-color
+;;       ptk/UpdateEvent
+;;       (update [_ state]
+;;         (let [file-id (:current-file-id state)]
+;;           (update-in state [:recent-colors file-id]
+;;                      (fn [colors]
+;;                        (let [colors (d/removev (partial recent-color-equal? color) colors)
+;;                              colors (conj colors color)]
+;;                          (cond-> colors
+;;                            (> (count colors) 15)
+;;                            (subvec 1)))))))
 
-  (when params
-    (assert (gpt/point? position) "expected a point instance for `position` param"))
+  (defn assign-token-context-menu
+    [{:keys [position] :as params}]
 
-  (ptk/reify ::show-token-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (if params
-        (update state :workspace-tokens assoc :token-context-menu params)
-        (update state :workspace-tokens dissoc :token-context-menu)))))
+    (when params
+      (assert (gpt/point? position) "expected a point instance for `position` param"))
+
+    (ptk/reify ::show-token-context-menu
+      ptk/UpdateEvent
+      (update [_ state]
+        (if params
+          (update state :workspace-tokens assoc :token-context-menu params)
+          (update state :workspace-tokens dissoc :token-context-menu)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN-SET UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn assign-token-set-context-menu
-  [{:keys [position] :as params}]
-  (when params
-    (assert (gpt/point? position) "expected valid point for `position` param"))
+  (defn assign-token-set-context-menu
+    [{:keys [position] :as params}]
+    (when params
+      (assert (gpt/point? position) "expected valid point for `position` param"))
 
-  (ptk/reify ::assign-token-set-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (if params
-        (update state :workspace-tokens assoc :token-set-context-menu params)
-        (update state :workspace-tokens dissoc :token-set-context-menu)))))
+    (ptk/reify ::assign-token-set-context-menu
+      ptk/UpdateEvent
+      (update [_ state]
+        (if params
+          (update state :workspace-tokens assoc :token-set-context-menu params)
+          (update state :workspace-tokens dissoc :token-set-context-menu)))))
 
-(defn set-selected-token-set-id
-  [id]
-  (ptk/reify ::set-selected-token-set-id
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-tokens assoc :selected-token-set-id id))))
+  (defn set-selected-token-set-id
+    [id]
+    (ptk/reify ::set-selected-token-set-id
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :workspace-tokens assoc :selected-token-set-id id))))
 
-(defn start-token-set-edition
-  [edition-id]
+  (defn start-token-set-edition
+    [edition-id]
   ;; Path string for edition of a group, UUID for edition of a set.
-  (assert (or (string? edition-id) (uuid? edition-id)) "expected a string or uuid for `edition-id`")
+    (assert (or (string? edition-id) (uuid? edition-id)) "expected a string or uuid for `edition-id`")
 
-  (ptk/reify ::start-token-set-edition
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-tokens assoc :token-set-edition-id edition-id))))
+    (ptk/reify ::start-token-set-edition
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :workspace-tokens assoc :token-set-edition-id edition-id))))
 
-(defn start-token-set-creation
-  [path]
-  (assert (vector? path) "expected a vector for `path`")
+  (defn start-token-set-creation
+    [path]
+    (assert (vector? path) "expected a vector for `path`")
 
-  (ptk/reify ::start-token-set-creation
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-tokens assoc :token-set-new-path path))))
+    (ptk/reify ::start-token-set-creation
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :workspace-tokens assoc :token-set-new-path path))))
 
-(defn clear-token-set-edition
-  []
-  (ptk/reify ::clear-token-set-edition
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-tokens dissoc :token-set-edition-id))))
+  (defn clear-token-set-edition
+    []
+    (ptk/reify ::clear-token-set-edition
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :workspace-tokens dissoc :token-set-edition-id))))
 
-(defn clear-token-set-creation
-  []
-  (ptk/reify ::clear-token-set-creation
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-tokens dissoc :token-set-new-path))))
+  (defn clear-token-set-creation
+    []
+    (ptk/reify ::clear-token-set-creation
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :workspace-tokens dissoc :token-set-new-path))))

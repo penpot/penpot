@@ -10,7 +10,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pprint :as pp]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -25,10 +24,11 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
-(def ref:set-unfolded-token-path
-  (l/derived (l/key :unfolded-token-path) refs/workspace-tokens))
+(def ref:unfolded-token-paths
+  (l/derived (l/key :unfolded-token-paths) refs/workspace-tokens))
 
 (defn token-section-icon
   [type]
@@ -72,12 +72,11 @@
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
 
-        unfolded-token-path (mf/deref ref:set-unfolded-token-path)
+        unfolded-token-paths (mf/deref ref:unfolded-token-paths)
+        is-type-unfolded (contains? (set unfolded-token-paths) (name type))
 
         editing-ref  (mf/deref refs/workspace-editor-state)
         not-editing? (empty? editing-ref)
-
-        is-expanded (= unfolded-token-path [(name type)])
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
@@ -102,11 +101,10 @@
 
         on-toggle-open-click
         (mf/use-fn
-         (mf/deps type is-expanded)
+         (mf/deps type expandable?)
          (fn []
-           (if is-expanded
-             (st/emit! (dwtl/set-unfolded-token-path []))
-             (st/emit! (dwtl/set-unfolded-token-path [(name type)])))))
+           (when expandable?
+             (st/emit! (dwtl/toggle-path (name type))))))
 
         on-popover-open-click
         (mf/use-fn
@@ -137,10 +135,10 @@
     [:div {:class (stl/css :token-section-wrapper)
            :data-testid (dm/str "section-" (name type))}
      [:> layer-button* {:label title
-                        :expanded is-expanded
+                        :expanded is-type-unfolded
                         :description (when expandable? (dm/str (count tokens)))
                         :is-expandable expandable?
-                        :aria-expanded is-expanded
+                        :aria-expanded is-type-unfolded
                         :aria-controls (dm/str "token-tree-" (name type))
                         :on-toggle-expand on-toggle-open-click
                         :icon (token-section-icon type)}
@@ -151,10 +149,12 @@
                           :variant "ghost"
                           :on-click on-popover-open-click
                           :class (stl/css :token-section-icon)}])]
-     (when is-expanded
+     (when is-type-unfolded
        [:> token-tree* {:tokens tokens
+                        :type type
                         :id (dm/str "token-tree-" (name type))
                         :tokens-lib tokens-lib
+                        :unfolded-token-paths unfolded-token-paths
                         :selected-shapes selected-shapes
                         :active-theme-tokens active-theme-tokens
                         :selected-token-set-id selected-token-set-id
