@@ -111,6 +111,7 @@
     [:div {:class (stl/css :options)}
      [:> layer-menu* {:type type
                       :ids layer-ids
+                      :applied-tokens applied-tokens
                       :values layer-values}]
      [:> measures-menu* {:type type
                          :ids measure-ids

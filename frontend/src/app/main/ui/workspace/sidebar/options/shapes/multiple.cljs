@@ -382,7 +382,7 @@
                        objects
                        objects)))
 
-        [layer-ids layer-values]
+        [layer-ids layer-values layer-tokens]
         (get-attrs shapes objects :layer)
 
         [text-ids text-values]
@@ -406,7 +406,7 @@
         [exports-ids exports-values]
         (get-attrs shapes objects :exports)
 
-        [layout-container-ids layout-container-values layout-contianer-tokens]
+        [layout-container-ids layout-container-values layout-container-tokens]
         (get-attrs shapes objects :layout-container)
 
         [layout-item-ids layout-item-values {}]
@@ -442,6 +442,7 @@
      (when-not (empty? layer-ids)
        [:> layer-menu* {:type type
                         :ids layer-ids
+                        :applied-tokens layer-tokens
                         :values layer-values}])
 
      (when-not (empty? measure-ids)
@@ -459,7 +460,7 @@
       {:type type
        :ids layout-container-ids
        :values layout-container-values
-       :applied-tokens layout-contianer-tokens
+       :applied-tokens layout-container-tokens
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)

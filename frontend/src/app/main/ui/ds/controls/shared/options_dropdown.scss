@@ -7,6 +7,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .option-list {
   --options-dropdown-icon-fg-color: var(--color-foreground-secondary);
@@ -15,32 +16,32 @@
   --options-dropdown-border-color: var(--color-background-quaternary);
 
   position: absolute;
-  top: $sz-36;
-  width: var(--dropdown-width, 100%);
+  inset-block-start: $sz-36;
+  inline-size: var(--dropdown-width, 100%);
   transform: translateX(var(--dropdown-translate-distance, 0));
   background-color: var(--options-dropdown-bg-color);
   border-radius: $br-8;
   border: $b-1 solid var(--options-dropdown-border-color);
   padding-block: var(--sp-xs);
   margin-block-end: 0;
-  max-height: $sz-400;
+  max-block-size: $sz-400;
   overflow-y: auto;
   overflow-x: hidden;
   z-index: var(--z-index-dropdown);
 }
 
 .left-align {
-  left: var(--dropdown-offset, 0);
+  inset-inline-start: var(--dropdown-offset, 0);
 }
 
 .right-align {
-  right: var(--dropdown-offset, 0);
+  inset-inline-end: var(--dropdown-offset, 0);
 }
 
 .option-separator {
   border: $b-1 solid var(--options-dropdown-border-color);
-  margin-top: var(--sp-xs);
-  margin-bottom: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+  margin-block-end: var(--sp-xs);
 }
 
 .group-option,
@@ -51,11 +52,11 @@
   gap: var(--sp-xs);
   color: var(--color-foreground-secondary);
   padding-inline: var(--sp-s);
-  height: var(--sp-xxxl);
+  block-size: var(--sp-xxxl);
 }
 
 .option-empty {
   justify-content: center;
   text-align: center;
-  padding: 0 40px;
+  padding: 0 px2rem(40);
 }

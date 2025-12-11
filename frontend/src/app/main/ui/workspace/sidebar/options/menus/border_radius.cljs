@@ -55,7 +55,6 @@
                    (-> (deref tokens)
                        (select-keys (get tk/tokens-by-input name))
                        (not-empty))))
-
         on-detach-attr
         (mf/use-fn
          (mf/deps on-detach name)

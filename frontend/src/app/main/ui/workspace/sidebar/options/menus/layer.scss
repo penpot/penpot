@@ -6,6 +6,7 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/_utils.scss" as *;
 
 .element-set-content {
   @include sidebar.option-grid-structure;
@@ -42,4 +43,10 @@
       }
     }
   }
+}
+
+.numeric-input-wrapper {
+  grid-column: span 2;
+  --dropdown-width: var(--7-columns-dropdown-width);
+  --dropdown-offset: #{px2rem(-35)};
 }

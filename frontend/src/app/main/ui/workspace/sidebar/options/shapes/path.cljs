@@ -84,6 +84,7 @@
 
     [:*
      [:> layer-menu* {:ids ids
+                      :applied-tokens applied-tokens
                       :type type
                       :values layer-values}]
      [:> measures-menu* {:ids ids
