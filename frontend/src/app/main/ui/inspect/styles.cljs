@@ -90,7 +90,7 @@
     :multiple))
 
 (mf/defc styles-tab*
-  [{:keys [color-space shapes libraries objects file-id]}]
+  [{:keys [color-space shapes libraries objects file-id from]}]
   (let [data               (dm/get-in libraries [file-id :data])
         first-shape        (first shapes)
         first-component    (ctkl/get-component data (:component-id first-shape))
@@ -131,7 +131,8 @@
          (mf/deps shorthands*)
          (fn [shorthand]
            (swap! shorthands* assoc (:panel shorthand) (:property shorthand))))]
-    [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
+    [:ol {:class (stl/css-case :styles-tab true
+                               :styles-tab-workspace (= from :workspace)) :aria-label (tr "labels.styles")}
      ;;  TOKENS PANEL
      (when (or (seq active-themes) (seq active-sets))
        [:li

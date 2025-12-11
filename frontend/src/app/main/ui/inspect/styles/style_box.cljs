@@ -19,7 +19,7 @@
   (case type
     :variant    (tr "inspect.tabs.styles.variants-panel")
     :token      (tr "inspect.tabs.styles.token-panel")
-    :geometry   (tr "inspect.tabs.styles.geometry-panel")
+    :geometry   (tr "inspect.attributes.size")
     :fill       (tr "labels.fill")
     :stroke     (tr "labels.stroke")
     :text       (tr "labels.text")
