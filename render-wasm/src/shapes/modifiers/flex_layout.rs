@@ -546,14 +546,22 @@ fn child_position(
             align_self: Some(align_self),
             ..
         }) => match align_self {
-            AlignSelf::Center => (track.across_size - child_axis.across_size) / 2.0,
+            AlignSelf::Center => {
+                (track.across_size - child_axis.across_size + child_axis.margin_across_start
+                    - child_axis.margin_across_end)
+                    / 2.0
+            }
             AlignSelf::End => {
                 track.across_size - child_axis.across_size - child_axis.margin_across_end
             }
             _ => child_axis.margin_across_start,
         },
         _ => match layout_data.align_items {
-            AlignItems::Center => (track.across_size - child_axis.across_size) / 2.0,
+            AlignItems::Center => {
+                (track.across_size - child_axis.across_size + child_axis.margin_across_start
+                    - child_axis.margin_across_end)
+                    / 2.0
+            }
             AlignItems::End => {
                 track.across_size - child_axis.across_size - child_axis.margin_across_end
             }
@@ -579,7 +587,11 @@ pub fn reflow_flex_layout(
     let tracks = calculate_track_data(shape, layout_data, flex_data, layout_bounds, shapes, bounds);
 
     for track in tracks.iter() {
-        let total_shapes_size = track.shapes.iter().map(|s| s.main_size).sum::<f32>();
+        let total_shapes_size = track
+            .shapes
+            .iter()
+            .map(|s| s.main_size + s.margin_main_start + s.margin_main_end)
+            .sum::<f32>();
         let mut shape_anchor = first_anchor(layout_data, &layout_axis, track, total_shapes_size);
 
         for child_axis in track.shapes.iter() {
