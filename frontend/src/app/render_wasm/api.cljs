@@ -41,6 +41,7 @@
    [app.util.globals :as ug]
    [app.util.text.content :as tc]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -702,7 +703,7 @@
   (set-grid-layout-columns (get shape :layout-grid-columns))
   (set-grid-layout-cells (get shape :layout-grid-cells)))
 
-(defn set-layout-child
+(defn set-layout-data
   [shape]
   (let [margins       (get shape :layout-item-margin)
         margin-top    (get margins :m1 0)
@@ -725,7 +726,7 @@
         is-absolute   (boolean (get shape :layout-item-absolute))
         z-index       (get shape :layout-item-z-index)]
     (h/call wasm/internal-module
-            "_set_layout_child_data"
+            "_set_layout_data"
             margin-top
             margin-right
             margin-bottom
@@ -745,6 +746,11 @@
             is-absolute
             (d/nilv z-index 0))))
 
+(defn has-any-layout-prop? [shape]
+  (some #(and (keyword? %)
+              (str/starts-with? (name %) "layout-"))
+        (keys shape)))
+
 (defn clear-layout
   []
   (h/call wasm/internal-module "_clear_shape_layout"))
@@ -752,10 +758,10 @@
 (defn- set-shape-layout
   [shape objects]
   (clear-layout)
-
   (when (or (ctl/any-layout? shape)
-            (ctl/any-layout-immediate-child? objects shape))
-    (set-layout-child shape))
+            (ctl/any-layout-immediate-child? objects shape)
+            (has-any-layout-prop? shape))
+    (set-layout-data shape))
 
   (when (ctl/flex-layout? shape)
     (set-flex-layout shape))
@@ -979,7 +985,6 @@
       (set-shape-grow-type grow-type))
 
     (set-shape-layout shape objects)
-
     (set-shape-selrect selrect)
 
     (let [pending_thumbnails (into [] (concat
