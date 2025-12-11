@@ -20,7 +20,7 @@ echo $PATH
 set -ex
 
 corepack enable;
-corepack install || exit 1;
+corepack install;
 yarn install || exit 1;
 
 rm -rf resources/public;

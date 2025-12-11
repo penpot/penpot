@@ -2,8 +2,6 @@
 
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
 
-set -x
-
 _BUILD_NAME="${_BUILD_NAME:-render_wasm}"
 
 _SCRIPT_DIR=$(dirname $0);
@@ -11,7 +9,11 @@ pushd $_SCRIPT_DIR;
 
 . ./_build_env
 
-set -x;
+set -ex;
+
+corepack enable;
+corepack install;
+yarn install;
 
 build;
 copy_artifacts "../frontend/resources/public/js";
