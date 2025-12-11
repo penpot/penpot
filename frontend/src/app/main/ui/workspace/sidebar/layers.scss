@@ -180,6 +180,8 @@
   overflow-y: overlay;
   scrollbar-gutter: stable;
 }
+
 .element-list {
   display: grid;
+  position: relative;
 }
