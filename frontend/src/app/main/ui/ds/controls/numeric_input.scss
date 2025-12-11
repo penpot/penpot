@@ -32,13 +32,19 @@
   min-width: var(--sp-l);
 }
 
+// TODO: Review if we need other type of button, so we don't need important here
 .invisible-button {
+  position: absolute;
+  right: 4px;
+  top: 4px;
   opacity: var(--opacity-button);
-
+  background-color: var(--color-background-quaternary) !important;
   &:hover {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
   &:focus {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
 }

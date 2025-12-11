@@ -19,6 +19,7 @@
 
 (def ^:private schema:token-field
   [:map
+   [:class {:optional true} [:maybe :string]]
    [:id {:optional true} [:maybe :string]]
    [:label {:optional true} [:maybe :string]]
    [:value :any]
@@ -32,7 +33,7 @@
 
 (mf/defc token-field*
   {::mf/schema schema:token-field}
-  [{:keys [id label value slot-start disabled
+  [{:keys [id label value slot-start disabled class
            on-click on-token-key-down on-blur detach-token
            token-wrapper-ref token-detach-btn-ref on-focus]}]
   (let [set-active? (some? id)
@@ -48,14 +49,11 @@
          (fn [event]
            (when-not ^boolean disabled
              (dom/prevent-default event)
-             (dom/focus! (mf/ref-val token-wrapper-ref)))))
+             (dom/focus! (mf/ref-val token-wrapper-ref)))))]
 
-        class
-        (stl/css-case :token-field true
-                      :with-icon (some? slot-start)
-                      :token-field-disabled disabled)]
-
-    [:div {:class class
+    [:div {:class [class (stl/css-case :token-field true
+                                       :with-icon (some? slot-start)
+                                       :token-field-disabled disabled)]
            :on-click focus-wrapper
            :disabled disabled
            :on-key-down on-token-key-down
@@ -80,7 +78,7 @@
          [:div {:class (stl/css :pill-dot)}])]]
 
      (when-not ^boolean disabled
-       [:> icon-button* {:variant "action"
+       [:> icon-button* {:variant "ghost"
                          :class (stl/css :invisible-button)
                          :icon i/broken-link
                          :ref token-detach-btn-ref

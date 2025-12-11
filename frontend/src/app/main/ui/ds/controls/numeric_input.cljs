@@ -183,6 +183,7 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
+   [:inner-class {:optional true} :string]
    [:value {:optional true} [:maybe [:or
                                      :int
                                      :float
@@ -205,11 +206,12 @@
    [:on-focus {:optional true} fn?]
    [:on-detach {:optional true} fn?]
    [:property {:optional true} :string]
-   [:align {:optional true} [:maybe [:enum :left :right]]]])
+   [:align {:optional true} [:maybe [:enum :left :right :right-adjust]]]])
 
 (mf/defc numeric-input*
   {::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder icon disabled
+  [{:keys [id class value default placeholder 
+           icon disabled inner-class
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
@@ -624,6 +626,7 @@
         (mf/spread-props props {:ref ref
                                 :type "text"
                                 :id id
+                                :class inner-class
                                 :placeholder (if is-multiple?
                                                (tr "labels.mixed-values")
                                                placeholder)
@@ -669,6 +672,7 @@
                               :on-token-key-down on-token-key-down
                               :disabled disabled
                               :on-blur on-blur
+                              :class inner-class
                               :slot-start (when icon
                                             (mf/html [:> tooltip*
                                                       {:content property

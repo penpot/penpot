@@ -26,7 +26,7 @@
   [:map
    [:id {:optional true} :string]
    [:resolved-value {:optional true}
-    [:or :int :string]]
+    [:or :int :string :float]]
    [:name {:optional true} :string]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
@@ -40,7 +40,7 @@
    [:selected {:optional true} :any]
    [:focused {:optional true} :any]
    [:empty-to-end {:optional true} [:maybe :boolean]]
-   [:align {:optional true} [:maybe [:enum :left :right]]]])
+   [:align {:optional true} [:maybe [:enum :left :right :right-adjust]]]])
 
 (def ^:private
   xf:filter-blank-id
@@ -109,7 +109,8 @@
         (mf/spread-props props
                          {:class (stl/css-case :option-list true
                                                :left-align (= align :left)
-                                               :right-align (= align :right))
+                                               :right-align (= align :right)
+                                               :adjust-align (= align :right-adjust))
                           :tab-index "-1"
                           :role "listbox"})
 

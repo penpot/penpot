@@ -17,7 +17,7 @@
 
 (def ^:private schema:input-field
   [:map
-   [:class {:optional true} :string]
+   [:class {:optional true} [:maybe :string]]
    [:aria-label {:optional true} [:maybe :string]]
    [:id :string]
    [:icon {:optional true}
@@ -44,9 +44,10 @@
         tooltip-id (mf/use-id)
 
         props (mf/spread-props props
-                               {:class (stl/css-case
-                                        :input true
-                                        :input-with-icon (some? icon))
+                               {:class [class
+                                        (stl/css-case
+                                         :input true
+                                         :input-with-icon (some? icon))]
                                 :ref (or ref input-ref)
                                 :aria-invalid (when (and has-hint
                                                          (= hint-type "error"))
