@@ -159,4 +159,6 @@ $arrow-side: 12px;
   block-size: fit-content;
   inline-size: fit-content;
   line-height: 0;
+  display: grid;
+  max-width: 100%;
 }

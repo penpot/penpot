@@ -31,3 +31,15 @@
 .icon {
   margin-inline: deprecated.$s-4;
 }
+
+.radius-wrapper {
+  --dropdown-width: var(--7-columns-dropdown-width);
+}
+
+.no-icon-input {
+  padding-inline-start: 6px;
+}
+
+.dropdown-adjustment {
+  --dropdown-adjustment: -68px;
+}
