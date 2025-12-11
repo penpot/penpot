@@ -344,6 +344,7 @@ fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackDat
                 let mut size =
                     track.across_size - child.margin_across_start - child.margin_across_end;
                 size = size.clamp(child.min_across_size, child.max_across_size);
+                size = f32::min(size, layout_axis.across_space());
                 child.across_size = size;
             }
         }
