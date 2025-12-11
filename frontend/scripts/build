@@ -23,19 +23,20 @@ corepack enable;
 corepack install;
 yarn install || exit 1;
 
-rm -rf resources/public;
 rm -rf target/dist;
+rm -rf resources/public;
+
+mkdir -p resources/public;
+
+pushd ../render-wasm;
+./build
+popd
 
 yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS;
-
-if [ "$INCLUDE_WASM" = "yes" ];  then
-    pushd ../render-wasm;
-    ./build
-    popd
-fi
-
 yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
+
+sed -i "s/\.\/render.js/.\/render.js?version=$CURRENT_VERSION/g" resources/public/js/worker/main*.js
 
 mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/

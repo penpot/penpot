@@ -63,12 +63,20 @@ function clean {
     cargo clean;
 }
 
+function setup {
+    corepack enable;
+    corepack install;
+    yarn install;
+}
+
 function build {
     cargo build $CARGO_PARAMS;
 }
 
 function copy_artifacts {
     DEST=$1;
+
+    mkdir -p $DEST;
 
     cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js $DEST/$BUILD_NAME.js;
     cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm $DEST/$BUILD_NAME.wasm;
