@@ -23,13 +23,13 @@ impl Modifier {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum TransformEntrySource {
     Input,
     Propagate,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct TransformEntry {
     pub id: Uuid,
@@ -65,10 +65,8 @@ impl TransformEntry {
     }
 }
 
-impl SerializableResult for TransformEntry {
-    type BytesType = [u8; 40];
-
-    fn from_bytes(bytes: Self::BytesType) -> Self {
+impl From<[u8; 40]> for TransformEntry {
+    fn from(bytes: [u8; 40]) -> Self {
         let id = uuid_from_u32_quartet(
             u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
             u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
@@ -89,29 +87,46 @@ impl SerializableResult for TransformEntry {
         );
         TransformEntry::from_input(id, transform)
     }
+}
 
-    fn as_bytes(&self) -> Self::BytesType {
-        let mut result: Self::BytesType = [0; 40];
-        let (a, b, c, d) = uuid_to_u32_quartet(&self.id);
+impl TryFrom<&[u8]> for TransformEntry {
+    type Error = String;
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 40] = bytes
+            .try_into()
+            .map_err(|_| "Invalid transform entry bytes".to_string())?;
+        Ok(TransformEntry::from(bytes))
+    }
+}
+
+impl From<TransformEntry> for [u8; 40] {
+    fn from(value: TransformEntry) -> Self {
+        let mut result = [0; 40];
+        let (a, b, c, d) = uuid_to_u32_quartet(&value.id);
         result[0..4].clone_from_slice(&a.to_le_bytes());
         result[4..8].clone_from_slice(&b.to_le_bytes());
         result[8..12].clone_from_slice(&c.to_le_bytes());
         result[12..16].clone_from_slice(&d.to_le_bytes());
 
-        result[16..20].clone_from_slice(&self.transform[0].to_le_bytes());
-        result[20..24].clone_from_slice(&self.transform[3].to_le_bytes());
-        result[24..28].clone_from_slice(&self.transform[1].to_le_bytes());
-        result[28..32].clone_from_slice(&self.transform[4].to_le_bytes());
-        result[32..36].clone_from_slice(&self.transform[2].to_le_bytes());
-        result[36..40].clone_from_slice(&self.transform[5].to_le_bytes());
+        result[16..20].clone_from_slice(&value.transform[0].to_le_bytes());
+        result[20..24].clone_from_slice(&value.transform[3].to_le_bytes());
+        result[24..28].clone_from_slice(&value.transform[1].to_le_bytes());
+        result[28..32].clone_from_slice(&value.transform[4].to_le_bytes());
+        result[32..36].clone_from_slice(&value.transform[2].to_le_bytes());
+        result[36..40].clone_from_slice(&value.transform[5].to_le_bytes());
 
         result
     }
+}
+
+impl SerializableResult for TransformEntry {
+    type BytesType = [u8; 40];
 
     // The generic trait doesn't know the size of the array. This is why the
     // clone needs to be here even if it could be generic.
     fn clone_to_slice(&self, slice: &mut [u8]) {
-        slice.clone_from_slice(&self.as_bytes());
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
     }
 }
 
@@ -198,8 +213,8 @@ mod tests {
             Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
         );
 
-        let bytes = entry.as_bytes();
+        let bytes: [u8; 40] = entry.into();
 
-        assert_eq!(entry, TransformEntry::from_bytes(bytes));
+        assert_eq!(entry, TransformEntry::from(bytes));
     }
 }

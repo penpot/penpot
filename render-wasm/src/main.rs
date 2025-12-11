@@ -303,7 +303,7 @@ pub extern "C" fn set_focus_mode() {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .map(|data| Uuid::try_from(data).unwrap())
         .collect();
 
     with_state_mut!(state, {
@@ -523,7 +523,7 @@ pub extern "C" fn set_children() {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .map(|data| Uuid::try_from(data).unwrap())
         .collect();
 
     set_children_set(entries);
@@ -679,7 +679,7 @@ pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
 
     let entries: Vec<_> = bytes
         .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .map(|data| TransformEntry::try_from(data).unwrap())
         .collect();
 
     with_state!(state, {
@@ -694,7 +694,7 @@ pub extern "C" fn set_modifiers() {
 
     let entries: Vec<_> = bytes
         .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .map(|data| TransformEntry::try_from(data).unwrap())
         .collect();
 
     let mut modifiers = HashMap::new();
