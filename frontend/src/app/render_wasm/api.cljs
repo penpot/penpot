@@ -33,7 +33,7 @@
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
-   [app.render-wasm.svg-fills :as svg-fills]
+   [app.render-wasm.svg-filters :as svg-filters]
    ;; FIXME: rename; confunsing name
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
@@ -909,7 +909,8 @@
 (defn set-object
   [objects shape]
   (perf/begin-measure "set-object")
-  (let [id           (dm/get-prop shape :id)
+  (let [shape        (svg-filters/apply-svg-derived shape)
+        id           (dm/get-prop shape :id)
         type         (dm/get-prop shape :type)
 
         parent-id    (get shape :parent-id)
@@ -923,14 +924,7 @@
         rotation     (get shape :rotation)
         transform    (get shape :transform)
 
-        ;; If the shape comes from an imported SVG (we know this because
-        ;; it has the :svg-attrs attribute) and it does not have its
-        ;; own fill, we set a default black fill. This fill will be
-        ;; inherited by child nodes and emulates the behavior of
-        ;; standard SVG, where a node without an explicit fill
-        ;; defaults to black.
-        fills        (svg-fills/resolve-shape-fills shape)
-
+        fills        (get shape :fills)
         strokes      (if (= type :group)
                        [] (get shape :strokes))
         children     (get shape :shapes)
@@ -974,7 +968,7 @@
       (set-shape-svg-attrs svg-attrs))
     (when (and (some? content) (= type :svg-raw))
       (set-shape-svg-raw-content (get-static-markup shape)))
-    (when (some? shadows) (set-shape-shadows shadows))
+    (set-shape-shadows shadows)
     (when (= type :text)
       (set-shape-grow-type grow-type))
 
