@@ -29,7 +29,9 @@ rm -rf target/dist;
 yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS;
 
 if [ "$INCLUDE_WASM" = "yes" ];  then
-    yarn run build:wasm || exit 1;
+    pushd ../render-wasm;
+    ./build
+    popd
 fi
 
 yarn run build:app:libs || exit 1;
