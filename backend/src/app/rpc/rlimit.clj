@@ -104,28 +104,29 @@
 (def ^:private schema:limit
   [:and
    [:map
-    [::name :any]
+    [::name :keyword]
     [::strategy schema:strategy]
     [::key :string]
-    [::opts :string]]
-   [:or
-    [:map
-     [::capacity ::sm/int]
-     [::rate ::sm/int]
-     [::internal ::ct/duration]
-     [::params [::sm/vec :any]]]
-    [:map
-     [::nreq ::sm/int]
-     [::unit [:enum :days :hours :minutes :seconds :weeks]]]]])
+    [::opts :string]
+    [::capacity {:optional true} ::sm/int]
+    [::rate {:optional true} ::sm/int]
+    [::interval {:optional true} ::ct/duration]
+    [::params {:optional true} [::sm/vec :any]]
+    [::permits {:optional true} ::sm/int]
+    [::unit {:optional true} [:enum :days :hours :minutes :seconds :weeks]]]
+   [:fn (fn [attrs]
+          (let [contains-fn (partial contains? attrs)]
+            (or (every? contains-fn [::capacity ::rate ::interval])
+                (every? contains-fn [::permits ::unit]))))]])
 
 (def ^:private schema:limits
   [:map-of :keyword [::sm/vec schema:limit]])
 
 (def ^:private valid-limit-tuple?
-  (sm/lazy-validator schema:limit-tuple))
+  (sm/validator schema:limit-tuple))
 
 (def ^:private valid-rlimit-instance?
-  (sm/lazy-validator ::rpc/rlimit))
+  (sm/validator ::rpc/rlimit))
 
 (defmethod parse-limit :window
   [[name strategy opts :as vlimit]]
@@ -134,16 +135,16 @@
   (merge
    {::name name
     ::strategy strategy}
-   (if-let [[_ nreq unit] (re-find window-opts-re opts)]
-     (let [nreq (parse-long nreq)]
-       {::nreq nreq
+   (if-let [[_ permits unit] (re-find window-opts-re opts)]
+     (let [permits (parse-long permits)]
+       {::permits permits
         ::unit (case unit
                  "d" :days
                  "h" :hours
                  "m" :minutes
                  "s" :seconds
                  "w" :weeks)
-        ::key  (str "ratelimit.window." (d/name name))
+        ::key  (str "penpot.rlimit." (cf/get :tenant) ".window." (d/name name))
         ::opts opts})
      (ex/raise :type :validation
                :code :invalid-window-limit-opts
@@ -164,15 +165,15 @@
        ::interval interval
        ::opts     opts
        ::params   [(->seconds interval) rate capacity]
-       ::key      (str "ratelimit.bucket." (d/name name))})
+       ::key      (str "penpot.rlimit." (cf/get :tenant) ".bucket." (d/name name))})
     (ex/raise :type :validation
               :code :invalid-bucket-limit-opts
               :hint (str/ffmt "looks like '%' does not have a valid format" opts))))
 
 (defmethod process-limit :bucket
-  [rconn user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
+  [rconn profile-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
   (let [script    (-> bucket-rate-limit-script
-                      (assoc ::rscript/keys [(str key "." service "." user-id)])
+                      (assoc ::rscript/keys [(str key "." service "." profile-id)])
                       (assoc ::rscript/vals (conj params (->seconds now))))
         result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
@@ -192,18 +193,18 @@
         (assoc ::lresult/remaining remaining))))
 
 (defmethod process-limit :window
-  [rconn user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
+  [rconn profile-id now {:keys [::permits ::unit ::key ::service] :as limit}]
   (let [ts        (ct/truncate now unit)
         ttl       (ct/diff now (ct/plus ts {unit 1}))
         script    (-> window-rate-limit-script
-                      (assoc ::rscript/keys [(str key "." service "." user-id "." (ct/format-inst ts))])
-                      (assoc ::rscript/vals [nreq (->seconds ttl)]))
+                      (assoc ::rscript/keys [(str key "." service "." profile-id "." (ct/format-inst ts))])
+                      (assoc ::rscript/vals [permits (->seconds ttl)]))
         result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)]
     (l/trace :hint "limit processed"
              :service service
-             :limit (name (::name limit))
+             :name (name (::name limit))
              :strategy (name (::strategy limit))
              :opts (::opts limit)
              :allowed allowed?
@@ -214,8 +215,8 @@
         (assoc ::lresult/reset (ct/plus ts {unit 1})))))
 
 (defn- process-limits
-  [rconn user-id limits now]
-  (let [results   (into [] (map (partial process-limit rconn user-id now)) limits)
+  [rconn profile-id limits now]
+  (let [results   (into [] (map (partial process-limit rconn profile-id now)) limits)
         remaining (->> results
                        (d/index-by ::name ::lresult/remaining)
                        (uri/map->query-string))
@@ -227,7 +228,7 @@
 
     (when rejected
       (l/warn :hint "rejected rate limit"
-              :user-id (str user-id)
+              :profile-id (str profile-id)
               :limit-service (-> rejected ::service name)
               :limit-name (-> rejected ::name name)
               :limit-strategy (-> rejected ::strategy name)))
@@ -371,12 +372,9 @@
 (defn- on-refresh-error
   [_ cause]
   (when-not (instance? java.util.concurrent.RejectedExecutionException cause)
-    (if-let [explain (-> cause ex-data ex/explain)]
-      (l/warn ::l/raw (str "unable to refresh config, invalid format:\n" explain)
-              ::l/sync? true)
-      (l/warn :hint "unexpected exception on loading config"
-              :cause cause
-              ::l/sync? true))))
+    (l/warn :hint "unexpected exception on loading config"
+            :cause cause
+            ::l/sync? true)))
 
 (defn- get-config-path
   []
