@@ -3,10 +3,15 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.token :as tk]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :as deprecated-input]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.util.i18n :as i18n :refer [tr]]
@@ -21,11 +26,15 @@
 (defn- check-border-radius-menu-props
   [old-props new-props]
   (let [old-values (unchecked-get old-props "values")
-        new-values (unchecked-get new-props "values")]
+        new-values (unchecked-get new-props "values")
+        old-applied-tokens (unchecked-get old-props "applied-tokens")
+        new-applied-tokens (unchecked-get new-props "applied-tokens")]
     (and (identical? (unchecked-get old-props "class")
                      (unchecked-get new-props "class"))
          (identical? (unchecked-get old-props "ids")
                      (unchecked-get new-props "ids"))
+         (identical? old-applied-tokens
+                     new-applied-tokens)
          (identical? (get old-values :r1)
                      (get new-values :r1))
          (identical? (get old-values :r2)
@@ -35,12 +44,63 @@
          (identical? (get old-values :r4)
                      (get new-values :r4)))))
 
+(mf/defc numeric-input-wrapper*
+  {::mf/private true}
+  [{:keys [values name applied-tokens align on-detach radius] :rest props}]
+  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
+        tokens (mf/with-memo [tokens name]
+                 (delay
+                   (-> (deref tokens)
+                       (select-keys (get tk/tokens-by-input name))
+                       (not-empty))))
+        on-detach-attr
+        (mf/use-fn
+         (mf/deps on-detach name)
+         #(on-detach % name))
+        
+        r1-value (get applied-tokens :r1)
+        r2-value (get applied-tokens :r2)
+        r3-value (get applied-tokens :r3)
+        r4-value (get applied-tokens :r4)
+        all-equal? (= r1-value r2-value r3-value r4-value)
+
+        applied-token (if (= :all radius)
+                        (if all-equal?
+                          r1-value
+                          :mixed)
+                        :mixed)
+        
+
+        props  (mf/spread-props props
+                                {:placeholder (if (or (= :multiple (:applied-tokens values))
+                                                      (= :multiple (get values name)))
+                                                (tr "settings.multiple") "--")
+                                 :class (stl/css :numeric-input-measures)
+                                 :applied-token applied-token
+                                 :tokens (if (delay? tokens) @tokens tokens)
+                                 :align align
+                                 :on-detach on-detach-attr
+                                 :value (get values name)})]
+    [:> numeric-input* props]))
+
 (mf/defc border-radius-menu*
   {::mf/wrap [#(mf/memo' % check-border-radius-menu-props)]}
-  [{:keys [class ids values]}]
-  (let [all-equal?       (all-equal? values)
+  [{:keys [class ids values applied-tokens]}]
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        all-equal?       (all-equal? values)
         radius-expanded* (mf/use-state false)
         radius-expanded  (deref radius-expanded*)
+
+        ;; DETACH
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token attr]
+           (st/emit! (dwta/unapply-token {:token (first token)
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         change-radius
         (mf/use-fn
@@ -94,23 +154,39 @@
 
     [:div {:class (dm/str class " " (stl/css :radius))}
      (if (not radius-expanded)
-       [:div {:class (stl/css :radius-1)
-              :title (tr "workspace.options.radius")}
-        [:> icon* {:icon-id i/corner-radius
-                   :size "s"
-                   :class (stl/css :icon)}]
-        [:> deprecated-input/numeric-input*
-         {:placeholder (cond
-                         (not all-equal?)
-                         "Mixed"
-                         (= :multiple (:r1 values))
-                         (tr "settings.multiple")
-                         :else
-                         "--")
-          :min 0
-          :nillable true
-          :on-change on-single-radius-change
-          :value (if all-equal? (:r1 values) nil)}]]
+       (if token-numeric-inputs
+         [:div {:class (stl/css :radius-1)
+                :title (tr "workspace.options.radius")}
+          [:> numeric-input-wrapper*
+          {:on-change on-single-radius-change
+           :on-detach on-detach-token
+           :icon i/corner-radius
+           :min 0
+           :name :border-radius
+           :nillable true
+           :property (tr "workspace.options.width")
+           :applied-tokens applied-tokens
+           :radius :all
+           :values (if all-equal? (:r1 values) nil)}]]
+         
+         [:div {:class (stl/css :radius-1)
+                :title (tr "workspace.options.radius")}
+          [:> icon* {:icon-id i/corner-radius
+                     :size "s"
+                     :class (stl/css :icon)}]
+
+          [:* [:> deprecated-input/numeric-input*
+               {:placeholder (cond
+                               (not all-equal?)
+                               "Mixed"
+                               (= :multiple (:r1 values))
+                               (tr "settings.multiple")
+                               :else
+                               "--")
+                :min 0
+                :nillable true
+                :on-change on-single-radius-change
+                :value (if all-equal? (:r1 values) nil)}]]])
 
        [:div {:class (stl/css :radius-4)}
         [:div {:class (stl/css :small-input)}

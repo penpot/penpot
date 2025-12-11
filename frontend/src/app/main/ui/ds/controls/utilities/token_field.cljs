@@ -80,7 +80,7 @@
          [:div {:class (stl/css :pill-dot)}])]]
 
      (when-not ^boolean disabled
-       [:> icon-button* {:variant "action"
+       [:> icon-button* {:variant "ghost"
                          :class (stl/css :invisible-button)
                          :icon i/broken-link
                          :ref token-detach-btn-ref
