@@ -1,30 +1,28 @@
 import path from "node:path";
-import fs from 'node:fs/promises';
+import fs from "node:fs/promises";
 import { defineConfig } from "vite";
 import { coverageConfigDefaults } from "vitest/config";
 
 async function waitFor(timeInMillis) {
-  return new Promise(resolve =>
-    setTimeout(_ => resolve(), timeInMillis)
-  );
+  return new Promise((resolve) => setTimeout((_) => resolve(), timeInMillis));
 }
 
 const wasmWatcherPlugin = (options = {}) => {
   return {
     name: "vite-wasm-watcher-plugin",
     configureServer(server) {
-      server.watcher.add("../resources/public/js/render_wasm.wasm")
-      server.watcher.add("../resources/public/js/render_wasm.js")
+      server.watcher.add("../resources/public/js/render_wasm.wasm");
+      server.watcher.add("../resources/public/js/render_wasm.js");
       server.watcher.on("change", async (file) => {
         if (file.includes("../resources/")) {
           // If we copy the files immediately, we end
           // up with an empty .js file (I don't know why).
-          await waitFor(100)
+          await waitFor(100);
           // copy files.
           await fs.copyFile(
             path.resolve(file),
-            path.resolve('./src/wasm/', path.basename(file))
-          )
+            path.resolve("./src/wasm/", path.basename(file)),
+          );
           console.log(`${file} changed`);
         }
       });
@@ -49,9 +47,7 @@ const wasmWatcherPlugin = (options = {}) => {
 };
 
 export default defineConfig({
-  plugins: [
-    wasmWatcherPlugin()
-  ],
+  plugins: [wasmWatcherPlugin()],
   root: "./src",
   resolve: {
     alias: {

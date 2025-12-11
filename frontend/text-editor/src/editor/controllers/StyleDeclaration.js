@@ -77,7 +77,10 @@ export class StyleDeclaration {
     const currentValue = this.getPropertyValue(name);
     if (this.#isQuotedValue(currentValue, value)) {
       return this.setProperty(name, value);
-    } else if (currentValue === "" && value === StyleDeclaration.Property.NULL) {
+    } else if (
+      currentValue === "" &&
+      value === StyleDeclaration.Property.NULL
+    ) {
       return this.setProperty(name, value);
     } else if (currentValue === "" && ["initial", "none"].includes(value)) {
       return this.setProperty(name, value);
@@ -107,4 +110,4 @@ export class StyleDeclaration {
   }
 }
 
-export default StyleDeclaration
+export default StyleDeclaration;

@@ -664,8 +664,16 @@ export class TextEditor extends EventTarget {
  * @param {boolean} allowHTMLPaste
  * @returns {Root}
  */
-export function createRootFromHTML(html, style = undefined, allowHTMLPaste = undefined) {
-  const fragment = mapContentFragmentFromHTML(html, style || undefined, allowHTMLPaste || undefined);
+export function createRootFromHTML(
+  html,
+  style = undefined,
+  allowHTMLPaste = undefined,
+) {
+  const fragment = mapContentFragmentFromHTML(
+    html,
+    style || undefined,
+    allowHTMLPaste || undefined,
+  );
   const root = createRoot([], style);
   root.replaceChildren(fragment);
   resetInertElement();

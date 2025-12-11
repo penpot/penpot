@@ -112,7 +112,11 @@ describe("Paragraph", () => {
     const helloTextSpan = createTextSpan(new Text("Hello, "));
     const worldTextSpan = createTextSpan(new Text("World"));
     const exclTextSpan = createTextSpan(new Text("!"));
-    const paragraph = createParagraph([helloTextSpan, worldTextSpan, exclTextSpan]);
+    const paragraph = createParagraph([
+      helloTextSpan,
+      worldTextSpan,
+      exclTextSpan,
+    ]);
     const newParagraph = splitParagraphAtNode(paragraph, 1);
     expect(newParagraph).toBeInstanceOf(HTMLDivElement);
     expect(newParagraph.nodeName).toBe(TAG);
