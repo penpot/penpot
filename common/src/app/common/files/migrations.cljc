@@ -1797,9 +1797,18 @@
                 (if (and (some? ref-shape)
                          (or (not= (:component-id shape) (:component-id ref-shape))
                              (not= (:component-file shape) (:component-file ref-shape))))
-                  (assoc shape
-                         :component-id (:component-id ref-shape)
-                         :component-file (:component-file ref-shape))
+                  (cond-> shape
+                    (some? (:component-id ref-shape))
+                    (assoc :component-id (:component-id ref-shape))
+
+                    (nil? (:component-id ref-shape))
+                    (dissoc :component-id)
+
+                    (some? (:component-file ref-shape))
+                    (assoc :component-file (:component-file ref-shape))
+
+                    (nil? (:component-file ref-shape))
+                    (dissoc :component-file))
                   shape))
               shape))
 
