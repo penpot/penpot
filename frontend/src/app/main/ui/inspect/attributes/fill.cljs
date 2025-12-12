@@ -68,7 +68,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "inspect.attributes.fill")
-         :class (stl/css :title-spacing-fill)}]
+         :class (stl/css :title-wrapper)
+         :class-title (stl/css :fill-attr-title)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]

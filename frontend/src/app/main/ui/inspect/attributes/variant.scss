@@ -5,18 +5,29 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .attributes-block {
-  @include deprecated.flexColumn;
+  --box-border-color: var(--color-background-primary);
+  display: flex;
+  flex-direction: column;
+  border-block-end: $b-2 solid var(--box-border-color);
 }
 
-.title-spacing-variant {
-  @extend .attr-title;
+.title-wrapper {
+  margin-inline-start: 0;
+}
+
+.variant-attr-title {
+  color: var(--entry-foreground-color-hover);
+  padding-block: var(--sp-s);
 }
 
 .variant-row {
   @extend .attr-row;
-  height: fit-content;
+  block-size: fit-content;
+  min-block-size: $sz-36;
 }
 
 .button-children {

@@ -33,7 +33,6 @@
   display: flex;
   align-items: center;
   gap: var(--title-gap);
-  padding-block: var(--title-padding);
 }
 
 .disclosure-button {
@@ -52,4 +51,5 @@
   @include use-typography("headline-small");
   flex: 1;
   color: var(--title-color);
+  padding-block: var(--title-padding);
 }

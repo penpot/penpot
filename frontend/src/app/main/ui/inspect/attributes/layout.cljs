@@ -57,7 +57,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title "Layout"
-         :class (stl/css :title-spacing-layout)}
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :layout-attr-title)}
 
         (when (= (count shapes) 1)
           [:> copy-button* {:data (css/get-shape-properties-css objects (first shapes) properties)
