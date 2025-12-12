@@ -20,15 +20,21 @@
 
 ;; Component -------------------------------------------------------------------
 
-(defn calculate-position
+(defn- calculate-position
   "Calculates the style properties for the given coordinates and position"
-  [{vh :height} position x y color?]
-  (let [;; picker height in pixels
-        ;; TODO: Revisit these harcoded values
-        h (if color? 610 510)
+  [{vh :height} position x y token-type]
+  (let [; TODO: Revisit these harcoded values
+        modal-height (case token-type
+                       :color
+                       500
+                       :typography
+                       660
+                       :shadow
+                       660
+                       400)
         ;; Checks for overflow outside the viewport height
-        max-y             (- vh h)
-        overflow-fix      (max 0 (+ y (- 50) h (- vh)))
+        max-y             (- vh modal-height)
+        overflow-fix      (max 0 (+ y (- 50) modal-height (- vh)))
         bottom-offset     "1rem"
         top-offset        (dm/str (- y 70) "px")
         max-height-top    (str "calc(100vh - " top-offset)
@@ -61,17 +67,19 @@
          :top (dm/str (- y 70 overflow-fix) "px")
          :maxHeight max-height-top}))))
 
-(defn use-viewport-position-style [x y position color?]
+(defn use-viewport-position-style [x y position token-type]
   (let [vport (-> (l/derived :vport refs/workspace-local)
                   (mf/deref))]
-    (-> (calculate-position vport position x y color?)
+    (-> (calculate-position vport position x y token-type)
         (clj->js))))
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
   [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
-  (let [wrapper-style (use-viewport-position-style x y position (= token-type :color))
-        modal-size-large* (mf/use-state (= token-type :typography))
+  (let [wrapper-style (use-viewport-position-style x y position token-type)
+        modal-size-large* (mf/use-state (or (= token-type :typography)
+                                            (= token-type :color)
+                                            (= token-type :shadow)))
         modal-size-large? (deref modal-size-large*)
         close-modal (mf/use-fn
                      (fn []
@@ -124,7 +132,7 @@
 
 (mf/defc box-shadow-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/box-shadow}
+   ::mf/register-as :tokens/shadow}
   [properties]
   [:& token-update-create-modal properties])
 

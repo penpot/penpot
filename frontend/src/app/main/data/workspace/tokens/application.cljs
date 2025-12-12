@@ -39,6 +39,7 @@
 
 (declare token-properties)
 (declare update-layout-item-margin)
+(declare all-attrs-appliable-for-token?)
 
 ;; Events to update the value of attributes with applied tokens ---------------------------------------------------------
 
@@ -148,6 +149,36 @@
                          {:page-id page-id
                           :ignore-touched true
                           :changed-sub-attr [:stroke-color]}))))
+
+(defn value->shadow
+  "Transform a token shadow value into penpot shadow data structure"
+  [value]
+  (mapv (fn [{:keys [offsetX offsetY blur spread color inset]}]
+          {:id (random-uuid)
+           :hidden false
+           :offset-x offsetX
+           :offset-y offsetY
+           :blur blur
+           :color (value->color color)
+           :spread spread
+           :style
+           (case inset
+             true :inner-shadow
+             :drop-shadow)})
+        value))
+
+(defn update-shadow
+  ([value shape-ids attributes]
+   (update-shadow value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when (sequential? value)
+     (let [shadows (value->shadow value)]
+       (dwsh/update-shapes shape-ids
+                           #(assoc % :shadow shadows)
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs [:shadow]})))))
 
 (defn update-fill-stroke
   ([value shape-ids attributes]
@@ -489,7 +520,8 @@
                                                 (or
                                                  (and (ctsl/any-layout-immediate-child? objects shape)
                                                       (some ctt/spacing-margin-keys attributes))
-                                                 (ctt/any-appliable-attr? attributes (:type shape) (:layout shape))))))
+                                                 (and (ctt/any-appliable-attr-for-shape? attributes (:type shape) (:layout shape))
+                                                      (all-attrs-appliable-for-token? attributes (:type token)))))))
                           shape-ids (d/nilv (keys shapes)  [])
                           any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
@@ -560,16 +592,31 @@
             (update shape :applied-tokens remove-token))))))))
 
 (defn toggle-token
-  [{:keys [token shapes attrs]}]
+  [{:keys [token attrs shape-ids expand-with-children]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [attributes all-attributes on-update-shape]}
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shapes (into [] (keep (d/getf objects)) shape-ids)
+
+            shapes
+            (if expand-with-children
+              (into []
+                    (mapcat (fn [shape]
+                              (if (= (:type shape) :group)
+                                (keep objects (:shapes shape))
+                                [shape])))
+                    shapes)
+              shapes)
+
+            {:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
 
             unapply-tokens?
             (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+
             shape-ids (map :id shapes)]
+
         (if unapply-tokens?
           (rx/of
            (unapply-token {:attributes (or attrs all-attributes attributes)
@@ -581,7 +628,7 @@
              (apply-spacing-token {:token token
                                    :attr attrs
                                    :shapes shapes})
-             (apply-token {:attributes (or attrs attributes)
+             (apply-token {:attributes (if (empty? attrs) attributes attrs)
                            :token token
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
@@ -631,6 +678,14 @@
     :modal {:key :tokens/border-radius
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}
+
+   :shadow
+   {:title "Shadow"
+    :attributes ctt/shadow-keys
+    :on-update-shape update-shadow
+    :modal {:key :tokens/shadow
+            :fields [{:label "Shadow"
+                      :key :shadow}]}}
 
    :color
    {:title "Color"
@@ -761,3 +816,22 @@
 
 (defn get-token-properties [token]
   (get token-properties (:type token)))
+
+(defn get-update-shape-fn
+  "Get the function that updates the attributes of a shape if this token is applied."
+  [token]
+  (when token
+    (-> (get-token-properties token)
+        :on-update-shape)))
+
+(defn appliable-attributes-for-token
+  "Get the attributes to which this token type can be applied."
+  [token-type]
+  (let [props (get token-properties token-type)]
+    (or (:all-attributes props)
+        (:attributes props))))
+
+(defn all-attrs-appliable-for-token?
+  "Check if any of the given attributes can be applied for the given token type."
+  [attributes token-type]
+  (set/subset? attributes (appliable-attributes-for-token token-type)))

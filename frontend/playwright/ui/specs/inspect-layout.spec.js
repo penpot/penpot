@@ -50,6 +50,7 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
   });
   await inspectButton.click();
 
+  // Open color space selector combobox and change to RGBA format
   const colorDropdown = workspacePage.page
     .getByRole("combobox")
     .getByText("HEX");
@@ -59,6 +60,17 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
     name: "RGBA",
   });
   await rgbaFormatButton.click();
+
+  // Open info tab selector and select the computed tab
+  const infoTabSelector = workspacePage.page
+    .getByRole("combobox")
+    .getByText("Styles");
+  await infoTabSelector.click();
+
+  const infoTabSelectorButton = workspacePage.page.getByRole("option", {
+    name: "Computed",
+  });
+  await infoTabSelectorButton.click();
 
   const copyColorButton = workspacePage.page.getByRole("button", {
     name: "Copy color",
@@ -117,6 +129,17 @@ test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", as
     name: "Inspect",
   });
   await inspectButton.click();
+
+  // Open info tab selector and select the computed tab
+  const infoTabSelector = workspacePage.page
+    .getByRole("combobox")
+    .getByText("Styles");
+  await infoTabSelector.click();
+
+  const infoTabSelectorButton = workspacePage.page.getByRole("option", {
+    name: "Computed",
+  });
+  await infoTabSelectorButton.click();
 
   const colorLibraryName = workspacePage.page.getByTestId("color-library-name");
 

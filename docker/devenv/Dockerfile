@@ -101,13 +101,45 @@ RUN set -eux; \
     corepack enable; \
     rm -rf /tmp/nodejs.tar.gz;
 
+
+################################################################################
+## CADDYSERVER SETUP
+################################################################################
+
+FROM base AS setup-caddy
+
+ENV CADDY_VERSION=2.10.2
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/caddy.tar.gz ${BINARY_URL}; \
+    mkdir -p /tmp/caddy; \
+    cd /tmp/caddy; \
+    tar -xf /tmp/caddy.tar.gz; \
+    chown -R root /tmp/caddy; \
+    mv /tmp/caddy/caddy /usr/bin/; \
+    rm -rf /tmp/caddy.tar.gz; \
+    rm -rf /tmp/caddy;
+
 ################################################################################
 ## JVM SETUP
 ################################################################################
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.2.1565
+ENV CLOJURE_VERSION=1.12.3.1577
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -393,6 +425,7 @@ COPY --from=setup-utils /opt/utils /opt/utils
 COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
+COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
@@ -403,6 +436,9 @@ COPY files/vimrc          /root/.vimrc
 COPY files/tmux.conf      /root/.tmux.conf
 COPY files/sudoers        /etc/sudoers
 
+COPY files/Caddyfile           /home/
+COPY files/selfsigned.crt      /home/
+COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh
 COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
 COPY files/entrypoint.sh       /home/entrypoint.sh

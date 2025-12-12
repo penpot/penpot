@@ -7,6 +7,8 @@
 (ns app.plugins.parser
   (:require
    [app.common.data :as d]
+   [app.common.json :as json]
+   [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -514,3 +516,8 @@
   (case axis
     "horizontal" :y
     "vertical"   :x))
+
+(defn parse-commands
+  [commands]
+  (-> (json/->clj commands)
+      (path/decode-segments)))

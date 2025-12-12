@@ -19,7 +19,7 @@
    [app.common.schema.generators :as sg]
    [app.common.transit :as t]
    [app.common.types.color :as clr]
-   [app.common.types.fills :refer [schema:fill fill->color]]
+   [app.common.types.fills :refer [schema:fills fill->color]]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.plugins :as ctpg]
@@ -36,8 +36,7 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(defonce ^:dynamic *wasm-sync* false)
-
+(defonce ^:dynamic *shape-changes* nil)
 (defonce wasm-enabled? false)
 (defonce wasm-create-shape (constantly nil))
 
@@ -193,8 +192,7 @@
    [:locked {:optional true} :boolean]
    [:hidden {:optional true} :boolean]
    [:masked-group {:optional true} :boolean]
-   [:fills {:optional true}
-    [:vector {:gen/max 2} schema:fill]]
+   [:fills {:optional true} schema:fills]
    [:proportion {:optional true} ::sm/safe-number]
    [:proportion-lock {:optional true} :boolean]
    [:constraints-h {:optional true}

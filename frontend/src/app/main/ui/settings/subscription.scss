@@ -8,10 +8,12 @@
 @use "ds/typography.scss" as t;
 @use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-section {
   display: flex;
-  width: 100%;
+  inline-size: 100%;
   justify-content: center;
   align-items: center;
 }
@@ -20,10 +22,10 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  max-width: deprecated.$s-500;
+  max-inline-size: $sz-500;
   margin-block-end: var(--sp-xxxl);
-  width: deprecated.$s-580;
-  margin: deprecated.$s-92 auto deprecated.$s-120 auto;
+  inline-size: px2rem(580);
+  margin: px2rem(92) auto px2rem(120) auto;
   justify-content: center;
 }
 
@@ -72,10 +74,15 @@
 }
 
 .plan-card {
-  border: $b-1 solid var(--color-foreground-secondary);
+  border: $b-1 solid var(--color-background-quaternary);
   border-radius: var(--sp-s);
   margin-block-start: var(--sp-l);
   padding: var(--sp-l);
+}
+
+.plan-card-highlight {
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-accent-select);
 }
 
 .plan-card-header {
@@ -93,8 +100,8 @@
 .plan-title-icon {
   @extend .button-icon;
   stroke: var(--color-foreground-primary);
-  height: var(--sp-xl);
-  width: var(--sp-xl);
+  block-size: var(--sp-xl);
+  inline-size: var(--sp-xl);
   border-radius: 6px;
   border: 1.75px solid var(--color-foreground-primary);
   stroke-width: 2.25px;
@@ -135,14 +142,14 @@
 }
 
 .other-subscriptions {
-  margin-block-start: deprecated.$s-52;
+  margin-block-start: px2rem(52);
 }
 
 .cta-button {
   @include t.use-typography("body-medium");
   @include deprecated.buttonStyle;
   align-items: center;
-  color: var(--color-accent-tertiary);
+  color: var(--color-accent-primary);
   display: flex;
   margin-block-start: var(--sp-m);
   text-align: left;
@@ -150,9 +157,9 @@
 
 .cta-button svg {
   @extend .button-icon;
-  height: var(--sp-l);
-  width: var(--sp-l);
-  stroke: var(--color-accent-tertiary);
+  block-size: var(--sp-l);
+  inline-size: var(--sp-l);
+  stroke: var(--color-accent-primary);
   margin-inline-start: var(--sp-xs);
 }
 
@@ -164,20 +171,22 @@
   margin-block-start: var(--sp-xs);
 }
 
+.bottom-button {
+  margin-block-start: var(--sp-xl);
+}
+
 .modal-overlay {
   @extend .modal-overlay-base;
 }
 
 .modal-dialog {
   @extend .modal-container-base;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  max-height: initial;
-  min-width: deprecated.$s-548;
+  max-block-size: initial;
+  min-inline-size: px2rem(548);
 }
 
 .modal-dialog.subscription-success {
-  min-width: deprecated.$s-648;
+  min-inline-size: px2rem(648);
 }
 
 .close-btn {
@@ -223,11 +232,11 @@
 
 .modal-success-content {
   display: flex;
-  gap: deprecated.$s-40;
+  gap: $sz-40;
 }
 
 .modal-footer {
-  margin-block-start: deprecated.$s-40;
+  margin-block-start: $sz-40;
 }
 
 .action-buttons {
@@ -240,23 +249,28 @@
 
 .primary-button {
   @extend .modal-accept-btn;
+  min-block-size: $sz-32;
+  block-size: auto;
 }
 
 .cancel-button {
   @extend .modal-cancel-btn;
+  min-block-size: $sz-32;
+  white-space: break-spaces;
+  block-size: auto;
 }
 
 .modal-start {
   display: flex;
   justify-content: center;
-  max-width: deprecated.$s-220;
+  max-inline-size: $sz-224;
 
   svg {
-    width: 100%;
-    height: auto;
+    inline-size: 100%;
+    block-size: auto;
   }
 
-  @media (max-width: 992px) {
+  @media (max-inline-size: 992px) {
     display: none;
   }
 }
@@ -276,19 +290,19 @@
   list-style-position: inside;
   list-style-type: none;
   margin-inline-start: var(--sp-xl);
-  max-height: deprecated.$s-216;
+  max-block-size: px2rem(216);
   overflow-y: auto;
 }
 
 .input-field {
   --input-icon-padding: var(--sp-s);
-  width: deprecated.$s-80;
+  inline-size: px2rem(80);
 }
 
 .error-message {
   @include t.use-typography("body-small");
   color: var(--color-foreground-error);
-  margin-block-start: deprecated.$s-8;
+  margin-block-start: var(--sp-s);
 }
 
 .editors-wrapper {
@@ -307,7 +321,7 @@
   @include t.use-typography("body-small");
   background-color: var(--color-background-tertiary);
   border-radius: var(--sp-s);
-  margin-block-start: deprecated.$s-40;
+  margin-block-start: $sz-40;
   padding-block: var(--sp-s);
   padding-inline: var(--sp-m);
 }

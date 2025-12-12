@@ -23,11 +23,11 @@
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
+   [app.util.clipboard :as clipboard]
    [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -96,7 +96,7 @@
                      embed-images? (replace-map images-data))]
     (str/format page-template style-code markup-code)))
 
-(mf/defc code
+(mf/defc code*
   [{:keys [shapes frame on-expand from]}]
   (let [style-type*    (mf/use-state "css")
         markup-type*   (mf/use-state "html")
@@ -202,7 +202,7 @@
         (mf/use-fn
          (mf/deps style-code markup-code images-data)
          (fn []
-           (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))
+           (clipboard/to-clipboard (gen-all-code style-code markup-code images-data))
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]

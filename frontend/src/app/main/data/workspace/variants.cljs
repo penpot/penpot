@@ -128,14 +128,16 @@
             related-components (cfv/find-variant-components data objects variant-id)
 
             props              (-> related-components last :variant-properties)
-            prop-name          (-> props (nth pos) :name)
+            valid-pos?         (> (count props) pos)
+            prop-name          (when valid-pos? (-> props (nth pos) :name))
 
-            changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects)
-                        (pcb/with-library-data data)
-                        (clvp/generate-update-property-name variant-id pos new-name))
+            changes            (when valid-pos?
+                                 (-> (pcb/empty-changes it page-id)
+                                     (pcb/with-objects objects)
+                                     (pcb/with-library-data data)
+                                     (clvp/generate-update-property-name variant-id pos new-name)))
             undo-id (js/Symbol)]
-        (when (not= prop-name new-name)
+        (when (and valid-pos? (not= prop-name new-name))
           (rx/of
            (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)

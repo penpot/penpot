@@ -1,13 +1,5 @@
-use crate::shapes::Shape;
-use crate::state::ShapesPool;
-use crate::uuid::Uuid;
-
-use crate::math::Matrix;
-use skia_safe::{self as skia, Rect};
-
-use std::collections::HashMap;
-
 use super::{tiles, RenderState, SurfaceId};
+use skia_safe::{self as skia, Rect};
 
 #[cfg(target_arch = "wasm32")]
 use crate::run_script;
@@ -23,10 +15,11 @@ fn get_debug_rect(rect: Rect) -> Rect {
     )
 }
 
+#[allow(dead_code)]
 fn render_debug_view(render_state: &mut RenderState) {
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
-    paint.set_color(skia::Color::from_rgb(255, 0, 255));
+    paint.set_color(skia::Color::GREEN);
     paint.set_stroke_width(1.);
 
     let rect = get_debug_rect(render_state.viewbox.area);
@@ -36,6 +29,7 @@ fn render_debug_view(render_state: &mut RenderState) {
         .draw_rect(rect, &paint);
 }
 
+#[allow(dead_code)]
 pub fn render_debug_cache_surface(render_state: &mut RenderState) {
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     canvas.save();
@@ -50,7 +44,7 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     let canvas = render_state.surfaces.canvas(SurfaceId::Target);
     let skia::ISize { width, height } = canvas.base_layer_size();
     let mut paint = skia::Paint::default();
-    paint.set_color(skia::Color::from_argb(100, 0, 0, 0));
+    paint.set_color(skia::Color::GRAY);
 
     let str = if render_state.options.is_debug_visible() {
         "WASM RENDERER (DEBUG)"
@@ -64,36 +58,12 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     canvas.draw_str(str, p, debug_font, &paint);
 }
 
-pub fn render_debug_shape(
-    render_state: &mut RenderState,
-    element: &Shape,
-    intersected: bool,
-    shapes_pool: &ShapesPool,
-    modifiers: &HashMap<Uuid, Matrix>,
-) {
-    let mut paint = skia::Paint::default();
-    paint.set_style(skia::PaintStyle::Stroke);
-    paint.set_color(if intersected {
-        skia::Color::from_rgb(255, 255, 0)
-    } else {
-        skia::Color::from_rgb(0, 255, 255)
-    });
-    paint.set_stroke_width(1.);
-
-    let rect = get_debug_rect(element.extrect(shapes_pool, modifiers));
-    render_state
-        .surfaces
-        .canvas(SurfaceId::Debug)
-        .draw_rect(rect, &paint);
-}
-
+#[allow(dead_code)]
 pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
     let tiles::TileRect(sx, sy, ex, ey) = render_state.tile_viewbox.interest_rect;
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let mut paint = skia::Paint::default();
-    paint.set_style(skia::PaintStyle::Stroke);
-    paint.set_color(skia::Color::from_rgb(255, 0, 127));
-    paint.set_stroke_width(1.);
+    paint.set_color(skia::Color::RED);
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
 
     let debug_font = render_state.fonts.debug_font();
@@ -101,12 +71,13 @@ pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
 }
 
 // Renders the tiles in the viewbox
+#[allow(dead_code)]
 pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     let scale = render_state.get_scale();
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
-    paint.set_color(skia::Color::from_rgb(255, 0, 127));
+    paint.set_color(skia::Color::MAGENTA);
     paint.set_stroke_width(1.);
 
     let tile_size = tiles::get_tile_size(scale);
@@ -130,42 +101,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
             let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
             let str = format!("{}:{}", x, y);
             let debug_font = render_state.fonts.debug_font();
-            canvas.draw_str(str, p, debug_font, &paint);
-            canvas.draw_rect(debug_rect, &paint);
-        }
-    }
-}
-
-pub fn render_debug_tiles(render_state: &mut RenderState) {
-    let scale = render_state.get_scale();
-    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
-    let mut paint = skia::Paint::default();
-    paint.set_style(skia::PaintStyle::Stroke);
-    paint.set_color(skia::Color::from_rgb(127, 0, 255));
-    paint.set_stroke_width(1.);
-
-    let tile_size = tiles::get_tile_size(scale);
-    let tiles::TileRect(sx, sy, ex, ey) =
-        tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
-    for y in sy..=ey {
-        for x in sx..=ex {
-            let tile = tiles::Tile(x, y);
-            let shape_count = render_state.tiles.get_shapes_at(tile).iter().len();
-            if shape_count == 0 {
-                continue;
-            }
-
-            let rect = Rect::from_xywh(
-                x as f32 * tile_size,
-                y as f32 * tile_size,
-                tile_size,
-                tile_size,
-            );
-            let debug_rect = get_debug_rect(rect);
-            let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
-            let str = format!("{}:{} {}", x, y, shape_count);
-
-            let debug_font = render_state.fonts.debug_font();
+            paint.set_style(skia::PaintStyle::Fill);
             canvas.draw_str(str, p, debug_font, &paint);
             canvas.draw_rect(debug_rect, &paint);
         }
@@ -173,15 +109,62 @@ pub fn render_debug_tiles(render_state: &mut RenderState) {
 }
 
 pub fn render(render_state: &mut RenderState) {
-    render_debug_view(render_state);
-    render_debug_viewbox_tiles(render_state);
-    render_debug_tiles(render_state);
-    render_debug_cache_surface(render_state);
+    // DEBUG VIEWBOX - green rect - buggy?
+    // render_debug_view(render_state);
+
+    // DEBUG VIEWBOX TILES - magenta - buggy?
+    // render_debug_viewbox_tiles(render_state);
+
+    // DEBUG CACHE SURFACE - noisy - ?
+    // render_debug_cache_surface(render_state);
+
     render_state.surfaces.draw_into(
         SurfaceId::Debug,
         SurfaceId::Target,
         Some(&skia::Paint::default()),
     );
+}
+
+pub fn render_workspace_current_tile(
+    render_state: &mut RenderState,
+    prefix: String,
+    tile: tiles::Tile,
+    rect: skia::Rect,
+) {
+    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
+    let mut p = skia::Paint::default();
+    p.set_stroke_width(2.);
+    p.set_style(skia::PaintStyle::Stroke);
+    canvas.draw_rect(rect, &p);
+
+    let tile_position_origin = skia::Point::new(rect.x() + 10., rect.y() + 20.);
+    p.set_style(skia::PaintStyle::Fill);
+    let str = format!("{prefix} {}:{}", tile.x(), tile.y());
+    let mut debug_font = render_state.fonts.debug_font().clone();
+    debug_font.set_size(16.);
+    canvas.draw_str(str, tile_position_origin, &debug_font, &p);
+}
+
+pub fn render_debug_shape(
+    render_state: &mut RenderState,
+    shape_selrect: Option<skia::Rect>,
+    shape_extrect: Option<skia::Rect>,
+) {
+    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
+
+    let mut paint = skia::Paint::default();
+    paint.set_style(skia::PaintStyle::Stroke);
+    paint.set_color(skia::Color::RED);
+    paint.set_stroke_width(1.);
+
+    if let Some(rect) = shape_selrect {
+        canvas.draw_rect(rect, &paint);
+    }
+
+    if let Some(rect) = shape_extrect {
+        paint.set_color(skia::Color::BLUE);
+        canvas.draw_rect(rect, &paint);
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -207,23 +190,4 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }
-}
-
-pub fn render_workspace_current_tile(
-    render_state: &mut RenderState,
-    prefix: String,
-    tile: tiles::Tile,
-    rect: skia::Rect,
-) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Target);
-    let mut p = skia::Paint::default();
-    p.set_stroke_width(1.);
-    p.set_style(skia::PaintStyle::Stroke);
-    canvas.draw_rect(rect, &p);
-
-    let point = skia::Point::new(rect.x() + 10., rect.y() + 20.);
-    p.set_stroke_width(1.);
-    let str = format!("{prefix} {}:{}", tile.0, tile.1);
-    let debug_font = render_state.fonts.debug_font();
-    canvas.draw_str(str, point, debug_font, &p);
 }

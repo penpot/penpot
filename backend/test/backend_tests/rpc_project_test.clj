@@ -6,11 +6,13 @@
 
 (ns backend-tests.rpc-project-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.setup.clock :as clock]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -104,7 +106,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))))))
+        (t/is (= 1 (count (remove :deleted-at result))))
+        (t/is (= 2 (count result)))))))
 
 (t/deftest permissions-checks-create-project
   (let [profile1 (th/create-profile* 1)
@@ -207,7 +210,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))))
+        (t/is (= 2 (count result)))
+        (t/is (= 1 (count (remove :deleted-at result))))))
 
     ;; run permanent deletion (should be noop)
     (let [result (th/run-task! :objects-gc {})]
@@ -224,8 +228,9 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 1 (:processed result))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [result (th/run-task! :objects-gc {})]
+        (t/is (= 1 (:processed result)))))
 
     ;; query the list of files of a after hard deletion
     (let [data {::th/type :get-project-files

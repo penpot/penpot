@@ -263,13 +263,14 @@
           (apply array (keys (dm/get-in page [:plugin-data (keyword "shared" namespace)]))))))
 
     :openPage
-    (fn []
+    (fn [new-window]
       (cond
         (not (r/check-permission plugin-id "content:read"))
         (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
 
         :else
-        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))))
+        (let [new-window (if (boolean? new-window) new-window true)]
+          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
 
     :createFlow
     (fn [name frame]

@@ -89,6 +89,39 @@ test.describe("Shape attributes", () => {
 
     await expect(workspace.page.getByTestId("add-fill")).toBeDisabled();
   });
+
+  // FIXME: flaky
+  test.skip("Cannot add a new text fill when the limit has been reached", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "design/get-file-text-fills-limit.json",
+    );
+
+    await workspace.goToWorkspace({
+      fileId: "b1ff3fdf-b491-812b-8006-f2ce3d29333a",
+      pageId: "b1ff3fdf-b491-812b-8006-f2ce3d29333b",
+    });
+
+    await workspace.clickLeafLayer("Lorem ipsum");
+
+    await expect(
+      workspace.page.getByRole("button", { name: "Remove color" }),
+    ).toHaveCount(7);
+
+    await workspace.page.getByRole("button", { name: "Add fill" }).click();
+    await expect(
+      workspace.page.getByRole("button", { name: "Remove color" }),
+    ).toHaveCount(8);
+
+    await expect(
+      workspace.page.getByRole("button", { name: "Add fill" }),
+    ).toBeDisabled();
+  });
 });
 
 test.describe("Multiple shapes attributes", () => {

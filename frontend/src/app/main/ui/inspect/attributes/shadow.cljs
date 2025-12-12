@@ -7,11 +7,10 @@
 (ns app.main.ui.inspect.attributes.shadow
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
-   [app.main.ui.inspect.attributes.common :refer [color-row]]
+   [app.main.ui.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [app.util.code-gen.style-css-formats :refer [format-color-value]]
    [app.util.i18n :refer [tr]]
@@ -31,13 +30,14 @@
 (mf/defc shadow-block [{:keys [shadow]}]
   (let [color-format (mf/use-state :hex)
         color-format* (deref color-format)
+        label (cmm/get-css-rule-humanized (:style shadow))
         on-change-format
         (mf/use-fn
          (fn [format]
            (reset! color-format format)))]
     [:div {:class (stl/css :attributes-shadow-block)}
      [:div {:class (stl/css :shadow-row)}
-      [:div {:class (stl/css :global/attr-label)} (->> shadow :style d/name (str "workspace.options.shadow-options.") (tr))]
+      [:div {:class (stl/css :global/attr-label)} label]
       [:div {:class (stl/css :global/attr-value)}
        [:> copy-button* {:data  (shadow-copy-data shadow)
                          :class (stl/css :color-row-copy-btn)}
@@ -51,10 +51,10 @@
          (str (:blur shadow) "px") " "
          (str (:spread shadow) "px")]]]]
 
-     [:& color-row {:color (:color shadow)
-                    :format @color-format
-                    :copy-data (copy-color-data (:color shadow) color-format*)
-                    :on-change-format on-change-format}]]))
+     [:& cmm/color-row {:color (:color shadow)
+                        :format @color-format
+                        :copy-data (copy-color-data (:color shadow) color-format*)
+                        :on-change-format on-change-format}]]))
 
 (mf/defc shadow-panel [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]

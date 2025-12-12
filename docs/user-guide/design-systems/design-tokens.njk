@@ -1,0 +1,683 @@
+---
+title: Design Tokens
+order: 5
+desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG format, with sets, themes, aliases, equations and JSON import/export.
+---
+
+<h1 id="design-tokens">Design Tokens</h1>
+<p class="main-paragraph">Design tokens are the building blocks of all UI elements, the same tokens are used in designs, tools, and code. They include colors, typography, spacing, shadows, and any visual element that affects a layer: all these properties collectively make up a design system or a visual inheritance.</p>
+
+<figure>
+  <img src="/img/design-tokens/01-tokens-cover.webp" alt="Tokens cover" />
+</figure>
+
+<h3>Why Design Tokens?</h3>
+<p>Design tokens act as a single source of truth, a common language that can be translated and used in any other tool or framework capable of reading the token format. With Design Tokens, you can create, manage, and synchronize these visual elements within Penpot and across other design tools, keeping your designs consistent and making your workflows faster and easier to maintain.</p>
+<p>You can also integrate Design Tokens with other core Penpot features, such as components and grid & flex layout, plus plugins will be able to access the tokens API (coming soon) making it even more powerful.</p>
+
+<h3>W3C DTCG Format</h3>
+<p>Penpot Design Tokens adhere to the <a href="https://design-tokens.github.io/community-group/format/" target="_blank">Design Tokens Format Module</a> and <a href="https://www.designtokens.org/glossary/" target="_blank">its definitions</a>, a draft by the <a href="https://www.w3.org/community/design-tokens/" target="_blank">W3C DTCG</a>. Penpot ensures compatibility across various disciplines, tools, and technologies by following the most standardized approach available for design tokens.</p>
+<p>Tokens can be exported from Penpot or integrated into other tools directly, without conversion. Additionally, the knowledge gained from using Design Tokens in Penpot remains valuable, regardless of whether you continue using Penpot or a different tool or technology.</p>
+
+<h2 id="design-tokens-use-create">Creating a token</h2>
+<p>You can create reusable and semantic tokens to be referenced in your designs at the <strong>Tokens</strong> panel. In this panel, you’ll find all the available types of tokens in Penpot arranged alphabetically, with existing tokens being shown at the top of the list.</p>
+<figure>
+  <img src="/img/design-tokens/02-tokens-create.webp" alt="Tokens create" />
+</figure>
+<p>To create a token, click on the + next to the type of token you want to create. You’ll then be prompted to define the token’s:</p>
+<ul>
+    <li><strong>Name:</strong> The name should be specific to that token, as it is not possible to create multiple tokens with the same name; for example, <strong>dimension.small</strong>.</li>
+    <li><strong>Value:</strong> The value you wish to attribute to the token; depending on the token type, values may be numerical or color spaces (Hex, RGB, RGBA, ARGB, HSL or HSLA).</li>
+    <li><strong>Description:</strong> You can also choose to add a description to your token.</li>
+</ul>
+<p>Once you have named the token and assigned it a value, click <strong>Save</strong> to store the token and start referencing it.</p>
+
+<h2 id="design-tokens-aliases">Referencing tokens into values (aliases)</h2>
+<p>When assigning a value to a token, you can reference existing tokens - these are called aliases at the <a href="https://www.designtokens.org/glossary/" target="_blank">DTCG Glossary</a>.</p>
+<figure>
+  <img src="/img/design-tokens/03-tokens-aliases.webp" alt="Tokens aliases" />
+</figure>
+<p>For example, if you have created a <strong>dimension.small</strong> token, with a value of <strong">64</strong>, you could create a <strong>spacing.small</strong> token with a value of <code class="language-js">{dimension.small}</code>. The <strong>spacing.small</strong> token would thereby have a value of 64.</p>
+<p>When referencing an existing token in the value of a new token, you must reference it within <strong>{}</strong>.</p>
+<p>If the value of the referenced token changes, this will also change the value of the tokens where it is referenced.</p>
+<p class="advice">References to existing tokens are case sensitive.</p>
+
+<h2 id="design-tokens-equations">Using equations</h2>
+<p>Token types with numerical values also accept mathematical equations. If, for example, you create a <strong>spacing.small</strong> token with the value of <strong>2</strong>, and you then want to create a <strong>spacing.medium</strong> token that is twice as large, you could do so by writing <code class="language-js">{spacing.small} * 2</code> in its value. As a result, <strong>spacing.medium</strong> would have a value of <strong>4</strong>.</p>
+<p>Say you have a <strong>spacing.scale</strong> token with a value of <strong>2</strong>. You could also use this token in the equation to calculate the value of <strong>spacing.medium</strong> by writing <code class="language-js">{spacing.small} * {spacing.scale}</code> in its value.</p>
+<figure>
+  <img src="/img/design-tokens/04-tokens-math.webp" alt="Tokens math" />
+</figure>
+<p>Mathematical equations can be performed using:</p>
+<ul>
+    <li><code class="language-js">+</code> for addition.</li>
+    <li><code class="language-js">-</code> for subtraction.</li>
+    <li><code class="language-js">*</code> for multiplication.</li>
+    <li><code class="language-js">/</code> for division.</li>
+</ul>
+
+<h2 id="design-tokens-edit">Editing a token</h2>
+<p>Tokens can be edited by right-clicking the token and selecting <strong>Edit token</strong>. This will allow you to change the tokens name, value and description. Once the changes are made, click <strong>Save</strong>.</p>
+<figure>
+  <img src="/img/design-tokens/05-tokens-edit.webp" alt="Tokens edit" />
+</figure>
+<p class="advice">Renaming tokens will break any references to their old names. If a token is already applied somewhere, you'll need to reapply it after renaming. This can lead to extra work, so rename with caution. We're actively working on a solution to handle this automatically, ensuring renamed tokens stay linked to their properties without additional effort.</p>
+
+<h2 id="design-tokens-duplicate">Duplicating a token</h2>
+<p>Tokens can be duplicated by right-clicking the token you wish to duplicate and selecting <strong>Duplicate token</strong>. This will create a copy of the selected token within the same set, with <code class="language-js">-copy</code> added to its name.</p>
+
+<h2 id="design-tokens-delete">Deleting a token</h2>
+<p>Tokens can be deleted by right-clicking the token you wish to delete and selecting <strong>Delete token</strong>.</p>
+
+<h2 id="design-tokens-available">Available tokens</h2>
+<p>You can apply tokens to the properties of any <a href="/user-guide/designing/layers/" target="_blank">layer</a>. There are two ways to apply tokens to a selection:</p>
+<ul>
+  <li>Right-click on tokens to specify a particular property that you want to apply.</li>
+  <li>Left-click on tokens to apply the assumtion. Assumptions can vary across different token types. For example, for the <strong>color</strong> type the assumtion is that you want to apply the token as a <strong>fill</strong>.</li>
+</ul>
+<p>Tokens can be applied to multiple selected elements, but not to groups.</p>
+
+<h3 id="design-tokens-radius">Border radius</h3>
+<p>Border radius tokens allow you to define specific values for border-radius properties, offering flexibility in how you style the corners of elements.</p>
+<figure>
+  <img src="/img/design-tokens/06-tokens-radius.webp" alt="Tokens radius" />
+</figure>
+<h4>Applying Border Radius Tokens</h4>
+<p>To apply the border radius token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a border radius token will apply it to all corners of the element simultaneously.</li>
+    <li>Right-clicking on a border radius token, allows you to select which corners the token should be applied to.</li>
+</ul>
+
+<h3 id="design-tokens-color">Color</h3>
+<p>Color tokens support color properties that can be applied to many different design elements, including boards, groups, shapes, and text.</p>
+<figure>
+  <img src="/img/design-tokens/07-tokens-color-create.webp" alt="Tokens color create" />
+</figure>
+<p>You can define a color token’s value using:</p>
+<ol>
+    <li><strong>The color picker</strong>, select the color switch to the left of the token <strong>Value</strong> input to open the color picker; here you’ll also be able to define the colors opacity.</li>
+    <li>
+        <strong>The color Spaces</strong>, define your color token in the following color spaces:
+        <ul>
+            <li>Hex: #ff0000</li>
+            <li>RGB: rgb(255, 0, 0)</li>
+            <li>RGBA: rgba(255, 0, 0, 1)</li>
+            <li>ARGB: #80FFFF00 (also known as Hex8)</li>
+            <li>HSL: hsl(120, 50%, 50%)</li>
+            <li>HSLA: hsla(120, 50%, 50%, 1)</li>
+        </ul>
+    </li>
+</ol>
+<h4>Applying Color Tokens</h4>
+<p>Color tokens can define a design element's <strong>fill</strong> or <strong>stroke</strong> color. To apply the color token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a color token will apply it to the element as a fill by default.</li>
+    <li>Right-clicking on a color token, allows you to select whether it should be applied as a fill or stroke color.</li>
+</ul>
+<figure>
+  <img src="/img/design-tokens/08-tokens-color.webp" alt="Tokens color" />
+</figure>
+
+<h3 id="design-tokens-dimensions">Dimension</h3>
+<p>Dimension tokens allow you to define an amount of distance that can be used to set the size, space, radius or position of specific elements within a design.</p>
+<h4>Applying Dimension Tokens</h4>
+<p>To apply a dimension token, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a dimension token will apply it to the element’s width and height by default.</li>
+    <li>
+        Right-clicking on a dimension token, allows you to select where you want the token to be used in the element. You can use it for:
+        <ol>
+            <li>Sizing</li>
+            <li>Spacing</li>
+            <li>Border radius</li>
+            <li>Stroke width</li>
+            <li>X position</li>
+            <li>Y position</li>
+        </ol>
+    </li>
+</ul>
+<h4>Sizing (dimension)</h4>
+<p>The sizing property of the dimension token defines the height or width of design elements like boards, shapes, and groups.</p>
+<figure>
+  <img src="/img/design-tokens/09-tokens-dimensions-sizing.webp" alt="Tokens dimensions sizing" />
+</figure>
+<p>When using dimension tokens for sizing, you can apply the token to an element's size by selecting:</p>
+<ul>
+    <li><strong>All</strong> to apply the same size value to both the width and height of an element;</li>
+    <li><strong>Width</strong> to apply the token value to the horizontal size of an element;</li>
+    <li><strong>Height</strong> to apply the token value to the vertical size of an element;</li>
+</ul>
+<p>If you are working with flex-layout boards, you can also apply the token to an element’s size by selecting:</p>
+<ul>
+    <li><strong>All</strong> to apply the same size value to both the <strong>Min width</strong> and <strong>Min height</strong> of an element;</li>
+    <li><strong>Min width</strong> to define the smallest allowed horizontal size of an element but allow a larger size;</li>
+    <li><strong>Min height</strong> to define the smallest allowed vertical size of an element but allow a large size;</li>
+    <li><strong>All</strong> to apply the same size value to both the <strong>Max width</strong> and <strong>Max height</strong> of an element;</li>
+    <li><strong>Max width</strong> to define the largest allowed horizontal size of an element but allow a smaller size;</li>
+    <li><strong>Max height</strong> to define the largest allowed vertical size of an element but allow a smaller size.</li>
+</ul>
+<p class="advice">If you apply the <strong>min/max height/width properties</strong> to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+
+<h4>Spacing (dimension)</h4>
+<p>The spacing property of the dimension token defines the distance between elements and it must be applied to flex-layout boards.</p>
+<figure>
+  <img src="/img/design-tokens/10-tokens-dimensions-spacing.webp" alt="Tokens dimensions spacing" />
+</figure>
+<p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+<p>When using dimension tokens for spacing, you can apply the token to an element's padding and gap. Specifically, you can select:</p>
+<ul>
+  <li>
+    <strong>Gaps</strong>
+    <ul>
+      <li><strong>All</strong> to apply the gap to all sides of the element;</li>
+      <li><strong>Column Gap</strong> to add a gap between child elements within a parent element;</li>
+      <li><strong>Row Gap</strong> to add vertical space between rows on flex-layout board elements set to wrap. </li></li>
+    </ul>
+  </li>
+  <li>
+    <strong>Paddings & Margins:</strong>
+    <ul>
+        <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
+        <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+        <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
+    </ul>
+  </li>
+</ul>
+
+<h4>Border radius (dimension)</h4>
+<p>The border radius property of the dimension token defines the roundness of the corner of elements like boards, shapes, and groups.</p>
+<p>You can apply the border radius property by right-clicking on the dimension token and selecting:</p>
+<ul>
+    <li><strong>All</strong> to apply the radius to all sides of the selected element;</li>
+    <li><strong>Top Left</strong> to apply the radius to the top-left corner of the selected element;</li>
+    <li><strong>Top Right</strong> to apply the radius to the top-right corner of the selected element;</li>
+    <li><strong>Bottom Right</strong> to apply the radius to the bottom-right corner of the selected element;</li>
+    <li><strong>Bottom Left</strong> to apply the radius to the bottom-left corner of the selected element.</li>
+</ul>
+
+<h4>Stroke width (dimension)</h4>
+<p>The stroke width property specifies the thickness of a border for elements that already have a stroke property applied.</p>
+<p class="advice">If you apply the border property to an element before it has a stroke applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+
+<h4>X Position (dimension)</h4>
+<p>The X property specifies the position of the element on the X axis of the canvas.</p>
+
+<h4>Y Position (dimension)</h4>
+<p>The Y property specifies the position of the element on the Y axis of the canvas.</p>
+
+<h3 id="design-tokens-opacity">Opacity</h3>
+<p>Opacity tokens allow you to define the opacity of a layer, ranging from fully opaque to fully transparent.</p>
+<p>Opacity tokens can be applied to any design element that supports transparency. You can use any decimal value between 0 and 1 to set varying levels of opacity or you can use any value between 0 and 100 with <strong>`%`</strong> sign at the end of the value. For example, you can use <strong>45%</strong> which would resolve to <strong>.45</strong>.</p>
+<h4>Applying Opacity Tokens</h4>
+<p>To apply the opacity token to an element, select the element and click on the desired token.</p>
+
+<h3 id="design-tokens-rotation">Rotation</h3>
+<p>Rotation tokens are used to define and standardize rotational values within a design system. These tokens represent rotation angles, typically measured in degrees, and can be applied to elements such as icons or images, to ensure consistent rotation throughout a design.</p>
+<h4>Applying Rotation Tokens</h4>
+<p>To apply a rotation token, select the element and choose the token from the list.</p>
+
+<h3 id="design-tokens-sizing">Sizing</h3>
+<p>Sizing tokens can define various size-related design properties, namely the height and width of design elements.The sizing token supports numeric values, which include negative values.</p>
+<figure>
+  <img src="/img/design-tokens/11-tokens-spacing.webp" alt="Tokens spacing" />
+</figure>
+<h4>Applying Sizing Tokens</h4>
+<p>To apply the sizing token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a sizing token will apply it to all sides of the element by default;</li>
+    <li>
+        Right-clicking on a sizing token, allows you to specify which side of the element the token should apply to:
+        <ul>
+            <li><strong>All</strong> applies the same size value to both the width and height of an element;</li>
+            <li><strong>Width</strong> applies the token to the horizontal size of an element;</li>
+            <li><strong>Height</strong> applies the token to the vertical size of an element;</li>
+        </ul>
+    </li>
+</ul>
+<p>If you are working with flex-layout boards, you can also apply the token to an element’s size by selecting:</p>
+<ul>
+    <li><strong>Min width</strong> defines the smallest allowed horizontal size of an element, allowing larger sizes;</li>
+    <li><strong>Min height</strong> defines the smallest allowed vertical size of an element, allowing larger sizes;</li>
+    <li><strong>Max width</strong> defines the largest allowed horizontal size of an element, allowing smaller sizes;</li>
+    <li><strong>Max height</strong> defines the largest allowed vertical size of an element, allowing smaller sizes.</li>
+</ul>
+
+<h3 id="design-tokens-spacing">Spacing</h3>
+<p>The spacing token defines the distance between design elements and supports numeric values, which include negative values. Spacing tokens must be applied to Flex Layout boards. </p>
+<p class="advice">If you apply the token to a board before flex-layout is applied to it, you may have to remove and re-apply the token for it to take effect.</p>
+<h4>Applying Spacing Tokens</h4>
+<p>To apply the spacing token to an element, select the element and choose the token from the list:</p>
+<ul>
+    <li>Clicking on a spacing token will apply it to all gaps (row and column).</li>
+    <li>Right-clicking on a spacing token, allows you to specify which property of the element the token should apply to. In this menu, properties are divided by blocks. In each property you can choose to apply to ‘All’ sides in a specific property, or choose to apply them to individual sides:</li>
+    <li><strong>Gaps:</strong> Applies spaces between child elements within a parent container (both column and row gaps). This only works on flex and grid layouts.</li>
+    <li>
+        <strong>Paddings & Margins:</strong>
+        <ul>
+            <li><strong>Horizontal</strong> applies to the left and right of the container;</li>
+            <li><strong>Vertical</strong> and to the top and bottom sides of the container;</li>
+            <li><strong>Top, right, bottom or left</strong> apply space to individual sides of the element.</li>
+        </ul>
+    </li>
+</ul>
+
+<h3 id="design-tokens-stroke-width">Stroke Width</h3>
+<p>The stroke width token, also known as the border width token, defines the thickness of a stroke around a design element. It can be applied to boards, groups, rectangles and text elements.</p>
+
+
+<h3 id="design-tokens-number">Number token</h3>
+<p>Number tokens define the numeric value of properties that don’t require a unit of measurement.</p>
+<p>The difference between a number token and a dimension token is that the first one has to be unitless.</p>
+<p class="advice">The Number Token does not have a default property to apply to, so it can only be applied by right-clicking and selecting the specific property.</p>
+<p>Number token is especially useful as a reference in other tokens, for math equations (<strong>operands</strong>), to create scales, for example font-size scales, or grid scales.</p>
+<p>It can also be applied to Line Height –since this property works as a multiplier of the font size– or rotation property.</p>
+<figure>
+  <img src="/img/design-tokens/24-tokens-type-number.webp" alt="Number token applied" />
+</figure>
+
+<h3 id="design-tokens-typography">Typography tokens</h3>
+<p class="advice">Typography tokens can only be applied to a text layer, but not to individual elements inside a text layer.
+Applying a Typography Token will detach any Typography Style previously applied, and vice versa.</p>
+<h4>Font Family</h4>
+<figure>
+  <img src="/img/design-tokens/25-tokens-type-font-family.webp" alt="Font family" />
+</figure>
+<figure>
+  <img src="/img/design-tokens/26-tokens-type-font-family-select.webp" alt="Font family selector" />
+</figure>
+<p>As in other tokens, Font Family accepts references to other font family tokens.</p>
+<p>Additionally, you can specify a prioritized list of Font Family names or generic names separated by commas (,), as in CSS. Penpot will use only the first font in the list, but this helps define your font fallbacks so developers can implement them accordingly.</p>
+<pre>
+  <code class="language-css">
+  font-family: Lucida Console, Courier, monospace
+  </code>
+</pre>
+<figure>
+  <img src="/img/design-tokens/27-tokens-type-font-family-edit.webp" alt="Font family edit" />
+</figure>
+<p>When writing the string values of a <strong>Font Family Token</strong>, pay close attention to:</p>
+<ul>
+  <li>Spelling</li>
+  <li>Spacing</li>
+  <li>Punctuation</li>
+  <li>Use of capital letters</li>
+</ul>
+<p><strong>Note:</strong> You can quote font family names — especially those that contain spaces or special characters — 
+  to follow <strong>CSS best practices</strong> or to align with the conventions used by your development team:
+</p>
+<pre>
+  <code class="language-css">
+  font-family: "DM Sans", sans-serif;
+  </code>
+</pre>
+<figure>
+  <img src="/img/design-tokens/28-tokens-type-font-family-resolved.webp" alt="Font family resolved" />
+</figure>
+<p>If the Font Family does not exist in Penpot, when you apply the token you will see a “Missing font” message in the design panel input:</p>
+<figure>
+  <img src="/img/design-tokens/29-tokens-type-font-family-missing.webp" alt="Font family missing" />
+</figure>
+
+
+<h4 id="design-tokens-font-size">Font Size</h4>
+<p>Font size tokens define the vertical size of glyphs/characters as an individual property. In typography, the letter spacing and line height properties are related to the font size.</p>
+<p>Font sizes are typically defined using a proportional scale. You can use math operations with references in order to create dynamic typography scales that follow a particular multiplier, like Golden Ratio.</p>
+<p><strong>Tip:</strong> Use <a href="#design-tokens-number" target="_blank">Number Tokens</a> (unitless token) to create stunning typographic scales though design tokens:</p>
+<figure>
+  <img src="/img/design-tokens/30-tokens-type-font-size-scale.webp" alt="Font size scale" />
+</figure>
+<p>Font size is a dimension-type token and should be defined in px (unitless values are computed as px) for now. To follow the DTGC format, in upcoming releases, units will be mandatory and rem units will be allowed.</p>
+<p>You can use any dimension token as a reference in a font size token. Math operations are also allowed.</p>
+<p><strong>Tip:</strong> You can use a rounding function to round your resolved values and reduce decimals in math operations, since decimals are not ideal when using px:</p>
+<p><code class="language-js">roundTo({values}, decimals)</code></p>
+<figure>
+  <img src="/img/design-tokens/31-tokens-type-font-size-function.webp" alt="Font size function" />
+</figure>
+
+
+<h4 id="design-tokens-font-weight">Font Weight</h4>
+<p>Font Weight defines the thickness of each character/glyph in the Font Family. Font Weight design decisions are typically used to communicate visual hierarchy or emphasize text elements.</p>
+<p>Penpot combines Font Weight and Style as a single property written as a string value and it requires a match to the Font Family it is paired with, since not all font families have the same weight / styles.</p>
+<p>The Token can be defined with a numeric value (100, 400, 900, etc) or a string name (Bold, Black, Thin, etc), and the font style (Italic), if needed.</p>
+<p><strong>Note:</strong> Font Family and Font Weight Tokens work as a pair in Penpot. This means you must consider the current Font Family in order to decide the Font Weight you want to use in your designs.</p>
+<p>This token can be applied to text layers but the result depends on the Font Family in use.</p>
+<h5>Accepted values</h5>
+<p>Font Weight Token can be defined in numeric values or string values. Both values are accepted. When applied, a conversion will occur, transforming any string value to its corresponding numeric value:</p>
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Numeric Value</th>
+      <th>String Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>100</td>
+      <td>Thin, Hairline</td>
+    </tr>
+    <tr>
+      <td>200</td>
+      <td>Extra Light, ExtraLight, extra-light, Ultra Light, UltraLight, ultra-light, extraleicht</td>
+    </tr>
+    <tr>
+      <td>300</td>
+      <td>Light, leicht</td>
+    </tr>
+    <tr>
+      <td>400</td>
+      <td>Regular, Normal, Book, buch</td>
+    </tr>
+    <tr>
+      <td>500</td>
+      <td>Medium, kraeftig, kräftig</td>
+    </tr>
+    <tr>
+      <td>600</td>
+      <td>Semibold, SemiBold, Semi Bold, semi-bold, DemiBold, Demi Bold, demi-bold, halbfett</td>
+    </tr>
+    <tr>
+      <td>700</td>
+      <td>Bold, dreiviertelfett</td>
+    </tr>
+    <tr>
+      <td>800</td>
+      <td>ExtraBold, Extra Bold, extra-bold, ultra-bold, UltraBold, Ultra Bold, fett</td>
+    </tr>
+    <tr>
+      <td>900</td>
+      <td>Black, Heavy, extrafett</td>
+    </tr>
+    <tr>
+      <td>950</td>
+      <td>Extra Black, extra-black, Ultra Black, ultra-black</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Note:</strong> values are case insensitive so for example <code>Regular</code> and <code>regular</code> will both work.</p>
+
+<p>Any of these values can also include the Font Style <em>Italic</em>, if needed. Some examples of accepted values:</p>
+
+<pre><code class="language-css">regular
+Normal Italic
+700
+400 italic
+Bold italic
+ExtraBold Italic
+</code></pre>
+
+<h4 id="design-tokens-font-letter-spacing">Letter Spacing</h4>
+<p>Letter Spacing, also known as kerning, defines the horizontal distance between individual characters.</p>
+<p>The default value is 0. In Penpot letter spacing is defined in px. In the token, you can use values in px or any reference to a Dimension / Spacing / Sizing / Letter Spacing Token.</p>
+<p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
+
+<h4 id="design-tokens-font-text-case">Text Case</h4>
+<p>Text Case defines that the system should transform the capitalization of letters in a text element regardless of how they are typed.</p>
+<p>This property corresponds to <code class="language-css">text-transform</code> in CSS.</p>
+<p>Accepted values are <code class="language-css">none</code>, <code class="language-css">uppercase</code>, <code class="language-css">lowercase</code> and <code class="language-css">capitalize</code>. It also accepts references to another Text Case token.</p>
+<p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
+
+<h4 id="design-tokens-font-text-decoration">Text Decoration</h4>
+<p>Text Decoration defines an optional line as part of font styling properties, typically used to communicate the visual emphasis of a text.</p>
+<p>Accepted values are <code class="language-css">none</code>, <code class="language-css">underline</code> and <code class="language-css">strike-through</code>. It also accepts references to another Text Decoration token.</p>
+<p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
+
+
+<h3 id="typography-composite-tokens">Typography composite token</h3>
+<p><strong>Typography tokens</strong> are composite entities that group several text properties into a single token definition. They allow you to define and reuse complete text styles in a consistent way.</p>
+<p>Each property within a typography token can either reference an existing <a href="#design-tokens-typography">individual typography token</a> (for example, <em>font-size</em> or <em>font-family</em>) or use a hardcoded value. The behavior and syntax of individual typography tokens are described in the previous section of this guide.</p>
+<figure>
+  <img src="/img/design-tokens/36-tokens-composite-typography.webp" alt="Typography composite token" />
+</figure>
+
+<h4 id="reference-composite-token">Reference another Typography Composite Token</h4>
+<p>You can also reference another existing <strong>Typography Composite Token</strong> instead of defining each property manually. When doing so, Penpot resolves all individual properties from the referenced token.</p>
+<figure>
+  <img src="/img/design-tokens/34-tokens-composite-typography-alias.webp" alt="Typography composite token" />
+</figure>
+
+<h4 id="line-height-property">Line height property</h4>
+<p>The <strong>Typography Token</strong> includes a <em>line-height</em> property, which is not available as an individual token. This is because line-height depends on the font size to be calculated properly. Make sure the <em>font-size</em> property is defined before setting <em>line-height</em>.</p>
+<figure>
+  <img src="/img/design-tokens/35-tokens-composite-typography-lineheight.webp" alt="Typography composite token" />
+</figure>
+
+<p>Accepted values for the line-height input:</p>
+<ul>
+  <li><strong>Unitless number:</strong> interpreted as a multiplier of the font size. This is Penpot’s default behavior.</li>
+  <li><strong>Percentage (%):</strong> converted internally to a multiplier.</li>
+  <li><strong>Pixel (px) or rem value:</strong> if using rem, Penpot calculates the proportion relative to the font size and converts it to a multiplier.</li>
+  <li><strong>References:</strong> you can also reference <a href="#design-tokens-number">number</a> or <a href="#design-tokens-dimensions">dimension</a> tokens.</li>
+</ul>
+
+<h4 id="apply-typography-token">Apply a Typography token</h4>
+<p>A <strong>Typography composite token</strong> can be applied to a full text layer to set all typography properties at once. This lets you manage complete text styles using a single token instead of combining multiple individual ones.</p>
+<p>When applying a Typography composite token to a layer, any previously applied <em>Typography composite token</em> or <em>style</em> will be detached. The same happens in reverse. Only one of them can be active at a time.</p>
+
+
+
+
+<h2 id="design-tokens-sets">Token Sets</h2>
+<p>Token Sets allow you to split your tokens up into multiple files in order to create organized groups or collections of tokens. It enables efficient management and customization within design files. For example you can group all your color sets, sizing sets or platform-specific sets. The purpose of tokens sets is to organize them in a way that matches your needs.</p>
+<figure>
+  <img src="/img/design-tokens/12-tokens-sets.webp" alt="Tokens sets" />
+</figure>
+<p>When you create your first token, a default set is created. You can rename, group or move it later. As you create new token sets, they’ll be added sequentially after existing ones. You can reorder token sets by dragging and dropping them.</p>
+<p class="advice">The order of the token sets is essential! If you have tokens with the same name (and different  values) across multiple sets, the tokens that are in the set that appears last in the list will override the previous ones - similar to how Cascading Style Sheets work.</p>
+<p>When creating a token set, it’s recommended that you assign it a unique name to ensure clarity. Token set names are not included in individual token names by default so it is possible to have tokens with the same name belonging to different token sets.</p>
+<p>Token sets can be enabled or disabled. If a set is disabled, its tokens will be excluded from the token resolution process.</p>
+
+<h3>Creating Token Sets</h3>
+<p>There are two ways to create a token set at the <strong>Tokens</strong> tab:</p>
+<ol>
+    <li>Click on the <strong>+</strong> next to <strong>Sets</strong>;</li>
+    <li>Click on the <strong>Create one</strong> button.</li>
+</ol>
+<p>You’ll then need to name your token set. Set names should be specific, as it is not possible to create multiple token sets with the same name.</p>
+<p>When a token set is selected, the tokens within the selected set are displayed on the panel below.</p>
+
+
+<h3>Editing Token Sets</h3>
+<p>Right-click a token set to perform these quick actions:</p>
+<ol>
+    <li><strong>Rename</strong>: Give the set a new name and press Enter.</li>
+    <li><strong>Duplicate</strong>: Make a copy of the set.</li>
+    <li><strong>Delete</strong>: Remove the set permanently.</li>
+</ol>
+<figure>
+  <img src="/img/design-tokens/14-tokens-sets-edit.webp" alt="Tokens sets edit" />
+</figure>
+
+<h3 id="design-tokens-sets-create-within"></h3>
+<p>Once you have created a token set, you can start creating tokens within that token set. To do so, simply select the token set and create a new token.</p>
+<p class="advice">If a token with the same name already exists in another set, a new token can still be created in the current set.</p>
+
+<h3>Creating Token Set Folders</h3>
+<p>To group token sets just use folder-style names. For example, naming your sets <code class="language-js">Light/Global</code> and <code class="language-js">Light/Colors</code> will create a folder called <strong><i>Light</i></strong> with two sets inside it: <strong><i>Global</i></strong> and <strong><i>Colors</i></strong>.</p>
+<figure>
+  <img src="/img/design-tokens/15-tokens-sets-group.webp" alt="Tokens sets folder" />
+</figure>
+
+<h2 id="design-tokens-themes">Token Themes</h2>
+<p>Themes are a way to configure your sets to be applied in a specific context, such as a brand, a mode or a touchpoint. Themes enable switching between different styles dynamically by applying different token values depending on the selected theme.</p>
+<p>Themes are multidimensional, this means that you can have more than one theme active at the same time, combining the values of the active themes.</p>
+
+<h4>Theme groups</h4>
+<p>Using Theme Groups you can categorise your themes into groups. This will allow you to generate a number of combinations involving color themes, brands, platforms, density, and more. Using groups will reduce the need to create an excessive number of individual themes with every combination.</p>
+<figure>
+  <img src="/img/design-tokens/16-tokens-themes.webp" alt="Tokens themes" />
+</figure>
+<p>For example:</p>
+<p><i>Group - theme options</i></p>
+<ul>
+    <li><strong>Mode</strong> - Light, Dark</li>
+    <li><strong>Brand</strong> - RedPlanet, YellowCab</li>
+    <li><strong>Contrast</strong> - High, Low, Dim</li>
+    <li><strong>Platform</strong> - Web, App</li>
+</ul>
+<p>When you have various themes inside a group, only one of the themes in this group can be active.</p>
+<p>Having your sets clubbed under groups makes it more accessible to switch from a matrix of themes.</p>
+
+<h3>Creating Token Themes</h3>
+<p>To create a new theme, click the <strong>Create one</strong> button in the Themes section. You can create a group (this is optional) or add an existing one, and then you then need to assign a name to your theme and click on <strong>Save Theme</strong>.</p>
+<p>Your new theme will now appear on the Theme lists. You’ll need to enable the tokens sets that you want to include in the theme, clicking on the button “no active sets”. Here you can also activate and deactivate it, as well as delete the theme.</p>
+<figure>
+  <img src="/img/design-tokens/17-tokens-themes-create.webp" alt="Tokens themes create" />
+</figure>
+
+<h3>Editing Themes</h3>
+<p>In the <strong>Themes</strong> section, you can find a dropdown to activate and deactivate themes. If there are no active themes, the dropdown shows a message of: “no theme active”.</p>
+<figure>
+  <img src="/img/design-tokens/19-tokens-themes-edit.webp" alt="Tokens themes edit" />
+</figure>
+<p>To edit existing themes, you can click on the <strong>Edit</strong> button next to the dropdown in the <strong>Themes</strong> section or open the dropdown and select <strong>Edit themes</strong>:</p>
+<figure>
+  <img src="/img/design-tokens/18-tokens-themes-list.webp" alt="Tokens themes list" />
+</figure>
+<p>This action will open a modal window where you can activate or deactivate themes, as well as select which Token sets should be part of the theme.</p>
+<ol>
+    <li>You can enable and disable the themes.</li>
+    <li>Configure the token sets you want to be included in the theme.</li>
+    <li>Deletes the theme.</li>
+    <li>Creates a new theme.</li>
+</ol>
+
+<h3>Grouping Themes</h3>
+<p>You can categorize your themes into groups. This allows you to generate a matrix of potential combinations involving color themes, brands, modes, and more.</p>
+<figure>
+  <img src="/img/design-tokens/20-tokens-themes-group.webp" alt="Tokens themes group" />
+</figure>
+
+<ol>
+    <li>Select a particular group.</li>
+    <li>Select the theme from the group.</li>
+    <li>You can define what token sets should be used as part of this theme option.</li>
+    <li>Click save theme to see the changes.</li>
+    <li>Cancel to clear the edits.</li>
+    <li>Delete.</li>
+</ol>
+
+<h2 id="design-tokens-import-export">Importing and Exporting Tokens</h2>
+<p>You can export Tokens from Penpot and import them from your computer to a Penpot file. Tokens can be imported from the <strong>Tools</strong> option at the bottom of the <strong>Tokens</strong> tab.</p>
+<p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file or a folder with multiple files in it.</p>
+<p>These features support JSON files formatted according to specific guidelines and preserve the ability to undo changes if needed.</p>
+<figure>
+  <img src="/img/design-tokens/21-tokens-import-export.webp" alt="Tokens import export" />
+</figure>
+<ol>
+    <li><strong>Import:</strong> Click <strong>Tools</strong>, then select <strong>Import</strong> to view import options. </li>
+    <li><strong>Export:</strong> Click <strong>Tools</strong>, then select <strong>Export</strong> to view export options.</li>
+</ol>
+
+<h3>Import Options</h3>
+
+<h4>ZIP file</h4>
+<p>You can import tokens from a <strong>.zip</strong> file. This file can either contain a single JSON file or a folder structure with multiple files. The ZIP import option provides flexibility for organizing your tokens before importing them into Penpot.</p>
+<ul>
+  <li>If the ZIP contains a single JSON file, it will be imported as a single set of tokens.</li>
+  <li>If the ZIP contains a folder structure, each file and folder will be interpreted as separate token sets, following the same rules as the multifile import.</li>
+</ul>
+
+<h4>Single JSON file</h4>
+
+<p>You can import a JSON file comprising all tokens, token sets and token themes.</p>
+<p>When importing a single file, the first-level keys of the json file will be interpreted as the set name.</p>
+
+<pre class="language-json">
+<code class="language-json">
+  {
+    "Global": {
+      // first-level key will be interpreted as set name
+      "color": {
+        "300": {
+          "$value": "red",
+          "$type": "color",
+          "$description": "my token description"
+        }
+      }
+    },
+    "Brands/A": {
+      // first-level key will be interpreted as set name
+      "color": {
+        "accent": {
+          "$value": "{red}",
+          "$type": "color",
+          "$description": "my token description"
+        }
+      }
+    },
+    "Brands/B": {
+      // first-level key will be interpreted as set name
+      "color": {
+        "accent": {
+          "$value": "#fabada",
+          "$type": "color",
+          "$description": "my token description"
+        }
+      }
+    }
+  }
+</code>
+</pre>
+
+<h4>Multifile</h4>
+<p>Imports a folder containing multiple JSON files (one per Token Set) and additional files like <code class="language-json">$themes.json</code> or <code class="language-json">$metadata.json</code> configurations. When importing multiple files, the name and path of the individual json files inside the folder will be interpreted as set names. These files should only contain tokens.</p>
+<p>Multifile folder structure example:</p>
+<code>
+  <pre>
+    folder/
+    ├── global/
+    │   ├── colors.json		  // can only contain tokens
+    │   └── dimension.json	// can only contain tokens
+    ├── mode/
+    │   ├── dark.json       // can only contain tokens
+    │   └── light.json      // can only contain tokens
+    ├── $themes.json        // themes config
+    └── $metadata.json      // other metadata config
+  </code>
+</pre>
+<figcaption>The main folder name won’t be used to build token set names, so in this example, <strong>folder</strong> will be ignored in the set names.</figcaption>
+
+<h3>Export Options</h3>
+<p>Just like with importing, you can export tokens, themes and sets either in a single JSON file or in multiple files. There is no difference in the content being exported; the choice depends on your team's preferences for file organization: a single file with all the tokens, sets and themes, or a folder structure with separated JSON files organized by sets.</p>
+<p>In both cases you can preview the result of the export options:</p>
+
+<figure>
+  <img src="/img/design-tokens/22-tokens-export-multiple.webp" alt="Tokens export with multiple files" />
+  <figcaption>Exporting tokens as multiple files.</figcaption>
+</figure>
+
+<figure>
+  <img src="/img/design-tokens/23-tokens-export-single.webp" alt="Tokens export with single file" />
+  <figcaption>Exporting tokens as a single file.</figcaption>
+</figure>
+
+<!-- Leaving this section as a comment as the feature will be released very soon
+<h2 id="design-tokens-settings">Tokens settings</h2>
+
+<h3 id="design-tokens-base-font-size">Base font size</h3>
+<p>The Base Font Size provides the value for <code class="language-css">1rem</code>.</p>
+<figure>
+  <img src="/img/design-tokens/32-tokens-base-font-size.webp" alt="Tokens base font size" />
+</figure>
+<p>This feature not only supports responsive design decisions but also ensures the adaptability of the design, similar to how engineers work in code.</p>
+<p>When you assign a Token's value in rem units, the property is related to the Base Font Size, which the user of your product or website can adjust.</p>
+<ul>
+  <li>For example, if the user increases the font size or uses a zoom feature, all design properties defined in <code class="language-css">rem</code> units will respond accordingly.</li>
+</ul>
+<p>In contrast, design elements defined in <code class="language-css">pixels</code> will remain the same regardless of the user settings.</p>
+<p><strong>This feature is only supported on Tokens</strong>. When applying Tokens set in rem to any design element, it will convert the rem units to pixels, taking into account the value of this setting. The default value assumes <code class="language-css">1rem = 16px</code>.</p>
+<ul>
+  <li><code class="language-css">rem</code> units can be used in all <a href="/user-guide/design-tokens/#design-tokens-dimensions" target="_blank">dimension token</a> types: Dimension, Spacing, Sizing, Border radius, Stroke Width, Font size, letter spacing, and line height.</li>
+</ul>
+<p>This value is not shared across files so you can have different values in different files, allowing you to use different rem values with the same Tokens structure.</p>
+
+<h4 id="design-tokens-change-base-font-size">View and change the current base font size setting</h4>
+<p>Navigate to the Settings modal with the <strong>settings button</strong> on the bottom of the tokens tab:</p>
+<figure>
+  <img src="/img/design-tokens/33-tokens-settings.webp" alt="Tokens settings" />
+</figure>
+<p>Here you can view and change the value.</p>
+<p>The input accepts values with px and unitless, which will be interpreted as pixels.</p>
+ -->

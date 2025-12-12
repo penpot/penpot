@@ -193,6 +193,7 @@
   ([form field value trim?]
    (swap! form (fn [state]
                  (-> state
+                     (assoc-in [:touched field] true)
                      (assoc-in [:data field] (if trim? (str/trim value) value))
                      (update :errors dissoc field))))))
 

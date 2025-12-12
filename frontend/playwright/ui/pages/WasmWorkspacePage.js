@@ -1,16 +1,27 @@
 import { expect } from "@playwright/test";
 import { WorkspacePage } from "./WorkspacePage";
 
+export const WASM_FLAGS = [
+  "enable-feature-render-wasm",
+  "enable-render-wasm-dpr",
+  "enable-feature-text-editor-v2",
+];
+
 export class WasmWorkspacePage extends WorkspacePage {
   static async init(page) {
     await super.init(page);
-    await WorkspacePage.mockConfigFlags(page, [
-      "enable-feature-render-wasm",
-      "enable-render-wasm-dpr",
-    ]);
+    await WorkspacePage.mockConfigFlags(page, WASM_FLAGS);
 
     await page.addInitScript(() => {
-      document.addEventListener("wasm:set-objects-finished", () => {
+      document.addEventListener("penpot:wasm:loaded", () => {
+        window.wasmModuleLoaded = true;
+      });
+
+      document.addEventListener("penpot:wasm:render", () => {
+        window.wasmRenderCount = (window.wasmRenderCount || 0) + 1;
+      });
+
+      document.addEventListener("penpot:wasm:set-objects", () => {
         window.wasmSetObjectsFinished = true;
       });
     });
@@ -21,17 +32,18 @@ export class WasmWorkspacePage extends WorkspacePage {
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
-  async waitForFirstRender(config = {}) {
-    const options = { hideUI: true, ...config };
-
-    await expect(this.pageName).toHaveText("Page 1");
-    if (options.hideUI) {
-      await this.hideUI();
-    }
-    await this.canvas.waitFor({ state: "visible" });
+  async waitForFirstRender() {
+    await this.pageName.waitFor();
+    await this.canvas.waitFor();
     await this.page.waitForFunction(() => {
+      console.log("RAF:", window.wasmSetObjectsFinished);
       return window.wasmSetObjectsFinished;
     });
+  }
+
+  async waitForFirstRenderWithoutUI() {
+    await this.waitForFirstRender();
+    await this.hideUI();
   }
 
   async hideUI() {

@@ -12,8 +12,11 @@
    [app.common.schema :as-alias sm]
    [app.common.transit :as t]
    [app.config :as cf]
+   [app.http :as-alias http]
    [app.http.errors :as errors]
+   [app.tokens :as tokens]
    [app.util.pointer-map :as pmap]
+   [buddy.core.codecs :as bc]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
    [yetti.middleware :as ymw]
@@ -240,3 +243,77 @@
              (if (contains? allowed method)
                (handler request)
                {::yres/status 405}))))))})
+
+(defn- wrap-auth
+  [handler decoders]
+  (let [token-re
+        #"(?i)^(Token|Bearer)\s+(.*)"
+
+        get-token-from-authorization
+        (fn [request]
+          (when-let [[_ token-type token] (some->> (yreq/get-header request "authorization")
+                                                   (re-matches token-re))]
+            (if (= "token" (str/lower token-type))
+              {:type :token
+               :token token}
+              {:type :bearer
+               :token token})))
+
+        get-token-from-cookie
+        (fn [request]
+          (let [cname (cf/get :auth-token-cookie-name)
+                token (some-> (yreq/get-cookie request cname) :value)]
+            (when-not (str/empty? token)
+              {:type :cookie
+               :token token})))
+
+        get-token
+        (some-fn get-token-from-cookie get-token-from-authorization)
+
+        process-request
+        (fn [request]
+          (if-let [{:keys [type token] :as auth} (get-token request)]
+            (let [decode-fn (get decoders type)]
+              (if (or (= type :cookie) (= type :bearer))
+                (let [metadata (tokens/decode-header token)]
+                  ;; NOTE: we only proceed to decode claims on new
+                  ;; cookie tokens. The old cookies dont need to be
+                  ;; decoded because they use the token string as ID
+                  (if (and (= (:kid metadata) 1)
+                           (= (:ver metadata) 1)
+                           (some? decode-fn))
+                    (assoc request ::http/auth-data (assoc auth
+                                                           :claims (decode-fn token)
+                                                           :metadata metadata))
+                    (assoc request ::http/auth-data (assoc auth :metadata {:ver 0}))))
+
+                (if decode-fn
+                  (assoc request ::http/auth-data (assoc auth :claims (decode-fn token)))
+                  (assoc request ::http/auth-data auth))))
+
+            request))]
+
+    (fn [request]
+      (-> request process-request handler))))
+
+(def auth
+  {:name ::auth
+   :compile (constantly wrap-auth)})
+
+(defn- wrap-shared-key-auth
+  [handler shared-key]
+  (if shared-key
+    (let [shared-key (if (string? shared-key)
+                       shared-key
+                       (bc/bytes->b64-str shared-key true))]
+      (fn [request]
+        (let [key (yreq/get-header request "x-shared-key")]
+          (if (= key shared-key)
+            (handler request)
+            {::yres/status 403}))))
+    (fn [_ _]
+      {::yres/status 403})))
+
+(def shared-key-auth
+  {:name ::shared-key-auth
+   :compile (constantly wrap-shared-key-auth)})

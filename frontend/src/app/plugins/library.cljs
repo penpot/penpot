@@ -5,16 +5,18 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.library
-  "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as clr]
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
@@ -26,6 +28,7 @@
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.text :as text]
+   [app.plugins.tokens :as tokens]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -612,6 +615,85 @@
         (let [typography (u/locate-library-typography file-id id)]
           (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)]))))))))
 
+(defn get-variant-components
+  [file-id variant-id]
+  (cfv/find-variant-components (-> file-id u/locate-file :data) variant-id))
+
+(declare lib-component-proxy)
+
+(defn variant-proxy
+  [plugin-id file-id id]
+
+  (obj/reify {:name "VariantProxy"}
+    :$plugin {:enumerable false :get (constantly plugin-id)}
+    :$file {:enumerable false :get (constantly file-id)}
+    :$id {:enumerable false :get (constantly id)}
+
+    :id {:get (fn [_] (dm/str id))}
+    :libraryId {:get (fn [_] (dm/str file-id))}
+
+    :properties
+    {:this true
+     :get (fn [_]
+            (->> (get-variant-components file-id id)
+                 (mapcat :variant-properties)
+                 (keep :name)
+                 (set)
+                 (apply array)))}
+
+    :currentValues
+    (fn [property]
+      (->> (get-variant-components file-id id)
+           (map
+            (fn [{:keys [variant-properties]}]
+              (->> variant-properties
+                   (d/seek #(= (:name %) property)))))
+           (keep :value)
+           (set)
+           (apply array)))
+
+    :variantComponents
+    (fn []
+      (->> (get-variant-components file-id id)
+           (map :id)
+           (map #(lib-component-proxy plugin-id file-id %))
+           (apply array)))
+
+    :addVariant
+    (fn []
+      (st/emit!
+       (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant"})
+       (dwv/add-new-variant id)))
+
+    :addProperty
+    (fn []
+      (st/emit!
+       (ev/event {::ev/name "add-new-property" ::ev/origin "plugin:add-property"})
+       (dwv/add-new-property id {:property-value "Value 1"})))
+
+    :removeProperty
+    (fn [pos]
+      (if (not (nat-int? pos))
+        (u/display-not-valid :pos pos)
+        (st/emit!
+         (ev/event {::ev/name "remove-property" ::ev/origin "plugin:remove-property"})
+         (dwv/remove-property id pos))))
+
+    :renameProperty
+    (fn [pos name]
+      (cond
+        (not (nat-int? pos))
+        (u/display-not-valid :pos pos)
+
+        (not (string? name))
+        (u/display-not-valid :name name)
+
+        :else
+        (st/emit!
+         (dwv/update-property-name id pos name {:trigger "plugin:rename-property"}))))))
+
+(set! shape/variant-proxy variant-proxy)
+
 (defn lib-component-proxy? [p]
   (obj/type-of? p "LibraryComponentProxy"))
 
@@ -763,7 +845,71 @@
             component (u/locate-library-component file-id id)
             root (ctf/get-component-root (:data file) component)]
         (when (some? root)
-          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))))
+          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))
+
+    :isVariant
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (ctk/is-variant? component)))
+
+    :variants
+    {:enumerable false
+     :get
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (when (ctk/is-variant? component)
+           (variant-proxy plugin-id file-id (:variant-id component)))))}
+
+    :variantProps
+    {:get
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (when (ctk/is-variant? component)
+           (->> (:variant-properties component)
+                (reduce
+                 (fn [acc {:keys [name value]}]
+                   (obj/set! acc name value))
+                 #js {})))))}
+
+    :variantError
+    {:get (fn []
+            (let [file (u/locate-file file-id)
+                  component (u/locate-library-component file-id id)
+                  root (ctf/get-component-root (:data file) component)]
+              (when (ctk/is-variant? component)
+                (:variant-error root))))}
+
+    :transformInVariant
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (when (and component
+                   (not (ctk/is-variant? component)))
+          (st/emit!
+           (ev/event {::ev/name "transform-in-variant"  ::ev/origin "plugin:transform-in-variant"})
+           (dwv/transform-in-variant (:main-instance-id component))))))
+
+    :addVariant
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (when (and component
+                   (ctk/is-variant? component))
+          (st/emit!
+           (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant-from-component"})
+           (dwv/add-new-variant (:main-instance-id component))))))
+
+    :setVariantProperty
+    (fn [pos value]
+      (cond
+        (not (nat-int? pos))
+        (u/display-not-valid :pos (str pos))
+
+        (not (string? value))
+        (u/display-not-valid :name value)
+
+        :else
+        (st/emit!
+         (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
+         (dwv/update-property-value id pos value))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
@@ -804,14 +950,21 @@
     {:this true
      :get
      (fn [_]
-       (let [file (u/locate-file file-id)
-             components (->> file
-                             :data
+       (let [file       (u/locate-file file-id)
+             data       (:data file)
+             components (->> data
                              :components
                              (remove (comp :deleted second))
+                             (remove (comp #(cfv/is-secondary-variant? % data) second))
                              (map first)
                              (map #(lib-component-proxy plugin-id file-id %)))]
          (apply array components)))}
+
+    :tokens
+    {:this true
+     :get
+     (fn [_]
+       (tokens/tokens-catalog plugin-id file-id))}
 
     :createColor
     (fn []

@@ -48,10 +48,12 @@
 
      (when cancel-label
        [:> button* {:variant "secondary"
+                    :type "button"
                     :on-click on-cancel}
         cancel-label])
 
      (when accept-label
        [:> button* {:variant (if (= variant "default") "primary" "destructive")
+                    :type "button"
                     :on-click on-accept}
         accept-label])]))

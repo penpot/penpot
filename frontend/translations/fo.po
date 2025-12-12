@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.11-dev\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Hevur tú longu ein brúkara?"
 
@@ -39,13 +39,13 @@ msgstr "Stovna royndarkonto"
 msgid "auth.create-demo-profile"
 msgstr "Vilt tú royna tað?"
 
-#: src/app/main/ui/auth/login.cljs:43
+#: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
 msgstr ""
 "Hetta er ein ROYNDAR tænasta, IKKI BRÚKA til veruligt arbeiði, "
 "verkætlanirnar verða slettaðar regluliga."
 
-#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
 msgstr "Gloymt loyniorðið?"
 
@@ -53,41 +53,42 @@ msgstr "Gloymt loyniorðið?"
 msgid "auth.fullname"
 msgstr "Fullfíggja navn"
 
-#: src/app/main/ui/auth/login.cljs:282
+#: src/app/main/ui/auth/login.cljs:271
 msgid "auth.login-account-title"
 msgstr "Rita inn á mína konto"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:156, src/app/main/ui/viewer/login.cljs:101
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Innrita her."
 
 #: src/app/main/ui/auth/login.cljs:195
+#, unused
 msgid "auth.login-submit"
 msgstr "Rita inn"
 
-#: src/app/main/ui/auth/login.cljs:285
+#: src/app/main/ui/auth/login.cljs:274
 msgid "auth.login-tagline"
 msgstr ""
 "Penpot er eitt ókeypis formgevingstól við opnari keldukotu, at nýta til "
 "Formgávu og Forritanar samstarv"
 
-#: src/app/main/ui/auth/login.cljs:222
+#: src/app/main/ui/auth/login.cljs:231
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:228
+#: src/app/main/ui/auth/login.cljs:237
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:216
+#: src/app/main/ui/auth/login.cljs:225
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:201
+#: src/app/main/ui/auth/login.cljs:210
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
+#: src/app/main/ui/auth/login.cljs:243
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
@@ -113,7 +114,7 @@ msgstr "Leinkjan til at endurseta títt loyniorð er send til tín postkassa."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Sameinaðan í toymið var væleydnað"
 
-#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:174
+#: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Loyniorð"
 
@@ -141,7 +142,7 @@ msgstr "Gloymt loyniorð?"
 msgid "auth.recovery-submit"
 msgstr "Broyt títt loyniorð"
 
-#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "Onga konto enn?"
 
@@ -155,7 +156,7 @@ msgstr ""
 msgid "auth.register-account-title"
 msgstr "Navn títt"
 
-#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:143, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Stovna konto"
 
@@ -176,7 +177,7 @@ msgstr "Stovna eina konto"
 msgid "auth.sidebar-tagline"
 msgstr "Loysnin við opnari keldukotu, at formgeva og frumsniða."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Treytir"
 
@@ -260,15 +261,15 @@ msgstr "Vel alt"
 msgid "common.unpublish"
 msgstr "Angra útgevan"
 
-#: src/app/main/ui/dashboard/projects.cljs:91
+#: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.management"
 msgstr "Toymisleiðsla"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:91
 msgid "dasboard.team-hero.text"
 msgstr "Penpot er fyri toymum. Bjóða limum at arbeiða saman á verkætlanir og fílur"
 
-#: src/app/main/ui/dashboard/projects.cljs:88
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.title"
 msgstr "Toyma upp!"
 
@@ -299,7 +300,7 @@ msgstr "Kom ein túr gjøgnum Penpot og lær høvuðsfunkurnar at kenna."
 msgid "dasboard.walkthrough-hero.start"
 msgstr "Byrja rundferð"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
 msgid "dashboard.add-shared"
 msgstr "Legg afturat sum Deilt Savn"
 
@@ -323,11 +324,11 @@ msgstr "Títt Penpot"
 msgid "dashboard.delete-team"
 msgstr "Strika toymi"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:689, src/app/main/ui/workspace/main_menu.cljs:698
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:694, src/app/main/ui/workspace/main_menu.cljs:703
 msgid "dashboard.download-binary-file"
 msgstr "Heinta Penpot fílu (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:707
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.download-standard-file"
 msgstr "Heinta standarafílu (.svg + .json)"
 
@@ -343,7 +344,7 @@ msgstr "Tvítak %s fílur"
 msgid "dashboard.export-binary-multi"
 msgstr "Heinta %s Penpot fílur (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:715
+#: src/app/main/ui/workspace/main_menu.cljs:720
 msgid "dashboard.export-frames"
 msgstr "Útflyt borð sum PDF"
 
@@ -359,7 +360,7 @@ msgstr "Útflyt Penpot %s fílur"
 msgid "dashboard.export-multiple.selected"
 msgstr "%s av %s lutum eru valdir"
 
-#: src/app/main/ui/workspace/main_menu.cljs:677
+#: src/app/main/ui/workspace/main_menu.cljs:682
 msgid "dashboard.export-shapes"
 msgstr "Útflyt"
 
@@ -480,7 +481,7 @@ msgstr "Flyt %s fílur til"
 msgid "dashboard.move-to-other-team"
 msgstr "Flyt til eitt annað toymi"
 
-#: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
 msgid "dashboard.new-file"
 msgstr "+ Nýggja fílu"
 
@@ -488,7 +489,7 @@ msgstr "+ Nýggja fílu"
 msgid "dashboard.new-file-prefix"
 msgstr "Nýggja fílu"
 
-#: src/app/main/ui/dashboard/projects.cljs:60
+#: src/app/main/ui/dashboard/projects.cljs:61
 msgid "dashboard.new-project"
 msgstr "+ Nýggj verkætlan"
 
@@ -500,7 +501,7 @@ msgstr "Nýggj verkætlan"
 msgid "dashboard.no-matches-for"
 msgstr "Onki samsvar funnið fyri \"%\""
 
-#: src/app/main/ui/dashboard/sidebar.cljs:763
+#: src/app/main/ui/dashboard/sidebar.cljs:764
 msgid "dashboard.no-projects-placeholder"
 msgstr "Festar verkætlanir verða víst her"
 
@@ -524,7 +525,7 @@ msgstr "%s limir"
 msgid "dashboard.open-in-new-tab"
 msgstr "Lat fílu upp í nýggjum skiljiblaði"
 
-#: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
+#: src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:265, src/app/main/ui/dashboard/projects.cljs:266
 msgid "dashboard.options"
 msgstr "Valmøguleikar"
 
@@ -536,7 +537,7 @@ msgstr "Broyt loyniorð"
 msgid "dashboard.pin-unpin"
 msgstr "Fest/Loys"
 
-#: src/app/main/ui/dashboard/projects.cljs:55
+#: src/app/main/ui/dashboard/projects.cljs:56
 msgid "dashboard.projects-title"
 msgstr "Verkætlanir"
 
@@ -569,7 +570,7 @@ msgstr "Vel mál til takførisflatu"
 msgid "dashboard.select-ui-theme"
 msgstr "Vel tema"
 
-#: src/app/main/ui/dashboard/projects.cljs:304
+#: src/app/main/ui/dashboard/projects.cljs:308
 msgid "dashboard.show-all-files"
 msgstr "Vís allar fílurnar"
 
@@ -621,11 +622,11 @@ msgstr "Skriva fyri at leita eftir úrslitum"
 msgid "ds.alert-ok"
 msgstr "Ókey"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
 msgid "ds.confirm-ok"
 msgstr "Ókey"
 
-#: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
+#: src/app/main/data/auth.cljs:335, src/app/main/ui/auth/login.cljs:85, src/app/main/ui/auth/login.cljs:93
 msgid "errors.profile-blocked"
 msgstr "Vangamyndin er stongd"
 
@@ -637,7 +638,7 @@ msgstr "Strikað %s fílur"
 msgid "labels.edit-file"
 msgstr "Broyt fílu"
 
-#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1354
+#: src/app/main/ui/dashboard/projects.cljs:239, src/app/main/ui/dashboard/team.cljs:1354
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "1 fíla"
@@ -647,11 +648,11 @@ msgstr[1] "%s fílur"
 msgid "labels.profile"
 msgstr "Vangamynd"
 
-#: src/app/main/data/common.cljs:130
+#: src/app/main/data/common.cljs:119
 msgid "modals.add-shared-confirm.accept"
 msgstr "Legg afturat sum Deilt Savn"
 
-#: src/app/main/data/common.cljs:127
+#: src/app/main/data/common.cljs:116
 msgid "modals.add-shared-confirm.message"
 msgstr "Legg \"%s\" afturat sum Deilt Savn"
 
@@ -707,7 +708,7 @@ msgstr "Strikað sum Deilt Savn"
 msgid "modals.remove-shared-confirm.message"
 msgstr "Strika \"%s\" sum Deilt Savn"
 
-#: src/app/main/ui/dashboard/files.cljs:180
+#: src/app/main/ui/dashboard/files.cljs:181
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
 
@@ -715,6 +716,6 @@ msgstr "%s - Penpot"
 msgid "title.settings.profile"
 msgstr "Vangamynd - Penpot"
 
-#: src/app/main/ui/workspace/main_menu.cljs:889
+#: src/app/main/ui/workspace/main_menu.cljs:894
 msgid "workspace.header.menu.option.file"
 msgstr "Fílu"

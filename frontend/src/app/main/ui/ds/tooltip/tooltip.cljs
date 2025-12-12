@@ -36,6 +36,9 @@
 
 (defn- hide-popover
   [node]
+  (dom/unset-css-property! node "block-size")
+  (dom/unset-css-property! node "inset-block-start")
+  (dom/unset-css-property! node "inset-inline-start")
   (.hidePopover ^js node))
 
 (defn- calculate-placement-bounding-rect
@@ -154,10 +157,8 @@
   the dom with the result."
   [tooltip placement origin-brect offset]
   (show-popover tooltip)
-  (let [saved-height (dom/get-data tooltip "height")
-        saved-width (dom/get-data tooltip "width")
-        tooltip-brect (dom/get-bounding-rect tooltip)
-        tooltip-brect (assoc tooltip-brect :height (or saved-height (:height tooltip-brect)) :width (or saved-width (:width tooltip-brect)))
+  (let [tooltip-brect (dom/get-bounding-rect tooltip)
+        tooltip-brect (assoc tooltip-brect :height (:height tooltip-brect) :width (:width tooltip-brect))
         window-size   (dom/get-window-size)]
     (when-let [[placement placement-rect] (find-matching-placement placement tooltip-brect origin-brect window-size offset)]
       (let [height (:height placement-rect)]
@@ -172,7 +173,7 @@
    [:id {:optional true} :string]
    [:offset {:optional true} :int]
    [:delay {:optional true} :int]
-   [:content [:or fn? :string]]
+   [:content [:or fn? :string map?]]
    [:placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 

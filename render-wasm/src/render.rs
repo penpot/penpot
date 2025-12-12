@@ -14,7 +14,7 @@ mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use gpu_state::GpuState;
 use options::RenderOptions;
@@ -22,17 +22,13 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, StructureEntry, Type,
+    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, Type,
 };
-use crate::state::ShapesPool;
+use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
-
-use crate::math;
-use crate::math::bools;
-use indexmap::IndexSet;
 
 pub use fonts::*;
 pub use images::*;
@@ -42,12 +38,14 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
+type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
+
 pub struct NodeRenderState {
     pub id: Uuid,
     // We use this bool to keep that we've traversed all the children inside this node.
     visited_children: bool,
     // This is used to clip the content of frames.
-    clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+    clip_bounds: Option<ClipStack>,
     // This is a flag to indicate that we've already drawn the mask of a masked group.
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
@@ -62,26 +60,36 @@ impl NodeRenderState {
     /// Calculates the clip bounds for child elements of a given shape.
     ///
     /// This function determines the clipping region that should be applied to child elements
-    /// when rendering. It takes into account the element's selection rectangle, transform,
-    /// and any additional modifiers.
+    /// when rendering. It takes into account the element's selection rectangle, transform.
     ///
     /// # Parameters
     ///
     /// * `element` - The shape element for which to calculate clip bounds
-    /// * `modifiers` - Optional transformation matrix to apply to the bounds
     /// * `offset` - Optional offset (x, y) to adjust the bounds position. When provided,
     ///   the bounds are translated by the negative of this offset, effectively moving
     ///   the clipping region to compensate for coordinate system transformations.
     ///   This is useful for nested coordinate systems or when elements are grouped
     ///   and need relative positioning adjustments.
+    fn append_clip(
+        clip_stack: Option<ClipStack>,
+        clip: (Rect, Option<Corners>, Matrix),
+    ) -> Option<ClipStack> {
+        match clip_stack {
+            Some(mut stack) => {
+                stack.push(clip);
+                Some(stack)
+            }
+            None => Some(vec![clip]),
+        }
+    }
+
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: Option<&Matrix>,
         offset: Option<(f32, f32)>,
-    ) -> Option<(Rect, Option<Corners>, Matrix)> {
+    ) -> Option<ClipStack> {
         if self.id.is_nil() || !element.clip() {
-            return self.clip_bounds;
+            return self.clip_bounds.clone();
         }
 
         let mut bounds = element.selrect();
@@ -96,38 +104,33 @@ impl NodeRenderState {
         transform.post_translate(bounds.center());
         transform.pre_translate(-bounds.center());
 
-        if let Some(modifier) = modifiers {
-            transform.post_concat(modifier);
-        }
-
         let corners = match &element.shape_type {
             Type::Rect(data) => data.corners,
             Type::Frame(data) => data.corners,
             _ => None,
         };
 
-        Some((bounds, corners, transform))
+        Self::append_clip(self.clip_bounds.clone(), (bounds, corners, transform))
     }
 
     /// Calculates the clip bounds for shadow rendering of a given shape.
     ///
     /// This function determines the clipping region that should be applied when rendering a
-    /// shadow for a shape element. It uses the shadow bounds but calculates the
-    /// transformation center based on the original shape, not the shadow bounds.
+    /// shadow for a shape element. For frames, it uses the shadow bounds to clip nested
+    /// shadows. For groups, it returns the existing clip bounds since groups should not
+    /// constrain nested shadows based on their selection rectangle bounds.
     ///
     /// # Parameters
     ///
     /// * `element` - The shape element for which to calculate shadow clip bounds
-    /// * `modifiers` - Optional transformation matrix to apply to the bounds
     /// * `shadow` - The shadow configuration containing blur, offset, and other properties
     pub fn get_nested_shadow_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: Option<&Matrix>,
         shadow: &Shadow,
-    ) -> Option<(Rect, Option<Corners>, Matrix)> {
+    ) -> Option<ClipStack> {
         if self.id.is_nil() {
-            return self.clip_bounds;
+            return self.clip_bounds.clone();
         }
 
         // Assert that the shape is either a Frame or Group
@@ -136,22 +139,22 @@ impl NodeRenderState {
             "Shape must be a Frame or Group for nested shadow clip bounds calculation"
         );
 
-        let bounds = element.get_selrect_shadow_bounds(shadow);
-        let mut transform = element.transform;
-        transform.post_translate(element.center());
-        transform.pre_translate(-element.center());
+        match &element.shape_type {
+            Type::Frame(_) => {
+                let bounds = element.get_selrect_shadow_bounds(shadow);
+                let mut transform = element.transform;
+                transform.post_translate(element.center());
+                transform.pre_translate(-element.center());
 
-        if let Some(modifier) = modifiers {
-            transform.post_concat(modifier);
+                let corners = match &element.shape_type {
+                    Type::Frame(data) => data.corners,
+                    _ => None,
+                };
+
+                Self::append_clip(self.clip_bounds.clone(), (bounds, corners, transform))
+            }
+            _ => self.clip_bounds.clone(),
         }
-
-        let corners = match &element.shape_type {
-            Type::Rect(data) => data.corners,
-            Type::Frame(data) => data.corners,
-            _ => None,
-        };
-
-        Some((bounds, corners, transform))
     }
 }
 
@@ -248,10 +251,17 @@ pub(crate) struct RenderState {
     // without their own fill definitions. This is necessary because in SVG, a group's `fill`
     // can affect its child elements if they don't specify one themselves. If the planned
     // migration to remove group-level fills is completed, this code should be removed.
+    // Frames contained in groups must reset this nested_fills stack pushing a new empty vector.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
+    pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
+    pub touched_ids: HashSet<Uuid>,
+    /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
+    /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
+    /// `with_nested_blurs_suppressed` to ensure it's always restored.
+    pub ignore_nested_blurs: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -271,28 +281,6 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
         ((iey - isy).abs() + dy) * tile_size as i32,
     )
         .into()
-}
-
-fn is_modified_child(
-    shape: &Shape,
-    shapes: &ShapesPool,
-    modifiers: &HashMap<Uuid, Matrix>,
-) -> bool {
-    if modifiers.is_empty() {
-        return false;
-    }
-
-    let ids = shape.all_children(shapes, true, false);
-    let default = &Matrix::default();
-    let parent_modifier = modifiers.get(&shape.id).unwrap_or(default);
-
-    // Returns true if the transform of any child is different to the parent's
-    ids.iter().any(|id| {
-        !math::is_close_matrix(
-            parent_modifier,
-            modifiers.get(id).unwrap_or(&Matrix::default()),
-        )
-    })
 }
 
 impl RenderState {
@@ -341,9 +329,81 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_blurs: vec![],
+            nested_shadows: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
+            touched_ids: HashSet::default(),
+            ignore_nested_blurs: false,
         }
+    }
+
+    /// Combines every visible layer blur currently active (ancestors + shape)
+    /// into a single equivalent blur. Layer blur radii compound by adding their
+    /// variances (σ² = radius²), so we:
+    ///   1. Convert each blur radius into variance via `blur_variance`.
+    ///   2. Sum all variances.
+    ///   3. Convert the total variance back to a radius with `blur_from_variance`.
+    ///
+    /// This keeps blur math consistent everywhere we need to merge blur sources.
+    fn combined_layer_blur(&self, shape_blur: Option<Blur>) -> Option<Blur> {
+        let mut total = 0.;
+
+        for nested_blur in self.nested_blurs.iter().flatten() {
+            total += Self::blur_variance(Some(*nested_blur));
+        }
+
+        total += Self::blur_variance(shape_blur);
+
+        Self::blur_from_variance(total)
+    }
+
+    /// Returns the variance (radius²) for a visible layer blur, or zero if the
+    /// blur is hidden/absent. Working in variance space lets us add multiple
+    /// blur radii correctly.
+    fn blur_variance(blur: Option<Blur>) -> f32 {
+        match blur {
+            Some(blur) if !blur.hidden && blur.blur_type == BlurType::LayerBlur => {
+                blur.value.powi(2)
+            }
+            _ => 0.,
+        }
+    }
+
+    /// Builds a blur from an accumulated variance value. If no variance was
+    /// contributed, we return `None`; otherwise the equivalent single radius is
+    /// `sqrt(total)`.
+    fn blur_from_variance(total: f32) -> Option<Blur> {
+        (total > 0.).then(|| Blur::new(BlurType::LayerBlur, false, total.sqrt()))
+    }
+
+    /// Convenience helper to merge two optional layer blurs using the same
+    /// variance math as `combined_layer_blur`.
+    fn combine_blur_values(base: Option<Blur>, extra: Option<Blur>) -> Option<Blur> {
+        let total = Self::blur_variance(base) + Self::blur_variance(extra);
+        Self::blur_from_variance(total)
+    }
+
+    fn frame_clip_layer_blur(shape: &Shape) -> Option<Blur> {
+        match shape.shape_type {
+            Type::Frame(_) if shape.clip() => shape.blur.filter(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.
+            }),
+            _ => None,
+        }
+    }
+
+    /// Runs `f` with `ignore_nested_blurs` temporarily forced to `true`.
+    /// Certain off-screen passes (e.g. shadow masks) must render shapes without
+    /// inheriting ancestor blur. This helper guarantees the flag is restored.
+    fn with_nested_blurs_suppressed<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut RenderState) -> R,
+    {
+        let previous = self.ignore_nested_blurs;
+        self.ignore_nested_blurs = true;
+        let result = f(self);
+        self.ignore_nested_blurs = previous;
+        result
     }
 
     pub fn fonts(&self) -> &FontStore {
@@ -354,12 +414,30 @@ impl RenderState {
         &mut self.fonts
     }
 
-    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data)
+    pub fn add_image(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        image_data: &[u8],
+    ) -> Result<(), String> {
+        self.images.add(id, is_thumbnail, image_data)
     }
 
-    pub fn has_image(&self, id: &Uuid) -> bool {
-        self.images.contains(id)
+    /// Adds an image from an existing WebGL texture, avoiding re-decoding
+    pub fn add_image_from_gl_texture(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        texture_id: u32,
+        width: i32,
+        height: i32,
+    ) -> Result<(), String> {
+        self.images
+            .add_image_from_gl_texture(id, is_thumbnail, texture_id, width, height)
+    }
+
+    pub fn has_image(&self, id: &Uuid, is_thumbnail: bool) -> bool {
+        self.images.contains(id, is_thumbnail)
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
@@ -422,15 +500,6 @@ impl RenderState {
             rect,
             self.background_color,
         );
-
-        if self.options.is_debug_visible() {
-            debug::render_workspace_current_tile(
-                self,
-                "".to_string(),
-                self.current_tile.unwrap(),
-                rect,
-            );
-        }
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
@@ -480,15 +549,36 @@ impl RenderState {
         self.focus_mode.set_shapes(shapes);
     }
 
+    fn get_inherited_drop_shadows(&self) -> Option<Vec<skia_safe::Paint>> {
+        let drop_shadows: Vec<&Shadow> = self
+            .nested_shadows
+            .iter()
+            .flat_map(|shadows| shadows.iter())
+            .filter(|shadow| !shadow.hidden() && shadow.style() == crate::shapes::ShadowStyle::Drop)
+            .collect();
+
+        if drop_shadows.is_empty() {
+            return None;
+        }
+
+        Some(
+            drop_shadows
+                .into_iter()
+                .map(|shadow| {
+                    let mut paint = skia_safe::Paint::default();
+                    let filter = shadow.get_drop_shadow_filter();
+                    paint.set_image_filter(filter);
+                    paint
+                })
+                .collect(),
+        )
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
-        shapes: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
-        scale_content: Option<&f32>,
-        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+        clip_bounds: Option<ClipStack>,
         fills_surface_id: SurfaceId,
         strokes_surface_id: SurfaceId,
         innershadows_surface_id: SurfaceId,
@@ -497,12 +587,6 @@ impl RenderState {
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
     ) {
-        let shape = if let Some(scale_content) = scale_content {
-            &shape.scale_content(*scale_content)
-        } else {
-            shape
-        };
-
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
@@ -514,65 +598,59 @@ impl RenderState {
         let antialias = shape.should_use_antialias(self.get_scale());
 
         // set clipping
-        if let Some((bounds, corners, transform)) = clip_bounds {
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas().concat(&transform);
-            });
+        if let Some(clips) = clip_bounds.as_ref() {
+            for (bounds, corners, transform) in clips.iter() {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().concat(transform);
+                });
 
-            if let Some(corners) = corners {
-                let rrect = RRect::new_rect_radii(bounds, &corners);
+                if let Some(corners) = corners {
+                    let rrect = RRect::new_rect_radii(*bounds, corners);
+                    self.surfaces.apply_mut(surface_ids, |s| {
+                        s.canvas()
+                            .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+                    });
+                } else {
+                    self.surfaces.apply_mut(surface_ids, |s| {
+                        s.canvas()
+                            .clip_rect(*bounds, skia::ClipOp::Intersect, antialias);
+                    });
+                }
+
+                // This renders a red line around clipped
+                // shapes (frames).
+                if self.options.is_debug_visible() {
+                    let mut paint = skia::Paint::default();
+                    paint.set_style(skia::PaintStyle::Stroke);
+                    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                    paint.set_stroke_width(4.);
+                    self.surfaces
+                        .canvas(fills_surface_id)
+                        .draw_rect(*bounds, &paint);
+                }
+
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas()
-                        .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
-                });
-            } else {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
+                        .concat(&transform.invert().unwrap_or(Matrix::default()));
                 });
             }
-
-            // This renders a red line around clipped
-            // shapes (frames).
-            if self.options.is_debug_visible() {
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-                paint.set_stroke_width(4.);
-                self.surfaces
-                    .canvas(fills_surface_id)
-                    .draw_rect(bounds, &paint);
-            }
-
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas()
-                    .concat(&transform.invert().unwrap_or(Matrix::default()));
-            });
         }
 
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+        let frame_has_blur = Self::frame_clip_layer_blur(&shape).is_some();
+        let shape_has_blur = shape.blur.is_some();
 
-        if let Some(shape_modifiers) = modifiers.get(&shape.id) {
-            shape.to_mut().apply_transform(shape_modifiers);
-        }
-
-        let mut nested_blur_value = 0.;
-        for nested_blur in self.nested_blurs.iter().flatten() {
-            if !nested_blur.hidden && nested_blur.blur_type == BlurType::LayerBlur {
-                nested_blur_value += nested_blur.value.powf(2.);
+        if self.ignore_nested_blurs {
+            if frame_has_blur && shape_has_blur {
+                shape.to_mut().set_blur(None);
             }
-        }
-
-        if let Some(blur) = shape.blur {
-            if !blur.hidden {
-                nested_blur_value += blur.value.powf(2.);
+        } else if !frame_has_blur {
+            if let Some(blur) = self.combined_layer_blur(shape.blur) {
+                shape.to_mut().set_blur(Some(blur));
             }
-        }
-
-        if nested_blur_value > 0. {
-            let blur = Blur::new(BlurType::LayerBlur, false, nested_blur_value.sqrt());
-            shape.to_mut().set_blur(Some(blur));
+        } else if shape_has_blur {
+            shape.to_mut().set_blur(None);
         }
 
         let center = shape.center();
@@ -587,12 +665,12 @@ impl RenderState {
 
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
-                if let Some(shape_modifiers) = modifiers.get(&shape.id) {
-                    self.surfaces
-                        .canvas(fills_surface_id)
-                        .concat(shape_modifiers);
+                if let Some(svg_transform) = shape.svg_transform() {
+                    matrix.pre_concat(&svg_transform);
                 }
+
                 self.surfaces.canvas(fills_surface_id).concat(&matrix);
+
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(fills_surface_id))
                 } else {
@@ -616,7 +694,12 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let drop_shadows = shape.drop_shadow_paints();
+                let mut drop_shadows = shape.drop_shadow_paints();
+
+                if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
+                    drop_shadows.extend(inherited_shadows);
+                }
+
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
@@ -625,6 +708,7 @@ impl RenderState {
                     text_content.paragraph_builder_group_from_text(Some(true));
                 let mut stroke_paragraphs_list = shape
                     .visible_strokes()
+                    .rev()
                     .map(|stroke| {
                         text::stroke_paragraph_builder_group_from_text(
                             &text_content,
@@ -638,6 +722,7 @@ impl RenderState {
 
                 let mut stroke_paragraphs_with_shadows_list = shape
                     .visible_strokes()
+                    .rev()
                     .map(|stroke| {
                         text::stroke_paragraph_builder_group_from_text(
                             &text_content,
@@ -651,14 +736,14 @@ impl RenderState {
 
                 if let Some(parent_shadows) = parent_shadows {
                     if !shape.has_visible_strokes() {
-                        for shadow in &parent_shadows {
+                        for shadow in parent_shadows {
                             text::render(
                                 Some(self),
                                 None,
                                 &shape,
                                 &mut paragraphs_with_shadows,
                                 text_drop_shadows_surface_id.into(),
-                                Some(shadow),
+                                Some(&shadow),
                                 blur_filter.as_ref(),
                             );
                         }
@@ -756,29 +841,15 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
-                // For boolean shapes, there's no need to calculate children because
-                // when painting the shape, the necessary path is already calculated
-                let shape = if let Type::Bool(_) = &shape.shape_type {
-                    // If any child transform doesn't match the parent transform means
-                    // that the children is transformed and we need to recalculate the
-                    // boolean
-                    if is_modified_child(&shape, shapes, modifiers) {
-                        &bools::update_bool_to_path(&shape, shapes, modifiers, structure)
-                    } else {
-                        &shape
-                    }
-                } else {
-                    &shape
-                };
-
-                let has_fill_none = matches!(
-                    shape.svg_attrs.get("fill").map(String::as_str),
-                    Some("none")
-                );
+                let shape = &shape;
 
                 if shape.fills.is_empty()
                     && !matches!(shape.shape_type, Type::Group(_))
-                    && !has_fill_none
+                    && !matches!(shape.shape_type, Type::Frame(_))
+                    && !shape
+                        .svg_attrs
+                        .as_ref()
+                        .is_some_and(|attrs| attrs.fill_none)
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
@@ -814,6 +885,12 @@ impl RenderState {
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
+
+        if self.options.is_debug_visible() {
+            let shape_selrect_bounds = self.get_shape_selrect_bounds(&shape);
+            debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
+        }
+
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
@@ -837,12 +914,7 @@ impl RenderState {
         }
     }
 
-    pub fn render_from_cache(
-        &mut self,
-        shapes: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) {
+    pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -871,7 +943,11 @@ impl RenderState {
             canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
 
-            ui::render(self, shapes, modifiers, structure);
+            if self.options.is_debug_visible() {
+                debug::render(self);
+            }
+
+            ui::render(self, shapes);
             debug::render_wasm_label(self);
 
             self.flush_and_submit();
@@ -880,11 +956,10 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
         timestamp: i32,
+        sync_render: bool,
     ) -> Result<(), String> {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
@@ -913,10 +988,12 @@ impl RenderState {
             );
         }
 
-        debug::render_debug_tiles_for_viewbox(self);
+        // FIXME - review debug
+        // debug::render_debug_tiles_for_viewbox(self);
 
         performance::begin_measure!("tile_cache");
-        self.pending_tiles.update(&self.tile_viewbox);
+        self.pending_tiles
+            .update(&self.tile_viewbox, &self.surfaces);
         performance::end_measure!("tile_cache");
 
         self.pending_nodes.clear();
@@ -924,26 +1001,39 @@ impl RenderState {
             self.pending_nodes
                 .reserve(tree.len() - self.pending_nodes.capacity());
         }
+        // Clear nested state stacks to avoid residual fills/blurs from previous renders
+        // being incorrectly applied to new frames
+        self.nested_fills.clear();
+        self.nested_blurs.clear();
+        self.nested_shadows.clear();
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
-        self.process_animation_frame(tree, modifiers, structure, scale_content, timestamp)?;
+
+        if sync_render {
+            self.render_shape_tree_sync(base_object, tree, timestamp)?;
+        } else {
+            self.process_animation_frame(base_object, tree, timestamp)?;
+        }
+
         performance::end_measure!("start_render_loop");
         Ok(())
     }
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
         timestamp: i32,
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
-            self.render_shape_tree_partial(tree, modifiers, structure, scale_content, timestamp)?;
+            if tree.len() != 0 {
+                self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
+            } else {
+                println!("Empty tree");
+            }
             self.flush_and_submit();
 
             if self.render_in_progress {
@@ -954,6 +1044,22 @@ impl RenderState {
             }
         }
         performance::end_measure!("process_animation_frame");
+        Ok(())
+    }
+
+    pub fn render_shape_tree_sync(
+        &mut self,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if tree.len() != 0 {
+            self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
+        } else {
+            println!("Empty tree");
+        }
+        self.flush_and_submit();
+
         Ok(())
     }
 
@@ -971,7 +1077,10 @@ impl RenderState {
         // other already drawn elements.
         if let Type::Group(group) = element.shape_type {
             let fills = &element.fills;
+            let shadows = &element.shadows;
             self.nested_fills.push(fills.to_vec());
+            self.nested_shadows.push(shadows.to_vec());
+
             if group.masked {
                 let paint = skia::Paint::default();
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -981,9 +1090,21 @@ impl RenderState {
             }
         }
 
+        if let Type::Frame(_) = element.shape_type {
+            self.nested_fills.push(Vec::new());
+        }
+
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
+
+        if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+            let scale = self.get_scale();
+            let sigma = frame_blur.value * scale;
+            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+                paint.set_image_filter(filter);
+            }
+        }
 
         // When we're rendering the mask shape we need to set a special blend mode
         // called 'destination-in' that keeps the drawn content within the mask.
@@ -1006,15 +1127,7 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_exit(
-        &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        element: &Shape,
-        visited_mask: bool,
-        scale_content: Option<&f32>,
-    ) {
+    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -1052,13 +1165,12 @@ impl RenderState {
                 }
             }
         }
-        if let Type::Group(_) = element.shape_type {
-            self.nested_fills.pop();
-        }
 
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
+                self.nested_fills.pop();
                 self.nested_blurs.pop();
+                self.nested_shadows.pop();
             }
             _ => {}
         }
@@ -1070,11 +1182,7 @@ impl RenderState {
             element_strokes.to_mut().clear_shadows();
             element_strokes.to_mut().clip_content = false;
             self.render_shape(
-                tree,
-                modifiers,
-                structure,
                 &element_strokes,
-                scale_content,
                 None,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
@@ -1103,6 +1211,29 @@ impl RenderState {
         )
     }
 
+    pub fn get_rect_bounds(&mut self, rect: skia::Rect) -> Rect {
+        let scale = self.get_scale();
+        let offset_x = self.viewbox.area.left * scale;
+        let offset_y = self.viewbox.area.top * scale;
+        Rect::from_xywh(
+            (rect.left * scale) - offset_x,
+            (rect.top * scale) - offset_y,
+            rect.width() * scale,
+            rect.height() * scale,
+        )
+    }
+
+    pub fn get_shape_selrect_bounds(&mut self, shape: &Shape) -> Rect {
+        let rect = shape.selrect();
+        self.get_rect_bounds(rect)
+    }
+
+    pub fn get_shape_extrect_bounds(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Rect {
+        let scale = self.get_scale();
+        let rect = self.get_cached_extrect(shape, tree, scale);
+        self.get_rect_bounds(rect)
+    }
+
     pub fn get_aligned_tile_bounds(&mut self, tile: tiles::Tile) -> Rect {
         let scale = self.get_scale();
         let start_tile_x =
@@ -1110,8 +1241,8 @@ impl RenderState {
         let start_tile_y =
             (self.viewbox.area.top * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
         Rect::from_xywh(
-            (tile.0 as f32 * tiles::TILE_SIZE) - start_tile_x,
-            (tile.1 as f32 * tiles::TILE_SIZE) - start_tile_y,
+            (tile.x() as f32 * tiles::TILE_SIZE) - start_tile_x,
+            (tile.y() as f32 * tiles::TILE_SIZE) - start_tile_y,
             tiles::TILE_SIZE,
             tiles::TILE_SIZE,
         )
@@ -1136,22 +1267,35 @@ impl RenderState {
     #[allow(clippy::too_many_arguments)]
     fn render_drop_black_shadow(
         &mut self,
-        shapes: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
+        shape_bounds: &Rect,
         shadow: &Shadow,
-        scale_content: Option<&f32>,
-        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+        clip_bounds: Option<ClipStack>,
         scale: f32,
         translation: (f32, f32),
+        extra_layer_blur: Option<Blur>,
     ) {
         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
-        transformed_shadow.to_mut().offset = (0., 0.);
+        transformed_shadow.to_mut().offset = (0.0, 0.0);
         transformed_shadow.to_mut().color = skia::Color::BLACK;
-        transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
 
         let mut plain_shape = Cow::Borrowed(shape);
+        let combined_blur =
+            Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur);
+        let blur_filter = combined_blur
+            .and_then(|blur| skia::image_filters::blur((blur.value, blur.value), None, None, None));
+
+        let mut transform_matrix = shape.transform;
+        let center = shape.center();
+        // Re-center the matrix so rotations/scales happen around the shape center,
+        // matching how the shape itself is rendered.
+        transform_matrix.post_translate(center);
+        transform_matrix.pre_translate(-center);
+
+        // Transform the local shadow offset into world coordinates so that rotations/scales
+        // applied to the shape are respected when positioning the shadow.
+        let mapped = transform_matrix.map_vector((shadow.offset.0, shadow.offset.1));
+        let world_offset = (mapped.x, mapped.y);
 
         // The opacity of fills and strokes shouldn't affect the shadow,
         // so we paint everything black with the same opacity
@@ -1174,109 +1318,139 @@ impl RenderState {
             });
         }
 
-        let mut shadow_paint = skia::Paint::default();
-        shadow_paint.set_image_filter(transformed_shadow.get_drop_shadow_filter());
-        shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+        plain_shape.to_mut().clear_shadows();
+        plain_shape.to_mut().blur = None;
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .save_layer(&layer_rec);
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .scale((scale, scale));
-        self.surfaces
-            .canvas(SurfaceId::DropShadows)
-            .translate(translation);
+        let Some(drop_filter) = transformed_shadow.get_drop_shadow_filter() else {
+            return;
+        };
 
-        self.render_shape(
-            shapes,
-            modifiers,
-            structure,
-            &plain_shape,
-            scale_content,
-            clip_bounds,
-            SurfaceId::DropShadows,
-            SurfaceId::DropShadows,
-            SurfaceId::DropShadows,
-            SurfaceId::DropShadows,
-            false,
-            Some((shadow.offset.0, shadow.offset.1)),
-            None,
-        );
+        let mut bounds = drop_filter.compute_fast_bounds(shape_bounds);
+        // Account for the shadow offset so the temporary surface fully contains the shifted blur.
+        bounds.offset(world_offset);
 
-        self.surfaces.canvas(SurfaceId::DropShadows).restore();
+        let filter_result =
+            filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
+                {
+                    let canvas = state.surfaces.canvas(temp_surface);
+
+                    let mut shadow_paint = skia::Paint::default();
+                    shadow_paint.set_image_filter(drop_filter.clone());
+                    shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+                    canvas.save_layer(&layer_rec);
+                }
+
+                state.with_nested_blurs_suppressed(|state| {
+                    state.render_shape(
+                        &plain_shape,
+                        clip_bounds,
+                        temp_surface,
+                        temp_surface,
+                        temp_surface,
+                        temp_surface,
+                        false,
+                        Some(shadow.offset),
+                        None,
+                    );
+                });
+
+                {
+                    let canvas = state.surfaces.canvas(temp_surface);
+                    canvas.restore();
+                }
+            });
+
+        if let Some((image, filter_scale)) = filter_result {
+            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+            drop_canvas.save();
+            drop_canvas.scale((scale, scale));
+            drop_canvas.translate(translation);
+            let mut drop_paint = skia::Paint::default();
+            drop_paint.set_image_filter(blur_filter.clone());
+
+            // If we scaled down in the filter surface, we need to scale back up
+            if filter_scale < 1.0 {
+                let scaled_width = bounds.width() * filter_scale;
+                let scaled_height = bounds.height() * filter_scale;
+                let src_rect = skia::Rect::from_xywh(0.0, 0.0, scaled_width, scaled_height);
+
+                drop_canvas.save();
+                drop_canvas.scale((1.0 / filter_scale, 1.0 / filter_scale));
+                drop_canvas.draw_image_rect_with_sampling_options(
+                    image,
+                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+                    skia::Rect::from_xywh(
+                        bounds.left * filter_scale,
+                        bounds.top * filter_scale,
+                        scaled_width,
+                        scaled_height,
+                    ),
+                    self.sampling_options,
+                    &drop_paint,
+                );
+                drop_canvas.restore();
+            } else {
+                let src_rect = skia::Rect::from_xywh(0.0, 0.0, bounds.width(), bounds.height());
+                drop_canvas.draw_image_rect_with_sampling_options(
+                    image,
+                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+                    bounds,
+                    self.sampling_options,
+                    &drop_paint,
+                );
+            }
+            drop_canvas.restore();
+        }
     }
 
     pub fn render_shape_tree_partial_uncached(
         &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
+        tree: ShapesPoolRef,
         timestamp: i32,
+        allow_stop: bool,
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
-            let NodeRenderState {
-                id: node_id,
-                visited_children,
-                clip_bounds,
-                visited_mask,
-                mask,
-            } = node_render_state;
+            let node_id = node_render_state.id;
+            let visited_children = node_render_state.visited_children;
+            let visited_mask = node_render_state.visited_mask;
+            let mask = node_render_state.mask;
+            let clip_bounds = node_render_state.clip_bounds.clone();
 
             is_empty = false;
-            let element = tree.get(&node_id).ok_or(
-                "Error: Element with root_id {node_render_state.id} not found in the tree."
-                    .to_string(),
-            )?;
 
-            // If the shape is not in the tile set, then we update
-            // it.
+            let element = tree.get(&node_id).ok_or(format!(
+                "Error: Element with root_id {} not found in the tree.",
+                node_render_state.id
+            ))?;
+
+            // If the shape is not in the tile set, then we add them.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                self.update_tile_for(element, tree, modifiers);
+                self.add_shape_tiles(element, tree);
             }
 
             if visited_children {
-                self.render_shape_exit(
-                    tree,
-                    modifiers,
-                    structure,
-                    element,
-                    visited_mask,
-                    scale_content.get(&element.id),
-                );
+                self.render_shape_exit(element, visited_mask);
                 continue;
             }
 
             if !node_render_state.is_root() {
-                let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
+                let transformed_element: Cow<Shape> = Cow::Borrowed(element);
+                let scale = self.get_scale();
+                let extrect = transformed_element.extrect(tree, scale);
 
-                if let Some(modifier) = modifiers.get(&node_id) {
-                    transformed_element.to_mut().apply_transform(modifier);
-                }
-
-                let is_visible = transformed_element
-                    .extrect(tree, modifiers)
-                    .intersects(self.render_area)
+                let is_visible = extrect.intersects(self.render_area)
                     && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(
-                        self.get_scale(),
-                        tree,
-                        modifiers,
-                    );
+                    && !transformed_element.visually_insignificant(scale, tree);
 
                 if self.options.is_debug_visible() {
-                    debug::render_debug_shape(
-                        self,
-                        &transformed_element,
-                        is_visible,
-                        tree,
-                        modifiers,
-                    );
+                    let shape_extrect_bounds =
+                        self.get_shape_extrect_bounds(&transformed_element, tree);
+                    debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
                 if !is_visible {
@@ -1310,6 +1484,11 @@ impl RenderState {
                     //
                     // This approach is essential for complex shapes with transparency where
                     // multiple shadow areas might overlap, ensuring visual consistency.
+                    let inherited_layer_blur = match element.shape_type {
+                        Type::Frame(_) | Type::Group(_) => element.blur,
+                        _ => None,
+                    };
+
                     for shadow in element.drop_shadows_visible() {
                         let paint = skia::Paint::default();
                         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -1320,15 +1499,13 @@ impl RenderState {
 
                         // First pass: Render shadow in black to establish alpha mask
                         self.render_drop_black_shadow(
-                            tree,
-                            modifiers,
-                            structure,
                             element,
+                            &element.extrect(tree, scale),
                             shadow,
-                            scale_content.get(&element.id),
-                            clip_bounds,
+                            clip_bounds.clone(),
                             scale,
                             translation,
+                            None,
                         );
 
                         if !matches!(element.shape_type, Type::Bool(_)) {
@@ -1338,23 +1515,19 @@ impl RenderState {
                                 if shadow_shape.hidden {
                                     continue;
                                 }
-                                let clip_bounds = node_render_state.get_nested_shadow_clip_bounds(
-                                    element,
-                                    modifiers.get(&element.id),
-                                    shadow,
-                                );
+
+                                let clip_bounds = node_render_state
+                                    .get_nested_shadow_clip_bounds(element, shadow);
 
                                 if !matches!(shadow_shape.shape_type, Type::Text(_)) {
                                     self.render_drop_black_shadow(
-                                        tree,
-                                        modifiers,
-                                        structure,
                                         shadow_shape,
+                                        &shadow_shape.extrect(tree, scale),
                                         shadow,
-                                        scale_content.get(&element.id),
                                         clip_bounds,
                                         scale,
                                         translation,
+                                        inherited_layer_blur,
                                     );
                                 } else {
                                     let paint = skia::Paint::default();
@@ -1372,10 +1545,12 @@ impl RenderState {
                                         .translate(translation);
 
                                     let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
-                                    // transformed_shadow.to_mut().offset = (0., 0.);
+
                                     transformed_shadow.to_mut().color = skia::Color::BLACK;
                                     transformed_shadow.to_mut().blur =
                                         transformed_shadow.blur * scale;
+                                    transformed_shadow.to_mut().spread =
+                                        transformed_shadow.spread * scale;
 
                                     let mut new_shadow_paint = skia::Paint::default();
                                     new_shadow_paint.set_image_filter(
@@ -1383,21 +1558,19 @@ impl RenderState {
                                     );
                                     new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
 
-                                    self.render_shape(
-                                        tree,
-                                        modifiers,
-                                        structure,
-                                        shadow_shape,
-                                        scale_content.get(&element.id),
-                                        clip_bounds,
-                                        SurfaceId::DropShadows,
-                                        SurfaceId::DropShadows,
-                                        SurfaceId::DropShadows,
-                                        SurfaceId::DropShadows,
-                                        true,
-                                        None,
-                                        Some(vec![new_shadow_paint.clone()]),
-                                    );
+                                    self.with_nested_blurs_suppressed(|state| {
+                                        state.render_shape(
+                                            shadow_shape,
+                                            clip_bounds,
+                                            SurfaceId::DropShadows,
+                                            SurfaceId::DropShadows,
+                                            SurfaceId::DropShadows,
+                                            SurfaceId::DropShadows,
+                                            true,
+                                            None,
+                                            Some(vec![new_shadow_paint.clone()]),
+                                        );
+                                    });
                                     self.surfaces.canvas(SurfaceId::DropShadows).restore();
                                 }
                             }
@@ -1417,20 +1590,56 @@ impl RenderState {
                     }
                 }
 
-                self.surfaces
-                    .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+                if let Some(clips) = clip_bounds.as_ref() {
+                    let antialias = element.should_use_antialias(scale);
+
+                    self.surfaces.canvas(SurfaceId::Current).save();
+                    for (bounds, corners, transform) in clips.iter() {
+                        let mut total_matrix = Matrix::new_identity();
+                        total_matrix.pre_scale((scale, scale), None);
+                        total_matrix.pre_translate((translation.0, translation.1));
+                        total_matrix.pre_concat(transform);
+
+                        self.surfaces
+                            .canvas(SurfaceId::Current)
+                            .concat(&total_matrix);
+
+                        if let Some(corners) = corners {
+                            let rrect = RRect::new_rect_radii(*bounds, corners);
+                            self.surfaces.canvas(SurfaceId::Current).clip_rrect(
+                                rrect,
+                                skia::ClipOp::Intersect,
+                                antialias,
+                            );
+                        } else {
+                            self.surfaces.canvas(SurfaceId::Current).clip_rect(
+                                *bounds,
+                                skia::ClipOp::Intersect,
+                                antialias,
+                            );
+                        }
+
+                        self.surfaces
+                            .canvas(SurfaceId::Current)
+                            .concat(&total_matrix.invert().unwrap_or_default());
+                    }
+
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+
+                    self.surfaces.canvas(SurfaceId::Current).restore();
+                } else {
+                    self.surfaces
+                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+                }
 
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)
                     .clear(skia::Color::TRANSPARENT);
 
                 self.render_shape(
-                    tree,
-                    modifiers,
-                    structure,
                     element,
-                    scale_content.get(&element.id),
-                    clip_bounds,
+                    clip_bounds.clone(),
                     SurfaceId::Fills,
                     SurfaceId::Strokes,
                     SurfaceId::InnerShadows,
@@ -1448,10 +1657,11 @@ impl RenderState {
             }
 
             match element.shape_type {
+                Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                    self.nested_blurs.push(None);
+                }
                 Type::Frame(_) | Type::Group(_) => {
-                    if let Some(blur) = element.blur {
-                        self.nested_blurs.push(Some(blur));
-                    }
+                    self.nested_blurs.push(element.blur);
                 }
                 _ => {}
             }
@@ -1460,35 +1670,34 @@ impl RenderState {
             self.pending_nodes.push(NodeRenderState {
                 id: node_id,
                 visited_children: true,
-                clip_bounds,
+                clip_bounds: clip_bounds.clone(),
                 visited_mask: false,
                 mask,
             });
 
             if element.is_recursive() {
-                let children_clip_bounds = node_render_state.get_children_clip_bounds(
-                    element,
-                    modifiers.get(&element.id),
-                    None,
-                );
-
-                let mut children_ids =
-                    element.modified_children_ids(structure.get(&element.id), false);
+                let children_clip_bounds =
+                    node_render_state.get_children_clip_bounds(element, None);
+                let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
+                    if element.is_flex() && !element.is_flex_reverse() {
+                        children_ids.reverse();
+                    }
+
                     children_ids.sort_by(|id1, id2| {
-                        let z1 = tree.get(id1).map_or_else(|| 0, |s| s.z_index());
-                        let z2 = tree.get(id2).map_or_else(|| 0, |s| s.z_index());
-                        z1.cmp(&z2)
+                        let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
+                        let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
+                        z2.cmp(&z1)
                     });
                 }
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
-                        id: *child_id,
+                        id: **child_id,
                         visited_children: false,
-                        clip_bounds: children_clip_bounds,
+                        clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
                         mask: false,
                     });
@@ -1496,7 +1705,7 @@ impl RenderState {
             }
 
             // We try to avoid doing too many calls to get_time
-            if self.should_stop_rendering(iteration, timestamp) {
+            if allow_stop && self.should_stop_rendering(iteration, timestamp) {
                 return Ok((is_empty, true));
             }
             iteration += 1;
@@ -1506,11 +1715,10 @@ impl RenderState {
 
     pub fn render_shape_tree_partial(
         &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
+        base_object: Option<&Uuid>,
+        tree: ShapesPoolRef,
         timestamp: i32,
+        allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
         while !should_stop {
@@ -1535,13 +1743,9 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
-                    let (is_empty, early_return) = self.render_shape_tree_partial_uncached(
-                        tree,
-                        modifiers,
-                        structure,
-                        scale_content,
-                        timestamp,
-                    )?;
+                    let (is_empty, early_return) =
+                        self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop)?;
+
                     if early_return {
                         return Ok(());
                     }
@@ -1549,6 +1753,15 @@ impl RenderState {
                     let tile_rect = self.get_current_tile_bounds();
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
+
+                        if self.options.is_debug_visible() {
+                            debug::render_workspace_current_tile(
+                                self,
+                                "".to_string(),
+                                current_tile,
+                                tile_rect,
+                            );
+                        }
                     } else {
                         self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
                             let mut paint = skia::Paint::default();
@@ -1563,10 +1776,16 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            let Some(root) = tree.get(&Uuid::nil()) else {
-                return Err(String::from("Root shape not found"));
+            let root_ids = {
+                if let Some(shape_id) = base_object {
+                    vec![*shape_id]
+                } else {
+                    let Some(root) = tree.get(&Uuid::nil()) else {
+                        return Err(String::from("Root shape not found"));
+                    };
+                    root.children_ids(false)
+                }
             };
-            let root_ids = root.modified_children_ids(structure.get(&root.id), false);
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -1578,11 +1797,14 @@ impl RenderState {
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
                             .iter()
-                            .filter_map(|id| root_ids.get(id).map(|_| *id))
+                            .filter(|id| root_ids.contains(id))
+                            .copied()
                             .collect();
 
                         // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| root_ids.get_index_of(id));
+                        valid_ids.sort_by_key(|id| {
+                            root_ids.iter().position(|x| x == id).unwrap_or(usize::MAX)
+                        });
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -1601,120 +1823,175 @@ impl RenderState {
         }
         self.render_in_progress = false;
 
+        self.surfaces.gc();
+
         // Cache target surface in a texture
         self.cached_viewbox = self.viewbox;
+
         self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {
             debug::render(self);
         }
 
-        ui::render(self, tree, modifiers, structure);
+        ui::render(self, tree);
         debug::render_wasm_label(self);
 
         Ok(())
     }
 
-    pub fn get_tiles_for_shape(
-        &mut self,
-        shape: &Shape,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> TileRect {
-        let tile_size = tiles::get_tile_size(self.get_scale());
-        tiles::get_tiles_for_rect(shape.extrect(tree, modifiers), tile_size)
+    /*
+     * Given a shape returns the TileRect with the range of tiles that the shape is in
+     */
+    pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
+        let scale = self.get_scale();
+        let extrect = self.get_cached_extrect(shape, tree, scale);
+        let tile_size = tiles::get_tile_size(scale);
+        tiles::get_tiles_for_rect(extrect, tile_size)
     }
 
-    pub fn update_tile_for(
-        &mut self,
-        shape: &Shape,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
-        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree, modifiers);
-        let old_tiles: HashSet<tiles::Tile> = self
+    /*
+     * Given a shape, check the indexes and update it's location in the tile set
+     * returns the tiles that have changed in the process.
+     */
+    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
+
+        let old_tiles = self
             .tiles
             .get_tiles_of(shape.id)
-            .map_or(HashSet::new(), |tiles| tiles.iter().cloned().collect());
-        let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
-            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
-            .collect();
+            .map_or(Vec::new(), |tiles| tiles.iter().copied().collect());
+
+        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)));
+
+        let mut result = HashSet::<tiles::Tile>::new();
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
-            self.remove_cached_tile_shape(tile, shape.id);
+            self.tiles.remove_shape_at(tile, shape.id);
+            result.insert(tile);
         }
 
         // Then, add the shape to the new tiles
         for tile in new_tiles {
             self.tiles.add_shape_at(tile, shape.id);
+            result.insert(tile);
         }
+
+        result.iter().copied().collect()
     }
 
-    pub fn remove_cached_tile_shape(&mut self, tile: tiles::Tile, id: Uuid) {
+    /*
+     * Add the tiles forthe shape to the index.
+     * returns the tiles that have been updated
+     */
+    pub fn add_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
+        let tiles: Vec<_> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)))
+            .collect();
+
+        for tile in tiles.iter() {
+            self.tiles.add_shape_at(*tile, shape.id);
+        }
+        tiles
+    }
+
+    pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
         let rect = self.get_aligned_tile_bounds(tile);
         self.surfaces
             .remove_cached_tile_surface(tile, rect, self.background_color);
-        self.tiles.remove_shape_at(tile, id);
     }
 
-    pub fn rebuild_tiles_shallow(
-        &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) {
+    pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
-        self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles(self.background_color);
+
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
-                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
-                    if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.to_mut().apply_transform(modifier);
-                    }
-                    self.update_tile_for(&shape, tree, modifiers);
+                    all_tiles.extend(self.update_shape_tiles(shape, tree));
                 } else {
                     // We only need to rebuild tiles from the first level.
-                    let children = shape.modified_children_ids(structure.get(&shape.id), false);
-                    for child_id in children.iter() {
+                    for child_id in shape.children_ids_iter(false) {
                         nodes.push(*child_id);
                     }
                 }
             }
         }
+
+        // Update the changed tiles
+        self.surfaces.remove_cached_tiles(self.background_color);
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
-    pub fn rebuild_tiles(
-        &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) {
+    pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
         performance::begin_measure!("rebuild_tiles");
+
         self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles(self.background_color);
-        let mut nodes = vec![Uuid::nil()];
+
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
+        let mut nodes = {
+            if let Some(base_id) = base_id {
+                vec![*base_id]
+            } else {
+                vec![Uuid::nil()]
+            }
+        };
+
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
-                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
-                    if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.to_mut().apply_transform(modifier);
-                    }
-                    self.update_tile_for(&shape, tree, modifiers);
+                    // We have invalidated the tiles so we only need to add the shape
+                    all_tiles.extend(self.add_shape_tiles(shape, tree));
                 }
 
-                let children = shape.modified_children_ids(structure.get(&shape.id), false);
-                for child_id in children.iter() {
+                for child_id in shape.children_ids_iter(false) {
                     nodes.push(*child_id);
                 }
             }
         }
+
+        // Update the changed tiles
+        self.surfaces.remove_cached_tiles(self.background_color);
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
         performance::end_measure!("rebuild_tiles");
+    }
+
+    /*
+     * Rebuild the tiles for the shapes that have been modified from the
+     * last time this was executed.
+     */
+    pub fn rebuild_touched_tiles(&mut self, tree: ShapesPoolRef) {
+        performance::begin_measure!("rebuild_touched_tiles");
+
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
+
+        let ids = self.touched_ids.clone();
+
+        for shape_id in ids.iter() {
+            if let Some(shape) = tree.get(shape_id) {
+                if shape_id != &Uuid::nil() {
+                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                }
+            }
+        }
+
+        // Update the changed tiles
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+
+        self.clean_touched();
+
+        performance::end_measure!("rebuild_touched_tiles");
     }
 
     /// Invalidates extended rectangles and updates tiles for a set of shapes
@@ -1725,39 +2002,18 @@ impl RenderState {
     ///
     /// This is useful when you have a pre-computed set of shape IDs that need to be refreshed,
     /// regardless of their relationship to other shapes (e.g., ancestors, descendants, or any other collection).
-    pub fn invalidate_and_update_tiles(
-        &mut self,
-        shape_ids: &IndexSet<Uuid>,
-        tree: &mut ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
+    pub fn update_tiles_shapes(&mut self, shape_ids: &[Uuid], tree: ShapesPoolMutRef<'_>) {
+        performance::begin_measure!("invalidate_and_update_tiles");
+        let mut all_tiles = HashSet::<tiles::Tile>::new();
         for shape_id in shape_ids {
-            if let Some(shape) = tree.get_mut(shape_id) {
-                shape.invalidate_extrect();
-            }
             if let Some(shape) = tree.get(shape_id) {
-                if !shape.id.is_nil() {
-                    self.update_tile_for(shape, tree, modifiers);
-                }
+                all_tiles.extend(self.update_shape_tiles(shape, tree));
             }
         }
-    }
-
-    /// Processes all ancestors of a shape, invalidating their extended rectangles and updating their tiles
-    ///
-    /// When a shape changes, all its ancestors need to have their extended rectangles recalculated
-    /// because they may contain the changed shape. This function:
-    /// 1. Computes all ancestors of the shape
-    /// 2. Invalidates the extrect cache for each ancestor
-    /// 3. Updates the tiles for each ancestor to ensure proper rendering
-    pub fn process_shape_ancestors(
-        &mut self,
-        shape: &Shape,
-        tree: &mut ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
-        let ancestors = shape.all_ancestors(tree, false);
-        self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
+        for tile in all_tiles {
+            self.remove_cached_tile(tile);
+        }
+        performance::end_measure!("invalidate_and_update_tiles");
     }
 
     /// Rebuilds tiles for shapes with modifiers and processes their ancestors
@@ -1766,26 +2022,9 @@ impl RenderState {
     /// Additionally, it processes all ancestors of modified shapes to ensure their
     /// extended rectangles are properly recalculated and their tiles are updated.
     /// This is crucial for frames and groups that contain transformed children.
-    pub fn rebuild_modifier_tiles(
-        &mut self,
-        tree: &mut ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
-        let mut ancestors = IndexSet::new();
-        for (uuid, matrix) in modifiers {
-            let mut shape = {
-                let Some(shape) = tree.get(uuid) else {
-                    panic!("Invalid current shape")
-                };
-                let shape: Cow<Shape> = Cow::Borrowed(shape);
-                shape
-            };
-
-            shape.to_mut().apply_transform(matrix);
-            ancestors.insert(*uuid);
-            ancestors.extend(shape.all_ancestors(tree, false));
-        }
-        self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
+    pub fn rebuild_modifier_tiles(&mut self, tree: ShapesPoolMutRef<'_>, ids: Vec<Uuid>) {
+        let ancestors = all_with_ancestors(&ids, tree, false);
+        self.update_tiles_shapes(&ancestors, tree);
     }
 
     pub fn get_scale(&self) -> f32 {
@@ -1794,5 +2033,21 @@ impl RenderState {
 
     pub fn get_cached_scale(&self) -> f32 {
         self.cached_viewbox.zoom() * self.options.dpr()
+    }
+
+    pub fn mark_touched(&mut self, uuid: Uuid) {
+        self.touched_ids.insert(uuid);
+    }
+
+    pub fn clean_touched(&mut self) {
+        self.touched_ids.clear();
+    }
+
+    pub fn get_cached_extrect(&mut self, shape: &Shape, tree: ShapesPoolRef, scale: f32) -> Rect {
+        shape.extrect(tree, scale)
+    }
+
+    pub fn set_view(&mut self, zoom: f32, x: f32, y: f32) {
+        self.viewbox.set_all(zoom, x, y);
     }
 }

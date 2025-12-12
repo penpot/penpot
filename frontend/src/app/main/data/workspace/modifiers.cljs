@@ -19,12 +19,11 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.shape :as shape]
+   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
@@ -203,21 +202,27 @@
         wasm-props
         (concat clean-props wasm-props)
 
-        wasm-props
+        ;; Stores a map shape -> set of properties changed
+        ;; this is the standard format used by process-shape-changes
+        shape-changes
         (-> (group-by first wasm-props)
-            (update-vals #(map second %)))]
+            (update-vals #(into #{} (map (comp :property second)) %)))
 
-    ;; Props are grouped by id and then assoc to the shape the new value
-    (doseq [[id properties] wasm-props]
-      (let [shape
-            (->> properties
-                 (reduce
-                  (fn [shape {:keys [property value]}]
-                    (assoc shape property value))
-                  (get objects id)))]
-
-        ;; With the new values to the shape change multi props
-        (wasm.shape/set-wasm-multi-attrs! shape (->> properties (map :property)))))))
+        ;; Create a new objects only with the temporary modifications
+        objects-changed
+        (->> wasm-props
+             (group-by first)
+             (reduce
+              (fn [objects [id properties]]
+                (let [shape
+                      (->> properties
+                           (reduce
+                            (fn [shape [_ operation]]
+                              (ctm/apply-modifier shape operation))
+                            (get objects id)))]
+                  (assoc objects id shape)))
+              objects))]
+    (wasm.shape/process-shape-changes! objects-changed shape-changes)))
 
 (defn clear-local-transform []
   (ptk/reify ::clear-local-transform
@@ -406,10 +411,7 @@
          (dsh/lookup-page-objects state page-id)
 
          snap-pixel?
-         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
-
-         zoom (dm/get-in state [:workspace-local :zoom])
-         snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)]
+         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
 
      (as-> objects $
        (apply-text-modifiers $ (get state :workspace-text-modifier))
@@ -417,8 +419,7 @@
        (gm/set-objects-modifiers modif-tree $ (merge
                                                params
                                                {:ignore-constraints ignore-constraints
-                                                :snap-pixel? snap-pixel?
-                                                :snap-precision snap-precision}))))))
+                                                :snap-pixel? snap-pixel?}))))))
 
 (defn- calculate-update-modifiers
   [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
@@ -428,9 +429,6 @@
         snap-pixel?
         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-        zoom (dm/get-in state [:workspace-local :zoom])
-
-        snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)
         objects
         (-> objects
             (apply-text-modifiers (get state :workspace-text-modifier)))]
@@ -440,8 +438,7 @@
      modif-tree
      objects
      {:ignore-constraints ignore-constraints
-      :snap-pixel? snap-pixel?
-      :snap-precision snap-precision})))
+      :snap-pixel? snap-pixel?})))
 
 (defn update-modifiers
   ([modif-tree]
@@ -616,17 +613,20 @@
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
-                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-group nil}
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?]
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-transation? true}
                  :as params}]
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
     (watch [_ state _]
+      (wasm.api/clean-modifiers)
+      (let [structure-entries (parse-structure-modifiers modif-tree)]
+        (wasm.api/set-structure-modifiers structure-entries))
+
       (let [objects          (dsh/lookup-page-objects state)
 
             ignore-tree
-            (binding [shape/*wasm-sync* false]
-              (calculate-ignore-tree modif-tree objects))
+            (calculate-ignore-tree modif-tree objects)
 
             options
             (-> params
@@ -658,12 +658,34 @@
                     modifiers   (dm/get-in modif-tree [shape-id :modifiers])]
                 (-> shape
                     (gsh/apply-transform transform)
-                    (ctm/apply-structure-modifiers modifiers))))]
-        (rx/of
-         (clear-local-transform)
-         (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
-         (ptk/event ::dwcm/move-frame-comment-threads transforms)
-         (dwsh/update-shapes ids update-shape options))))))
+                    (ctm/apply-structure-modifiers modifiers))))
+
+            bool-ids
+            (into #{}
+                  (comp
+                   (mapcat (partial cfh/get-parents-with-self objects))
+                   (filter cfh/bool-shape?)
+                   (map :id))
+                  ids)
+
+            undo-id (js/Symbol)]
+        (rx/concat
+         (if undo-transation?
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/empty))
+         (rx/of
+          (clear-local-transform)
+          (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+          (ptk/event ::dwcm/move-frame-comment-threads transforms)
+          (dwsh/update-shapes ids update-shape options)
+
+          ;; The update to the bool path needs to be in a different operation because it
+          ;; needs to have the updated children info
+          (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
+
+         (if undo-transation?
+           (rx/of (dwu/commit-undo-transaction undo-id))
+           (rx/empty)))))))
 
 (def ^:private
   xf-rotation-shape

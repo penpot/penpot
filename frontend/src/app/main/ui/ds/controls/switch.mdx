@@ -1,0 +1,52 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as Switch from "./switch.stories";
+
+<Meta title="Controls/Switch" />
+
+# Switch
+
+The `switch*` component is a toggle control. It allows users to switch between two mutually exclusive states (`false` or `true`), while also accepting an initial third state (`nil`).
+
+<Canvas of={Switch.Default} />
+
+## Anatomy
+
+The switch component consists of three main parts:
+
+- **Label** (optional): the text that describes what the switch controls. Clicking on this text also works for toggling.
+- **Track**: the pill-shaped background.
+- **Thumb**: the knob that moves between positions.
+
+## Basic usage
+
+```clj
+[:> switch* {:label "Toggle something"
+             :default-checked nil
+             :on-change handle-change
+             :disabled false}]
+```
+
+## Accesibility
+
+When no visible label is provided, use `:aria-label` for accessibility.
+
+## Usage Guidelines
+
+### When to Use
+
+- For boolean settings that take effect immediately.
+- In preference panels and configuration screens.
+- For ternary states where the third state is only relevant at the beginning (e.g., selection of multiple elements with opposite states).
+
+### When Not to Use
+
+- For actions that require confirmation (use buttons instead).
+- For multiple choice selections (use radio buttons or select).
+- For temporary states that need explicit "Apply" action.
+- For ternary states that require passing through all three states.

@@ -213,7 +213,7 @@ pub extern "C" fn set_shape_path_content() {
 pub extern "C" fn current_to_path() -> *mut u8 {
     let mut result = Vec::<RawSegmentData>::default();
     with_current_shape!(state, |shape: &Shape| {
-        let path = shape.to_path(&state.shapes, &state.modifiers, &state.structure);
+        let path = shape.to_path(&state.shapes);
         result = path
             .segments()
             .iter()
@@ -223,37 +223,6 @@ pub extern "C" fn current_to_path() -> *mut u8 {
     });
 
     mem::write_vec(result)
-}
-
-// Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
-// Updates the `start` index to the end of the extracted string.
-fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
-    match bytes[*start..].iter().position(|&b| b == 0) {
-        Some(pos) => {
-            let end = *start + pos;
-            let slice = &bytes[*start..end];
-            *start = end + 1; // Move the `start` pointer past the null byte
-                              // Call to unsafe function within an unsafe block
-            unsafe { String::from_utf8_unchecked(slice.to_vec()) }
-        }
-        None => {
-            *start = bytes.len(); // Move `start` to the end if no null byte is found
-            String::new()
-        }
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        let bytes = mem::bytes();
-        let mut start = 0;
-        for _ in 0..num_attrs {
-            let name = extract_string(&mut start, &bytes);
-            let value = extract_string(&mut start, &bytes);
-            shape.set_path_attr(name, value);
-        }
-    });
 }
 
 #[cfg(test)]

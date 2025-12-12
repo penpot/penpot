@@ -1381,17 +1381,27 @@
 (defmethod migrate-data "0006-fix-old-texts-fills"
   [data _]
   (letfn [(fix-fills [node]
-            (let [fills (if (and (not (seq (:fills node)))
-                                 (or (some? (:fill-color node))
-                                     (some? (:fill-opacity node))
-                                     (some? (:fill-color-gradient node))))
-                          [(d/without-nils (select-keys node [:fill-color :fill-opacity :fill-color-gradient
-                                                              :fill-color-ref-id :fill-color-ref-file]))]
-                          (:fills node))]
-              (-> node
-                  (assoc :fills fills)
-                  (dissoc :fill-color :fill-opacity :fill-color-gradient
-                          :fill-color-ref-id :fill-color-ref-file))))
+            (let [;; In the old format refs were strings
+                  sanitize-uuid
+                  (fn [o]
+                    (if (uuid? o)
+                      o
+                      (uuid/parse* o)))
+
+                  fills
+                  (if (and (not (seq (:fills node)))
+                           (or (some? (:fill-color node))
+                               (some? (:fill-opacity node))
+                               (some? (:fill-color-gradient node))))
+                    [(-> (select-keys node types.fills/fill-attrs)
+                         (update :fill-color-ref-file sanitize-uuid)
+                         (update :fill-color-ref-id sanitize-uuid)
+                         (d/without-nils))]
+                    (:fills node))]
+
+              (reduce dissoc
+                      (assoc node :fills fills)
+                      types.fills/fill-attrs)))
 
           (update-object [object]
             (if (cfh/text-shape? object)
@@ -1598,6 +1608,63 @@
   ;; as value; this migration fixes it.
   (d/update-when data :components d/update-vals d/without-nils))
 
+(defmethod migrate-data "0015-fix-text-attrs-blank-strings"
+  [data _]
+  ;; After making text validation more restrictive (using ::sm/text
+  ;; instead of :string), we need to fix text attributes that contain
+  ;; empty or blank strings. These should be replaced with default
+  ;; values from default-text-attrs.
+  (letfn [(blank-or-empty? [v]
+            (or (nil? v)
+                (and (string? v)
+                     (or (str/empty? v)
+                         (str/blank? v)))))
+
+          (get-default-value [attr]
+            (let [defaults types.text/default-text-attrs]
+              (case attr
+                ;; direction in content maps to text-direction in defaults
+                :direction (:text-direction defaults)
+                ;; For other attrs, get directly from defaults
+                (get defaults attr))))
+
+          (fix-text-attrs [node]
+            ;; These are the attributes that were changed to ::sm/text in the schema
+            (let [text-attrs [:font-family :font-size :font-style :font-weight
+                              :direction :text-decoration :text-transform]]
+              (reduce
+               (fn [node attr]
+                 (if (and (contains? node attr)
+                          (blank-or-empty? (get node attr)))
+                   ;; Replace blank/empty value with default
+                   (if-let [default-val (get-default-value attr)]
+                     (assoc node attr default-val)
+                     ;; If no default, remove the attribute
+                     (dissoc node attr))
+                   node))
+               node
+               text-attrs)))
+
+          (fix-position-data [position-data]
+            (mapv fix-text-attrs position-data))
+
+          (fix-text-content [content]
+            (types.text/transform-nodes types.text/is-content-node? fix-text-attrs content))
+
+          (update-shape [object]
+            (if (cfh/text-shape? object)
+              (-> object
+                  (d/update-when :content fix-text-content)
+                  (d/update-when :position-data fix-position-data))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (defmethod migrate-data "0015-clean-shadow-color"
   [data _]
   (let [decode-shadow-color
@@ -1632,6 +1699,68 @@
         update-container
         (fn [container]
           (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+;; Copy fills from position-data to text nodes when all text nodes lack fills,
+;; all position-data have fills, and the counts match
+(defmethod migrate-data "0016-copy-fills-from-position-data-to-text-node"
+  [data _]
+  (letfn [(get-text-nodes [content]
+            ;; Get all leaf text nodes from the content tree
+            (when content
+              (->> (types.text/node-seq types.text/is-text-node? content)
+                   (seq))))
+
+          (update-content [content fills-map]
+            ;; Transform the content tree to update text nodes with their corresponding fills
+            ;; fills-map is a map from text node to its fills
+            (types.text/transform-nodes
+             types.text/is-text-node?
+             (fn [text-node]
+               (if-let [fills (get fills-map text-node)]
+                 (assoc text-node :fills fills)
+                 text-node))
+             content))
+
+          (update-object [object]
+            (if (cfh/text-shape? object)
+              (let [content       (:content object)
+                    position-data (:position-data object)
+                    text-nodes    (get-text-nodes content)]
+
+                ;; Check if conditions are met:
+                ;; 1. Has at least one text node
+                ;; 2. All text nodes have no fills or empty fills
+                ;; 3. Has at least one position-data entry
+                ;; 4. All position-data have fills
+                ;; 5. The number of text nodes matches the number of position-data
+                (if (and (seq text-nodes)
+                         (seq position-data)
+                         (= (count text-nodes) (count position-data))
+                         (every? (fn [text-node]
+                                   (let [fills (:fills text-node)]
+                                     (or (nil? fills) (empty? fills))))
+                                 text-nodes)
+                         (every? (fn [pd]
+                                   (let [fills (:fills pd)]
+                                     (and (some? fills) (seq fills))))
+                                 position-data))
+
+                  ;; Apply the migration: create a map from each text node to its corresponding fills
+                  (let [fills-map (zipmap text-nodes (map :fills position-data))]
+                    (update object :content #(update-content % fills-map)))
+
+                  ;; Don't modify if conditions aren't met
+                  object))
+
+              ;; Not a text shape, return as-is
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
@@ -1708,4 +1837,6 @@
          "0013-clear-invalid-strokes-and-fills"
          "0014-fix-tokens-lib-duplicate-ids"
          "0014-clear-components-nil-objects"
-         "0015-clean-shadow-color"]))
+         "0015-fix-text-attrs-blank-strings"
+         "0015-clean-shadow-color"
+         "0016-copy-fills-from-position-data-to-text-node"]))

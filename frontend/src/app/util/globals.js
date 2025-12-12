@@ -18,9 +18,11 @@
 goog.provide("app.util.globals");
 
 goog.scope(function () {
-  app.util.globals.global = goog.global;
+  var self = app.util.globals;
 
-  function createGlobalEventEmitter(k) {
+  self.global = goog.global;
+
+  function createMockedEventEmitter(k) {
     /* Allow mocked objects to be event emitters, so other modules
      * may subscribe to them.
      */
@@ -33,13 +35,33 @@ goog.scope(function () {
     };
   }
 
-  app.util.globals.window = (function () {
+  self.event = function(name, detail) {
+    const options = {};
+    if (detail !== undefined) {
+      options.detail = detail;
+    }
+    return new CustomEvent(name, options);
+  };
+
+  self.dispatch_BANG_ = function(...args) {
+    self.document.dispatchEvent(...args);
+  };
+
+  self.listen = function(...args) {
+    self.document.addEventListener(...args);
+  };
+
+  self.unlisten = function(...args) {
+    self.document.removeEventListener(...args);
+  }
+
+  self.window = (function () {
     if (typeof goog.global.window !== "undefined") {
       return goog.global.window;
     } else {
-      const mockWindow = createGlobalEventEmitter();
+      const mockWindow = createMockedEventEmitter();
       mockWindow.matchMedia = function (query) {
-        const mediaObj = createGlobalEventEmitter();
+        const mediaObj = createMockedEventEmitter();
         mediaObj.matches = false;
         mediaObj.media = query;
         mediaObj.onchange = null;
@@ -49,31 +71,31 @@ goog.scope(function () {
     }
   })();
 
-  app.util.globals.document = (function() {
+  self.document = (function() {
     if (typeof goog.global.document !== "undefined") {
       return goog.global.document;
     } else {
-      return createGlobalEventEmitter();
+      return createMockedEventEmitter();
     }
   })();
 
-  app.util.globals.location = (function() {
+  self.location = (function() {
     if (typeof goog.global.location !== "undefined") {
       return goog.global.location;
     } else {
-      return createGlobalEventEmitter();
+      return createMockedEventEmitter();
     }
   })();
 
-  app.util.globals.navigator = (function() {
+  self.navigator = (function() {
     if (typeof goog.global.navigator !== "undefined") {
       return goog.global.navigator;
     } else {
-      return createGlobalEventEmitter();
+      return createMockedEventEmitter();
     }
   })();
 
-  app.util.globals.FormData = (function() {
+  self.FormData = (function() {
     if (typeof goog.global.FormData !== "undefined") {
       return goog.global.FormData;
     } else {

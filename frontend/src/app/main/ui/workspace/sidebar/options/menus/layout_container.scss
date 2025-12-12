@@ -4,244 +4,242 @@
 //
 // Copyright (c) KALEIDOS INC
 
+// TODO: When button replace remove this @use
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set {
+  @include sidebar.option-grid-structure;
+}
+
+.element-title {
+  grid-column: span 8;
+}
+
+.title-spacing-layout {
+  padding-inline-start: var(--sp-xxs);
+  margin: 0;
+}
+
+.title-actions {
+  position: relative;
+  display: flex;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  padding: 0;
+  margin: 0;
+}
+
+.layout-option {
+  white-space: nowrap;
+}
+
+.flex-layout-menu {
+  @include sidebar.option-grid-structure;
+  margin-block-end: var(--sp-s);
+}
+
+.first-row {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  grid-template-columns: subgrid;
+  margin-block-end: var(--sp-m);
+  margin-block-start: var(--sp-xs);
+}
 
-  .element-title {
-    grid-column: span 8;
+.align-row {
+  grid-column: span 3;
+}
 
-    .title-spacing-layout {
-      padding-left: deprecated.$s-2;
-      margin: 0;
-    }
+.direction-row-flex {
+  grid-column: span 4;
+}
 
-    .title-actions {
-      position: relative;
-      display: flex;
-      gap: deprecated.$s-4;
-      height: deprecated.$s-32;
-      padding: 0;
-      margin: 0;
-      .layout-options {
-        width: fit-content;
-      }
-      .layout-option {
-        white-space: nowrap;
-      }
-    }
+// TODO: Replace this buttons with DS buttons
+.wrap-button {
+  @extend .button-tertiary;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
   }
-  .flex-layout-menu {
-    display: grid;
-    grid-template-columns: repeat(8, var(--sp-xxxl));
-    gap: var(--sp-xs);
-    margin-bottom: deprecated.$s-8;
-
-    .first-row {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: subgrid;
-      margin-bottom: deprecated.$s-12;
-      margin-top: deprecated.$s-4;
-
-      .align-row {
-        grid-column: span 3;
-      }
-
-      .direction-row-flex {
-        grid-column: span 4;
-      }
-
-      .wrap-button {
-        @extend .button-tertiary;
-        border-radius: deprecated.$br-8;
-        height: deprecated.$s-32;
-        width: deprecated.$s-32;
-        svg {
-          @extend .button-icon;
-          stroke: var(--icon-foreground);
-        }
-        &.selected {
-          @extend .button-icon-selected;
-        }
-      }
-    }
-    .second-row,
-    .third-row {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: subgrid;
-      margin-bottom: deprecated.$s-12;
-
-      .align-content-row,
-      .justify-content-row {
-        grid-column: span 6;
-      }
-    }
-    .forth-row {
-      display: grid;
-      --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
-      grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
-      gap: var(--sp-xs);
-      grid-column: 1 / -1;
-    }
-    .help-button-wrapper {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-    }
+  &.selected {
+    @extend .button-icon-selected;
   }
+}
+
+.second-row,
+.third-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  margin-block-end: var(--sp-m);
+}
+
+.align-content-row,
+.justify-content-row {
+  grid-column: span 6;
+}
+
+.forth-row {
+  display: grid;
+  grid-template-columns:
+    var(--grid-exception-input-width) /* first input block */
+    var(--grid-exception-input-width) /* second input block */
+    var(--sp-xxxl); /* action button */
+  gap: var(--sp-xs);
+  grid-column: 1 / -1;
+}
+
+.help-button-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .gap-group {
   grid-column: span 3;
   display: grid;
   grid-template-columns: subgrid;
-  .column-gap {
-    @extend .input-element;
-    @include deprecated.bodySmallTypography;
-    &.disabled {
-      @extend .disabled-input;
-    }
+}
+
+// TODO: Remove when activating token numeric inputs
+.column-gap,
+.row-gap {
+  @extend .input-element;
+  @include t.use-typography("body-small");
+  &.disabled {
+    @extend .disabled-input;
   }
-  .row-gap {
-    @extend .input-element;
-    @include deprecated.bodySmallTypography;
-    &.disabled {
-      @extend .disabled-input;
-    }
-  }
+}
+
+// TODO: Remove when activating token numeric inputs
+.padding-simple,
+.padding-multiple {
+  @include t.use-typography("body-small");
+  @extend .input-element;
 }
 
 .padding-group {
   display: grid;
   grid-column: span 3;
   grid-template-columns: subgrid;
+}
 
-  .padding-inputs {
-    grid-column: span 2;
-    display: grid;
-    grid-template-columns: subgrid;
+.padding-inputs,
+.paddings-simple {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.paddings-multiple {
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: subgrid;
+  gap: var(--sp-xs);
+}
+
+// TODO: Replace this buttons with DS buttons
+.padding-toggle {
+  @extend .button-tertiary;
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
   }
-
-  .paddings-simple {
-    display: grid;
-    grid-column: span 2;
-    grid-template-columns: subgrid;
-
-    .padding-simple {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
-    }
-  }
-
-  .paddings-multiple {
-    display: grid;
-    grid-column: span 2;
-    grid-template-columns: subgrid;
-    gap: var(--sp-xs);
-
-    .padding-multiple {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
-    }
-  }
-
-  .padding-toggle {
-    @extend .button-tertiary;
-    height: deprecated.$s-32;
-    width: deprecated.$s-32;
-    border-radius: deprecated.$br-8;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
-    &.selected {
-      @extend .button-icon-selected;
-    }
+  &.selected {
+    @extend .button-icon-selected;
   }
 }
 
 .grid-layout-menu {
+  @include sidebar.option-grid-structure;
+}
+
+.edit-grid-wrapper,
+.first-row,
+.grid-layout-align,
+.gap-row,
+.padding-row {
+  grid-column: 1 / -1;
+}
+
+.first-row {
+  margin-block-end: var(--sp-s);
   display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
+  grid-template-columns: subgrid;
+}
+
+.grid-layout-align {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: flex-start;
+  position: relative;
   gap: var(--sp-xs);
+}
 
-  .edit-grid-wrapper,
-  .first-row,
-  .grid-layout-align,
-  .gap-row,
-  .padding-row {
-    grid-column: 1 / -1;
-  }
+.locate-button {
+  grid-row: 1;
+  grid-column: 8;
+}
 
-  .first-row {
-    margin-bottom: deprecated.$s-8;
-    display: grid;
-    grid-template-columns: subgrid;
-  }
+.grid-layout-menu-title {
+  @include t.use-typography("headline-small");
+  flex: 1;
+  color: var(--color-foreground-primary);
+  grid-column: span 5;
+}
 
-  .grid-layout-align {
-    display: grid;
-    grid-template-columns: subgrid;
-    align-items: flex-start;
-    position: relative;
-    gap: var(--sp-xs);
+// TODO: Replace this buttons with DS buttons
+.edit-mode-btn {
+  @extend .button-secondary;
+  @include t.use-typography("headline-small");
+  inline-size: 100%;
+  padding: var(--sp-s);
+  grid-column: span 7;
+}
 
-    .locate-button {
-      grid-row: 1;
-      grid-column: 8;
-    }
-  }
+// TODO: Replace this buttons with DS buttons
+.exit-btn {
+  @extend .button-secondary;
+  @include t.use-typography("headline-small");
+  padding: var(--sp-s) var(--sp-xl);
+  grid-column: span 2;
+}
 
-  .grid-layout-menu-title {
-    flex: 1;
-    font-size: deprecated.$fs-11;
-    color: var(--title-foreground-color-hover);
-    grid-column: span 5;
-  }
+.grid-tracks-info-container {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+}
 
-  .edit-mode-btn {
-    @extend .button-secondary;
-    @include deprecated.uppercaseTitleTipography;
-    width: 100%;
-    padding: deprecated.$s-8;
-    grid-column: span 7;
-  }
+.padding-section {
+  margin-block-start: var(--sp-s);
+}
 
-  .exit-btn {
-    @extend .button-secondary;
-    @include deprecated.uppercaseTitleTipography;
-    padding: deprecated.$s-8 deprecated.$s-20;
-    grid-column: span 2;
-  }
+.grid-tracks-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+}
 
-  .grid-tracks-info-container {
-    display: grid;
-    grid-template-columns: subgrid;
-    grid-column: 1 / -1;
-    gap: var(--sp-xs);
-    margin-top: deprecated.$s-4;
-  }
-
-  .padding-section {
-    margin-top: deprecated.$s-8;
-  }
-
-  .grid-tracks-row {
-    display: grid;
-    grid-template-columns: subgrid;
-    grid-column: 1 / -1;
-  }
-
-  .edit-grid-wrapper {
-    display: grid;
-    grid-template-columns: subgrid;
-  }
+.edit-grid-wrapper {
+  display: grid;
+  grid-template-columns: subgrid;
 }
 
 .track-info {
@@ -250,127 +248,155 @@
   grid-template-columns: subgrid;
 
   &.dnd-over-top {
-    border-top: deprecated.$s-2 solid var(--button-foreground-hover);
+    border-block-start: $b-2 solid var(--color-accent-primary);
   }
 
   &.dnd-over-bot {
-    border-bottom: deprecated.$s-2 solid var(--button-foreground-hover);
+    border-block-end: $b-2 solid var(--color-accent-primary);
   }
+}
 
-  .track-info-container {
-    display: flex;
-    grid-column: 1 / span 7;
-  }
+.track-info-container {
+  display: flex;
+  grid-column: 1 / span 7;
+}
 
-  .track-info-dir-icon {
-    cursor: pointer;
-    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
-    background-color: var(--input-background-color);
-    padding: 0 deprecated.$s-8;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-      height: 100%;
-    }
-    &:hover svg {
-      stroke: var(--icon-foreground-hover);
-    }
+// TODO: Replace this buttons with DS buttons
+.track-info-dir-icon {
+  cursor: pointer;
+  border-radius: $br-8 0 0 $br-8;
+  background-color: var(--color-background-tertiary);
+  padding: 0 var(--sp-s);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+    block-size: 100%;
   }
+  &:hover svg {
+    stroke: var(--color-foreground-primary);
+  }
+}
 
-  .track-info-value {
-    @extend .input-element;
-    @include deprecated.bodySmallTypography;
-    border-radius: 0;
-    border-right: deprecated.$s-1 solid var(--panel-background-color);
-  }
+.track-info-value {
+  @extend .input-element;
+  @include t.use-typography("body-small");
+  border-radius: 0;
+  border-inline-end: $b-1 solid var(--color-background-primary);
+}
 
-  .track-info-unit-selector {
-    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-    width: deprecated.$s-96;
-  }
+.track-info-unit-selector {
+  border-radius: 0 $br-8 $br-8 0;
+  inline-size: px2rem(96);
 }
 
 .grid-tracks {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
-  margin-top: deprecated.$s-8;
+  margin-block-start: var(--sp-s);
+}
 
-  .grid-track-header {
-    @include deprecated.flexRow;
-    font-size: deprecated.$fs-12;
-    border-radius: deprecated.$br-8;
-    overflow: hidden;
-    background: var(--button-secondary-background-color-rest);
-    height: deprecated.$s-52;
-    grid-column: 1 / -1;
+.grid-track-header {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  border-radius: $br-8;
+  overflow: hidden;
+  background: var(--color-background-tertiary);
+  block-size: px2rem(52);
+  grid-column: 1 / -1;
+}
+
+.track-title {
+  display: grid;
+  flex-grow: 1;
+  padding: var(--sp-s);
+  gap: 0;
+  overflow: hidden;
+}
+
+.track-name {
+  color: var(--color-foreground-primary);
+}
+
+.track-detail {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  inline-size: 100%;
+  color: var(--color-foreground-secondary);
+}
+
+// TODO: Replace this buttons with DS buttons
+.expand-icon {
+  @extend .button-secondary;
+  block-size: px2rem(52);
+
+  border-radius: $br-8 0 0 $br-8;
+  border-inline-end: $b-1 solid var(--color-background-primary);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+    fill: var(--color-foreground-secondary);
   }
-
-  .track-title {
-    display: grid;
-    flex-grow: 1;
-    padding: deprecated.$s-8;
-    gap: 0;
-    overflow: hidden;
-  }
-
-  .track-name {
-    color: var(--color-foreground-primary);
-  }
-
-  .track-detail {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    width: 100%;
-    color: var(--color-foreground-secondary);
-  }
-
-  .expand-icon {
-    @extend .button-secondary;
-    height: deprecated.$s-52;
-
-    border-radius: deprecated.$s-8 0 0 deprecated.$s-8;
-    border-right: deprecated.$s-1 solid var(--panel-background-color);
+  &:hover,
+  &:active {
     svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-      fill: var(--icon-foreground);
-    }
-    &:hover,
-    &:active {
-      svg {
-        stroke: var(--button-foreground-hover);
-        fill: var(--button-foreground-hover);
-      }
-    }
-  }
-
-  .add-column {
-    @extend .button-tertiary;
-    height: deprecated.$s-52;
-
-    svg {
-      @extend .button-icon;
-      height: deprecated.$s-12;
-      width: deprecated.$s-12;
-      stroke: var(--icon-foreground);
-      fill: var(--icon-foreground);
+      stroke: var(--color-accent-primary);
+      fill: var(--color-accent-primary);
     }
   }
 }
 
+// TODO: Replace this buttons with DS buttons
+.add-column {
+  @extend .button-tertiary;
+  block-size: px2rem(52);
+
+  svg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+    fill: none;
+    stroke-width: px2rem(1);
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke: var(--color-foreground-secondary);
+    fill: var(--color-foreground-secondary);
+  }
+}
+
 .layout-options {
-  @extend .dropdown-wrapper;
-  @include deprecated.flexColumn;
-  right: var(--sp-s);
-  left: initial;
+  box-shadow: 0px 0px $sz-12 0px var(--color-shadow-dark);
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  inset-block-start: $sz-32;
+  inset-inline-start: initial;
+  inset-inline-end: var(--sp-s);
+  max-block-size: var(--menu-max-height, px2rem(300));
+  padding: var(--sp-xxs);
+  margin: 0;
+  margin-block-start: px2rem(1);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  gap: var(--sp-xs);
+  inline-size: fit-content;
 
   button {
-    @include deprecated.buttonStyle;
-    padding: deprecated.$s-8;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: var(--sp-s);
     color: var(--color-foreground-primary);
-    border-radius: deprecated.$br-6;
+    border-radius: $br-6;
 
     &:hover {
       background: var(--color-background-quaternary);
@@ -393,8 +419,10 @@
 .gap-row,
 .padding-row {
   display: grid;
-  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - var(--sp-xs) / 2);
-  grid-template-columns: var(--input-width) var(--input-width) var(--sp-xxxl);
+  grid-template-columns:
+    var(--grid-exception-input-width) /* first input block */
+    var(--grid-exception-input-width) /* second input block */
+    var(--sp-xxxl); /* action button */
   gap: var(--sp-xs);
 }
 
@@ -403,4 +431,8 @@
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
   align-items: center;
+}
+
+.numeric-input-measures {
+  --dropdown-width: var(--7-columns-dropdown-width);
 }

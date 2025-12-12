@@ -1,8 +1,10 @@
 use crate::shapes::fills::{Fill, SolidColor};
 use skia_safe::{self as skia, Rect};
-use std::collections::HashMap;
 
 use super::Corners;
+use super::StrokeLineCap;
+use super::StrokeLineJoin;
+use super::SvgAttrs;
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum StrokeStyle {
@@ -48,6 +50,20 @@ impl Stroke {
         } else {
             self.kind
         }
+    }
+
+    pub fn bounds_width(&self, is_open: bool) -> f32 {
+        match self.render_kind(is_open) {
+            StrokeKind::Inner => 0.,
+            StrokeKind::Center => self.width / 2.,
+            StrokeKind::Outer => self.width,
+        }
+    }
+
+    pub fn max_bounds_width<'a>(strokes: impl Iterator<Item = &'a Stroke>, is_open: bool) -> f32 {
+        strokes
+            .map(|stroke| stroke.bounds_width(is_open))
+            .fold(0.0, f32::max)
     }
 
     pub fn new_center_stroke(
@@ -145,7 +161,7 @@ impl Stroke {
     pub fn to_paint(
         &self,
         rect: &Rect,
-        svg_attrs: &HashMap<String, String>,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -161,12 +177,14 @@ impl Stroke {
         paint.set_stroke_width(width);
         paint.set_anti_alias(antialias);
 
-        if let Some("round") = svg_attrs.get("stroke-linecap").map(String::as_str) {
-            paint.set_stroke_cap(skia::paint::Cap::Round);
-        }
+        if let Some(svg_attrs) = svg_attrs {
+            if svg_attrs.stroke_linecap == StrokeLineCap::Round {
+                paint.set_stroke_cap(skia::paint::Cap::Round);
+            }
 
-        if let Some("round") = svg_attrs.get("stroke-linejoin").map(String::as_str) {
-            paint.set_stroke_join(skia::paint::Join::Round);
+            if svg_attrs.stroke_linejoin == StrokeLineJoin::Round {
+                paint.set_stroke_join(skia::paint::Join::Round);
+            }
         }
 
         if self.style != StrokeStyle::Solid {
@@ -211,7 +229,7 @@ impl Stroke {
         &self,
         is_open: bool,
         rect: &Rect,
-        svg_attrs: &HashMap<String, String>,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -235,7 +253,7 @@ impl Stroke {
         &self,
         is_open: bool,
         rect: &Rect,
-        svg_attrs: &HashMap<String, String>,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -258,5 +276,23 @@ impl Stroke {
             Fill::Solid(SolidColor(color)) => color.a() == 0,
             _ => false,
         }
+    }
+
+    pub fn cap_bounds_margin(&self) -> f32 {
+        cap_margin_for_cap(self.cap_start, self.width)
+            .max(cap_margin_for_cap(self.cap_end, self.width))
+    }
+}
+
+fn cap_margin_for_cap(cap: Option<StrokeCap>, width: f32) -> f32 {
+    match cap {
+        Some(StrokeCap::LineArrow)
+        | Some(StrokeCap::TriangleArrow)
+        | Some(StrokeCap::SquareMarker)
+        | Some(StrokeCap::DiamondMarker) => width * 4.0,
+        Some(StrokeCap::CircleMarker) => width * 2.0,
+        Some(StrokeCap::Square) => width,
+        Some(StrokeCap::Round) => width * 0.5,
+        _ => 0.0,
     }
 }

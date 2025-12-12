@@ -1,5 +1,104 @@
 # CHANGELOG
 
+## 2.12.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+#### Backend RPC API changes
+
+The backend RPC API URLS are changed from `/api/rpc/command/<name>` to
+`/api/main/methods/<name>`. The previous PATH is preserved for backward
+compatibility; however, if you are a user of this API, it is strongly
+recommended that you adapt your code to use the new PATH.
+
+
+#### Updated SSO Callback URL
+
+The OAuth / Single Sign-On (SSO) callback endpoint has changed to
+align with the new OpenID Connect (OIDC) implementation.
+
+Old callback URL:
+
+```
+https://<your_domain>/api/auth/oauth/<oauth_provider>/callback
+```
+
+New callback URL:
+
+```
+https://<your_domain>/api/auth/oidc/callback
+```
+
+**Action required:**
+
+If you have SSO/Social-Auth configured on your on-premise instance,
+the following actions are required before update:
+
+Update your OAuth or SSO provider configuration (e.g., Okta, Google,
+Azure AD, etc.) to use the new callback URL. Failure to update may
+result in authentication failures after upgrading.
+
+**Reason for change:**
+
+This update standardizes all authentication flows under the single URL
+and makis it more modular, enabling the ability to configure SSO auth
+provider dinamically.
+
+
+#### Changes on default docker compose
+
+We have updated the `docker/images/docker-compose.yaml` with a small
+change related to the `PENPOT_SECRET_KEY`. Since this version, this
+environment variable is also required on exporter. So if you are using
+penpot on-premise you will need to apply the same changes on your own
+`docker-compose.yaml` file.
+
+We have removed the Minio server from the `docker/images/docker-compose.yml`
+example. It's still usable as before, we just removed the example.
+
+### :rocket: Epics and highlights
+
+### :heart: Community contributions (Thank you!)
+
+- Ensure consistent snap behavior across all zoom levels [Github #7774](https://github.com/penpot/penpot/pull/7774) by [@Tokytome](https://github.com/Tokytome)
+- Fix crash in token grid view due to tooltip validation (by @dfelinto) [Github #7887](https://github.com/penpot/penpot/pull/7887)
+
+### :sparkles: New features & Enhancements
+
+- Add the ability to select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
+- Add toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
+- Make the file export process more reliable [Taiga #12555](https://tree.taiga.io/project/penpot/us/12555)
+- Add auth flow changes [Taiga #12333](https://tree.taiga.io/project/penpot/us/12333)
+- Add new shape validation mechanism for shapes [Github #7696](https://github.com/penpot/penpot/pull/7696)
+- Apply color tokens from sidebar [Taiga #11353](https://tree.taiga.io/project/penpot/us/11353)
+- Display tokens in the inspect tab [Taiga #9313](https://tree.taiga.io/project/penpot/us/9313)
+- Refactor clipboard behavior to assess some minor inconsistencies and make pasting binary data faster. [Taiga #12571](https://tree.taiga.io/project/penpot/task/12571)
+
+### :bug: Bugs fixed
+
+- Fix text line-height values are wrong [Taiga #12252](https://tree.taiga.io/project/penpot/issue/12252)
+- Fix an error translation [Taiga #12402](https://tree.taiga.io/project/penpot/issue/12402)
+- Fix pan cursor not disabling viewport guides [Github #6985](https://github.com/penpot/penpot/issues/6985)
+- Fix viewport resize on locked shapes [Taiga #11974](https://tree.taiga.io/project/penpot/issue/11974)
+- Fix nested variant in a component doesn't keep inherited overrides [Taiga #12299](https://tree.taiga.io/project/penpot/issue/12299)
+- Fix on copy instance inside a components chain touched are missing [Taiga #12371](https://tree.taiga.io/project/penpot/issue/12371)
+- Fix problem with multiple selection and shadows [Github #7437](https://github.com/penpot/penpot/issues/7437)
+- Fix search shortcut [Taiga #10265](https://tree.taiga.io/project/penpot/issue/10265)
+- Fix shortcut conflict in text editor (increase/decrease font size vs word selection)
+- Fix problem with plugins generating code for pages different than current one [Taiga #12312](https://tree.taiga.io/project/penpot/issue/12312)
+- Fix input confirmation behavior is not uniform [Taiga #12294](https://tree.taiga.io/project/penpot/issue/12294)
+- Fix copy/pasting application/transit+json [Taiga #12721](https://tree.taiga.io/project/penpot/issue/12721)
+- Fix problem with plugins content attribute [Plugins #209](https://github.com/penpot/penpot-plugins/issues/209)
+- Fix U and E icon displayed in project list [Taiga #12806](https://tree.taiga.io/project/penpot/issue/12806)
+- Fix unpublish library modal not scrolling a long file list [Taiga #12285](https://tree.taiga.io/project/penpot/issue/12285)
+- Fix incorrect interaction betwen hower and scroll on assets sidebar [Taiga #12389](https://tree.taiga.io/project/penpot/issue/12389)
+- Fix switch variants with paths [Taiga #12841](https://tree.taiga.io/project/penpot/issue/12841)
+- Fix referencing typography tokens on font-family tokens [Taiga #12492](https://tree.taiga.io/project/penpot/issue/12492)
+
+## 2.11.1
+
+- Fix WEBP shape export on docker images [Taiga #3838](https://tree.taiga.io/project/penpot/issue/3838)
+
 ## 2.11.0
 
 ### :boom: Breaking changes & Deprecations

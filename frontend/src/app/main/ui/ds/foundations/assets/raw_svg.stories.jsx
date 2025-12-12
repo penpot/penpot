@@ -36,7 +36,11 @@ export const All = {
   ),
   parameters: {
     controls: { exclude: ["id"] },
-    backgrounds: { values: [{ name: "debug", value: "#ccc" }] },
+    backgrounds: {
+      options: {
+        debug: { name: "debug", value: "#ccc" },
+      },
+    },
   },
 };
 

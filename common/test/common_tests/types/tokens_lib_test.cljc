@@ -1362,9 +1362,7 @@
                                    {:name "button.primary.background"
                                     :type :color
                                     :value "{accent.default}"
-                                    :description ""})))
-       (t/testing "invalid tokens got discarded"
-         (t/is (nil? (ctob/get-token-by-name lib "theme" "boxShadow.default")))))))
+                                    :description ""}))))))
 
 #?(:clj
    (t/deftest parse-multi-set-dtcg-json
@@ -1392,9 +1390,7 @@
                                    {:name "button.primary.background"
                                     :type :color
                                     :value "{accent.default}"
-                                    :description ""})))
-       (t/testing "invalid tokens got discarded"
-         (t/is (nil? (ctob/get-token-by-name lib "theme" "boxShadow.default")))))))
+                                    :description ""}))))))
 
 #?(:clj
    (t/deftest parse-multi-set-dtcg-json-default-team
@@ -1444,8 +1440,7 @@
            result   (ctob/export-dtcg-json tokens-lib)
            expected {"$themes" [{"description" ""
                                  "group" "group-1"
-                                 "is-source" false
-                                 "modified-at" now
+                                 "isSource" false
                                  "id" "test-id-00"
                                  "name" "theme-1"
                                  "selectedTokenSets" {"core" "enabled"}}]
@@ -1562,12 +1557,11 @@
                                                                  :external-id "test-id-01"
                                                                  :modified-at now
                                                                  :sets #{"core"}))
-                          (ctob/toggle-theme-active? (thi/id :theme-1)))
+                          (ctob/toggle-theme-active (thi/id :theme-1)))
            result   (ctob/export-dtcg-json tokens-lib)
            expected {"$themes" [{"description" ""
                                  "group" "group-1"
-                                 "is-source" false
-                                 "modified-at" now
+                                 "isSource" false
                                  "id" "test-id-01"
                                  "name" "theme-1"
                                  "selectedTokenSets" {"core" "enabled"}}]
@@ -1616,12 +1610,11 @@
                                                                  :external-id "test-id-01"
                                                                  :modified-at now
                                                                  :sets #{"some/set"}))
-                          (ctob/toggle-theme-active? (thi/id :theme-1)))
+                          (ctob/toggle-theme-active (thi/id :theme-1)))
            result   (ctob/export-dtcg-multi-file tokens-lib)
            expected {"$themes.json" [{"description" ""
                                       "group" "group-1"
-                                      "is-source" false
-                                      "modified-at" now
+                                      "isSource" false
                                       "id" "test-id-01"
                                       "name" "theme-1"
                                       "selectedTokenSets" {"some/set" "enabled"}}]
@@ -1893,3 +1886,130 @@
            (t/is (some? imported-single))
            (t/is (= (:type imported-single) (:type original-single)))
            (t/is (= (:value imported-single) (:value original-single))))))))
+
+#?(:clj
+   (t/deftest parse-shadow-tokens
+     (let [json (-> (slurp "test/common_tests/types/data/tokens-shadow-example.json")
+                    (json/decode {:key-fn identity}))
+           lib (ctob/parse-decoded-json json "shadow-test")]
+
+       (t/testing "single shadow token"
+         (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-single")]
+           (t/is (some? token))
+           (t/is (= :shadow (:type token)))
+           (t/is (= [{:offsetX "0", :offsetY "2px", :blur "4px", :spread "0", :color "#000", :inset false}]
+                    (:value token)))))
+
+       (t/testing "multiple shadow token"
+         (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-multiple")]
+           (t/is (some? token))
+           (t/is (= :shadow (:type token)))
+           (t/is (= [{:offsetX "0", :offsetY "2px", :blur "4px", :spread "0", :color "#000", :inset true}
+                     {:offsetX "0", :offsetY "8px", :blur "16px", :spread "0", :color "#000", :inset true}]
+                    (:value token)))))
+
+       (t/testing "shadow token with reference"
+         (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-ref")]
+           (t/is (some? token))
+           (t/is (= :shadow (:type token)))
+           (t/is (= "{shadow-single}" (:value token)))))
+
+       (t/testing "shadow token with type"
+         (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-with-type")]
+           (t/is (some? token))
+           (t/is (= :shadow (:type token)))
+           (t/is (= [{:offsetX "0", :offsetY "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset false}]
+                    (:value token)))))
+
+       (t/testing "shadow token with description"
+         (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-with-description")]
+           (t/is (some? token))
+           (t/is (= :shadow (:type token)))
+           (t/is (= "A simple shadow token" (:description token))))))))
+
+#?(:clj
+   (t/deftest export-shadow-tokens
+     (let [tokens-lib (-> (ctob/make-tokens-lib)
+                          (ctob/add-set
+                           (ctob/make-token-set
+                            :name "shadow-set"
+                            :tokens {"shadow.single"
+                                     (ctob/make-token
+                                      {:name "shadow.single"
+                                       :type :shadow
+                                       :value [{:offsetX "0" :offsetY "2px" :blur "4px" :spread "0" :color "#0000001A"}]
+                                       :description "A single shadow"})
+                                     "shadow.multiple"
+                                     (ctob/make-token
+                                      {:name "shadow.multiple"
+                                       :type :shadow
+                                       :value [{:offsetX "0" :offsetY "2px" :blur "4px" :spread "0" :color "#0000001A"}
+                                               {:offsetX "0" :offsetY "8px" :blur "16px" :spread "0" :color "#0000001A"}]})
+                                     "shadow.ref"
+                                     (ctob/make-token
+                                      {:name "shadow.ref"
+                                       :type :shadow
+                                       :value "{shadow.single}"})
+                                     "shadow.empty"
+                                     (ctob/make-token
+                                      {:name "shadow.empty"
+                                       :type :shadow
+                                       :value {}})})))
+           result (ctob/export-dtcg-json tokens-lib)
+           shadow-set (get result "shadow-set")]
+
+       (t/testing "single shadow token export"
+         (let [single-token (get-in shadow-set ["shadow" "single"])]
+           (t/is (= "shadow" (get single-token "$type")))
+           (t/is (= [{"offsetX" "0" "offsetY" "2px" "blur" "4px" "spread" "0" "color" "#0000001A"}] (get single-token "$value")))
+           (t/is (= "A single shadow" (get single-token "$description")))))
+
+       (t/testing "multiple shadow token export"
+         (let [multiple-token (get-in shadow-set ["shadow" "multiple"])]
+           (t/is (= "shadow" (get multiple-token "$type")))
+           (t/is (= [{"offsetX" "0" "offsetY" "2px" "blur" "4px" "spread" "0" "color" "#0000001A"}
+                     {"offsetX" "0" "offsetY" "8px" "blur" "16px" "spread" "0" "color" "#0000001A"}]
+                    (get multiple-token "$value")))))
+
+       (t/testing "reference shadow token export"
+         (let [ref-token (get-in shadow-set ["shadow" "ref"])]
+           (t/is (= "shadow" (get ref-token "$type")))
+           (t/is (= "{shadow.single}" (get ref-token "$value")))))
+
+       (t/testing "empty shadow token export"
+         (let [empty-token (get-in shadow-set ["shadow" "empty"])]
+           (t/is (= "shadow" (get empty-token "$type")))
+           (t/is (= {} (get empty-token "$value"))))))))
+
+#?(:clj
+   (t/deftest shadow-token-round-trip
+     (let [original-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set
+                             (ctob/make-token-set
+                              :name "test-set"
+                              :tokens {"shadow.test"
+                                       (ctob/make-token
+                                        {:name "shadow.test"
+                                         :type :shadow
+                                         :value [{:offsetX "1" :offsetY "1" :blur "1" :spread "1" :color "red" :inset true}]
+                                         :description "Round trip test"})
+                                       "shadow.ref"
+                                       (ctob/make-token
+                                        {:name "shadow.ref"
+                                         :type :shadow
+                                         :value "{shadow.test}"})})))
+           exported (ctob/export-dtcg-json original-lib)
+           imported-lib (ctob/parse-decoded-json exported "")]
+
+       (t/testing "round trip preserves shadow tokens"
+         (let [original-token (ctob/get-token-by-name original-lib "test-set" "shadow.test")
+               imported-token (ctob/get-token-by-name imported-lib "test-set" "shadow.test")]
+           (t/is (some? imported-token))
+           (t/is (= (:type original-token) (:type imported-token)))
+           (t/is (= (:value original-token) (:value imported-token)))
+           (t/is (= (:description original-token) (:description imported-token))))
+         (let [original-ref (ctob/get-token-by-name original-lib "test-set" "shadow.ref")
+               imported-ref (ctob/get-token-by-name imported-lib "test-set" "shadow.ref")]
+           (t/is (some? imported-ref))
+           (t/is (= (:type original-ref) (:type imported-ref)))
+           (t/is (= (:value imported-ref) (:value original-ref))))))))

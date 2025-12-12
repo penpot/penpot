@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
-"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
-"frontend/id/>\n"
+"Language-Team: Indonesian "
+"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 5.14-dev\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Sudah memiliki akun?"
 
@@ -39,13 +39,13 @@ msgstr "Buat akun demo"
 msgid "auth.create-demo-profile"
 msgstr "Hanya ingin mencobanya?"
 
-#: src/app/main/ui/auth/login.cljs:43
+#: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
 msgstr ""
 "Ini layanan DEMO, JANGAN GUNAKAN untuk pekerjaan nyata, proyek-proyek ini "
 "akan di hapus secara berkala."
 
-#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
 msgstr "Lupa kata sandi?"
 
@@ -53,41 +53,42 @@ msgstr "Lupa kata sandi?"
 msgid "auth.fullname"
 msgstr "Nama Lengkap"
 
-#: src/app/main/ui/auth/login.cljs:282
+#: src/app/main/ui/auth/login.cljs:271
 msgid "auth.login-account-title"
 msgstr "Masuk ke akun saya"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:156, src/app/main/ui/viewer/login.cljs:101
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Masuk di sini."
 
 #: src/app/main/ui/auth/login.cljs:195
+#, unused
 msgid "auth.login-submit"
 msgstr "Masuk"
 
-#: src/app/main/ui/auth/login.cljs:285
+#: src/app/main/ui/auth/login.cljs:274
 msgid "auth.login-tagline"
 msgstr ""
 "Penpot adalah peralatan desain bebas & bersumber terbuka untuk kolaborasi "
 "Desain dan Kode"
 
-#: src/app/main/ui/auth/login.cljs:222
+#: src/app/main/ui/auth/login.cljs:231
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:228
+#: src/app/main/ui/auth/login.cljs:237
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:216
+#: src/app/main/ui/auth/login.cljs:225
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:201
+#: src/app/main/ui/auth/login.cljs:210
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
+#: src/app/main/ui/auth/login.cljs:243
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID Connect"
 
@@ -111,7 +112,7 @@ msgstr "Tautan pemulihan kata sandi telah dikirim ke kotak masuk Anda."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Berhasil bergabung ke tim"
 
-#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:174
+#: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Kata sandi"
 
@@ -139,7 +140,7 @@ msgstr "Lupa kata sandi?"
 msgid "auth.recovery-submit"
 msgstr "Ubah kata sandi Anda"
 
-#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "Belum punya akun?"
 
@@ -153,7 +154,7 @@ msgstr ""
 msgid "auth.register-account-title"
 msgstr "Nama Anda"
 
-#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:143, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Buat akun baru"
 
@@ -179,7 +180,7 @@ msgstr "Solusi sumber terbuka untuk pembuatan desain dan prototipe."
 msgid "auth.terms-and-privacy-agreement"
 msgstr "Saya menyetujui [persyaratan layanan](%s) dan [kebijakan privasi](%s)."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Kebijakan layanan"
 
@@ -193,7 +194,7 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Kami telah mengirimkan surel verifikasi ke"
 
-#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
 msgid "auth.work-email"
 msgstr "Surel kerja"
 
@@ -281,17 +282,17 @@ msgstr "Pilih Semua"
 msgid "common.unpublish"
 msgstr "Batalkan penerbitan"
 
-#: src/app/main/ui/dashboard/projects.cljs:91
+#: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.management"
 msgstr "Pengelolaan tim"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:91
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot dimaksud untuk tim. Undang anggota untuk bekerja bersama pada "
 "berbagai proyek dan berkas"
 
-#: src/app/main/ui/dashboard/projects.cljs:88
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.title"
 msgstr "Bersekutu!"
 
@@ -402,7 +403,7 @@ msgstr "Token tidak memiliki tanggal kedaluwarsa"
 msgid "dashboard.add-file"
 msgstr "Tambahkan berkas"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
 msgid "dashboard.add-shared"
 msgstr "Tambahkan sebagai Pustaka Bersama"
 
@@ -418,7 +419,7 @@ msgstr "(salin)"
 msgid "dashboard.create-new-team"
 msgstr "Buat tim baru"
 
-#: src/app/main/ui/workspace/main_menu.cljs:659
+#: src/app/main/ui/workspace/main_menu.cljs:664
 msgid "dashboard.create-version-menu"
 msgstr "Sematkan versi ini"
 
@@ -430,11 +431,11 @@ msgstr "Penpot Anda"
 msgid "dashboard.delete-team"
 msgstr "Hapus tim"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:689, src/app/main/ui/workspace/main_menu.cljs:698
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:694, src/app/main/ui/workspace/main_menu.cljs:703
 msgid "dashboard.download-binary-file"
 msgstr "Unduh berkas Penpot (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:707
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.download-standard-file"
 msgstr "Unduh berkas standar (.svg + .json)"
 
@@ -446,19 +447,19 @@ msgstr "Duplikasi"
 msgid "dashboard.duplicate-multi"
 msgstr "Gandakan % berkas"
 
-#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:285
+#: src/app/main/ui/dashboard/files.cljs:203, src/app/main/ui/dashboard/projects.cljs:289
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "Ketika anggota proyek membuat draf, itu akan ditampilkan di sini."
 
-#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:280
+#: src/app/main/ui/dashboard/files.cljs:198, src/app/main/ui/dashboard/projects.cljs:284
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "Belum ada draf."
 
-#: src/app/main/ui/dashboard/files.cljs:201, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:290
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "Ketika anggota proyek membuat berkas, itu akan ditampilkan di sini."
 
-#: src/app/main/ui/dashboard/files.cljs:196, src/app/main/ui/dashboard/projects.cljs:281
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Belum ada berkas."
 
@@ -518,7 +519,7 @@ msgstr "Mulai membuat hal-hal yang hebat"
 msgid "dashboard.export-binary-multi"
 msgstr "Unduh %s berkas Penpot (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:715
+#: src/app/main/ui/workspace/main_menu.cljs:720
 msgid "dashboard.export-frames"
 msgstr "Ekspor papan sebagai PDF"
 
@@ -534,7 +535,7 @@ msgstr "Ekspor %s berkas Penpot"
 msgid "dashboard.export-multiple.selected"
 msgstr "%s dari %s elemen dipilih"
 
-#: src/app/main/ui/workspace/main_menu.cljs:677
+#: src/app/main/ui/workspace/main_menu.cljs:682
 msgid "dashboard.export-shapes"
 msgstr "Ekspor"
 
@@ -572,7 +573,7 @@ msgstr ""
 
 #: src/app/main/ui/exports/files.cljs:164
 msgid "dashboard.export.options.all.message"
-msgstr "berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
+msgstr "Berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"
@@ -753,7 +754,7 @@ msgstr "Jelajahi lebih banyak dan pelajari cara berkontribusi"
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "Terjadi masalah saat mengimpor template. Template tidak diimpor."
 
-#: src/app/main/ui/dashboard/libraries.cljs:66
+#: src/app/main/ui/dashboard/libraries.cljs:69
 msgid "dashboard.libraries-title"
 msgstr "Pustaka"
 
@@ -781,7 +782,7 @@ msgstr "Pindahkan %s berkas ke"
 msgid "dashboard.move-to-other-team"
 msgstr "Pindahkan ke tim lain"
 
-#: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
 msgid "dashboard.new-file"
 msgstr "+ Buat Berkas"
 
@@ -789,7 +790,7 @@ msgstr "+ Buat Berkas"
 msgid "dashboard.new-file-prefix"
 msgstr "Berkas Baru"
 
-#: src/app/main/ui/dashboard/projects.cljs:60
+#: src/app/main/ui/dashboard/projects.cljs:61
 msgid "dashboard.new-project"
 msgstr "+ Buat Proyek"
 
@@ -801,7 +802,7 @@ msgstr "Proyek Baru"
 msgid "dashboard.no-matches-for"
 msgstr "Tidak ada hasil yang ditemukan untuk “%s”"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:763
+#: src/app/main/ui/dashboard/sidebar.cljs:764
 msgid "dashboard.no-projects-placeholder"
 msgstr "Proyek yang disemat akan muncul di sini"
 
@@ -837,7 +838,7 @@ msgstr "%s anggota"
 msgid "dashboard.open-in-new-tab"
 msgstr "Buka berkas di tab baru"
 
-#: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
+#: src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:265, src/app/main/ui/dashboard/projects.cljs:266
 msgid "dashboard.options"
 msgstr "Opsi"
 
@@ -845,19 +846,19 @@ msgstr "Opsi"
 msgid "dashboard.password-change"
 msgstr "Ubah kata sandi"
 
-#: src/app/main/data/common.cljs:203
+#: src/app/main/data/common.cljs:191
 msgid "dashboard.permissions-change.admin"
 msgstr "Anda sekarang seorang admin di tim ini."
 
-#: src/app/main/data/common.cljs:202
+#: src/app/main/data/common.cljs:190
 msgid "dashboard.permissions-change.editor"
 msgstr "Anda sekarang seorang penyunting di tim ini."
 
-#: src/app/main/data/common.cljs:204
+#: src/app/main/data/common.cljs:192
 msgid "dashboard.permissions-change.owner"
 msgstr "Anda sekarang seorang pemilik di tim ini."
 
-#: src/app/main/data/common.cljs:201
+#: src/app/main/data/common.cljs:189
 msgid "dashboard.permissions-change.viewer"
 msgstr "Anda sekarang seorang peninjau di tim ini."
 
@@ -877,7 +878,7 @@ msgstr "Tidak dapat mengurai manifes plugin"
 msgid "dashboard.plugins.try-plugin"
 msgstr "Coba plugin: "
 
-#: src/app/main/ui/dashboard/projects.cljs:55
+#: src/app/main/ui/dashboard/projects.cljs:56
 msgid "dashboard.projects-title"
 msgstr "Proyek"
 
@@ -890,7 +891,7 @@ msgstr "Ingin menghapus akun Anda?"
 msgid "dashboard.remove-shared"
 msgstr "Hapus sebagai Pustaka Terbagi"
 
-#: src/app/main/data/common.cljs:236
+#: src/app/main/data/common.cljs:224
 msgid "dashboard.removed-from-team"
 msgstr "Anda bukan merupakan bagian dari tim “%s” lagi."
 
@@ -974,11 +975,11 @@ msgstr "Perbarui pengaturan"
 msgid "dashboard.settings.notifications.title"
 msgstr "Notifikasi"
 
-#: src/app/main/ui/dashboard/projects.cljs:304
+#: src/app/main/ui/dashboard/projects.cljs:308
 msgid "dashboard.show-all-files"
 msgstr "Tampilkan semua berkas"
 
-#: src/app/main/ui/workspace/main_menu.cljs:666
+#: src/app/main/ui/workspace/main_menu.cljs:671
 msgid "dashboard.show-version-history"
 msgstr "Riwayat versi"
 
@@ -1040,7 +1041,7 @@ msgstr "Hasil pencarian"
 msgid "dashboard.type-something"
 msgstr "Ketik untuk mencari hasil"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:640
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:645
 msgid "dashboard.unpublish-shared"
 msgstr "Batal Penerbitan Pustaka"
 
@@ -1048,11 +1049,11 @@ msgstr "Batal Penerbitan Pustaka"
 msgid "dashboard.update-settings"
 msgstr "Perbarui pengaturan"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:976
+#: src/app/main/ui/dashboard/sidebar.cljs:977
 msgid "dashboard.upgrade-plan.no-limits"
 msgstr "Tanpa batasan kreativitas"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:974
+#: src/app/main/ui/dashboard/sidebar.cljs:975
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
@@ -1112,7 +1113,7 @@ msgstr "Surel"
 msgid "dashboard.your-name"
 msgstr "Nama Anda"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Penpot Anda"
 
@@ -1128,15 +1129,15 @@ msgstr "Peringatan"
 msgid "ds.component-subtitle"
 msgstr "Komponen untuk diperbarui:"
 
-#: src/app/main/ui/workspace/plugins.cljs:339, src/app/main/ui/workspace/plugins.cljs:393
+#: src/app/main/ui/workspace/plugins.cljs:340, src/app/main/ui/workspace/plugins.cljs:394
 msgid "ds.confirm-allow"
 msgstr "Perbolehkan"
 
-#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:333, src/app/main/ui/workspace/plugins.cljs:387
+#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:216, src/app/main/ui/settings/subscription.cljs:228, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
 msgid "ds.confirm-cancel"
 msgstr "Batal"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
 msgid "ds.confirm-ok"
 msgstr "Oke"
 
@@ -1144,15 +1145,15 @@ msgstr "Oke"
 msgid "ds.confirm-title"
 msgstr "Apakah Anda yakin?"
 
-#: src/app/main/data/auth.cljs:314
+#: src/app/main/data/auth.cljs:337
 msgid "errors.auth-provider-not-allowed"
 msgstr "Penyedia autentikasi tidak diperbolehkan untuk profil ini"
 
-#: src/app/main/ui/auth/login.cljs:78
+#: src/app/main/data/auth.cljs:189
 msgid "errors.auth-provider-not-configured"
 msgstr "Penyedia autentikasi tidak dikonfigurasi."
 
-#: src/app/main/errors.cljs:112
+#: src/app/main/errors.cljs:119
 msgid "errors.auth.unable-to-login"
 msgstr "Sepertinya Anda tidak terautentikasi atau sesi kedaluwarsa."
 
@@ -1168,15 +1169,15 @@ msgstr "Fon %s tidak dapat dimuat"
 msgid "errors.cannot-upload"
 msgstr "Tidak dapat mengunggah berkas media."
 
-#: src/app/main/ui/comments.cljs:730, src/app/main/ui/comments.cljs:761, src/app/main/ui/comments.cljs:858
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/comments.cljs:749, src/app/main/ui/comments.cljs:846
 msgid "errors.character-limit-exceeded"
 msgstr "Melebihi batas karakter"
 
-#: src/app/main/data/workspace/clipboard.cljs:279, src/app/main/data/workspace/clipboard.cljs:497
+#: src/app/main/data/workspace/clipboard.cljs:283, src/app/main/data/workspace/clipboard.cljs:501
 msgid "errors.clipboard-not-implemented"
 msgstr "Peramban Anda tidak dapat melakukan operasi ini"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:274
+#: src/app/main/data/workspace/tokens/library_edit.cljs:305
 msgid "errors.drop-token-set-parent-to-child"
 msgstr "Tidak dapat melepaskan set induk ke jalur anak sendiri."
 
@@ -1192,7 +1193,7 @@ msgstr "Surel sudah divalidasi."
 msgid "errors.email-as-password"
 msgstr "Anda tidak dapat menggunakan surel Anda sebagai kata sandi"
 
-#: src/app/main/data/auth.cljs:316, src/app/main/ui/auth/register.cljs:95
+#: src/app/main/data/auth.cljs:339, src/app/main/ui/auth/register.cljs:95
 msgid "errors.email-domain-not-allowed"
 msgstr "Domain tidak diperbolehkan"
 
@@ -1204,13 +1205,13 @@ msgstr "Surel “%s” memiliki banyak laporan lompatan permanen."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "Surel “%s” telah dilaporkan sebagai spam atau lompatan permanen."
 
-#: src/app/main/errors.cljs:277
+#: src/app/main/errors.cljs:284
 msgid "errors.feature-mismatch"
 msgstr ""
 "Sepertinya Anda membuka berkas yang memiliki fitur '%s' aktif tetapi "
 "frontend Penpot Anda tidak mendukungnya atau menonaktifkannya."
 
-#: src/app/main/errors.cljs:281, src/app/main/errors.cljs:295
+#: src/app/main/errors.cljs:288, src/app/main/errors.cljs:302
 msgid "errors.feature-not-supported"
 msgstr "Fitur '%s' tidak didukung."
 
@@ -1227,14 +1228,14 @@ msgstr "Kolom kosong"
 msgid "errors.field-not-all-whitespace"
 msgstr "Nama harus berisi karakter selain spasi."
 
-#: src/app/main/errors.cljs:273
+#: src/app/main/errors.cljs:280
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Sepertinya ada ketidakcocokan antara fitur yang diaktifkan dengan fitur "
 "berkas yang sedang Anda buka. Migrasi untuk '%s' harus diterapkan sebelum "
 "berkasnya dapat dibuka."
 
-#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
+#: src/app/main/data/auth.cljs:345, src/app/main/ui/auth/login.cljs:104, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:84
 msgid "errors.generic"
 msgstr "Sesuatu yang salah terjadi."
 
@@ -1264,19 +1265,19 @@ msgstr "Token pemulihan tidak sah."
 msgid "errors.invalid-text"
 msgstr "Teks tidak valid"
 
-#: src/app/main/ui/static.cljs:70
+#: src/app/main/ui/static.cljs:75
 msgid "errors.invite-invalid"
 msgstr "Undangan tidak valid"
 
-#: src/app/main/ui/static.cljs:71
+#: src/app/main/ui/static.cljs:76
 msgid "errors.invite-invalid.info"
 msgstr "Undangan ini mungkin dibatalkan atau telah kedaluwarsa."
 
-#: src/app/main/ui/auth/login.cljs:107
+#: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"
 msgstr "Autentikasi LDAP dinonaktifkan."
 
-#: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
+#: src/app/main/errors.cljs:296, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
 msgid "errors.max-quota-reached"
 msgstr "Anda telah meraih kutipan '%s'. Hubungi dukungan."
 
@@ -1304,7 +1305,7 @@ msgstr ""
 "Profil yang Anda undang membisukan surel (laporan spam atau lompatan "
 "tinggi)."
 
-#: src/app/main/errors.cljs:263
+#: src/app/main/errors.cljs:270
 msgid "errors.migration-in-progress"
 msgstr "Migrasi sedang berlangsung"
 
@@ -1318,11 +1319,11 @@ msgstr "Kata sandi konfirmasi harus cocok"
 msgid "errors.password-too-short"
 msgstr "Kata sandi setidaknya 8 karakter"
 
-#: src/app/main/errors.cljs:141
+#: src/app/main/errors.cljs:148
 msgid "errors.paste-data-validation"
 msgstr "Data tidak valid dalam papan klip"
 
-#: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
+#: src/app/main/data/auth.cljs:335, src/app/main/ui/auth/login.cljs:85, src/app/main/ui/auth/login.cljs:93
 msgid "errors.profile-blocked"
 msgstr "Profil diblokir"
 
@@ -1330,11 +1331,11 @@ msgstr "Profil diblokir"
 msgid "errors.profile-is-muted"
 msgstr "Profil Anda membisukan surel (laporan spam atau lompatan tinggi)."
 
-#: src/app/main/data/auth.cljs:310, src/app/main/ui/auth/register.cljs:92
+#: src/app/main/data/auth.cljs:333, src/app/main/ui/auth/register.cljs:92
 msgid "errors.registration-disabled"
 msgstr "Pendaftaran saat ini dinonaktifkan."
 
-#: src/app/main/errors.cljs:268
+#: src/app/main/errors.cljs:275
 msgid "errors.team-feature-mismatch"
 msgstr "Fitur '%s' tidak kompatibel terdeteksi"
 
@@ -1354,17 +1355,17 @@ msgstr ""
 "Pemilik tidak dapat meninggalkan tim, Anda harus memberikan ulang peran "
 "pemilik."
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:150, src/app/main/data/workspace/tokens/library_edit.cljs:180
+#: src/app/main/data/workspace/tokens/library_edit.cljs:162, src/app/main/data/workspace/tokens/library_edit.cljs:192
 msgid "errors.token-set-already-exists"
 msgstr "Set dengan nama yang sama sudah ada"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:273
+#: src/app/main/data/workspace/tokens/library_edit.cljs:304
 msgid "errors.token-set-exists-on-drop"
 msgstr ""
 "Tidak dapat menyelesaikan drop, set dengan nama yang sama sudah ada di "
 "jalur ini."
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:77, src/app/main/data/workspace/tokens/library_edit.cljs:95
+#: src/app/main/data/workspace/tokens/library_edit.cljs:77, src/app/main/data/workspace/tokens/library_edit.cljs:96
 msgid "errors.token-theme-already-exists"
 msgstr "Opsi Tema dengan nama yang sama sudah ada"
 
@@ -1380,7 +1381,7 @@ msgstr "Token tidak diketahui"
 msgid "errors.validation"
 msgstr "Kesalahan Validasi"
 
-#: src/app/main/errors.cljs:285
+#: src/app/main/errors.cljs:292
 msgid "errors.version-not-supported"
 msgstr "Berkas memiliki nomor versi tidak kompatibel"
 
@@ -1412,7 +1413,7 @@ msgstr "Terjadi kesalahan tidak terduga saat memvalidasi"
 msgid "errors.webhooks.unexpected-status"
 msgstr "Status %s tidak diduga"
 
-#: src/app/main/ui/auth/login.cljs:115, src/app/main/ui/auth/login.cljs:119
+#: src/app/main/ui/auth/login.cljs:97, src/app/main/ui/auth/login.cljs:101
 msgid "errors.wrong-credentials"
 msgstr "Surel atau kata sandi tidak benar."
 
@@ -1420,48 +1421,36 @@ msgstr "Surel atau kata sandi tidak benar."
 msgid "errors.wrong-old-password"
 msgstr "Kata sandi lama tidak benar"
 
-#: src/app/main/ui/settings/feedback.cljs:74
+#: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
 msgstr "Deskripsi"
 
-#: src/app/main/ui/settings/feedback.cljs:92
-msgid "feedback.discourse-go-to"
-msgstr "Pergi ke forum Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs:86
+#: src/app/main/ui/settings/feedback.cljs:150
 msgid "feedback.discourse-subtitle1"
 msgstr ""
 "Kami senang memiliki Anda di sini. Jika Anda membutuhkan bantuan, silakan "
 "mencari sebelum Anda mengirim."
 
-#: src/app/main/ui/settings/feedback.cljs:85
+#: src/app/main/ui/settings/feedback.cljs:149
 msgid "feedback.discourse-title"
 msgstr "Komunitas Penpot"
 
-#: src/app/main/ui/settings/feedback.cljs:69
+#: src/app/main/ui/settings/feedback.cljs:105
 msgid "feedback.subject"
 msgstr "Subjek"
 
-#: src/app/main/ui/settings/feedback.cljs:66
+#: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.subtitle"
 msgstr ""
 "Silakan jelaskan alasan surel Anda, menetapkan bahwa itu adalah sebuah "
 "masalah, sebuah ide, atau sebuah keluhan. Salah satu anggota dari tim kami "
 "akan menjawab sesegera mungkin."
 
-#: src/app/main/ui/settings/feedback.cljs:65
-msgid "feedback.title"
-msgstr "Surel"
-
-#: src/app/main/ui/settings/feedback.cljs:102
-msgid "feedback.twitter-go-to"
-msgstr "Pergi ke X"
-
-#: src/app/main/ui/settings/feedback.cljs:96
+#: src/app/main/ui/settings/feedback.cljs:156
 msgid "feedback.twitter-subtitle1"
 msgstr "Di sini untuk membantu dengan kueri teknis Anda."
 
-#: src/app/main/ui/settings/feedback.cljs:95
+#: src/app/main/ui/settings/feedback.cljs:155
 msgid "feedback.twitter-title"
 msgstr "Akun dukungan X"
 
@@ -1477,23 +1466,23 @@ msgstr "Buram"
 msgid "inspect.attributes.blur.value"
 msgstr "Nilai"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:91, src/app/main/ui/inspect/right_sidebar.cljs:97
+#: src/app/main/ui/inspect/attributes/common.cljs:93, src/app/main/ui/inspect/right_sidebar.cljs:97
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:93, src/app/main/ui/inspect/right_sidebar.cljs:101
+#: src/app/main/ui/inspect/attributes/common.cljs:95, src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:92, src/app/main/ui/inspect/right_sidebar.cljs:99
+#: src/app/main/ui/inspect/attributes/common.cljs:94, src/app/main/ui/inspect/right_sidebar.cljs:99
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/inspect/attributes/fill.cljs:53
+#: src/app/main/ui/inspect/attributes/fill.cljs:70
 msgid "inspect.attributes.fill"
 msgstr "Isian"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:127
+#: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:126
 msgid "inspect.attributes.image.download"
 msgstr "Unduh gambar sumber"
 
@@ -1550,7 +1539,7 @@ msgstr "Bayangan"
 msgid "inspect.attributes.size"
 msgstr "Ukuran dan posisi"
 
-#: src/app/main/ui/inspect/attributes/stroke.cljs:63
+#: src/app/main/ui/inspect/attributes/stroke.cljs:90
 msgid "inspect.attributes.stroke"
 msgstr "Sapuan"
 
@@ -1587,7 +1576,7 @@ msgstr "Padat"
 msgid "inspect.attributes.stroke.width"
 msgstr "Lebar"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:184
+#: src/app/main/ui/inspect/attributes/text.cljs:53, src/app/main/ui/inspect/attributes/text.cljs:159
 msgid "inspect.attributes.typography"
 msgstr "Tipografi"
 
@@ -1621,11 +1610,11 @@ msgstr "Tinggi Garis"
 msgid "inspect.attributes.typography.text-decoration"
 msgstr "Dekorasi Teks"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:136
+#: src/app/main/ui/inspect/attributes/text.cljs:111
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Tidak ada"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:138
+#: src/app/main/ui/inspect/attributes/text.cljs:113
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Garis bawah"
 
@@ -1634,23 +1623,23 @@ msgstr "Garis bawah"
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Transformasi Teks"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:150, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Huruf Judul"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
+#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Huruf Kecil"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:149
+#: src/app/main/ui/inspect/attributes/text.cljs:124
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Tidak ada"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:152
+#: src/app/main/ui/inspect/attributes/text.cljs:127
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Tidak ditetapkan"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:151, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
+#: src/app/main/ui/inspect/attributes/text.cljs:126, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Huruf Besar"
 
@@ -1658,19 +1647,23 @@ msgstr "Huruf Besar"
 msgid "inspect.attributes.variant"
 msgstr "Properti varian"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:232
+#: src/app/main/ui/inspect/right_sidebar.cljs:237
 msgid "inspect.empty.help"
 msgstr ""
 "Jika Anda ingin mengetahui lebih lanjut tentang inspeksi desain kunjungi "
 "pusat bantuan Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:235
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
 msgid "inspect.empty.more-info"
 msgstr "Lebih banyak info tentang inspeksi"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:227
+#: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Pilih bentuk, papan, atau grup untuk menginskpeksi properti dan kodenya"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:137
+msgid "inspect.multiple-selected"
+msgstr "%s Dipilih"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:67
 msgid "inspect.subtitle.copy"
@@ -1680,61 +1673,49 @@ msgstr "Salin"
 msgid "inspect.subtitle.main"
 msgstr "Komponen utama"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
-msgid "inspect.tabs.code"
-msgstr "Kode"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:142
+#: src/app/main/ui/inspect/right_sidebar.cljs:143
 msgid "inspect.tabs.code.selected.circle"
 msgstr "Lingkaran"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:143
+#: src/app/main/ui/inspect/right_sidebar.cljs:144
 msgid "inspect.tabs.code.selected.component"
 msgstr "Komponen"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:144
+#: src/app/main/ui/inspect/right_sidebar.cljs:145
 msgid "inspect.tabs.code.selected.curve"
 msgstr "Kurva"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:145
+#: src/app/main/ui/inspect/right_sidebar.cljs:146
 msgid "inspect.tabs.code.selected.frame"
 msgstr "Papan"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:146
+#: src/app/main/ui/inspect/right_sidebar.cljs:147
 msgid "inspect.tabs.code.selected.group"
 msgstr "Grup"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:147
+#: src/app/main/ui/inspect/right_sidebar.cljs:148
 msgid "inspect.tabs.code.selected.image"
 msgstr "Gambar"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:148
+#: src/app/main/ui/inspect/right_sidebar.cljs:149
 msgid "inspect.tabs.code.selected.mask"
 msgstr "Topeng"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
-msgstr "%s Dipilih"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:149
+#: src/app/main/ui/inspect/right_sidebar.cljs:150
 msgid "inspect.tabs.code.selected.path"
 msgstr "Jalur"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:150
+#: src/app/main/ui/inspect/right_sidebar.cljs:151
 msgid "inspect.tabs.code.selected.rect"
 msgstr "Persegi Panjang"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:151
+#: src/app/main/ui/inspect/right_sidebar.cljs:152
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:152
+#: src/app/main/ui/inspect/right_sidebar.cljs:153
 msgid "inspect.tabs.code.selected.text"
 msgstr "Teks"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
-msgstr "Info"
 
 #: src/app/main/ui/dashboard/comments.cljs:96
 msgid "label.mark-all-as-read"
@@ -1744,7 +1725,7 @@ msgstr "Tandai semua sebagai terbaca"
 msgid "label.shortcuts"
 msgstr "Pintasan"
 
-#: src/app/main/data/common.cljs:90, src/app/main/ui/dashboard/import.cljs:530
+#: src/app/main/data/common.cljs:89, src/app/main/ui/dashboard/import.cljs:530
 msgid "labels.accept"
 msgstr "Terima"
 
@@ -1776,7 +1757,7 @@ msgstr "Admin"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:89, src/app/main/ui/workspace/tokens/management/context_menu.cljs:123, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:86, src/app/main/ui/workspace/tokens/management/context_menu.cljs:120, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
 msgid "labels.all"
 msgstr "Semua"
 
@@ -1789,17 +1770,17 @@ msgstr "dan"
 msgid "labels.back"
 msgstr "Kembali"
 
-#: src/app/main/ui/static.cljs:292
+#: src/app/main/ui/static.cljs:298
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
 "Sepertinya Anda harus menunggu sebentar dan mencoba lagi; kami melakukan "
 "pemeliharaan kecil pada peladen kami."
 
-#: src/app/main/ui/static.cljs:291
+#: src/app/main/ui/static.cljs:297
 msgid "labels.bad-gateway.main-message"
 msgstr "Gerbang Jalur Buruk"
 
-#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
+#: src/app/main/data/common.cljs:118, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:216, src/app/main/ui/workspace/tokens/management/create/form.cljs:655, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:266
 msgid "labels.cancel"
 msgstr "Batal"
 
@@ -1807,19 +1788,23 @@ msgstr "Batal"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:246, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:656, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:244, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/create/modals.cljs:91, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:58, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:161, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:441
+#: src/app/main/data/common.cljs:95, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:100, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:655, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:244, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/create/modals.cljs:91, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:186, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:480
 msgid "labels.close"
 msgstr "Tutup"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
+msgid "labels.code"
+msgstr "Kode"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:181
 msgid "labels.collapse"
 msgstr "Tutup"
 
-#: src/app/main/ui/comments.cljs:913
+#: src/app/main/ui/comments.cljs:901
 msgid "labels.comment"
 msgstr "Komentar"
 
-#: src/app/main/ui/comments.cljs:917
+#: src/app/main/ui/comments.cljs:905
 msgid "labels.comment.mark-as-solved"
 msgstr "Tandau sebagai selesai"
 
@@ -1827,7 +1812,7 @@ msgstr "Tandau sebagai selesai"
 msgid "labels.comments"
 msgstr "Komentar"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:840, src/app/main/ui/workspace/main_menu.cljs:144
+#: src/app/main/ui/dashboard/sidebar.cljs:841, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "Komunitas"
 
@@ -1835,7 +1820,7 @@ msgstr "Komunitas"
 msgid "labels.confirm-password"
 msgstr "Konfirmasi kata sandi"
 
-#: src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:220, src/app/main/ui/settings/subscription.cljs:235
 msgid "labels.continue"
 msgstr "Lanjutkan"
 
@@ -1851,7 +1836,7 @@ msgstr "Anda dapat melanjutkan dengan sebuah akun Penpot"
 msgid "labels.copy"
 msgstr "Salin"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:99
+#: src/app/main/ui/inspect/attributes/common.cljs:101
 msgid "labels.copy-color"
 msgstr "Salin warna"
 
@@ -1859,11 +1844,7 @@ msgstr "Salin warna"
 msgid "labels.copy-invitation-link"
 msgstr "Salin tautan"
 
-#: src/app/main/ui/static.cljs:63
-msgid "labels.copyright"
-msgstr "Kaleidos @2024"
-
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204
 msgid "labels.create"
 msgstr "Buat"
 
@@ -1883,15 +1864,15 @@ msgstr "Fon khusus"
 msgid "labels.dashboard"
 msgstr "Dasbor"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:224, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:626, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
+#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:224, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:209, src/app/main/ui/workspace/tokens/management/create/form.cljs:649, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:400
 msgid "labels.delete"
 msgstr "Hapus"
 
-#: src/app/main/ui/comments.cljs:1009
+#: src/app/main/ui/comments.cljs:997
 msgid "labels.delete-comment"
 msgstr "Hapus komentar"
 
-#: src/app/main/ui/comments.cljs:931
+#: src/app/main/ui/comments.cljs:919
 msgid "labels.delete-comment-thread"
 msgstr "Hapus utasan"
 
@@ -1912,15 +1893,15 @@ msgstr "Pengembang"
 msgid "labels.director"
 msgstr "Direktur"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:214
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:212
 msgid "labels.discard"
 msgstr "Abaikan"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:725
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:228, src/app/main/ui/dashboard/projects.cljs:232, src/app/main/ui/dashboard/sidebar.cljs:726
 msgid "labels.drafts"
 msgstr "Draf"
 
-#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:220, src/app/main/ui/workspace/tokens/themes.cljs:51
+#: src/app/main/ui/comments.cljs:993, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:219, src/app/main/ui/workspace/tokens/themes.cljs:52
 msgid "labels.edit"
 msgstr "Sunting"
 
@@ -1941,15 +1922,15 @@ msgstr "Acara"
 msgid "labels.expired-invitation"
 msgstr "Kedaluwarsa"
 
-#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/workspace/tokens/sidebar.cljs:133
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/workspace/tokens/sidebar.cljs:134
 msgid "labels.export"
 msgstr "Ekspor"
 
-#: src/app/main/ui/settings/feedback.cljs:48
+#: src/app/main/ui/settings/feedback.cljs:83
 msgid "labels.feedback-disabled"
 msgstr "Masukan dinonaktifkan"
 
-#: src/app/main/ui/settings/feedback.cljs:39
+#: src/app/main/ui/settings/feedback.cljs:74
 msgid "labels.feedback-sent"
 msgstr "Masukan dikirim"
 
@@ -1969,7 +1950,7 @@ msgstr "Penyedia fon"
 msgid "labels.font-variants"
 msgstr "Gaya"
 
-#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:738
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:739
 msgid "labels.fonts"
 msgstr "Fon"
 
@@ -1983,15 +1964,15 @@ msgstr "CEO atau Pendiri"
 msgid "labels.freelancer"
 msgstr "Saya seorang pekerja lepas"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:834, src/app/main/ui/workspace/main_menu.cljs:176
+#: src/app/main/ui/dashboard/sidebar.cljs:835, src/app/main/ui/workspace/main_menu.cljs:176
 msgid "labels.github-repo"
 msgstr "Repositori GitHub"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:809, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:205
+#: src/app/main/ui/dashboard/sidebar.cljs:810, src/app/main/ui/workspace/main_menu.cljs:205
 msgid "labels.give-feedback"
 msgstr "Berikan masukan"
 
-#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:170, src/app/main/ui/viewer/login.cljs:111
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:176, src/app/main/ui/viewer/login.cljs:113
 msgid "labels.go-back"
 msgstr "Kembali"
 
@@ -1999,7 +1980,7 @@ msgstr "Kembali"
 msgid "labels.graphic-design"
 msgstr "Desain grafis"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:792, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1085, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1110, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1296
+#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1333, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1361, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1549
 msgid "labels.help-center"
 msgstr "Pusat Bantuan"
 
@@ -2011,7 +1992,7 @@ msgstr "Sembunyikan"
 msgid "labels.hide-resolved-comments"
 msgstr "Sembunyikan komentar yang telah diselesaikan"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:130
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:131
 msgid "labels.import"
 msgstr "Impor"
 
@@ -2019,17 +2000,15 @@ msgstr "Impor"
 msgid "labels.inactive"
 msgstr "Tidak Aktif"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:114
+msgid "labels.info"
+msgstr "Info"
+
 #: src/app/main/ui/dashboard/fonts.cljs:428
 msgid "labels.installed-fonts"
 msgstr "Fon terpasang"
 
-#: src/app/main/ui/static.cljs:373
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Sesuatu yang buruk terjadi. Silakan mencoba lagi operasi dan jika masalah "
-"masih ada, hubungi dukungan."
-
-#: src/app/main/ui/static.cljs:372
+#: src/app/main/ui/static.cljs:393
 msgid "labels.internal-error.main-message"
 msgstr "Kesalahan Internal"
 
@@ -2057,11 +2036,11 @@ msgstr "Memuat…"
 msgid "labels.log-or-sign"
 msgstr "Masuk atau daftar"
 
-#: src/app/main/ui/static.cljs:57, src/app/main/ui/static.cljs:132
+#: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:138
 msgid "labels.login"
 msgstr "Masuk"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1053
+#: src/app/main/ui/dashboard/sidebar.cljs:1054
 msgid "labels.logout"
 msgstr "Keluar"
 
@@ -2104,7 +2083,7 @@ msgstr ""
 "Laman ini mungkin tidak ada atau Anda tidak memiliki izin untuk "
 "mengaksesnya."
 
-#: src/app/main/ui/static.cljs:281
+#: src/app/main/ui/static.cljs:287
 msgid "labels.not-found.main-message"
 msgstr "Aduh!"
 
@@ -2112,7 +2091,7 @@ msgstr "Aduh!"
 msgid "labels.notifications"
 msgstr "Notifikasi"
 
-#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1354
+#: src/app/main/ui/dashboard/projects.cljs:239, src/app/main/ui/dashboard/team.cljs:1354
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "%s berkas"
@@ -2140,7 +2119,7 @@ msgstr "Kata sandi lama"
 msgid "labels.only-yours"
 msgstr "Hanya Anda"
 
-#: src/app/main/ui/comments.cljs:923, src/app/main/ui/comments.cljs:988, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:310, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:339
+#: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:310, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:339
 msgid "labels.options"
 msgstr "Opsi"
 
@@ -2168,7 +2147,7 @@ msgstr "Kata sandi"
 msgid "labels.pending-invitation"
 msgstr "Ditunda"
 
-#: src/app/main/ui/comments.cljs:679
+#: src/app/main/ui/comments.cljs:680
 msgid "labels.post"
 msgstr "Kiriman"
 
@@ -2188,11 +2167,11 @@ msgstr "Pengelolaan Produk"
 msgid "labels.profile"
 msgstr "Profil"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:718
+#: src/app/main/ui/dashboard/sidebar.cljs:719
 msgid "labels.projects"
 msgstr "Proyek"
 
-#: src/app/main/data/common.cljs:83
+#: src/app/main/data/common.cljs:82
 msgid "labels.refresh"
 msgstr "Muat ulang"
 
@@ -2238,7 +2217,7 @@ msgstr "balas"
 msgid "labels.reply.new"
 msgstr "balasan baru"
 
-#: src/app/main/ui/comments.cljs:722
+#: src/app/main/ui/comments.cljs:713
 msgid "labels.reply.thread"
 msgstr "Balas"
 
@@ -2250,7 +2229,7 @@ msgstr "Kirim ulang undangan"
 msgid "labels.restore"
 msgstr "Pulihkan"
 
-#: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
+#: src/app/main/ui/static.cljs:300, src/app/main/ui/static.cljs:309, src/app/main/ui/static.cljs:410
 msgid "labels.retry"
 msgstr "Coba lagi"
 
@@ -2258,11 +2237,11 @@ msgstr "Coba lagi"
 msgid "labels.role"
 msgstr "Peran"
 
-#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:206, src/app/main/ui/workspace/tokens/management/create/form.cljs:637, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
+#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:220, src/app/main/ui/workspace/tokens/management/create/form.cljs:660, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
 msgid "labels.save"
 msgstr "Simpan"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:421, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:730
+#: src/app/main/ui/workspace/sidebar/layers.cljs:421, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:780
 msgid "labels.search"
 msgstr "Cari"
 
@@ -2274,19 +2253,19 @@ msgstr "Cari fon"
 msgid "labels.select-option"
 msgstr "Pilih opsi"
 
-#: src/app/main/ui/settings/feedback.cljs:79
+#: src/app/main/ui/settings/feedback.cljs:137
 msgid "labels.send"
 msgstr "Kirim"
 
-#: src/app/main/ui/settings/feedback.cljs:79
+#: src/app/main/ui/settings/feedback.cljs:137
 msgid "labels.sending"
 msgstr "Mengirim…"
 
-#: src/app/main/ui/static.cljs:301
+#: src/app/main/ui/static.cljs:307
 msgid "labels.service-unavailable.desc-message"
 msgstr "Kami dalam pemeliharaan yang telah diprogram untuk sistem kami."
 
-#: src/app/main/ui/static.cljs:300
+#: src/app/main/ui/static.cljs:306
 msgid "labels.service-unavailable.main-message"
 msgstr "Layanan Tidak Tersedia"
 
@@ -2306,7 +2285,7 @@ msgstr "Bagikan"
 msgid "labels.share-prototype"
 msgstr "Bagikan prototipe"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:745
+#: src/app/main/ui/dashboard/sidebar.cljs:746
 msgid "labels.shared-libraries"
 msgstr "Pustaka"
 
@@ -2364,7 +2343,7 @@ msgstr "Tema"
 msgid "labels.tutorials"
 msgstr "Tutorial"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:101
+#: src/app/main/data/workspace/tokens/errors.cljs:113
 msgid "labels.unknown-error"
 msgstr "Kesalahan tidak diketahui"
 
@@ -2404,7 +2383,7 @@ msgstr "Pelihat"
 msgid "labels.webhooks"
 msgstr "Kaitan web"
 
-#: src/app/main/ui/comments.cljs:850
+#: src/app/main/ui/comments.cljs:838
 msgid "labels.write-new-comment"
 msgstr "Tulis komentar baru"
 
@@ -2412,7 +2391,7 @@ msgstr "Tulis komentar baru"
 msgid "labels.you"
 msgstr "(Anda)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1006
+#: src/app/main/ui/dashboard/sidebar.cljs:1007
 msgid "labels.your-account"
 msgstr "Akun Anda"
 
@@ -2503,7 +2482,7 @@ msgstr "Tingkatkan Penpot dengan plugin dari komunitas untuk fungsi tambahan."
 msgid "loader.tips.10.title"
 msgstr "Dukungan Plugin"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:486, src/app/main/ui/workspace/colorpicker.cljs:487, src/app/main/ui/workspace/colorpicker.cljs:489
+#: src/app/main/ui/workspace/colorpicker.cljs:482, src/app/main/ui/workspace/colorpicker.cljs:483, src/app/main/ui/workspace/colorpicker.cljs:485
 msgid "media.choose-image"
 msgstr "Pilih gambar"
 
@@ -2511,15 +2490,15 @@ msgstr "Pilih gambar"
 msgid "media.gradient"
 msgstr "Gradien"
 
-#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:44, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:65, src/app/main/ui/workspace/colorpicker.cljs:258, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:395
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:258, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:403
 msgid "media.image"
 msgstr "Gambar"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:55
+#: src/app/main/ui/inspect/attributes/common.cljs:53
 msgid "media.image.short"
 msgstr "gambar"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:479
+#: src/app/main/ui/workspace/colorpicker.cljs:475
 msgid "media.keep-aspect-ratio"
 msgstr "Jaga rasio aspek"
 
@@ -2541,24 +2520,24 @@ msgstr "Radial"
 msgid "media.solid"
 msgstr "Padat"
 
-#: src/app/main/data/common.cljs:128
+#: src/app/main/data/common.cljs:117
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
 "Pustaka Anda saat ini kosong. Ketika ditambahkan sebagai Pustaka Terbagi, "
 "aset yang Anda buat akan tersedia untuk digunakan bersama dengan berkas "
 "Anda. Apakah Anda yakin ingin menerbitkannya?"
 
-#: src/app/main/data/common.cljs:130
+#: src/app/main/data/common.cljs:119
 msgid "modals.add-shared-confirm.accept"
 msgstr "Tambahkan sebagai Pustaka Terbagi"
 
-#: src/app/main/data/common.cljs:128
+#: src/app/main/data/common.cljs:117
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Ketika ditambahkan sebagai Pustaka Terbagi, aset dari pustaka berkas ini "
 "akan tersedia untuk digunakan di antara berkas Anda yang lain."
 
-#: src/app/main/data/common.cljs:127
+#: src/app/main/data/common.cljs:116
 msgid "modals.add-shared-confirm.message"
 msgstr "Tambahkan “%s” sebagai Pustaka Terbagi"
 
@@ -2658,25 +2637,25 @@ msgstr ""
 msgid "modals.delete-account.title"
 msgstr "Apakah Anda yakin ingin menghapus akun Anda?"
 
-#: src/app/main/ui/comments.cljs:901
+#: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
 msgstr "Hapus percakapan"
 
-#: src/app/main/ui/comments.cljs:900
+#: src/app/main/ui/comments.cljs:888
 msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Apakah Anda yakin ingin menghapus percakapan ini? Semua komentar dalam "
 "utasan ini akan dihapus."
 
-#: src/app/main/ui/comments.cljs:899
+#: src/app/main/ui/comments.cljs:887
 msgid "modals.delete-comment-thread.title"
 msgstr "Hapus percakapan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157
 msgid "modals.delete-component-annotation.message"
 msgstr "Apakah Anda yakin ingin menghapus anotasi ini?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:154
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156
 msgid "modals.delete-component-annotation.title"
 msgstr "Haus anotasi"
 
@@ -3009,15 +2988,15 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Perbarui sebuah komponen dalam sebuah pustaka terbagi"
 
-#: src/app/main/ui/static.cljs:283
+#: src/app/main/ui/static.cljs:289
 msgid "not-found.desc-message.doesnt-exist"
 msgstr "Laman ini tidak ada"
 
-#: src/app/main/ui/static.cljs:282
+#: src/app/main/ui/static.cljs:288
 msgid "not-found.desc-message.error"
 msgstr "Kesalahan 404"
 
-#: src/app/main/ui/static.cljs:133
+#: src/app/main/ui/static.cljs:139
 msgid "not-found.login.free"
 msgstr ""
 "Penpkt adalah alat bebas dan bersumber terbuka untuk kolaborasi dengan "
@@ -3031,89 +3010,89 @@ msgstr "Kami telah mengirim surel pemulihan ke"
 msgid "not-found.login.sent-recovery-check"
 msgstr "Periksa surel Anda dan klik tautan untuk membuat kata sandi baru."
 
-#: src/app/main/ui/static.cljs:147
+#: src/app/main/ui/static.cljs:153
 msgid "not-found.login.signup-free"
 msgstr "Daftar secara gratis"
 
-#: src/app/main/ui/static.cljs:148
+#: src/app/main/ui/static.cljs:154
 msgid "not-found.login.start-using"
 msgstr "Dan mulai menggunakan Penpot dalam hitungan detik!"
 
-#: src/app/main/ui/static.cljs:65
+#: src/app/main/ui/static.cljs:70
 msgid "not-found.made-with-love"
 msgstr "Dibuat dengan CINTA dan Sumber Terbuka"
 
-#: src/app/main/ui/static.cljs:243
+#: src/app/main/ui/static.cljs:249
 msgid "not-found.no-permission.already-requested.file"
 msgstr "Anda sudah meminta akses ke berkas ini."
 
-#: src/app/main/ui/static.cljs:244
+#: src/app/main/ui/static.cljs:250
 msgid "not-found.no-permission.already-requested.or-others.file"
 msgstr ""
 "Anda sudah meminta akses ke berkas ini atau berkas lain atau proyek dari "
 "tim ini."
 
-#: src/app/main/ui/static.cljs:250
+#: src/app/main/ui/static.cljs:256
 msgid "not-found.no-permission.already-requested.or-others.project"
 msgstr ""
 "Anda sudah meminta akses ke proyek ini atau proyek lain atau berkas dari "
 "tim ini."
 
-#: src/app/main/ui/static.cljs:249
+#: src/app/main/ui/static.cljs:255
 msgid "not-found.no-permission.already-requested.project"
 msgstr "Anda sudah meminta akses ke proyek ini."
 
-#: src/app/main/ui/static.cljs:264, src/app/main/ui/static.cljs:273
+#: src/app/main/ui/static.cljs:270, src/app/main/ui/static.cljs:279
 msgid "not-found.no-permission.ask"
 msgstr "MINTA AKSES"
 
-#: src/app/main/ui/static.cljs:256
+#: src/app/main/ui/static.cljs:262
 msgid "not-found.no-permission.done.remember"
 msgstr "Perlu diingat, jika pemilik mengizinkan, Anda akan diundang ke tim."
 
-#: src/app/main/ui/static.cljs:255
+#: src/app/main/ui/static.cljs:261
 msgid "not-found.no-permission.done.success"
 msgstr "Permintaan Anda telah dikirim dengan benar!"
 
-#: src/app/main/ui/static.cljs:261
+#: src/app/main/ui/static.cljs:267
 msgid "not-found.no-permission.file"
 msgstr "Anda tidak memiliki akses ke berkas ini."
 
-#: src/app/main/ui/static.cljs:52, src/app/main/ui/static.cljs:239, src/app/main/ui/static.cljs:245, src/app/main/ui/static.cljs:251, src/app/main/ui/static.cljs:257, src/app/main/ui/static.cljs:266, src/app/main/ui/static.cljs:275
+#: src/app/main/ui/static.cljs:57, src/app/main/ui/static.cljs:245, src/app/main/ui/static.cljs:251, src/app/main/ui/static.cljs:257, src/app/main/ui/static.cljs:263, src/app/main/ui/static.cljs:272, src/app/main/ui/static.cljs:281
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Pergi ke Penpot Anda"
 
-#: src/app/main/ui/static.cljs:263, src/app/main/ui/static.cljs:272
+#: src/app/main/ui/static.cljs:269, src/app/main/ui/static.cljs:278
 msgid "not-found.no-permission.if-approves"
 msgstr "Jika pemilik mengizinkan, Anda akan diundang ke tim."
 
-#: src/app/main/ui/static.cljs:450, src/app/main/ui/static.cljs:463
+#: src/app/main/ui/static.cljs:484, src/app/main/ui/static.cljs:497
 msgid "not-found.no-permission.penpot-file"
 msgstr "Berkas Penpot"
 
-#: src/app/main/ui/static.cljs:238, src/app/main/ui/static.cljs:270
+#: src/app/main/ui/static.cljs:244, src/app/main/ui/static.cljs:276
 msgid "not-found.no-permission.project"
 msgstr "Anda tidak memiliki akses ke proyek ini."
 
-#: src/app/main/ui/static.cljs:449, src/app/main/ui/static.cljs:461
+#: src/app/main/ui/static.cljs:483, src/app/main/ui/static.cljs:495
 msgid "not-found.no-permission.project-name"
 msgstr "PROYEK"
 
-#: src/app/main/ui/static.cljs:262
+#: src/app/main/ui/static.cljs:268
 msgid "not-found.no-permission.you-can-ask.file"
 msgstr "Untuk mengakses berkas ini, Anda dapat menanyakan kepada pemilik tim."
 
-#: src/app/main/ui/static.cljs:271
+#: src/app/main/ui/static.cljs:277
 msgid "not-found.no-permission.you-can-ask.project"
 msgstr "Untuk mengakses proyek ini, Anda dapat menanyakan kepada pemilik tim."
 
-#: src/app/main/data/common.cljs:89
+#: src/app/main/data/common.cljs:88
 msgid "notifications.by-code.maintenance"
 msgstr ""
 "Jeda pemeliharaan: kami tidak akan tersedia selama pemeliharaan yang "
 "sebentar dalam 5 menit lagi."
 
-#: src/app/main/data/common.cljs:82
+#: src/app/main/data/common.cljs:81
 msgid "notifications.by-code.upgrade-version"
 msgstr "Versi baru sudah tersedia, silakan muat ulang laman"
 
@@ -3265,7 +3244,7 @@ msgstr "Buat tim"
 msgid "onboarding.choice.team-up.create-team-without-inviting"
 msgstr "Buat tim tanpa mengundang"
 
-#: src/app/main/ui/dashboard/projects.cljs:95, src/app/main/ui/onboarding/team_choice.cljs:187
+#: src/app/main/ui/dashboard/projects.cljs:96, src/app/main/ui/onboarding/team_choice.cljs:187
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Undang anggota"
 
@@ -3495,19 +3474,19 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Pergi ke log masuk"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:366
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:374
 msgid "settings.detach"
 msgstr "Copot"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:454, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:987, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1216, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:246, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:346, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:361, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:112, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:513, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:524, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:578, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:414, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:214
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1051, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1291, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:78, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:439, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:469, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:505, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:560, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:423, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:203
 msgid "settings.multiple"
 msgstr "Tercampur"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:423
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:432
 msgid "settings.remove-color"
 msgstr "Hapus warna"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:428
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:437
 msgid "settings.select-this-color"
 msgstr "Pilih item menggunakan gaya ini"
 
@@ -3545,7 +3524,7 @@ msgstr "Generik"
 msgid "shortcut-subsection.general-viewer"
 msgstr "Generik"
 
-#: src/app/main/ui/workspace/main_menu.cljs:873, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
+#: src/app/main/ui/workspace/main_menu.cljs:878, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"
 msgstr "Menu utama"
 
@@ -4156,7 +4135,7 @@ msgstr "Tambahkan lensa zum"
 msgid "shortcuts.zoom-selected"
 msgstr "Zum ke terpilih"
 
-#: src/app/main/ui/dashboard/files.cljs:180
+#: src/app/main/ui/dashboard/files.cljs:181
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
 
@@ -4168,7 +4147,7 @@ msgstr "Penyedia Fon - %s - Penpot"
 msgid "title.dashboard.fonts"
 msgstr "Fon - %s - Penpot"
 
-#: src/app/main/ui/dashboard/projects.cljs:349
+#: src/app/main/ui/dashboard/projects.cljs:354
 msgid "title.dashboard.projects"
 msgstr "Proyek - %s - Penpot"
 
@@ -4176,7 +4155,7 @@ msgstr "Proyek - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "Cari - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs:57
+#: src/app/main/ui/dashboard/libraries.cljs:58
 msgid "title.dashboard.shared-libraries"
 msgstr "Pustaka Terbagi - %s - Penpot"
 
@@ -4188,7 +4167,7 @@ msgstr "Penpot - Kebebasan Desain untuk Tim"
 msgid "title.settings.access-tokens"
 msgstr "Profil - Token akses"
 
-#: src/app/main/ui/settings/feedback.cljs:107
+#: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Berikan masukan - Penpot"
 
@@ -4406,7 +4385,7 @@ msgstr "Nama kelompok"
 msgid "workspace.assets.list-view"
 msgstr "Tampilan daftar"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:631
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:679
 msgid "workspace.assets.local-library"
 msgstr "pustaka lokal"
 
@@ -4470,6 +4449,10 @@ msgstr "Fon"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
 msgstr "Ukuran"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "workspace.assets.typography.font-style"
+msgstr "Gaya Fon"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
@@ -4649,15 +4632,15 @@ msgstr "Sembunyikan penggaris"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Sembunyikan palet fon"
 
-#: src/app/main/ui/workspace/main_menu.cljs:900
+#: src/app/main/ui/workspace/main_menu.cljs:905
 msgid "workspace.header.menu.option.edit"
 msgstr "Sunting"
 
-#: src/app/main/ui/workspace/main_menu.cljs:889
+#: src/app/main/ui/workspace/main_menu.cljs:894
 msgid "workspace.header.menu.option.file"
 msgstr "Berkas"
 
-#: src/app/main/ui/workspace/main_menu.cljs:946
+#: src/app/main/ui/workspace/main_menu.cljs:951
 msgid "workspace.header.menu.option.help-info"
 msgstr "Bantuan & info"
 
@@ -4666,11 +4649,11 @@ msgstr "Bantuan & info"
 msgid "workspace.header.menu.option.power-up"
 msgstr "Tingkatkan paket Anda"
 
-#: src/app/main/ui/workspace/main_menu.cljs:922
+#: src/app/main/ui/workspace/main_menu.cljs:927
 msgid "workspace.header.menu.option.preferences"
 msgstr "Preferensi"
 
-#: src/app/main/ui/workspace/main_menu.cljs:911
+#: src/app/main/ui/workspace/main_menu.cljs:916
 msgid "workspace.header.menu.option.view"
 msgstr "Tampilan"
 
@@ -4771,39 +4754,39 @@ msgstr "Layar penuh"
 msgid "workspace.header.zoom-selected"
 msgstr "Zum ke terpilih"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:621
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
 msgid "workspace.layout_grid.editor.options.edit-grid"
 msgstr "Sunting kisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1301
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1554
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Keluar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:436
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:612, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618
 msgid "workspace.layout_grid.editor.padding.bottom"
 msgstr "Padding bawah"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:490, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:491
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:685, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:686
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Tampilkan opsi bantalan 4 sisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:362
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:470
 msgid "workspace.layout_grid.editor.padding.horizontal"
 msgstr "Padding horizontal"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:451
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:636, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:641, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:647
 msgid "workspace.layout_grid.editor.padding.left"
 msgstr "Padding kiri"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:415, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:421
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:590
 msgid "workspace.layout_grid.editor.padding.right"
 msgstr "Padding kanan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:400, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:406
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:561
 msgid "workspace.layout_grid.editor.padding.top"
 msgstr "Padding atas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:341, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:347
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:428, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:440
 msgid "workspace.layout_grid.editor.padding.vertical"
 msgstr "Padding vertikal"
 
@@ -4819,7 +4802,7 @@ msgstr "Selesai"
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Cari lokasi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1327
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1580
 msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
 msgstr "Lokasi tata letak kisi"
 
@@ -4854,11 +4837,11 @@ msgstr "Warna terkini"
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "Pelengkap RGB"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:358
+#: src/app/main/ui/workspace/colorpicker.cljs:354
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:557
+#: src/app/main/ui/workspace/colorpicker.cljs:554
 msgid "workspace.libraries.colors.save-color"
 msgstr "Simpan gaya warna"
 
@@ -4882,7 +4865,7 @@ msgstr "Pustaka berkas"
 msgid "workspace.libraries.in-this-file"
 msgstr "PUSTAKA DALAM BERKAS INI"
 
-#: src/app/main/ui/workspace/libraries.cljs:642, src/app/main/ui/workspace/libraries.cljs:660
+#: src/app/main/ui/workspace/libraries.cljs:641, src/app/main/ui/workspace/libraries.cljs:659
 msgid "workspace.libraries.libraries"
 msgstr "PUSTAKA"
 
@@ -4944,7 +4927,7 @@ msgstr "Perbarui"
 msgid "workspace.libraries.update.see-all-changes"
 msgstr "lihat semua perubahan"
 
-#: src/app/main/ui/workspace/libraries.cljs:644
+#: src/app/main/ui/workspace/libraries.cljs:643
 msgid "workspace.libraries.updates"
 msgstr "PEMBARUAN"
 
@@ -4980,19 +4963,19 @@ msgstr "Sakelar buram"
 msgid "workspace.options.canvas-background"
 msgstr "Latar belakang kanvas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:630
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:623
 msgid "workspace.options.clip-content"
 msgstr "Klip konten"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:937, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:943, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1183
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1016, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1022, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1271
 msgid "workspace.options.component"
 msgstr "Komponen"
 
-#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:196
+#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:195
 msgid "workspace.options.component.annotation"
 msgstr "Anotasi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:951
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1030
 msgid "workspace.options.component.copy"
 msgstr "Salin"
 
@@ -5004,15 +4987,15 @@ msgstr "Buat anotasi"
 msgid "workspace.options.component.edit-annotation"
 msgstr "Sunting anotasi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1187
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1029, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1275
 msgid "workspace.options.component.main"
 msgstr "Utama"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:721
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:774
 msgid "workspace.options.component.swap"
 msgstr "Ganti komponen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:765
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:811
 msgid "workspace.options.component.swap.empty"
 msgstr "Belum ada aset dalam pustaka ini"
 
@@ -5102,19 +5085,19 @@ msgstr "Pengeksporan gagal"
 msgid "workspace.options.exporting-object-slow"
 msgstr "Pengeksporan secara tidak terduga lambat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:121, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:261
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
 msgid "workspace.options.fill"
 msgstr "Isian"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:234
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:209
 msgid "workspace.options.fill.add-fill"
 msgstr "Tambahkan warna isian"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:248
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223
 msgid "workspace.options.fill.remove-fill"
 msgstr "Hapus isian"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:474
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:466
 msgid "workspace.options.fit-content"
 msgstr "Ubah ukuran papan untuk memuat konten"
 
@@ -5232,7 +5215,7 @@ msgstr "Baris"
 msgid "workspace.options.grid.square"
 msgstr "Kotak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:120
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107
 msgid "workspace.options.group-fill"
 msgstr "Isian kelompok"
 
@@ -5240,7 +5223,7 @@ msgstr "Isian kelompok"
 msgid "workspace.options.group-stroke"
 msgstr "Sapuan kelompok"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:326
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:327
 msgid "workspace.options.guides.add-guide"
 msgstr "Tambahkan alur"
 
@@ -5248,7 +5231,7 @@ msgstr "Tambahkan alur"
 msgid "workspace.options.guides.remove-guide"
 msgstr "Hapus alur"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:324
 msgid "workspace.options.guides.title"
 msgstr "Panduan"
 
@@ -5256,7 +5239,7 @@ msgstr "Panduan"
 msgid "workspace.options.guides.toggle-guide"
 msgstr "Sakelar pemandu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:501, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:520
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:493, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:512
 msgid "workspace.options.height"
 msgstr "Tinggi"
 
@@ -5491,67 +5474,67 @@ msgstr "Tambahkan interaksi"
 msgid "workspace.options.interactions.remove-interaction"
 msgstr "Hapus interaksi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:169
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:168
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "Warna"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
 msgid "workspace.options.layer-options.blend-mode.color-burn"
 msgstr "Bakaran warna"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:160
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
 msgstr "Penghindaran warna"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "Gelapkan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:164
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "Perbedaan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:166
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:165
 msgid "workspace.options.layer-options.blend-mode.exclusion"
 msgstr "Tidak termasukan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:164
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:163
 msgid "workspace.options.layer-options.blend-mode.hard-light"
 msgstr "Cahaya keras"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:167
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:166
 msgid "workspace.options.layer-options.blend-mode.hue"
 msgstr "Rona"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
 msgid "workspace.options.layer-options.blend-mode.lighten"
 msgstr "Terangkan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:170
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:169
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "Kilau"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
 msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "Kalikan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:154
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "Normal"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:162
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
 msgid "workspace.options.layer-options.blend-mode.overlay"
 msgstr "Hamparan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:168
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:167
 msgid "workspace.options.layer-options.blend-mode.saturation"
 msgstr "Saturasi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
 msgid "workspace.options.layer-options.blend-mode.screen"
 msgstr "Layar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:162
 msgid "workspace.options.layer-options.blend-mode.soft-light"
 msgstr "Cahaya lembut"
 
@@ -5570,7 +5553,7 @@ msgstr "Lapisan kelompok"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Lapisan terpilih"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:207, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:213
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:206, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:212
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Sakelar keterlihatan lapisan"
 
@@ -5705,15 +5688,15 @@ msgstr "ruang di antara"
 msgid "workspace.options.layout.top"
 msgstr "Atas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:179
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:240
 msgid "workspace.options.more-colors"
 msgstr "Lebih banyak warna"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:222
 msgid "workspace.options.more-lib-colors"
 msgstr "Lebih banyak warna pustaka"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:192
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191
 msgid "workspace.options.opacity"
 msgstr "Opasitas"
 
@@ -5762,7 +5745,7 @@ msgstr "Terkini"
 msgid "workspace.options.retry"
 msgstr "Coba lagi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:600
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:593
 msgid "workspace.options.rotation"
 msgstr "Rotasi"
 
@@ -5774,11 +5757,11 @@ msgstr "Cari fon"
 msgid "workspace.options.select-a-shape"
 msgstr "Pilih bentuk, papan, atau kelompok untuk menyeret koneksi ke papan lain."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:132
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:200
 msgid "workspace.options.selection-color"
 msgstr "Warna terpilih"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:106
 msgid "workspace.options.selection-fill"
 msgstr "Isian seleksi"
 
@@ -5786,63 +5769,63 @@ msgstr "Isian seleksi"
 msgid "workspace.options.selection-stroke"
 msgstr "Sapuan seleksi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:341
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:143
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "Tambahkan bayangan"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:203, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:205
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:180, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:182
 msgid "workspace.options.shadow-options.blur"
 msgstr "Buram"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:236
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:210
 msgid "workspace.options.shadow-options.color"
 msgstr "Warna bayangan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:142
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:122
 msgid "workspace.options.shadow-options.drop-shadow"
 msgstr "Bayangan jatuhan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:143
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:123
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Bayangan masuk"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:193
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:171
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:225
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:200
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:183, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:354
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:156, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:160
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "Hapus bayangan"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:214, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:216
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:190, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:192
 msgid "workspace.options.shadow-options.spread"
 msgstr "Tersebar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:336
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
 msgid "workspace.options.shadow-options.title"
 msgstr "Bayangan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:335
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Bayangan kelompok"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:334
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:136
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Bayangan seleksi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:179
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:156
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "Sakelar bayangan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:285
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:262
 msgid "workspace.options.show-fill-on-export"
 msgstr "Tampilkan dalam ekspor"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:645
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:638
 msgid "workspace.options.show-in-viewer"
 msgstr "Tampilkan dalam mode penampil"
 
@@ -5850,7 +5833,7 @@ msgstr "Tampilkan dalam mode penampil"
 msgid "workspace.options.size"
 msgstr "Ukuran"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:70, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:434
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:70, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:426
 msgid "workspace.options.size-presets"
 msgstr "Prasetel ukuran"
 
@@ -5864,7 +5847,7 @@ msgstr "Sapuan"
 msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Penanda lingkaran"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:168
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:157
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "Lingkaran"
 
@@ -5873,7 +5856,7 @@ msgstr "Lingkaran"
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Penanda berlian"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:169
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:158
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "Berlian"
 
@@ -5882,19 +5865,19 @@ msgstr "Berlian"
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Panah garis"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:154
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "Tanda panah"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:152
 msgid "workspace.options.stroke-cap.none"
 msgstr "Tidak ada"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:171
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:160
 msgid "workspace.options.stroke-cap.round"
 msgstr "Bulat"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:161
 msgid "workspace.options.stroke-cap.square"
 msgstr "Kotak"
 
@@ -5903,7 +5886,7 @@ msgstr "Kotak"
 msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Penanda kotak"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:167
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:156
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "Persegi panjang"
 
@@ -5912,51 +5895,51 @@ msgstr "Persegi panjang"
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Panah segi tiga"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:166
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:155
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "Segitiga"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:210
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:209
 msgid "workspace.options.stroke-color"
 msgstr "Warna sapuan"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:207
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:198
 msgid "workspace.options.stroke-width"
 msgstr "Lebar sapuan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:189
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:188
 msgid "workspace.options.stroke.add-stroke"
 msgstr "Tambahkan warna garis"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:97
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:99
 msgid "workspace.options.stroke.center"
 msgstr "Tengah"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:127
 msgid "workspace.options.stroke.dashed"
 msgstr "Garis"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
 msgid "workspace.options.stroke.dotted"
 msgstr "Titik"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:98
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:100
 msgid "workspace.options.stroke.inner"
 msgstr "Dalam"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:128
 msgid "workspace.options.stroke.mixed"
 msgstr "Tercampur"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:99
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:101
 msgid "workspace.options.stroke.outer"
 msgstr "Luar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:202
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:201
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Hapus garis"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:136
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:125
 msgid "workspace.options.stroke.solid"
 msgstr "Padat"
 
@@ -6060,15 +6043,15 @@ msgstr "Huruf Besar"
 msgid "workspace.options.use-play-button"
 msgstr "Gunakan tombol main di tajuk untuk menjalankan tampilan prototipe."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:508
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500
 msgid "workspace.options.width"
 msgstr "Lebar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:547, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:564
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:540, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:557
 msgid "workspace.options.x"
 msgstr "Sumbu X"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:557, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:575
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:568
 msgid "workspace.options.y"
 msgstr "Sumbu Y"
 
@@ -6112,78 +6095,78 @@ msgstr "Simpul terpisah (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Tancap simpul (%s)"
 
-#: src/app/main/ui/workspace/plugins.cljs:84
+#: src/app/main/ui/workspace/plugins.cljs:85
 msgid "workspace.plugins.button-open"
 msgstr "Buka"
 
-#: src/app/main/ui/workspace/plugins.cljs:198
+#: src/app/main/ui/workspace/plugins.cljs:199
 #, markdown
 msgid "workspace.plugins.discover"
 msgstr "Jelajahi [lebih banyak plugin](%s)"
 
-#: src/app/main/ui/workspace/plugins.cljs:205
+#: src/app/main/ui/workspace/plugins.cljs:206
 msgid "workspace.plugins.empty-plugins"
 msgstr "Belum ada plugin yang terpasang"
 
-#: src/app/main/ui/workspace/plugins.cljs:192
+#: src/app/main/ui/workspace/plugins.cljs:193
 msgid "workspace.plugins.error.manifest"
 msgstr "Manifes plugin tidak benar."
 
-#: src/app/main/data/plugins.cljs:89, src/app/main/ui/workspace/main_menu.cljs:783, src/app/main/ui/workspace/plugins.cljs:83
+#: src/app/main/data/plugins.cljs:89, src/app/main/ui/workspace/main_menu.cljs:788, src/app/main/ui/workspace/plugins.cljs:84
 msgid "workspace.plugins.error.need-editor"
 msgstr "Anda perlu menjadi penyunting untuk menggunakan plugin ini"
 
-#: src/app/main/ui/workspace/plugins.cljs:188
+#: src/app/main/ui/workspace/plugins.cljs:189
 msgid "workspace.plugins.error.url"
 msgstr "Plugin tidak ada atau URL tidak benar."
 
-#: src/app/main/ui/workspace/plugins.cljs:184
+#: src/app/main/ui/workspace/plugins.cljs:185
 msgid "workspace.plugins.install"
 msgstr "Pasang"
 
-#: src/app/main/ui/workspace/plugins.cljs:214
+#: src/app/main/ui/workspace/plugins.cljs:215
 msgid "workspace.plugins.installed-plugins"
 msgstr "Plugin terpasang"
 
-#: src/app/main/ui/workspace/main_menu.cljs:738
+#: src/app/main/ui/workspace/main_menu.cljs:743
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Pengelola plugin"
 
-#: src/app/main/ui/workspace/main_menu.cljs:934
+#: src/app/main/ui/workspace/main_menu.cljs:939
 msgid "workspace.plugins.menu.title"
 msgstr "Plugin"
 
-#: src/app/main/ui/workspace/plugins.cljs:375
+#: src/app/main/ui/workspace/plugins.cljs:376
 msgid "workspace.plugins.permissions-update.title"
 msgstr "PERBARUI PLUGIN INI"
 
-#: src/app/main/ui/workspace/plugins.cljs:379
+#: src/app/main/ui/workspace/plugins.cljs:380
 msgid "workspace.plugins.permissions-update.warning"
 msgstr ""
 "Plugin ini telah diubah sejak terakhir kali Anda membukanya. Ini sekarang "
 "memerlukan akses:"
 
-#: src/app/main/ui/workspace/plugins.cljs:279
+#: src/app/main/ui/workspace/plugins.cljs:280
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Memulai pengunduhan berkas."
 
-#: src/app/main/ui/workspace/plugins.cljs:272
+#: src/app/main/ui/workspace/plugins.cljs:273
 msgid "workspace.plugins.permissions.comment-read"
 msgstr "Membaca komentar dan balasan Anda."
 
-#: src/app/main/ui/workspace/plugins.cljs:266
+#: src/app/main/ui/workspace/plugins.cljs:267
 msgid "workspace.plugins.permissions.comment-write"
 msgstr "Membaca dan mengubah komentar Anda dan membalas dengan nama Anda."
 
-#: src/app/main/ui/workspace/plugins.cljs:239
+#: src/app/main/ui/workspace/plugins.cljs:240
 msgid "workspace.plugins.permissions.content-read"
 msgstr "Membaca konten berkas yang dapat diakses pengguna."
 
-#: src/app/main/ui/workspace/plugins.cljs:233
+#: src/app/main/ui/workspace/plugins.cljs:234
 msgid "workspace.plugins.permissions.content-write"
 msgstr "Membaca dan mengubah konten berkas yang dapat diakses pengguna."
 
-#: src/app/main/ui/workspace/plugins.cljs:326
+#: src/app/main/ui/workspace/plugins.cljs:327
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
 "Harap diingat bahwa plugin ini dibuat oleh pihak eksternal, jadi pastikan "
@@ -6191,31 +6174,31 @@ msgstr ""
 "Anda penting bagi kami. Jika Anda memiliki masalah, silakan hubungi "
 "dukungan."
 
-#: src/app/main/ui/workspace/plugins.cljs:259
+#: src/app/main/ui/workspace/plugins.cljs:260
 msgid "workspace.plugins.permissions.library-read"
 msgstr "Membaca pustaka dan aset Anda."
 
-#: src/app/main/ui/workspace/plugins.cljs:253
+#: src/app/main/ui/workspace/plugins.cljs:254
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Membaca dan mengubah pustaka dan aset Anda."
 
-#: src/app/main/ui/workspace/plugins.cljs:319
+#: src/app/main/ui/workspace/plugins.cljs:320
 msgid "workspace.plugins.permissions.title"
 msgstr "PLUGIN '%s' MEMINTA AKSES:"
 
-#: src/app/main/ui/workspace/plugins.cljs:246
+#: src/app/main/ui/workspace/plugins.cljs:247
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Membaca informasi profil pengguna sasaat ini."
 
-#: src/app/main/ui/workspace/plugins.cljs:210
+#: src/app/main/ui/workspace/plugins.cljs:211
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Daftar Plugin"
 
-#: src/app/main/ui/workspace/plugins.cljs:87
+#: src/app/main/ui/workspace/plugins.cljs:88
 msgid "workspace.plugins.remove-plugin"
 msgstr "Hapus plugin"
 
-#: src/app/main/ui/workspace/plugins.cljs:179
+#: src/app/main/ui/workspace/plugins.cljs:180
 msgid "workspace.plugins.search-placeholder"
 msgstr "Tuliskan URL plugin"
 
@@ -6223,26 +6206,26 @@ msgstr "Tuliskan URL plugin"
 msgid "workspace.plugins.success"
 msgstr "Plugin dimuat dengan benar."
 
-#: src/app/main/ui/workspace/plugins.cljs:173
+#: src/app/main/ui/workspace/plugins.cljs:174
 msgid "workspace.plugins.title"
 msgstr "Plugin"
 
-#: src/app/main/ui/workspace/plugins.cljs:439
+#: src/app/main/ui/workspace/plugins.cljs:440
 msgid "workspace.plugins.try-out.cancel"
 msgstr "NANTI"
 
-#: src/app/main/ui/workspace/plugins.cljs:432
+#: src/app/main/ui/workspace/plugins.cljs:433
 msgid "workspace.plugins.try-out.message"
 msgstr ""
 "Ingin melihat? Ini akan membuka dalam draf baru untuk tim Anda saat ini. "
 "(Jika tidak, Anda selalu dapat mencarinya dalam plugin terpasang dalam "
 "berkas apa pun.)"
 
-#: src/app/main/ui/workspace/plugins.cljs:428
+#: src/app/main/ui/workspace/plugins.cljs:429
 msgid "workspace.plugins.try-out.title"
 msgstr "PLUGIN '%s' TERPASANG UNTUK PENGGUNA ANDA!"
 
-#: src/app/main/ui/workspace/plugins.cljs:445
+#: src/app/main/ui/workspace/plugins.cljs:446
 msgid "workspace.plugins.try-out.try"
 msgstr "COBA PLUGIN"
 
@@ -6254,15 +6237,15 @@ msgstr "Tambahkan tata letak flex"
 msgid "workspace.shape.menu.add-grid"
 msgstr "Tambahkan tata letak kisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1016, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1040
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1264, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1288
 msgid "workspace.shape.menu.add-layout"
 msgstr "Tambahkan tata letak"
 
-#: src/app/main/ui/workspace/context_menu.cljs:610, src/app/main/ui/workspace/sidebar/assets/common.cljs:514, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:961, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1113, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1195
+#: src/app/main/ui/workspace/context_menu.cljs:610, src/app/main/ui/workspace/sidebar/assets/common.cljs:514, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1040, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1208, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
 msgid "workspace.shape.menu.add-variant"
 msgstr "Buat varian"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:518, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1010, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1115, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1233
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:518, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1210, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1296
 msgid "workspace.shape.menu.add-variant-property"
 msgstr "Buat properti baru"
 
@@ -6322,7 +6305,7 @@ msgstr "Buat beberapa komponen"
 msgid "workspace.shape.menu.cut"
 msgstr "Potong"
 
-#: src/app/main/ui/workspace/context_menu.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:780, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1058
+#: src/app/main/ui/workspace/context_menu.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1306
 msgid "workspace.shape.menu.delete"
 msgstr "Hapus"
 
@@ -6399,7 +6382,7 @@ msgstr "Tampilkan/Sembunyikan Antarmuka"
 msgid "workspace.shape.menu.intersection"
 msgstr "Persimpangan"
 
-#: src/app/main/ui/workspace/context_menu.cljs:483, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:220
+#: src/app/main/ui/workspace/context_menu.cljs:483, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:219
 msgid "workspace.shape.menu.lock"
 msgstr "Kunci"
 
@@ -6427,11 +6410,11 @@ msgstr "Hapus tata letak flex"
 msgid "workspace.shape.menu.remove-grid"
 msgstr "Hapus tata letak kisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1034
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1282
 msgid "workspace.shape.menu.remove-layout"
 msgstr "Hapus tata letak"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1257
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1146
 msgid "workspace.shape.menu.remove-variant-property"
 msgstr "Hapus properti"
 
@@ -6455,7 +6438,7 @@ msgstr "Pilih lapisan"
 msgid "workspace.shape.menu.show"
 msgstr "Tampilkan"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:487, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1111
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:487, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1206
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Tampilkan dalam panel aset"
 
@@ -6484,7 +6467,7 @@ msgstr "Lepaskan kelompok"
 msgid "workspace.shape.menu.union"
 msgstr "Serikat"
 
-#: src/app/main/ui/workspace/context_menu.cljs:480, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:226
+#: src/app/main/ui/workspace/context_menu.cljs:480, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:225
 msgid "workspace.shape.menu.unlock"
 msgstr "Buka kunci"
 
@@ -6574,7 +6557,7 @@ msgstr "%s tema aktif"
 msgid "workspace.tokens.add set"
 msgstr "Tambahkan set"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:165, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:328
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:87, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:190, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:367
 msgid "workspace.tokens.add-new-theme"
 msgstr "Tambahkan tema baru"
 
@@ -6586,19 +6569,19 @@ msgstr "Tambahkan set ke kelompok ini"
 msgid "workspace.tokens.applied-to"
 msgstr "Diterapkan pada"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:316
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:315
 msgid "workspace.tokens.axis"
 msgstr "Axis"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:337
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:376
 msgid "workspace.tokens.back-to-themes"
 msgstr "Kembali ke daftar tema"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:286
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:284
 msgid "workspace.tokens.color"
 msgstr "Warna"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:78
 msgid "workspace.tokens.create-new-theme"
 msgstr "Buat tema pertama Anda sekarang."
 
@@ -6606,31 +6589,31 @@ msgstr "Buat tema pertama Anda sekarang."
 msgid "workspace.tokens.create-one"
 msgstr "Buat baru."
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:552
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:167, src/app/main/ui/workspace/tokens/management/create/form.cljs:582
 msgid "workspace.tokens.create-token"
 msgstr "Buat token %s baru"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:338
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.delete"
 msgstr "Hapus token"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:179
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Hapus tema"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:334
 msgid "workspace.tokens.duplicate"
 msgstr "Gandakan token"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:197, src/app/main/data/workspace/tokens/library_edit.cljs:415
+#: src/app/main/data/workspace/tokens/library_edit.cljs:209, src/app/main/data/workspace/tokens/library_edit.cljs:452
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "salin"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:322
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:321
 msgid "workspace.tokens.edit"
 msgstr "Sunting token"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:327
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:366
 msgid "workspace.tokens.edit-theme-title"
 msgstr "Sunting tema"
 
@@ -6638,7 +6621,7 @@ msgstr "Sunting tema"
 msgid "workspace.tokens.edit-themes"
 msgstr "Sunting tema"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:558
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:173, src/app/main/ui/workspace/tokens/management/create/form.cljs:588
 msgid "workspace.tokens.enter-token-name"
 msgstr "Masukkan nama token %s"
 
@@ -6646,7 +6629,7 @@ msgstr "Masukkan nama token %s"
 msgid "workspace.tokens.error-parse"
 msgstr "Kesalahan Pengimporan: Tidak dapat mengurai JSON."
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:225
 msgid "workspace.tokens.gaps"
 msgstr "Celah"
 
@@ -6655,7 +6638,7 @@ msgstr "Celah"
 msgid "workspace.tokens.generic-error"
 msgstr "Kesalahan: "
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:104
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:129
 msgid "workspace.tokens.group-name"
 msgstr "Nama kelompok"
 
@@ -6685,31 +6668,31 @@ msgstr "Kesalahan pengimporan: Data token tidak valid dalam JSON."
 msgid "workspace.tokens.invalid-value"
 msgstr "Nilai token tidak valid: %s"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:191
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:227
 msgid "workspace.tokens.label.group"
 msgstr "Kelompok"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:193
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:229
 msgid "workspace.tokens.label.group-placeholder"
 msgstr "Tambahkan kelompok (mis. Mode)"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:199
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:235
 msgid "workspace.tokens.label.theme"
 msgstr "Tema"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:200
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:236
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Tambahkan tema (mis. Terang)"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:220
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:217
 msgid "workspace.tokens.margins"
 msgstr "Margin"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
 msgid "workspace.tokens.max-size"
 msgstr "Ukuran maksimal"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:250
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:247
 msgid "workspace.tokens.min-size"
 msgstr "Ukuran minimal"
 
@@ -6717,7 +6700,7 @@ msgstr "Ukuran minimal"
 msgid "workspace.tokens.missing-references"
 msgstr "Referensi token hilang: "
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:149
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:174
 msgid "workspace.tokens.no-active-sets"
 msgstr "Tidak ada set aktif"
 
@@ -6729,7 +6712,7 @@ msgstr "Tidak ada tema aktif"
 msgid "workspace.tokens.no-permisions-set"
 msgstr "Anda perlu menjadi penyunting untuk mengaktifkan / menonaktifkan set"
 
-#: src/app/main/ui/workspace/tokens/themes.cljs:53
+#: src/app/main/ui/workspace/tokens/themes.cljs:54
 msgid "workspace.tokens.no-permission-themes"
 msgstr "Anda perlu menjadi penyunting untuk menggunakan tema"
 
@@ -6745,11 +6728,11 @@ msgstr "Belum ada set."
 msgid "workspace.tokens.no-themes"
 msgstr "Belum ada tema."
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:74
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Anda saat ini belum memiliki tema."
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:148
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:173
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s set aktif"
 
@@ -6766,11 +6749,11 @@ msgstr "Opasitas harus antara 0 dan 100% atau 0 dan 1 (mis. 50% atau 0.5)."
 msgid "workspace.tokens.original-value"
 msgstr "Nilai asli: %s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:204
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:201
 msgid "workspace.tokens.paddings"
 msgstr "Padding"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:277
 msgid "workspace.tokens.radius"
 msgstr "Radius"
 
@@ -6783,12 +6766,12 @@ msgstr "Referensi tidak valid atau tidak dalam set aktif mana pun"
 msgid "workspace.tokens.reference-error"
 msgstr "Kesalahan Referensi: "
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:102, src/app/main/ui/workspace/tokens/management/create/form_input_token.cljs:109, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 #, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Nilai terselesaikan: %s"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:234
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:272
 msgid "workspace.tokens.save-theme"
 msgstr "Simpan tema"
 
@@ -6796,7 +6779,7 @@ msgstr "Simpan tema"
 msgid "workspace.tokens.select-set"
 msgstr "Pilih set."
 
-#: src/app/main/data/workspace/tokens/errors.cljs:45
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:55
 msgid "workspace.tokens.self-reference"
 msgstr "Token memiliki referensi diri"
 
@@ -6804,7 +6787,7 @@ msgstr "Token memiliki referensi diri"
 msgid "workspace.tokens.set-edit-placeholder"
 msgstr "Masukkan nama (gunakan '/' untuk grup)"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:342
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:381
 msgid "workspace.tokens.set-selection-theme"
 msgstr "Tentukan set token apa yang digunakan sebagai bagian opsi tema ini:"
 
@@ -6813,38 +6796,38 @@ msgstr "Tentukan set token apa yang digunakan sebagai bagian opsi tema ini:"
 msgid "workspace.tokens.set.not-active"
 msgstr "Token yang diatur tidak aktif"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:143
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:168
 msgid "workspace.tokens.sets-hint"
 msgstr "Sunting tema dan kelola set"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:244
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:241
 msgid "workspace.tokens.size"
 msgstr "Ukuran"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:155
 msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:121
 msgid "workspace.tokens.themes-description"
 msgstr ""
 "Di sini Anda dapat mengelola tema Anda, apakah aktif/nonaktif, dan atur set "
 "aktifnya."
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:45, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:94
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:70, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:119
 msgid "workspace.tokens.themes-list"
 msgstr "Daftar tema"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:608, src/app/main/ui/workspace/tokens/management/create/form.cljs:609
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:194, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:195, src/app/main/ui/workspace/tokens/management/create/form.cljs:629, src/app/main/ui/workspace/tokens/management/create/form.cljs:630
 #, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Deskripsi"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:109, src/app/main/ui/workspace/tokens/management/create/form.cljs:557
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:111, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:172, src/app/main/ui/workspace/tokens/management/create/form.cljs:587
 msgid "workspace.tokens.token-name"
 msgstr "Nama"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:69
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:43, src/app/main/ui/workspace/tokens/management/create/form.cljs:69
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " bukanlah nama token yang valid.\n"
@@ -6856,19 +6839,19 @@ msgstr ""
 msgid "workspace.tokens.token-not-resolved"
 msgstr "Tidak dapat mengurai token referensi dengan nama: %s"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:585
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:186, src/app/main/ui/workspace/tokens/management/create/form.cljs:606
 msgid "workspace.tokens.token-value"
 msgstr "Nilai"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:584, src/app/main/ui/workspace/tokens/management/create/form.cljs:1035
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:185, src/app/main/ui/workspace/tokens/management/create/form.cljs:605
 msgid "workspace.tokens.token-value-enter"
 msgstr "Masukkan nilai atau alias dengan {alias}"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:131
+#: src/app/main/ui/workspace/tokens/management.cljs:133
 msgid "workspace.tokens.tokens-section-title"
 msgstr "TOKEN -  %s"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:121
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:122
 msgid "workspace.tokens.tools"
 msgstr "Peralatan"
 
@@ -6876,7 +6859,7 @@ msgstr "Peralatan"
 msgid "workspace.tokens.value-not-valid"
 msgstr "Nilai tidak valid"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:581
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
 msgid "workspace.tokens.warning-name-change"
 msgstr "Mengubah nama token ini akan merusak referensi nama lamanya."
 
@@ -6884,7 +6867,7 @@ msgstr "Mengubah nama token ini akan merusak referensi nama lamanya."
 msgid "workspace.toolbar.assets"
 msgstr "Aset"
 
-#: src/app/main/ui/workspace/palette.cljs:167, src/app/main/ui/workspace/palette.cljs:168
+#: src/app/main/ui/workspace/palette.cljs:168, src/app/main/ui/workspace/palette.cljs:169
 msgid "workspace.toolbar.color-palette"
 msgstr "Palet Warna (%s)"
 
@@ -6937,7 +6920,7 @@ msgstr "Pintasan (%s)"
 msgid "workspace.toolbar.text"
 msgstr "Teks (%s)"
 
-#: src/app/main/ui/workspace/palette.cljs:175, src/app/main/ui/workspace/palette.cljs:176
+#: src/app/main/ui/workspace/palette.cljs:176, src/app/main/ui/workspace/palette.cljs:177
 msgid "workspace.toolbar.text-palette"
 msgstr "Tipografi (%s)"
 
@@ -7099,19 +7082,19 @@ msgstr "Operasi pada %s"
 msgid "workspace.undo.title"
 msgstr "Riwayat"
 
-#: src/app/main/data/workspace/libraries.cljs:1228, src/app/main/ui/workspace/sidebar/versions.cljs:84
+#: src/app/main/data/workspace/libraries.cljs:1233, src/app/main/ui/workspace/sidebar/versions.cljs:84
 msgid "workspace.updates.dismiss"
 msgstr "Abaikan"
 
-#: src/app/main/data/workspace/libraries.cljs:1226
+#: src/app/main/data/workspace/libraries.cljs:1231
 msgid "workspace.updates.more-info"
 msgstr "Info lebih lanjut"
 
-#: src/app/main/data/workspace/libraries.cljs:1224
+#: src/app/main/data/workspace/libraries.cljs:1229
 msgid "workspace.updates.there-are-updates"
 msgstr "Ada pembaruan dalam pustaka terbagi"
 
-#: src/app/main/data/workspace/libraries.cljs:1230
+#: src/app/main/data/workspace/libraries.cljs:1235
 msgid "workspace.updates.update"
 msgstr "Perbarui"
 

@@ -9,10 +9,10 @@
   (:refer-clojure :exclude [get-in select-keys str with-open max])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
+   #?(:clj [cljs.analyzer.api :as aapi])
    #?(:clj [clojure.core :as c]
       :cljs [cljs.core :as c])
    [app.common.data :as d]
-   [cljs.analyzer.api :as aapi]
    [cuerdas.core :as str]))
 
 (defmacro select-keys
@@ -44,42 +44,43 @@
   [& params]
   `(str/concat ~@params))
 
-(defmacro export
-  "A helper macro that allows reexport a var in a current namespace."
-  [v]
-  (if (boolean (:ns &env))
+#?(:clj
+   (defmacro export
+     "A helper macro that allows reexport a var in a current namespace."
+     [v]
+     (if (boolean (:ns &env))
 
-    ;; Code for ClojureScript
-    (let [mdata    (aapi/resolve &env v)
-          arglists (second (get-in mdata [:meta :arglists]))
-          sym      (symbol (c/name v))
-          andsym   (symbol "&")
-          procarg  #(if (= % andsym) % (gensym "param"))]
-      (if (pos? (count arglists))
-        `(def
-           ~(with-meta sym (:meta mdata))
-           (fn ~@(for [args arglists]
-                   (let [args (map procarg args)]
-                     (if (some #(= andsym %) args)
-                       (let [[sargs dargs] (split-with #(not= andsym %) args)]
-                         `([~@sargs ~@dargs] (apply ~v ~@sargs ~@(rest dargs))))
-                       `([~@args] (~v ~@args)))))))
-        `(def ~(with-meta sym (:meta mdata)) ~v)))
+       ;; Code for ClojureScript
+       (let [mdata    (aapi/resolve &env v)
+             arglists (second (get-in mdata [:meta :arglists]))
+             sym      (symbol (c/name v))
+             andsym   (symbol "&")
+             procarg  #(if (= % andsym) % (gensym "param"))]
+         (if (pos? (count arglists))
+           `(def
+              ~(with-meta sym (:meta mdata))
+              (fn ~@(for [args arglists]
+                      (let [args (map procarg args)]
+                        (if (some #(= andsym %) args)
+                          (let [[sargs dargs] (split-with #(not= andsym %) args)]
+                            `([~@sargs ~@dargs] (apply ~v ~@sargs ~@(rest dargs))))
+                          `([~@args] (~v ~@args)))))))
+           `(def ~(with-meta sym (:meta mdata)) ~v)))
 
-    ;; Code for Clojure
-    (let [vr (resolve v)
-          m  (meta vr)
-          n  (:name m)
-          n  (with-meta n
-               (cond-> {}
-                 (:dynamic m) (assoc :dynamic true)
-                 (:protocol m) (assoc :protocol (:protocol m))))]
-      `(let [m# (meta ~vr)]
-         (def ~n (deref ~vr))
-         (alter-meta! (var ~n) merge (dissoc m# :name))
-         ;; (when (:macro m#)
-         ;;   (.setMacro (var ~n)))
-         ~vr))))
+       ;; Code for Clojure
+       (let [vr (resolve v)
+             m  (meta vr)
+             n  (:name m)
+             n  (with-meta n
+                  (cond-> {}
+                    (:dynamic m) (assoc :dynamic true)
+                    (:protocol m) (assoc :protocol (:protocol m))))]
+         `(let [m# (meta ~vr)]
+            (def ~n (deref ~vr))
+            (alter-meta! (var ~n) merge (dissoc m# :name))
+            ;; (when (:macro m#)
+            ;;   (.setMacro (var ~n)))
+            ~vr)))))
 
 (defmacro fmt
   "String interpolation helper. Can only be used with strings known at

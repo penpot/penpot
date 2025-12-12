@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -x
+
+EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
 
 _BUILD_NAME="${_BUILD_NAME:-render_wasm}"
 
@@ -8,18 +9,13 @@ pushd $_SCRIPT_DIR;
 
 . ./_build_env
 
-export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+set -ex;
 
-cargo build $_CARGO_PARAMS
+setup;
+build;
+copy_artifacts "../frontend/resources/public/js";
+copy_shared_artifact;
 
-_SHARED_FILE=$(find target/wasm32-unknown-emscripten -name render_wasm_shared.js | head -n 1);
-
-cat target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js "$_SHARED_FILE" > ../frontend/resources/public/js/$_BUILD_NAME.js
-cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/$_BUILD_NAME.wasm
-
-sed -i "s/render_wasm.wasm/$_BUILD_NAME.wasm?version=develop/g" ../frontend/resources/public/js/$_BUILD_NAME.js;
-
-exit $?
+exit $?;
 
 popd

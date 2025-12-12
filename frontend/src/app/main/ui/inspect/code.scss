@@ -14,7 +14,7 @@
   padding-bottom: deprecated.$s-16;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-gutter: stable;
+  padding-inline: var(--sp-m);
 }
 
 .viewer-code-block {

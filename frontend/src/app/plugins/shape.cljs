@@ -31,6 +31,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -42,6 +43,8 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.flex :as flex]
@@ -58,6 +61,8 @@
 
 (declare shape-proxy)
 (declare shape-proxy?)
+;; This is injected from plugin/librraies
+(def variant-proxy nil)
 
 (defn interaction-proxy? [p]
   (obj/type-of? p "InteractionProxy"))
@@ -213,7 +218,7 @@
                   (u/display-not-valid :name value)
 
                   :else
-                  (st/emit! (dw/end-rename-shape id value)))))}
+                  (st/emit! (dw/rename-shape-or-variant file-id page-id id value)))))}
 
            :blocked
            {:this true
@@ -526,6 +531,19 @@
                        (let [parent-id (:parent-id shape)]
                          (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))))}
 
+           :parentIndex
+           {:this true
+            :get
+            (fn [self]
+              (let [shape (u/proxy->shape self)]
+                (if (cfh/root? shape)
+                  0
+                  (let [file-id (obj/get self "$file")
+                        page-id (obj/get self "$page")
+                        parent (u/locate-shape file-id page-id (:parent-id shape))
+                        index (d/index-of (:shapes parent) id)]
+                    index))))}
+
            :parentX
            {:this true
             :get (fn [self]
@@ -762,6 +780,8 @@
 
 
            ;; Interactions
+
+
            :interactions
            {:this true
             :get
@@ -771,9 +791,7 @@
                  #(interaction-proxy plugin-id file-id page-id id %)
                  (range 0 (count interactions)))))}
 
-
            ;; Methods
-
            :resize
            (fn [width height]
              (cond
@@ -1016,8 +1034,8 @@
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (cfh/path-shape? shape))
-                 (u/display-not-valid :makeMask (:type shape))
+                 (and (not (cfh/path-shape? shape)) (not (cfh/bool-shape? shape)))
+                 (u/display-not-valid :toD (:type shape))
 
                  :else
                  (.toString (:content shape)))))
@@ -1055,6 +1073,35 @@
                  :else
                  (let [typography (u/proxy->library-typography typography)]
                    (st/emit! (dwt/apply-typography #{id} typography file-id))))))
+
+           ;; Change index method
+           :setParentIndex
+           (fn [index]
+             (cond
+               (not (us/safe-int? index))
+               (u/display-not-valid :setParentIndex index)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/display-not-valid :setParentIndex "Plugin doesn't have 'content:write' permission")
+
+               :else
+               (st/emit! (dw/set-shape-index file-id page-id id index))))
+
+           :bringForward
+           (fn []
+             (st/emit! (dw/vertical-order-selected :up)))
+
+           :sendBackward
+           (fn []
+             (st/emit! (dw/vertical-order-selected :down)))
+
+           :bringToFront
+           (fn []
+             (st/emit! (dw/vertical-order-selected :top)))
+
+           :sendToBack
+           (fn []
+             (st/emit! (dw/vertical-order-selected :bottom)))
 
            ;; COMPONENTS
            :isComponentInstance
@@ -1221,13 +1268,102 @@
 
                :else
                (let [guide (u/proxy->ruler-guide value)]
-                 (st/emit! (dwgu/remove-guide guide))))))
+                 (st/emit! (dwgu/remove-guide guide)))))
+
+           :tokens
+           {:this true
+            :get
+            (fn [_]
+              (let [tokens
+                    (-> (u/locate-shape file-id page-id id)
+                        (get :applied-tokens))]
+                (reduce
+                 (fn [acc [prop name]]
+                   (obj/set! acc (d/name prop) name))
+                 #js {}
+                 tokens)))}
+
+           :applyToken
+           (fn [token attrs]
+             (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
+                   kw-attrs (into #{} (map keyword attrs))]
+               (if (some #(not (cto/token-attr? %)) kw-attrs)
+                 (u/display-not-valid :applyToken attrs)
+                 (st/emit!
+                  (dwta/toggle-token {:token token
+                                      :attrs kw-attrs
+                                      :shape-ids [id]
+                                      :expand-with-children false})))))
+
+           :isVariantHead
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)
+                   component (u/locate-library-component file-id (:component-id shape))]
+               (and (ctk/instance-head? shape) (ctk/is-variant? component))))
+
+           :isVariantContainer
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)]
+               (ctk/is-variant-container? shape)))
+
+           :switchVariant
+           (fn [pos value]
+             (cond
+               (not (nat-int? pos))
+               (u/display-not-valid :pos pos)
+
+               (not (string? value))
+               (u/display-not-valid :value value)
+
+               :else
+               (let [shape     (u/locate-shape file-id page-id id)
+                     component (u/locate-library-component file-id (:component-id shape))]
+                 (when  (and component (ctk/is-variant? component))
+                   (st/emit! (dwv/variants-switch {:shapes [shape] :pos pos :val value}))))))
+
+           :combineAsVariants
+           (fn [ids]
+             (if (or (not (seq ids)) (not (every? uuid/parse* ids)))
+               (u/display-not-valid :ids ids)
+               (let [shape     (u/locate-shape file-id page-id id)
+                     component (u/locate-library-component file-id (:component-id shape))
+                     ids (->> ids
+                              (map uuid/uuid)
+                              (into #{id}))]
+                 (when  (and component (not (ctk/is-variant? component)))
+                   (st/emit!
+                    (dwv/combine-as-variants ids {:trigger "plugin:combine-as-variants"})))))))
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
-            {:name "children"
+            {:this true
+             :name "children"
              :enumerable false
-             :get #(.getChildren ^js %)}))
+             :get
+             (fn [^js self]
+               (.getChildren self))
+
+             :set
+             (fn [^js self children]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/display-not-valid :children "Plugin doesn't have 'content:write' permission")
+
+                 (not (every? shape-proxy? children))
+                 (u/display-not-valid :children "Every children needs to be shape proxies")
+
+                 :else
+                 (let [shape (u/proxy->shape self)
+                       file-id (obj/get self "$file")
+                       page-id (obj/get self "$page")
+                       ids (->> children (map #(obj/get % "$id")))]
+
+                   (cond
+                     (not= (set ids) (set (:shapes shape)))
+                     (u/display-not-valid :children "Not all children are present in the input")
+
+                     :else
+                     (st/emit! (dw/reorder-children file-id page-id (:id shape) ids))))))}))
 
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!
@@ -1338,19 +1474,51 @@
                        (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
 
                        :else
-                       (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))})))
+                       (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
+
+                {:name "variants"
+                 :enumerable false
+                 :get
+                 (fn [self]
+                   (let [shape (-> self u/proxy->shape)]
+                     (when (ctk/is-variant-container? shape)
+                       (variant-proxy plugin-id file-id (:id shape)))))})))
 
          (cond-> (cfh/text-shape? data) (text/add-text-props plugin-id))
 
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
-            {:name "content"
+            {:name "commands"
+             :get #(-> % u/proxy->shape :content format/format-path-content)
+             :set
+             (fn [_ value]
+               (let [segments (parser/parse-commands value)]
+                 (cond
+                   (not (r/check-permission plugin-id "content:write"))
+                   (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+
+                   (not (sm/validate path/schema:segments segments))
+                   (u/display-not-valid :content segments)
+
+                   :else
+                   (let [selrect (path/calc-selrect segments)
+                         content (path/from-plain segments)
+                         points  (grc/rect->points selrect)]
+                     (st/emit! (dwsh/update-shapes
+                                [id]
+                                (fn [shape]
+                                  (-> shape
+                                      (assoc :content content)
+                                      (assoc :selrect selrect)
+                                      (assoc :points points)))))))))}
+            {:name "d"
              :get #(-> % u/proxy->shape :content str)
              :set
              (fn [_ value]
-               (let [segments (if (string? value)
-                                (svg.path/parse value)
-                                value)]
+               (let [segments
+                     (if (string? value)
+                       (svg.path/parse value)
+                       value)]
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
                    (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
@@ -1370,4 +1538,7 @@
                                                      (-> shape
                                                          (assoc :content content)
                                                          (assoc :selrect selrect)
-                                                         (assoc :points points)))))))))}))))))
+                                                         (assoc :points points)))))))))}
+            {:name "content"
+             :get #(.-d %)
+             :set (fn [self value] (set! (.-d self) value))}))))))

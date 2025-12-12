@@ -96,6 +96,7 @@
 
       [:div {:class (stl/css :button-row)}
        [:> button* {:variant "primary"
+                    :type "button"
                     :class (stl/css :modal-accept-btn)
                     :on-click on-close}
         (tr "ds.confirm-ok")]]]]))

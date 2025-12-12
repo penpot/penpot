@@ -1,0 +1,132 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u3e5ffd68-2819-8084-8006-eb1c616a5afd",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "Text fills",
+    "~:revn": 26,
+    "~:modified-at": "~m1760450987132",
+    "~:vern": 0,
+    "~:id": "~ub1ff3fdf-b491-812b-8006-f2ce3d29333a",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content-v2",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content-v2",
+            "0004-clean-shadow-color",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-v4",
+            "0009-clean-library-colors",
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes",
+            "0011-fix-invalid-text-touched-flags",
+            "0012-fix-position-data",
+            "0013-fix-component-path",
+            "0014-fix-tokens-lib-duplicate-ids"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u3e5ffd68-2819-8084-8006-eb1c616e69bf",
+    "~:created-at": "~m1760368824484",
+    "~:backend": "legacy-db",
+    "~:data": {
+        "~:pages": [
+            "~ub1ff3fdf-b491-812b-8006-f2ce3d29333b"
+        ],
+        "~:pages-index": {
+            "~ub1ff3fdf-b491-812b-8006-f2ce3d29333b": {
+                "~:objects": {
+                    "~#penpot/objects-map/v2": {
+                        "~u00000000-0000-0000-0000-000000000000": "[\"~#shape\",[\"^ \",\"~:y\",0,\"~:hide-fill-on-export\",false,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"Root Frame\",\"~:width\",0.01,\"~:type\",\"~:frame\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",0.0,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.01]],[\"^:\",[\"^ \",\"~:x\",0.0,\"~:y\",0.01]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^3\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",0,\"~:proportion\",1.0,\"~:r4\",0,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^6\",0.01,\"~:height\",0.01,\"~:x1\",0,\"~:y1\",0,\"~:x2\",0.01,\"~:y2\",0.01]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#FFFFFF\",\"~:fill-opacity\",1]],\"~:flip-x\",null,\"^H\",0.01,\"~:flip-y\",null,\"~:shapes\",[\"~u23b2a9cc-5d10-800a-8006-f2ce6354e75d\"]]]",
+                        "~u23b2a9cc-5d10-800a-8006-f2ce6354e75d": "[\"~#shape\",[\"^ \",\"~:y\",540.9999842227844,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:grow-type\",\"~:auto-width\",\"~:content\",[\"^ \",\"~:type\",\"root\",\"~:key\",\"1tx250q8puw\",\"~:children\",[[\"^ \",\"^7\",\"paragraph-set\",\"^9\",[[\"^ \",\"~:line-height\",\"1.2\",\"~:font-style\",\"normal\",\"^9\",[[\"^ \",\"^:\",\"\",\"^;\",\"normal\",\"~:typography-ref-id\",null,\"~:text-transform\",\"none\",\"~:font-id\",\"sourcesanspro\",\"^8\",\"1c1skqx1y2p\",\"~:font-size\",\"36\",\"~:font-weight\",\"700\",\"~:typography-ref-file\",null,\"~:font-variant-id\",\"bold\",\"~:text-decoration\",\"none\",\"~:letter-spacing\",\"0\",\"~:fills\",[[\"^ \",\"~:fill-color\",\"#000000\",\"~:fill-opacity\",1],[\"^ \",\"^F\",\"#00ffc3\",\"^G\",1],[\"^ \",\"^F\",\"#d9ff00\",\"^G\",1],[\"^ \",\"^F\",\"#192b60\",\"^G\",1],[\"^ \",\"^F\",\"#7f9fff\",\"^G\",1],[\"^ \",\"^F\",\"#ff00ca\",\"^G\",1],[\"^ \",\"^F\",\"#003fff\",\"^G\",1]],\"~:font-family\",\"sourcesanspro\",\"~:text\",\"Lorem ipsum\"]],\"^<\",null,\"^=\",\"none\",\"~:text-align\",\"left\",\"^>\",\"sourcesanspro\",\"^8\",\"12a6vwimj9j\",\"^?\",\"0\",\"^@\",\"700\",\"^A\",null,\"~:text-direction\",\"ltr\",\"^7\",\"paragraph\",\"^B\",\"bold\",\"^C\",\"none\",\"^D\",\"0\",\"^E\",[[\"^ \",\"^F\",\"#000000\",\"^G\",1],[\"^ \",\"^F\",\"#00ffc3\",\"^G\",1],[\"^ \",\"^F\",\"#d9ff00\",\"^G\",1],[\"^ \",\"^F\",\"#192b60\",\"^G\",1],[\"^ \",\"^F\",\"#7f9fff\",\"^G\",1],[\"^ \",\"^F\",\"#ff00ca\",\"^G\",1],[\"^ \",\"^F\",\"#003fff\",\"^G\",1]],\"^H\",\"sourcesanspro\"]]]],\"~:vertical-align\",\"top\"],\"~:hide-in-viewer\",false,\"~:name\",\"Lorem ipsum\",\"~:width\",207.000004835394,\"^7\",\"^I\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",321.9999624852649,\"~:y\",540.9999842227845]],[\"^Q\",[\"^ \",\"~:x\",528.9999673206589,\"~:y\",540.9999842227845]],[\"^Q\",[\"^ \",\"~:x\",528.9999673206589,\"~:y\",583.9999821366218]],[\"^Q\",[\"^ \",\"~:x\",321.9999624852649,\"~:y\",583.9999821366218]]],\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~u23b2a9cc-5d10-800a-8006-f2ce6354e75d\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:x\",321.99996248526486,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",321.99996248526486,\"~:y\",540.9999842227844,\"^O\",207.000004835394,\"~:height\",42.99999791383732,\"~:x1\",321.99996248526486,\"~:y1\",540.9999842227844,\"~:x2\",528.9999673206589,\"~:y2\",583.9999821366217]],\"~:flip-x\",null,\"^X\",42.99999791383732,\"~:flip-y\",null]]"
+                    }
+                },
+                "~:id": "~ub1ff3fdf-b491-812b-8006-f2ce3d29333b",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~ub1ff3fdf-b491-812b-8006-f2ce3d29333a",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}

@@ -704,6 +704,12 @@
   (and (sql-exception? cause)
        (= "40001" (.getSQLState ^java.sql.SQLException cause))))
 
+(defn duplicate-key-error?
+  [cause]
+  (and (sql-exception? cause)
+       (= "23505" (.getSQLState ^java.sql.SQLException cause))))
+
+
 (extend-protocol jdbc.prepare/SettableParameter
   clojure.lang.Keyword
   (set-parameter [^clojure.lang.Keyword v ^PreparedStatement s ^long i]

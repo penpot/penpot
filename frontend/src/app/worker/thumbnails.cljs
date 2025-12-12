@@ -7,18 +7,28 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
+   [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
+   [app.common.types.color :as cc]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.render :as render]
+   [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
    [app.worker.impl :as impl]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (log/set-level! :trace)
+
+(def ^:private ^:const thumbnail-aspect-ratio (/ 2 3))
 
 (defn- handle-response
   [{:keys [body status] :as response}]
@@ -42,11 +52,11 @@
                :http-body body})))
 
 (defn- request-data-for-thumbnail
-  [file-id revn]
-  (let [path    "api/rpc/command/get-file-data-for-thumbnail"
+  [file-id revn strip-frames-with-thumbnails]
+  (let [path    "api/main/methods/get-file-data-for-thumbnail"
         params   {:file-id file-id
                   :revn revn
-                  :strip-frames-with-thumbnails true}
+                  :strip-frames-with-thumbnails strip-frames-with-thumbnails}
         request  {:method :get
                   :uri (u/join cf/public-uri path)
                   :credentials "include"
@@ -54,6 +64,10 @@
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SVG RENDERING (LEGACY RENDER)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- render-thumbnail
   [{:keys [page file-id revn] :as params}]
@@ -86,5 +100,116 @@
 
 (defmethod impl/handler :thumbnails/generate-for-file
   [{:keys [file-id revn] :as message} _]
-  (->> (request-data-for-thumbnail file-id revn)
+  (->> (request-data-for-thumbnail file-id revn true)
        (rx/map render-thumbnail)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WASM RENDERING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(mf/defc svg-wrapper*
+  {::mf/private true}
+  [{:keys [uri background width height]}]
+  [:svg {:version "1.1"
+         :xmlns "http://www.w3.org/2000/svg"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
+
+         :style {:width "100%"
+                 :height "100%"
+                 :background background}
+         :fill "none"
+         :viewBox (dm/str "0 0 " width " " height)}
+   [:image {:xlinkHref uri
+            :width width
+            :height height}]])
+
+(defn- blob->uri
+  [blob]
+  (.readAsDataURL (js/FileReaderSync.) blob))
+
+(defn- render-canvas-blob
+  [canvas width height background]
+  (->> (.convertToBlob ^js canvas)
+       (p/fmap (fn [blob]
+                 (rds/renderToStaticMarkup
+                  (mf/element svg-wrapper*
+                              #js {:uri (blob->uri blob)
+                                   :width width
+                                   :height height
+                                   :background background}))))))
+
+(defonce ^:private wasm-module
+  (delay
+    (let [module  (unchecked-get js/globalThis "WasmModule")
+          init-fn (unchecked-get module "default")
+          href    (cf/resolve-href "js/render-wasm.wasm")]
+      (->> (init-fn #js {:locateFile (constantly href)})
+           (p/fnly (fn [module cause]
+                     (if cause
+                       (js/console.error cause)
+                       (set! wasm/internal-module module))))))))
+
+(defn- render-thumbnail-with-wasm
+  [{:keys [id file-id revn width] :as message}]
+  (->> (rx/from @wasm-module)
+       (rx/mapcat #(request-data-for-thumbnail file-id revn false))
+       (rx/mapcat
+        (fn [{:keys [page] :as file}]
+          (rx/create
+           (fn [subs]
+             (let [bgcolor (or (:background page) cc/canvas)
+                   height  (* width thumbnail-aspect-ratio)
+                   canvas  (js/OffscreenCanvas. width height)
+                   init?   (wasm.api/init-canvas-context canvas)]
+               (if init?
+                 (let [objects (:objects page)
+                       frame   (some->> page :thumbnail-frame-id (get objects))
+                       vbox    (if frame
+                                 (-> (gsb/get-object-bounds objects frame)
+                                     (grc/fix-aspect-ratio thumbnail-aspect-ratio))
+                                 (render/calculate-dimensions objects thumbnail-aspect-ratio))
+                       zoom    (/ width (:width vbox))]
+
+                   (wasm.api/initialize-viewport
+                    objects zoom vbox bgcolor
+                    (fn []
+                      (if frame
+                        (wasm.api/render-sync-shape (:id frame))
+                        (wasm.api/render-sync))
+
+                      (->> (render-canvas-blob canvas width height bgcolor)
+                           (p/fnly (fn [data cause]
+                                     (if cause
+                                       (rx/error! subs cause)
+                                       (rx/push! subs
+                                                 {:id id
+                                                  :data data
+                                                  :file-id file-id
+                                                  :revn revn}))
+                                     (rx/end! subs)))))))
+                 (rx/end! subs))
+               nil)))))))
+
+(defonce ^:private
+  thumbnails-queue
+  (rx/subject))
+
+(defonce ^:private
+  thumbnails-stream
+  (->> thumbnails-queue
+       (rx/mapcat render-thumbnail-with-wasm)
+       (rx/share)))
+
+(defmethod impl/handler :thumbnails/generate-for-file-wasm
+  [message _]
+  (rx/create
+   (fn [subs]
+     (let [id  (uuid/next)
+           sid (->> thumbnails-stream
+                    (rx/filter #(= id (:id %)))
+                    (rx/subs!
+                     (fn [result]
+                       (rx/push! subs result)
+                       (rx/end! subs))))]
+       (rx/push! thumbnails-queue (assoc message :id id))
+       #(rx/dispose! sid)))))

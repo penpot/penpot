@@ -21,7 +21,7 @@
    [app.http.client :as-alias http.client]
    [app.http.debug :as-alias http.debug]
    [app.http.management :as mgmt]
-   [app.http.session :as-alias session]
+   [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
    [app.loggers.webhooks :as-alias webhooks]
@@ -31,7 +31,6 @@
    [app.redis :as-alias rds]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
-   [app.rpc.doc :as-alias rpc.doc]
    [app.setup :as-alias setup]
    [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
@@ -260,14 +259,17 @@
    ::oidc.providers/generic
    {::http.client/client (ig/ref ::http.client/client)}
 
+   ::oidc/providers
+   [(ig/ref ::oidc.providers/google)
+    (ig/ref ::oidc.providers/github)
+    (ig/ref ::oidc.providers/gitlab)
+    (ig/ref ::oidc.providers/generic)]
+
    ::oidc/routes
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::setup/props        (ig/ref ::setup/props)
-    ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
-                          :github (ig/ref ::oidc.providers/github)
-                          :gitlab (ig/ref ::oidc.providers/gitlab)
-                          :oidc   (ig/ref ::oidc.providers/generic)}
+    ::oidc/providers     (ig/ref ::oidc/providers)
     ::session/manager    (ig/ref ::session/manager)
     ::email/blacklist    (ig/ref ::email/blacklist)
     ::email/whitelist    (ig/ref ::email/whitelist)}
@@ -280,7 +282,6 @@
    {::session/manager    (ig/ref ::session/manager)
     ::db/pool            (ig/ref ::db/pool)
     ::rpc/routes         (ig/ref ::rpc/routes)
-    ::rpc.doc/routes     (ig/ref ::rpc.doc/routes)
     ::setup/props        (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
     ::oidc/routes        (ig/ref ::oidc/routes)
@@ -300,6 +301,7 @@
    {::db/pool         (ig/ref ::db/pool)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::mbus/msgbus     (ig/ref ::mbus/msgbus)
+    ::setup/props     (ig/ref ::setup/props)
     ::session/manager (ig/ref ::session/manager)}
 
    :app.http.assets/routes
@@ -337,14 +339,26 @@
     ::email/blacklist    (ig/ref ::email/blacklist)
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
-   :app.rpc.doc/routes
-   {:app.rpc/methods (ig/ref :app.rpc/methods)}
+   :app.rpc/management-methods
+   {::http.client/client (ig/ref ::http.client/client)
+    ::db/pool            (ig/ref ::db/pool)
+    ::rds/pool           (ig/ref ::rds/pool)
+    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    ::session/manager    (ig/ref ::session/manager)
+    ::sto/storage        (ig/ref ::sto/storage)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
+    ::mbus/msgbus        (ig/ref ::mbus/msgbus)
+    ::rds/client         (ig/ref ::rds/client)
+    ::setup/props        (ig/ref ::setup/props)}
 
    ::rpc/routes
-   {::rpc/methods     (ig/ref :app.rpc/methods)
-    ::db/pool         (ig/ref ::db/pool)
-    ::session/manager (ig/ref ::session/manager)
-    ::setup/props     (ig/ref ::setup/props)}
+   {::rpc/methods        (ig/ref :app.rpc/methods)
+    ::rpc/management-methods (ig/ref :app.rpc/management-methods)
+
+    ;; FIXME: revisit if db/pool is necessary here
+    ::db/pool                (ig/ref ::db/pool)
+    ::session/manager        (ig/ref ::session/manager)
+    ::setup/props            (ig/ref ::setup/props)}
 
    ::wrk/registry
    {::mtx/metrics (ig/ref ::mtx/metrics)

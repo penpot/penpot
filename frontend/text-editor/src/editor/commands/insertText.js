@@ -25,8 +25,8 @@ export function insertText(event, editor, selectionController) {
   } else {
     if (selectionController.isMultiParagraph) {
       return selectionController.replaceParagraphs(event.data);
-    } else if (selectionController.isMultiInline) {
-      return selectionController.replaceInlines(event.data);
+    } else if (selectionController.isMultiTextSpan) {
+      return selectionController.replaceTextSpans(event.data);
     } else if (selectionController.isTextSame) {
       return selectionController.replaceText(event.data);
     }

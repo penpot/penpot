@@ -8,8 +8,14 @@
 @use "ds/_sizes.scss" as *;
 @use "ds/colors.scss" as *;
 
+@property --solid-color-overlay {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: rgba(0, 0, 0, 0);
+}
+
 .swatch {
-  --border-color: var(--color-accent-primary-muted);
+  --border-color: var(--color-background-quaternary);
   --border-radius: #{$br-4};
   --border-color-active: var(--color-foreground-primary);
   --border-color-active-inset: var(--color-background-primary);
@@ -20,7 +26,7 @@
   border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
-  &:focus {
+  &:focus-visible {
     --border-color: var(--color-accent-primary);
   }
 }
@@ -73,7 +79,8 @@
   background: none;
 
   &:hover {
-    border: 2px solid var(--border-color);
+    --border-color: var(--color-accent-primary-muted);
+    border-width: $b-2;
   }
 }
 
@@ -98,9 +105,25 @@
 }
 
 .swatch-opacity {
-  background: var(--checkerboard-background);
-  background-size: var(--checkerboard-size);
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto;
+}
+
+.swatch-opacity-side-transparency {
+  background-image:
+  /* solid‑colour overlay */
+  /* checkerboard pattern */
+    linear-gradient(var(--solid-color-overlay), var(--solid-color-overlay)), var(--checkerboard-background);
+
+  background-size: cover, var(--checkerboard-size);
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+  clip-path: inset(0 0 0 0 round 0 #{$br-4} #{$br-4} 0);
+}
+
+.swatch-opacity-side-solid-color {
+  background: var(--solid-color-overlay);
+  background-size: cover;
 }
 
 .swatch-solid-side,

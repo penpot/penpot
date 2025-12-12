@@ -1,0 +1,12 @@
+{
+    auto_https off
+}
+
+localhost:3449 {
+   reverse_proxy localhost:4449
+   tls /home/selfsigned.crt /home/selfsigned.key
+}
+
+http://localhost:3450 {
+   reverse_proxy localhost:4449
+}

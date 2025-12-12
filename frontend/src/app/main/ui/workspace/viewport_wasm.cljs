@@ -66,9 +66,9 @@
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
   (->> modifiers
-       (filter #(contains? selected (:id %)))
+       (filter #(contains? selected (first %)))
        (reduce
-        (fn [objects {:keys [id transform]}]
+        (fn [objects [id transform]]
           (update objects id gsh/apply-transform transform))
         objects)))
 
@@ -113,8 +113,7 @@
         objects-modified
         (mf/with-memo
           [base-objects wasm-modifiers]
-          (binding [cts/*wasm-sync* false]
-            (apply-modifiers-to-selected selected base-objects wasm-modifiers)))
+          (apply-modifiers-to-selected selected base-objects wasm-modifiers))
 
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
@@ -143,9 +142,9 @@
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
 
-        ;; VARS
-        disable-paste     (mf/use-var false)
-        in-viewport?      (mf/use-var false)
+        ;; STATE REFS
+        disable-paste-ref (mf/use-ref false)
+        in-viewport-ref   (mf/use-ref false)
 
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
@@ -160,6 +159,8 @@
                                  (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
+        prev-zoom         (mf/use-ref zoom)
+
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
@@ -203,10 +204,10 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste)
+        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
 
-        on-pointer-enter  (actions/on-pointer-enter in-viewport?)
-        on-pointer-leave  (actions/on-pointer-leave in-viewport?)
+        on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
+        on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
         on-pointer-move   (actions/on-pointer-move move-stream)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected read-only?)
@@ -296,8 +297,9 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)))))
+                         (let [init? (wasm.api/init-canvas-context canvas)]
+                           (reset! canvas-init? init?)
+                           (when-not init? (js/alert "WebGL not supported")))))))
         (fn []
           (wasm.api/clear-canvas))))
 
@@ -311,7 +313,6 @@
             (wasm.api/set-shape-text-content edition content)
             (let [dimension (wasm.api/get-text-dimensions)]
               (st/emit! (dwt/resize-text-editor edition dimension))
-              (wasm.api/clear-drawing-cache)
               (wasm.api/request-render "content"))))))
 
     (mf/with-effect [vport]
@@ -324,7 +325,7 @@
 
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
-        (wasm.api/initialize base-objects zoom vbox background)
+        (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
 
     (mf/with-effect [focus]
@@ -335,7 +336,8 @@
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-box zoom vbox)))
+        (wasm.api/set-view-box (mf/ref-val prev-zoom) zoom vbox))
+      (mf/set-ref-val! prev-zoom zoom))
 
     (mf/with-effect [background]
       (when (and @canvas-init? initialized?)
@@ -347,7 +349,7 @@
           (wasm.api/show-grid @hover-top-frame-id)
           (wasm.api/clear-grid))))
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
+    (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
@@ -431,6 +433,7 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
+                                      :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
                                           :ref text-editor-ref}]))

@@ -180,8 +180,8 @@ export async function watch(baseDir, predicate, callback) {
   });
 }
 
-async function readManifestFile(path) {
-  const manifestPath = "resources/public/js/manifest.json";
+async function readManifestFile(resource) {
+  const manifestPath = "resources/public/" + resource;
   let content = await fs.readFile(manifestPath, { encoding: "utf8" });
   return JSON.parse(content);
 }
@@ -189,12 +189,7 @@ async function readManifestFile(path) {
 async function readShadowManifest() {
   const ts = Date.now();
   try {
-    const content1 = await readManifestFile(
-      "resources/public/js/manifest.json",
-    );
-    const content2 = await readManifestFile(
-      "resources/public/js/worker/manifest.json",
-    );
+    const content = await readManifestFile("js/manifest.json");
 
     const index = {
       ts: ts,
@@ -202,10 +197,11 @@ async function readShadowManifest() {
       polyfills: "js/polyfills.js?ts=" + ts,
     };
 
-    for (let item of content1) {
+    for (let item of content) {
       index[item.name] = "js/" + item["output-name"];
     }
 
+    const content2 = await readManifestFile("js/worker/manifest.json");
     for (let item of content2) {
       index["worker_" + item.name] = "js/worker/" + item["output-name"];
     }

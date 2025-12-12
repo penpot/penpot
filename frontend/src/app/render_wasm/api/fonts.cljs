@@ -25,6 +25,10 @@
 (def ^:private fonts
   (l/derived :fonts st/state))
 
+(def ^:private default-font-size 14)
+(def ^:private default-line-height 1.2)
+(def ^:private default-letter-spacing 0.0)
+
 (defn- google-font-id->uuid
   [font-id]
   (let [font (fonts/get-font-data font-id)]
@@ -66,9 +70,10 @@
     :custom
     (let [font-uuid (custom-font-id->uuid font-id)
           matching-font (d/seek (fn [[_ font]]
-                                  (and (= (:font-id font) font-uuid)
-                                       (or (nil? (:font-variant-id font))
-                                           (= (:font-variant-id font) font-variant-id))))
+                                  (let [variant-id (or (:font-variant-id font) (dm/str (:font-style font) "-" (:font-weight font)))]
+                                    (and (= (:font-id font) font-uuid)
+                                         (or (nil? font-variant-id)
+                                             (= variant-id font-variant-id)))))
                                 (seq @fonts))]
       (when matching-font
         (:ttf-file-id (second matching-font))))
@@ -76,7 +81,17 @@
     (let [variant (font-db-data font-id font-variant-id)]
       (:ttf-url variant))))
 
-;; IMPORTANT: It should be noted that only TTF fonts can be stored.
+(defn update-text-layout
+  [id]
+  (when wasm/context-initialized?
+    (let [shape-id-buffer (uuid/get-u32 id)]
+      (h/call wasm/internal-module "_update_shape_text_layout_for"
+              (aget shape-id-buffer 0)
+              (aget shape-id-buffer 1)
+              (aget shape-id-buffer 2)
+              (aget shape-id-buffer 3)))))
+
+;; IMPORTANT: Only TTF fonts can be stored.
 (defn- store-font-buffer
   [shape-id font-data font-array-buffer emoji? fallback?]
   (let [font-id-buffer  (:family-id-buffer font-data)
@@ -100,11 +115,7 @@
             emoji?
             fallback?)
 
-    (h/call wasm/internal-module "_update_shape_text_layout_for"
-            (aget shape-id-buffer 0)
-            (aget shape-id-buffer 1)
-            (aget shape-id-buffer 2)
-            (aget shape-id-buffer 3))
+    (update-text-layout shape-id)
 
     true))
 
@@ -176,6 +187,15 @@
     (catch :default _e
       uuid/zero)))
 
+(defn serialize-font-size
+  [font-size]
+  (cond
+    (number? font-size)
+    font-size
+
+    (string? font-size)
+    (or (d/parse-double font-size) default-font-size)))
+
 (defn serialize-font-weight
   [font-weight]
   (if (number? font-weight)
@@ -204,6 +224,26 @@
         :else
         400))))
 
+(defn serialize-line-height
+  ([line-height]
+   (serialize-line-height line-height default-line-height))
+  ([line-height default-value]
+   (cond
+     (number? line-height)
+     line-height
+
+     (string? line-height)
+     (or (d/parse-double line-height) default-value))))
+
+(defn serialize-letter-spacing
+  [letter-spacing]
+  (cond
+    (number? letter-spacing)
+    letter-spacing
+
+    (string? letter-spacing)
+    (or (d/parse-double letter-spacing) default-letter-spacing)))
+
 (defn store-font
   [shape-id font]
   (let [font-id (get font :font-id)
@@ -226,6 +266,13 @@
 
     (store-font-id shape-id font-data asset-id emoji? fallback?)))
 
+;; FIXME: This is a temporary function to load the fallback fonts for the editor.
+;; Once we render the editor content within wasm, we can remove this function.
+(defn load-fallback-fonts-for-editor!
+  [fonts]
+  (doseq [font fonts]
+    (fonts/ensure-loaded! (:font-id font) (:font-variant-id font))))
+
 (defn store-fonts
   [shape-id fonts]
   (keep (fn [font] (store-font shape-id font)) fonts))
@@ -236,7 +283,8 @@
                :font-variant-id "regular"
                :style 0
                :weight 400
-               :is-emoji true}))
+               :is-emoji true
+               :is-fallback true}))
 
 (def noto-fonts
   {:japanese    {:font-id "gfont-noto-sans-jp"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}

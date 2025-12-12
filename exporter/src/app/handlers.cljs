@@ -12,7 +12,6 @@
    [app.common.spec :as us]
    [app.handlers.export-frames :as export-frames]
    [app.handlers.export-shapes :as export-shapes]
-   [app.handlers.resources :as resources]
    [app.util.transit :as t]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
@@ -54,7 +53,7 @@
 
       :else
       (let [data {:type :server-error
-                  :code type
+                  :code code
                   :hint (ex-message error)
                   :data data}]
         (l/error :hint "unexpected internal error" :cause error)
@@ -71,7 +70,6 @@
 
 (defmethod command-spec :export-shapes [_] ::export-shapes/params)
 (defmethod command-spec :export-frames [_] ::export-frames/params)
-(defmethod command-spec :get-resource [_] (s/keys :req-un [::id]))
 
 (s/def ::params
   (s/and (s/keys :req-un [::cmd]
@@ -83,7 +81,6 @@
   (let [{:keys [cmd] :as params} (us/conform ::params params)]
     (l/debug :hint "process-request" :cmd cmd)
     (case cmd
-      :get-resource  (resources/handler exchange)
       :export-shapes (export-shapes/handler exchange params)
       :export-frames (export-frames/handler exchange params)
       (ex/raise :type :internal

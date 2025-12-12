@@ -55,10 +55,7 @@
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint allowed-shape-attributes]}]
   (let [allowed-attributes (set/intersection attributes allowed-shape-attributes)
-        on-update-shape-fn
-        (or on-update-shape
-            (-> (dwta/get-token-properties token)
-                (:on-update-shape)))
+        on-update-shape-fn (or on-update-shape (dwta/get-update-shape-fn token))
 
         {:keys [selected-pred shape-ids]}
         (attribute-actions token selected-shapes allowed-attributes)]
@@ -279,7 +276,8 @@
                                                                            :r3 "Bottom Right"}
                                                         :hint (tr "workspace.tokens.radius")
                                                         :on-update-shape-all dwta/update-shape-radius-all
-                                                        :on-update-shape update-shape-radius-for-corners})]
+                                                        :on-update-shape update-shape-radius-for-corners})
+        shadow (partial generic-attribute-actions #{:shadow} "Shadow")]
     {:border-radius border-radius
      :color (fn [context-data]
               (concat
@@ -303,6 +301,7 @@
      :text-decoration text-decoration
      :font-weight font-weight
      :typography typography
+     :shadow shadow
      :dimensions (fn [context-data]
                    (-> (concat
                         (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing" :submenu :sizing}])

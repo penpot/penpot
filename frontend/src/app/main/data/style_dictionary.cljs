@@ -255,14 +255,19 @@
 
 (defn- parse-sd-token-font-family-value
   [value]
-  (let [missing-references (seq (some cto/find-token-value-references value))]
+  (let [value (-> (js->clj value) (flatten))
+        valid-font-family (or (string? value) (every? string? value))
+        missing-references (seq (some cto/find-token-value-references value))]
     (cond
+      (not valid-font-family)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-font-family value)]}
+
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
        :references missing-references}
 
       :else
-      {:value (-> (js->clj value) (flatten))})))
+      {:value value})))
 
 (defn parse-atomic-typography-value [token-type token-value]
   (case token-type
@@ -324,6 +329,106 @@
 (defn collect-typography-errors [token]
   (group-by :typography-key (:errors token)))
 
+(defn- parse-sd-token-shadow-inset
+  [value]
+  (let [references (seq (cto/find-token-value-references value))]
+    (cond
+      (boolean? value)
+      {:value value}
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-shadow-type value)]})))
+
+(defn- parse-sd-token-shadow-blur
+  "Parses shadow blur value (non-negative number)."
+  [value]
+  (let [parsed (parse-sd-token-general-value value)
+        valid? (and (:value parsed) (>= (:value parsed) 0))]
+    (cond
+      valid?
+      parsed
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-shadow-blur value)]})))
+
+(defn- parse-sd-token-shadow-spread
+  "Parses shadow spread value (non-negative number)."
+  [value]
+  (let [parsed (parse-sd-token-general-value value)
+        valid? (and (:value parsed) (>= (:value parsed) 0))]
+    (cond
+      valid?
+      parsed
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-shadow-spread value)]})))
+
+(defn- parse-single-shadow
+  "Parses a single shadow map with properties: x, y, blur, spread, color, type."
+  [shadow-map shadow-index]
+  (let [add-keyed-errors (fn [shadow-result k errors]
+                           (update shadow-result :errors concat
+                                   (map #(assoc % :shadow-key k :shadow-index shadow-index) errors)))
+        parsers {:offsetX parse-sd-token-general-value
+                 :offsetY parse-sd-token-general-value
+                 :blur parse-sd-token-shadow-blur
+                 :spread parse-sd-token-shadow-spread
+                 :color parse-sd-token-color-value
+                 :inset parse-sd-token-shadow-inset}
+        valid-shadow (reduce
+                      (fn [acc [k v]]
+                        (if-let [parser (get parsers k)]
+                          (let [{:keys [errors value]} (parser v)]
+                            (if (seq errors)
+                              (add-keyed-errors acc k errors)
+                              (assoc-in acc [:value k] (or value v))))
+                          acc))
+                      {:value {}}
+                      shadow-map)]
+    valid-shadow))
+
+(defn- parse-sd-token-shadow-value
+  "Parses shadow value and validates it."
+  [value]
+  (cond
+    ;; Reference value (string)
+    (string? value) {:value value}
+
+    ;; Empty value
+    (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
+
+    ;; Invalid value
+    (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
+
+    ;; Array of shadows
+    :else
+    (let [converted (js->clj value :keywordize-keys true)
+          ;; Parse each shadow with its index
+          parsed-shadows (map-indexed
+                          (fn [idx shadow-map]
+                            (parse-single-shadow shadow-map idx))
+                          converted)
+
+          ;; Collect all errors from all shadows
+          all-errors (mapcat :errors parsed-shadows)
+
+          ;; Collect all values from shadows that have values
+          all-values (into [] (keep :value parsed-shadows))]
+
+      (if (seq all-errors)
+        {:errors all-errors
+         :value all-values}
+        {:value all-values}))))
+
+(defn collect-shadow-errors [token shadow-index]
+  (group-by :shadow-key
+            (filter #(= (:shadow-index %) shadow-index)
+                    (:errors token))))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -364,6 +469,7 @@
                                (parse-atomic-typography-value (:type origin-token) value)
                                (case (:type origin-token)
                                  :typography (parse-composite-typography-value value)
+                                 :shadow (parse-sd-token-shadow-value value)
                                  :color (parse-sd-token-color-value value)
                                  :opacity (parse-sd-token-opacity-value value)
                                  :stroke-width (parse-sd-token-stroke-width-value value)

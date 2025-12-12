@@ -1,9 +1,11 @@
-{% if profile %}
-Feedback profile: {{profile.fullname}} <{{profile.email}}> / {{profile.id}}
-{% else %}
-Feedback from: {{email}}
-{% endif %}
+From: {{profile.fullname}} <{{profile.email}}> / {{profile.id}}
+Subject: {{feedback-subject}}
+Type: {{feedback-type}}
 
-Subject: {{subject}}
+{% if feedback-error-href %}
+HREF: {{feedback-error-href}}
+{% endif -%}
 
-{{content}}
+Message:
+
+{{feedback-content}}

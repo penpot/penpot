@@ -13,12 +13,12 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.inspect.annotation :refer [annotation]]
    [app.main.ui.inspect.attributes.blur :refer [blur-panel]]
-   [app.main.ui.inspect.attributes.fill :refer [fill-panel]]
+   [app.main.ui.inspect.attributes.fill :refer [fill-panel*]]
    [app.main.ui.inspect.attributes.geometry :refer [geometry-panel]]
    [app.main.ui.inspect.attributes.layout :refer [layout-panel]]
    [app.main.ui.inspect.attributes.layout-element :refer [layout-element-panel]]
    [app.main.ui.inspect.attributes.shadow :refer [shadow-panel]]
-   [app.main.ui.inspect.attributes.stroke :refer [stroke-panel]]
+   [app.main.ui.inspect.attributes.stroke :refer [stroke-panel*]]
    [app.main.ui.inspect.attributes.svg :refer [svg-panel]]
    [app.main.ui.inspect.attributes.text :refer [text-panel]]
    [app.main.ui.inspect.attributes.variant :refer [variant-panel*]]
@@ -36,8 +36,8 @@
    :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
-(mf/defc attributes
-  [{:keys [page-id file-id shapes frame from libraries share-id objects]}]
+(mf/defc attributes*
+  [{:keys [page-id file-id shapes frame from libraries share-id objects color-space]}]
   (let [shapes             (hooks/use-equal-memo shapes)
         first-shape        (first shapes)
         data               (dm/get-in libraries [file-id :data])
@@ -64,8 +64,8 @@
              :geometry         geometry-panel
              :layout           layout-panel
              :layout-element   layout-element-panel
-             :fill             fill-panel
-             :stroke           stroke-panel
+             :fill             fill-panel*
+             :stroke           stroke-panel*
              :shadow           shadow-panel
              :blur             blur-panel
              :visibility       visibility-panel*
@@ -74,6 +74,7 @@
              :variant          variant-panel*)
         {:key idx
          :shapes shapes
+         :color-space color-space
          :objects objects
          :frame frame
          :from from

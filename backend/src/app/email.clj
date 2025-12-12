@@ -7,6 +7,7 @@
 (ns app.email
   "Main api for send emails."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -93,36 +94,44 @@
                headers)))
 
 (defn- assign-body
-  [^MimeMessage mmsg {:keys [body charset] :or {charset "utf-8"}}]
-  (let [mpart (MimeMultipart. "mixed")]
+  [^MimeMessage mmsg {:keys [body charset attachments] :or {charset "utf-8"}}]
+  (let [mixed-mpart  (MimeMultipart. "mixed")]
     (cond
       (string? body)
-      (let [bpart (MimeBodyPart.)]
-        (.setContent bpart ^String body (str "text/plain; charset=" charset))
-        (.addBodyPart mpart bpart))
-
-      (vector? body)
-      (let [mmp (MimeMultipart. "alternative")
-            mbp (MimeBodyPart.)]
-        (.addBodyPart mpart mbp)
-        (.setContent mbp mmp)
-        (doseq [item body]
-          (let [mbp (MimeBodyPart.)]
-            (.setContent mbp
-                         ^String (:content item)
-                         ^String (str (:type item "text/plain") "; charset=" charset))
-            (.addBodyPart mmp mbp))))
+      (let [text-part (MimeBodyPart.)]
+        (.setText text-part ^String body ^String charset)
+        (.addBodyPart mixed-mpart text-part))
 
       (map? body)
-      (let [bpart (MimeBodyPart.)]
-        (.setContent bpart
-                     ^String (:content body)
-                     ^String (str (:type body "text/plain") "; charset=" charset))
-        (.addBodyPart mpart bpart))
+      (let [content-part      (MimeBodyPart.)
+            alternative-mpart (MimeMultipart. "alternative")]
+
+        (when-let [content (get body "text/plain")]
+          (let [text-part (MimeBodyPart.)]
+            (.setText text-part ^String content ^String charset)
+            (.addBodyPart alternative-mpart text-part)))
+
+        (when-let [content (get body "text/html")]
+          (let [html-part (MimeBodyPart.)]
+            (.setContent html-part ^String content
+                         (str "text/html; charset=" charset))
+            (.addBodyPart alternative-mpart html-part)))
+
+        (.setContent content-part alternative-mpart)
+        (.addBodyPart mixed-mpart content-part))
 
       :else
-      (throw (ex-info "Unsupported type" {:body body})))
-    (.setContent mmsg mpart)
+      (throw (IllegalArgumentException. "invalid email body provided")))
+
+    (doseq [[name content] attachments]
+
+      (prn "attachment" name)
+      (let [attachment-part (MimeBodyPart.)]
+        (.setFileName attachment-part ^String name)
+        (.setContent attachment-part ^String content (str "text/plain; charset=" charset))
+        (.addBodyPart mixed-mpart attachment-part)))
+
+    (.setContent mmsg mixed-mpart)
     mmsg))
 
 (defn- opts->props
@@ -210,24 +219,26 @@
       (ex/raise :type :internal
                 :code :missing-email-templates))
     {:subject subj
-     :body (into
-            [{:type "text/plain"
-              :content text}]
-            (when html
-              [{:type "text/html"
-                :content html}]))}))
+     :body (d/without-nils
+            {"text/plain" text
+             "text/html" html})}))
 
-(def ^:private schema:context
-  [:map
+(def ^:private schema:params
+  [:map {:title "Email Params"}
    [:to [:or ::sm/email [::sm/vec ::sm/email]]]
    [:reply-to {:optional true} ::sm/email]
    [:from {:optional true} ::sm/email]
    [:lang {:optional true} ::sm/text]
+   [:subject {:optional true} ::sm/text]
    [:priority {:optional true} [:enum :high :low]]
-   [:extra-data {:optional true} ::sm/text]])
+   [:extra-data {:optional true} ::sm/text]
+   [:body {:optional true}
+    [:or :string [:map-of :string :string]]]
+   [:attachments {:optional true}
+    [:map-of :string :string]]])
 
-(def ^:private check-context
-  (sm/check-fn schema:context))
+(def ^:private check-params
+  (sm/check-fn schema:params))
 
 (defn template-factory
   [& {:keys [id schema]}]
@@ -235,9 +246,9 @@
   (let [check-fn (if schema
                    (sm/check-fn schema)
                    (constantly nil))]
-    (fn [context]
-      (let [context (-> context check-context check-fn)
-            email   (build-email-template id context)]
+    (fn [params]
+      (let [params (-> params check-params check-fn)
+            email  (build-email-template id params)]
         (when-not email
           (ex/raise :type :internal
                     :code :email-template-does-not-exists
@@ -245,35 +256,40 @@
                     :template-id id))
 
         (cond-> (assoc email :id (name id))
-          (:extra-data context)
-          (assoc :extra-data (:extra-data context))
+          (:extra-data params)
+          (assoc :extra-data (:extra-data params))
 
-          (:from context)
-          (assoc :from (:from context))
+          (seq (:attachments params))
+          (assoc :attachments (:attachments params))
 
-          (:reply-to context)
-          (assoc :reply-to (:reply-to context))
+          (:from params)
+          (assoc :from (:from params))
 
-          (:to context)
-          (assoc :to (:to context)))))))
+          (:reply-to params)
+          (assoc :reply-to (:reply-to params))
+
+          (:to params)
+          (assoc :to (:to params)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC HIGH-LEVEL API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn render
-  [email-factory context]
-  (email-factory context))
+  [email-factory params]
+  (email-factory params))
 
 (defn send!
   "Schedule an already defined email to be sent using asynchronously
   using worker task."
-  [{:keys [::conn ::factory] :as context}]
+  [{:keys [::conn ::factory] :as params}]
   (assert (db/connectable? conn) "expected a valid database connection or pool")
 
   (let [email (if factory
-                (factory context)
-                (dissoc context ::conn))]
+                (factory params)
+                (-> params
+                    (dissoc params)
+                    (check-params)))]
     (wrk/submit! {::wrk/task :sendmail
                   ::wrk/delay 0
                   ::wrk/max-retries 4
@@ -343,8 +359,10 @@
 
 (def ^:private schema:feedback
   [:map
-   [:subject ::sm/text]
-   [:content ::sm/text]])
+   [:feedback-subject ::sm/text]
+   [:feedback-type ::sm/text]
+   [:feedback-content ::sm/text]
+   [:profile :map]])
 
 (def user-feedback
   "A profile feedback email."

@@ -281,7 +281,20 @@
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [s          (schema s)
+  (let [s          #?(:clj
+                      (schema s)
+                      :cljs
+                      (try
+                        (schema s)
+                        (catch :default cause
+                          (let [data (ex-data cause)]
+                            (if (= :malli.core/invalid-schema (:type data))
+                              (throw (ex-info
+                                      (str "Invalid schema\n"
+                                           (pp/pprint-str (:data data)))
+                                      {}))
+                              (throw cause))))))
+
         validator* (delay (m/validator s))
         explainer* (delay (m/explainer s))
         hint       (or ^boolean hint "check error")
@@ -842,38 +855,6 @@
                                     choices))]
                {:pred pred}))})
 
-;; (register!
-;;  {:type ::inst
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int :min 0 :max 100000)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-
-;;    :decode/string tm/parse-inst
-;;    :encode/string tm/format-inst
-;;    :decode/json tm/parse-inst
-;;    :encode/json tm/format-inst
-;;    ::oapi/type "string"
-;;    ::oapi/format "iso"}})
-
-;; (register!
-;;  {:type ::timestamp
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol, the same as ::inst but encodes to epoch"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-;;    :decode/string tm/parse-inst
-;;    :encode/string inst-ms
-;;    :decode/json tm/parse-inst
-;;    :encode/json inst-ms
-;;    ::oapi/type "string"
-;;    ::oapi/format "number"}})
 
 #?(:clj
    (register!
@@ -951,7 +932,7 @@
   :pred #(and (string? %) (not (str/blank? %)))
   :property-pred
   (fn [{:keys [min max] :as props}]
-    (if (seq props)
+    (if (or min max)
       (fn [value]
         (let [size (count value)]
           (cond

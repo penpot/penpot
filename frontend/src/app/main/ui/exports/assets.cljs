@@ -34,7 +34,8 @@
 (def ^:private close-icon
   (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
-(mf/defc export-multiple-dialog
+(mf/defc export-multiple-dialog*
+  {::mf/private true}
   [{:keys [exports title cmd no-selection origin]}]
   (let [lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
@@ -186,7 +187,7 @@
    ::mf/register-as :export-shapes}
   [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-shapes.title")]
-    [:& export-multiple-dialog
+    [:> export-multiple-dialog*
      {:exports exports
       :title title
       :cmd :export-shapes
@@ -198,7 +199,7 @@
    ::mf/register-as :export-frames}
   [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-frames.title")]
-    [:& export-multiple-dialog
+    [:> export-multiple-dialog*
      {:exports exports
       :title title
       :cmd :export-frames
@@ -222,24 +223,30 @@
         circ              (* 2 Math/PI 12)
         pct               (- circ (* circ (/ progress total)))
 
-        pwidth (if error?
-                 280
-                 (/ (* progress 280) total))
-        color  (cond
-                 error?         clr/new-danger
-                 healthy?       (if is-default-theme?
-                                  clr/new-primary
-                                  clr/new-primary-light)
-                 (not healthy?) clr/new-warning)
+        pwidth
+        (if error?
+          280
+          (/ (* progress 280) total))
 
-        background-clr (if is-default-theme?
-                         clr/background-quaternary
-                         clr/background-quaternary-light)
-        title  (cond
-                 error?          (tr "workspace.options.exporting-object-error")
-                 complete?       (tr "workspace.options.exporting-complete")
-                 healthy?        (tr "workspace.options.exporting-object")
-                 (not healthy?)  (tr "workspace.options.exporting-object-slow"))
+        color
+        (cond
+          error?         clr/new-danger
+          healthy?       (if is-default-theme?
+                           clr/new-primary
+                           clr/new-primary-light)
+          (not healthy?) clr/new-warning)
+
+        background-clr
+        (if is-default-theme?
+          clr/background-quaternary
+          clr/background-quaternary-light)
+
+        title
+        (cond
+          error?          (tr "workspace.options.exporting-object-error")
+          complete?       (tr "workspace.options.exporting-complete")
+          healthy?        (tr "workspace.options.exporting-object")
+          (not healthy?)  (tr "workspace.options.exporting-object-slow"))
 
         retry-last-export
         (mf/use-fn #(st/emit! (de/retry-last-export)))
@@ -283,7 +290,7 @@
                      :on-click retry-last-export}
             (tr "workspace.options.retry")]
 
-           [:p {:class (stl/css :progress)}
+           [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 
         [:button {:class (stl/css :progress-close-button)

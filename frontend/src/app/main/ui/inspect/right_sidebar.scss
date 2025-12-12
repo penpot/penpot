@@ -7,65 +7,69 @@
 @use "ds/typography.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .settings-bar-right {
-  min-width: deprecated.$s-252;
-  width: 100%;
-  height: 100vh;
+  min-inline-size: px2rem(252);
+  inline-size: 100%;
+  block-size: 100vh;
   position: relative;
-  left: unset;
-  right: unset;
+  inset-inline-start: unset;
+  inset-inline-end: unset;
   grid-area: right-sidebar;
   overflow: hidden;
 
   &.viewer-code {
-    height: calc(100vh - deprecated.$s-48);
+    block-size: calc(100vh - $sz-48);
   }
 }
 
 .viewer-code {
-  padding-inline-start: deprecated.$s-8;
+  padding-inline-start: var(--sp-s);
 }
 
 .tool-windows {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: deprecated.$s-8;
-  padding-left: var(--sp-m);
+  block-size: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--sp-s);
 }
 
 .shape-info {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
   align-items: center;
-  height: deprecated.$s-32;
+  block-size: $sz-32;
+  padding-inline-start: var(--sp-m);
 }
 
 .shape-info-subtitle {
-  height: fit-content;
+  block-size: fit-content;
   align-items: flex-start;
 }
 
 .layers-icon,
 .shape-icon {
-  @include deprecated.flexCenter;
-  height: deprecated.$s-32;
   --icon-stroke-color: var(--color-foreground-primary);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: $sz-32;
 }
 
 .layer-title {
   @include deprecated.bodySmallTypography;
   @include deprecated.textEllipsis;
-  height: deprecated.$s-32;
-  padding: deprecated.$s-8 0;
+  block-size: $sz-32;
+  padding: var(--sp-s) 0;
   color: var(--color-foreground-primary);
 }
 
 .layer-title-with-subtitle {
-  height: fit-content;
-  padding-bottom: 0;
+  block-size: fit-content;
+  padding-block-end: 0;
 }
 
 .layer-subtitle {
@@ -78,8 +82,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: deprecated.$s-40;
-  padding-top: deprecated.$s-24;
+  gap: $sz-40;
+  padding-top: $sz-24;
 }
 
 .code-info,
@@ -87,8 +91,8 @@
   @include deprecated.flexColumn;
   align-items: center;
   justify-content: flex-start;
-  gap: deprecated.$s-12;
-  margin-right: deprecated.$s-8;
+  gap: var(--sp-m);
+  margin-inline-end: var(--sp-s);
 }
 
 .placeholder-icon {
@@ -98,48 +102,54 @@
 .placeholder-label {
   @include deprecated.bodySmallTypography;
   text-align: center;
-  width: deprecated.$s-200;
+  inline-size: px2rem(200);
   color: var(--empty-message-foreground-color);
 }
 
 .more-info-btn {
   @extend .button-secondary;
   @include deprecated.uppercaseTitleTipography;
-  height: deprecated.$s-32;
-  padding: deprecated.$s-8 deprecated.$s-24;
+  block-size: $sz-32;
+  padding: var(--sp-s) var(--sp-xxl);
 }
 
 .inspect-tab-switcher {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-block: var(--sp-s);
-  padding-inline-end: var(--sp-m);
+  padding: var(--sp-s) var(--sp-m) var(--sp-s) var(--sp-m);
+  gap: var(--sp-m);
 }
 
 .inspect-tab-switcher-label {
   @include use-typography("body-medium");
   color: var(--color-foreground-primary);
-  flex: 1;
+  flex: 0 1 40%;
 }
 
 .inspect-tab-switcher-controls {
   display: flex;
   align-items: center;
-  flex: 2;
+  flex: 1;
   gap: var(--sp-s);
+  justify-content: flex-end;
 }
 
 .inspect-tab-switcher-controls-color-space {
-  flex: 1 0 $sz-24;
+  // 65px is the minimum size of the switcher to avoid text ellipsis on the options
+  flex: 0 0 65px;
+}
+
+.inspect-tab-switcher-controls-color-space-select {
+  justify-self: end;
 }
 
 .inspect-tab-switcher-controls-tab {
-  flex: 2;
+  // 110px is the minimum size of the switcher to avoid text ellipsis on the options
+  flex: 0 0 110px;
 }
 
 .inspect-content {
-  flex: 1;
   overflow: hidden;
 }
 
@@ -147,14 +157,5 @@
   --tabs-nav-padding-inline-start: 0;
   --tabs-nav-padding-inline-end: var(--sp-m);
 
-  /* same height as .element-options in workspace/sidebar/options.scss */
-  /* which is one of the parents of this component */
-  --max-inspect-tab-height: var(--sidebar-element-options-height);
-  max-block-size: var(--max-inspect-tab-height);
-
   overflow: auto;
-}
-
-.viewer-tab-switcher-layout {
-  display: grid;
 }

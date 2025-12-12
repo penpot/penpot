@@ -21,4 +21,5 @@
 
 .workspace-element-options {
   height: calc(100vh - px2rem(200)); // TODO: Fix this hardcoded value
+  padding-inline: var(--sp-m);
 }

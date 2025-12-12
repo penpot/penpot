@@ -19,6 +19,12 @@
   padding: var(--sp-m);
 }
 
+.cta-power-up.highlighted {
+  background: var(--color-background-quaternary);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  padding: var(--sp-l);
+}
+
 .cta-top-section {
   @include deprecated.buttonStyle;
   display: grid;
@@ -54,12 +60,25 @@
   margin-block-start: var(--sp-m);
   padding-block-start: var(--sp-m);
 }
+
+.highlighted .cta-bottom-section {
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+}
+
 .cta-bottom-section .content {
   @include t.use-typography("body-medium");
   @include deprecated.buttonStyle;
   color: var(--color-foreground-secondary);
   display: inline-block;
   text-align: left;
+}
+
+.cta-bottom-button {
+  margin-block-start: var(--sp-s);
+}
+
+.highlighted .cta-bottom-button {
+  margin-block-start: var(--sp-m);
 }
 
 .cta-text,
@@ -72,8 +91,18 @@
   margin-block-end: var(--sp-xs);
 }
 
+.highlighted .cta-title {
+  @include t.use-typography("body-medium");
+  margin-block-end: 0;
+}
+
 .cta-text {
   @include t.use-typography("title-small");
+}
+
+.highlighted .cta-text {
+  @include t.use-typography("body-large");
+  color: var(--color-foreground-primary);
 }
 
 .cta-bottom-section .content a {
@@ -115,20 +144,20 @@
   padding: 0;
 }
 
-.subscription-icon {
-  @extend .button-icon;
+.subscription-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: var(--color-background-primary);
-  stroke: var(--color-foreground-secondary);
-  border-radius: 6px;
+  border-radius: $br-6;
   border: 1.75px solid var(--color-foreground-secondary);
-  stroke-width: 2.25px;
-  width: var(--sp-xl);
-  height: var(--sp-xl);
+  block-size: var(--sp-xl);
+  inline-size: var(--sp-xl);
+}
 
-  svg {
-    block-size: var(--sp-m);
-    inline-size: var(--sp-m);
-  }
+.subscription-icon {
+  stroke: var(--color-foreground-secondary);
+  stroke-width: 2.25px;
 }
 
 .menu-item {

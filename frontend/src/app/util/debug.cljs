@@ -96,8 +96,11 @@
     ;; Show some information about the WebGL context.
     :gl-context
 
-    ;; Show viewbox
+    ;; Show viewbox.
     :wasm-viewbox
+
+    ;; Makes the GL context to fail on initialization.
+    :wasm-gl-context-init-error
 
     ;; Event times
     :events-times})

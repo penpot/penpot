@@ -39,7 +39,7 @@
         fullname (str "Demo User " sem)
 
         password (-> (bn/random-bytes 16)
-                     (bc/bytes->b64u)
+                     (bc/bytes->b64 true)
                      (bc/bytes->str))
 
         params   {:email email
@@ -49,9 +49,9 @@
                   :deleted-at (ct/in-future (cf/get-deletion-delay))
                   :password (derive-password password)
                   :props {}}
-        profile  (db/tx-run! cfg (fn [{:keys [::db/conn]}]
-                                   (->> (auth/create-profile! conn params)
-                                        (auth/create-profile-rels! conn))))]
+        profile  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                                   (->> (auth/create-profile cfg params)
+                                        (auth/create-profile-rels conn))))]
     (with-meta {:email email
                 :password password}
       {::audit/profile-id (:id profile)})))

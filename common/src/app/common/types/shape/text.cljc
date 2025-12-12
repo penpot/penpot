@@ -7,7 +7,7 @@
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
-   [app.common.types.fills :refer [schema:fill]]))
+   [app.common.types.fills :refer [schema:fills]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -32,15 +32,14 @@
           [:type [:= "paragraph"]]
           [:key {:optional true} :string]
           [:fills {:optional true}
-           [:maybe
-            [:vector {:gen/max 2}  schema:fill]]]
-          [:font-family {:optional true} :string]
-          [:font-size {:optional true} :string]
-          [:font-style {:optional true} :string]
-          [:font-weight {:optional true} :string]
-          [:direction {:optional true} :string]
-          [:text-decoration {:optional true} :string]
-          [:text-transform {:optional true} :string]
+           [:maybe schema:fills]]
+          [:font-family {:optional true} ::sm/text]
+          [:font-size {:optional true} ::sm/text]
+          [:font-style {:optional true} ::sm/text]
+          [:font-weight {:optional true} ::sm/text]
+          [:direction {:optional true} ::sm/text]
+          [:text-decoration {:optional true} ::sm/text]
+          [:text-transform {:optional true} ::sm/text]
           [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
           [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
           [:children
@@ -49,15 +48,14 @@
              [:text :string]
              [:key {:optional true} :string]
              [:fills {:optional true}
-              [:maybe
-               [:vector {:gen/max 2} schema:fill]]]
-             [:font-family {:optional true} :string]
-             [:font-size {:optional true} :string]
-             [:font-style {:optional true} :string]
-             [:font-weight {:optional true} :string]
-             [:direction {:optional true} :string]
-             [:text-decoration {:optional true} :string]
-             [:text-transform {:optional true} :string]
+              [:maybe schema:fills]]
+             [:font-family {:optional true} ::sm/text]
+             [:font-size {:optional true} ::sm/text]
+             [:font-style {:optional true} ::sm/text]
+             [:font-weight {:optional true} ::sm/text]
+             [:direction {:optional true} ::sm/text]
+             [:text-decoration {:optional true} ::sm/text]
+             [:text-transform {:optional true} ::sm/text]
              [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
              [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
 
@@ -71,12 +69,12 @@
     [:y ::sm/safe-number]
     [:width ::sm/safe-number]
     [:height ::sm/safe-number]
-    [:fills [:vector {:gen/max 2} schema:fill]]
-    [:font-family {:optional true} :string]
-    [:font-size {:optional true} :string]
-    [:font-style {:optional true} :string]
-    [:font-weight {:optional true} :string]
+    [:fills schema:fills]
+    [:font-family {:optional true} ::sm/text]
+    [:font-size {:optional true} ::sm/text]
+    [:font-style {:optional true} ::sm/text]
+    [:font-weight {:optional true} ::sm/text]
     [:rtl {:optional true} :boolean]
     [:text {:optional true} :string]
-    [:text-decoration {:optional true} :string]
-    [:text-transform {:optional true} :string]]])
+    [:text-decoration {:optional true} ::sm/text]
+    [:text-transform {:optional true} ::sm/text]]])

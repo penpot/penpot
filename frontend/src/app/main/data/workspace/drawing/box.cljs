@@ -19,7 +19,6 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.snap :as snap]
@@ -83,8 +82,7 @@
             zoom         (dm/get-in state [:workspace-local :zoom] 1)
 
             snap-pixel?  (contains? layout :snap-pixel-grid)
-            snap-prec    (if (>= zoom zoom-half-pixel-precision) 0.5 1)
-            initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-prec))
+            initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step 1))
 
             page-id      (:current-page-id state)
             objects      (dsh/lookup-page-objects state page-id)
@@ -133,7 +131,7 @@
                             (rx/map (partial array/conj current)))))
                     (rx/map
                      (fn [[_ shift? mod? point]]
-                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-prec)) shift? mod?))))))
+                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step 1)) shift? mod?))))))
 
          (->> (rx/of (common/handle-finish-drawing))
               (rx/delay 100)))))))

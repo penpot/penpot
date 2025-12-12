@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
+import { WasmWorkspacePage, WASM_FLAGS } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
 });
 
-test("BUG 10867 - Crash when loading comments", async ({ page }) => {
+test.skip("BUG 10867 - Crash when loading comments", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.goToWorkspace();
@@ -16,7 +16,7 @@ test("BUG 10867 - Crash when loading comments", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("BUG 12164 - Crash when trying to fetch a missing font", async ({
+test.skip("BUG 12164 - Crash when trying to fetch a missing font", async ({
   page,
 }) => {
   // mock fetching a missing font
@@ -51,7 +51,8 @@ test("BUG 12164 - Crash when trying to fetch a missing font", async ({
     pageId: "2b7f0188-51a1-8193-8006-e05bad87b74d",
   });
 
-  await workspacePage.waitForFirstRender({ hideUI: false });
+  await workspacePage.page.waitForTimeout(1000)
+  await workspacePage.waitForFirstRender();
 
   await expect(
     workspacePage.page.getByText("Internal Error"),

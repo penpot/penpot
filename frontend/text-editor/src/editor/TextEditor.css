@@ -1,28 +1,3 @@
-::selection {
-  background-color: red;
-}
-
-.selection-imposter-rect {
-  background-color: red;
-  position: absolute;
-}
-
-.text-editor-selection-imposter {
-  pointer-events: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-}
-
-.text-editor-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 .text-editor-content {
   height: 100%;
   font-family: sourcesanspro;

@@ -9,23 +9,19 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
+   [app.http :as-alias http]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
-   [app.tokens :as tokens]
-   [yetti.request :as yreq]))
+   [app.tokens :as tokens]))
 
-(def header-re #"(?i)^Token\s+(.*)")
-
-(defn get-token
-  [request]
-  (some->> (yreq/get-header request "authorization")
-           (re-matches header-re)
-           (second)))
-
-(defn- decode-token
+(defn decode-token
   [cfg token]
-  (when token
-    (tokens/verify cfg {:token token :iss "access-token"})))
+  (try
+    (tokens/verify cfg {:token token :iss "access-token"})
+    (catch Throwable cause
+      (l/trc :hint "exception on decoding token"
+             :token token
+             :cause cause))))
 
 (def sql:get-token-data
   "SELECT perms, profile_id, expires_at
@@ -35,47 +31,28 @@
            OR (expires_at > now()));")
 
 (defn- get-token-data
-  [pool token-id]
+  [pool claims]
   (when-not (db/read-only? pool)
-    (some-> (db/exec-one! pool [sql:get-token-data token-id])
-            (update :perms db/decode-pgarray #{}))))
-
-(defn- wrap-soft-auth
-  "Soft Authentication, will be executed synchronously on the undertow
-  worker thread."
-  [handler cfg]
-  (letfn [(handle-request [request]
-            (try
-              (let [token  (get-token request)
-                    claims (decode-token cfg token)]
-                (cond-> request
-                  (map? claims)
-                  (assoc ::id (:tid claims))))
-              (catch Throwable cause
-                (l/trace :hint "exception on decoding malformed token" :cause cause)
-                request)))]
-
-    (fn [request]
-      (handler (handle-request request)))))
+    (when-let [token-id (get claims :tid)]
+      (some-> (db/exec-one! pool [sql:get-token-data token-id])
+              (update :perms db/decode-pgarray #{})))))
 
 (defn- wrap-authz
-  "Authorization middleware, will be executed synchronously on vthread."
   [handler {:keys [::db/pool]}]
   (fn [request]
-    (let [{:keys [perms profile-id expires-at]} (some->> (::id request) (get-token-data pool))]
-      (handler (cond-> request
-                 (some? perms)
-                 (assoc ::perms perms)
-                 (some? profile-id)
-                 (assoc ::profile-id profile-id)
-                 (some? expires-at)
-                 (assoc ::expires-at expires-at))))))
+    (let [{:keys [type claims]} (get request ::http/auth-data)]
+      (if (= :token type)
+        (let [{:keys [perms profile-id expires-at]} (some->> claims (get-token-data pool))]
+          ;; FIXME: revisit this, this data looks unused
+          (handler (cond-> request
+                     (some? perms)
+                     (assoc ::perms perms)
+                     (some? profile-id)
+                     (assoc ::profile-id profile-id)
+                     (some? expires-at)
+                     (assoc ::expires-at expires-at))))
 
-(def soft-auth
-  {:name ::soft-auth
-   :compile (fn [& _]
-              (when (contains? cf/flags :access-tokens)
-                wrap-soft-auth))})
+        (handler request)))))
 
 (def authz
   {:name ::authz

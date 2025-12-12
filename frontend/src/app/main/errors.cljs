@@ -16,6 +16,7 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.worker]
    [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -24,6 +25,9 @@
 
 ;; From app.main.data.workspace we can use directly because it causes a circular dependency
 (def reload-file nil)
+
+;; Will contain the latest error report assigned
+(def last-report nil)
 
 (defn- print-data!
   [data]
@@ -90,6 +94,9 @@
     (ptk/handle-error error)
     (let [data (exception->error-data error)]
       (ptk/handle-error data))))
+
+;; Inject dependency to remove circular dependency
+(set! app.main.worker/on-error on-error)
 
 ;; Set the main potok error handler
 (reset! st/on-error on-error)

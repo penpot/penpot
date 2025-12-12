@@ -371,7 +371,7 @@
    [:set-tokens-lib
     [:map {:title "SetTokensLib"}
      [:type [:= :set-tokens-lib]]
-     [:tokens-lib ::sm/any]]]  ;; TODO: we should define a plain object schema for tokens-lib
+     [:tokens-lib [:maybe ctob/schema:tokens-lib]]]]
 
    [:set-token
     [:map {:title "SetTokenChange"}
@@ -463,35 +463,16 @@
 
 ;; Changes Processing Impl
 
-(defn validate-shapes!
-  [data-old data-new items]
-  (letfn [(validate-shape! [[page-id id]]
-            (let [shape-old (dm/get-in data-old [:pages-index page-id :objects id])
-                  shape-new (dm/get-in data-new [:pages-index page-id :objects id])]
-
-              ;; If object has changed or is new verify is correct
-              (when (and (some? shape-new)
-                         (not= shape-old shape-new))
-                (when-not (and (cts/valid-shape? shape-new)
-                               (cts/shape? shape-new))
-                  (ex/raise :type :assertion
-                            :code :data-validation
-                            :hint (str "invalid shape found after applying changes on file "
-                                       (:id data-new))
-                            :file-id (:id data-new)
-                            ::sm/explain (cts/explain-shape shape-new))))))]
-
-    (->> (into #{} (map :page-id) items)
-         (mapcat (fn [page-id]
-                   (filter #(= page-id (:page-id %)) items)))
-         (mapcat (fn [{:keys [type id page-id] :as item}]
-                   (sequence
-                    (map (partial vector page-id))
-                    (case type
-                      (:add-obj :mod-obj :del-obj) (cons id nil)
-                      (:mov-objects :reg-objects)  (:shapes item)
-                      nil))))
-         (run! validate-shape!))))
+#_:clj-kondo/ignore
+(defn- validate-shape
+  [{:keys [id] :as shape} page-id]
+  (when-not (cts/valid-shape? shape)
+    (ex/raise :type :assertion
+              :code :data-validation
+              :hint (str "invalid shape found '" id "'")
+              :page-id page-id
+              :shape-id id
+              ::sm/explain (cts/explain-shape shape))))
 
 (defn- process-touched-change
   [data {:keys [id page-id component-id]}]
@@ -517,16 +498,9 @@
    (when verify?
      (check-changes items))
 
-   (binding [*touched-changes* (volatile! #{})
-             cts/*wasm-sync* true]
-     (let [result (reduce #(or (process-change %1 %2) %1) data items)
-           result (reduce process-touched-change result @*touched-changes*)]
-       ;; Validate result shapes (only on the backend)
-       ;;
-       ;; TODO: (PERF) add changed shapes tracking and only validate
-       ;; the tracked changes instead of iterate over all shapes
-       #?(:clj (validate-shapes! data result items))
-       result))))
+   (binding [*touched-changes* (volatile! #{})]
+     (let [result (reduce #(or (process-change %1 %2) %1) data items)]
+       (reduce process-touched-change result @*touched-changes*)))))
 
 ;; --- Comment Threads
 
@@ -614,9 +588,10 @@
 
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
-  (let [update-container
-        (fn [container]
-          (ctst/add-shape id obj container frame-id parent-id index ignore-touched))]
+  ;; NOTE: we only perform hard validation on backend
+  #?(:clj (validate-shape obj page-id))
+
+  (let [update-container #(ctst/add-shape id obj % frame-id parent-id index ignore-touched)]
 
     (when *state*
       (swap! *state* collect-shape-media-refs obj page-id))
@@ -638,6 +613,9 @@
 
       (when (and *state* page-id)
         (swap! *state* collect-shape-media-refs shape page-id))
+
+      ;; NOTE: we only perform hard validation on backend
+      #?(:clj (validate-shape shape page-id))
 
       (assoc objects id shape))
 
@@ -693,8 +671,6 @@
       (d/update-in-when data [:pages-index page-id] fix-container)
       (d/update-in-when data [:components component-id] fix-container))))
 
-;; FIXME: remove, seems like this method is already unused
-;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id component-id shapes]}]
   ;; FIXME: Improve performance
@@ -723,48 +699,60 @@
 
           (update-group [group objects]
             (let [lookup   (d/getf objects)
-                  children (get group :shapes)]
-              (cond
-                ;; If the group is empty we don't make any changes. Will be removed by a later process
-                (empty? children)
-                group
+                  children (get group :shapes)
+                  group    (cond
+                             ;; If the group is empty we don't make any changes. Will be removed by a later process
+                             (empty? children)
+                             group
 
-                (= :bool (:type group))
-                (path/update-bool-shape group objects)
+                             (= :bool (:type group))
+                             (path/update-bool-shape group objects)
 
-                (:masked-group group)
-                (->> (map lookup children)
-                     (set-mask-selrect group))
+                             (:masked-group group)
+                             (->> (map lookup children)
+                                  (set-mask-selrect group))
 
-                :else
-                (->> (map lookup children)
-                     (gsh/update-group-selrect group)))))]
+                             :else
+                             (->> (map lookup children)
+                                  (gsh/update-group-selrect group)))]
+              #?(:clj (validate-shape group page-id))
+              group))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape allow-altering-copies syncing]}]
+  ;; FIXME: ignore-touched is no longer used, so we can consider it deprecated
+  [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape allow-altering-copies syncing]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
                    (reduce reduce-fn #{shape-id}))))
 
-          ;; Avoid placing a shape as a direct or indirect child of itself,
-          ;; or inside its main component if it's in a copy,
-          ;; or inside a copy, or from a copy
+          ;; Avoid placing a shape as a direct or indirect child of itself, or
+          ;; inside its main component if it's in a copy, or inside a copy, or
+          ;; from a copy
           (is-valid-move? [objects shape-id]
             (let [invalid-targets (calculate-invalid-targets objects shape-id)
                   shape (get objects shape-id)]
               (and shape
                    (not (invalid-targets parent-id))
                    (not (cfh/components-nesting-loop? objects shape-id parent-id))
-                   (or allow-altering-copies ;; In some cases (like a component swap) it's allowed to change the structure of a copy
-                       syncing ;; If we are syncing the changes of a main component, it's allowed to change the structure of a copy
-                       (and
-                        (not (ctk/in-component-copy? (get objects (:parent-id shape)))) ;; We don't want to change the structure of component copies
-                        (not (ctk/in-component-copy? (get objects parent-id))))))))     ;; We need to check the origin and target frames
+                   (or
+                    ;; In some cases (like a component
+                    ;; swap) it's allowed to change the
+                    ;; structure of a copy
+                    allow-altering-copies
+
+                    ;; DEPRECATED, remove once v2.12 released
+                    syncing
+
+                    (and
+                     ;; We don't want to change the structure of component copies
+                     (not (ctk/in-component-copy? (get objects (:parent-id shape))))
+                     ;; We need to check the origin and target frames
+                     (not (ctk/in-component-copy? (get objects parent-id))))))))
 
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]
@@ -773,17 +761,13 @@
                 (cfh/append-at-the-end prev-shapes shapes))))
 
           (add-to-parent [parent index shapes]
-            (let [parent (-> parent
-                             (update :shapes insert-items index shapes)
-                             ;; We need to ensure that no `nil` in the
-                             ;; shapes list after adding all the
-                             ;; incoming shapes to the parent.
-                             (update :shapes d/vec-without-nils))]
-              (cond-> parent
-                (and (:shape-ref parent)
-                     (#{:group :frame} (:type parent))
-                     (not ignore-touched))
-                (dissoc :remote-synced))))
+            (update parent :shapes
+                    (fn [parent-shapes]
+                      (-> parent-shapes
+                          (insert-items index shapes)
+                          ;; We need to ensure that no `nil` in the shapes list
+                          ;; after adding all the incoming shapes to the parent.
+                          (d/vec-without-nils)))))
 
           (remove-from-old-parent [old-objects objects shape-id]
             (let [prev-parent-id (dm/get-in old-objects [shape-id :parent-id])]
@@ -791,58 +775,63 @@
               ;; the new destination target parent id.
               (if (= prev-parent-id parent-id)
                 objects
-                (let [sid        shape-id
-                      pid        prev-parent-id
-                      obj        (get objects pid)
-                      component? (and (:shape-ref obj)
-                                      (= (:type obj) :group)
-                                      (not ignore-touched))]
-                  (-> objects
-                      (d/update-in-when [pid :shapes] d/without-obj sid)
-                      (d/update-in-when [pid :shapes] d/vec-without-nils)
-                      (cond-> component? (d/update-when pid #(dissoc % :remote-synced))))))))
+                (d/update-in-when objects [prev-parent-id :shapes]
+                                  (fn [shapes]
+                                    (-> shapes
+                                        (d/without-obj shape-id)
+                                        (d/vec-without-nils)))))))
 
           (update-parent-id [objects id]
-            (-> objects
-                (d/update-when id assoc :parent-id parent-id)))
+            (d/update-when objects id assoc :parent-id parent-id))
 
           ;; Updates the frame-id references that might be outdated
-          (assign-frame-id [frame-id objects id]
-            (let [objects (d/update-when objects id assoc :frame-id frame-id)
-                  obj     (get objects id)]
+          (update-frame-id [frame-id objects id]
+            (let [obj (some-> (get objects id)
+                              (assoc :frame-id frame-id))]
               (cond-> objects
-                ;; If we moving frame, the parent frame is the root
-                ;; and we DO NOT NEED update children because the
-                ;; children will point correctly to the frame what we
-                ;; are currently moving
-                (not= :frame (:type obj))
-                (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
+                (some? obj)
+                (assoc id obj)
+
+                ;; If we moving a frame, we DO NOT NEED update
+                ;; children because the children will point correctly
+                ;; to the frame what we are currently moving
+                (not (cfh/frame-shape? obj))
+                (as-> $$ (reduce (partial update-frame-id frame-id) $$ (:shapes obj))))))
+
+          (validate-shape [objects #_:clj-kondo/ignore shape-id]
+            #?(:clj (when-let [shape (get objects shape-id)]
+                      (validate-shape shape page-id)))
+            objects)
 
           (move-objects [objects]
-            (let [valid?   (every? (partial is-valid-move? objects) shapes)
-                  parent   (get objects parent-id)
-                  after-shape-index (d/index-of (:shapes parent) after-shape)
-                  index (if (nil? after-shape-index) index (inc after-shape-index))
-                  frame-id (if (= :frame (:type parent))
-                             (:id parent)
-                             (:frame-id parent))]
+            (let [parent (get objects parent-id)]
+              ;; Do not proceed with the move if parent does not
+              ;; exists; this can happen on a race condition when an
+              ;; inflight move operations lands when parent is deleted
+              (if (and (seq shapes) (every? (partial is-valid-move? objects) shapes) parent)
+                (let [index    (or (some-> (d/index-of (:shapes parent) after-shape) inc) index)
+                      frame-id (if (cfh/frame-shape? parent)
+                                 (:id parent)
+                                 (:frame-id parent))]
+                  (as-> objects $
+                    ;; Add the new shapes to the parent object.
+                    (d/update-when $ parent-id #(add-to-parent % index shapes))
 
-              (if (and valid? (seq shapes))
-                (as-> objects $
-                  ;; Add the new shapes to the parent object.
-                  (d/update-when $ parent-id #(add-to-parent % index shapes))
+                    ;; Update each individual shape link to the new parent
+                    (reduce update-parent-id $ shapes)
 
-                  ;; Update each individual shape link to the new parent
-                  (reduce update-parent-id $ shapes)
+                    ;; Analyze the old parents and clear the old links
+                    ;; only if the new parent is different form old
+                    ;; parent.
+                    (reduce (partial remove-from-old-parent objects) $ shapes)
 
-                  ;; Analyze the old parents and clear the old links
-                  ;; only if the new parent is different form old
-                  ;; parent.
-                  (reduce (partial remove-from-old-parent objects) $ shapes)
+                    ;; Ensure that all shapes of the new parent has a
+                    ;; correct link to the topside frame.
+                    (reduce (partial update-frame-id frame-id) $ shapes)
 
-                  ;; Ensure that all shapes of the new parent has a
-                  ;; correct link to the topside frame.
-                  (reduce (partial assign-frame-id frame-id) $ shapes))
+                    ;; Perform validation of the affected shapes
+                    (reduce validate-shape $ shapes)))
+
                 objects)))]
 
     (if page-id

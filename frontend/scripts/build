@@ -20,20 +20,23 @@ echo $PATH
 set -ex
 
 corepack enable;
-corepack install || exit 1;
+corepack install;
 yarn install || exit 1;
 
-rm -rf resources/public;
 rm -rf target/dist;
+rm -rf resources/public;
 
-yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
+mkdir -p resources/public;
 
-if [ "$INCLUDE_WASM" = "yes" ];  then
-    yarn run build:wasm || exit 1;
-fi
+pushd ../render-wasm;
+./build
+popd
 
+yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS;
 yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
+
+sed -i "s/\.\/render.js/.\/render.js?version=$CURRENT_VERSION/g" resources/public/js/worker/main*.js
 
 mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/
@@ -43,10 +46,6 @@ sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/render.html;
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/rasterizer.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/rasterizer.html;
-
-if [ "$INCLUDE_WASM" = "yes" ];  then
-    sed -i "s/version=develop/version=$CURRENT_VERSION/g" ./target/dist/js/render_wasm.js;
-fi
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
     # build storybook

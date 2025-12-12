@@ -1,21 +1,12 @@
 use skia_safe::{self as skia};
-use std::collections::HashMap;
 
-use crate::math::{Matrix, Rect};
+use crate::math::Rect;
 use crate::shapes::modifiers::grid_layout::grid_cell_data;
-use crate::shapes::{Shape, StructureEntry};
-use crate::state::ShapesPool;
-use crate::uuid::Uuid;
+use crate::shapes::Shape;
+use crate::state::ShapesPoolRef;
 
-pub fn render_overlay(
-    zoom: f32,
-    canvas: &skia::Canvas,
-    shape: &Shape,
-    shapes: &ShapesPool,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
-) {
-    let cells = grid_cell_data(shape, shapes, modifiers, structure, true);
+pub fn render_overlay(zoom: f32, canvas: &skia::Canvas, shape: &Shape, shapes: ShapesPoolRef) {
+    let cells = grid_cell_data(shape, shapes, true);
 
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);

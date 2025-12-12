@@ -15,6 +15,7 @@
 (def ^:private schema:button
   [:map
    [:class {:optional true} :string]
+   [:type {:optional true} [:maybe [:enum "button" "submit" "reset"]]]
    [:icon {:optional true}
     [:and :string [:fn #(contains? icon-list %)]]]
    [:on-ref {:optional true} fn?]
@@ -24,7 +25,7 @@
 
 (mf/defc button*
   {::mf/schema schema:button}
-  [{:keys [variant icon children class on-ref to] :rest props}]
+  [{:keys [variant icon children class on-ref to type] :rest props}]
   (let [variant (d/nilv variant "primary")
         element (if to "a" "button")
         internal-class (stl/css-case :button true
@@ -35,6 +36,7 @@
                                      :button-destructive (= variant "destructive"))
         props (mf/spread-props props {:class [class internal-class]
                                       :href to
+                                      :type (d/nilv type "button")
                                       :ref (fn [node]
                                              (when on-ref
                                                (on-ref node)))})]

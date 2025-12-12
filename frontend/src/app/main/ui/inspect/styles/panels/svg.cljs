@@ -30,9 +30,9 @@
                                  :term (d/name sub-attr-key)
                                  :detail (dm/str sub-attr-value)
                                  :property property-value
-                                 :copiable false}]))
+                                 :copiable true}]))
         [:> properties-row* {:key (dm/str "svg-property-" (d/name attr-key))
                              :term (d/name attr-key)
                              :detail (dm/str attr-value)
                              :property (dm/str attr-key ": " attr-value ";")
-                             :copiable false}]))]])
+                             :copiable true}]))]])

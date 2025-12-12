@@ -94,6 +94,7 @@
    {:main
     {:entries [app.worker]
      :web-worker true
+     :prepend-js "importScripts('./render.js');"
      :depends-on #{}}}
 
    :js-options

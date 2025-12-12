@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.types.color :as types.color]
    [app.common.types.fills.impl :as impl]
    [clojure.core :as c]
@@ -49,11 +50,18 @@
     (= 1 (count result))))
 
 (def schema:fill
-  [:and schema:fill-attrs
-   [:fn has-valid-fill-attrs?]])
+  [:and schema:fill-attrs [:fn has-valid-fill-attrs?]])
 
 (def check-fill
   (sm/check-fn schema:fill))
+
+(def ^:private schema:fills-as-vector
+  [:vector {:gen/max 2} schema:fill])
+
+(def schema:fills
+  [:or {:gen/gen (sg/generator schema:fills-as-vector)}
+   schema:fills-as-vector
+   [:fn impl/fills?]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTRUCTORS

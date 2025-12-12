@@ -171,7 +171,7 @@
    :layout-container  layout-container-flex-attrs
    :layout-item       layout-item-attrs})
 
-(def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
+(def shadow-keys [:style :color :offset-x :offset-y :blur :spread :hidden])
 
 (defn shadow-eq
   "Function to check if two shadows are equivalent to the multiple selection (ignores their ids)"
@@ -408,7 +408,7 @@
         [exports-ids exports-values]
         (get-attrs shapes objects :exports)
 
-        [layout-container-ids layout-container-values]
+        [layout-container-ids layout-container-values layout-contianer-tokens]
         (get-attrs shapes objects :layout-container)
 
         [layout-item-ids layout-item-values {}]
@@ -461,6 +461,7 @@
       {:type type
        :ids layout-container-ids
        :values layout-container-values
+       :applied-tokens layout-contianer-tokens
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
@@ -483,8 +484,6 @@
        [:> fill/fill-menu* {:type type
                             :ids fill-ids
                             :values fill-values
-                            :shapes shapes
-                            :objects objects
                             :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
@@ -492,8 +491,6 @@
                         :ids stroke-ids
                         :show-caps show-caps?
                         :values stroke-values
-                        :shapes shapes
-                        :objects objects
                         :disable-stroke-style has-text?
                         :applied-tokens stroke-tokens}])
 

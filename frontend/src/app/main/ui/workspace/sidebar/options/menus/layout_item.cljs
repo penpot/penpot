@@ -13,7 +13,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.icons :as deprecated-icon]
@@ -82,27 +82,27 @@
             :title "Vertical margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-top-bottom]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder m1-placeholder
-                          :data-name "m1"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m1}]]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder m1-placeholder
+                                           :data-name "m1"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m1}]]
 
      [:div {:class (stl/css :horizontal-margin)
             :title "Horizontal margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-left-right]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder m2-placeholder
-                          :data-name "m2"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m2}]]]))
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder m2-placeholder
+                                           :data-name "m2"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m2}]]]))
 
 (mf/defc margin-multiple*
   [{:keys [value on-change on-blur]}]
@@ -134,52 +134,52 @@
             :title "Top margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-top]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m1"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m1}]]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m1"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m1}]]
      [:div {:class (stl/css :right-margin)
             :title "Right margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-right]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m2"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m2}]]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m2"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m2}]]
 
      [:div {:class (stl/css :bottom-margin)
             :title "Bottom margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-bottom]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m3"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m3}]]
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m3"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m3}]]
 
      [:div {:class (stl/css :left-margin)
             :title "Left margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-left]
-      [:> numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m4"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m4}]]]))
+      [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
+                                           :placeholder "--"
+                                           :data-name "m4"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m4}]]]))
 
 
 (mf/defc margin-section*
@@ -466,7 +466,7 @@
                   :title "z-index"}
 
             [:span {:class (stl/css :icon-text)} "Z"]
-            [:> numeric-input*
+            [:> deprecated-input/numeric-input*
              {:class (stl/css :numeric-input)
               :placeholder "--"
               :on-focus #(dom/select-target %)
@@ -511,7 +511,7 @@
                      :title (tr "workspace.options.layout-item.layout-item-min-w")}
 
                [:span {:class (stl/css :icon-text)} "MIN W"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0
@@ -526,7 +526,7 @@
               [:div {:class (stl/css :layout-item-max-w)
                      :title (tr "workspace.options.layout-item.layout-item-max-w")}
                [:span {:class (stl/css :icon-text)} "MAX W"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0
@@ -544,7 +544,7 @@
                      :title (tr "workspace.options.layout-item.layout-item-min-h")}
 
                [:span {:class (stl/css :icon-text)} "MIN H"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0
@@ -560,7 +560,7 @@
                      :title (tr "workspace.options.layout-item.layout-item-max-h")}
 
                [:span {:class (stl/css :icon-text)} "MAX H"]
-               [:> numeric-input*
+               [:> deprecated-input/numeric-input*
                 {:class (stl/css :numeric-input)
                  :no-validate true
                  :min 0

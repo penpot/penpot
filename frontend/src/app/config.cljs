@@ -104,7 +104,6 @@
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
 (def templates-uri        (obj/get global "penpotTemplatesUri" "https://penpot.github.io/penpot-files/"))
 
-
 ;; We set the current parsed flags under common for make
 ;; it available for common code without the need to pass
 ;; the flags all arround on parameters.
@@ -128,7 +127,7 @@
       public-uri))
 
 (def worker-uri
-  (obj/get global "penpotWorkerURI" "/js/worker.js"))
+  (obj/get global "penpotWorkerURI" "/js/worker/main.js"))
 
 (defn external-feature-flag
   [flag value]
@@ -190,7 +189,11 @@
         (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
         (false? thumbnail?) (u/join (dm/str id)))))))
 
-(defn resolve-static-asset
-  [path]
-  (let [uri (u/join public-uri path)]
-    (assoc uri :query (dm/str "version=" (:full version)))))
+(defn resolve-href
+  [resource]
+  (let [version (get version :full)
+        href    (-> public-uri
+                    (u/ensure-path-slash)
+                    (u/join resource)
+                    (get :path))]
+    (str href "?version=" version)))

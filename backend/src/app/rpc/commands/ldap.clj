@@ -66,12 +66,12 @@
                             :member-email (:email profile))
               token  (tokens/generate cfg claims)]
           (-> {:invitation-token token}
-              (rph/with-transform (session/create-fn cfg (:id profile)))
+              (rph/with-transform (session/create-fn cfg profile))
               (rph/with-meta {::audit/props (:props profile)
                               ::audit/profile-id (:id profile)})))
 
         (-> (profile/strip-private-attrs profile)
-            (rph/with-transform (session/create-fn cfg (:id profile)))
+            (rph/with-transform (session/create-fn cfg profile))
             (rph/with-meta {::audit/props (:props profile)
                             ::audit/profile-id (:id profile)}))))))
 
@@ -83,6 +83,6 @@
                              (profile/clean-email)
                              (profile/get-profile-by-email conn))
                     (->> (assoc info :is-active true :is-demo false)
-                         (auth/create-profile! conn)
-                         (auth/create-profile-rels! conn)
+                         (auth/create-profile cfg)
+                         (auth/create-profile-rels conn)
                          (profile/strip-private-attrs))))))

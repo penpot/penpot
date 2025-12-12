@@ -1,0 +1,62 @@
+{
+  "a": {},
+  "b": {
+    "aaa": {
+      "$value": "red",
+      "$type": "color",
+      "$description": ""
+    },
+    "bbb": {
+      "$value": "blue",
+      "$type": "color",
+      "$description": ""
+    },
+    "ccc": {
+      "eee": {
+        "$value": "green",
+        "$type": "color",
+        "$description": ""
+      }
+    },
+    "fff": {
+      "ttt": {
+        "$value": {
+          "fontFamilies": [
+            "Aboreto"
+          ],
+          "fontSizes": "12",
+          "fontWeights": "300"
+        },
+        "$type": "typography",
+        "$description": ""
+      }
+    }
+  },
+  "b/c": {},
+  "$themes": [
+    {
+      "id": "48af6582-f247-8060-8006-ff4dd1d761a8",
+      "name": "tes1",
+      "description": "",
+      "isSource": false,
+      "selectedTokenSets": {
+        "a": "enabled",
+        "b": "enabled"
+      }
+    }
+  ],
+  "$metadata": {
+    "tokenSetOrder": [
+      "a",
+      "b",
+      "b/c"
+    ],
+    "activeThemes": [
+      "/tes1"
+    ],
+    "activeSets": [
+      "a",
+      "b"
+    ]
+  }
+}

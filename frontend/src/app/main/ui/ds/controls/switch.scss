@@ -1,0 +1,118 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/colors.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+
+.switch {
+  --switch-label-foreground-color: var(--color-foreground-primary);
+
+  --switch-track-outline-color: none;
+  --switch-track-shadow: inset 0 1px 2px var(--color-shadow-light);
+
+  --switch-thumb-shadow: 0 1px 2px var(--color-shadow-light);
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-s);
+  inline-size: fit-content;
+  outline: none;
+
+  &.off {
+    --switch-track-justify-content: start;
+    --switch-track-background-color: var(--color-foreground-secondary);
+
+    --switch-thumb-width: #{px2rem(14)};
+    --switch-thumb-height: #{px2rem(14)};
+    --switch-thumb-background-color: var(--color-accent-off);
+    --switch-thumb-border-radius: #{$br-circle};
+  }
+
+  &.neutral {
+    --switch-track-justify-content: center;
+    --switch-track-background-color: var(--color-accent-tertiary);
+
+    --switch-thumb-width: #{px2rem(14)};
+    --switch-thumb-height: #{px2rem(4)};
+    --switch-thumb-background-color: var(--color-accent-off);
+    --switch-thumb-border-radius: #{$br-8};
+  }
+
+  &.on {
+    --switch-track-justify-content: end;
+    --switch-track-background-color: var(--color-accent-tertiary);
+
+    --switch-thumb-width: #{px2rem(14)};
+    --switch-thumb-height: #{px2rem(14)};
+    --switch-thumb-background-color: var(--color-accent-off);
+    --switch-thumb-border-radius: #{$br-circle};
+  }
+
+  &[disabled] {
+    pointer-events: none;
+    --switch-label-foreground-color: var(--color-foreground-secondary);
+
+    --switch-track-shadow: none;
+
+    --switch-thumb-shadow: none;
+  }
+
+  &.off[disabled] {
+    --switch-track-background-color: var(--color-background-primary);
+    --switch-track-border-color: var(--color-background-disabled);
+
+    --switch-thumb-background-color: var(--color-background-disabled);
+  }
+
+  &.on[disabled],
+  &.neutral[disabled] {
+    --switch-track-background-color: var(--color-background-disabled);
+
+    --switch-thumb-background-color: var(--color-background-primary);
+  }
+
+  &:focus-visible {
+    --switch-track-outline-color: var(--color-accent-primary);
+  }
+
+  &:hover {
+    --switch-thumb-background-color: var(--color-static-white);
+  }
+}
+
+.switch-label {
+  @include t.use-typography("body-small");
+  color: var(--switch-label-foreground-color);
+  user-select: none;
+}
+
+.switch-track {
+  display: flex;
+  align-items: center;
+  justify-content: var(--switch-track-justify-content);
+  inline-size: px2rem(30);
+  block-size: px2rem(18);
+  padding: var(--sp-xxs);
+  border-radius: $br-12;
+  border: $b-1 solid var(--switch-track-border-color);
+  outline: $b-1 solid var(--switch-track-outline-color);
+  outline-offset: $b-1;
+  box-shadow: var(--switch-track-shadow);
+  background-color: var(--switch-track-background-color);
+}
+
+.switch-thumb {
+  inline-size: var(--switch-thumb-width);
+  block-size: var(--switch-thumb-height);
+  border-radius: var(--switch-thumb-border-radius);
+  box-shadow: var(--switch-thumb-shadow);
+  background-color: var(--switch-thumb-background-color);
+}

@@ -105,7 +105,7 @@
         index         (reduce-kv #(index-shape objects parents-index clip-index %1 %3)
                                  (qdt/create (clj->js bounds))
                                  (dissoc objects uuid/zero))]
-    {:index index :bounds bounds}))
+    {:index index :bounds bounds :parents-index parents-index :clip-index clip-index}))
 
 ;; FIXME: optimize
 (defn- update-index
@@ -140,6 +140,12 @@
                 (qdt/remove-all index changed-ids)
                 shapes)]
 
+    (assoc data :index index :parents-index parents-index :clip-index clip-index)))
+
+(defn update-index-single
+  [{index :index parents-index :parents-index clip-index :clip-index :as data} objects shape]
+  (let [index (qdt/remove-all index [(:id shape)])
+        index (index-shape objects parents-index clip-index index shape)]
     (assoc data :index index)))
 
 (defn- query-index

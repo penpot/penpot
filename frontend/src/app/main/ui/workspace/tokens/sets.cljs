@@ -33,15 +33,12 @@
         can-edit?
         (mf/use-ctx ctx/can-edit?)
 
-        active-token-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
-
         token-set-active?
         (mf/use-fn
-         (mf/deps active-token-sets-names)
+         (mf/deps tokens-lib)
          (fn [name]
-           (contains? active-token-sets-names name)))
+           (when tokens-lib
+             (ctob/token-set-active? tokens-lib name))))
 
         token-set-group-active?
         (mf/use-fn

@@ -2,11 +2,10 @@ use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vect
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
     JustifyContent, JustifyItems, JustifySelf, Layout, LayoutData, LayoutItem, Modifier, Shape,
-    StructureEntry, Type,
+    Type,
 };
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
-use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
 
 use super::common::GetBounds;
@@ -45,7 +44,7 @@ pub fn calculate_tracks(
     grid_data: &GridData,
     layout_bounds: &Bounds,
     cells: &Vec<GridCell>,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Vec<TrackData> {
     let layout_size = if is_column {
@@ -122,7 +121,7 @@ fn set_auto_base_size(
     column: bool,
     tracks: &mut [TrackData],
     cells: &Vec<GridCell>,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     for cell in cells {
@@ -173,7 +172,7 @@ fn set_auto_multi_span(
     column: bool,
     tracks: &mut [TrackData],
     cells: &[GridCell],
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups with flex (will be set in flex_multi_span)
@@ -248,7 +247,7 @@ fn set_flex_multi_span(
     layout_data: &LayoutData,
     tracks: &mut [TrackData],
     cells: &[GridCell],
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups without flex
@@ -538,8 +537,8 @@ fn cell_bounds(
 
 pub fn create_cell_data<'a>(
     layout_bounds: &Bounds,
-    children: &IndexSet<Uuid>,
-    shapes: &'a ShapesPool,
+    children: &[Uuid],
+    shapes: ShapesPoolRef<'a>,
     cells: &Vec<GridCell>,
     column_tracks: &[TrackData],
     row_tracks: &[TrackData],
@@ -602,9 +601,7 @@ pub fn create_cell_data<'a>(
 
 pub fn grid_cell_data<'a>(
     shape: &Shape,
-    shapes: &'a ShapesPool,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    shapes: ShapesPoolRef<'a>,
     allow_empty: bool,
 ) -> Vec<CellData<'a>> {
     let Type::Frame(Frame {
@@ -616,26 +613,8 @@ pub fn grid_cell_data<'a>(
     };
 
     let bounds = &mut HashMap::<Uuid, Bounds>::new();
-
-    let shape = &mut shape.clone();
-    if let Some(modifiers) = modifiers.get(&shape.id) {
-        shape.apply_transform(modifiers);
-    }
-
     let layout_bounds = shape.bounds();
-    let children = shape.modified_children_ids(structure.get(&shape.id), false);
-
-    for child_id in children.iter() {
-        let Some(child) = shapes.get(child_id) else {
-            continue;
-        };
-
-        if let Some(modifier) = modifiers.get(child_id) {
-            let mut b = bounds.find(child);
-            b.transform_mut(modifier);
-            bounds.insert(*child_id, b);
-        }
-    }
+    let children = shape.children_ids(false);
 
     let column_tracks = calculate_tracks(
         true,
@@ -723,13 +702,12 @@ pub fn reflow_grid_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     grid_data: &GridData,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
-    let children = shape.modified_children_ids(structure.get(&shape.id), true);
+    let children = shape.children_ids(true);
 
     let column_tracks = calculate_tracks(
         true,
@@ -813,7 +791,7 @@ pub fn reflow_grid_layout(
             transform.post_concat(&Matrix::translate(delta_v));
         }
 
-        result.push_back(Modifier::transform(child.id, transform));
+        result.push_back(Modifier::transform_propagate(child.id, transform));
     }
 
     if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {

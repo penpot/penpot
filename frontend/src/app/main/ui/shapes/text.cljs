@@ -38,5 +38,8 @@
       (some? position-data)
       [:> svg/text-shape props]
 
-      (or (nil? position-data) is-component?)
+      ;; Only use this for component preview, otherwise the dashboard thumbnails
+      ;; will give a tainted canvas error because the `foreignObject` cannot be
+      ;; rendered.
+      (and (nil? position-data) is-component?)
       [:> fo/text-shape props])))

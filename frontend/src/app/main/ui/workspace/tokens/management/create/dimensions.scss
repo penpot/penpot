@@ -1,0 +1,58 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+
+.form-wrapper {
+  width: $sz-384;
+  position: relative;
+}
+
+.token-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.title-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.form-modal-title {
+  @include t.use-typography("headline-medium");
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: var(--sp-m);
+  padding-block-start: var(--sp-s);
+}
+
+.with-delete {
+  grid-template-columns: 1fr auto auto;
+}
+
+.warning-name-change-notification-wrapper {
+  margin-block-start: var(--sp-l);
+}
+
+.delete-btn {
+  justify-self: start;
+}

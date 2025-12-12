@@ -9,7 +9,7 @@
 @use "ds/_utils.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/typography.scss" as t;
-
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .annotation {
@@ -446,9 +446,7 @@
 }
 
 .component-section {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  column-gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .component-title {
@@ -651,9 +649,7 @@
 }
 
 .variant-property-container {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
-  gap: var(--sp-xs);
+  @include sidebar.option-grid-structure;
 }
 
 .variant-property-name-wrapper {
@@ -666,8 +662,17 @@
   align-self: center;
 }
 
+.variant-property-value-switch-wrapper {
+  grid-column: span 5;
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
+  padding-inline-start: var(--sp-s);
+}
+
 .variant-property-name {
   @include t.use-typography("body-small");
+  margin-inline-start: var(--sp-s);
   color: var(--color-foreground-secondary);
   display: block;
   overflow: hidden;

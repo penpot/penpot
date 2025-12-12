@@ -10,13 +10,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
    [beicon.v2.core :as rx]
@@ -71,7 +69,7 @@
   {::mf/register modal/components
    ::mf/register-as ::fexp/export-files
    ::mf/props :obj}
-  [{:keys [team-id files format]}]
+  [{:keys [team-id files]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
 
@@ -79,40 +77,19 @@
         selected     (:selected state)
         status       (:status state)
 
-        binary?      (not= format :legacy-zip)
-
-        ;; We've deprecated the merge option on non-binary files
-        ;; because it wasn't working and we're planning to remove this
-        ;; export in future releases.
-        export-types (if binary? fexp/valid-types [:all :detach])
-
         start-export
         (mf/use-fn
          (mf/deps team-id selected files)
          (fn []
            (swap! state* assoc :status :exporting)
-           (->> (mw/ask-many!
-                 {:cmd :export-files
-                  :format format
-                  :team-id team-id
-                  :type selected
-                  :files files})
-                (rx/mapcat #(->> (rx/of %)
-                                 (rx/delay 1000)))
+           (->> (fexp/export-files :files files :type selected)
                 (rx/subs!
-                 (fn [msg]
-                   (cond
-                     (= :error (:type msg))
-                     (swap! state* update :files mark-file-error (:file-id msg))
-
-                     (= :finish (:type msg))
-                     (let [mtype (if (contains? cf/flags :export-file-v3)
-                                   "application/penpot"
-                                   (:mtype msg))
-                           fname (:filename msg)
-                           uri   (:uri msg)]
-                       (swap! state* update :files mark-file-success (:file-id msg))
-                       (dom/trigger-download-uri fname mtype uri))))))))
+                 (fn [{:keys [file-id error filename uri] :as result}]
+                   (if error
+                     (swap! state* update :files mark-file-error file-id)
+                     (do
+                       (swap! state* update :files mark-file-success file-id)
+                       (dom/trigger-download-uri filename "application/penpot" uri))))))))
 
         on-cancel
         (mf/use-fn
@@ -155,7 +132,7 @@
           [:p {:class (stl/css :modal-msg)} (tr "dashboard.export.explain")]
           [:p {:class (stl/css :modal-scd-msg)} (tr "dashboard.export.detail")]
 
-          (for [type export-types]
+          (for [type fexp/valid-types]
             [:div {:class (stl/css :export-option true)
                    :key (name type)}
              [:label {:for (str "export-" type)

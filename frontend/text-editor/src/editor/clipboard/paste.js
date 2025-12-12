@@ -12,6 +12,48 @@ import {
 } from "../content/dom/Content.js";
 
 /**
+ * Returns a DocumentFragment from text/html.
+ *
+ * @param {DataTransfer} clipboardData
+ * @returns {DocumentFragment}
+ */
+function getFormattedFragmentFromClipboardData(selectionController, clipboardData) {
+  return mapContentFragmentFromHTML(
+    clipboardData.getData("text/html"),
+    selectionController.currentStyle,
+  );
+}
+
+/**
+ * Returns a DocumentFragment from text/plain.
+ *
+ * @param {DataTransfer} clipboardData
+ * @returns {DocumentFragment}
+ */
+function getPlainFragmentFromClipboardData(selectionController, clipboardData) {
+  return mapContentFragmentFromString(
+    clipboardData.getData("text/plain"),
+    selectionController.currentStyle,
+  );
+}
+
+/**
+ * Returns a DocumentFragment (or null) if it contains
+ * a compatible clipboardData type.
+ *
+ * @param {DataTransfer} clipboardData
+ * @returns {DocumentFragment|null}
+ */
+function getFragmentFromClipboardData(selectionController, clipboardData) {
+  if (clipboardData.types.includes("text/html")) {
+    return getFormattedFragmentFromClipboardData(selectionController, clipboardData)
+  } else if (clipboardData.types.includes("text/plain")) {
+    return getPlainFragmentFromClipboardData(selectionController, clipboardData)
+  }
+  return null
+}
+
+/**
  * When the user pastes some HTML, what we do is generate
  * a new DOM based on what the user pasted and then we
  * insert it in the appropiate part (see `insertFromPaste` command).
@@ -28,18 +70,10 @@ export function paste(event, editor, selectionController) {
   event.preventDefault();
 
   let fragment = null;
-  if (event.clipboardData.types.includes("text/html")) {
-    const html = event.clipboardData.getData("text/html");
-    fragment = mapContentFragmentFromHTML(
-      html,
-      selectionController.currentStyle,
-    );
-  } else if (event.clipboardData.types.includes("text/plain")) {
-    const plain = event.clipboardData.getData("text/plain");
-    fragment = mapContentFragmentFromString(
-      plain,
-      selectionController.currentStyle,
-    );
+  if (editor?.options?.allowHTMLPaste) {
+    fragment = getFragmentFromClipboardData(selectionController, event.clipboardData);
+  } else {
+    fragment = getPlainFragmentFromClipboardData(selectionController, event.clipboardData);
   }
 
   if (!fragment) {

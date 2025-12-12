@@ -14,7 +14,9 @@
    [integrant.core :as ig])
   (:import
    java.time.Clock
-   java.time.Duration))
+   java.time.Duration
+   java.time.Instant
+   java.time.ZoneId))
 
 (defonce current
   (atom {:clock (Clock/systemDefaultZone)
@@ -35,6 +37,12 @@
 (defmethod ig/halt-key! ::setup/clock
   [_ _]
   (remove-watch current ::common))
+
+(defn fixed
+  "Get fixed clock, mainly used in tests"
+  [instant]
+  (Clock/fixed ^Instant (ct/inst instant)
+               ^ZoneId (ZoneId/of "Z")))
 
 (defn set-offset!
   [duration]

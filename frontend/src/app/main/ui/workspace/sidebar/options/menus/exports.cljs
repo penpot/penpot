@@ -101,9 +101,8 @@
                                   :name sname
                                   :object-id (:id (first shapes-with-exports))}
                      full-export (merge export defaults)]
-                 (st/emit!
-                  (de/request-simple-export {:export full-export})
-                  (de/export-shapes-event [full-export] "workspace:sidebar")))
+                 (st/emit! (de/request-simple-export {:export full-export})
+                           (de/export-shapes-event [full-export] "workspace:sidebar")))
                (st/emit!
                 (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
 

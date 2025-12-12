@@ -7,11 +7,12 @@
 (ns app.util.shell
   "Shell & FS utilities."
   (:require
-   ["child_process" :as proc]
-   ["fs" :as fs]
-   ["path" :as path]
+   ["node:child_process" :as proc]
+   ["node:fs" :as fs]
+   ["node:path" :as path]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [cuerdas.core :as str]
@@ -19,7 +20,8 @@
 
 (l/set-level! :trace)
 
-(def tempfile-minage (* 1000 60 60 1)) ;; 1h
+(def ^:const default-deletion-delay
+  (* 60 60 1)) ;; 1h
 
 (def tmpdir
   (let [path (cf/get :tempdir)]
@@ -28,16 +30,28 @@
       (fs/mkdirSync path #js {:recursive true}))
     path))
 
-(defn- schedule-deletion!
-  [path]
-  (letfn [(remote-tempfile []
-            (when (fs/existsSync path)
-              (l/trace :hint "permanently remove tempfile" :path path)
-              (fs/rmSync path #js {:recursive true})))]
-    (l/trace :hint "schedule tempfile deletion"
-             :path path
-             :scheduled-at (.. (js/Date. (+ (js/Date.now) tempfile-minage)) toString))
-    (js/setTimeout remote-tempfile tempfile-minage)))
+(defn schedule-deletion
+  ([path] (schedule-deletion path default-deletion-delay))
+  ([path delay]
+   (let [remove-path
+         (fn []
+           (try
+             (when (fs/existsSync path)
+               (fs/rmSync path #js {:recursive true})
+               (l/trc :hint "tempfile permanently deleted" :path path))
+             (catch :default cause
+               (l/err :hint "error on deleting temporal file"
+                      :path path
+                      :cause cause))))
+         scheduled-at
+         (-> (ct/now) (ct/plus #js {:seconds delay}))]
+
+     (l/trc :hint "schedule tempfile deletion"
+            :path path
+            :scheduled-at (ct/format-inst scheduled-at))
+
+     (js/setTimeout remove-path (* delay 1000))
+     path)))
 
 (defn tempfile
   [& {:keys [prefix suffix]
@@ -48,9 +62,7 @@
       (let [path (path/join tmpdir (str/concat prefix (uuid/next) "-" i  suffix))]
         (if (fs/existsSync path)
           (recur (inc i))
-          (do
-            (schedule-deletion! path)
-            path)))
+          (schedule-deletion path)))
       (ex/raise :type :internal
                 :code :unable-to-locate-temporal-file
                 :hint "unable to find a tempfile candidate"))))
@@ -61,11 +73,13 @@
 
 (defn stat
   [path]
-  (-> (.stat fs/promises path)
-      (p/then (fn [data]
-                {:created-at (inst-ms (.-ctime ^js data))
-                 :size (.-size data)}))
-      (p/catch (constantly nil))))
+  (->> (.stat fs/promises path)
+       (p/fmap (fn [data]
+                 {:path path
+                  :created-at (inst-ms (.-ctime ^js data))
+                  :size (.-size data)}))
+       (p/merr (fn [_cause]
+                 (p/resolved nil)))))
 
 (defn rmdir!
   [path]

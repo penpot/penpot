@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.config
-  "A configuration management."
   (:refer-clojure :exclude [get])
   (:require
    [app.common.data :as d]
@@ -47,6 +46,7 @@
    :auto-file-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"
+
    :host "localhost"
    :tenant "default"
 
@@ -56,6 +56,8 @@
 
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
+
+   :auth-token-cookie-name "auth-token"
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -90,7 +92,7 @@
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} :string]
-    [:public-uri {:optional false} :string]
+    [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 
     [:http-server-port {:optional true} ::sm/int]
@@ -100,7 +102,7 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
-    [:management-api-shared-key {:optional true} :string]
+    [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
@@ -165,7 +167,7 @@
     [:google-client-id {:optional true} :string]
     [:google-client-secret {:optional true} :string]
     [:oidc-client-id {:optional true} :string]
-    [:oidc-user-info-source {:optional true} :keyword]
+    [:oidc-user-info-source {:optional true} [:enum "auto" "userinfo" "token"]]
     [:oidc-client-secret {:optional true} :string]
     [:oidc-base-uri {:optional true} :string]
     [:oidc-token-uri {:optional true} :string]

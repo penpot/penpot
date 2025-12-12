@@ -37,6 +37,15 @@
    :padding-block-end :p3
    :padding-inline-start :p4})
 
+(defn- has-padding?
+  [shape]
+  (let [padding (:layout-padding shape)
+        padding-keys [:p1 :p2 :p3 :p4]]
+    (some (fn [key]
+            (and (contains? padding key)
+                 (not= 0 (get padding key))))
+          padding-keys)))
+
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]
   (let [padding-prop (get shape-prop->padding-prop property)]
@@ -51,19 +60,43 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
+(defn- generate-layout-shorthand
+  [shapes objects]
+  (let [shape (first shapes)
+        shorthand-padding (when (and (= (count shapes) 1) (has-padding? shape))
+                            (css/get-css-property objects shape :padding))
+        shorthand-grid (when (and (= (count shapes) 1)
+                                  (= :grid (:layout shape)))
+                         (str "grid: "
+                              (css/get-css-value objects shape :grid-template-rows)
+                              " / "
+                              (css/get-css-value objects shape :grid-template-columns)
+                              ";"))
+        shorthand (when (or shorthand-padding shorthand-grid)
+                    (str shorthand-grid " " shorthand-padding))]
+    shorthand))
+
 (mf/defc layout-panel*
-  [{:keys [shapes objects resolved-tokens]}]
-  [:div {:class (stl/css :variants-panel)}
-   (for [shape shapes]
-     [:div {:key (:id shape) :class "layout-shape"}
-      (for [property properties]
-        (when-let [value (css/get-css-value objects shape property)]
-          (let [property-name (cmm/get-css-rule-humanized property)
-                resolved-token (get-resolved-token property shape resolved-tokens)
-                property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
-            [:> properties-row* {:key (dm/str "layout-property-" property)
-                                 :term property-name
-                                 :detail value
-                                 :token resolved-token
-                                 :property property-value
-                                 :copiable true}])))])])
+  [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
+  (let [shorthand* (mf/use-state #(generate-layout-shorthand shapes objects))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (mf/deps shorthand on-layout-shorthand shapes objects)
+     (fn []
+       (reset! shorthand* (generate-layout-shorthand shapes objects))
+       (on-layout-shorthand {:panel :layout
+                             :property shorthand})))
+    [:div {:class (stl/css :variants-panel)}
+     (for [shape shapes]
+       [:div {:key (:id shape) :class (stl/css :layout-shape)}
+        (for [property properties]
+          (when-let [value (css/get-css-value objects shape property)]
+            (let [property-name (cmm/get-css-rule-humanized property)
+                  resolved-token (get-resolved-token property shape resolved-tokens)
+                  property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
+              [:> properties-row* {:key (dm/str "layout-property-" property)
+                                   :term property-name
+                                   :detail value
+                                   :token resolved-token
+                                   :property property-value
+                                   :copiable true}])))])]))

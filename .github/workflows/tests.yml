@@ -1,0 +1,298 @@
+name: "CI"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  push:
+    branches:
+      - develop
+      - staging
+
+concurrency:
+  group: ${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: "Linter"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check clojure code format
+        run: |
+          ./scripts/lint
+
+  test-common:
+    name: "Common Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests on JVM
+        working-directory: ./common
+        run: |
+          clojure -M:dev:test
+
+      - name: Run tests on NODE
+        working-directory: ./common
+        run: |
+          ./scripts/test
+
+  test-frontend:
+    name: "Frontend Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Unit Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test
+
+      - name: Component Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-components
+
+  test-render-wasm:
+    name: "Render WASM Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Format
+        working-directory: ./render-wasm
+        run: |
+          cargo fmt --check
+
+      - name: Lint
+        working-directory: ./render-wasm
+        run: |
+          ./lint
+
+      - name: Test
+        working-directory: ./render-wasm
+        run: |
+          ./test
+
+  test-backend:
+    name: "Backend Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    services:
+      postgres:
+        image: postgres:17
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: penpot_test
+          POSTGRES_PASSWORD: penpot_test
+          POSTGRES_DB: penpot_test
+
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:9
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
+          PENPOT_TEST_DATABASE_USERNAME: penpot_test
+          PENPOT_TEST_DATABASE_PASSWORD: penpot_test
+          PENPOT_TEST_REDIS_URI: "redis://redis/1"
+
+        run: |
+          clojure -M:dev:test --reporter kaocha.report/documentation
+
+  test-library:
+    name: "Library Tests"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        working-directory: ./library
+        run: |
+          ./scripts/test
+
+  build-integration:
+    name: "Build Integration Bundle"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          yarn install
+          yarn run build:app:assets
+          yarn run build:app
+          yarn run build:app:libs
+
+      - name: Build WASM
+        working-directory: "./render-wasm"
+        run: |
+          ./build release
+
+      - name: Store Bundle Cache
+        uses: actions/cache@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+  test-integration-1:
+    name: "Integration Tests 1/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e --shard="1/4";
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result-1
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-2:
+    name: "Integration Tests 2/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e --shard="2/4";
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result-2
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-3:
+    name: "Integration Tests 3/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e --shard="3/4";
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result-3
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-4:
+    name: "Integration Tests 4/4"
+    runs-on: ubuntu-24.04
+    container: penpotapp/devenv:latest
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e --shard="4/4";
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result-4
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3

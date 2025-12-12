@@ -267,7 +267,7 @@
                (filter :is-default)
                (first)))]
 
-    (hooks/use-shortcuts ::dashboard sc/shortcuts)
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-dashboard)
 
     (mf/with-effect [team-id]
       (st/emit! (dd/initialize team-id))

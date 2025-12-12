@@ -43,8 +43,7 @@
            on-detach-token
            disable-stroke-style
            select-on-focus
-           shapes
-           objects]}]
+           ids]}]
 
   (let [on-drop
         (mf/use-fn
@@ -64,7 +63,8 @@
            :data {:index index})
           [nil nil])
 
-        stroke-color-token (:stroke-color applied-tokens)
+        stroke-color-token
+        (:stroke-color applied-tokens)
 
         on-color-change-refactor
         (mf/use-fn
@@ -108,28 +108,15 @@
 
         on-token-change
         (mf/use-fn
-         (mf/deps shapes objects)
+         (mf/deps ids)
          (fn [_ token]
-           (let [expanded-shapes
-                 (if (= 1 (count shapes))
-                   (let [shape (first shapes)]
-                     (if (= (:type shape) :group)
-                       (keep objects (:shapes shape))
-                       [shape]))
-
-                   (mapcat (fn [shape]
-                             (if (= (:type shape) :group)
-                               (keep objects (:shapes shape))
-                               [shape]))
-                           shapes))]
-
-             (st/emit!
-              (dwta/toggle-token {:token token
-                                  :attrs #{:stroke-color}
-                                  :shapes expanded-shapes})))))
+           (st/emit!
+            (dwta/toggle-token {:token token
+                                :attrs #{:stroke-color}
+                                :shape-ids ids
+                                :expand-with-children true}))))
 
         stroke-style (or (:stroke-style stroke) :solid)
-
 
         stroke-style-options
         (mf/with-memo [stroke-style]
@@ -196,7 +183,9 @@
                      :on-detach on-color-detach
                      :on-remove on-remove
                      :disable-drag disable-drag
-                     :applied-token stroke-color-token
+                     :applied-token (if (= index 0)
+                                      stroke-color-token
+                                      nil)
                      :on-detach-token on-detach-token-color
                      :on-token-change on-token-change
                      :on-focus on-focus

@@ -88,7 +88,7 @@
 (defn group->paths
   "Given a map with :group string (slash-separated), returns a set of vectors
    representing the cumulative group hierarchy.
-   
+
    Example:
    {:group \"test/gracia\"}
    => #{[\"test\"] [\"test\" \"gracia\"]}"
@@ -103,7 +103,7 @@
 
 (mf/defc set-section*
   {::mf/private true}
-  [{:keys [collapsed toggle-sets-open group-or-set name color-origin on-token-change] :rest props}]
+  [{:keys [collapsed toggle-sets-open group-or-set name color-origin on-token-change applied-token] :rest props}]
 
   (let [list-style* (mf/use-state :list)
         list-style  (deref list-style*)
@@ -156,7 +156,7 @@
                        (let [{:keys [modal title]} (get dwta/token-properties :color)
                              window-size (dom/get-window-size)
                              left-sidebar (dom/get-element "left-sidebar-aside")
-                             x-size (dom/get-data left-sidebar "size")
+                             x-size (dom/get-data left-sidebar "width")
                              modal-height 392
                              x (- (int x-size) 30)
                              y (- (/ (:height window-size) 2) (/ modal-height 2))]
@@ -176,7 +176,7 @@
       [:button {:class (stl/css :set-title-btn)
                 :aria-controls (str "set-panel-" (d/name name))
                 :aria-expanded (not collapsed)
-                :aria-label (tr "inspect.tabs.styles.panel.toggle-style" name)
+                :aria-label (tr "inspect.tabs.styles.toggle-style" name)
                 :on-click toggle-set}
        [:> i/icon* {:icon-id icon-id
                     :size "s"
@@ -204,9 +204,11 @@
                                    :grid-view (= list-style :grid))}
 
         (for [token (:tokens group-or-set)]
-          (let [selected? (if (= color-origin :fill)
-                            (= has-color-tokens? (:name token))
-                            (= has-stroke-tokens? (:name token)))]
+          (let [selected? (case color-origin
+                            :fill (= has-color-tokens? (:name token))
+                            :stroke-color (= has-stroke-tokens? (:name token))
+                            :color-selection (= applied-token (:name token))
+                            false)]
             (if (= :grid list-style)
               [:> grid-item* {:key (str "token-grid-" (:id token))
                               :on-token-pill-click on-token-pill-click
@@ -225,13 +227,13 @@
 (defn- filter-combined-tokens
   "Filters the combined-tokens structure by token name.
    Removes sets or groups if they end up with no tokens.
-   
-   Input: 
+
+   Input:
    [{:group \"brand\", :sets [\"light\" \"dark\"], :tokens [{:name \"background\"} {:name \"foreground\"}]}
     {:group nil, :sets [\"primitivos\"], :tokens [{:name \"blue-100\"} {:name \"red-100\"}]}]
-   
+
    (filter-combined-tokens ... \"blue\")
-   Output: 
+   Output:
    [{:group nil, :sets [\"primitivos\"], :tokens [{:name \"blue-100\"}]}]
    => keeps only tokens matching \"blue\", and removes sets/groups if no tokens match."
 
@@ -251,9 +253,9 @@
 
 (defn- sort-combined-tokens
   "Sorts tokens alphabetically by :name inside each group/set.
-   Input: 
+   Input:
    [{:group \"brand\", :sets [\"light\" \"dark\"], :tokens [{:name \"foreground\"} {:name \"background\"}]}]
-   
+
    Output:
    [{:group \"brand\", :sets [\"light\" \"dark\"], :tokens [{:name \"background\"} {:name \"foreground\"}]}]"
   [combined-tokens]
@@ -263,7 +265,7 @@
 
 (mf/defc token-section*
   {}
-  [{:keys [combined-tokens color-origin on-token-change] :rest props}]
+  [{:keys [combined-tokens color-origin on-token-change applied-token] :rest props}]
   (let [sets (set (mapv label-group-or-set combined-tokens))
         filter-term* (mf/use-state "")
         filter-term (deref filter-term*)
@@ -308,6 +310,7 @@
                 :color-origin color-origin
                 :on-token-change on-token-change
                 :name name
+                :applied-token applied-token
                 :group-or-set combined-sets}]))]
          [:> token-empty-state*])]
       [:> token-empty-state*])))

@@ -96,6 +96,7 @@
       {:type type
        :ids ids
        :values layout-container-values
+       :applied-tokens applied-tokens
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
@@ -120,13 +121,11 @@
      [:> fill/fill-menu*
       {:ids ids
        :type type
-       :shapes shapes
        :values shape
        :applied-tokens applied-tokens}]
 
      [:& stroke-menu {:ids ids
                       :type type
-                      :shapes shapes
                       :values stroke-values
                       :applied-tokens applied-tokens}]
 

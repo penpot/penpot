@@ -88,6 +88,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-font-weight
     :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
 
+   :error.style-dictionary/invalid-token-value-font-family
+   {:error/code :error.style-dictionary/invalid-token-value-font-family
+    :error/fn #(tr "workspace.tokens.invalid-font-family-token-value" %)}
+
    :error.style-dictionary/invalid-token-value-typography
    {:error/code :error.style-dictionary/invalid-token-value-typography
     :error/fn #(tr "workspace.tokens.invalid-token-value-typography" %)}
@@ -95,6 +99,18 @@
    :error.style-dictionary/composite-line-height-needs-font-size
    {:error/code :error.style-dictionary/composite-line-height-needs-font-size
     :error/fn #(tr "workspace.tokens.composite-line-height-needs-font-size" %)}
+
+   :error.style-dictionary/invalid-token-value-shadow-type
+   {:error/code :error.style-dictionary/invalid-token-value-shadow-type
+    :error/fn #(tr "workspace.tokens.invalid-shadow-type-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-shadow-blur
+   {:error/code :error.style-dictionary/invalid-token-value-shadow-blur
+    :error/fn #(tr "workspace.tokens.shadow-blur-range")}
+
+   :error.style-dictionary/invalid-token-value-shadow-spread
+   {:error/code :error.style-dictionary/invalid-token-value-shadow-spread
+    :error/fn #(tr "workspace.tokens.shadow-spread-range")}
 
    :error/unknown
    {:error/code :error/unknown

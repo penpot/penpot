@@ -1,0 +1,101 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// ============================================================
+// SIDEBAR & GRID CONFIGURATION
+// ============================================================
+//
+//  - We need to mantain these values in sync with the constants defined in
+//    frontend/src/app/main/constants.cljs
+//
+// ============================================================
+// DIMENSIONS
+// ============================================================
+//
+// Left sidebar
+$left-sidebar-width: px2rem(318);
+$left-sidebar-width-max: $sz-500;
+
+// Right sidebar
+$right-sidebar-width: px2rem(318);
+$right-sidebar-width-max: px2rem(768);
+
+// ============================================================
+// GRID SYSTEM (used inside right sidebar)
+// ============================================================
+//
+// We use a 8-column grid with fixed column width and spacing.
+// Useful for consistent layout alignment across components.
+//
+
+$column-width: $sz-32; // width of each grid column
+$column-gap: var(--sp-xs); // spacing between columns
+$column-number: 8; // total number of columns
+
+//      |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|
+//   -> 8 columns (32px each) + 7 gaps (4px each) = 284px
+
+// Derived widths
+$options-width: calc(#{$column-width} * #{$column-number} + #{$column-gap} * calc(#{$column-number} - 1));
+$seven-column-width: calc(
+  #{$column-width} * calc(#{$column-number} - 1) + #{$column-gap} * calc(#{$column-number} - 2)
+);
+
+// ------------------------------------------------------------
+// Grid mixin — applies the standard structure to any container
+// ------------------------------------------------------------
+@mixin option-grid-structure {
+  display: grid;
+  grid-template-columns: repeat(#{$column-number}, #{$column-width});
+  column-gap: #{$column-gap};
+}
+
+// ============================================================
+// LAYOUT LOGIC — CALCULATED ELEMENTS
+// ============================================================
+//
+// This section defines special cases where elements don’t
+// perfectly fit the standard grid rhythm.
+//
+// Example: Two input blocks + one button inside an 8-column grid.
+//
+// Visual explanation:
+//   |----|_____________________________________________|-----|---|
+//   -> 284px options-width + 2*12px paddings + 10px scrollbar gutter
+//
+//        |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|
+//   -> 8 columns (32px each) + 7 gaps (4px each) = 284px
+//
+//   But one block (grid-exception-input) doesn’t fit perfectly:
+//        |__________________|-|__________________|-|___|
+//
+// We calculate the width of that grid-exception-input as:
+//
+//   - 3.5 columns of base grid width
+//   - + 3 inter-column gaps
+//   - − half a gap (because it’s visually shared with the next block)
+
+$grid-exception-input-width: calc(#{$sz-32} * 3.5 + 3 * var(--sp-xs) - (var(--sp-xs) / 2));
+
+// ============================================================
+// CSS VARIABLES (exposed for runtime use)
+// ============================================================
+//
+// Make sidebar and layout values accessible to JS/CSS consumers.
+
+:root {
+  --left-sidebar-width: #{$left-sidebar-width};
+  --left-sidebar-width-max: #{$left-sidebar-width-max};
+  --right-sidebar-width: #{$right-sidebar-width};
+  --right-sidebar-width-max: #{$right-sidebar-width-max};
+  --7-columns-dropdown-width: #{$seven-column-width};
+  --options-width: #{$options-width};
+  --grid-exception-input-width: #{$grid-exception-input-width};
+}

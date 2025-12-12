@@ -7,14 +7,18 @@
 (ns app.main.data.changes
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.logging :as log]
    [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.features :as features]
    [app.main.worker :as mw]
+   [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -99,7 +103,21 @@
                     pids (into #{} xf:map-page-id redo-changes)]
                 (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
-        (update-in state [:files file-id :data] apply-changes)))))
+        (if (features/active-feature? state "render-wasm/v1")
+          ;; Update the wasm model
+          (let [shape-changes (volatile! {})
+
+                state
+                (binding [cts/*shape-changes* shape-changes]
+                  (update-in state [:files file-id :data] apply-changes))]
+
+            (let [objects (dm/get-in state [:files file-id :data :pages-index (:current-page-id state) :objects])]
+              (wasm.shape/process-shape-changes! objects @shape-changes))
+
+            state)
+
+          ;; wasm renderer deactivated
+          (update-in state [:files file-id :data] apply-changes))))))
 
 (defn commit
   "Create a commit event instance"

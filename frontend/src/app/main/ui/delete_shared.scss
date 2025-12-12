@@ -4,7 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "refactor/basic-rules.scss" as *;
+@use "ds/typography.scss" as t;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -15,14 +16,19 @@
 
 .modal-container {
   @extend .modal-container-base;
+  display: grid;
+  gap: var(--sp-xxl);
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-.modal-header {
-  margin-bottom: deprecated.$s-24;
+.list-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: 100%;
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include t.use-typography("headline-medium");
   color: var(--modal-title-foreground-color);
 }
 
@@ -31,13 +37,16 @@
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
-  margin-bottom: deprecated.$s-24;
+  @include t.use-typography("body-small");
+  display: grid;
+  gap: var(--sp-s);
 }
 
 .element-list {
-  @include deprecated.bodyLargeTypography;
+  @include t.use-typography("body-large");
   color: var(--modal-text-foreground-color);
+  overflow-y: auto;
+  margin-block: 0;
 }
 
 .action-buttons {
@@ -55,10 +64,14 @@
   }
 }
 
+.modal-scd-msg {
+  margin-block: 0;
+}
+
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include deprecated.bodyLargeTypography;
+  @include t.use-typography("body-large");
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }

@@ -15,8 +15,14 @@
 (def grid-x-axis 10)
 (def grid-y-axis 10)
 
-(def sidebar-default-width 318)
-(def sidebar-default-max-width 768)
+;; Before changing these values also check:
+;; frontend/src/app/main/ui/workspace/sidebar/common/sidebar.scss
+
+(def right-sidebar-default-width 318)
+(def right-sidebar-default-max-width 768)
+
+(def left-sidebar-default-width 318)
+(def left-sidebar-default-max-width 500)
 
 (def page-metadata
   "Default data for page metadata."
@@ -294,7 +300,5 @@
    {:name "YouTube thumb"
     :width 1280
     :height 720}])
-
-(def zoom-half-pixel-precision 8)
 
 (def max-input-length 255)

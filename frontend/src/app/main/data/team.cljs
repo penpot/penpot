@@ -20,8 +20,8 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.util.clipboard :as clipboard]
    [app.util.storage :as storage]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [clojure.string :as str]
    [potok.v2.core :as ptk]))
@@ -351,19 +351,31 @@
                  (on-success))))
              (rx/catch on-error))))))
 
+
+(def ^:private schema:create-invitation
+  [:and
+   [:map
+    [:emails {:optional true} [::sm/set ::sm/email]]
+    [:invitations {:optional true}
+     [:vector
+      [:map
+       [:email ::sm/email]
+       [:role [::sm/one-of ctt/valid-roles]]]]]
+    [:team-id ::sm/uuid]
+    [:resend? {:optional true} ::sm/boolean]]
+   [:fn (fn [attrs]
+          (or (contains? attrs :emails)
+              (contains? attrs :invitations)))]])
+
+(def ^:private check-create-invitations-params
+  (sm/check-fn schema:create-invitation))
+
 (defn create-invitations
   "Unified function to create invitations. Supports two parameter formats:
   1. {:emails #{...} :role :admin :team-id uuid} - single role for all emails
   2. {:invitations [{:email ... :role ...}] :team-id uuid} - individual roles per email"
   [{:keys [emails role team-id invitations resend?] :as params}]
-
-  (assert (uuid? team-id))
-  ;; Validate input format - must have either emails+role OR invitations
-  (assert (or (and emails role (sm/check-set-of-emails emails) (keyword? role))
-              (and invitations
-                   (sm/check-set-of-emails (map :email invitations))
-                   (every? #(contains? ctt/valid-roles (:role %)) invitations)))
-          "Must provide either emails+role or invitations with individual roles")
+  (check-create-invitations-params params)
 
   (ptk/reify ::create-invitations
     ev/Event
@@ -417,7 +429,7 @@
              (rx/map (fn [fragment]
                        (assoc cf/public-uri :fragment fragment)))
              (rx/tap (fn [uri]
-                       (wapi/write-to-clipboard (str uri))))
+                       (clipboard/to-clipboard (str uri))))
              (rx/tap on-success)
              (rx/ignore)
              (rx/catch on-error))))))

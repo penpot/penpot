@@ -16,8 +16,8 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.inspect.attributes :refer [attributes]]
-   [app.main.ui.inspect.code :refer [code]]
+   [app.main.ui.inspect.attributes :refer [attributes*]]
+   [app.main.ui.inspect.code :refer [code*]]
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
    [app.main.ui.inspect.styles :refer [styles-tab*]]
    [app.util.dom :as dom]
@@ -106,14 +106,14 @@
           (if (contains? cf/flags :inspect-styles)
             [{:label (tr "labels.styles")
               :id "styles"}
-             {:label (tr "inspect.tabs.computed")
+             {:label (tr "labels.computed")
               :id "computed"}
-             {:label (tr "inspect.tabs.code")
+             {:label (tr "labels.code")
               :data-testid "code"
               :id "code"}]
-            [{:label (tr "inspect.tabs.info")
+            [{:label (tr "labels.info")
               :id "info"}
-             {:label (tr "inspect.tabs.code")
+             {:label (tr "labels.code")
               :data-testid "code"
               :id "code"}]))]
 
@@ -133,7 +133,7 @@
            [:*
             [:div {:class (stl/css :layers-icon)}
              [:> icon* {:icon-id i/layers :size "s"}]]
-            [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
+            [:span {:class (stl/css :layer-title)} (tr "inspect.multiple-selected" (count shapes))]]
            [:*
             [:div {:class (stl/css :shape-icon)}
              ;; Use the shape icon utility to get the correct icon for the first shape
@@ -162,15 +162,18 @@
         [:div {:class (stl/css :inspect-content)}
          (if (contains? cf/flags :inspect-styles)
            [:div {:class (stl/css :inspect-tab-switcher)}
-            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.tabs.switcher.label")]
+            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.layer-info")]
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
-              [:> select* {:options color-spaces
+              [:> select* {:class (stl/css :inspect-tab-switcher-controls-color-space-select)
+                           :aria-label (tr "inspect.color-space-label")
+                           :options color-spaces
                            :default-selected "hex"
                            :variant "ghost"
                            :on-change handle-change-color-space}]]
              [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
               [:> select* {:options tabs
+                           :aria-label (tr "inspect.tabs-switcher-label")
                            :default-selected (name @section)
                            :on-change handle-change-tab}]]]]
            nil)
@@ -185,40 +188,41 @@
                                :libraries libraries
                                :file-id file-id}]
               :computed
-              [:& attributes {:page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:color-space color-space
+                               :page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])]
            [:> tab-switcher* {:tabs tabs
                               :selected (name @section)
                               :on-change handle-change-tab
                               :class (stl/css :viewer-tab-switcher)}
             (case @section
               :info
-              [:& attributes {:page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])])]]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])])]]
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}

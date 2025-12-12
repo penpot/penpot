@@ -41,6 +41,7 @@
     "file-object-thumbnail"
     "file-thumbnail"
     "profile"
+    "tempfile"
     "file-data"
     "file-data-fragment"
     "file-change"})
@@ -163,9 +164,6 @@
      backend
      (:metadata result))))
 
-(def ^:private sql:retrieve-storage-object
-  "select * from storage_object where id = ? and (deleted_at is null or deleted_at > now())")
-
 (defn row->storage-object [res]
   (let [mdata (or (some-> (:metadata res) (db/decode-transit-pgobject)) {})]
     (impl/storage-object
@@ -177,9 +175,15 @@
      (keyword (:backend res))
      mdata)))
 
-(defn- retrieve-database-object
+(def ^:private sql:get-storage-object
+  "SELECT *
+     FROM storage_object
+    WHERE id = ?
+      AND (deleted_at IS NULL)")
+
+(defn- get-database-object
   [conn id]
-  (some-> (db/exec-one! conn [sql:retrieve-storage-object id])
+  (some-> (db/exec-one! conn [sql:get-storage-object id])
           (row->storage-object)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -202,7 +206,7 @@
 (defn get-object
   [{:keys [::db/connectable] :as storage}  id]
   (assert (valid-storage? storage))
-  (retrieve-database-object connectable id))
+  (get-database-object connectable id))
 
 (defn put-object!
   "Creates a new object with the provided content."

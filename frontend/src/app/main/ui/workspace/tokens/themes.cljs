@@ -46,6 +46,7 @@
          [:div {:class (stl/css :theme-selector-wrapper)}
           [:& theme-selector]
           [:> button* {:variant "secondary"
+                       :type "button"
                        :class (stl/css :edit-theme-button)
                        :on-click open-modal}
            (tr "labels.edit")]]

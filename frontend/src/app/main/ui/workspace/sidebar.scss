@@ -7,9 +7,6 @@
 @use "ds/_sizes.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
-$width-settings-bar: $sz-318;
-$width-settings-bar-max: $sz-500;
-
 .left-settings-bar {
   display: grid;
   grid-template-areas:
@@ -19,9 +16,9 @@ $width-settings-bar-max: $sz-500;
   grid-template-columns: 1fr 0;
   position: relative;
   grid-area: left-sidebar;
-  min-width: $width-settings-bar;
-  max-width: $width-settings-bar-max;
-  width: var(--width, $width-settings-bar);
+  min-width: var(--left-sidebar-width);
+  max-width: var(--left-sidebar-width-max);
+  width: var(--right-sidebar-width);
   background-color: var(--panel-background-color);
   height: 100vh;
   max-height: 100vh;
@@ -65,14 +62,14 @@ $width-settings-bar-max: $sz-500;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   height: 100vh;
-  width: $width-settings-bar;
+  width: var(--right-sidebar-width);
   background-color: var(--panel-background-color);
   z-index: deprecated.$z-index-1;
   &.not-expand {
-    max-width: $width-settings-bar;
+    max-width: var(--right-sidebar-width);
   }
   &.expanded {
-    width: var(--width, $width-settings-bar);
+    width: var(--right-sidebar-width, var(--right-sidebar-width));
   }
 
   .settings-bar-inside {
@@ -116,6 +113,44 @@ $width-settings-bar-max: $sz-500;
   transform: rotate(180deg);
   &:hover {
     --collapse-icon-color: var(--color-foreground-primary);
+  }
+}
+
+.collapsed-sidebar {
+  @include deprecated.flexCenter;
+  position: absolute;
+  top: deprecated.$s-48;
+  left: 0;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
+  background: var(--color-background-primary);
+  margin-inline-start: var(--sp-m);
+}
+.collapsed-title {
+  @include deprecated.flexCenter;
+  height: deprecated.$s-36;
+  width: deprecated.$s-24;
+  border-radius: deprecated.$br-8;
+  background: var(--color-background-secondary);
+}
+.collapsed-button {
+  @include deprecated.buttonStyle;
+  height: deprecated.$s-24;
+  width: deprecated.$s-16;
+  padding: 0;
+  border-radius: deprecated.$br-5;
+  svg {
+    @include deprecated.flexCenter;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
+    color: transparent;
+    fill: none;
+    stroke: var(--icon-foreground);
+  }
+  &:hover {
+    svg {
+      stroke: var(--icon-foreground-hover);
+    }
   }
 }
 

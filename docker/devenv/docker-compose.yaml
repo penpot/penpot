@@ -33,6 +33,8 @@ services:
       - 3447:3447
       - 3448:3448
       - 3449:3449
+      - 3449:3449/udp
+      - 3450:3450
       - 6006:6006
       - 6060:6060
       - 6061:6061
@@ -82,6 +84,11 @@ services:
       - 9000:9000
       - 9001:9001
 
+    networks:
+      default:
+        aliases:
+          - minio
+
   postgres:
     image: postgres:16.8
     command: postgres -c config_file=/etc/postgresql.conf
@@ -110,6 +117,11 @@ services:
     volumes:
       - "valkey_data:/data"
 
+    networks:
+      default:
+        aliases:
+          - redis
+
   mailer:
     image: sj26/mailcatcher:latest
     restart: always
@@ -117,6 +129,12 @@ services:
       - '1025'
     ports:
       - "1080:1080"
+
+    networks:
+      default:
+        aliases:
+          - mailer
+
 
   # https://github.com/rroemhild/docker-test-openldap
   ldap:
@@ -131,3 +149,9 @@ services:
       nofile:
         soft: 1024
         hard: 1024
+
+    networks:
+      default:
+        aliases:
+          - ldap
+

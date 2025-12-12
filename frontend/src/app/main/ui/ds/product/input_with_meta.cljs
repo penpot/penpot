@@ -25,20 +25,25 @@
 (mf/defc input-with-meta*
   {::mf/schema schema:input-with-meta}
   [{:keys [value meta max-length is-editing on-blur] :rest props}]
-  (let [editing*  (mf/use-state (d/nilv is-editing false))
-        editing?  (deref editing*)
+  (let [title       (if meta (str value ": " meta) value)
+        editing*    (mf/use-state (d/nilv is-editing false))
+        editing?    (deref editing*)
+        input-ref   (mf/use-ref)
+        last-node*  (mf/use-ref nil)
 
-        input-ref (mf/use-ref)
-        input     (mf/ref-val input-ref)
-
-        title     (if meta (str value ": " meta) value)
+        ref-cb      (mf/use-fn
+                     (fn [node]
+                       ;; We need to keep the last not-null node for cleanup
+                       (mf/set-ref-val! input-ref node)
+                       (when node
+                         (mf/set-ref-val! last-node* node))))
 
         on-edit
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
            (reset! editing* true)
-           (dom/focus! input)))
+           (dom/focus! (mf/ref-val input-ref))))
 
         on-stop-edit
         (mf/use-fn
@@ -64,13 +69,25 @@
              (when ^boolean enter? (dom/blur! node))
              (when ^boolean esc? (dom/blur! node)))))
 
-        props (mf/spread-props props {:ref input-ref
+        props (mf/spread-props props {:ref ref-cb
                                       :default-value value
                                       :max-length (d/nilv max-length max-input-length)
                                       :auto-focus true
                                       :on-focus on-focus
                                       :on-blur on-stop-edit
                                       :on-key-down handle-key-down})]
+
+    ;; Cleanup: Simulate a blur event
+    (mf/with-effect [on-blur last-node*]
+      (fn []
+        (let [input (mf/ref-val last-node*)
+              fake-blur-event #js {:type              "blur"
+                                   :target            input
+                                   :currentTarget     input
+                                   :stopPropagation   (fn [])
+                                   :preventDefault    (fn [])}]
+          (when input
+            (on-blur fake-blur-event)))))
 
     (if editing?
       [:div {:class (stl/css :input-with-meta-edit-container)}

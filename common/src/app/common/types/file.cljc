@@ -32,6 +32,7 @@
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1081,33 +1082,35 @@
 
         detach-shape
         (fn [objects shape]
-          (l/debug :hint "detach-shape"
-                   :file-id file-id
-                   :component-ref-file (get-component-ref-file objects shape)
-                   ::l/sync? true)
-          (cond-> shape
-            (not= file-id (:fill-color-ref-file shape))
-            (dissoc :fill-color-ref-id :fill-color-ref-file)
+          (let [shape' (cond-> shape
+                         (not= file-id (:fill-color-ref-file shape))
+                         (dissoc :fill-color-ref-id :fill-color-ref-file)
 
-            (not= file-id (:stroke-color-ref-file shape))
-            (dissoc :stroke-color-ref-id :stroke-color-ref-file)
+                         (not= file-id (:stroke-color-ref-file shape))
+                         (dissoc :stroke-color-ref-id :stroke-color-ref-file)
 
-            (not= file-id (get-component-ref-file objects shape))
-            (dissoc :component-id :component-file :shape-ref :component-root)
+                         (not= file-id (get-component-ref-file objects shape))
+                         (dissoc :component-id :component-file :shape-ref :component-root)
 
-            (= :text (:type shape))
-            (update :content detach-text)))
+                         (= :text (:type shape))
+                         (update :content detach-text))]
+
+            (when (not= shape shape')
+              (l/dbg :hint "detach shape"
+                     :file-id (str file-id)
+                     :shape-id (str (:id shape))))
+
+            shape'))
 
         detach-objects
         (fn [objects]
-          (update-vals objects #(detach-shape objects %)))
+          (d/update-vals objects #(detach-shape objects %)))
 
         detach-pages
         (fn [pages-index]
-          (update-vals pages-index #(update % :objects detach-objects)))]
+          (d/update-vals pages-index #(update % :objects detach-objects)))]
 
-    (-> file
-        (update-in [:data :pages-index] detach-pages))))
+    (update-in file [:data :pages-index] detach-pages)))
 
 ;; Base font size
 
@@ -1119,3 +1122,29 @@
 (defn set-base-font-size
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
+
+
+;; Ref Chains
+(defn get-ref-chain-until-target-ref
+  "Returns a vector with the shape ref chain until target-ref, including itself"
+  [container libraries shape target-ref]
+  (loop [chain [shape]
+         current shape]
+    (if (= current target-ref)
+      chain
+      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+        (recur (conj chain ref) ref)
+        chain))))
+
+(defn get-touched-from-ref-chain-until-target-ref
+  "Returns a set with the :touched of all the items on the shape
+   ref chain until target-ref, including itself"
+  [container libraries shape target-ref]
+  (let [chain (get-ref-chain-until-target-ref container libraries shape target-ref)
+        more-touched (->> chain
+                          (map :touched)
+                          (remove nil?)
+                          (apply set/union)
+                          (remove ctk/swap-slot?)
+                          set)]
+    (set/union (or (:touched shape) #{}) more-touched)))

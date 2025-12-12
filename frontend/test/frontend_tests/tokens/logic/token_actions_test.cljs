@@ -469,6 +469,44 @@
                (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
 
+(t/deftest test-apply-shadow
+  (t/testing "applies shadow token and updates the shapes with shadow"
+    (t/async
+      done
+      (let [shadow-token {:name "shadow.sm"
+                          :value [{:offsetX 10
+                                   :offsetY 10
+                                   :blur 10
+                                   :spread 10
+                                   :color "rgba(0,0,0,0.5)"
+                                   :inset false}]
+                          :type :shadow}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token shadow-token))))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
+                                       :attributes #{:shadow}
+                                       :token (toht/get-token file "shadow.sm")
+                                       :on-update-shape dwta/update-shadow})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "shadow.sm")
+                 rect-1' (cths/get-shape file' :rect-1)
+                 shadow (first (:shadow rect-1'))]
+             (t/testing "token got applied to rect with shadow and shape shadow got updated"
+               (t/is (= (:shadow (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:offset-x shadow) 10))
+               (t/is (= (:offset-y shadow) 10))
+               (t/is (= (:blur shadow) 10))
+               (t/is (= (:spread shadow) 10))
+               (t/is (= (get-in shadow [:color :color]) "#000000"))
+               (t/is (= (get-in shadow [:color :opacity]) 0.5))))))))))
+
 (t/deftest test-apply-font-size
   (t/testing "applies font-size token and updates the text font-size"
     (t/async
@@ -722,7 +760,7 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
-            events [(dwta/toggle-token {:shapes [rect-1 rect-2]
+            events [(dwta/toggle-token {:shape-ids [(:id rect-1) (:id rect-2)]
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
                                                            :on-update-shape dwta/update-shape-radius-all}
                                         :token (toht/get-token file "borderRadius.md")})]]
@@ -753,7 +791,7 @@
             rect-without-token (cths/get-shape file :rect-2)
             rect-with-other-token (cths/get-shape file :rect-3)
 
-            events [(dwta/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
+            events [(dwta/toggle-token {:shape-ids [(:id rect-with-token) (:id rect-without-token) (:id rect-with-other-token)]
                                         :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
@@ -786,7 +824,7 @@
             rect-without-token (cths/get-shape file :rect-2)
             rect-with-other-token-2 (cths/get-shape file :rect-3)
 
-            events [(dwta/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
+            events [(dwta/toggle-token {:shape-ids [(:id rect-with-other-token-1) (:id rect-without-token) (:id rect-with-other-token-2)]
                                         :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
@@ -822,7 +860,7 @@
             rect-in-layout (cths/get-shape file :rect-in-layout)
             rect-regular (cths/get-shape file :rect-regular)
             events [(dwta/toggle-token {:token (toht/get-token file "spacing.md")
-                                        :shapes [frame-layout rect-in-layout rect-regular]})]]
+                                        :shape-ids [(:id frame-layout) (:id rect-in-layout) (:id rect-regular)]})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]

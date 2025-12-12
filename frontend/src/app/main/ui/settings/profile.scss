@@ -11,7 +11,7 @@
   width: 100%;
   justify-content: center;
   align-items: center;
-  a:not(.button-primary) {
+  a:not(.button-primary):not(.link) {
     color: var(--color-foreground-secondary);
   }
 }

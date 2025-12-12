@@ -8,6 +8,8 @@
 .text-editor-container {
   height: 100%;
   position: relative;
+
+  cursor: text;
 }
 
 .text-editor-selection-imposter {
@@ -35,25 +37,21 @@
   }
 
   [data-itype="inline"] {
-    line-break: auto;
+    box-sizing: content-box;
+    display: inline;
     line-height: inherit;
-    overflow-wrap: initial;
     caret-color: var(--text-editor-caret-color);
+    white-space-collapse: pre;
+    word-break: normal;
+    overflow-wrap: break-word;
+    tab-size: 2;
+    -o-tab-size: 2;
   }
 
   [data-itype="root"] {
     display: flex;
     flex-direction: column;
     height: 100%;
-  }
-}
-
-// Grow type
-.grow-type-fixed,
-.grow-type-auto-height {
-  [data-itype="inline"],
-  [data-itype="paragraph"] {
-    white-space: break-spaces;
   }
 }
 

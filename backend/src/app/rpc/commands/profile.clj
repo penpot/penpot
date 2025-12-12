@@ -154,7 +154,6 @@
 
 (declare validate-password!)
 (declare update-profile-password!)
-(declare invalidate-profile-session!)
 
 (def ^:private
   schema:update-profile-password
@@ -169,8 +168,7 @@
    ::climit/id :auth/global
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id password] :as params}]
-  (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
-        session-id (::session/id params)]
+  (let [profile (validate-password! cfg (assoc params :profile-id profile-id))]
 
     (when (= (:email profile) (str/lower (:password params)))
       (ex/raise :type :validation
@@ -178,14 +176,12 @@
                 :hint "you can't use your email as password"))
 
     (update-profile-password! cfg (assoc profile :password password))
-    (invalidate-profile-session! cfg profile-id session-id)
-    nil))
 
-(defn- invalidate-profile-session!
-  "Removes all sessions except the current one."
-  [{:keys [::db/conn]} profile-id session-id]
-  (let [sql "delete from http_session where profile_id = ? and id != ?"]
-    (:next.jdbc/update-count (db/exec-one! conn [sql profile-id session-id]))))
+    (->> (rph/get-request params)
+         (session/get-session)
+         (session/invalidate-others cfg))
+
+    nil))
 
 (defn- validate-password!
   [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
@@ -284,9 +280,9 @@
                          :file-path (str (:path file))
                          :file-mtype (:mtype file)}}))))
 
-(defn- generate-thumbnail!
-  [_ file]
-  (let [input   (media/run {:cmd :info :input file})
+(defn- generate-thumbnail
+  [_ input]
+  (let [input   (media/run {:cmd :info :input input})
         thumb   (media/run {:cmd :profile-thumbnail
                             :format :jpeg
                             :quality 85
@@ -307,7 +303,7 @@
                    (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
                                        [:process-image/global]])
                    (assoc ::climit/label "upload-photo")
-                   (climit/invoke! generate-thumbnail! file))]
+                   (climit/invoke! generate-thumbnail file))]
     (sto/put-object! storage params)))
 
 ;; --- MUTATION: Request Email Change

@@ -6,17 +6,32 @@
 
 @use "ds/typography.scss" as *;
 
+// TODO: this must be a custom property in the design system
+:global(.light) {
+  --low-emphasis-background: #fafafa;
+}
+
+:global(.default) {
+  --low-emphasis-background: #121214;
+}
+
 .style-box {
   --title-gap: var(--sp-xs);
   --title-padding: var(--sp-s);
   --title-color: var(--color-foreground-primary);
   --arrow-color: var(--color-foreground-secondary);
+  --box-border-color: var(--color-background-primary);
 
   padding-block: var(--sp-s);
+  padding-inline: var(--sp-m);
+  background-color: var(--low-emphasis-background);
+
+  border-block-end: 2px solid var(--box-border-color);
 }
 
 .disclosure-header {
   display: flex;
+  align-items: center;
   gap: var(--title-gap);
   padding-block: var(--title-padding);
 }
@@ -35,7 +50,6 @@
 
 .panel-title {
   @include use-typography("headline-small");
-  text-transform: capitalize;
   flex: 1;
   color: var(--title-color);
 }

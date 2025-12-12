@@ -1,4 +1,4 @@
-use crate::math::{Bounds, Matrix};
+use crate::math::{is_move_only_matrix, Bounds, Matrix};
 use crate::shapes::{ConstraintH, ConstraintV};
 
 pub fn calculate_resize(
@@ -110,7 +110,7 @@ pub fn propagate_shape_constraints(
     // can propagate as is
     if (ignore_constrainst
         || constraint_h == ConstraintH::Scale && constraint_v == ConstraintV::Scale)
-        || transform.is_translate()
+        || is_move_only_matrix(&transform)
     {
         return transform;
     }

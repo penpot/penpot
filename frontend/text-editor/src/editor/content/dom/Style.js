@@ -13,6 +13,40 @@ const DEFAULT_FONT_SIZE_VALUE = parseFloat(DEFAULT_FONT_SIZE);
 const DEFAULT_LINE_HEIGHT = "1.2";
 const DEFAULT_FONT_WEIGHT = "400";
 
+/** Sanitizes font-family values to be quoted, so it handles multi-word font names
+ * with numbers like "Font Awesome 7 Free"
+ *
+ * @param {string} value
+ */
+export function sanitizeFontFamily(value) {
+  // NOTE: This is a fix for a bug introduced earlier that have might modified the font-family in the model
+  // adding extra double quotes.
+  if (value && value.startsWith('""')) {
+    //remove the first and last quotes
+    value = value.slice(1).replace(/"([^"]*)$/, "$1");
+
+    // remove quotes from font-family in 1-word font-families
+    // and repeated values
+    value = [
+      ...new Set(
+        value
+          .split(", ")
+          .map((x) => (x.includes(" ") ? x : x.replace(/"/g, ""))),
+      ),
+    ].join(", ");
+  }
+
+  if (!value || value === "") {
+    return "var(--fallback-families)";
+  } else if (value.endsWith(" var(--fallback-families)")) {
+    return value;
+  } else if (value.startsWith('"')) {
+    return `${value}, var(--fallback-families)`;
+  } else {
+    return `"${value}", var(--fallback-families)`;
+  }
+}
+
 /**
  * Merges two style declarations. `source` -> `target`.
  *
@@ -25,7 +59,7 @@ export function mergeStyleDeclarations(target, source) {
   // for (const styleName of source) {
   for (let index = 0; index < source.length; index++) {
     const styleName = source.item(index);
-    const styleValue = source.getPropertyValue(styleName);
+    let styleValue = source.getPropertyValue(styleName);
     target.setProperty(styleName, styleValue);
   }
   return target;
@@ -46,22 +80,22 @@ function resetStyleDeclaration(styleDeclaration) {
 }
 
 /**
+ * Resets the style declaration of the inert
+ * element.
+ */
+export function resetInertElement() {
+  const inertElement = getInertElement();
+  resetStyleDeclaration(inertElement.style);
+  return inertElement;
+}
+
+/**
  * An inert element that only keeps the style
  * declaration used for merging other styleDeclarations.
  *
  * @type {HTMLDivElement|null}
  */
-let inertElement = null;
-
-/**
- * Resets the style declaration of the inert
- * element.
- */
-export function resetInertElement() {
-  if (!inertElement) throw new Error("Invalid inert element");
-  resetStyleDeclaration(inertElement.style);
-  return inertElement;
-}
+let globalInertElement = null;
 
 /**
  * Returns an instance of a <div> element used
@@ -70,12 +104,11 @@ export function resetInertElement() {
  * @returns {HTMLDivElement}
  */
 function getInertElement() {
-  if (!inertElement) {
-    inertElement = document.createElement("div");
-    return inertElement;
+  if (!globalInertElement) {
+    globalInertElement = document.createElement("div");
+    return globalInertElement;
   }
-  resetInertElement();
-  return inertElement;
+  return globalInertElement;
 }
 
 /**
@@ -84,9 +117,9 @@ function getInertElement() {
  * @returns {CSSStyleDeclaration}
  */
 function getStyleDefaultsDeclaration() {
-  const element = getInertElement();
+  const inertElement = getInertElement();
   resetInertElement();
-  return element.style;
+  return inertElement.style;
 }
 
 /**
@@ -98,17 +131,23 @@ function getStyleDefaultsDeclaration() {
 export function getComputedStyle(element) {
   if (typeof window !== "undefined" && window.getComputedStyle) {
     const inertElement = getInertElement();
+    resetInertElement(element);
     const computedStyle = window.getComputedStyle(element);
     inertElement.style = computedStyle;
-
     return inertElement.style;
   }
   return getComputedStylePolyfill(element);
 }
 
+/**
+ * Returns a polyfilled version of a computed style.
+ *
+ * @param {Element} element
+ * @returns {CSSStyleDeclaration}
+ */
 export function getComputedStylePolyfill(element) {
   const inertElement = getInertElement();
-
+  resetInertElement(element);
   let currentElement = element;
   while (currentElement) {
     for (let index = 0; index < currentElement.style.length; index++) {
@@ -117,11 +156,14 @@ export function getComputedStylePolyfill(element) {
       if (currentValue) {
         const priority = currentElement.style.getPropertyPriority(styleName);
         if (priority === "important") {
-          const newValue = currentElement.style.getPropertyValue(styleName);
+          let newValue = currentElement.style.getPropertyValue(styleName);
           inertElement.style.setProperty(styleName, newValue);
         }
       } else {
-        const newValue = currentElement.style.getPropertyValue(styleName);
+        let newValue = currentElement.style.getPropertyValue(styleName);
+        if (styleName === "font-family") {
+          newValue = sanitizeFontFamily(newValue);
+        }
         inertElement.style.setProperty(styleName, newValue);
       }
     }
@@ -205,10 +247,16 @@ export function setStyle(element, styleName, styleValue, styleUnit) {
     typeof styleValue !== "string" &&
     typeof styleValue !== "number"
   ) {
-    if (styleName === "--fills" && styleValue === null) debugger;
     element.style.setProperty(styleName, JSON.stringify(styleValue));
   } else {
-    element.style.setProperty(styleName, styleValue + (styleUnit ?? ""));
+    if (styleName === "font-family") {
+      styleValue = sanitizeFontFamily(styleValue);
+    }
+
+    element.style.setProperty(
+      styleName,
+      styleValue + (styleUnit ? styleUnit : ""),
+    );
   }
   return element;
 }
@@ -284,15 +332,20 @@ export function getStyle(element, styleName, styleUnit) {
  * @returns {HTMLElement}
  */
 export function setStylesFromObject(element, allowedStyles, styleObject) {
-  for (const [styleName, styleUnit] of allowedStyles) {
-    if (!(styleName in styleObject)) {
-      continue;
+  if (element.tagName === "SPAN")
+    for (const [styleName, styleUnit] of allowedStyles) {
+      if (!(styleName in styleObject)) {
+        continue;
+      }
+      let styleValue = styleObject[styleName];
+      if (styleName === "font-family") {
+        styleValue = sanitizeFontFamily(styleValue);
+      }
+
+      if (styleValue) {
+        setStyle(element, styleName, styleValue, styleUnit);
+      }
     }
-    const styleValue = styleObject[styleName];
-    if (styleValue) {
-      setStyle(element, styleName, styleValue, styleUnit);
-    }
-  }
   return element;
 }
 

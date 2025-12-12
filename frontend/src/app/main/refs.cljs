@@ -154,6 +154,9 @@
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
 
+(def workspace-selrect
+  (l/derived :workspace-selrect st/state))
+
 ;; WARNING: Don't use directly from components, this is a proxy to
 ;; improve performance of selected-shapes and
 (def ^:private selected-shapes-data

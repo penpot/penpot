@@ -20,7 +20,9 @@
    [app.common.path-names :as cpn]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
@@ -68,7 +70,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm :as wasm]
-   [app.render-wasm.api :as api]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -261,13 +263,14 @@
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 
-(defn process-wasm-object
+;; FIXME: this need docstring
+(defn- process-wasm-object
   [id]
   (ptk/reify ::process-wasm-object
     ptk/EffectEvent
     (effect [_ state _]
       (let [objects (dsh/lookup-page-objects state)]
-        (api/process-object (get objects id))))))
+        (wasm.api/process-object (get objects id))))))
 
 (defn initialize-workspace
   [team-id file-id]
@@ -300,6 +303,10 @@
                (rx/merge
                 (if ^boolean render-wasm?
                   (->> (rx/from @wasm/module)
+                       (rx/filter true?)
+                       (rx/tap (fn [_]
+                                 (let [event (ug/event "penpot:wasm:loaded")]
+                                   (ug/dispatch! event))))
                        (rx/ignore))
                   (rx/empty))
 
@@ -546,7 +553,6 @@
                component-id (:component-id shape)
                undo-id (js/Symbol)]
 
-
            (when valid?
              (if (ctc/is-variant-container? shape)
                ;; Rename the full variant when it is a variant container
@@ -560,6 +566,43 @@
                 (when (and (some? component-id) (ctc/main-instance? shape))
                   (dwl/rename-component component-id clean-name))
                 (dwu/commit-undo-transaction undo-id))))))))))
+
+(defn rename-shape-or-variant
+  ([id name]
+   (rename-shape-or-variant nil nil id name))
+  ([file-id page-id id name]
+   (ptk/reify ::rename-shape-or-variant
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [file-id (d/nilv file-id (:current-file-id state))
+             page-id (d/nilv page-id (:current-page-id state))
+
+             file-data (dsh/lookup-file-data state file-id)
+             shape
+             (-> (dsh/lookup-page-objects state file-id page-id)
+                 (get id))
+
+             is-variant? (ctc/is-variant? shape)
+             variant-id (when is-variant? (:variant-id shape))
+             variant-name (when is-variant? (:variant-name shape))
+             component-id (:component-id shape)
+             component (ctkl/get-component file-data (:component-id shape))
+             variant-properties (:variant-properties component)]
+         (cond
+           (and variant-name (ctv/valid-properties-formula? name))
+           (rx/of (dwva/update-properties-names-and-values
+                   component-id variant-id variant-properties (ctv/properties-formula->map name))
+                  (dwva/remove-empty-properties variant-id)
+                  (dwva/update-error component-id))
+
+           variant-name
+           (rx/of (dwva/update-properties-names-and-values
+                   component-id variant-id variant-properties {})
+                  (dwva/remove-empty-properties variant-id)
+                  (dwva/update-error component-id name))
+
+           :else
+           (rx/of (end-rename-shape id name))))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -647,6 +690,59 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (ptk/data-event :layout/update {:ids selected-ids})
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn set-shape-index
+  [file-id page-id id new-index]
+  (ptk/reify ::set-shape-index
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id         (or file-id (:current-file-id state))
+            page-id         (or page-id (:current-page-id state))
+
+            objects         (dsh/lookup-page-objects state file-id page-id)
+
+            undo-id (js/Symbol)
+
+            shape (get objects id)
+            parent (get objects (:parent-id shape))
+
+            current-index (d/index-of (:shapes parent) id)
+
+            new-index
+            (if (> new-index current-index)
+              (inc new-index)
+              new-index)
+
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/change-parent (:id parent) [shape] new-index))]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update {:ids [id]})
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn reorder-children
+  [file-id page-id parent-id children]
+
+  (ptk/reify ::reorder-children
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id (or file-id (:current-file-id state))
+            page-id (or page-id (:current-page-id state))
+            objects (dsh/lookup-page-objects state file-id page-id)
+            undo-id (js/Symbol)
+
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/reorder-children parent-id children))]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update {:ids [parent-id]})
                (dwu/commit-undo-transaction undo-id))))))
 
 ;; --- Change Shape Order (D&D Ordering)

@@ -64,11 +64,13 @@
    [:size {:optional true} [:enum "small" "medium" "large"]]
    [:active {:optional true} ::sm/boolean]
    [:has-errors {:optional true} [:maybe ::sm/boolean]]
+   [:show-tooltip {:optional true} [:maybe ::sm/boolean]]
+   [:tooltip-content {:optional true} ::sm/any]
    [:on-click {:optional true} ::sm/fn]])
 
 (mf/defc swatch*
   {::mf/schema (sm/schema schema:swatch)}
-  [{:keys [background on-click size active class tooltip-content has-errors]
+  [{:keys [background class size active has-errors tooltip-content on-click show-tooltip]
     :rest props}]
   (let [;; NOTE: this code is only relevant for storybook, because
         ;; storybook is unable to pass in a comfortable way a complex
@@ -84,6 +86,7 @@
         id?            (some? (:ref-id background))
         element-type   (if read-only? "div" "button")
         button-type    (if (not read-only?) "button" nil)
+        show-tooltip   (if (some? show-tooltip) show-tooltip true)
         size           (or size "small")
         active         (or active false)
         gradient-type  (-> background :gradient :type)
@@ -93,6 +96,8 @@
         image          (:image background)
         format         (if id? "rounded" "square")
         element-id     (mf/use-id)
+        has-opacity?  (and (some? (:color background))
+                           (< (:opacity background) 1))
         on-click
         (mf/use-fn
          (mf/deps background on-click)
@@ -115,28 +120,34 @@
         (mf/spread-props props {:class class
                                 :on-click on-click
                                 :type button-type
-                                :aria-labelledby element-id})]
+                                :aria-labelledby element-id})
+        children (mf/html
+                  [:> element-type props
+                   (cond
+                     (some? gradient-type)
+                     [:div {:class (stl/css :swatch-gradient)
+                            :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
 
-    [:> tooltip* {:content (if tooltip-content
-                             tooltip-content
-                             (color-title background))
-                  :id element-id}
-     [:> element-type props
-      (cond
-        (some? gradient-type)
-        [:span {:class (stl/css :swatch-gradient)
-                :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
+                     (some? image)
+                     (let [uri (cfg/resolve-file-media image)]
+                       [:div {:class (stl/css :swatch-image)
+                              :style {:background-image (str/ffmt "url(%)" uri)}}])
+                     has-errors
+                     [:div {:class (stl/css :swatch-error)}]
+                     :else
+                     [:div {:class (stl/css :swatch-opacity)}
+                      [:div {:class (stl/css :swatch-solid-side)
+                             :style {:background (uc/color->background (assoc background :opacity 1))}}]
+                      [:div {:class (stl/css-case :swatch-opacity-side true
+                                                  :swatch-opacity-side-transparency has-opacity?
+                                                  :swatch-opacity-side-solid-color (not has-opacity?))
+                             :style {"--solid-color-overlay" (str (uc/color->background background))}}]])])]
 
-        (some? image)
-        (let [uri (cfg/resolve-file-media image)]
-          [:span {:class (stl/css :swatch-image)
-                  :style {:background-image (str/ffmt "url(%)" uri)}}])
-        has-errors
-        [:span {:class (stl/css :swatch-error)}]
+    (if show-tooltip
+      [:> tooltip* {:content (if tooltip-content
+                               tooltip-content
+                               (color-title background))
+                    :id element-id}
+       children]
 
-        :else
-        [:span {:class (stl/css :swatch-opacity)}
-         [:span {:class (stl/css :swatch-solid-side)
-                 :style {:background (uc/color->background (assoc background :opacity 1))}}]
-         [:span {:class (stl/css :swatch-opacity-side)
-                 :style {:background (uc/color->background background)}}]])]]))
+      children)))

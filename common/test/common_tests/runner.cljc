@@ -45,6 +45,7 @@
    [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
+   [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
    [common-tests.uuid-test]))
 
@@ -98,4 +99,5 @@
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.tokens-lib-test
+   'common-tests.types.token-test
    'common-tests.uuid-test))
