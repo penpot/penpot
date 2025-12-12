@@ -1,0 +1,31 @@
+[package]
+name = "graph"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/penpot/penpot"
+license-file = "../LICENSE"
+description = "Wasm-based graph module for Penpot"
+
+build = "build.rs"
+
+[[bin]]
+name = "graph_wasm"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "s"
+# Note: We need panic=unwind because core requires it
+# We'll compile std from source with atomics support instead
+
+[profile.dev]
+# Note: We need panic=unwind because core requires it
+# We'll compile std from source with atomics support instead
+
+[dependencies]
+lbug = "0.12.2"
+uuid = { version = "1.11.0", features = ["v4", "js"] }
+
+# Patch lbug to use local version with wasm32-unknown-emscripten support
+[patch.crates-io]
+lbug = { path = "./lbug-0.12.2" }
+

@@ -1,0 +1,6 @@
+[target.wasm32-unknown-emscripten]
+# Note: Not using atomics to avoid recompiling std library
+# We're running without pthreads, so lbug needs to work single-threaded
+rustflags = ["-C", "link-arg=-fexceptions"]
+# Linker is configured via environment variable CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER in _build_env
+

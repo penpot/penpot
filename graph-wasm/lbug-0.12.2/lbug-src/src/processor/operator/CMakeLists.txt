@@ -1,0 +1,41 @@
+add_subdirectory(aggregate)
+add_subdirectory(ddl)
+add_subdirectory(hash_join)
+add_subdirectory(intersect)
+add_subdirectory(order_by)
+add_subdirectory(persistent)
+add_subdirectory(scan)
+add_subdirectory(simple)
+add_subdirectory(table_scan)
+add_subdirectory(macro)
+
+add_library(lbug_processor_operator
+        OBJECT
+        arrow_result_collector.cpp
+        base_partitioner_shared_state.cpp
+        cross_product.cpp
+        empty_result.cpp
+        filter.cpp
+        filtering_operator.cpp
+        flatten.cpp
+        index_lookup.cpp
+        limit.cpp
+        multiplicity_reducer.cpp
+        partitioner.cpp
+        path_property_probe.cpp
+        physical_operator.cpp
+        projection.cpp
+        profile.cpp
+        recursive_extend.cpp
+        result_collector.cpp
+        semi_masker.cpp
+        sink.cpp
+        skip.cpp
+        standalone_call.cpp
+        table_function_call.cpp
+        transaction.cpp
+        unwind.cpp)
+
+set(ALL_OBJECT_FILES
+        ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:lbug_processor_operator>
+        PARENT_SCOPE)

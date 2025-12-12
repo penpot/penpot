@@ -124,7 +124,7 @@
          (reset! cursor new-cursor))))))
 
 (defn setup-keyboard
-  [alt* mod* space* z* shift*]
+  [alt* mod* space* z* shift* g*]
   (let [kbd-zoom-s
         (mf/with-memo []
           (->> ms/keyboard
@@ -151,12 +151,22 @@
                (rx/filter kbd/z?)
                (rx/filter (complement kbd/editing-event?))
                (rx/map kbd/key-down-event?)
-               (rx/pipe (rxo/distinct-contiguous))))]
+               (rx/pipe (rxo/distinct-contiguous))))
+
+        kbd-g-s
+        (mf/with-memo []
+          (let [c-pred (kbd/is-key-ignore-case? "g")]
+            (->> ms/keyboard
+                 (rx/filter c-pred)
+                 (rx/filter (complement kbd/editing-event?))
+                 (rx/map kbd/key-down-event?)
+                 (rx/pipe (rxo/distinct-contiguous)))))]
 
     (hooks/use-stream ms/keyboard-alt (partial reset! alt*))
     (hooks/use-stream ms/keyboard-space (partial reset! space*))
     (hooks/use-stream kbd-z-s (partial reset! z*))
     (hooks/use-stream kbd-shift-s (partial reset! shift*))
+    (hooks/use-stream kbd-g-s (partial reset! g*))
     (hooks/use-stream ms/keyboard-mod
                       (fn [value]
                         (reset! mod* value)

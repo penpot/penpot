@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body>  
+  <script type="module">
+    import initWasmModule from '/js/graph-wasm.js';
+
+    let Module = null;
+    function init(moduleInstance) {
+      Module = moduleInstance;
+    }
+
+    console.log("Loading module");
+    initWasmModule().then(Module => {      
+      init(Module);
+      Module._hello();
+    });
+    
+  </script>
+</body>
+</html>

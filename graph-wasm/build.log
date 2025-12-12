@@ -1,0 +1,26 @@
+~/penpot/graph-wasm ~/penpot/graph-wasm
+./_build_env: line 60: export: `CXX_wasm32-unknown-emscripten=/home/penpot/penpot/graph-wasm/wrapper-em++.sh': not a valid identifier
+./_build_env: line 110: export: `CXXFLAGS_wasm32-unknown-emscripten=-ffunction-sections -fdata-sections -fexceptions --target=wasm32-unknown-emscripten': not a valid identifier
++ setup
++ true
++ build
++ cargo build
+   Compiling graph v0.1.0 (/home/penpot/penpot/graph-wasm)
+warning: unused import: `Error`
+ --> src/main.rs:1:48
+  |
+1 | use lbug::{Database, Connection, SystemConfig, Error};
+  |                                                ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> src/main.rs:23:9
+   |
+23 |     let mut conn = match Connection::new(&db) {
+   |         ----^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+

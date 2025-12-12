@@ -56,6 +56,7 @@
     "text-editor/v2-html-paste"
     "text-editor/v2"
     "render-wasm/v1"
+    "graph-wasm/v1"
     "variants/v1"})
 
 ;; A set of features enabled by default
@@ -79,7 +80,8 @@
     "text-editor/v2-html-paste"
     "text-editor/v2"
     "tokens/numeric-input"
-    "render-wasm/v1"})
+    "render-wasm/v1"
+    "graph-wasm/v1"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
@@ -128,6 +130,7 @@
     :feature-text-editor-v2 "text-editor/v2"
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-render-wasm "render-wasm/v1"
+    :feature-graph-wasm "graph-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"
     nil))

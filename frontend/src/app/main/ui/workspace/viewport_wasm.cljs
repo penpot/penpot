@@ -122,6 +122,7 @@
         mod?              (mf/use-state false)
         space?            (mf/use-state false)
         z?                (mf/use-state false)
+        c?                (mf/use-state false)
         cursor            (mf/use-state (utils/get-cursor :pointer-inner))
         hover-ids         (mf/use-state nil)
         hover             (mf/use-state nil)
@@ -360,7 +361,7 @@
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
-    (hooks/setup-keyboard alt? mod? space? z? shift?)
+    (hooks/setup-keyboard alt? mod? space? z? shift? c?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)

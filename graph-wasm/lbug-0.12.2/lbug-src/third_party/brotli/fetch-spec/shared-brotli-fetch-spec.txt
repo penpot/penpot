@@ -1,0 +1,116 @@
+[DRAFT]
+
+Introduction:
+
+This document is a draft proposal for Shard Brotli dictionaries in the fetch spec
+(https://fetch.spec.whatwg.org/).
+
+The goal is to add support for custom dictionaries for Brotli. A dictionary is used
+to improve compression. A client can download a dictionary from a server and then
+use it to decompress resources compressed with this dictionary.
+
+This document specifies how the client and server negotiate the dictionary over HTTP.
+A high level overview is as follows: The server adds an HTTP header to the response
+with a URL of the dictionary. The browser downloads the dictionary from the URL and
+then caches it so it can be reused. The server also adds a checksum to an HTTP header
+which the client uses to verify the dictionary. Caching, CORS, and other existing
+mechanisms are used. A dictionary can be a pre-made static dictionary, but does not
+have to be, for example a previous page loaded from this server, or an old version
+of a page, can be used as well.
+
+Below are changes and additions to add Shared Brotli dictionaries to the fetch spec
+at https://fetch.spec.whatwg.org/:
+
+Additions to `4.5. HTTP-network-or-cache fetch`
+
+Add to point `15. Modify httpRequest’s header list per HTTP.`:
+
+  If the recursive-sbr flag is enabled, `Accept-Encoding` may not contain `sbr`
+  [NOTE-BOX] When sbr can be used, it is possible to add a header Available-Dict
+  with the URL and hash code of a cached resource. The server may then use it as
+  shared dictionary.
+
+Additions to `4.6. HTTP-network fetch`
+
+Add after point `10. Run these steps, but abort if the ongoing fetch is terminated`:
+
+  11. Let codings be the result of extracting header list values given
+      `Content-Encoding` and response’s header list.
+  12. If codings contains `sbr`
+    1. If the header list does not contain `Sbr-Dict`, return a network error
+    2. Let dictionaryId be the result of extracting header list values given
+       `Sbr-Dict` and response’s header list.
+
+To point `12. Run these substeps in parallel:`, add new first sub-point:
+
+  1. If codings contains `sbr`, run these subsubsteps:
+      1. Let dictionaryResponse be the result of performing a
+         Shared-Brotli-dictionary fetch given dictionaryId and request.
+      2. If dictionaryResponse is a network error, return a network error.
+
+Change point `12.4. Set bytes to the result of handling content codings given codings and bytes.` to:
+
+  4. Set bytes to the result of handling content codings given codings, bytes
+     and, if codings contains `sbr`, also dictionaryResponse's body.
+     [NOTE-BOX] If the dictionary is still being fetched, which happens in
+     parallel, enqueue bytes in a compressed buffer and handle content coding
+     once the dictionary is fetched
+
+Additions to `2.2.4. Bodies`
+
+
+Change last section `To handle content codings ...` to:
+
+  To handle content codings given codings, bytes and optionally a dictionary, run these substeps:
+    1. If codings are not supported, return bytes.
+    2. If the codings has `sbr`, run these subsubsteps:
+       a. Return the result of decoding bytes and dictionary with the Shared
+          Brotli decoder.
+          [Shared Brotli Spec] [IANA Brotli](https://www.iana.org/assignments/http-parameters/http-parameters.xhtml)
+    3. Else:
+       a. Return the result of decoding bytes with the given codings, as
+          explained in HTTP. [HTTP] [HTTP-SEMANTICS] [HTTP-COND] [HTTP-CACHING]
+          [HTTP-AUTH]
+
+New section `4.10. Shared-Brotli-dictionary fetch`
+
+  To perform a Shared-Brotli-dictionary fetch using dictionaryId, and parentRequest, perform these steps:
+
+  1. Let dictionaryURL be the URL extracted from dictionaryId
+  2. Let dictionaryHash be the hash id extracted from dictionaryId
+  3. Let dictionaryRequest be a new request whose method is `GET`, url is
+     dictionaryURL, mode is "cors", and client is parentRequest's client.
+  4. Let dictionaryResponse be the result of performing an
+     [HTTP-network-or-cache](https://fetch.spec.whatwg.org/#concept-http-network-or-cache-fetch)
+     fetch using dictionaryRequest with the recursive-sbr flag set to true.
+     [NOTE-BOX] For compression benefits, the dictionary should be reused to
+     decode multiple different responses. We rely on caching to achieve this.
+     It is suggested for servers to not add any "no-cache" or short "max-age"
+     Cache-Control directives, and it is suggested for the client to effectively
+     support caching it.
+     [NOTE-BOX] Since the same dictionary can be identified by a hash code, a
+     browser can avoid fetching a dictionary if it already has one with the same
+     hashed cached from a different source URL.
+     [NOTE-BOX] It is suggested that a server does not reuse the same URL
+     to host an updated or different dictionary. Instead the same dictionary URL
+     should contain a dictionary with the same content and same hash.
+  5. If dictionaryResponse is a network error, return a network error.
+  6. If dictionaryResponse's status is not an ok status, return a network error.
+  7. Let tokens be the result of
+     [parsing metadata](https://w3c.github.io/webappsec-subresource-integrity/#parse-metadata)
+     given dictionaryHash.
+     [Subresource Integrity](https://w3c.github.io/webappsec-subresource-integrity/)
+  8. If tokens is no metadata or the length of tokens is not 1, return a network
+     error
+  9. Let algorithm be the alg component of tokens[0]. If alg is 'hw3', set
+     algorithm to 256-bit HighwayHash
+  10. Let digest be the val component of tokens[1].
+  11. Let hashValue be the result of base64 decoding digest
+      [base64](https://tools.ietf.org/html/rfc4648)
+  12. If hashValue is not a valid base64 encoding, return a network error
+      [NOTE-BOX] All of the supported hashing algorithms are cryptographically
+      secure.
+  13. Compute the hash code of dictionaryResponse's body using algorithm and
+      compare this checksum for equality with hashValue. If the computed
+      checksum does not match hashValue, return a network error.
+  14. Return dictionaryResponse.

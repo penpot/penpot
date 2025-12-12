@@ -92,7 +92,7 @@
    {:main
     {:entries [app.worker]
      :web-worker true
-     :prepend-js "importScripts('./render.js');"
+     :prepend-js "importScripts('./render.js', './graph-wasm-worker.js');"
      :depends-on #{}}}
 
    :js-options

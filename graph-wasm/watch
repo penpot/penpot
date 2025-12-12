@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+_SCRIPT_DIR=$(dirname $0);
+pushd $_SCRIPT_DIR;
+
+. ./_build_env
+
+set -x
+# Hacemos un build inicial y copiamos artefactos.
+build;
+copy_artifacts "../frontend/resources/public/js";
+copy_shared_artifact;
+
+# Ahora solo observamos cambios reales de código; evitamos llamar a ./build
+# desde cargo-watch porque tocaría artefactos y re-dispararía el watcher.
+cargo watch \
+      --watch src \
+      --watch exports.txt \
+      --ignore "../frontend/resources/public/js/$BUILD_NAME.*" \
+      --ignore build.log \
+      -x "build $CARGO_PARAMS" \
+      -s "bash -lc 'source ./_build_env; copy_artifacts \"../frontend/resources/public/js\"; copy_shared_artifact; echo \"DONE\"'";
+
+popd

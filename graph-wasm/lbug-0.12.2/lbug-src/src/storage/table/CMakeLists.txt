@@ -1,0 +1,39 @@
+add_library(lbug_storage_store
+        OBJECT
+        chunked_node_group.cpp
+        column.cpp
+        column_chunk.cpp
+        column_chunk_data.cpp
+        column_chunk_stats.cpp
+        csr_chunked_node_group.cpp
+        csr_node_group.cpp
+        column_reader_writer.cpp
+        column_chunk_data.cpp
+        column_chunk_metadata.cpp
+        compression_flush_buffer.cpp
+        dictionary_chunk.cpp
+        dictionary_column.cpp
+        in_mem_chunked_node_group_collection.cpp
+        in_memory_exception_chunk.cpp
+        lazy_segment_scanner.cpp
+        list_chunk_data.cpp
+        list_column.cpp
+        node_group.cpp
+        node_group_collection.cpp
+        node_table.cpp
+        null_column.cpp
+        rel_table.cpp
+        rel_table_data.cpp
+        string_chunk_data.cpp
+        string_column.cpp
+        struct_chunk_data.cpp
+        struct_column.cpp
+        table.cpp
+        update_info.cpp
+        version_info.cpp
+        version_record_handler.cpp
+)
+
+set(ALL_OBJECT_FILES
+        ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:lbug_storage_store>
+        PARENT_SCOPE)

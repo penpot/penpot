@@ -1,0 +1,51 @@
+add_library(lbug_processor_mapper
+        OBJECT
+        create_arrow_result_collector.cpp
+        create_factorized_table_scan.cpp
+        create_result_collector.cpp
+        expression_mapper.cpp
+        map_acc_hash_join.cpp
+        map_accumulate.cpp
+        map_aggregate.cpp
+        map_standalone_call.cpp
+        map_table_function_call.cpp
+        map_copy_to.cpp
+        map_copy_from.cpp
+        map_insert.cpp
+        map_create_macro.cpp
+        map_cross_product.cpp
+        map_ddl.cpp
+        map_delete.cpp
+        map_distinct.cpp
+        map_explain.cpp
+        map_expressions_scan.cpp
+        map_dummy_scan.cpp
+        map_dummy_sink.cpp
+        map_empty_result.cpp
+        map_extend.cpp
+        map_filter.cpp
+        map_flatten.cpp
+        map_hash_join.cpp
+        map_index_scan_node.cpp
+        map_intersect.cpp
+        map_label_filter.cpp
+        map_limit.cpp
+        map_merge.cpp
+        map_multiplicity_reducer.cpp
+        map_noop.cpp
+        map_order_by.cpp
+        map_path_property_probe.cpp
+        map_projection.cpp
+        map_recursive_extend.cpp
+        map_scan_node_table.cpp
+        map_semi_masker.cpp
+        map_set.cpp
+        map_simple.cpp
+        map_transaction.cpp
+        map_union.cpp
+        map_unwind.cpp
+        plan_mapper.cpp)
+
+set(ALL_OBJECT_FILES
+        ${ALL_OBJECT_FILES} $<TARGET_OBJECTS:lbug_processor_mapper>
+        PARENT_SCOPE)

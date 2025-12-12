@@ -1,0 +1,11 @@
+_hello
+_generate_db
+_init
+_search_similar_shapes
+_free_similar_shapes_buffer
+_set_shape_parent
+_set_shape_selrect
+_set_shape_type
+_use_shape
+
+

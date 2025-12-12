@@ -11,6 +11,7 @@
    [app.common.schema :as sm]
    [app.common.types.objects-map]
    [app.util.object :as obj]
+   [app.worker.graph-wasm]
    [app.worker.impl :as impl]
    [app.worker.import]
    [app.worker.index]

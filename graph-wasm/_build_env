@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+# --------------------
+# Build configuration
+# --------------------
+
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+export CURRENT_VERSION="${CURRENT_VERSION:-develop}"
+export BUILD_NAME="${BUILD_NAME:-graph-wasm}"
+export CARGO_BUILD_TARGET="${CARGO_BUILD_TARGET:-wasm32-unknown-emscripten}"
+# Keep the emscripten cache in-repo so system cache cleaners do not wipe it.
+export EM_CACHE="${EM_CACHE:-${_SCRIPT_DIR}/.emsdk_cache}"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-${_SCRIPT_DIR}/target}"
+if [[ -z "${CARGO_INCREMENTAL:-}" && "${NODE_ENV:-}" != "production" ]]; then
+    export CARGO_INCREMENTAL=1
+fi
+if [[ -z "${RUSTC_WRAPPER:-}" ]] && command -v sccache >/dev/null 2>&1; then
+    export RUSTC_WRAPPER=sccache
+fi
+export CRATE_CC_NO_DEFAULTS=1
+
+# BUILD_MODE
+if [[ "${NODE_ENV:-}" == "production" ]]; then
+    BUILD_MODE=release
+else
+    BUILD_MODE="${1:-debug}"
+fi
+export BUILD_MODE
+
+# --------------------
+# Emscripten memory
+# --------------------
+
+export EM_INITIAL_HEAP=$((256 * 1024 * 1024))
+export EM_MAXIMUM_MEMORY=$((4 * 1024 * 1024 * 1024))
+export EM_MEMORY_GROWTH_GEOMETRIC_STEP=0.8
+export EM_MALLOC=dlmalloc
+
+# --------------------
+# Flags
+# --------------------
+
+EMCC_COMMON_FLAGS=(
+    --no-entry
+    -sASSERTIONS=1
+    -sALLOW_TABLE_GROWTH=1
+    -sALLOW_MEMORY_GROWTH=1
+    -sINITIAL_HEAP=$EM_INITIAL_HEAP
+    -sMEMORY_GROWTH_GEOMETRIC_STEP=$EM_MEMORY_GROWTH_GEOMETRIC_STEP
+    -sMAXIMUM_MEMORY=$EM_MAXIMUM_MEMORY
+    -sERROR_ON_UNDEFINED_SYMBOLS=0
+    -sDISABLE_EXCEPTION_CATCHING=0
+    -sEXPORT_NAME=createGraphModule
+    -sEXPORTED_RUNTIME_METHODS=stringToUTF8,HEAPU8
+    -sENVIRONMENT=web
+    -sMODULARIZE=1
+    -sEXPORT_ES6=1
+)
+
+export RUSTFLAGS="-C link-arg=-sEXPORTED_FUNCTIONS=@${_SCRIPT_DIR}/exports.txt -C link-arg=-sEXPORT_ALL=0"
+
+# Mode-specific flags
+if [[ "$BUILD_MODE" == "release" ]]; then
+    export EMCC_CFLAGS="-Os ${EMCC_COMMON_FLAGS[*]}"
+    CARGO_PARAMS=(--release "${@:2}")
+else
+    export EMCC_CFLAGS="-g -sVERBOSE=1 -sMALLOC=$EM_MALLOC ${EMCC_COMMON_FLAGS[*]}"
+    CARGO_PARAMS=("${@:2}")
+fi
+
+export CARGO_PARAMS
+
+# --------------------
+# Tasks
+# --------------------
+
+clean() {
+    cargo clean
+}
+
+setup() {
+    :
+}
+
+build() {
+    cargo build "${CARGO_PARAMS[@]}"
+}
+
+copy_artifacts() {
+    local dest=$1
+    local base="target/$CARGO_BUILD_TARGET/$BUILD_MODE"
+
+    mkdir -p "$dest"
+
+    cp "$base/graph_wasm.js"   "$dest/$BUILD_NAME.js"
+    cp "$base/graph_wasm.wasm" "$dest/$BUILD_NAME.wasm"
+
+    sed -i "s/graph_wasm.wasm/$BUILD_NAME.wasm?version=$CURRENT_VERSION/g" \
+        "$dest/$BUILD_NAME.js"
+}
+
+copy_shared_artifact() {
+    :
+}

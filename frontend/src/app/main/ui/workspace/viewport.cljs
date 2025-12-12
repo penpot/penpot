@@ -13,11 +13,16 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
+   [app.config :as cf]
+   [app.graph-wasm.api :as graph-wasm.api]
+   [app.main.data.workspace.componentize :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -57,8 +62,11 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
+   [app.main.worker :as worker]
    [app.util.debug :as dbg]
+   [app.util.modules :as mod]
    [beicon.v2.core :as rx]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
@@ -134,6 +142,7 @@
         mod?               (mf/use-state false)
         space?             (mf/use-state false)
         z?                 (mf/use-state false)
+        g?                 (mf/use-state false)
         cursor             (mf/use-state #(utils/get-cursor :pointer-inner))
         hover-ids          (mf/use-state nil)
         hover              (mf/use-state nil)
@@ -302,12 +311,79 @@
         (mf/use-fn
          (mf/deps first-shape)
          #(st/emit!
-           (dwv/add-new-variant (:id first-shape))))]
+           (dwv/add-new-variant (:id first-shape))))
+
+        graph-wasm-enabled? (features/use-feature "graph-wasm/v1")]
+
+    (mf/with-effect [page-id]
+      (when graph-wasm-enabled?
+        ;; Initialize graph-wasm in the worker to avoid blocking main thread
+        (let [subscription
+              (->> (worker/ask! {:cmd :graph-wasm/init})
+                   (rx/filter #(= (:status %) :ok))
+                   (rx/take 1)
+                   (rx/merge-map (fn [_]
+                                   (worker/ask! {:cmd :graph-wasm/set-objects
+                                                 :objects base-objects}))))]
+
+          (rx/subscribe subscription
+                        (fn [result]
+                          (when (= (:status result) :ok)
+                            (js/console.debug "Graph WASM initialized in worker"
+                                              (select-keys result [:processed]))))
+                        (fn [error]
+                          (js/console.error "Error initializing graph-wasm in worker:" error))
+                        (fn []
+                          (js/console.debug "Graph WASM worker operations completed"))))))
+
+    (mf/with-effect [selected @g?]
+      (when graph-wasm-enabled?
+        ;; Search for similar shapes when selection changes or when
+        ;; the user presses the \"c\" key while having a single
+        ;; selection.
+        (when (and @g?
+                   (some? selected)
+                   (= (count selected) 1))
+          (let [selected-id    (first selected)
+                selected-shape (get base-objects selected-id)
+                ;; Skip shapes that already belong to a component
+                non-component? (and (some? selected-shape)
+                                    (not (ctn/in-any-component? base-objects selected-shape)))]
+
+            (println selected-shape)
+            (println (ctn/in-any-component? base-objects selected-shape))
+
+            (when non-component?
+              (let [subscription
+                    (worker/ask! {:cmd :graph-wasm/search-similar-shapes
+                                  :shape-id selected-id})]
+
+                (rx/subscribe subscription
+                              (fn [result]
+                                (when (= (:status result) :ok)
+                                  (let [raw-similar-shapes (:similar-shapes result)
+                                      ;; Filter out shapes that already belong to some component
+                                      ;; (main instance, instance head or inside a component copy).
+                                        similar-shapes      (->> raw-similar-shapes
+                                                                 (remove (fn [sid]
+                                                                           (when-let [s (get base-objects sid)]
+                                                                             (ctn/in-any-component? base-objects s))))
+                                                                 (into []))]
+                                    (when (d/not-empty? similar-shapes)
+                                    ;; Transform the selected subtree into a component and
+                                    ;; replace similar subtrees by instances of that component.
+                                      (st/emit! (dwc/componentize-similar-subtrees
+                                                 selected-id
+                                                 similar-shapes))))))
+                              (fn [error]
+                                (js/console.error "Error searching similar shapes:" error))
+                              (fn []
+                                (js/console.debug "Similar shapes search completed")))))))))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
-    (hooks/setup-keyboard alt? mod? space? z? shift?)
+    (hooks/setup-keyboard alt? mod? space? z? shift? g?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
     (hooks/setup-viewport-modifiers modifiers base-objects)
