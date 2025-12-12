@@ -1779,34 +1779,44 @@
 
 (defmethod migrate-data "0018-sync-component-id-with-near-main"
   [data _]
-  (letfn [(fix-shape [page shape]
-            (if (and (ctk/subcopy-head? shape)
-                     (nil? (ctk/get-swap-slot shape)))
-              (let [file {:id (:id data) :data data}
-                    libs (some-> (:libs data) deref)
-                    ref-shape  (ctf/find-ref-shape file page libs shape {:include-deleted? true :with-context? true})]
-                (if (and (some? ref-shape)
-                         (or (not= (:component-id shape) (:component-id ref-shape))
-                             (not= (:component-file shape) (:component-file ref-shape))))
-                  (cond-> shape
-                    (some? (:component-id ref-shape))
-                    (assoc :component-id (:component-id ref-shape))
+  (let [libs (some-> (:libs data) deref)]
+    (letfn [(fix-shape
+              [data page shape]
+              (if (and (ctk/subcopy-head? shape)
+                       (nil? (ctk/get-swap-slot shape)))
+                (let [file {:id (:id data) :data data}
+                      ref-shape  (ctf/find-ref-shape file page libs shape {:include-deleted? true :with-context? true})]
+                  (if (and (some? ref-shape)
+                           (or (not= (:component-id shape) (:component-id ref-shape))
+                               (not= (:component-file shape) (:component-file ref-shape))))
+                    (cond-> shape
+                      (some? (:component-id ref-shape))
+                      (assoc :component-id (:component-id ref-shape))
 
-                    (nil? (:component-id ref-shape))
-                    (dissoc :component-id)
+                      (nil? (:component-id ref-shape))
+                      (dissoc :component-id)
 
-                    (some? (:component-file ref-shape))
-                    (assoc :component-file (:component-file ref-shape))
+                      (some? (:component-file ref-shape))
+                      (assoc :component-file (:component-file ref-shape))
 
-                    (nil? (:component-file ref-shape))
-                    (dissoc :component-file))
-                  shape))
-              shape))
+                      (nil? (:component-file ref-shape))
+                      (dissoc :component-file))
+                    shape))
+                shape))
 
-          (update-page [page]
-            (d/update-when page :objects d/update-vals (partial fix-shape page)))]
-    (-> data
-        (update :pages-index d/update-vals update-page))))
+            (update-page
+              [data page]
+              (d/update-when page :objects d/update-vals (partial fix-shape data page)))
+
+            (fix-data [data]
+              (loop [current-data data
+                     iteration    0]
+                (let [next-data (update current-data :pages-index d/update-vals (partial update-page current-data))]
+                  (if (or (= current-data next-data)
+                          (> iteration 20))     ;; safety bound
+                    next-data
+                    (recur next-data (inc iteration))))))]
+      (fix-data data))))
 
 
 (def available-migrations
