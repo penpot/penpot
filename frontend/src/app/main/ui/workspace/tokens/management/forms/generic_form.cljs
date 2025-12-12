@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.files.tokens :as cft]
+   [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -181,6 +182,8 @@
          (mf/deps validate-token token tokens token-type value-subfield type active-tab)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
+                 path (str (clojure.core/name token-type) "." name)
+                 _ (pp/pprint {:submitting-form-path path})
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield type)]
@@ -202,6 +205,8 @@
                                            {:name name
                                             :value (:value valid-token)
                                             :description description}))
+                      ;; (dwtl/clean-paths)
+                      (dwtl/toggle-path path)
                       (dwtp/propagate-workspace-tokens)
                       (modal/hide))))))))]
 

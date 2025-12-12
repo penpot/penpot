@@ -132,8 +132,7 @@
              :on-context-menu on-context-menu}])
           ;; Render segment folder
          [:ul {:class (stl/css :node-parent)
-               :key (:path node)
-               :style {:--node-depth (inc (:depth node))}}
+               :key (:path node)}
           [:> folder-node* {:node node
                             :type type
                             :unfolded-token-paths unfolded-token-paths

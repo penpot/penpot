@@ -11,7 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
-   [app.common.pprint :as pp]
+   [app.common.path-names :as cpn]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -24,7 +24,10 @@
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [cljs.pprint :as pp]
+   [app.common.types.path.segment :as segm]
+   [app.common.types.path.segment :as segment]))
 
 (declare set-selected-token-set-id)
 
@@ -462,17 +465,13 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (defn toggle-path
-;;   [path]
-;;   (ptk/reify ::toggle-path
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (update-in state [:workspace-tokens :unfolded-token-paths]
-;;                  (fn [paths]
-;;                    (let [_ ((pp/pprint {:current-path path
-;;                                         :current-paths paths}))]
-;;                      (fnil conj [])
-;;                      path))))))
+(defn clean-paths
+  []
+  (ptk/reify ::clean-paths
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
+
 (defn toggle-path
   [path]
   (ptk/reify ::toggle-path
@@ -485,7 +484,27 @@
                        (vec (remove #(or (= % path)
                                          (str/starts-with? % (str path ".")))
                                     paths))
-                       (conj paths path))))))))
+                       (let [split-path (cpn/split-path path :separator ".")
+                             partial-paths (reduce
+                                            (fn [acc segment]
+                                              (pp/pprint {:acc acc})
+                                              (pp/pprint {:segment segment})
+                                              (let [new-acc (if (empty? acc)
+                                                              segment
+                                                              (str (last acc) "." segment))]
+                                                (conj acc new-acc)))
+                                            []
+                                            split-path)
+                             _ (pp/pprint {:partial-paths partial-paths})]
+                         (into paths partial-paths)))))))))
+
+  ;; (reduce
+  ;;  (fn [primes number]
+  ;;    (if (some zero? (map (partial mod number) primes))
+  ;;      primes
+  ;;      (conj primes number)))
+  ;;  [2]
+  ;;  (take 1000 (iterate inc 3)))
 
 ;; (defn add-recent-color
 ;;   [color]
