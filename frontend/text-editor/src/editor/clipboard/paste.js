@@ -18,7 +18,10 @@ import { TextEditor } from "../TextEditor.js";
  * @param {DataTransfer} clipboardData
  * @returns {DocumentFragment}
  */
-function getFormattedFragmentFromClipboardData(selectionController, clipboardData) {
+function getFormattedFragmentFromClipboardData(
+  selectionController,
+  clipboardData,
+) {
   return mapContentFragmentFromHTML(
     clipboardData.getData("text/html"),
     selectionController.currentStyle,
@@ -79,9 +82,14 @@ export function paste(event, editor, selectionController) {
 
   let fragment = null;
   if (editor?.options?.allowHTMLPaste) {
-    fragment = getFormattedOrPlainFragmentFromClipboardData(event.clipboardData);
+    fragment = getFormattedOrPlainFragmentFromClipboardData(
+      event.clipboardData,
+    );
   } else {
-    fragment = getPlainFragmentFromClipboardData(selectionController, event.clipboardData);
+    fragment = getPlainFragmentFromClipboardData(
+      selectionController,
+      event.clipboardData,
+    );
   }
 
   if (!fragment) {
@@ -92,10 +100,9 @@ export function paste(event, editor, selectionController) {
   if (selectionController.isCollapsed) {
     const hasOnlyOneParagraph = fragment.children.length === 1;
     const hasOnlyOneTextSpan = fragment.firstElementChild.children.length === 1;
-    const forceTextSpan = fragment.firstElementChild.dataset.textSpan === "force";
-    if (hasOnlyOneParagraph
-     && hasOnlyOneTextSpan
-     && forceTextSpan) {
+    const forceTextSpan =
+      fragment.firstElementChild.dataset.textSpan === "force";
+    if (hasOnlyOneParagraph && hasOnlyOneTextSpan && forceTextSpan) {
       selectionController.insertIntoFocus(fragment.textContent);
     } else {
       selectionController.insertPaste(fragment);
@@ -103,10 +110,9 @@ export function paste(event, editor, selectionController) {
   } else {
     const hasOnlyOneParagraph = fragment.children.length === 1;
     const hasOnlyOneTextSpan = fragment.firstElementChild.children.length === 1;
-    const forceTextSpan = fragment.firstElementChild.dataset.textSpan === "force";
-    if (hasOnlyOneParagraph
-     && hasOnlyOneTextSpan
-     && forceTextSpan) {
+    const forceTextSpan =
+      fragment.firstElementChild.dataset.textSpan === "force";
+    if (hasOnlyOneParagraph && hasOnlyOneTextSpan && forceTextSpan) {
       selectionController.replaceText(fragment.textContent);
     } else {
       selectionController.replaceWithPaste(fragment);

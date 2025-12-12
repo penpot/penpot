@@ -42,6 +42,37 @@
 (deftest skips-when-no-svg-fill
   (is (nil? (svg-fills/svg-fill->fills {:svg-attrs {:fill "none"}}))))
 
+(def elliptical-shape
+  {:selrect {:x 0 :y 0 :width 200 :height 100}
+   :svg-attrs {:style {:fill "url(#grad-ellipse)"}}
+   :svg-defs {"grad-ellipse"
+              {:tag :radialGradient
+               :attrs {:id "grad-ellipse"
+                       :gradientUnits "userSpaceOnUse"
+                       :cx "50"
+                       :cy "50"
+                       :r "50"
+                       :gradientTransform "matrix(2 0 0 1 0 0)"}
+               :content [{:tag :stop
+                          :attrs {:offset "0"
+                                  :style "stop-color:#000000;stop-opacity:1"}}
+                         {:tag :stop
+                          :attrs {:offset "1"
+                                  :style "stop-color:#ffffff;stop-opacity:1"}}]}}})
+
+(deftest builds-elliptical-radial-gradient-with-transform
+  (let [fills (svg-fills/svg-fill->fills elliptical-shape)
+        gradient (get-in (first fills) [:fill-color-gradient])]
+    (testing "ellipse from gradientTransform is preserved"
+      (is (= 1 (count fills)))
+      (is (= :radial (:type gradient)))
+      (is (= 0.5 (:start-x gradient)))
+      (is (= 0.5 (:start-y gradient)))
+      (is (= 0.5 (:end-x gradient)))
+      (is (= 1.0 (:end-y gradient)))
+      ;; Scaling the X axis in the gradientTransform should reflect on width.
+      (is (= 1.0 (:width gradient))))))
+
 (deftest resolve-shape-fills-prefers-existing-fills
   (let [fills [{:fill-color "#ff00ff" :fill-opacity 0.75}]
         resolved (svg-fills/resolve-shape-fills {:fills fills})]

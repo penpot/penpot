@@ -384,7 +384,7 @@ pub fn propagate_modifiers(
             if math::identitish(&entry.transform) {
                 Modifier::Reflow(entry.id)
             } else {
-                Modifier::Transform(entry.clone())
+                Modifier::Transform(*entry)
             }
         })
         .collect();

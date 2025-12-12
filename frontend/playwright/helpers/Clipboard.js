@@ -1,12 +1,12 @@
 export class Clipboard {
   static Permission = {
-    ONLY_READ: ['clipboard-read'],
-    ONLY_WRITE: ['clipboard-write'],
-    ALL: ['clipboard-read', 'clipboard-write']
-  }
+    ONLY_READ: ["clipboard-read"],
+    ONLY_WRITE: ["clipboard-write"],
+    ALL: ["clipboard-read", "clipboard-write"],
+  };
 
   static enable(context, permissions) {
-    return context.grantPermissions(permissions)
+    return context.grantPermissions(permissions);
   }
 
   static writeText(page, text) {
@@ -18,8 +18,8 @@ export class Clipboard {
   }
 
   constructor(page, context) {
-    this.page = page
-    this.context = context
+    this.page = page;
+    this.context = context;
   }
 
   enable(permissions) {

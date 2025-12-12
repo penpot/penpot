@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import SafeGuard from '../../controllers/SafeGuard.js';
+import SafeGuard from "../../controllers/SafeGuard.js";
 
 /**
  * Iterator direction.
@@ -58,7 +58,7 @@ export class TextNodeIterator {
     startNode,
     rootNode,
     skipNodes = new Set(),
-    direction = TextNodeIteratorDirection.FORWARD
+    direction = TextNodeIteratorDirection.FORWARD,
   ) {
     if (startNode === rootNode) {
       return TextNodeIterator.findDown(
@@ -67,7 +67,7 @@ export class TextNodeIterator {
           : startNode.lastChild,
         rootNode,
         skipNodes,
-        direction
+        direction,
       );
     }
 
@@ -95,7 +95,7 @@ export class TextNodeIterator {
             : currentNode.lastChild,
           rootNode,
           skipNodes,
-          direction
+          direction,
         );
       }
       currentNode =
@@ -119,7 +119,7 @@ export class TextNodeIterator {
     startNode,
     rootNode,
     backTrack = new Set(),
-    direction = TextNodeIteratorDirection.FORWARD
+    direction = TextNodeIteratorDirection.FORWARD,
   ) {
     backTrack.add(startNode);
     if (TextNodeIterator.isTextNode(startNode)) {
@@ -127,14 +127,14 @@ export class TextNodeIterator {
         startNode.parentNode,
         rootNode,
         backTrack,
-        direction
+        direction,
       );
     } else if (TextNodeIterator.isContainerNode(startNode)) {
       const found = TextNodeIterator.findDown(
         startNode,
         rootNode,
         backTrack,
-        direction
+        direction,
       );
       if (found) {
         return found;
@@ -144,7 +144,7 @@ export class TextNodeIterator {
           startNode.parentNode,
           rootNode,
           backTrack,
-          direction
+          direction,
         );
       }
     }
@@ -214,7 +214,7 @@ export class TextNodeIterator {
       this.#currentNode,
       this.#rootNode,
       new Set(),
-      TextNodeIteratorDirection.FORWARD
+      TextNodeIteratorDirection.FORWARD,
     );
 
     if (!nextNode) {
@@ -237,7 +237,7 @@ export class TextNodeIterator {
       this.#currentNode,
       this.#rootNode,
       new Set(),
-      TextNodeIteratorDirection.BACKWARD
+      TextNodeIteratorDirection.BACKWARD,
     );
 
     if (!previousNode) {
@@ -270,10 +270,8 @@ export class TextNodeIterator {
    * @param {TextNode} endNode
    * @yields {TextNode}
    */
-  * iterateFrom(startNode, endNode) {
-    const comparedPosition = startNode.compareDocumentPosition(
-      endNode
-    );
+  *iterateFrom(startNode, endNode) {
+    const comparedPosition = startNode.compareDocumentPosition(endNode);
     this.#currentNode = startNode;
     SafeGuard.start();
     while (this.#currentNode !== endNode) {

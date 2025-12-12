@@ -1,18 +1,16 @@
 export class Transit {
   static parse(value) {
-    if (typeof value !== 'string')
-      return value
+    if (typeof value !== "string") return value;
 
-    if (value.startsWith('~'))
-      return value.slice(2)
+    if (value.startsWith("~")) return value.slice(2);
 
-    return value
+    return value;
   }
 
   static get(object, ...path) {
     let aux = object;
     for (const name of path) {
-      if (typeof name !== 'string') {
+      if (typeof name !== "string") {
         if (!(name in aux)) {
           return undefined;
         }

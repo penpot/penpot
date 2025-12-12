@@ -1,6 +1,9 @@
 import { createRoot } from "../editor/content/dom/Root.js";
 import { createParagraph } from "../editor/content/dom/Paragraph.js";
-import { createEmptyTextSpan, createTextSpan } from "../editor/content/dom/TextSpan.js";
+import {
+  createEmptyTextSpan,
+  createTextSpan,
+} from "../editor/content/dom/TextSpan.js";
 import { createLineBreak } from "../editor/content/dom/LineBreak.js";
 
 export class TextEditorMock extends EventTarget {
@@ -38,14 +41,14 @@ export class TextEditorMock extends EventTarget {
   static createTextEditorMockWithRoot(root) {
     const container = TextEditorMock.getTemplate();
     const selectionImposterElement = container.querySelector(
-      ".text-editor-selection-imposter"
+      ".text-editor-selection-imposter",
     );
     const textEditorMock = new TextEditorMock(
       container.querySelector(".text-editor-content"),
       {
         root,
         selectionImposterElement,
-      }
+      },
     );
     return textEditorMock;
   }
@@ -86,8 +89,8 @@ export class TextEditorMock extends EventTarget {
     return this.createTextEditorMockWithParagraphs([
       createParagraph([
         text.length === 0
-        ? createEmptyTextSpan()
-        : createTextSpan(new Text(text))
+          ? createEmptyTextSpan()
+          : createTextSpan(new Text(text)),
       ]),
     ]);
   }
@@ -100,7 +103,9 @@ export class TextEditorMock extends EventTarget {
    * @returns
    */
   static createTextEditorMockWithParagraph(textSpans) {
-    return this.createTextEditorMockWithParagraphs([createParagraph(textSpans)]);
+    return this.createTextEditorMockWithParagraphs([
+      createParagraph(textSpans),
+    ]);
   }
 
   #element = null;

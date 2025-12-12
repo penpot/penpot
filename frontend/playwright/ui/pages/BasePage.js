@@ -9,7 +9,7 @@ export class BasePage {
    */
   static async mockRPCs(page, paths, options) {
     for (const [path, jsonFilename] of Object.entries(paths)) {
-      await this.mockRPC(page, path, jsonFilename, options)
+      await this.mockRPC(page, path, jsonFilename, options);
     }
   }
 

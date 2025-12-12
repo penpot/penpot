@@ -12,10 +12,12 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
+   [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -256,6 +258,16 @@
         single-select?           (= (count selected-shapes) 1)
 
         first-shape (first selected-shapes)
+
+        show-add-variant?        (and single-select?
+                                      (or (ctk/is-variant-container? first-shape)
+                                          (ctk/is-variant? first-shape)))
+
+        add-variant
+        (mf/use-fn
+         (mf/deps first-shape)
+         #(st/emit!
+           (dwv/add-new-variant (:id first-shape))))
 
         show-padding?
         (and (nil? transform)
@@ -635,6 +647,12 @@
                                     :hover-top-frame-id @hover-top-frame-id
                                     :zoom zoom}])
 
+       (when (dbg/enabled? :text-outline)
+         [:& wvd/debug-text-wasm-position-data
+          {:selected-shapes selected-shapes
+           :objects base-objects
+           :zoom zoom}])
+
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           (when-not text-editing?
@@ -662,6 +680,11 @@
          [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
+
+       (when show-add-variant?
+         [:> widgets/button-add* {:shape first-shape
+                                  :zoom zoom
+                                  :on-click add-variant}])
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when show-grid-editor?

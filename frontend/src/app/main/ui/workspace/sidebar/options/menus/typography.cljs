@@ -265,11 +265,13 @@
          (mf/deps font on-change)
          (fn [new-variant-id]
            (let [variant (d/seek #(= new-variant-id (:id %)) (:variants font))]
-             (on-change {:font-id (:id font)
-                         :font-family (:family font)
-                         :font-variant-id new-variant-id
-                         :font-weight (:weight variant)
-                         :font-style (:style variant)})
+             (when-not (nil? variant)
+               (on-change {:font-id (:id font)
+                           :font-family (:family font)
+                           :font-variant-id new-variant-id
+                           :font-weight (:weight variant)
+                           :font-style (:style variant)}))
+
              (dom/blur! (dom/get-target new-variant-id)))))
 
         on-font-select
@@ -342,12 +344,13 @@
                                                {:value (:id variant)
                                                 :key (pr-str variant)
                                                 :label (:name variant)})))
-             variant-options (if (= font-size :multiple)
+             variant-options (if (= font-variant-id :multiple)
                                (conj basic-variant-options
-                                     {:value :multiple
+                                     {:value ""
                                       :key :multiple-variants
                                       :label "--"})
                                basic-variant-options)]
+
          ;;  TODO Add disabled mode
          [:& select
           {:class (stl/css :font-variant-select)

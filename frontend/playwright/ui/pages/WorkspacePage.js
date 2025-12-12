@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
-import { readFile } from 'node:fs/promises';
+import { readFile } from "node:fs/promises";
 import { BaseWebSocketPage } from "./BaseWebSocketPage";
-import { Transit } from '../../helpers/Transit';
+import { Transit } from "../../helpers/Transit";
 
 export class WorkspacePage extends BaseWebSocketPage {
   static TextEditor = class TextEditor {

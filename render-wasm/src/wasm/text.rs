@@ -2,13 +2,14 @@ use macros::ToJs;
 
 use super::{fills::RawFillData, fonts::RawFontStyle};
 use crate::math::{Matrix, Point};
-use crate::mem;
+use crate::mem::{self, SerializableResult};
 use crate::shapes::{
     self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{
-    with_current_shape_mut, with_state, with_state_mut, with_state_mut_current_shape, STATE,
+    with_current_shape, with_current_shape_mut, with_state, with_state_mut,
+    with_state_mut_current_shape, STATE,
 };
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
@@ -410,4 +411,40 @@ pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
         }
     });
     -1
+}
+
+const RAW_POSITION_DATA_SIZE: usize = size_of::<shapes::PositionData>();
+
+impl From<[u8; RAW_POSITION_DATA_SIZE]> for shapes::PositionData {
+    fn from(bytes: [u8; RAW_POSITION_DATA_SIZE]) -> Self {
+        unsafe { std::mem::transmute(bytes) }
+    }
+}
+
+impl From<shapes::PositionData> for [u8; RAW_POSITION_DATA_SIZE] {
+    fn from(value: shapes::PositionData) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl SerializableResult for shapes::PositionData {
+    type BytesType = [u8; RAW_POSITION_DATA_SIZE];
+
+    // The generic trait doesn't know the size of the array. This is why the
+    // clone needs to be here even if it could be generic.
+    fn clone_to_slice(&self, slice: &mut [u8]) {
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn calculate_position_data() -> *mut u8 {
+    let mut result = Vec::<shapes::PositionData>::default();
+    with_current_shape!(state, |shape: &Shape| {
+        if let Type::Text(text_content) = &shape.shape_type {
+            result = shapes::calculate_position_data(shape, text_content, false);
+        }
+    });
+    mem::write_vec(result)
 }

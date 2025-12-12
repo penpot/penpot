@@ -1,5 +1,5 @@
 use crate::mem;
-use crate::mem::SerializableResult;
+// use crate::mem::SerializableResult;
 use crate::uuid::Uuid;
 use crate::with_state_mut;
 use crate::STATE;
@@ -48,8 +48,8 @@ pub struct ShapeImageIds {
 
 impl From<[u8; IMAGE_IDS_SIZE]> for ShapeImageIds {
     fn from(bytes: [u8; IMAGE_IDS_SIZE]) -> Self {
-        let shape_id = Uuid::from_bytes(bytes[0..16].try_into().unwrap());
-        let image_id = Uuid::from_bytes(bytes[16..32].try_into().unwrap());
+        let shape_id = Uuid::try_from(&bytes[0..16]).unwrap();
+        let image_id = Uuid::try_from(&bytes[16..32]).unwrap();
         ShapeImageIds { shape_id, image_id }
     }
 }
@@ -93,7 +93,7 @@ pub extern "C" fn store_image() {
 /// Stores an image from an existing WebGL texture, avoiding re-decoding
 /// Expected memory layout:
 /// - bytes 0-15: shape UUID
-/// - bytes 16-31: image UUID  
+/// - bytes 16-31: image UUID
 /// - bytes 32-35: is_thumbnail flag (u32)
 /// - bytes 36-39: GL texture ID (u32)
 /// - bytes 40-43: width (i32)

@@ -14,7 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
-   [app.render-wasm.svg-fills :as svg-fills]
+   [app.render-wasm.svg-filters :as svg-filters]
    [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
@@ -130,7 +130,11 @@
 (defn- set-wasm-attr!
   [shape k]
   (when wasm/context-initialized?
-    (let [v  (get shape k)
+    (let [shape (case k
+                  :svg-attrs (svg-filters/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
+                  (:fills :blur :shadow) (svg-filters/apply-svg-derived shape)
+                  shape)
+          v  (get shape k)
           id (get shape :id)]
       (case k
         :parent-id
@@ -163,8 +167,7 @@
         (api/set-shape-transform v)
 
         :fills
-        (let [fills (svg-fills/resolve-shape-fills shape)]
-          (into [] (api/set-shape-fills id fills false)))
+        (api/set-shape-fills id v false)
 
         :strokes
         (into [] (api/set-shape-strokes id v false))
@@ -222,8 +225,12 @@
           v])
 
         :svg-attrs
-        (when (cfh/path-shape? shape)
-          (api/set-shape-svg-attrs v))
+        (do
+          (api/set-shape-svg-attrs v)
+          ;; Always update fills/blur/shadow to clear previous state if filters disappear          
+          (api/set-shape-fills id (:fills shape) false)
+          (api/set-shape-blur (:blur shape))
+          (api/set-shape-shadows (:shadow shape)))
 
         :masked-group
         (when (cfh/mask-shape? shape)
@@ -262,7 +269,7 @@
          :layout-item-min-w
          :layout-item-absolute
          :layout-item-z-index)
-        (api/set-layout-child shape)
+        (api/set-layout-data shape)
 
         :layout-grid-rows
         (api/set-grid-layout-rows v)
@@ -292,7 +299,7 @@
 
             (ctl/flex-layout? shape)
             (api/set-flex-layout shape))
-          (api/set-layout-child shape))
+          (api/set-layout-data shape))
 
         ;; Property not in WASM
         nil))))
