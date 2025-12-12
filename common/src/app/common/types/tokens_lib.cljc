@@ -1410,8 +1410,8 @@ Will return a value that matches this schema:
     ;; NOTE: we can't assign statically at eval time the value of a
     ;; function that is declared but not defined; so we need to pass
     ;; an anonymous function and delegate the resolution to runtime
-    {:encode/json #(export-dtcg-json %)
-     :decode/json #(read-multi-set-dtcg %)
+    {:encode/json #(some-> % export-dtcg-json)
+     :decode/json #(some-> % read-multi-set-dtcg)
      ;; FIXME: add better, more reallistic generator
      :gen/gen (->> (sg/small-int)
                    (sg/fmap (fn [_]
