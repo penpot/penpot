@@ -19,59 +19,62 @@
 
 (defonce enabled (atom true))
 
-(defn- send-mattermost-notification!
-  [cfg {:keys [id public-uri] :as report}]
-
-
-  (let [text (str "Exception: " public-uri "/dbg/error/" id " "
-                  (when-let [pid (:profile-id report)]
-                    (str "(pid: #uuid-" pid ")"))
-                  "\n"
-                  "- host: #" (:host report) "\n"
-                  "- tenant: #" (:tenant report) "\n"
-                  "- logger: #" (:logger report) "\n"
-                  "- request-path: `" (:request-path report) "`\n"
-                  "- frontend-version: `" (:frontend-version report) "`\n"
-                  "- backend-version: `" (:backend-version report) "`\n"
-                  "\n"
-                  "```\n"
-                  "Trace:\n"
-                  (:trace report)
-                  "```")
-
-        resp (http/req! cfg
+(defn- send-mattermost-notification
+  [cfg text]
+  (let [resp (http/req! cfg
                         {:uri (cf/get :error-report-webhook)
                          :method :post
                          :headers {"content-type" "application/json"}
-                         :body (json/encode-str {:text text})}
-                        {:sync? true})]
-
+                         :body (json/encode-str {:text text})})]
     (when (not= 200 (:status resp))
-      (l/warn :hint "error on sending data"
+      (l/warn :hint "error on sending data to mattermost"
               :response (pr-str resp)))))
 
-(defn record->report
+(defn- log-record->report
   [{:keys [::l/context ::l/id ::l/cause] :as record}]
   (assert (l/valid-record? record) "expectd valid log record")
-  {:id               id
-   :tenant           (cf/get :tenant)
-   :host             (cf/get :host)
-   :public-uri       (cf/get :public-uri)
-   :backend-version  (or (:version/backend context) (:full cf/version))
-   :frontend-version (:version/frontend context)
-   :profile-id       (:request/profile-id context)
-   :request-path     (:request/path context)
-   :logger           (::l/logger record)
-   :trace            (ex/format-throwable cause :detail? false :header? false)})
+  (let [tenant           (cf/get :tenant)
+        host             (cf/get :host)
+        public-uri       (cf/get :public-uri)
+        backend-version  (or (:version/backend context) (:full cf/version))
+        frontend-version (:version/frontend context)
+        profile-id       (:request/profile-id context)
+        request-path     (:request/path context)
+        logger           (::l/logger record)
+        trace            (ex/format-throwable cause :detail? false :header? false)]
 
-(defn handle-event
+    (str "#exception => " public-uri "/dbg/error/" id " "
+         (when-let [pid (:profile-id report)]
+           (str "(pid: #uuid-" pid ")"))
+         "\n"
+         "- host: #" (:host report) "\n"
+         "- tenant: #" (:tenant report) "\n"
+         "- logger: #" (:logger report) "\n"
+         "- request-path: `" (:request-path report) "`\n"
+         "- frontend-version: `" (:frontend-version report) "`\n"
+         "- backend-version: `" (:backend-version report) "`\n"
+         "\n"
+         "```\n"
+         "Trace:\n"
+         (:trace report)
+         "```")))
+
+(defn- process-log-record
   [cfg record]
-  (when @enabled
+  (when (ldb/error-record? record)
     (try
       (let [report (record->report record)]
         (send-mattermost-notification! cfg report))
       (catch Throwable cause
-        (l/warn :hint "unhandled error" :cause cause)))))
+        (l/warn :hint "error on processing log record" :cause cause)))))
+
+(defn- process-event
+  [cfg [type event]]
+  (when @enabled
+    (case type
+      :log-record (process-log-record cfg event))))
+
+                           ;; :xf (filter ldb/error-record?))]
 
 (defmethod ig/assert-key ::reporter
   [_ params]
@@ -80,26 +83,28 @@
 (defmethod ig/init-key ::reporter
   [_ cfg]
   (when-let [uri (cf/get :error-report-webhook)]
-    (px/thread
-      {:name "penpot/mattermost-reporter"
-       :virtual true}
-      (l/info :hint "initializing error reporter" :uri uri)
-      (let [input (sp/chan :buf (sp/sliding-buffer 128)
-                           :xf (filter ldb/error-record?))]
-        (add-watch l/log-record ::reporter #(sp/put! input %4))
-        (try
-          (loop []
-            (when-let [msg (sp/take! input)]
-              (handle-event cfg msg)
-              (recur)))
-          (catch InterruptedException _
-            (l/debug :hint "reporter interrupted"))
-          (catch Throwable cause
-            (l/error :hint "unexpected error" :cause cause))
-          (finally
-            (sp/close! input)
-            (remove-watch l/log-record ::reporter)
-            (l/info :hint "reporter terminated")))))))
+    (let [input  (sp/chan :buf (sp/sliding-buffer 128)
+                          :xf  (keep process-event))
+          thread (px/thread
+                   {:name "penpot/mattermost-reporter"}
+                   (l/info :hint "initializing mattermost reporter thread" :uri uri)
+                   (try
+                     (loop []
+                       (when-let [msg (sp/take! input)]
+                         (handle-event cfg msg)
+                         (recur)))
+                     (catch InterruptedException _
+                       (l/debug :hint "mattermost reporter interrupted"))
+                     (catch Throwable cause
+                       (l/error :hint "unexpected error on mattermost reporter" :cause cause))
+                     (finally
+                       (sp/close! input)
+                       (remove-watch l/log-record ::reporter)
+                       (l/info :hint "mattermost reporter terminated"))))]
+
+      (add-watch l/log-record ::reporter #(sp/put! input [:log-record %4]))
+
+      input)))
 
 (defmethod ig/halt-key! ::reporter
   [_ thread]
