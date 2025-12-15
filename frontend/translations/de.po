@@ -1,19 +1,19 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-03 20:51+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2025-12-16 10:00+0000\n"
+"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.14.1-dev\n"
+"X-Generator: Weblate 5.15.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
-msgstr "Sie haben schon ein Konto?"
+msgstr "Sie haben bereits ein Konto?"
 
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:238
 msgid "auth.check-mail"
@@ -7504,3 +7504,170 @@ msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Diese Einladungen werden gelöscht:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Diese Einladungen werden erneut gesendet:"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "Eine Einladung ausgewählt"
+msgstr[1] "%s Einladungen ausgewählt"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:121
+msgid "workspace.tokens.themes-description"
+msgstr ""
+"Hier können Sie ihre Themes verwalten, ein- oder ausschalten und aktive Sets "
+"auswählen."
+
+#: src/app/main/ui/workspace/tokens/management.cljs:143
+msgid "workspace.tokens.inactive-set"
+msgstr "Inaktiv"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:174
+msgid "workspace.tokens.no-active-sets"
+msgstr "Keine Sets aktiviert"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:173
+msgid "workspace.tokens.num-active-sets"
+msgstr "%s aktivierte Sets"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Keine Farb-Tokens vorhanden. Aktivieren sie Sets und/oder Themes oder fügen "
+"Sie neue Tokens hinzu."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr ""
+"Es sind keine passenden Tokens in aktivierten Sets oder Themes vorhanden."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:41, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Dieser Token ist nicht Teil eines aktiven Sets oder ungültig."
+
+#: src/app/main/errors.cljs:307
+msgid "errors.deprecated"
+msgstr ""
+"Tut uns leid! Diese Datei beinhaltet veraltete Penpot-Assets und kann "
+"deshalb nicht geöffnet werden."
+
+#: src/app/main/errors.cljs:310
+msgid "errors.deprecated.contact.after"
+msgstr "damit wir Ihnen helfen können."
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:52, src/app/main/ui/workspace/tokens/management/create/form.cljs:80
+msgid "errors.field-max-length"
+msgstr "Darf maximal %s Zeichen enthalten."
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "Weitere Möglichkeiten uns zu kontaktieren"
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "Bitte beschreiben Sie ihr Feedback"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"Wenn sich Ihr Feedback auf eine Datei oder Projekt bezieht, können Sie einen "
+"Link hinzufügen:"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Kontakt"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+msgid "feedback.type"
+msgstr "Art"
+
+#: src/app/main/ui/settings/feedback.cljs:115
+msgid "feedback.type.doubt"
+msgstr "Bedenken"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "Idee"
+
+#: src/app/main/ui/settings/feedback.cljs:114
+msgid "feedback.type.issue"
+msgstr "Problem"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "Bildvorschau"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Farbraum auswählen"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "CSS-Stile kopieren"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.toggle-style"
+msgstr "%s-Schaltfläche ein-/ausblenden"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.token-panel"
+msgstr "Token Sets und Themes"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:60
+msgid "inspect.tabs.styles.token-resolved-value"
+msgstr "Festgelegter Wert:"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Weichzeichnen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1031
+msgid "labels.community-contributions"
+msgstr "Community & Beiträge"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Support kontaktieren"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Kontakt"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "Kaleidos © 2019-heute"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "%s herunterladen"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Fläche"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1020
+msgid "labels.help-learning"
+msgstr "Hilfe & Lernen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:667
+msgid "labels.reference"
+msgstr "Referenz"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Erneut senden"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:873
+msgid "labels.version-notes"
+msgstr "Hinweise zu Version %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Sichtbarkeit"
