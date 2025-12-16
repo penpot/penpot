@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-16 10:00+0000\n"
+"PO-Revision-Date: 2025-12-17 12:00+0000\n"
 "Last-Translator: Marius <hi@mariusscheel.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -3907,7 +3907,7 @@ msgstr "Kopieren"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.copy-link"
-msgstr "Link in die Zwischenablage kopieren"
+msgstr "Link kopieren"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
 #, unused
@@ -6705,7 +6705,7 @@ msgstr "Als CSS kopieren (verschachtelte Ebenen)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:202
 msgid "workspace.shape.menu.copy-link"
-msgstr "Link in die Zwischenablage kopieren"
+msgstr "Link kopieren"
 
 #: src/app/main/ui/workspace/context_menu.cljs:215
 msgid "workspace.shape.menu.copy-paste-as"
@@ -7671,3 +7671,495 @@ msgstr "Hinweise zu Version %s"
 #: src/app/main/ui/inspect/styles/style_box.cljs:32
 msgid "labels.visibility"
 msgstr "Sichtbarkeit"
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr "Probieren Sie es erneut oder kontaktieren Sie unseren Support."
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr ""
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "Einladung erfolgreich widerrufen"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Komponente / Variante erstellen"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
+msgid "workspace.assets.component-group-options"
+msgstr "Optionen für diese Gruppe"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427, src/app/main/ui/workspace/colorpicker.cljs:439
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Farb-Tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
+msgid "workspace.component.swap.loop-error"
+msgstr "Komponenten können nicht in sich selbst verschachtelt werden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:498
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Einige Elemente konnten nicht ausgetauscht werden. Komponenten können nicht "
+"in sich selbst verschachtelt werden."
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 Farbe"
+msgstr[1] "%s Farben"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 Komponente"
+msgstr[1] "%s Komponenten"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "%s Grafik"
+msgstr[1] "%s Grafiken"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 Textstil"
+msgstr[1] "%s Textstile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1055
+msgid "workspace.options.component.unlinked"
+msgstr "Getrennt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1330
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Doppelte Varianten anzeigen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1327
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Einige Varianten haben identische Eigenschaften und Werte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:268
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"Diese Varianten haben identische Eigenschaften und Werte. Geben Sie jeder "
+"Variante einen eindeutigen Wert."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:265
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"Diese Variante hat die selben Eigenschaften order Werte wie eine andere "
+"Variante. Geben Sie jeder Variante einen eindeutigen Wert."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:271
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"Einige dieser Varianten haben identische Eigenschaften und Werte. Geben Sie "
+"jeder Variante einen eindeutigen Wert."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:550
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Diese Komponente hat Varianten mit ungültigen Namen. Stellen Sie sicher, das "
+"jede Variante korrekt benannt ist."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:424
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "Versuchen Sie diesem Schema zu folgen:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Um Änderungen beizubehalten wenn Sie Varianten wechseln, verbindet Penpot "
+"Ebenen die:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"Jede Änderung (z.B. Ebenen umbenennen oder gruppieren) trennt die "
+"Verbindung. Änderungen können rückgängig gemacht werden, um die Verbindung "
+"wiederherzustellen."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Den gleichen Namen haben."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Vom gleichen Typ sind."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Rechtecke, Ellipsen, Pfade und boolesche Operationen gelten als der gleiche "
+"Typ."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:209, src/app/main/data/workspace/tokens/library_edit.cljs:452
+msgid "workspace.tokens.duplicate-suffix"
+msgstr "Kopie"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:581
+msgid "workspace.tokens.edit-token"
+msgstr "%s Token bearbeiten"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:41
+msgid "workspace.tokens.empty-input"
+msgstr "Der Token-Wert darf nicht leer sein"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:15
+msgid "workspace.tokens.error-parse"
+msgstr "Fehler beim Importieren. JSON konnte nicht verarbeitet werden."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:49
+msgid "workspace.tokens.export"
+msgstr "Export"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:125
+msgid "workspace.tokens.export-tokens"
+msgstr "Tokens Exportieren"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:118
+msgid "workspace.tokens.export.multiple-files"
+msgstr "Mehrere Dateien"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:38
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "Es sind keine Tokens, Themes oder Sets zum Exportieren vorhanden."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:35
+msgid "workspace.tokens.export.preview"
+msgstr "Vorschau:"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:116
+msgid "workspace.tokens.export.single-file"
+msgstr "Einzeln"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1339
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Schriftgröße oder {alias}"
+
+#: src/app/main/data/workspace/tokens/application.cljs:323
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Fehler beim Festlegen der Schriftstärke/des Schriftstils. Dieser Schriftstil "
+"ist in der aktuellen Schriftart nicht vorhanden"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1328, src/app/main/ui/workspace/tokens/management/create/form.cljs:1343
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Schriftstärke (300, Fett Kursiv) oder {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:225
+msgid "workspace.tokens.gaps"
+msgstr "Zwischenräume"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.generic-error"
+msgstr "Fehler: "
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:129
+msgid "workspace.tokens.group-name"
+msgstr "Gruppenname"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "%s importieren"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.import-error"
+msgstr "Fehler beim Import:"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Ordner"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Einzelne JSON-Datei"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP-Datei"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:241
+msgid "workspace.tokens.import-multiple-files"
+msgstr ""
+"Bei mehreren Dateien werden die Datei- oder Pfadnamen zum Benennen der Sets "
+"verwendet."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:240
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"Bei einer einzelnen JSON-Datei sollten die Keys der ersten Ebene die Namen "
+"der Token-Sets sein."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:237
+msgid "workspace.tokens.import-tokens"
+msgstr "Token importieren"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+#, unused
+msgid "workspace.tokens.import-tooltip"
+msgstr ""
+"Beim Importieren einer JSON-Datei werden alle bestehenden Tokens, Sets und "
+"Themes überschrieben"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:247
+msgid "workspace.tokens.import-warning"
+msgstr ""
+"Beim Import werden alle bestehenden Tokens, Sets und Themes überschrieben."
+
+#: src/app/main/ui/workspace/tokens/management.cljs:134
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Dieses Set ist nicht aktiv. Ändern Sie das Theme oder aktivieren Sie dieses "
+"Set, um Änderungen im Anzeigebereich sehen zu können"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:741
+msgid "workspace.tokens.individual-tokens"
+msgstr "Einzelne Token verwenden"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "workspace.tokens.invalid-color"
+msgstr "Ungültiger Farbwert: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Ungültiger Wert für die Schriftstärke: Verwenden Sie numerische Werte (100–"
+"950) oder Standardbezeichnungen (dünn, leicht, normal, fett usw.), optional "
+"gefolgt von „kursiv”"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json"
+msgstr "Fehler beim Importieren: Ihre JSON-Datei enthält ungültige Token-Daten."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:27
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "Fehler beim Importieren: Ihre JSON-Datei enthält ungültige Token-Namen."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"„%s“ ist kein gültiger Namen für ein Token.\n"
+"Token-Namen dürfen nur Buchstaben und Ziffern enthalten, die durch Punkte "
+"getrennt sind und dürfen nicht mit einem Dollarzeichen beginnen."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Ungültiger Schattentyp: Es werden nur „innerShadow” oder „dropShadow” "
+"akzeptiert"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Ungültiger Token-Wert: Es werden nur „none“, „Uppercase“, „Lowercase“ oder „"
+"Capitalize“ akzeptiert"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Ungültiger Token-Wert: Es werden nur „none“, „underline“ oder „strike-through"
+"“ akzeptiert"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr ""
+"Ungültiger Wert: Der Wert muss auf ein zusammengesetztes Typografie-Token "
+"verweisen."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
+msgid "workspace.tokens.invalid-value"
+msgstr "Ungültiger Token-Wert: %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:229
+msgid "workspace.tokens.label.group-placeholder"
+msgstr "Gruppe hinzufügen (z. B. „Modus“)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:236
+msgid "workspace.tokens.label.theme-placeholder"
+msgstr "Theme hinzufügen (z. B. „Hell“)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1351
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Zeichenabstand oder {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1347
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Zeilenabstand (Multiplikator, px, %) oder {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:217
+msgid "workspace.tokens.margins"
+msgstr "Abstände"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
+msgid "workspace.tokens.max-size"
+msgstr "Maximale Größe"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:247
+msgid "workspace.tokens.min-size"
+msgstr "Mindestgröße"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.missing-references"
+msgstr "Fehlende Token-Referenzen: "
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.more-options"
+msgstr "Rechtsklick, um Optionen anzuzeigen"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "In dieser Datei wurden keine Tokens, Sets oder Themen gefunden."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:53
+msgid "workspace.tokens.number-too-large"
+msgstr "Ungültiger Tokenwert. Der ermittelte Wert ist zu hoch: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
+msgid "workspace.tokens.opacity-range"
+msgstr ""
+"Die Deckkraft muss zwischen 0 und 100 % oder zwischen 0 und 1 liegen (z. B. "
+"50 % oder 0,5)."
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:201
+msgid "workspace.tokens.paddings"
+msgstr "Innenabstände"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:277
+msgid "workspace.tokens.radius"
+msgstr "Radius"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite"
+msgstr "Geben Sie einen Typografie-Alias für diesen Token ein"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.reference-error"
+msgstr "Referenzfehler: "
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:55
+msgid "workspace.tokens.self-reference"
+msgstr "Der Token referenziert sich selbst"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
+msgid "workspace.tokens.set-edit-placeholder"
+msgstr "Namen eingeben (für Gruppen „/“ verwenden)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:168
+msgid "workspace.tokens.sets-hint"
+msgstr "Theme bearbeiten und Sets verwalten"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:91
+msgid "workspace.tokens.setting-description"
+msgstr ""
+"Hier können Sie die grundlegende Schriftgröße festlegen, die als Wert für "
+"1rem verwendet wird:"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:84
+msgid "workspace.tokens.settings"
+msgstr "Token-Einstellungen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1084
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Schatten hinzufügen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:981, src/app/main/ui/workspace/tokens/management/create/form.cljs:982
+msgid "workspace.tokens.shadow-blur"
+msgstr "Weichzeichnen"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "Wert muss größer oder gleich 0 sein."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+msgid "workspace.tokens.shadow-color"
+msgstr "Farbe"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:990, src/app/main/ui/workspace/tokens/management/create/form.cljs:991
+msgid "workspace.tokens.shadow-inset"
+msgstr "Innerer Schatten"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1091
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Schatten entfernen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+msgid "workspace.tokens.shadow-title"
+msgstr "Schatten"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:975, src/app/main/ui/workspace/tokens/management/create/form.cljs:976
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:978, src/app/main/ui/workspace/tokens/management/create/form.cljs:979
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:241
+msgid "workspace.tokens.size"
+msgstr "Größe"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "Die Rahmenbreite muss größer oder gleich 0 sein."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1322, src/app/main/ui/workspace/tokens/management/create/form.cljs:1359
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "none | underline | strike-through oder {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1316, src/app/main/ui/workspace/tokens/management/create/form.cljs:1355
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "none | uppercase | lowercase | capitalize oder {alias}"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:52
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "Ein Theme mit diesem Namen existiert bereits"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1283, src/app/main/ui/workspace/tokens/management/create/form.cljs:1335
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Schriftfamilie oder eine durch Kommas (,) getrennte Liste von Schriften"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:44, src/app/main/ui/workspace/tokens/management/create/form.cljs:70
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "Unter diesem Speicherort existiert bereits ein Token: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Der Name muss mindestens 1 Zeichen lang sein"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+#, unused
+msgid "workspace.tokens.token-not-resolved"
+msgstr "Das Token mit dem Namen „%s” konnte nicht gefunden werden"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:185, src/app/main/ui/workspace/tokens/management/create/form.cljs:605
+msgid "workspace.tokens.token-value-enter"
+msgstr "Geben Sie einen Wert oder einen Alias mittels {alias} ein"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:49
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "„%s“ wird nicht als Datentyp unterstützt (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:745
+msgid "workspace.tokens.use-reference"
+msgstr "Referenz verwenden"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65
+msgid "workspace.tokens.value-with-units"
+msgstr "Ungültiger Wert: Einheiten sind hier nicht zulässig."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:129
+msgid "workspace.toolbar.frame-first-time"
+msgstr ""
+"Zeichenfläche erstellen. Zum Festlegen der Größe anklicken und ziehen. (%s)"
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr ""
+"Diese Version ist durch %s gesperrt und kann gerade nicht bearbeitet werden"
