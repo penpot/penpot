@@ -55,6 +55,7 @@
    [app.plugins.ruler-guides :as rg]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
+   [app.util.http :as http]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
@@ -1196,7 +1197,12 @@
                    (js/Promise.
                     (fn [resolve reject]
                       (->> (rp/cmd! :export payload)
-                           (rx/mapcat #(rp/cmd! :export {:cmd :get-resource :wait true :id (:id %) :blob? true}))
+                           (rx/mapcat (fn [{:keys [uri]}]
+                                        (->> (http/send! {:method :get
+                                                          :uri uri
+                                                          :response-type :blob
+                                                          :omit-default-headers true})
+                                             (rx/map :body))))
                            (rx/mapcat #(.arrayBuffer %))
                            (rx/map #(js/Uint8Array. %))
                            (rx/subs! resolve reject))))))))
