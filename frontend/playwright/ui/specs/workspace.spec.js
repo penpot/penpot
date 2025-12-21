@@ -332,24 +332,33 @@ test("Copy/paste properties", async ({ page, context }) => {
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
-  await page.getByText("Rectangle").first().click({ button: "right" });
-  await page.getByText("Copy/Paste as").hover();
-  await page.getByText("Paste properties").click();
-
-  await page.getByText("Board").nth(2).click({ button: "right" });
+  await page
+    .getByTestId("layer-item")
+    .getByText("Rectangle")
+    .first()
+    .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
   await page
     .getByTestId("layer-item")
-    .locator("div")
-    .filter({ hasText: "Path" })
+    .getByText("Board")
     .nth(1)
     .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
-  await page.getByText("Ellipse").click({ button: "right" });
+  await page
+    .getByTestId("layer-item")
+    .getByText("Path")
+    .click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page
+    .getByTestId("layer-item")
+    .getByText("Ellipse")
+    .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 });

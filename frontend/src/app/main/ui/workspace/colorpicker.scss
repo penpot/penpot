@@ -46,52 +46,6 @@
   width: px2rem(68);
 }
 
-// TODO: change to DS button component
-.picker-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: none;
-  background: none;
-  cursor: pointer;
-  border-radius: $br-8;
-  background-color: transparent;
-  border: $b-1 solid transparent;
-  height: var(--sp-xl);
-  width: var(--sp-xl);
-  border-radius: $br-4;
-  padding: 0;
-  margin-top: var(--sp-xs);
-  svg {
-    @extend .button-icon;
-    stroke: var(--button-tertiary-foreground-color-rest);
-  }
-  &:hover {
-    svg {
-      stroke: var(--button-tertiary-foreground-color-focus);
-    }
-  }
-  &:focus,
-  &:focus-visible {
-    outline: none;
-    svg {
-      stroke: var(--button-secondary-foreground-color-hover);
-    }
-  }
-  &:active {
-    outline: none;
-    border: $b-1 solid transparent;
-    svg {
-      stroke: var(--button-tertiary-foreground-color-active);
-    }
-  }
-  &.selected {
-    svg {
-      stroke: var(--button-tertiary-foreground-color-active);
-    }
-  }
-}
-
 .gradient-buttons {
   display: flex;
   align-items: center;

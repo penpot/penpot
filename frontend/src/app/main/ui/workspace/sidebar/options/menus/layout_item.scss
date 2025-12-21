@@ -30,10 +30,8 @@
   grid-template-columns: auto auto;
 }
 
-.vertical-behaviour {
-  .rotated {
-    transform: rotate(90deg);
-  }
+.rotated {
+  transform: rotate(90deg);
 }
 
 .z-index-wrapper {

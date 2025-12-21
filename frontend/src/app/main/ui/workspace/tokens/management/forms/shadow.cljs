@@ -12,14 +12,15 @@
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.main.data.workspace.tokens.errors :as wte]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as forms]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
-   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-self-reference default-validate-token]]
+   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-self-reference
+                                                                     default-validate-token]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -231,18 +232,17 @@
                         :aria-label (tr "workspace.tokens.shadow-add-shadow")
                         :on-click on-add-shadow-block
                         :icon i/add}]
-      [:& radio-buttons {:class (stl/css :listing-options)
-                         :selected (d/name tab)
-                         :on-change handle-toggle
-                         :name "reference-composite-tab"}
-       [:& radio-button {:icon i/layers
-                         :value "composite"
-                         :title (tr "workspace.tokens.individual-tokens")
-                         :id "composite-opt"}]
-       [:& radio-button {:icon i/tokens
-                         :value "reference"
-                         :title (tr "workspace.tokens.use-reference")
-                         :id "reference-opt"}]]]
+      [:> radio-buttons* {:selected (d/name tab)
+                          :on-change handle-toggle
+                          :name "reference-composite-tab"
+                          :options [{:id "composite-opt"
+                                     :icon i/layers
+                                     :label (tr "workspace.tokens.individual-tokens")
+                                     :value "composite"}
+                                    {:id "reference-opt"
+                                     :icon i/tokens
+                                     :label (tr "workspace.tokens.use-reference")
+                                     :value "reference"}]}]]
 
      (if (= tab :composite)
        [:> composite-form* {:token token

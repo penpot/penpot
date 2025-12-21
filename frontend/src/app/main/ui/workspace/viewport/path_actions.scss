@@ -34,27 +34,11 @@
   align-items: center;
   margin: 0;
   opacity: deprecated.$op-10;
+  gap: var(--sp-xs);
   transition: opacity 0.3s ease;
 }
 
 .topbar-btn {
-  --pathbar-icon-color: var(--color-foreground-secondary);
-  @extend .button-tertiary;
   height: deprecated.$s-36;
   width: deprecated.$s-36;
-  flex-shrink: 0;
-  background-color: transparent;
-  border-radius: deprecated.$s-8;
-  border: none;
-  margin: 0 deprecated.$s-2;
-
-  &.is-toggled {
-    --pathbar-icon-color: var(--button-radio-foreground-color-active);
-    background-color: var(--button-radio-background-color-active);
-  }
-
-  .pathbar-icon {
-    @extend .button-icon;
-    stroke: var(--pathbar-icon-color);
-  }
 }

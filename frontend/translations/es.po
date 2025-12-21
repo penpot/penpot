@@ -5217,6 +5217,10 @@ msgstr "Desagrupar"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Tokens de color"
 
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "Absorber color"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.component.swap.loop-error"
 msgstr "Los componentes no pueden anidarse dentro de sí mismos."
@@ -6113,6 +6117,30 @@ msgstr "Tiempo"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:621
 msgid "workspace.options.interaction-animation"
 msgstr "Animación"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:609
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:613
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:617
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "Abajo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:621
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "Arriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:595
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "Dentro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:599
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "Fuera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:413
 msgid "workspace.options.interaction-animation-dissolve"

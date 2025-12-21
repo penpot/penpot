@@ -30,7 +30,7 @@
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.dashboard.team :refer [team-settings-page* team-members-page* team-invitations-page* webhooks-page*]]
    [app.main.ui.dashboard.templates :refer [templates-section*]]
-   [app.main.ui.exports.assets :refer [progress-widget]]
+   [app.main.ui.exports.assets :refer [progress-widget*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.plugins]
@@ -87,7 +87,7 @@
            :on-click clear-selected-fn
            :ref container}
 
-     [:& progress-widget {:operation :restore}]
+     [:> progress-widget* {:operation :restore}]
 
      (case section
        :dashboard-recent

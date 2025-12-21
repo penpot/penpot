@@ -137,36 +137,4 @@
   margin-bottom: deprecated.$s-8;
   margin-top: deprecated.$s-8;
   padding-left: 0;
-  input {
-    margin: 0;
-  }
-
-  label {
-    @include deprecated.bodySmallTypography;
-    display: flex;
-    align-items: center;
-    gap: deprecated.$s-2;
-    cursor: pointer;
-    color: var(--input-checkbox-text-foreground-color);
-    .check-mark {
-      @include deprecated.flexCenter;
-      width: deprecated.$s-16;
-      height: deprecated.$s-16;
-      border-radius: deprecated.$br-6;
-      background-color: var(--input-checkbox-inactive-background-color);
-      &.checked {
-        background-color: var(--input-checkbox-background-color-active);
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--input-details-color);
-        }
-      }
-      &:hover {
-        border-color: var(--input-checkbox-border-color-hover);
-      }
-      &:focus {
-        border-color: var(--input-checkbox-border-color-focus);
-      }
-    }
-  }
 }

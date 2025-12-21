@@ -16,8 +16,9 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
@@ -35,10 +36,10 @@
                  :justify-self
                  :area-name])
 
-(mf/defc set-self-alignment
-  [{:keys [is-col? alignment set-alignment] :as props}]
+(mf/defc set-self-alignment*
+  [{:keys [is-col alignment set-alignment]}]
   (let [alignment (or alignment :auto)
-        type (if is-col? "col" "row")
+        type (if is-col "col" "row")
 
         handle-set-alignment
         (mf/use-callback
@@ -46,39 +47,35 @@
          (fn [value]
            (set-alignment (-> value keyword))))]
 
-    [:div {:class (stl/css :self-align-menu)}
-     [:& radio-buttons {:selected (d/name alignment)
-                        :on-change handle-set-alignment
+    [:> radio-buttons* {:class (stl/css :self-align-menu)
+                        :selected (d/name alignment)
+                        :name (dm/str "flex-align-items-" type)
                         :allow-empty true
-                        :name (dm/str "flex-align-items-" type)}
-      [:& radio-button {:value "start"
-                        :icon  (if is-col?
-                                 i/align-self-row-left
-                                 i/align-self-column-top)
-                        :title "Align self start"
-                        :id     (dm/str "align-self-start-" type)}]
-
-      [:& radio-button {:value "center"
-                        :icon  (if is-col?
-                                 i/align-self-row-center
-                                 i/align-self-column-center)
-                        :title "Align self center"
-                        :id     (dm/str "align-self-center-" type)}]
-
-      [:& radio-button {:value "end"
-                        :icon  (if is-col?
-                                 i/align-self-row-right
-                                 i/align-self-column-bottom)
-                        :title "Align self end"
-                        :id     (dm/str "align-self-end-" type)}]
-
-      [:& radio-button {:value "stretch"
-                        :icon  (if is-col?
-                                 i/align-self-row-stretch
-                                 i/align-self-column-stretch)
-                        :title "Align self stretch"
-                        :id     (dm/str "align-self-stretch-" type)}]]]))
-
+                        :on-change handle-set-alignment
+                        :options [{:id    (dm/str "align-self-start-" type)
+                                   :icon  (if is-col
+                                            i/align-self-row-left
+                                            i/align-self-column-top)
+                                   :label "Align self start"
+                                   :value "start"}
+                                  {:id    (dm/str "align-self-center-" type)
+                                   :icon  (if is-col
+                                            i/align-self-row-center
+                                            i/align-self-column-center)
+                                   :label "Align self center"
+                                   :value "center"}
+                                  {:id    (dm/str "align-self-end-" type)
+                                   :icon  (if is-col
+                                            i/align-self-row-right
+                                            i/align-self-column-bottom)
+                                   :label "Align self end"
+                                   :value "end"}
+                                  {:id    (dm/str "align-self-stretch-" type)
+                                   :icon  (if is-col
+                                            i/align-self-row-stretch
+                                            i/align-self-column-stretch)
+                                   :label "Align self stretch"
+                                   :value "stretch"}]}]))
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
@@ -182,16 +179,19 @@
 
      (when open?
        [:div {:class (stl/css :grid-cell-menu-container)}
-        [:div {:class (stl/css :cell-mode :row)}
-         [:& radio-buttons {:selected (d/name cell-mode)
-                            :on-change set-cell-mode
+        [:> radio-buttons* {:selected (d/name cell-mode)
                             :name "cell-mode"
-                            :wide true}
-          [:& radio-button {:value "auto" :id :auto}]
-          [:& radio-button {:value "manual" :id :manual}]
-          [:& radio-button {:value "area"
-                            :id :area
-                            :disabled (not valid-area-cells?)}]]]
+                            :on-change set-cell-mode
+                            :options [{:id "auto"
+                                       :label "Auto"
+                                       :value "auto"}
+                                      {:id "manual"
+                                       :label "Manual"
+                                       :value "manual"}
+                                      {:id "area"
+                                       :label "Area"
+                                       :value "area"
+                                       :disabled (not valid-area-cells?)}]}]
 
         (when (= :area cell-mode)
           [:div {:class (stl/css :row)}
@@ -261,16 +261,15 @@
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}
-         [:& set-self-alignment {:is-col? false
-                                 :alignment align-self
-                                 :set-alignment set-alignment}]
-         [:& set-self-alignment {:is-col? true
-                                 :alignment justify-self
-                                 :set-alignment set-justify-self}]]
+         [:> set-self-alignment* {:is-col false
+                                  :alignment align-self
+                                  :set-alignment set-alignment}]
+         [:> set-self-alignment* {:is-col true
+                                  :alignment justify-self
+                                  :set-alignment set-justify-self}]]
 
         [:div {:class (stl/css :row)}
-         [:button
-          {:class (stl/css :edit-grid-btn)
-           :alt    (tr "workspace.layout_grid.editor.options.edit-grid")
-           :on-click toggle-edit-mode}
+         [:> button* {:variant "secondary"
+                      :class (stl/css :edit-grid-btn)
+                      :on-click toggle-edit-mode}
           (tr "workspace.layout_grid.editor.options.edit-grid")]]])]))

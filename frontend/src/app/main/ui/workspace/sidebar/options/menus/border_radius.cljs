@@ -145,9 +145,9 @@
            :on-change on-radius-r3-change
            :value (:r3 values)}]]])
 
-     [:> icon-button* {:class (stl/css-case :selected radius-expanded)
-                       :variant "ghost"
+     [:> icon-button* {:variant "ghost"
                        :on-click toggle-radius-mode
+                       :aria-pressed radius-expanded
                        :aria-label (if radius-expanded
                                      (tr "workspace.options.radius.hide-all-corners")
                                      (tr "workspace.options.radius.show-single-corners"))
