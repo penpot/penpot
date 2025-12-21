@@ -198,10 +198,10 @@ export class WorkspacePage extends BaseWebSocketPage {
       `[id="shape-00000000-0000-0000-0000-000000000000"]`,
     );
     this.toolbarOptions = page.getByTestId("toolbar-options");
-    this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
-    this.ellipseShapeButton = page.getByRole("button", { name: "Ellipse (E)" });
-    this.moveButton = page.getByRole("button", { name: "Move (V)" });
-    this.boardButton = page.getByRole("button", { name: "Board (B)" });
+    this.rectShapeButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Rectangle" });
+    this.ellipseShapeButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Ellipse" });
+    this.moveButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Move" });
+    this.boardButton = page.getByTestId("toolbar-options").getByRole("button", { name: "Board" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
     });

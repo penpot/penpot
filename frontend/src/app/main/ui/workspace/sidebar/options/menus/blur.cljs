@@ -15,7 +15,6 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -103,10 +102,12 @@
         [:div {:class (stl/css-case :first-row true
                                     :hidden hidden?)}
          [:div {:class (stl/css :blur-info)}
-          [:button {:class (stl/css-case :show-more true
-                                         :selected more-options?)
-                    :on-click toggle-more-options}
-           deprecated-icon/menu]
+          [:> icon-button* {:variant "secondary"
+                            :class (stl/css :show-more)
+                            :aria-label (tr "labels.options")
+                            :aria-pressed more-options?
+                            :on-click toggle-more-options
+                            :icon i/menu}]
           [:span {:class (stl/css :label)}
            (tr "workspace.options.blur-options.title")]]
          [:div {:class (stl/css :actions)}

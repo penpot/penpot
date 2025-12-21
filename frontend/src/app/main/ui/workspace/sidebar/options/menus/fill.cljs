@@ -17,9 +17,9 @@
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -252,16 +252,9 @@
         (when (or (= type :frame)
                   (and (= type :multiple)
                        (some? hide-on-export)))
-          [:div {:class (stl/css :fill-checkbox)}
-           [:label {:for "show-fill-on-export"
-                    :class (stl/css-case :global/checked (not hide-on-export))}
-            [:span {:class (stl/css-case :check-mark true
-                                         :checked (not hide-on-export))}
-             (when (not hide-on-export)
-               deprecated-icon/status-tick)]
-            (tr "workspace.options.show-fill-on-export")
-            [:input {:type "checkbox"
-                     :id "show-fill-on-export"
-                     :ref checkbox-ref
-                     :checked (not hide-on-export)
-                     :on-change on-change-show-on-export}]]])])]))
+          [:> checkbox* {:ref checkbox-ref
+                         :id "show-fill-on-export"
+                         :class (stl/css :fill-checkbox)
+                         :label (tr "workspace.options.show-fill-on-export")
+                         :checked (not hide-on-export)
+                         :on-change on-change-show-on-export}])])]))

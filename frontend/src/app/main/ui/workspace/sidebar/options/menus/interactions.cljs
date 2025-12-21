@@ -17,13 +17,13 @@
    [app.main.data.workspace.interactions :as dwi]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.util.dom :as dom]
@@ -582,41 +582,43 @@
                          :options animation-opts
                          :on-change change-animation-type}]]]
 
-           ;; Direction
+           ;; Way
            (when (ctsi/has-way? interaction)
              [:div {:class (stl/css :interaction-row)}
               [:div {:class (stl/css :interaction-row-radio)}
-               [:& radio-buttons {:selected (d/name way)
-                                  :on-change change-way
-                                  :name "animation-way"}
-                [:& radio-button {:value "in"
-                                  :id "animation-way-in"}]
-                [:& radio-button {:id "animation-way-out"
-                                  :value "out"}]]]])
+               [:> radio-buttons* {:selected (d/name way)
+                                   :on-change change-way
+                                   :name "animation-way"
+                                   :options [{:id "animation-way-in"
+                                              :label (tr "workspace.options.interaction-animation-direction-in")
+                                              :value "in"}
+                                             {:id "animation-way-out"
+                                              :label (tr "workspace.options.interaction-animation-direction-out")
+                                              :value "out"}]}]]])
 
            ;; Direction
            (when (ctsi/has-direction? interaction)
              [:div {:class (stl/css :interaction-row)}
               [:div {:class (stl/css :interaction-row-radio)}
-               [:& radio-buttons {:selected (d/name direction)
-                                  :on-change change-direction
-                                  :name "animation-direction"}
-                [:& radio-button {:icon i/row
-                                  :icon-class (stl/css :right)
-                                  :value "right"
-                                  :id "animation-right"}]
-                [:& radio-button {:icon i/row-reverse
-                                  :icon-class (stl/css :left)
-                                  :id "animation-left"
-                                  :value "left"}]
-                [:& radio-button {:icon i/column
-                                  :icon-class (stl/css :down)
-                                  :id "animation-down"
-                                  :value "down"}]
-                [:& radio-button {:icon i/column-reverse
-                                  :icon-class (stl/css :up)
-                                  :id "animation-up"
-                                  :value "up"}]]]])
+               [:> radio-buttons* {:selected (d/name direction)
+                                   :on-change change-direction
+                                   :name "animation-direction"
+                                   :options [{:id "animation-right"
+                                              :icon i/row
+                                              :label (tr "workspace.options.interaction-animation-direction-right")
+                                              :value "right"}
+                                             {:id "animation-left"
+                                              :icon i/row-reverse
+                                              :label (tr "workspace.options.interaction-animation-direction-left")
+                                              :value "left"}
+                                             {:id "animation-down"
+                                              :icon i/column
+                                              :label (tr "workspace.options.interaction-animation-direction-down")
+                                              :value "down"}
+                                             {:id "animation-up"
+                                              :icon i/column-reverse
+                                              :label (tr "workspace.options.interaction-animation-direction-up")
+                                              :value "up"}]}]]])
 
            ;; Duration
            (when (ctsi/has-duration? interaction)

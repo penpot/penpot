@@ -5147,6 +5147,10 @@ msgstr "Mostrar interacciones al hacer click"
 msgid "viewer.header.sitemap"
 msgstr "Mapa del sitio"
 
+#: src/app/main/ui/viewer/header.cljs:185
+msgid "viewer.header.edit-in-workspace"
+msgstr "Editar en el espacio de trabajo"
+
 #: src/app/main/ui/dashboard/team.cljs:1203
 msgid "webhooks.last-delivery.success"
 msgstr "El último envío fue correcto."
@@ -5373,6 +5377,10 @@ msgstr "Desagrupar"
 #: src/app/main/ui/workspace/colorpicker.cljs:427, src/app/main/ui/workspace/colorpicker.cljs:439
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Tokens de color"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "Absorber color"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "workspace.component.swap.loop-error"
@@ -5655,7 +5663,11 @@ msgstr "Pantalla completa"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:217
+msgid "workspace.layout_grid.editor.margin.expand"
+msgstr "Mostrar el margen a 4 lados"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
 msgid "workspace.layout_grid.editor.options.edit-grid"
 msgstr "Editar rejilla"
 
@@ -5706,6 +5718,30 @@ msgstr "Mostrar"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1580
 msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
 msgstr "Mostrar grid layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:234
+msgid "workspace.layout_item.fix-width"
+msgstr "Fijar anchura"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:238
+msgid "workspace.layout_item.width-100"
+msgstr "Anchura 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:242
+msgid "workspace.layout_item.fit-content-horizontal"
+msgstr "Ajustar contenido (horizontal)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:260
+msgid "workspace.layout_item.fix-height"
+msgstr "Fijar altura"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:264
+msgid "workspace.layout_item.height-100"
+msgstr "Altura 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:268
+msgid "workspace.layout_item.fit-content-vertical"
+msgstr "Ajustar contenido (vertical)"
 
 #: src/app/main/ui/workspace/libraries.cljs
 #, unused
@@ -6271,7 +6307,31 @@ msgstr "Tiempo"
 msgid "workspace.options.interaction-animation"
 msgstr "Animación"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:609
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:613
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:617
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "Abajo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:621
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "Arriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:595
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "Dentro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:599
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "Fuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:413
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Disolver"
 
@@ -6715,6 +6775,14 @@ msgstr "Más tokens de color"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191
 msgid "workspace.options.opacity"
 msgstr "Opacidad"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:457, frontend/src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108
+msgid "workspace.options.orientation.horizontal"
+msgstr "Horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:453, frontend/src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104
+msgid "workspace.options.orientation.vertical"
+msgstr "Vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, unused
@@ -7554,6 +7622,10 @@ msgstr "Capas"
 msgid "workspace.sidebar.layers.components"
 msgstr "Componentes"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:295
+msgid "workspace.sidebar.layers.filter"
+msgstr "Filtrar"
+
 #: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
 msgid "workspace.sidebar.layers.frames"
 msgstr "Paneles"
@@ -8088,7 +8160,15 @@ msgstr "none | uppercase | lowercase | capitalize o {alias}"
 msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "none | underline | strike-through o {alias}"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+msgid "workspace.tokens.theme.disable"
+msgstr "Deshabilitar"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+msgid "workspace.tokens.theme.enable"
+msgstr "Habilitar"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:155
 msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 

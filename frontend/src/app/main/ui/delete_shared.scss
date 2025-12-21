@@ -33,7 +33,9 @@
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  position: absolute;
+  top: var(--sp-s);
+  right: var(--sp-s);
 }
 
 .modal-content {
@@ -51,17 +53,6 @@
 
 .action-buttons {
   @extend .modal-action-btns;
-}
-
-.cancel-button {
-  @extend .modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend .modal-accept-btn;
-  &.danger {
-    @extend .modal-danger-btn;
-  }
 }
 
 .modal-scd-msg {

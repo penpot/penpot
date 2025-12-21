@@ -43,14 +43,8 @@
 
 .shadow-basic-button {
   border-radius: $br-8 0 0 $br-8;
-
-  &.selected {
-    --button-bg-color: var(--color-background-quaternary);
-    --button-fg-color: var(--color-accent-primary);
-  }
-
-  &:disabled {
-    border: $b-1 solid var(--color-background-quaternary);
+  &.hidden {
+    border: deprecated.$s-1 solid var(--input-border-color-disabled);
   }
 }
 

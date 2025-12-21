@@ -19,39 +19,7 @@
     padding: 0 deprecated.$s-12 0 deprecated.$s-8;
     gap: deprecated.$s-4;
     .filter-button {
-      @include deprecated.flexCenter;
-      @include deprecated.buttonStyle;
-      height: deprecated.$s-32;
-      width: deprecated.$s-32;
-      margin: 0;
-      border: deprecated.$s-1 solid var(--color-background-tertiary);
-      border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
-      background-color: var(--color-background-tertiary);
-      svg {
-        height: deprecated.$s-16;
-        width: deprecated.$s-16;
-        stroke: var(--icon-foreground);
-      }
-      &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-focus);
-        outline: 0;
-        background-color: var(--input-background-color-active);
-        color: var(--input-foreground-color-active);
-        svg {
-          background-color: var(--input-background-color-active);
-        }
-      }
-      &:hover {
-        border: deprecated.$s-1 solid var(--input-border-color-hover);
-        background-color: var(--input-background-color-hover);
-        svg {
-          background-color: var(--input-background-color-hover);
-          stroke: var(--button-foreground-hover);
-        }
-      }
-      &.opened {
-        @extend .button-icon-selected;
-      }
+      border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
     }
   }
 }
@@ -143,7 +111,7 @@
 .filters-container {
   @extend .menu-dropdown;
   position: absolute;
-  left: deprecated.$s-20;
+  left: deprecated.$s-16;
   width: deprecated.$s-192;
   .filter-menu-item {
     @include deprecated.bodySmallTypography;

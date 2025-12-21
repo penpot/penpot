@@ -14,7 +14,7 @@
    [app.main.data.profile :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -110,11 +110,11 @@
       [:span {:class (stl/css :update-overlay)
               :on-click on-image-click} (tr "labels.update")]
       [:img {:src photo}]
-      [:& file-uploader {:accept "image/jpeg,image/png"
-                         :multi false
-                         :ref input-ref
-                         :on-selected on-file-selected
-                         :data-testid "profile-image-input"}]]]))
+      [:> file-uploader* {:accept "image/jpeg,image/png"
+                          :multi false
+                          :ref input-ref
+                          :on-selected on-file-selected
+                          :data-testid "profile-image-input"}]]]))
 
 ;; --- Profile Page
 

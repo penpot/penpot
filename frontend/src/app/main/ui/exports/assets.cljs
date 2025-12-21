@@ -208,7 +208,7 @@
 ;; FIXME: deprecated, should be refactored in two components and use
 ;; the generic progress reporter
 
-(mf/defc progress-widget
+(mf/defc progress-widget*
   {::mf/wrap [mf/memo]}
   []
   (let [state             (mf/deref refs/export)

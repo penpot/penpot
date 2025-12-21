@@ -478,7 +478,7 @@
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:> ot/text-menu* {:type type :ids text-ids :values text-values}])
 
      (when-not (empty? fill-ids)
        [:> fill/fill-menu* {:type type

@@ -12,6 +12,7 @@
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
@@ -63,6 +64,7 @@
     :Select select*
     :Switch switch*
     :Checkbox checkbox*
+    :RadioButtons radio-buttons*
     :Combobox combobox*
     :Text text*
     :TabSwitcher tab-switcher*

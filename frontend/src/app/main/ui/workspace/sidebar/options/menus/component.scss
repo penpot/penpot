@@ -587,14 +587,9 @@
 }
 
 .pill-actions-btn {
-  @extend .button-secondary;
-  cursor: unset;
-  block-size: 100%;
-  inline-size: 100%;
   border-radius: 0 $br-8 $br-8 0;
-
-  &.selected {
-    @extend .button-icon-selected;
+  &.extended {
+    block-size: $sz-48;
   }
 }
 

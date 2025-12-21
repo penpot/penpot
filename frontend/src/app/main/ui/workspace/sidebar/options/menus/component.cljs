@@ -28,7 +28,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
@@ -37,6 +36,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
@@ -794,15 +794,17 @@
       [:div  {:class (stl/css :swap-library)}
        [:div {:class (stl/css :swap-library-title)}
         [:div {:class (stl/css :swap-library-name)} current-lib-name]
-        [:& radio-buttons {:selected (if (:listing-thumbs? filters) "grid" "list")
-                           :on-change toggle-list-style
-                           :name "swap-listing-style"}
-         [:& radio-button {:icon i/view-as-list
-                           :value "list"
-                           :id "swap-opt-list"}]
-         [:& radio-button {:icon i/flex-grid
-                           :value "grid"
-                           :id "swap-opt-grid"}]]]
+        [:> radio-buttons* {:selected (if (:listing-thumbs? filters) "grid" "list")
+                            :on-change toggle-list-style
+                            :name "swap-listing-style"
+                            :options [{:id "swap-opt-list"
+                                       :icon i/view-as-list
+                                       :label (tr "workspace.assets.list-view")
+                                       :value "list"}
+                                      {:id "swap-opt-grid"
+                                       :icon i/flex-grid
+                                       :label (tr "workspace.assets.grid-view")
+                                       :value "grid"}]}]]
 
        (when-not (or search? (str/empty? (:path filters)))
          [:button {:class (stl/css :swap-library-back)
@@ -897,11 +899,13 @@
 
      (when menu-entries?
        [:div {:class (stl/css :pill-actions)}
-        [:button {:class (stl/css-case :pill-actions-btn true
-                                       :selected menu-open?)
-                  :on-click on-menu-click}
-         [:> icon* {:icon-id i/menu}]]
-
+        [:> icon-button* {:variant "secondary"
+                          :class (stl/css-case :pill-actions-btn true
+                                               :extended subtext)
+                          :aria-pressed menu-open?
+                          :aria-label (tr "labels.options")
+                          :on-click on-menu-click
+                          :icon i/menu}]
         [:& dropdown {:show menu-open?
                       :on-close on-menu-close}
          [:ul {:class (stl/css-case :pill-actions-dropdown true

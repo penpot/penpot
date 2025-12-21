@@ -16,7 +16,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.errors :as errors]
    [app.main.store :as st]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -58,10 +58,10 @@
   [{:keys [project-id on-finish-import]} external-ref]
   (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file {:aria-hidden "true"}
-     [:& file-uploader {:accept ".penpot,.zip"
-                        :multi true
-                        :ref external-ref
-                        :on-selected on-file-selected}]]))
+     [:> file-uploader* {:accept ".penpot,.zip"
+                         :multi true
+                         :ref external-ref
+                         :on-selected on-file-selected}]]))
 
 (defn- update-entry-name
   [entries file-id new-name]

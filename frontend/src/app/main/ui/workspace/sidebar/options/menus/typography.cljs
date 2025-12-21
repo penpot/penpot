@@ -22,10 +22,10 @@
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -422,27 +422,24 @@
             (on-change {:text-transform type}))
           (when (some? on-blur) (on-blur)))]
 
-    [:div {:class (stl/css :text-transform)}
-     [:& radio-buttons {:selected text-transform
+    [:> radio-buttons* {:selected text-transform
                         :on-change handle-change
-                        :name "text-transform"}
-      [:& radio-button {:icon i/text-uppercase
-                        :type "checkbox"
-                        :title (tr "inspect.attributes.typography.text-transform.uppercase")
-                        :value "uppercase"
-                        :id "text-transform-uppercase"}]
-      [:& radio-button {:icon i/text-mixed
-                        :type "checkbox"
-                        :value "capitalize"
-                        :title (tr "inspect.attributes.typography.text-transform.capitalize")
-                        :id "text-transform-capitalize"}]
-      [:& radio-button {:icon i/text-lowercase
-                        :type "checkbox"
-                        :title (tr "inspect.attributes.typography.text-transform.lowercase")
-                        :value "lowercase"
-                        :id "text-transform-lowercase"}]]]))
+                        :name "text-transform"
+                        :allow-empty true
+                        :options [{:id "text-transform-uppercase"
+                                   :icon i/text-uppercase
+                                   :label (tr "inspect.attributes.typography.text-transform.uppercase")
+                                   :value "uppercase"}
+                                  {:id "text-transform-capitalize"
+                                   :icon i/text-mixed
+                                   :label (tr "inspect.attributes.typography.text-transform.capitalize")
+                                   :value "capitalize"}
+                                  {:id "text-transform-lowercase"
+                                   :icon i/text-lowercase
+                                   :label (tr "inspect.attributes.typography.text-transform.lowercase")
+                                   :value "lowercase"}]}]))
 
-(mf/defc text-options
+(mf/defc text-options*
   {::mf/wrap-props false}
   [{:keys [ids editor values on-change on-blur show-recent]}]
   (let [full-size-selector? (and show-recent (= (mf/use-ctx ctx/sidebar) :right))
@@ -500,14 +497,13 @@
                   :on-click on-close}
             deprecated-icon/tick]]
 
-          [:& text-options {:values typography
-                            :on-change on-change
-                            :show-recent false}]]
+          [:> text-options* {:values typography
+                             :on-change on-change
+                             :show-recent false}]]
 
          [:div {:class (stl/css :typography-info-wrapper)}
           [:div {:class (stl/css :typography-name-wrapper)}
            [:div {:class (stl/css :typography-sample)
-
                   :style {:font-family (:font-family typography)
                           :font-weight (:font-weight typography)
                           :font-style (:font-style typography)}}
@@ -547,7 +543,7 @@
                  :on-click navigate-to-library}
              (tr "workspace.assets.typography.go-to-edit")])])])))
 
-(mf/defc typography-entry
+(mf/defc typography-entry*
   {::mf/wrap-props false}
   [{:keys [file-id typography local? selected? on-click on-change on-detach on-context-menu editing? renaming? focus-name? external-open*]}]
   (let [name-input-ref       (mf/use-ref)

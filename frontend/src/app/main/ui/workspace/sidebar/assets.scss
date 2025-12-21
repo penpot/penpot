@@ -17,89 +17,14 @@
   padding-top: deprecated.$s-8;
 }
 
-.libraries-button {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
-  gap: deprecated.$s-2;
-  height: deprecated.$s-32;
-  width: 100%;
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$s-8;
-
-  &:hover {
-    background-color: var(--button-secondary-background-color-hover);
-    color: var(--button-secondary-foreground-color-hover);
-    border: deprecated.$s-1 solid var(--button-secondary-border-color-hover);
-  }
-
-  &:focus {
-    background-color: var(--button-secondary-background-color-focus);
-    color: var(--button-secondary-foreground-color-focus);
-    border: deprecated.$s-1 solid var(--button-secondary-border-color-focus);
-  }
+.assets-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
 }
 
-.add-library-button {
-  @extend .button-primary;
-  @include deprecated.uppercaseTitleTipography;
-  gap: deprecated.$s-2;
-  height: deprecated.$s-32;
-  width: 100%;
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$s-8;
-}
-
-.section-button {
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
-  height: deprecated.$s-32;
-  width: deprecated.$s-32;
-  margin: 0;
-  border: deprecated.$s-1 solid var(--input-border-color-rest);
-  border-radius: deprecated.$br-8 deprecated.$br-2 deprecated.$br-2 deprecated.$br-8;
-  background-color: var(--input-background-color-rest);
-
-  svg {
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-    stroke: var(--icon-foreground);
-  }
-
-  &:focus {
-    border: deprecated.$s-1 solid var(--input-border-color-focus);
-    outline: 0;
-    background-color: var(--input-background-color-focus);
-    color: var(--input-foreground-color-focus);
-
-    svg {
-      background-color: var(--input-background-color-focus);
-    }
-  }
-
-  &:hover {
-    border: deprecated.$s-1 solid var(--input-border-color-hover);
-    background-color: var(--input-background-color-hover);
-
-    svg {
-      background-color: var(--input-background-color-hover);
-      stroke: var(--button-foreground-hover);
-    }
-
-    &:focus {
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
-      outline: 0;
-      background-color: var(--input-background-color-focus);
-      color: var(--input-foreground-color-focus);
-
-      svg {
-        background-color: var(--input-background-color-focus);
-      }
-    }
-  }
-
-  &.opened {
-    @extend .button-icon-selected;
-  }
+.filter-button {
+  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
 }
 
 .sections-container {
@@ -123,10 +48,6 @@
   width: 100%;
   padding: deprecated.$s-6;
   border-radius: deprecated.$br-8;
-}
-
-.section-btn {
-  @include deprecated.buttonStyle;
 }
 
 .assets-header {
