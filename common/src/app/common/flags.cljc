@@ -169,6 +169,7 @@
    :enable-component-thumbnails
    :enable-render-wasm-dpr
    :enable-token-color
+   :enable-token-shadow
    :enable-inspect-styles
    :enable-feature-fdata-objects-map])
 
