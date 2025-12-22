@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Vint Prox <vintprox@envs.net>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -1786,6 +1786,7 @@ msgid "inspect.empty.select"
 msgstr "Выберите фигуру, доску или группу, чтобы просмотреть свойства и код"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Информация о слое"
 
