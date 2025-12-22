@@ -307,7 +307,8 @@
                                             :content-type (:mtype input)})]
       (:id sobject))
     (catch Throwable cause
-      (l/err :hint "unable to import profile picture"
+      (l/wrn :hint "unable to import profile picture"
+             :uri uri
              :cause cause)
       nil)))
 

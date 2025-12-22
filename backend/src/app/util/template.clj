@@ -7,9 +7,17 @@
 (ns app.util.template
   (:require
    [app.common.exceptions :as ex]
+   [cuerdas.core :as str]
+   [selmer.filters :as sf]
    [selmer.parser :as sp]))
 
 ;; (sp/cache-off!)
+
+(sf/add-filter! :abbreviate
+                (fn [s n]
+                  (let [n (parse-long n)]
+                    (str/abbreviate s n))))
+
 
 (defn render
   [path context]
