@@ -13,7 +13,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]

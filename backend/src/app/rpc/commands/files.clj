@@ -688,11 +688,10 @@
   "Get libraries used by the specified file."
   {::doc/added "1.17"
    ::sm/params schema:get-file-libraries}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-    (bfc/get-file-libraries conn file-id)))
-
+  [cfg {:keys [::rpc/profile-id file-id]}]
+  (bfc/check-file-exists cfg file-id)
+  (check-read-permissions! cfg profile-id file-id)
+  (bfc/get-file-libraries cfg file-id))
 
 ;; --- COMMAND QUERY: Files that use this File library
 
@@ -785,8 +784,7 @@
        FROM file AS f
       INNER JOIN project AS p ON (p.id = f.project_id)
        LEFT JOIN file_thumbnail AS ft on (ft.file_id = f.id
-                                          AND ft.revn = f.revn
-                                          AND ft.deleted_at is null)
+                                          AND ft.revn = f.revn)
       WHERE p.team_id = ?
         AND (p.deleted_at > ?::timestamptz OR
              f.deleted_at > ?::timestamptz)
