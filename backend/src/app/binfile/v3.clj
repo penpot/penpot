@@ -821,9 +821,10 @@
         entries (keep (match-storage-entry-fn) entries)]
 
     (doseq [{:keys [id entry]} entries]
-      (let [object  (->> (read-entry input entry)
-                         (decode-storage-object)
-                         (validate-storage-object))
+      (let [object  (-> (read-entry input entry)
+                        (decode-storage-object)
+                        (update :bucket d/nilv sto/default-bucket)
+                        (validate-storage-object))
 
             ext     (cmedia/mtype->extension (:content-type object))
             path    (str "objects/" id ext)

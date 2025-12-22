@@ -35,6 +35,9 @@
       :assets-s3 :s3
       nil)))
 
+(def default-bucket
+  "file-media-object")
+
 (def valid-buckets
   #{"file-media-object"
     "team-font-variant"
