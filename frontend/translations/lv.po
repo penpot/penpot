@@ -1809,10 +1809,6 @@ msgstr ""
 "Ja ir vēlme uzzināt vairāk par dizaina apskati, jāapmeklē Penpot palīdzības "
 "centrs"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Vairāk informācijas par apskatīšanu"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Jāatlasa apveids, plātne vai kopa, lai apskatītu to īpašības un kodu"

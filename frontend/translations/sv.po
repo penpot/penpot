@@ -1802,10 +1802,6 @@ msgstr "Variantegenskaper"
 msgid "inspect.empty.help"
 msgstr "Om du vill veta mer om designinspektion kan du besöka Penpots hjälpcenter"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Mer information om inspektion"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

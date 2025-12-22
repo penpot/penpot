@@ -1510,10 +1510,6 @@ msgstr "全大寫"
 msgid "inspect.empty.help"
 msgstr "如果您想瞭解更多關於設計檢查的資訊，請訪問Penpot的幫助中心"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "有關檢查的詳細資訊"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "選擇一個形狀、版面或群組來檢查它們的屬性和程式碼"

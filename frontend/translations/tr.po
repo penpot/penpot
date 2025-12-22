@@ -1809,10 +1809,6 @@ msgstr ""
 "Tasarım incelemesi hakkında daha fazla bilgi edinmek istiyorsanız Penpot "
 "yardım merkezini ziyaret edin"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "İnceleme hakkında daha fazla bilgi"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

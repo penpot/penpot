@@ -1799,10 +1799,6 @@ msgstr ""
 "Für weitere Informationen zum Thema \"Auswerten von "
 "Design-Spezifikationen\", besuchen Sie bitte das Penpot-Hilfezentrum"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Weitere Informationen zur Inspektion"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

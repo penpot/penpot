@@ -1769,10 +1769,6 @@ msgstr "מאפייני הגוונים"
 msgid "inspect.empty.help"
 msgstr "למידע נוסף על חקירת עיצוב אפשר לבקר במרכז העזרה של Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "מידע נוסף על חקירה"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "ניתן לבחור צורה, לוח או קבוצה ולראות את המאפיינים והקוד שלהם"

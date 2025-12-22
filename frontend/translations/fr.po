@@ -1840,10 +1840,6 @@ msgstr "Propriétés des variantes"
 msgid "inspect.empty.help"
 msgstr "Pour en savoir plus sur l'inspection, visitez le centre d'aide de Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Plus d'informations sur l'inspection"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

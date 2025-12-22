@@ -1170,10 +1170,6 @@ msgstr ""
 "Jeśli chcesz dowiedzieć się więcej o inspekcji projektu, odwiedź centrum "
 "pomocy Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Więcej informacji o inspekcji"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Wybierz kształt, tablicę lub grupę, aby sprawdzić ich właściwości i kod"

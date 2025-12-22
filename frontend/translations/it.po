@@ -1824,10 +1824,6 @@ msgstr ""
 "Per ulteriori informazioni su l'ispezione, visita il centro di supporto di "
 "Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Maggiori informazioni sull'ispezione"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

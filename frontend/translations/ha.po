@@ -1244,10 +1244,6 @@ msgstr "manyan baqaqe"
 msgid "inspect.empty.help"
 msgstr "domin neman qarin bayani game da fenfot a tuntubi sashen agaji"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "qarin bayani a fagen lura"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "zabar zubi, hukumar masu sa ido akan bangarorinsu da lambobinsu"

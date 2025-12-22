@@ -1779,10 +1779,6 @@ msgstr ""
 "Если вы хотите узнать больше о осмотре дизайна, посетите справочный центр "
 "Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Подробнее об осмотре"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Выберите фигуру, доску или группу, чтобы просмотреть свойства и код"

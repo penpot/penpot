@@ -1812,10 +1812,6 @@ msgstr ""
 "Se quiser saber mais sobre inspecionar o design, visite a central de ajuda "
 "do Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Mais informações sobre inspecionar"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

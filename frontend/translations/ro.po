@@ -1821,10 +1821,6 @@ msgstr ""
 "Dacă dorești să afli mai multe despre inspectorul de design, vizitează "
 "centrul de ajutor Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Mai multe informații despre inspector"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

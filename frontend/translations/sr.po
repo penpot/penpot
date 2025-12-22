@@ -1348,10 +1348,6 @@ msgstr ""
 "Ако желите да сазнате више о прегледу дизајна, посетите Помоћни центар "
 "Penpot-а"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Више информација о прегледу"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Изаберите облик, таблу или групу да бисте прегледали њихова својства и код"

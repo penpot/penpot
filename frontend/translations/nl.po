@@ -1825,10 +1825,6 @@ msgstr ""
 "Als je meer wilt weten over ontwerpinspectie, ga dan naar het helpcentrum "
 "van Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Meer info over inspecteren"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

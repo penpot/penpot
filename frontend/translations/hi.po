@@ -1726,10 +1726,6 @@ msgstr ""
 "यदि आप डिजाइन निरीक्षण के बारे में अधिक जानना चाहते हैं, तो कृपया पेनपॉट के "
 "हेल्प सेंटर पर जाएं"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "निरीक्षण के बारे में अधिक जानकारी"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "उनके गुणधर्म और कोड का निरीक्षण करने के लिए कोई आकृति, बोर्ड या समूह चुनें"

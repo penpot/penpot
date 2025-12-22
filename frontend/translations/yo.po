@@ -1204,10 +1204,6 @@ msgstr ""
 "Tí o bá fẹ́ mọ̀ nípa àpẹẹrẹ alárà bẹ ààrin gbùngbùn àwọn pẹ́ńpọtì wò fún "
 "ìràlọ́wọ́"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Àfikún àlàyé fún ìbẹ̀wò"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Yan ìrísí, bọ́ọ̀dù tàbí ẹgbẹ́ láti lọ ṣe ìbẹ̀wò ohun ìní wọn àti kóòdù"

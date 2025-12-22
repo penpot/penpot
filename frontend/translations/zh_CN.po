@@ -1704,10 +1704,6 @@ msgstr "变体属性"
 msgid "inspect.empty.help"
 msgstr "如果您想了解有关设计检查的更多信息，请访问Penpot的帮助中心"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "有关检查的详细信息"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "选择形状、板或组以检查其属性和代码"

@@ -1297,10 +1297,6 @@ msgstr ""
 "Jika anda ingin mengetahui lebih lanjut tentang pemeriksaan reka bentuk, "
 "lawati pusat bantuan Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Maklumat lanjut tentang inspect"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Pilih bentuk, papan atau kumpulan untuk memeriksa sifat dan kod mereka"

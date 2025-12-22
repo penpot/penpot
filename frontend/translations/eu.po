@@ -1188,10 +1188,6 @@ msgstr ""
 "Diseinua ikuskatzeari buruz gehiago jakin nahi baduzu zoaz Penpoten "
 "laguntza zentrora"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Informazio gehiago ikuskatzeari buruz"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""
