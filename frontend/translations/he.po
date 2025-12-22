@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-02 21:00+0000\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.15-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -564,6 +564,7 @@ msgstr ""
 "המשאבים שלהן*?"
 
 #: src/app/main/ui/exports/files.cljs:164
+#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr "קבצים עם ספריות משותפות יצורפו לייצוא, תוך שימור הקישוריות שלהם."
 
@@ -1774,6 +1775,7 @@ msgid "inspect.empty.select"
 msgstr "ניתן לבחור צורה, לוח או קבוצה ולראות את המאפיינים והקוד שלהם"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "בחירת לשונית חקירה"
 
