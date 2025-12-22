@@ -87,7 +87,8 @@
       (try
         (let [params (-> params decode-params fb/decode-file)]
           (-> (swap! state fb/add-file params)
-              (get ::fb/current-file-id)))
+              (get ::fb/current-file-id)
+              (dm/str)))
         (catch :default cause
           (handle-exception cause))))
 
@@ -272,6 +273,16 @@
           nil)
         (catch :default cause
           (handle-exception cause))))
+
+    :addRelation
+    (fn [file-id library-id]
+      (let [file-id    (uuid/parse file-id)
+            library-id (uuid/parse library-id)]
+        (if (and file-id library-id)
+          (do
+            (swap! state update :relations assoc file-id library-id)
+            true)
+          false)))
 
     :genId
     (fn []
