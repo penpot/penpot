@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-12-23 17:00+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -1816,7 +1816,6 @@ msgstr ""
 "seçin"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
-#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Katman bilgisi"
 
@@ -8449,3 +8448,20 @@ msgstr "Şimdilik atlayın ve deneme sürümünü başlatın"
 
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "Ödeme bilgilerini ekleyin"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "Daha fazla bilgi"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Geçersiz token değeri: yalnızca font-family tokenine referans verebilirsiniz"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Geçersiz değer: bileşik gölge tokenine referans vermelidir."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Bir token gölge takma adı girin"
