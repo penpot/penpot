@@ -18,6 +18,7 @@
    [app.common.types.path :as path]
    [app.common.types.path.impl :as path.impl]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
@@ -1410,20 +1411,23 @@
                                     (get span))
                         text (subs (:text element) start-pos end-pos)]
 
-                    {:x x
-                     :y (+ y height)
-                     :width width
-                     :height height
-                     :direction       (dr/translate-direction direction)
-                     :font-family     (get element :font-family)
-                     :font-size       (get element :font-size)
-                     :font-weight     (get element :font-weight)
-                     :text-transform  (get element :text-transform)
-                     :text-decoration (get element :text-decoration)
-                     :letter-spacing  (get element :letter-spacing)
-                     :font-style      (get element :font-style)
-                     :fills           (get element :fills)
-                     :text            text}))))]
+                    (d/patch-object
+                     txt/default-text-attrs
+                     (d/without-nils
+                      {:x x
+                       :y (+ y height)
+                       :width width
+                       :height height
+                       :direction       (dr/translate-direction direction)
+                       :font-family     (get element :font-family)
+                       :font-size       (get element :font-size)
+                       :font-weight     (get element :font-weight)
+                       :text-transform  (get element :text-transform)
+                       :text-decoration (get element :text-decoration)
+                       :letter-spacing  (get element :letter-spacing)
+                       :font-style      (get element :font-style)
+                       :fills           (get element :fills)
+                       :text            text}))))))]
       (mem/free)
 
       result)))
