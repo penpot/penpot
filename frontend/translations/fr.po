@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Alexandre Pawlak <alexpawlak@gmail.com>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -1848,6 +1848,7 @@ msgstr ""
 "leurs propriétés et le code"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Info sur la couche"
 
