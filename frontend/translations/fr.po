@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-09 22:00+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"Last-Translator: Alexandre Pawlak <alexpawlak@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.15-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -585,6 +585,7 @@ msgstr ""
 "bibliothèques partagées. Que voulez-vous faire avec leurs ressources ?"
 
 #: src/app/main/ui/exports/files.cljs:164
+#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "Les fichiers avec des bibliothèques partagées seront inclus dans "
