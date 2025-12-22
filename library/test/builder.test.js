@@ -54,6 +54,33 @@ test("create context with two file", () => {
   assert.equal(file.data.pages.length, 0)
 });
 
+test("create context with two file and relation between", () => {
+  const context = penpot.createBuildContext();
+
+  const fileId_1 = context.addFile({name: "sample 1"});
+  const fileId_2 = context.addFile({name: "sample 2"});
+
+  context.addRelation(fileId_1, fileId_2);
+
+  const internalState = context.getInternalState();
+
+  assert.ok(internalState.files[fileId_1]);
+  assert.ok(internalState.files[fileId_2]);
+  assert.equal(internalState.files[fileId_1].name, "sample 1");
+  assert.equal(internalState.files[fileId_2].name, "sample 2");
+
+  assert.ok(internalState.relations[fileId_1]);
+  assert.equal(internalState.relations[fileId_1], fileId_2);
+
+  const file = internalState.files[fileId_2];
+
+  assert.ok(file.data);
+  assert.ok(file.data.pages);
+  assert.ok(file.data.pagesIndex);
+  assert.equal(file.data.pages.length, 0)
+});
+
+
 test("create context with file and page", () => {
   const context = penpot.createBuildContext();
 
