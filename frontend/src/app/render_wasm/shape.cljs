@@ -233,8 +233,8 @@
           (api/set-shape-shadows (:shadow shape)))
 
         :masked-group
-        (when (cfh/mask-shape? shape)
-          (api/set-masked (:masked-group shape)))
+        (when (cfh/group-shape? shape)
+          (api/set-masked (boolean (:masked-group shape))))
 
         :content
         (cond
