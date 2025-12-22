@@ -60,14 +60,9 @@ test("create context with two file and relation between", () => {
   const fileId_1 = context.addFile({name: "sample 1"});
   const fileId_2 = context.addFile({name: "sample 2"});
 
-  console.log(fileId_1, fileId_2);
-
-
   context.addRelation(fileId_1, fileId_2);
 
   const internalState = context.getInternalState();
-
-  // console.log(internalState.relations);
 
   assert.ok(internalState.files[fileId_1]);
   assert.ok(internalState.files[fileId_2]);
