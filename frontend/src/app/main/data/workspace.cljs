@@ -270,8 +270,12 @@
   (ptk/reify ::process-wasm-object
     ptk/EffectEvent
     (effect [_ state _]
-      (let [objects (dsh/lookup-page-objects state)]
-        (wasm.api/process-object (get objects id))))))
+      (let [objects (dsh/lookup-page-objects state)
+            shape (get objects id)]
+        ;; Only process objects that exist in the current page
+        ;; This prevents errors when processing changes from other pages
+        (when shape
+          (wasm.api/process-object shape))))))
 
 (defn initialize-workspace
   [team-id file-id]
