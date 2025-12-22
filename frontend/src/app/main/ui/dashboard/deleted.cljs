@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.deleted
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
@@ -40,10 +41,12 @@
 
 (mf/defc deleted-project-menu*
   [{:keys [project files team-id show on-close top left]}]
-  (let [top  (or top 0)
-        left (or left 0)
+  (let [top  (d/nilv top 0)
+        left (d/nilv left 0)
 
-        file-ids (into #{} (map :id files))
+        file-ids
+        (mf/with-memo [files]
+          (into #{} d/xf:map-id files))
 
         restore-fn
         (fn [_]
@@ -89,15 +92,14 @@
           :id     "project-delete"
           :handler on-delete-project}]]
 
-    [:*
-     [:> context-menu*
-      {:on-close on-close
-       :show show
-       :fixed (or (not= top 0) (not= left 0))
-       :min-width true
-       :top top
-       :left left
-       :options options}]]))
+    [:> context-menu*
+     {:on-close on-close
+      :show show
+      :fixed (or (not= top 0) (not= left 0))
+      :min-width true
+      :top top
+      :left left
+      :options options}]))
 
 (mf/defc deleted-project-item*
   {::mf/props :obj
@@ -111,9 +113,10 @@
         dstate         (mf/deref refs/dashboard-local)
         edit-id        (:project-for-edit dstate)
 
-        local          (mf/use-state {:menu-open false
-                                      :menu-pos nil
-                                      :edition (= (:id project) edit-id)})
+        local          (mf/use-state
+                        #(do {:menu-open false
+                              :menu-pos nil
+                              :edition (= (:id project) edit-id)}))
 
         [rowref limit] (hooks/use-dynamic-grid-item-width)
 
@@ -144,6 +147,7 @@
            (when (kbd/enter? event)
              (dom/stop-propagation event)
              (on-menu-click event))))]
+
     [:article {:class (stl/css-case :dashboard-project-row true)}
      [:header {:class (stl/css :project)}
       [:div {:class (stl/css :project-name-wrapper)}
@@ -163,14 +167,15 @@
                      :on-key-down handle-menu-click}
             menu-icon]]
 
-          [:> deleted-project-menu*
-           {:project project
-            :files project-files
-            :team-id (:id team)
-            :show (:menu-open @local)
-            :left (+ 24 (:x (:menu-pos @local)))
-            :top (:y (:menu-pos @local))
-            :on-close on-menu-close}]])]]
+          (when (:menu-open @local)
+            [:> deleted-project-menu*
+             {:project project
+              :files project-files
+              :team-id (:id team)
+              :show (:menu-open @local)
+              :left (+ 24 (:x (:menu-pos @local)))
+              :top (:y (:menu-pos @local))
+              :on-close on-menu-close}])])]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       (if ^boolean empty?
