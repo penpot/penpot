@@ -8,6 +8,7 @@
   "A i18n foundation."
   (:require
    [app.common.data :as d]
+   [app.common.i18n]
    [app.common.logging :as log]
    [app.common.time :as ct]
    [app.config :as cf]
@@ -212,3 +213,7 @@
                    cv (get cv :locale)]
                (when (not= pv cv)
                  (ct/set-default-locale! cv)))))
+
+;; We set the real translation function in the common i18n namespace,
+;; so that when common code calls (tr ...) it uses this function.
+(set! app.common.i18n/tr tr)

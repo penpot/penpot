@@ -4,10 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.forms.generic-form
+(ns app.main.ui.workspace.tokens.management.create.font-family
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -23,8 +22,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
-   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
-   [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
+   [app.main.ui.workspace.tokens.management.create.combobox-token-fonts :refer [font-picker-combobox*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -33,30 +31,8 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn- token-value-error-fn
-  [{:keys [value]}]
-  (when (or (str/empty? value)
-            (str/blank? value))
-    (tr "workspace.tokens.empty-input")))
-
-(defn get-value-for-validator
-  [active-tab value value-subfield form-type]
-
-  (case form-type
-    :indexed
-    (if (= active-tab :reference)
-      (:reference value)
-      (value-subfield value))
-
-    :composite
-    (if (= active-tab :reference)
-      (get value :reference)
-      value)
-
-    value))
-
-(defn- default-make-schema
-  [tokens-tree _]
+(defn- make-schema
+  [tokens-tree]
   (sm/schema
    [:and
     [:map
@@ -67,7 +43,7 @@
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
         #(not (ctob/token-name-path-exists? % tokens-tree))]]]
 
-     [:value [::sm/text {:error/fn token-value-error-fn}]]
+     [:value ::sm/text]
 
      [:description {:optional true}
       [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]]]
@@ -78,38 +54,18 @@
        (when (and name value)
          (not (cto/token-value-self-reference? name value))))]]))
 
+
 (mf/defc form*
-  [{:keys [token
-           validator
-           action
-           is-create
-           selected-token-set-id
-           tokens-tree-in-selected-set
-           token-type
-           make-schema
-           input-component
-           initial
-           type
-           value-subfield
-           input-value-placeholder] :as props}]
+  [{:keys [token validate-token action is-create selected-token-set-id tokens-tree-in-selected-set] :as props}]
 
-  (let [make-schema           (or make-schema default-make-schema)
-        input-component (or input-component token.controls/input*)
-        validate-token (or validator default-validate-token)
-
-        active-tab* (mf/use-state #(if (cfo/is-reference? token) :reference :composite))
-        active-tab (deref active-tab*)
-
-        on-toggle-tab
-        (mf/use-fn
-         (mf/deps)
-         (fn [new-tab]
-           (let [new-tab (keyword new-tab)]
-             (reset! active-tab* new-tab))))
-
-        token
+  (let [token
         (mf/with-memo [token]
-          (or token {:type token-type}))
+          (if token
+            (update token :value cto/join-font-family)
+            {:type :font-family}))
+
+        token-type
+        (get token :type)
 
         token-properties
         (dwta/get-token-properties token)
@@ -129,15 +85,14 @@
             (assoc (:name token) token)))
 
         schema
-        (mf/with-memo [tokens-tree-in-selected-set active-tab]
-          (make-schema tokens-tree-in-selected-set active-tab))
+        (mf/with-memo [tokens-tree-in-selected-set]
+          (make-schema tokens-tree-in-selected-set))
 
         initial
         (mf/with-memo [token]
-          (or initial
-              {:name (:name token "")
-               :value (:value token "")
-               :description (:description token "")}))
+          {:name (:name token "")
+           :value (:value token "")
+           :description (:description token "")})
 
         form
         (fm/use-form :schema schema
@@ -177,13 +132,12 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield type active-tab)
+         (mf/deps validate-token token tokens token-type)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
-                 value (get-in @form [:clean-data :value])
-                 value-for-validation (get-value-for-validator active-tab value value-subfield type)]
-             (->> (validate-token {:token-value value-for-validation
+                 value (get-in @form [:clean-data :value])]
+             (->> (validate-token {:token-value value
                                    :token-name name
                                    :token-description description
                                    :prev-token token
@@ -210,9 +164,7 @@
      [:div {:class (stl/css :token-rows)}
 
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
-       (if (= action "edit")
-         (tr "workspace.tokens.edit-token" token-type)
-         (tr "workspace.tokens.create-token" token-type))]
+       (tr "workspace.tokens.create-token" token-type)]
 
       [:div {:class (stl/css :input-row)}
        [:> fc/form-input* {:id "token-name"
@@ -229,29 +181,12 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       (case type
-         :indexed
-         [:> input-component
-          {:token          token
-           :tokens         tokens
-           :tab            active-tab
-           :value-subfield value-subfield
-           :handle-toggle  on-toggle-tab}]
-
-         :composite
-         [:> input-component
-          {:token         token
-           :tokens        tokens
-           :tab           active-tab
-           :handle-toggle on-toggle-tab}]
-
-         [:> input-component
-          {:placeholder (or input-value-placeholder
-                            (tr "workspace.tokens.token-value-enter"))
-           :label       (tr "workspace.tokens.token-value")
-           :name        :value
-           :token       token
-           :tokens      tokens}])]
+       [:> font-picker-combobox*
+        {:placeholder (tr "workspace.tokens.token-value-enter")
+         :label (tr "workspace.tokens.token-value")
+         :name :value
+         :token token
+         :tokens tokens}]]
 
       [:div {:class (stl/css :input-row)}
        [:> fc/form-input* {:id "token-description"
