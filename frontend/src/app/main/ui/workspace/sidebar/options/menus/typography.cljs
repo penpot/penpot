@@ -271,8 +271,10 @@
                            :font-variant-id new-variant-id
                            :font-weight (:weight variant)
                            :font-style (:style variant)}))
-
-             (dom/blur! (dom/get-target new-variant-id)))))
+             ;; NOTE: the select component we are using does not fire on-blur event
+             ;; so we need to call on-blur manually
+             (when (some? on-blur)
+               (on-blur)))))
 
         on-font-select
         (mf/use-fn

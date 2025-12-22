@@ -25,7 +25,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.storage :as-alias sto]
+   [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
 
@@ -130,7 +130,7 @@
   [{:keys [metadata]}]
   (or (some-> metadata :bucket)
       (some-> metadata :reference d/name)
-      "file-media-object"))
+      sto/default-bucket))
 
 (defn- process-objects!
   [conn has-refs? bucket objects]

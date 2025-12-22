@@ -276,6 +276,7 @@ export async function compileTranslations() {
     "id",
     "ru",
     "tr",
+    "hi",
     "zh_CN",
     "zh_Hant",
     "hr",
