@@ -197,7 +197,6 @@
   (l/derived :deleted-files st/state))
 
 (mf/defc deleted-section*
-  {::mf/props :obj}
   [{:keys [team projects]}]
   (let [deleted-map
         (mf/deref ref:deleted-files)

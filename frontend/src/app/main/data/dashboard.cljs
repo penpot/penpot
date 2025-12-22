@@ -490,6 +490,7 @@
         (-> state
             (d/update-in-when [:files file-id] assoc :thumbnail-id thumbnail-id)
             (d/update-in-when [:recent-files file-id] assoc :thumbnail-id thumbnail-id)
+            (d/update-in-when [:deleted-files file-id] assoc :thumbnail-id thumbnail-id)
             (d/update-when :dashboard-search-result update-search-files))))))
 
 ;; --- EVENT: create-file
