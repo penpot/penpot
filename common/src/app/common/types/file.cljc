@@ -362,24 +362,24 @@
         component           (ctkl/get-component component-file (:component-id top-instance) true)
         remote-shape        (get-ref-shape component-file component shape)
         component-container (get-component-container component-file component)
-        [remote-shape component-container]
+        [remote-shape component-container component-file]
         (if (some? remote-shape)
-          [remote-shape component-container]
+          [remote-shape component-container component-file]
           ;; If not found, try the case of this being a fostered or swapped children
-          (let [head-instance       (ctn/get-head-shape (:objects container) shape)
-                component-file      (get-in libraries [(:component-file head-instance) :data])
-                head-component      (ctkl/get-component component-file (:component-id head-instance) true)
-                remote-shape'       (get-ref-shape component-file head-component shape)
-                component-container (get-component-container component-file component)]
-            [remote-shape' component-container]))]
+          (let [head-instance        (ctn/get-head-shape (:objects container) shape)
+                component-file       (get-in libraries [(:component-file head-instance) :data])
+                head-component       (ctkl/get-component component-file (:component-id head-instance) true)
+                remote-shape'        (get-ref-shape component-file head-component shape)
+                component-container' (get-component-container component-file head-component)]
+            [remote-shape' component-container' component-file]))]
 
     (if (nil? remote-shape)
       nil
       (if (nil? (:shape-ref remote-shape))
         (cond-> remote-shape
           (and remote-shape with-context?)
-          (with-meta {:file {:id (:id file-data)
-                             :data file-data}
+          (with-meta {:file {:id (:id component-file)
+                             :data component-file}
                       :container component-container}))
         (find-remote-shape component-container libraries remote-shape :with-context? with-context?)))))
 
