@@ -278,6 +278,7 @@ async function readTranslations() {
     "id",
     "ru",
     "tr",
+    "hi",
     "zh_CN",
     "zh_Hant",
     "hr",
