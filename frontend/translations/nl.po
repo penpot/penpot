@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
 "Language: nl\n"
@@ -1833,6 +1833,7 @@ msgstr ""
 "inspecteren"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Laaginfo"
 
