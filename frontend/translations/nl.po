@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-22 10:51+0000\n"
-"Last-Translator: Keunes <keunes@mailbox.org>\n"
-"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
-">\n"
+"PO-Revision-Date: 2025-12-09 22:00+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -8384,7 +8384,7 @@ msgstr "Schakelaar"
 
 #: src/app/main/ui/dashboard/subscription.cljs:84
 msgid "subscription.dashboard.power-up.professional.bottom-button"
-msgstr "Inschakelen!"
+msgstr "Gas geven!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:83
 #, markdown
@@ -8474,3 +8474,18 @@ msgstr "Naam moet minimaal 1 teken zijn"
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS-code kopiëren naar klembord"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Help ons groeien en maak je proefperiode eenvoudiger"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Voeg nu je betalingsgegevens toe om je abonnement na de proefperiode soepel "
+"te laten verlopen en ons open-sourceproject te blijven ondersteunen. Er "
+"worden nog geen kosten in rekening gebracht."
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Nu overslaan en proefperiode starten"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Betalingsgegevens toevoegen"

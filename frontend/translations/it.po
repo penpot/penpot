@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-23 12:51+0000\n"
+"PO-Revision-Date: 2025-12-06 07:00+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -4743,9 +4743,8 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Sei %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:440
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "Ci supporti con questo piano dal %s"
+msgstr "Ci stai supportando con questo piano dal %s"
 
 #: src/app/main/ui/settings/subscription.cljs:472, src/app/main/ui/settings/subscription.cljs:488
 msgid "subscription.settings.try-it-free"
@@ -7772,7 +7771,6 @@ msgstr ""
 "0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Valore originale: %s"
 
@@ -7798,7 +7796,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Errori di riferimento: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:102, src/app/main/ui/workspace/tokens/management/create/form_input_token.cljs:109, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Valore risolto: %"
 
@@ -7872,7 +7869,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Elenco temi"
 
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:194, src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:195, src/app/main/ui/workspace/tokens/management/create/form.cljs:629, src/app/main/ui/workspace/tokens/management/create/form.cljs:630
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Descrizione"
 
@@ -8419,3 +8415,96 @@ msgstr "Esiste già un tema con questo nome"
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:44, src/app/main/ui/workspace/tokens/management/create/form.cljs:70
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "Un token con questo nome esiste già nel percorso: %s"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Qualcosa è andato storto."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"Puoi riprovare l’operazione oppure contattare il supporto per segnalare "
+"l’errore."
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Potenzia!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Ottieni spazio aggiuntivo, recupero dei file e altro ancora per i tuoi team."
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Aiutaci a crescere e rendi la tua prova ancora più semplice"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Aggiungi subito i tuoi dati di pagamento per mantenere attiva la "
+"sottoscrizione dopo il periodo di prova e continuare a supportare il nostro "
+"progetto open-source. Non ti verrà ancora addebitato nulla."
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "Copia l'abbreviazione CSS negli appunti"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+msgid "labels.switch"
+msgstr "Cambia"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Aggiungi dettagli di pagamento"
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "Consigliato"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 invito selezionato"
+msgstr[1] "%s inviti selezionati"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 colore"
+msgstr[1] "%s colori"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 componente"
+msgstr[1] "%s componenti"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 grafica"
+msgstr[1] "%s grafiche"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 tipografia"
+msgstr[1] "%s tipografie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:264
+msgid "workspace.options.more-token-colors"
+msgstr "Altri token colore"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1339
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Dimensione carattere o {alias}"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Tipologia ombra non valida: sono consentite solo 'innerShadow' o 'dropShadow'"
+
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Il nome deve essere di almeno 1 carattere"
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Salta per ora e inizia la prova"

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-27 12:02+0000\n"
+"PO-Revision-Date: 2025-12-09 22:00+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.14.1-dev\n"
+"X-Generator: Weblate 5.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -8228,3 +8228,86 @@ msgstr "Les versions auto-enregistrées seront gardées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "Décrivez la raison de votre commentaire"
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "Autres méthodes de contact"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"Si le commentaire concerne un fichier ou un projet, ajoutez le lien penpot "
+"ici :"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+#, fuzzy
+msgid "feedback.type"
+msgstr "Type"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "Idée"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "Aperçu de l'image de remplissage de la forme"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "Kaleidos © depuis 2019"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "Télécharger %s"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1020
+msgid "labels.help-learning"
+msgstr "Aide et formation"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Un incident est survenu."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"Vous pouvez réessayer d'effectuer l'opération ou contacter l'assistance "
+"technique pour signaler l'erreur."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:799
+msgid "labels.learning-center"
+msgstr "Centre de formation"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Contact"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Sélectionner un espace de couleur"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Contacter l'assistance technique"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Contact"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Bénéficiez de stockage supplémentaire, de la récupération de fichiers et de "
+"bien plus encore pour vos équipes."
+
+#: src/app/main/ui/dashboard/subscription.cljs:101
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Bénéficiez d'un stockage illimité, de la récupération de fichier étendue et "
+"d'un nombre illimité d'éditeurs pour toutes vos équipes à un tarif fixe. "
+"[Consultez le forfait Entreprise.|target:self](%s)"
