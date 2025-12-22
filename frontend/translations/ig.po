@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Igbo "
-"<https://hosted.weblate.org/projects/penpot/frontend/ig/>\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"Language-Team: Igbo <https://hosted.weblate.org/projects/penpot/frontend/ig/>"
+"\n"
 "Language: ig\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
@@ -402,6 +402,7 @@ msgid "dashboard.export.detail"
 msgstr "* Nwere Ike ịgụnye ngwa , esereese gasị, agwụgwara na/ma ọ bụ akara nkụpụta."
 
 #: src/app/main/ui/exports/files.cljs:164
+#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "A ga-atinye ederede nwere ọba ederede nkekọrịta ma gụnyere mbupu  , ma "
