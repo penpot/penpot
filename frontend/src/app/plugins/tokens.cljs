@@ -194,7 +194,12 @@
 
     :addToken
     (fn [type-str name value]
-      (let [type (cto/dtcg-token-type->token-type type-str)]
+      (let [type (cto/dtcg-token-type->token-type type-str)
+            value (case type
+                    :font-family (ctob/convert-dtcg-font-family (js->clj value))
+                    :typography (ctob/convert-dtcg-typography-composite (js->clj value))
+                    :shadow (ctob/convert-dtcg-shadow-composite (js->clj value))
+                    (js->clj value))]
         (cond
           (nil? type)
           (u/display-not-valid :addTokenType type-str)
