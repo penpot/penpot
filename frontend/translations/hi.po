@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-04 10:00+0000\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
 "hi/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.15-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -569,10 +569,11 @@ msgstr ""
 "लाइब्रेरीज़ का उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"
 
 #: src/app/main/ui/exports/files.cljs:164
+#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"साझा की गई लाइब्रेरीज़ वाली फ़ाइलें निर्यात में शामिल की जाएँगी, और उनका "
-"लिंक बनाए रखा जाएगा।"
+"साझा की गई लाइब्रेरीज़ वाली फ़ाइलें निर्यात में शामिल की जाएँगी, और उनका लिंक बनाए रखा "
+"जाएगा।"
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"
@@ -7751,6 +7752,7 @@ msgid "inspect.color-space-label"
 msgstr "रंग स्थान चुनें"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "निरीक्षण टैब चुनें"
 
