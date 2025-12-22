@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
 "Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
-"Language-Team: Yoruba "
-"<https://hosted.weblate.org/projects/penpot/frontend/yo/>\n"
+"Language-Team: Yoruba <https://hosted.weblate.org/projects/penpot/frontend/"
+"yo/>\n"
 "Language: yo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
@@ -422,6 +422,7 @@ msgid "dashboard.export.detail"
 msgstr "* ó le ní àwọn ẹ̀yà ara, àwòrán àti àwon àwọ̀ àti / tàbí àtẹ̀jáde."
 
 #: src/app/main/ui/exports/files.cljs:164
+#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "àwọn fáìli tí ó wà nínú yàrá ìkàwé pípín á dàpọ̀ mọ́ ti ìfiráńṣẹ́, fún "
