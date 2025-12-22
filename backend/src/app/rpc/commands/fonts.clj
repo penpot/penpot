@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.fonts
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -66,7 +67,7 @@
       (uuid? file-id)
       (let [file    (db/get-by-id conn :file file-id {:columns [:id :project-id]})
             project (db/get-by-id conn :project (:project-id file) {:columns [:id :team-id]})
-            perms   (files/get-permissions conn profile-id file-id share-id)]
+            perms   (bfc/get-file-permissions conn profile-id file-id share-id)]
         (files/check-read-permissions! perms)
         (db/query conn :team-font-variant
                   {:team-id (:team-id project)

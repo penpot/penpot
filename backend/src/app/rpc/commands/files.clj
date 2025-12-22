@@ -79,85 +79,14 @@
 
 ;; --- FILE PERMISSIONS
 
-
-(def ^:private sql:file-permissions
-  "select fpr.is_owner,
-          fpr.is_admin,
-          fpr.can_edit
-     from file_profile_rel as fpr
-    inner join file as f on (f.id = fpr.file_id)
-    where fpr.file_id = ?
-      and fpr.profile_id = ?
-      and f.deleted_at is null
-   union all
-   select tpr.is_owner,
-          tpr.is_admin,
-          tpr.can_edit
-     from team_profile_rel as tpr
-    inner join project as p on (p.team_id = tpr.team_id)
-    inner join file as f on (p.id = f.project_id)
-    where f.id = ?
-      and tpr.profile_id = ?
-      and f.deleted_at is null
-   union all
-   select ppr.is_owner,
-          ppr.is_admin,
-          ppr.can_edit
-     from project_profile_rel as ppr
-    inner join file as f on (f.project_id = ppr.project_id)
-    where f.id = ?
-      and ppr.profile_id = ?
-      and f.deleted_at is null")
-
-(defn get-file-permissions
-  [conn profile-id file-id]
-  (when (and profile-id file-id)
-    (db/exec! conn [sql:file-permissions
-                    file-id profile-id
-                    file-id profile-id
-                    file-id profile-id])))
-
-(defn get-permissions
-  ([conn profile-id file-id]
-   (let [rows     (get-file-permissions conn profile-id file-id)
-         is-owner (boolean (some :is-owner rows))
-         is-admin (boolean (some :is-admin rows))
-         can-edit (boolean (some :can-edit rows))]
-     (when (seq rows)
-       {:type :membership
-        :is-owner is-owner
-        :is-admin (or is-owner is-admin)
-        :can-edit (or is-owner is-admin can-edit)
-        :can-read true
-        :is-logged (some? profile-id)})))
-
-  ([conn profile-id file-id share-id]
-   (let [perms  (get-permissions conn profile-id file-id)
-         ldata  (some-> (db/get* conn :share-link {:id share-id :file-id file-id})
-                        (dissoc :flags)
-                        (update :pages db/decode-pgarray #{}))]
-
-     ;; NOTE: in a future when share-link becomes more powerful and
-     ;; will allow us specify which parts of the app is available, we
-     ;; will probably need to tweak this function in order to expose
-     ;; this flags to the frontend.
-     (cond
-       (some? perms) perms
-       (some? ldata) {:type :share-link
-                      :can-read true
-                      :pages (:pages ldata)
-                      :is-logged (some? profile-id)
-                      :who-comment (:who-comment ldata)
-                      :who-inspect (:who-inspect ldata)}))))
-
 (def has-edit-permissions?
-  (perms/make-edition-predicate-fn get-permissions))
+  (perms/make-edition-predicate-fn bfc/get-file-permissions))
 
 (def has-read-permissions?
-  (perms/make-read-predicate-fn get-permissions))
+  (perms/make-read-predicate-fn bfc/get-file-permissions))
 
 (def has-comment-permissions?
-  (perms/make-comment-predicate-fn get-permissions))
+  (perms/make-comment-predicate-fn bfc/get-file-permissions))
 
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
@@ -170,7 +99,7 @@
 
 (defn check-comment-permissions!
   [conn profile-id file-id share-id]
-  (let [perms       (get-permissions conn profile-id file-id share-id)
+  (let [perms       (bfc/get-file-permissions conn profile-id file-id share-id)
         can-read    (has-read-permissions? perms)
         can-comment (has-comment-permissions? perms)]
     (when-not (or can-read can-comment)
@@ -222,7 +151,7 @@
 (defn- get-minimal-file-with-perms
   [cfg {:keys [:id ::rpc/profile-id]}]
   (let [mfile (get-minimal-file cfg id)
-        perms (get-permissions cfg profile-id id)]
+        perms (bfc/get-file-permissions cfg profile-id id)]
     (assoc mfile :permissions perms)))
 
 (defn get-file-etag
@@ -248,7 +177,7 @@
   ;; will be already prefetched and we just reuse them instead
   ;; of making an additional database queries.
   (let [perms (or (:permissions (::cond/object params))
-                  (get-permissions conn profile-id id))]
+                  (bfc/get-file-permissions conn profile-id id))]
     (check-read-permissions! perms)
 
     (let [team (teams/get-team conn
@@ -311,7 +240,7 @@
    ::sm/result schema:file-fragment}
   [cfg {:keys [::rpc/profile-id file-id fragment-id share-id]}]
   (db/run! cfg (fn [cfg]
-                 (let [perms (get-permissions cfg profile-id file-id share-id)]
+                 (let [perms (bfc/get-file-permissions cfg profile-id file-id share-id)]
                    (check-read-permissions! perms)
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
@@ -456,8 +385,7 @@
               :code :params-validation
               :hint "page-id is required when object-id is provided"))
 
-  (let [perms (get-permissions conn profile-id file-id share-id)
-
+  (let [perms (bfc/get-file-permissions conn profile-id file-id share-id)
         file  (bfc/get-file cfg file-id :read-only? true)
 
         proj  (db/get conn :project {:id (:project-id file)})

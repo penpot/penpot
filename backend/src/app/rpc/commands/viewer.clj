@@ -120,7 +120,7 @@
   [system {:keys [::rpc/profile-id file-id share-id] :as params}]
   (db/run! system
            (fn [{:keys [::db/conn] :as system}]
-             (let [perms  (files/get-permissions conn profile-id file-id share-id)
+             (let [perms  (bfc/get-file-permissions conn profile-id file-id share-id)
                    params (-> params
                               (assoc ::perms perms)
                               (assoc :profile-id profile-id))]
