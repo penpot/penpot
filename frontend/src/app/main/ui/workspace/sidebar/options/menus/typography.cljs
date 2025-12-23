@@ -307,7 +307,7 @@
             :title (tr "inspect.attributes.typography.font-family")
             :on-click #(reset! open-selector? true)}
       (cond
-        (= :multiple font-id)
+        (or (= :multiple font-id) (= "mixed" font-id))
         "--"
 
         (some? font)

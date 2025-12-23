@@ -187,19 +187,23 @@
               style-value (normalize-style-value style-name v)]
           (assoc acc style-name style-value)))) {} style-defaults)))
 
+(def mixed-values #{:mixed :multiple "mixed" "multiple"})
+
 (defn get-styles-from-style-declaration
   "Returns a ClojureScript object compatible with text nodes"
-  [style-declaration]
+  [style-declaration & {:keys [removed-mixed] :or {removed-mixed false}}]
   (reduce
    (fn [acc k]
      (if (contains? mapping k)
        (let [style-name (get-style-name-as-css-variable k)
              [_ style-decode] (get mapping k)
              style-value (.getPropertyValue style-declaration style-name)]
-         (assoc acc k (style-decode style-value)))
+         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (assoc acc k (style-decode style-value))))
        (let [style-name (get-style-name k)
              style-value (normalize-attr-value k (.getPropertyValue style-declaration style-name))]
-         (assoc acc k style-value)))) {} txt/text-style-attrs))
+         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (assoc acc k style-value))))) {} txt/text-style-attrs))
 
 (defn get-styles-from-event
   "Returns a ClojureScript object compatible with text nodes"

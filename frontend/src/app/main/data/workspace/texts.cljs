@@ -554,7 +554,7 @@
        (when (features/active-feature? state "text-editor/v2")
          (let [instance (:workspace-editor state)
                styles   (some-> (editor.v2/getCurrentStyle instance)
-                                (styles/get-styles-from-style-declaration)
+                                (styles/get-styles-from-style-declaration :removed-mixed true)
                                 ((comp update-node-fn migrate-node))
                                 (styles/attrs->styles))]
            (editor.v2/applyStylesToSelection instance styles)))))))
