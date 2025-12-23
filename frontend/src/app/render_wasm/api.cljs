@@ -758,13 +758,8 @@
   (h/call wasm/internal-module "_clear_shape_layout"))
 
 (defn- set-shape-layout
-  [shape objects]
+  [shape]
   (clear-layout)
-  (when (or (ctl/any-layout? shape)
-            (ctl/any-layout-immediate-child? objects shape)
-            (has-any-layout-prop? shape))
-    (set-layout-data shape))
-
   (when (ctl/flex-layout? shape)
     (set-flex-layout shape))
 
@@ -915,7 +910,7 @@
           (perf/end-measure "set-view-box::zoom")))))
 
 (defn set-object
-  [objects shape]
+  [shape]
   (perf/begin-measure "set-object")
   (let [shape        (svg-filters/apply-svg-derived shape)
         id           (dm/get-prop shape :id)
@@ -980,7 +975,7 @@
     (when (= type :text)
       (set-shape-grow-type grow-type))
 
-    (set-shape-layout shape objects)
+    (set-shape-layout shape)
     (set-shape-selrect selrect)
 
     (let [pending_thumbnails (into [] (concat
@@ -1034,7 +1029,7 @@
 
 (defn process-object
   [shape]
-  (let [{:keys [thumbnails full]} (set-object [] shape)]
+  (let [{:keys [thumbnails full]} (set-object shape)]
     (process-pending [shape] thumbnails full noop-fn)))
 
 (defn set-objects
@@ -1049,7 +1044,7 @@
          (loop [index 0 thumbnails-acc [] full-acc []]
            (if (< index total-shapes)
              (let [shape    (nth shapes index)
-                   {:keys [thumbnails full]} (set-object objects shape)]
+                   {:keys [thumbnails full]} (set-object shape)]
                (recur (inc index)
                       (into thumbnails-acc thumbnails)
                       (into full-acc full)))
