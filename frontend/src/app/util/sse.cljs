@@ -46,6 +46,10 @@
   [event]
   (= "end" (get-type event)))
 
+(defn progress?
+  [event]
+  (= "progress" (get-type event)))
+
 (defn event?
   [event]
   (= "event" (get-type event)))

@@ -240,10 +240,13 @@
 
 ;; --- Grid Item
 
-(mf/defc grid-item-metadata
-  [{:keys [modified-at]}]
-  (let [time (ct/timeago modified-at)]
-    [:span {:class (stl/css :date)} time]))
+(mf/defc grid-item-metadata*
+  [{:keys [file]}]
+  (let [time (ct/timeago (or (:will-be-deleted-at file)
+                             (:modified-at file)))]
+    [:span {:class (stl/css :date)
+            :title (tr "dashboard.deleted.will-be-deleted-at" time)}
+     time]))
 
 (defn create-counter-element
   [_element file-count]
@@ -429,7 +432,7 @@
                               :on-end edit
                               :max-length 250}]
           [:h3 (:name file)])
-        [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+        [:> grid-item-metadata* {:file file}]]
 
        [:div {:class (stl/css-case :project-th-actions true :force-display menu-open?)}
         [:div

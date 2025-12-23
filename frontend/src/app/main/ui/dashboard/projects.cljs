@@ -17,11 +17,11 @@
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.dashboard.deleted :as deleted]
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
@@ -316,40 +316,34 @@
   {::mf/props :obj}
   [{:keys [team projects profile]}]
 
-  (let [projects
+  (let [team-id         (get team :id)
+
+        recent-map      (mf/deref ref:recent-files)
+        permisions      (:permissions team)
+
+        can-edit        (:can-edit permisions)
+        can-invite      (or (:is-owner permisions)
+                            (:is-admin permisions))
+
+        show-team-hero* (mf/use-state #(get storage/global ::show-team-hero true))
+        show-team-hero? (deref show-team-hero*)
+
+        is-my-penpot    (= (:default-team-id profile) team-id)
+        is-defalt-team? (:is-default team)
+
+        projects
         (mf/with-memo [projects]
           (->> projects
                (remove :deleted-at)
                (sort-by :modified-at)
                (reverse)))
 
-        team-id             (get team :id)
-
-        recent-map          (mf/deref ref:recent-files)
-        permisions          (:permissions team)
-
-        can-edit            (:can-edit permisions)
-        can-invite          (or (:is-owner permisions)
-                                (:is-admin permisions))
-
-        show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))
-        show-team-hero?     (deref show-team-hero*)
-
-        is-my-penpot        (= (:default-team-id profile) team-id)
-        is-defalt-team?     (:is-default team)
-
         on-close
         (mf/use-fn
          (fn []
            (reset! show-team-hero* false)
            (st/emit! (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                                 ::ev/origin "dashboard"}))))
-
-        on-deleted-click
-        (mf/use-fn
-         (mf/deps team-id)
-         (fn []
-           (st/emit! (dcm/go-to-dashboard-deleted :team-id team-id))))]
+                                                 ::ev/origin "dashboard"}))))]
 
     (mf/with-effect [show-team-hero?]
       (swap! storage/global assoc ::show-team-hero show-team-hero?))
@@ -383,15 +377,9 @@
                                                           (not is-defalt-team?)
                                                           show-team-hero?
                                                           can-invite))}
-          [:div {:class (stl/css :nav-options)}
-           [:div {:class (stl/css :selected)
-                  :data-testid "recent-tab"}
-            (tr "dashboard.labels.recent")]
-           [:> button* {:variant "ghost"
-                        :type "button"
-                        :data-testid "deleted-tab"
-                        :on-click on-deleted-click}
-            (tr "dashboard.labels.deleted")]]
+
+          [:> deleted/menu* {:team-id team-id :section :dashboard-recent}]
+
           (for [{:keys [id] :as project} projects]
             ;; FIXME: refactor this, looks inneficient
             (let [files (when recent-map

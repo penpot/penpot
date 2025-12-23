@@ -637,5 +637,5 @@
 (def persistence-state
   (l/derived (comp :status :persistence) st/state))
 
-(def restore
-  (l/derived :restore st/state))
+(def progress
+  (l/derived :progress st/state))

@@ -8422,110 +8422,113 @@ msgstr "Autosaved versions will be kept for %s days."
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
 
-msgid "dashboard.labels.recent"
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Will be deleted %s"
+
+msgid "labels.recent"
 msgstr "Recent"
 
-msgid "dashboard.labels.deleted"
+msgid "labels.deleted"
 msgstr "Deleted"
 
-msgid "dashboard.deleted.restore-all"
+msgid "dashboard.restore-all-deleted-button"
 msgstr "Restore All"
 
-msgid "dashboard.deleted.clear"
+msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
 
-msgid "dashboard.restore-file"
+msgid "dashboard.restore-file-button"
 msgstr "Restore file"
 
-msgid "dashboard.delete-file"
+msgid "dashboard.delete-file-button"
 msgstr "Delete file"
 
-msgid "dashboard.deleted.restore-project"
+msgid "dashboard.restore-project-button"
 msgstr "Restore project"
 
-msgid "dashboard.deleted.delete-project"
+msgid "dashboard.delete-project-button"
 msgstr "Delete project"
 
-msgid "dashboard.deleted.info-text"
+msgid "dashboard.trash-info-text-part1"
 msgstr "Deleted files will remain in the trash for"
 
-msgid "dashboard.deleted.info-days"
+msgid "dashboard.trash-info-text-part2"
 msgstr " %s days. "
 
-msgid "dashboard.deleted.info-text2"
+msgid "dashboard.trash-info-text-part3"
 msgstr "After that, they will be permanently deleted."
 
-msgid "dashboard.deleted.restore-text"
+msgid "dashboard.trash-info-text-part4"
 msgstr "If you change your mind, you can restore them or delete them permanently from each file's menu."
 
-msgid "dashboard.deleted.delete-forever"
-msgstr "Delete forever"
-
-msgid "restore-modal.restore-all.title"
+msgid "dashboard.restore-all-confirmation.title"
 msgstr "Restore all projects and files"
 
-msgid "restore-modal.restore-all.description"
+msgid "dashboard.restore-all-confirmation.description"
 msgstr "You're going to restore all your projects and files. This may take a while."
 
-msgid "restore-modal.restore-file.title"
+msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restore file"
 
-msgid "restore-modal.restore-file.description"
+msgid "dashboard-restore-file-confirmation.description"
 msgstr "You're going to restore %s."
 
-msgid "restore-modal.restore-project.title"
+msgid "dashboard.restore-project-confirmation.title"
 msgstr "Restore Project"
 
-msgid "restore-modal.restore-project.description"
+msgid "dashboard.restore-project-confirmation.description"
 msgstr "You're going to restore %s project and all the files contained in it."
 
-msgid "delete-forever-modal.title"
+msgid "dashboard.delete-forever-confirmation.title"
 msgstr "Delete forever"
 
-msgid "delete-forever-modal.delete-all.description"
+msgid "dashboard.delete-all-forever-confirmation.description"
 msgstr "Are you sure you want to delete forever all your deleted projects and files? This is a non reversible action."
 
-msgid "delete-forever-modal.delete-file.description"
+msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr "Are you sure you want to delete forever %s? This is a non reversible action."
 
-msgid "delete-forever-modal.delete-project.description"
-msgstr "Are you sure you want to delete forever %s project? You're going to delete it forever an all of the files contained in it. This is a non reeversible action."
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever %s project? You're going to delete it forever an all of the files contained in it. This is a non reversible action."
 
-msgid "restore-modal.success-restore-immediately"
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s files have been successfully restored."
+
+msgid "dashboard.restore-success-notification"
 msgstr "%s has been successfully restored."
 
-msgid "delete-forever-modal.success-delete-immediately"
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s files have been successfully deleted."
+
+msgid "dashboard.delete-success-notification"
 msgstr "%s has been successfully deleted."
 
-msgid "restore-modal.error-restore-files"
+msgid "dashboard.errors.error-on-restore-files"
 msgstr "There was an error while restoring the files."
 
-msgid "restore-modal.error-restore-file"
+msgid "dashboard.errors.error-on-restore-file"
 msgstr "There was an error while restoring the file %s."
 
-msgid "restore-modal.error-restore-project"
+msgid "dashboard.errors.error-on-restoring-project"
 msgstr "There was an error while restoring the project %s and its files."
 
-msgid "restore-modal.normal-progress-label"
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "There was an error while deleting the file %s."
+
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "There was an error while deleting the files."
+
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "There was an error while deleting the project %s."
+
+msgid "dashboard.progress-notification.restoring-files"
 msgstr "Restoring files…"
 
-msgid "restore-modal.failed-progress-label"
-msgstr "Restore failed"
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Deleting files…"
 
-msgid "restore-modal.slow-progress-label"
+msgid "dashboard.progress-notification.slow-restore"
 msgstr "Restore unexpectedly slow"
 
-msgid "restore-modal.complete-process-label"
-msgstr "Restore completed"
-
-msgid "progress-widget.default-normal-progress-label"
-msgstr "Processing…"
-
-msgid "progress-widget.default-failed-progress-label"
-msgstr "Process failed"
-
-msgid "progress-widget.default-slow-progress-label"
-msgstr "Process unexpectedly slow"
-
-msgid "progress-widget.default-complete-progress-label"
-msgstr "Process completed"
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Deletion unexpectedly slow"

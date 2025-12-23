@@ -200,7 +200,7 @@
      [:div {:class (stl/css :users-section)}
       [:& active-sessions]]
 
-     [:& progress-widget {:operation :export}]
+     [:& progress-widget]
 
      [:div {:class (stl/css :separator)}]
 

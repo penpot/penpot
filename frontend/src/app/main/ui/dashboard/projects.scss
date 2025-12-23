@@ -248,26 +248,3 @@
     width: 0;
   }
 }
-
-.nav-options {
-  display: flex;
-  gap: var(--sp-l);
-  justify-content: space-between;
-  border-bottom: $b-1 solid var(--panel-border-color);
-  padding-inline-start: var(--sp-l);
-  background: var(--color-background-default);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-index-panels);
-}
-
-.selected {
-  @include t.use-typography("headline-small");
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-foreground-primary);
-  border: $b-1 solid transparent;
-  border-bottom: $b-1 solid var(--color-foreground-primary);
-  padding: 0 var(--sp-m);
-}
