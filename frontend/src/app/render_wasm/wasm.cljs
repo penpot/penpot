@@ -11,6 +11,8 @@
 (defonce internal-module #js {})
 (defonce gl-context-handle nil)
 (defonce gl-context nil)
+(defonce context-lost-handler nil)
+(defonce context-restored-handler nil)
 (defonce serializers
   #js {:blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode

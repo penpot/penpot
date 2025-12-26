@@ -21,6 +21,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.render-wasm :as drw]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -1233,6 +1234,97 @@
           (re-find #"(?i)edge" user-agent) :edge
           :else :unknown)))))
 
+(defn- initialize-wasm-context
+  "Initializes the WebGL context and WASM render engine.
+   Registers the context with Emscripten, sets up extensions, and initializes the render module."
+  [canvas context flags]
+  (let [gl (unchecked-get wasm/internal-module "GL")
+        handle (.registerContext ^js gl context #js {"majorVersion" 2})]
+    (.makeContextCurrent ^js gl handle)
+    (set! wasm/gl-context-handle handle)
+    (set! wasm/gl-context context)
+
+    ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
+    (.getExtension context "WEBGL_debug_renderer_info")
+
+    ;; Initialize Wasm Render Engine
+    (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+    (h/call wasm/internal-module "_set_render_options" flags dpr)))
+
+(defn- handle-context-lost
+  "Handler for WebGL context loss events. Attempts to restore the context manually if possible."
+  [canvas event]
+  (.preventDefault event)
+  (log/warn :hint "WebGL context lost")
+  ;; Only mark as lost if this is the same canvas (not a page change)
+  ;; During page changes, clear-canvas handles the cleanup
+  (when (exists? js/window)
+    (let [saved-canvas (.-penpotCanvas js/window)]
+      (when (identical? canvas saved-canvas)
+        (set! wasm/context-initialized? false)
+        (st/emit! (drw/context-lost))
+        ;; Only try to restore manually if we have the lose extension
+        (when-let [lose-ext (.-penpotLoseContextExt js/window)]
+          ;; Use setTimeout to allow the browser to process the context loss event
+          (js/setTimeout
+           (fn []
+             (try
+                ;; Check if context is actually lost before trying to restore
+               (let [current-context (.getContext ^js canvas "webgl2" default-context-options)]
+                 (cond
+                   (nil? current-context)
+                    ;; No context available, try to restore
+                   (do
+                     (log/info :hint "No context available, attempting to restore manually")
+                     (.restoreContext ^js lose-ext))
+
+                   (.-isContextLost ^js current-context)
+                    ;; Context exists but is lost, try to restore
+                   (do
+                     (log/info :hint "Context is lost, attempting to restore manually")
+                     (.restoreContext ^js lose-ext))
+
+                   :else
+                    ;; Context is already restored, skip
+                   (log/info :hint "Context already restored, skipping manual restoration")))
+                ;; After restoreContext(), the browser should fire webglcontextrestored
+                ;; which will trigger our restoration handler
+               (catch :default err
+                 (log/warn :hint "Could not restore context manually" :error err))))
+           0))))))
+
+(defn- handle-context-restored
+  "Handler for WebGL context restoration events. Re-initializes the context and WASM module."
+  [canvas gl flags]
+  (log/info :hint "WebGL context restored by browser, re-initializing")
+  ;; Re-initialize the context after browser restoration
+  ;; Use setTimeout to ensure the browser has fully restored the context
+  (js/setTimeout
+   (fn []
+     (let [restored-context (.getContext ^js canvas "webgl2" default-context-options)]
+       (when-not (nil? restored-context)
+         (try
+           ;; Clean up old handle if exists
+           (when-let [old-handle wasm/gl-context-handle]
+             (try
+               (.deleteContext ^js gl old-handle)
+               (catch :default _)))
+
+           ;; Re-initialize the context and WASM module
+           (initialize-wasm-context canvas restored-context flags)
+
+           (set! wasm/context-initialized? true)
+
+           (log/info :hint "WebGL context restored successfully")
+           (st/emit! (drw/context-restored))
+           (ug/dispatch! (ug/event "penpot:wasm:context-restored"))
+           ;; Force a render after context restoration
+           (request-render "context-restored")
+           (catch :default err
+             (log/error :hint "Failed to restore WebGL context"
+                        :error err)))))
+     0)))
+
 (defn init-canvas-context
   [canvas]
   (let [gl      (unchecked-get wasm/internal-module "GL")
@@ -1243,17 +1335,45 @@
         browser (get-browser)
         browser (sr/translate-browser browser)]
     (when-not (nil? context)
-      (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
-        (.makeContextCurrent ^js gl handle)
-        (set! wasm/gl-context-handle handle)
-        (set! wasm/gl-context context)
+      ;; Initialize WebGL context and WASM render engine
+      (initialize-wasm-context canvas context flags)
 
-        ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
-        (.getExtension context "WEBGL_debug_renderer_info")
+      ;; Store reference to lose extension for manual restoration
+      (let [lose-ext (.getExtension context "WEBGL_lose_context")]
+        (when (and lose-ext (exists? js/window))
+          (set! (.-penpotLoseContextExt js/window) lose-ext)
+          (set! (.-penpotCanvas js/window) canvas)))
 
-        ;; Initialize Wasm Render Engine
-        (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-        (h/call wasm/internal-module "_set_render_options" flags dpr))
+      ;; Remove existing event listeners if any (cleanup from previous initialization)
+      (when wasm/context-lost-handler
+        (.removeEventListener canvas "webglcontextlost" wasm/context-lost-handler))
+      (when wasm/context-restored-handler
+        (.removeEventListener canvas "webglcontextrestored" wasm/context-restored-handler))
+
+      ;; Create and store event handlers for context loss and restoration
+      (let [lost-handler (fn [event]
+                           (handle-context-lost canvas event))
+            restored-handler (fn [event]
+                               (handle-context-restored canvas gl flags))]
+        (set! wasm/context-lost-handler lost-handler)
+        (set! wasm/context-restored-handler restored-handler)
+
+        ;; Add event listeners for context loss and restoration
+        (.addEventListener canvas "webglcontextlost" lost-handler)
+        (.addEventListener canvas "webglcontextrestored" restored-handler))
+
+      ;; Add debug helpers for reproducing context loss issues
+      (when (exists? js/window)
+        (set! (.-penpotDebugPanning js/window)
+              (fn []
+                (let [lose-ext (.getExtension context "WEBGL_lose_context")]
+                  (when lose-ext
+                    (js/setTimeout
+                     (fn []
+                       (log/warn :hint "Forcing context loss for testing")
+                       (.loseContext lose-ext))
+                     1000))))))
+
       (set! wasm/context-initialized? true))
 
     (h/call wasm/internal-module "_set_browser" browser)
@@ -1268,6 +1388,16 @@
     ;; TODO: perform corresponding cleaning
     (set! wasm/context-initialized? false)
     (h/call wasm/internal-module "_clean_up")
+
+    ;; Remove event listeners before cleaning up context
+    (when (and wasm/gl-context (.-canvas wasm/gl-context))
+      (let [canvas (.-canvas wasm/gl-context)]
+        (when wasm/context-lost-handler
+          (.removeEventListener canvas "webglcontextlost" wasm/context-lost-handler)
+          (set! wasm/context-lost-handler nil))
+        (when wasm/context-restored-handler
+          (.removeEventListener canvas "webglcontextrestored" wasm/context-restored-handler)
+          (set! wasm/context-restored-handler nil))))
 
     ;; Ensure the WebGL context is properly disposed so browsers do not keep
     ;; accumulating active contexts between page switches.

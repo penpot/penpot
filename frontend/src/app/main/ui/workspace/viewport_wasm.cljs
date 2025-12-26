@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.logging :as log]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
    [app.common.types.path :as path]
@@ -54,6 +55,7 @@
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
+   [app.util.globals :as ug]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -132,6 +134,9 @@
         active-frames     (mf/use-state #{})
         canvas-init?      (mf/use-state false)
         initialized?      (mf/use-state false)
+
+        ;; Refs to store current values for context restoration
+        viewport-state-ref (mf/use-ref nil)
 
         ;; REFS
         [viewport-ref
@@ -301,6 +306,8 @@
     ;;       We think moving this out to a handler will make the render code
     ;;       harder to follow through.
     (mf/with-effect [page-id]
+      ;; Reset initialized state when page changes
+      (reset! initialized? false)
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
              (p/fmap (fn [ready?]
@@ -331,10 +338,32 @@
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
+    ;; Update viewport state ref whenever values change
+    (mf/with-effect [base-objects zoom vbox background]
+      (mf/set-ref-val! viewport-state-ref {:base-objects base-objects
+                                           :zoom zoom
+                                           :vbox vbox
+                                           :background background}))
+
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
         (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
+
+    ;; Listen for context restoration events - register only once
+    (mf/with-effect []
+      (let [listener (fn [_]
+                       (log/info :hint "Context restored event received, resetting viewport initialization")
+                       (let [state (mf/ref-val viewport-state-ref)]
+                         (when state
+                           (reset! initialized? false)
+                           (wasm.api/initialize-viewport (:base-objects state)
+                                                         (:zoom state)
+                                                         (:vbox state)
+                                                         (:background state))
+                           (wasm.api/request-render "context-restored"))))]
+        (.addEventListener ug/document "penpot:wasm:context-restored" listener)
+        #(.removeEventListener ug/document "penpot:wasm:context-restored" listener)))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)
