@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"PO-Revision-Date: 2025-12-27 05:00+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
 "hi/>\n"
@@ -569,7 +569,6 @@ msgstr ""
 "लाइब्रेरीज़ का उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"
 
 #: src/app/main/ui/exports/files.cljs:164
-#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "साझा की गई लाइब्रेरीज़ वाली फ़ाइलें निर्यात में शामिल की जाएँगी, और उनका लिंक बनाए रखा "
@@ -7748,9 +7747,8 @@ msgid "inspect.color-space-label"
 msgstr "रंग स्थान चुनें"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
-#, fuzzy
 msgid "inspect.layer-info"
-msgstr "निरीक्षण टैब चुनें"
+msgstr "परत जानकारी"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
 msgid "inspect.tabs.styles.active-sets"
@@ -8440,3 +8438,19 @@ msgstr "यह संस्करण आपके द्वारा लॉक �
 #, unused
 msgid "workspace.versions.tooltip.locked-version"
 msgstr "लॉक किया गया संस्करण - केवल निर्माता ही इसे संशोधित कर सकता है"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "और जानकारी"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr "Invalid token value: आप केवल फ़ॉन्ट-परिवार token का संदर्भ ले सकते हैं"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "अमान्य मूल्य: एक समग्र छाया टोकन का संदर्भ देना चाहिए।।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "एक token छाया आलिया दर्ज करें"
