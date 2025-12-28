@@ -7935,12 +7935,6 @@ msgstr "Geçersiz değer: % izin verilmiyor."
 msgid "workspace.tokens.value-with-units"
 msgstr "Geçersiz değer: Birimlere izin verilmiyor."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr ""
-"Bu tokenin adını değiştirmek, eski adına yapılan tüm referansları "
-"bozacaktır."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Varlıklar"

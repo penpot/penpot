@@ -47,6 +47,18 @@
         self-reference? (get token-references token-name)]
     self-reference?))
 
+(defn references-token?
+  "Recursively check if a value references the token name. Handles strings, maps, and sequences."
+  [value token-name]
+  (cond
+    (string? value)
+    (boolean (some #(= % token-name) (find-token-value-references value)))
+    (map? value)
+    (some true? (map #(references-token? % token-name) (vals value)))
+    (sequential? value)
+    (some true? (map #(references-token? % token-name) value))
+    :else false))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -558,3 +570,18 @@
   "Predicate if a shadow composite token is a reference value - a string pointing to another reference token."
   [token-value]
   (string? token-value))
+
+(defn update-token-value-references
+  "Recursively update token references within a token value, supporting complex token values (maps, sequences, strings)."
+  [value old-name new-name]
+  (cond
+    (string? value)
+    (str/replace value
+                 (re-pattern (str "\\{" (str/replace old-name "." "\\.") "\\}"))
+                 (str "{" new-name "}"))
+    (map? value)
+    (d/update-vals value #(update-token-value-references % old-name new-name))
+    (sequential? value)
+    (mapv #(update-token-value-references % old-name new-name) value)
+    :else
+    value))
