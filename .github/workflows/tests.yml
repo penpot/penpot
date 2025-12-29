@@ -51,6 +51,49 @@ jobs:
         run: |
           ./scripts/test
 
+  test-plugins:
+    name: Plugins Runtime Linter & Tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        id: setup-node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install deps
+        working-directory: ./plugins
+        run: npm ci
+        shell: bash
+
+      - name: Run Lint
+        working-directory: ./plugins
+        run: npm run lint
+
+      - name: Run Format Check
+        working-directory: ./plugins
+        run: npm run format:check
+
+      - name: Run Test
+        working-directory: ./plugins
+        run: npm run test
+
+      - name: Build runtime
+        working-directory: ./plugins
+        run: npm run build
+
+      - name: Build plugins
+        working-directory: ./plugins
+        run: npm run build:plugins
+
+      - name: Build styles
+        working-directory: ./plugins
+        run: npm run build:styles-example
+
   test-frontend:
     name: "Frontend Tests"
     runs-on: ubuntu-24.04
