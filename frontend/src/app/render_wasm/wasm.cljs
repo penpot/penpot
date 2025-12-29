@@ -46,3 +46,6 @@
        :fill-rule shared/RawFillRule})
 
 (defonce context-initialized? false)
+(defonce context-lost? (atom false))
+(defonce context-lost-handler nil)
+(defonce context-lost-canvas nil)
