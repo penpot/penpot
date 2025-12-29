@@ -135,8 +135,18 @@
                          (not extra-errors)
                          valid?)))))
 
+
+(defn- make-initial-state
+  [initial-data]
+  (let [initial (if (fn? initial-data) (initial-data) initial-data)
+        initial (d/nilv initial {})]
+    {:initial initial
+     :data initial
+     :errors {}
+     :touched {}}))
+
 (defn- create-form-mutator
-  [internal-state rerender-fn wrap-update-fn initial opts]
+  [internal-state rerender-fn wrap-update-fn opts]
   (reify
     IDeref
     (-deref [_]
@@ -145,7 +155,10 @@
     IReset
     (-reset! [_ new-value]
       (if (nil? new-value)
-        (mf/set-ref-val! internal-state (if (fn? initial) (initial) initial))
+        (let [initial (-> (mf/ref-val internal-state)
+                          (get :initial)
+                          (make-initial-state))]
+          (mf/set-ref-val! internal-state initial))
         (mf/set-ref-val! internal-state new-value))
       (rerender-fn))
 
@@ -176,26 +189,20 @@
 
         initial
         (mf/with-memo [initial]
-          {:data (if (fn? initial) (initial) initial)
-           :errors {}
-           :touched {}})
+          (make-initial-state initial))
 
         internal-state
-        (mf/use-ref nil)
+        (mf/use-ref initial)
 
         form-mutator
-        (mf/with-memo [initial schema validators]
+        (mf/with-memo [schema validators]
           (let [mutator (create-form-mutator internal-state rerender-fn wrap-update-schema-fn
-                                             initial
                                              (select-keys opts [:schema :validators]))]
             (swap! mutator identity)
             mutator))]
 
-    (mf/with-effect [initial]
-      (mf/set-ref-val! internal-state initial))
-
     ;; Initialize internal state once
-    (mf/with-layout-effect []
+    (mf/with-effect []
       (mf/set-ref-val! internal-state initial))
 
     (mf/with-effect [initial]

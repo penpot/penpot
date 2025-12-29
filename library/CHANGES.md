@@ -1,5 +1,11 @@
 # CHANGELOG
 
+
+## 1.2.0-RC1
+
+- Add the ability to add relations (with `addRelation` method)
+
+
 ## 1.1.0
 
 - Same as 1.1.0-RC2
