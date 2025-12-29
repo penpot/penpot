@@ -1,0 +1,100 @@
+@import url('https://fonts.bunny.net/css?family=work-sans:400,500&display=swap');
+
+:root {
+  /* Font weight */
+  --font-weight-regular: 400;
+  --font-weight-bold: 500;
+  --font-line-height-s: 1.2;
+  --font-line-height-m: 1.4;
+  --font-line-height-l: 1.5;
+  --font-size-xs: 10px;
+  --font-size-s: 12px;
+  --font-size-m: 14px;
+  --font-size-l: 16px;
+}
+
+code {
+  font-family: 'Work Sans', sans-serif;
+}
+
+.display {
+  font-weight: var(--font-weight-regular);
+  font-size: 36px;
+  line-height: var(--font-line-height-s);
+}
+
+.title-s {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-m);
+  line-height: var(--font-line-height-s);
+}
+
+.title-m {
+  font-weight: var(--font-weight-regular);
+  font-size: 20px;
+  line-height: var(--font-line-height-s);
+}
+
+.title-l {
+  font-weight: var(--font-weight-regular);
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.headline-s {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-s);
+  line-height: var(--font-line-height-s);
+  text-transform: uppercase;
+}
+
+.headline-m {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-l);
+  line-height: var(--font-line-height-m);
+  text-transform: uppercase;
+}
+
+.headline-l {
+  font-weight: var(--font-weight-regular);
+  font-size: 18px;
+  line-height: var(--font-line-height-s);
+  text-transform: uppercase;
+}
+
+.body-xs {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-xs);
+  line-height: var(--font-line-height-s);
+}
+
+.body-s {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-s);
+  line-height: var(--font-line-height-m);
+}
+
+.body-m {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-m);
+  line-height: var(--font-line-height-l);
+}
+
+.body-l {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-l);
+  line-height: var(--font-line-height-l);
+}
+
+.caption {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-s);
+  line-height: var(--font-line-height-s);
+}
+
+code,
+.code-font {
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-s);
+  line-height: var(--font-line-height-l);
+}

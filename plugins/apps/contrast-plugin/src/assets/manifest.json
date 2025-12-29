@@ -1,0 +1,7 @@
+{
+  "name": "Contrast",
+  "description": "Measure contrast plugin",
+  "code": "/assets/plugin.js",
+  "icon": "/assets/icon.png",
+  "permissions": ["content:read"]
+}
