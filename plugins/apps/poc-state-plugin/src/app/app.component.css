@@ -1,0 +1,111 @@
+html {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji';
+  line-height: 1.5;
+  tab-size: 4;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: inherit;
+  line-height: inherit;
+  margin: 0;
+}
+
+h1,
+h2,
+p,
+pre {
+  margin: 0;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+
+h1,
+h2 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+}
+
+svg {
+  display: block;
+  vertical-align: middle;
+}
+
+svg {
+  shape-rendering: auto;
+  text-rendering: optimizeLegibility;
+}
+
+.wrapper {
+  width: 100%;
+}
+
+p {
+  margin-block-end: var(--spacing-12);
+}
+
+h1 {
+  font-size: 20px;
+  margin-block-end: var(--spacing-12);
+}
+
+.help {
+  color: #6b7280;
+  display: block;
+  font-size: 11px;
+  padding-inline-start: var(--spacing-12);
+}
+
+.name-wrap {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.name-wrap input {
+  flex: 1;
+}
+
+.actions-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.variant-info {
+  width: 100%;
+  height: 5rem;
+}

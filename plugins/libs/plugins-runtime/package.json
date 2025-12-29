@@ -1,0 +1,12 @@
+{
+  "name": "@penpot/plugins-runtime",
+  "version": "1.3.2",
+  "dependencies": {
+    "@penpot/plugin-types": "^1.3.2",
+    "ses": "^1.1.0",
+    "zod": "^3.22.4"
+  },
+  "module": "./index.mjs",
+  "typings": "./index.d.ts",
+  "type": "module"
+}
