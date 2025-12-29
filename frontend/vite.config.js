@@ -3,6 +3,8 @@ import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
 import { resolve } from "path";
 
+import { playwright } from '@vitest/browser-playwright'
+
 // https://vitejs.dev/config/
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,11 +34,15 @@ export default defineConfig({
           browser: {
             enabled: true,
             headless: true,
-            provider: "playwright",
-            instances: [
-              {
-                browser: "chromium",
+            provider: playwright({
+              launchOptions: {
+                slowMo: 100,
+                timeout: 160000,
               },
+              actionTimeout: 5000,
+            }),
+            instances: [
+              {browser: "chromium"},
             ],
           },
           setupFiles: [".storybook/vitest.setup.ts"],
