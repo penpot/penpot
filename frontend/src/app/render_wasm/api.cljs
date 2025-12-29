@@ -21,6 +21,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.render-wasm :as drw]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -95,20 +96,20 @@
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
-  (when wasm/context-initialized?
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render" timestamp)
     (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
 (defn render-sync
   []
-  (when wasm/context-initialized?
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_sync")
     (set! wasm/internal-frame-id nil)))
 
 (defn render-sync-shape
   [id]
-  (when wasm/context-initialized?
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (let [buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_render_sync_shape"
               (aget buffer 0)
@@ -122,7 +123,7 @@
 
 (defn request-render
   [_requester]
-  (when (not @pending-render)
+  (when (and wasm/context-initialized? (not @pending-render) (not @wasm/context-lost?))
     (reset! pending-render true)
     (js/requestAnimationFrame
      (fn [ts]
@@ -1253,40 +1254,57 @@
 
         ;; Initialize Wasm Render Engine
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-        (h/call wasm/internal-module "_set_render_options" flags dpr))
-      (set! wasm/context-initialized? true))
+        (h/call wasm/internal-module "_set_render_options" flags dpr)
 
-    (h/call wasm/internal-module "_set_browser" browser)
+        ;; Set browser and canvas size only after initialization
+        (h/call wasm/internal-module "_set_browser" browser)
+        (set-canvas-size canvas)
 
-    (h/call wasm/internal-module "_set_render_options" flags dpr)
-    (set-canvas-size canvas)
+        ;; Add event listeners for WebGL context lost
+        (let [handler (fn [event]
+                        (.preventDefault event)
+                        (reset! wasm/context-lost? true)
+                        (log/warn :hint "WebGL context lost")
+                        (st/emit! (drw/context-lost)))]
+          (set! wasm/context-lost-handler handler)
+          (set! wasm/context-lost-canvas canvas)
+          (.addEventListener canvas "webglcontextlost" handler))
+        (set! wasm/context-initialized? true)))
+
     context-init?))
 
 (defn clear-canvas
   []
-  (try
-    ;; TODO: perform corresponding cleaning
-    (set! wasm/context-initialized? false)
-    (h/call wasm/internal-module "_clean_up")
+  (when wasm/context-initialized?
+    (try
+      ;; TODO: perform corresponding cleaning
+      (set! wasm/context-initialized? false)
+      (h/call wasm/internal-module "_clean_up")
 
-    ;; Ensure the WebGL context is properly disposed so browsers do not keep
-    ;; accumulating active contexts between page switches.
-    (when-let [gl (unchecked-get wasm/internal-module "GL")]
-      (when-let [handle wasm/gl-context-handle]
-        (try
-          ;; Ask the browser to release resources explicitly if available.
-          (when-let [ctx wasm/gl-context]
-            (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
-              (.loseContext ^js lose-ext)))
-          (.deleteContext ^js gl handle)
-          (finally
-            (set! wasm/gl-context-handle nil)
-            (set! wasm/gl-context nil)))))
+      ;; Remove event listener for WebGL context lost
+      (when (and wasm/context-lost-handler wasm/context-lost-canvas)
+        (.removeEventListener wasm/context-lost-canvas "webglcontextlost" wasm/context-lost-handler)
+        (set! wasm/context-lost-canvas nil)
+        (set! wasm/context-lost-handler nil))
 
-    ;; If this calls panics we don't want to crash. This happens sometimes
-    ;; with hot-reload in develop
-    (catch :default error
-      (.error js/console error))))
+      ;; Ensure the WebGL context is properly disposed so browsers do not keep
+      ;; accumulating active contexts between page switches.
+      (when-let [gl (unchecked-get wasm/internal-module "GL")]
+        (when-let [handle wasm/gl-context-handle]
+          (try
+            ;; Ask the browser to release resources explicitly if available.
+            (when-let [ctx wasm/gl-context]
+              (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
+                (.loseContext ^js lose-ext)))
+            (.deleteContext ^js gl handle)
+            (finally
+              (set! wasm/gl-context-handle nil)
+              (set! wasm/gl-context nil)))))
+
+      ;; If this calls panics we don't want to crash. This happens sometimes
+      ;; with hot-reload in develop
+      (catch :default error
+        (.error js/console error)))))
 
 (defn show-grid
   [id]
