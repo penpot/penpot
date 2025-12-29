@@ -999,12 +999,13 @@ impl RenderState {
 
         let viewbox_cache_size = get_cache_size(self.viewbox, scale);
         let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
-        if viewbox_cache_size != cached_viewbox_cache_size {
-            self.surfaces.resize_cache(
-                &mut self.gpu_state,
-                viewbox_cache_size,
-                VIEWPORT_INTEREST_AREA_THRESHOLD,
-            );
+        // Only resize cache if the new size is larger than the cached size
+        // This avoids unnecessary surface recreations when the cache size decreases
+        if viewbox_cache_size.width > cached_viewbox_cache_size.width
+            || viewbox_cache_size.height > cached_viewbox_cache_size.height
+        {
+            self.surfaces
+                .resize_cache(viewbox_cache_size, VIEWPORT_INTEREST_AREA_THRESHOLD);
         }
 
         // FIXME - review debug
