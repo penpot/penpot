@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.12.0 (Unreleased)
+## 2.12.0
 
 ### :boom: Breaking changes & Deprecations
 
