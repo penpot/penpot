@@ -248,13 +248,8 @@ impl Surfaces {
         // The rest are tile size surfaces
     }
 
-    pub fn resize_cache(
-        &mut self,
-        gpu_state: &mut GpuState,
-        cache_dims: skia::ISize,
-        interest_area_threshold: i32,
-    ) {
-        self.cache = gpu_state.create_surface_with_isize("cache".to_string(), cache_dims);
+    pub fn resize_cache(&mut self, cache_dims: skia::ISize, interest_area_threshold: i32) {
+        self.cache = self.target.new_surface_with_dimensions(cache_dims).unwrap();
         self.cache.canvas().reset_matrix();
         self.cache.canvas().translate((
             (interest_area_threshold as f32 * TILE_SIZE),
