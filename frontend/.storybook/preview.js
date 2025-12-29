@@ -1,6 +1,5 @@
 import { withThemeByClassName } from "@storybook/addon-themes";
 
-
 import Components from "@target/components";
 import translations from "@public/translation.en.js";
 Components.setDefaultTranslations(translations);

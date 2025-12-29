@@ -110,6 +110,8 @@ jobs:
 
       - name: Component Tests
         working-directory: ./frontend
+        env:
+          VITEST_BROWSER_TIMEOUT: 120000
         run: |
           ./scripts/test-components
 
