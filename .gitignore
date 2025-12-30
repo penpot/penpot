@@ -5,6 +5,7 @@
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+.pnpm-store
 *-init.clj
 *.css.json
 *.jar
