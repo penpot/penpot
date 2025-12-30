@@ -106,9 +106,11 @@
                               :overflowWrap "initial"
                               :lineBreak "auto"
                               :whiteSpace "break-spaces"
-                              :textRendering "geometricPrecision"
-                              :display "inline-block"
-                              :verticalAlign "top"}
+                              :textRendering "geometricPrecision"}
+         base            (cond-> base
+                           (= (:line-height data) "0")
+                           (-> (obj/set! "display" "inline-block")
+                               (obj/set! "verticalAlign" "top")))
          fills
          (cond
            ;; DEPRECATED: still here for backward compatibility with
