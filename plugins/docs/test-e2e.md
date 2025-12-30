@@ -17,7 +17,7 @@
    Use the following command to execute the E2E tests:
 
    ```bash
-   npm run test:e2e
+   pnpm run test:e2e
    ```
 
 ### Writing Tests
@@ -77,5 +77,5 @@
    If you need to refresh all the snapshopts run the test with the update option:
 
    ```bash
-   npm run test:e2e -- --update
+   pnpm run test:e2e -- --update
    ```

@@ -13,7 +13,7 @@ Let's dive in.
 First, you need to create the scaffolding for your plugin. Use the following command, replacing `example-plugin` with the name of your plugin:
 
 ```sh
-npx nx g @nx/web:application example-plugin --directory=apps/example-plugin
+pnpx nx g @nx/web:application example-plugin --directory=apps/example-plugin
 ```
 
 ### Step 2: Migrate eslint to ESM
@@ -73,7 +73,7 @@ Update your `tsconfig.app.json` to include the necessary TypeScript files for yo
 To preview your plugin, start a static server by running:
 
 ```sh
-npx nx run example-plugin:build --watch & npx nx run example-plugin:preview
+pnpx nx run example-plugin:build --watch & pnpx nx run example-plugin:preview
 ```
 
 ### Step 7: Add TS parser to eslint

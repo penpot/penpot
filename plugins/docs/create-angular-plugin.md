@@ -13,7 +13,7 @@ Let's dive in.
 First, you need to create the scaffolding for your plugin. Use the following command, replacing `example-plugin` with the name of your plugin:
 
 ```sh
-npx nx g @nx/angular:app example-plugin --directory=apps/example-plugin --bundler=esbuild
+pnpx nx g @nx/angular:app example-plugin --directory=apps/example-plugin --bundler=esbuild
 ```
 
 ### Step 2: Configure the Manifest
@@ -125,7 +125,7 @@ console.log('Hello Plugin');
 Run this command:
 
 ```sh
-npx nx run example-plugin:init
+pnpx nx run example-plugin:init
 ```
 
 This will run two tasks: `serve`, the usual Angular server, and `buildPlugin`, which will compile the `plugin.ts` file.
@@ -143,7 +143,7 @@ You can also open the Plugin manager modal via:
 ### Step 9: Build plugin
 
 ```
-npx nx run example-plugin:build
+pnpx nx run example-plugin:build
 ```
 
 ### Learn More About Plugin Development
