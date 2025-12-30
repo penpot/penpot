@@ -27,7 +27,7 @@
     "test:e2e": "nx test e2e",
     "registry": "nx local-registry",
     "prepare": "husky",
-    "create:api-docs": "typedoc --tsconfig libs/plugins-runtime/tsconfig.lib.json --customCss ./tools/typedoc.css",
+    "build:doc": "typedoc --tsconfig libs/plugins-runtime/tsconfig.lib.json --customCss ./tools/typedoc.css --out dist/doc",
     "release": "tsx ./tools/scripts/publish.ts"
   },
   "private": true,
@@ -87,9 +87,6 @@
     "vite-plugin-static-copy": "^3.1.0",
     "vitest": "1.6.0"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "dependencies": {
     "@angular/animations": "19.1.3",
     "@angular/common": "19.1.3",

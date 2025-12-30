@@ -2,15 +2,23 @@
 
 ## Introduction
 
-This guide details the process of publishing `plugin-types`, `plugins-styles` and `plugins-runtime` packages, which are essential for plugin development. Below is a walkthrough for publishing these packages and managing releases.
+This guide details the process of publishing `plugin-types`,
+`plugins-styles` and `plugins-runtime` packages, which are essential
+for plugin development. Below is a walkthrough for publishing these
+packages and managing releases.
 
 ## Publishing Libraries
 
-Publishing packages enables the distribution of types and styles libraries. Currently, all packages share the same version, meaning some releases might not contain updates but will still increment the version. Follow the steps below for the automated publishing processes.
+Publishing packages enables the distribution of types and styles
+libraries. Currently, all packages share the same version, meaning
+some releases might not contain updates but will still increment the
+version. Follow the steps below for the automated publishing
+processes.
 
 ### Previewing a Release
 
-To generate a preview of the release to check if everything is as expected, run the following command:
+To generate a preview of the release to check if everything is as
+expected, run the following command:
 
 ```shell
 git checkout main
@@ -33,7 +41,8 @@ This command will:
 - Create a new git tag
 - Publish to NPM with the `latest` tag
 
-Ensure everything is correct before proceeding with the git push. Once verified, execute the following commands:
+Ensure everything is correct before proceeding with the git push. Once
+verified, execute the following commands:
 
 ```shell
 git push
@@ -50,7 +59,8 @@ git merge main
 git push origin stable
 ```
 
-For detailed information, refer to the [Nx Release Documentation](https://nx.dev/recipes/nx-release/get-started-with-nx-release).
+For detailed information, refer to the [Nx Release
+Documentation](https://nx.dev/recipes/nx-release/get-started-with-nx-release).
 
 ### Creating a Preview Version
 
@@ -60,7 +70,9 @@ To generate a preview version and avoid publishing it as the latest release, use
 npm run release -- --dry-run false --latest false --preid next
 ```
 
-For example, if the current version is `0.8.0` and you select the `prepatch` option as a version specifier, it will generate the version `0.8.1-next.0` and publish it with the next tag on npm.
+For example, if the current version is `0.8.0` and you select the
+`prepatch` option as a version specifier, it will generate the version
+`0.8.1-next.0` and publish it with the next tag on npm.
 
 ### Help
 
