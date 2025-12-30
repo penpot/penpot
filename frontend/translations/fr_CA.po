@@ -1,2 +1,40 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2025-12-30 16:00+0000\n"
+"Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 5.15.1\n"
+
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
+msgid "auth.already-have-account"
+msgstr "Tu as déjà un compte?"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:238
+msgid "auth.check-mail"
+msgstr "Vérifie ta boîte courriel"
+
+#: src/app/main/ui/auth/register.cljs:277
+#, unused
+msgid "auth.check-your-email"
+msgstr ""
+"Vérifie ta boîte courriel et clique le lien de vérification pour commencer à "
+"utiliser Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs:67
+msgid "auth.confirm-password"
+msgstr "Confirme ton mot de passe"
+
+#: src/app/main/ui/auth/register.cljs:227
+msgid "auth.create-demo-account"
+msgstr "Créer un compte de démonstration"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#, unused
+msgid "auth.create-demo-profile"
+msgstr "Tu veux simplement essayer?"
