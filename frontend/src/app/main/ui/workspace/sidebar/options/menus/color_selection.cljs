@@ -13,6 +13,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -49,16 +50,16 @@
          • :prop      → the property type (:fill, :stroke, :shadow, etc.)
          • :shape-id  → the UUID of the shape using this color
          • :index     → index of the color in the shape's fill/stroke list
-   
+
    Example of groups:
    {
      {:color \"#9f2929\", :opacity 0.3,  :token-name \"asd2\" :has-token-applied true}
      [{:prop :fill, :shape-id #uuid \"d0231035-25c9-80d5-8006-eae4c3dff32e\", :index 0}]
-   
+
      {:color \"#1b54b6\", :opacity 1}
      [{:prop :fill, :shape-id #uuid \"aab34f9a-98c1-801a-8006-eae5e8236f1b\", :index 0}]
    }
-   
+
    This structure allows fast lookups of all shapes using the same visual color,
    regardless of whether it comes from local fills, strokes or shadow-colors."
 
@@ -217,8 +218,8 @@
                :origin :color-selection
                :on-close on-close}]))
          (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
-           [:button  {:class (stl/css :more-colors-btn)
-                      :on-click #(reset! expand-lib-color true)}
+           [:> button* {:variant "secondary"
+                        :on-click #(reset! expand-lib-color true)}
             (tr "workspace.options.more-lib-colors")])]
 
         [:div {:class (stl/css :selected-color-group)}
@@ -235,8 +236,8 @@
              :on-close on-close}])
 
          (when (and (false? @expand-color) (< 3 (count colors)))
-           [:button  {:class (stl/css :more-colors-btn)
-                      :on-click #(reset! expand-color true)}
+           [:> button* {:variant "secondary"
+                        :on-click #(reset! expand-color true)}
             (tr "workspace.options.more-colors")])]
 
         [:div {:class (stl/css :selected-color-group)}
@@ -259,6 +260,6 @@
 
          (when (and (false? @expand-token-color)
                     (< 3 (count token-colors)))
-           [:button {:class (stl/css :more-colors-btn)
-                     :on-click #(reset! expand-token-color true)}
+           [:> button* {:variant "secondary"
+                        :on-click #(reset! expand-token-color true)}
             (tr "workspace.options.more-token-colors")])]])]))

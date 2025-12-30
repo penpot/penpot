@@ -54,6 +54,7 @@
   align-items: center;
   margin: 0;
   opacity: deprecated.$op-10;
+  gap: var(--sp-xs);
   transition: opacity 0.3s ease;
 
   li {
@@ -62,21 +63,8 @@
 }
 
 .main-toolbar-options-button {
-  @extend .button-tertiary;
   height: deprecated.$s-36;
   width: deprecated.$s-36;
-  flex-shrink: 0;
-  border-radius: deprecated.$s-8;
-  margin: 0 deprecated.$s-2;
-
-  svg {
-    @extend .button-icon;
-    stroke: var(--color-foreground-secondary);
-  }
-
-  &.selected {
-    @extend .button-icon-selected;
-  }
 }
 
 .toolbar-handler {
@@ -96,8 +84,4 @@
     border-radius: deprecated.$s-4;
     background-color: var(--palette-handler-background-color);
   }
-}
-
-ul.main-toolbar-panels {
-  display: none;
 }

@@ -14,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets]
@@ -263,12 +264,10 @@
                                 :icon i/remove}]])])
 
         (when (or (= :multiple exports) (seq exports))
-          [:button
-           {:on-click (when-not in-progress? on-download)
-            :class (stl/css-case
-                    :export-btn true
-                    :btn-disabled in-progress?)
-            :disabled in-progress?}
+          [:> button* {:variant "secondary"
+                       :class (stl/css :export-btn)
+                       :on-click (when-not in-progress? on-download)
+                       :disabled in-progress?}
            (if in-progress?
              (tr "workspace.options.exporting-object")
              (tr "workspace.options.export-object" (c (count shapes-with-exports))))])])]))

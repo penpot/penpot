@@ -206,7 +206,7 @@
       :cmd :export-frames
       :origin origin}]))
 
-(mf/defc progress-widget
+(mf/defc progress-widget*
   {::mf/wrap [mf/memo]}
   [{:keys [operation] :or {operation :export}}]
   (let [state             (mf/deref (case operation

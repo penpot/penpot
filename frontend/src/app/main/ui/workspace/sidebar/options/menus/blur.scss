@@ -37,21 +37,7 @@
     border-radius: deprecated.$br-8;
     background-color: var(--input-details-color);
     .show-more {
-      @extend .button-secondary;
-      height: deprecated.$s-32;
-      width: deprecated.$s-28;
       border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
-      box-sizing: border-box;
-      border: deprecated.$s-1 solid var(--button-secondary-background-color-rest);
-      svg {
-        @extend .button-icon;
-      }
-      &.selected {
-        background-color: var(--button-radio-background-color-active);
-        svg {
-          stroke: var(--button-radio-foreground-color-active);
-        }
-      }
     }
     .label {
       @include deprecated.bodySmallTypography;

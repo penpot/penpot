@@ -5223,6 +5223,10 @@ msgstr "Ungroup"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Color tokens"
 
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "Get color"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.component.swap.loop-error"
 msgstr "Components can't be nested inside themselves."
@@ -6160,6 +6164,30 @@ msgstr "After delay"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:621
 msgid "workspace.options.interaction-animation"
 msgstr "Animation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:609
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:613
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:617
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "Down"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:621
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "Up"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:595
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "In"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:599
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "Out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:413
 msgid "workspace.options.interaction-animation-dissolve"

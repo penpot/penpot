@@ -15,14 +15,11 @@
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(def ^:private flatten-icon
-  (deprecated-icon/icon-xref :boolean-flatten (stl/css :flatten-icon)))
 
 (mf/defc bool-options*
   [{:keys [total-selected shapes shapes-with-children]}]
@@ -70,41 +67,40 @@
                  (st/emit! (dwb/change-bool-type head-id bool-type)))))))
 
         flatten-objects
-        (mf/use-fn  #(st/emit! (dwps/convert-selected-to-path)))]
+        (mf/use-fn
+         #(st/emit! (dwps/convert-selected-to-path)))]
 
     (when (not (and disabled-bool-btns disabled-flatten))
       [:div {:class (stl/css :boolean-options)}
-       [:div {:class (stl/css :bool-group)}
-        [:& radio-buttons {:selected (d/name head-bool-type)
-                           :class (stl/css :boolean-radio-btn)
-                           :on-change on-change
-                           :name "bool-options"}
-         [:& radio-button {:icon i/boolean-union
-                           :value "union"
-                           :disabled disabled-bool-btns
-                           :title (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
-                           :id "bool-opt-union"}]
-         [:& radio-button {:icon i/boolean-difference
-                           :value "difference"
-                           :disabled disabled-bool-btns
-                           :title (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
-                           :id "bool-opt-differente"}]
-         [:& radio-button {:icon i/boolean-intersection
-                           :value "intersection"
-                           :disabled disabled-bool-btns
-                           :title (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
-                           :id "bool-opt-intersection"}]
-         [:& radio-button {:icon i/boolean-exclude
-                           :value "exclude"
-                           :disabled disabled-bool-btns
-                           :title (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")
-                           :id "bool-opt-exclude"}]]]
+       [:div {:class (stl/css :boolean-group)}
+        [:> radio-buttons* {:class (stl/css :boolean-radio-btn)
+                            :variant "ghost"
+                            :selected (d/name head-bool-type)
+                            :on-change on-change
+                            :name "bool-options"
+                            :options [{:id "bool-opt-union"
+                                       :icon i/boolean-union
+                                       :label (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
+                                       :value "union"
+                                       :disabled disabled-bool-btns}
+                                      {:id "bool-opt-differente"
+                                       :icon i/boolean-difference
+                                       :label (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
+                                       :value "difference"
+                                       :disabled disabled-bool-btns}
+                                      {:id "bool-opt-intersection"
+                                       :icon i/boolean-intersection
+                                       :label (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
+                                       :value "intersection"
+                                       :disabled disabled-bool-btns}
+                                      {:id "bool-opt-exclude"
+                                       :icon i/boolean-exclude
+                                       :label (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")
+                                       :value "exclude"
+                                       :disabled disabled-bool-btns}]}]]
 
-       [:button
-        {:title (tr "workspace.shape.menu.flatten")
-         :class (stl/css-case
-                 :flatten-button true
-                 :disabled disabled-flatten)
-         :disabled disabled-flatten
-         :on-click flatten-objects}
-        flatten-icon]])))
+       [:> icon-button* {:variant "ghost"
+                         :icon i/boolean-flatten
+                         :aria-label (tr "workspace.shape.menu.flatten")
+                         :on-click flatten-objects
+                         :disabled disabled-flatten}]])))

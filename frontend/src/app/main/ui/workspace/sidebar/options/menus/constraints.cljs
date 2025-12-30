@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -61,6 +61,7 @@
         constraints-h (or (get values :constraints-h) (gsh/default-constraints-h values))
         constraints-v (or (get values :constraints-v) (gsh/default-constraints-v values))
 
+        fixed-scroll? (d/nilv (:fixed-scroll values) false)
 
         on-constraint-button-clicked
         (mf/use-fn
@@ -218,16 +219,8 @@
               :options options-v
               :on-change on-constraint-v-select-changed}]]
            (when first-level?
-             [:div {:class (stl/css :checkbox)}
-
-              [:label {:for "fixed-on-scroll"
-                       :class (stl/css-case :checked (:fixed-scroll values))}
-               [:span {:class (stl/css-case :check-mark true
-                                            :checked (:fixed-scroll values))}
-                (when (:fixed-scroll values)
-                  deprecated-icon/status-tick)]
-               (tr "workspace.options.constraints.fix-when-scrolling")
-               [:input {:type "checkbox"
-                        :id "fixed-on-scroll"
-                        :checked (:fixed-scroll values)
-                        :on-change on-fixed-scroll-clicked}]]])]])])))
+             [:> checkbox* {:id "fixed-on-scroll"
+                            :class (stl/css :checkbox)
+                            :label (tr "workspace.options.constraints.fix-when-scrolling")
+                            :checked fixed-scroll?
+                            :on-change on-fixed-scroll-clicked}])]])])))
