@@ -112,10 +112,6 @@ COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
-RUN set -ex; \
-    corepack install; \
-    yarn install; \
-    yarn run playwright install chromium; \
-    rm -rf /opt/penpot/.yarn
+RUN ./setup
 
 CMD ["node", "app.js"]
