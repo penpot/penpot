@@ -8278,110 +8278,110 @@ msgstr "Los autoguardados duran %s días."
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
-msgid "dashboard.labels.recent"
+msgid "labels.recent"
 msgstr "Recientes"
 
-msgid "dashboard.labels.deleted"
+msgid "labels.deleted"
 msgstr "Eliminados"
 
-msgid "dashboard.deleted.restore-all"
+msgid "dashboard.restore-all-deleted-button"
 msgstr "Restaurar todo"
 
-msgid "dashboard.deleted.clear"
+msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
 
-msgid "dashboard.restore-file"
+msgid "dashboard.restore-file-button"
 msgstr "Restaurar archivo"
 
-msgid "dashboard.delete-file"
+msgid "dashboard.delete-file-button"
 msgstr "Eliminar archivo"
 
-msgid "dashboard.deleted.restore-project"
+msgid "dashboard.restore-project-button"
 msgstr "Restaurar proyecto"
 
-msgid "dashboard.deleted.delete-project"
+msgid "dashboard.delete-project-button"
 msgstr "Eliminar proyecto"
 
-msgid "dashboard.deleted.info-text"
+msgid "dashboard.trash-info-text-part1"
 msgstr "Los archivos eliminados permanecerán en la papelera durante"
 
-msgid "dashboard.deleted.info-days"
+msgid "dashboard.trash-info-text-part2"
 msgstr " %s días. "
 
-msgid "dashboard.deleted.info-text2"
+msgid "dashboard.trash-info-text-part3"
 msgstr "Después de eso, serán eliminados permanentemente."
 
-msgid "dashboard.deleted.restore-text"
+msgid "dashboard.trash-info-text-part4"
 msgstr "Si cambias de opinión, puedes restaurarlos o eliminarlos permanentemente desde el menú de cada archivo."
 
 msgid "dashboard.deleted.delete-forever"
 msgstr "Eliminar para siempre"
 
-msgid "restore-modal.restore-all.title"
+msgid "dashboard.restore-all-confirmation.title"
 msgstr "Restaurar todos los proyectos y archivos"
 
-msgid "restore-modal.restore-all.description"
+msgid "dashboard.restore-all-confirmation.description"
 msgstr "Vas a restaurar todos tus proyectos y archivos. Esto puede tardar un poco."
 
-msgid "restore-modal.restore-file.title"
+msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurar archivo"
 
-msgid "restore-modal.restore-file.description"
+msgid "dashboard-restore-file-confirmation.description"
 msgstr "Vas a restaurar %s."
 
-msgid "restore-modal.restore-project.title"
+msgid "dashboard.restore-project-confirmation.title"
 msgstr "Restaurar proyecto"
 
-msgid "restore-modal.restore-project.description"
+msgid "dashboard.restore-project-confirmation.description"
 msgstr "Vas a restaurar el proyecto %s y todos los archivos que contiene."
 
-msgid "delete-forever-modal.title"
+msgid "dashboard.delete-forever-confirmation.title"
 msgstr "Eliminar para siempre"
 
-msgid "delete-forever-modal.delete-all.description"
+msgid "dashboard.delete-all-forever-confirmation.description"
 msgstr "¿Estás seguro de que quieres eliminar para siempre todos tus proyectos y archivos eliminados? Esta es una acción irreversible."
 
-msgid "delete-forever-modal.delete-file.description"
+msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr "¿Estás seguro de que quieres eliminar para siempre %s? Esta es una acción irreversible."
 
-msgid "delete-forever-modal.delete-project.description"
+msgid "dashboard.delete-project-forever-confirmation.description"
 msgstr "¿Estás seguro de que quieres eliminar para siempre el proyecto %s? Vas a eliminarlo para siempre junto con todos los archivos que contiene. Esta es una acción irreversible."
 
-msgid "restore-modal.success-restore-immediately"
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s ficheros han sido restaurado correctamente."
+
+msgid "dashboard.restore-success-notification"
 msgstr "%s ha sido restaurado correctamente."
 
-msgid "delete-forever-modal.success-delete-immediately"
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s ficheros han sido eliminados correctamente."
+
+msgid "dashboard.delete-success-notification"
 msgstr "%s ha sido eliminado correctamente."
 
-msgid "restore-modal.error-restore-files"
+msgid "dashboard.errors.error-on-restore-files"
 msgstr "Hubo un error al restaurar los archivos."
 
-msgid "restore-modal.error-restore-file"
+msgid "dashboard.errors.error-on-restore-file"
 msgstr "Hubo un error al restaurar el archivo %s."
 
-msgid "restore-modal.error-restore-project"
-msgstr "Hubo un error al restaurar el proyecto %s y sus archivos."
+msgid "dashboard.errors.error-on-restoring-files"
+msgstr "Hubo un error al restaurar archivos."
 
-msgid "restore-modal.normal-progress-label"
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Hubo un error al eliminar archivos."
+
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Hubo un error al eliminar el proyecto %s"
+
+msgid "dashboard.progress-notification.restoring-files"
 msgstr "Restaurando archivos…"
 
-msgid "restore-modal.failed-progress-label"
-msgstr "Falló la restauración"
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Eliminando archivos…"
 
-msgid "restore-modal.slow-progress-label"
-msgstr "Restauración lenta"
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restauración inesperadamente lenta"
 
-msgid "restore-modal.complete-process-label"
-msgstr "Restauración completada"
-
-msgid "progress-widget.default-normal-progress-label"
-msgstr "Procesando…"
-
-msgid "progress-widget.default-failed-progress-label"
-msgstr "Falló el procesamiento"
-
-msgid "progress-widget.default-slow-progress-label"
-msgstr "Procesamiento lento"
-
-msgid "progress-widget.default-complete-progress-label"
-msgstr "Procesamiento completado"
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Eliminación inesperadamente lenta"

@@ -12,7 +12,6 @@
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
-   [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
@@ -27,6 +26,8 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ^:private ref:deleted-files
+  (l/derived :deleted-files st/state))
 
 (def ^:private menu-icon
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
@@ -40,57 +41,40 @@
     [:h1 (tr "dashboard.projects-title")]]])
 
 (mf/defc deleted-project-menu*
-  [{:keys [project files team-id show on-close top left]}]
+  [{:keys [project  show on-close top left]}]
   (let [top  (d/nilv top 0)
         left (d/nilv left 0)
 
-        file-ids
-        (mf/with-memo [files]
-          (into #{} d/xf:map-id files))
-
-        restore-fn
-        (fn [_]
-          (st/emit! (dd/restore-files-immediately
-                     (with-meta {:team-id team-id :ids file-ids}
-                       {:on-success #(st/emit! (ntf/success (tr "restore-modal.success-restore-immediately" (:name project)))
-                                               (dd/fetch-projects team-id)
-                                               (dd/fetch-deleted-files team-id))
-                        :on-error #(st/emit! (ntf/error (tr "restore-modal.error-restore-project" (:name project))))}))))
-
         on-restore-project
-        (fn []
-          (st/emit!
-           (modal/show {:type :confirm
-                        :title (tr "restore-modal.restore-project.title")
-                        :message (tr "restore-modal.restore-project.description" (:name project))
-                        :accept-style :primary
-                        :accept-label (tr "labels.continue")
-                        :on-accept restore-fn})))
-
-        delete-fn
-        (fn [_]
-          (st/emit! (ntf/success (tr "delete-forever-modal.success-delete-immediately" (:name project)))
-                    (dd/delete-files-immediately
-                     {:team-id team-id
-                      :ids file-ids})
-                    (dd/fetch-projects team-id)
-                    (dd/fetch-deleted-files team-id)))
+        (mf/use-fn
+         (mf/deps project)
+         (fn []
+           (let [on-accept #(st/emit! (dd/restore-project-immediately project))]
+             (st/emit! (modal/show {:type :confirm
+                                    :title (tr "dashboard.restore-project-confirmation.title")
+                                    :message (tr "dashboard.restore-project-confirmation.description" (:name project))
+                                    :accept-style :primary
+                                    :accept-label (tr "labels.continue")
+                                    :on-accept on-accept})))))
 
         on-delete-project
-        (fn []
-          (st/emit!
-           (modal/show {:type :confirm
-                        :title (tr "delete-forever-modal.title")
-                        :message (tr "delete-forever-modal.delete-project.description" (:name project))
-                        :accept-label (tr "dashboard.deleted.delete-forever")
-                        :on-accept delete-fn})))
+        (mf/use-fn
+         (mf/deps project)
+         (fn []
+           (let [accept-fn #(st/emit! (dd/delete-project-immediately project))]
+             (st/emit! (modal/show {:type :confirm
+                                    :title (tr "dashboard.delete-forever-confirmation.title")
+                                    :message (tr "dashboard.delete-project-forever-confirmation.description" (:name project))
+                                    :accept-label (tr "dashboard.delete-forever-confirmation.title")
+                                    :on-accept accept-fn})))))
         options
-        [{:name   (tr "dashboard.deleted.restore-project")
-          :id     "project-restore"
-          :handler on-restore-project}
-         {:name   (tr "dashboard.deleted.delete-project")
-          :id     "project-delete"
-          :handler on-delete-project}]]
+        (mf/with-memo [on-restore-project on-delete-project]
+          [{:name   (tr "dashboard.restore-project-button")
+            :id     "project-restore"
+            :handler on-restore-project}
+           {:name   (tr "dashboard.delete-project-button")
+            :id     "project-delete"
+            :handler on-delete-project}])]
 
     [:> context-menu*
      {:on-close on-close
@@ -102,9 +86,8 @@
       :options options}]))
 
 (mf/defc deleted-project-item*
-  {::mf/props :obj
-   ::mf/private true}
-  [{:keys [project team files]}]
+  {::mf/private true}
+  [{:keys [project files]}]
   (let [project-files  (filterv #(= (:project-id %) (:id project)) files)
 
         empty?         (empty? project-files)
@@ -170,8 +153,6 @@
           (when (:menu-open @local)
             [:> deleted-project-menu*
              {:project project
-              :files project-files
-              :team-id (:id team)
               :show (:menu-open @local)
               :left (+ 24 (:x (:menu-pos @local)))
               :top (:y (:menu-pos @local))
@@ -193,8 +174,34 @@
           :limit limit
           :selected-files selected-files}])]]))
 
-(def ^:private ref:deleted-files
-  (l/derived :deleted-files st/state))
+
+(mf/defc menu*
+  [{:keys [team-id section]}]
+  (let [on-recent-click
+        (mf/use-fn
+         (mf/deps team-id)
+         (fn []
+           (st/emit! (dcm/go-to-dashboard-recent :team-id team-id))))
+
+        on-deleted-click
+        (mf/use-fn
+         (mf/deps team-id)
+         (fn []
+           (st/emit! (dcm/go-to-dashboard-deleted :team-id team-id))))]
+
+    [:div {:class (stl/css :nav)}
+     [:div {:class [(stl/css :nav-option)
+                    (stl/css-case :selected (= section :dashboard-recent))]
+            :data-testid "recent-tab"
+            :on-click on-recent-click}
+      (tr "labels.recent")]
+     [:div {:class [(stl/css :nav-option)
+                    (stl/css-case :selected (= section :dashboard-deleted))]
+            :variant "ghost"
+            :type "button"
+            :data-testid "deleted-tab"
+            :on-click on-deleted-click}
+      (tr "labels.deleted")]]))
 
 (mf/defc deleted-section*
   [{:keys [team projects]}]
@@ -230,53 +237,33 @@
             (and (= "enterprise" sub-type) (not canceled?)) 90
             :else 7))
 
-        on-clear
+        on-delete-all
         (mf/use-fn
          (mf/deps team-id deleted-map)
          (fn []
-           (when deleted-map
-             (let [file-ids (into #{} (keys deleted-map))]
-               (when (seq file-ids)
-                 (st/emit!
-                  (modal/show {:type :confirm
-                               :title (tr "delete-forever-modal.title")
-                               :message (tr "delete-forever-modal.delete-all.description" (count file-ids))
-                               :accept-label (tr "dashboard.deleted.delete-forever")
-                               :on-accept #(st/emit!
-                                            (dd/delete-files-immediately
-                                             {:team-id team-id
-                                              :ids file-ids})
-                                            (dd/fetch-projects team-id)
-                                            (dd/fetch-deleted-files team-id))})))))))
-
-        restore-fn
-        (fn [file-ids]
-          (st/emit! (dd/restore-files-immediately
-                     (with-meta {:team-id team-id :ids file-ids}
-                       {:on-success #(st/emit! (dd/fetch-projects team-id)
-                                               (dd/fetch-deleted-files team-id))
-                        :on-error #(st/emit! (ntf/error (tr "restore-modal.error-restore-files")))}))))
+           (when-let [ids (not-empty (into #{} (map key) deleted-map))]
+             (let [on-accept #(st/emit! (dd/delete-files-immediately
+                                         {:team-id team-id
+                                          :ids ids}))]
+               (st/emit! (modal/show {:type :confirm
+                                      :title (tr "dashboard.delete-forever-confirmation.title")
+                                      :message (tr "dashboard.delete-all-forever-confirmation.description" (count ids))
+                                      :accept-label (tr "dashboard.delete-forever-confirmation.title")
+                                      :on-accept on-accept}))))))
 
         on-restore-all
         (mf/use-fn
          (mf/deps team-id deleted-map)
          (fn []
-           (when deleted-map
-             (let [file-ids (into #{} (keys deleted-map))]
-               (when (seq file-ids)
-                 (st/emit!
-                  (modal/show {:type :confirm
-                               :title (tr "restore-modal.restore-all.title")
-                               :message (tr "restore-modal.restore-all.description" (count file-ids))
-                               :accept-label (tr "labels.continue")
-                               :accept-style :primary
-                               :on-accept #(restore-fn file-ids)})))))))
+           (when-let [ids (not-empty (into #{} (map key) deleted-map))]
+             (let [on-accept #(st/emit! (dd/restore-files-immediately {:team-id team-id :ids ids}))]
+               (st/emit! (modal/show {:type :confirm
+                                      :title (tr "dashboard.restore-all-confirmation.title")
+                                      :message (tr "dashboard.restore-all-confirmation.description" (count ids))
+                                      :accept-label (tr "labels.continue")
+                                      :accept-style :primary
+                                      :on-accept on-accept}))))))]
 
-        on-recent-click
-        (mf/use-fn
-         (mf/deps team-id)
-         (fn []
-           (st/emit! (dcm/go-to-dashboard-recent :team-id team-id))))]
 
     (mf/with-effect [team-id]
       (st/emit! (dd/fetch-projects team-id)
@@ -289,35 +276,26 @@
       [:*
        [:div {:class (stl/css :no-bg)}
 
-        [:div {:class (stl/css :nav-options)}
-         [:> button* {:variant "ghost"
-                      :data-testid "recent-tab"
-                      :type "button"
-                      :on-click on-recent-click}
-          (tr "dashboard.labels.recent")]
-         [:div {:class (stl/css :selected)
-                :data-testid "deleted-tab"}
-          (tr "dashboard.labels.deleted")]]
+        [:> menu* {:team-id team-id :section :dashboard-deleted}]
 
-        [:div {:class (stl/css :deleted-content)}
-         [:div {:class (stl/css :deleted-info)}
-          [:div
-           (tr "dashboard.deleted.info-text")
-           [:span {:class (stl/css :info-text-highlight)}
-            (tr "dashboard.deleted.info-days" deletion-days)]
-           (tr "dashboard.deleted.info-text2")]
-          [:div
-           (tr "dashboard.deleted.restore-text")]]
+        [:div {:class (stl/css :deleted-info-content)}
+         [:p {:class (stl/css :deleted-info)}
+          (tr "dashboard.trash-info-text-part1")
+          [:span {:class (stl/css :info-text-highlight)}
+           (tr "dashboard.trash-info-text-part2" deletion-days)]
+          (tr "dashboard.trash-info-text-part3")
+          [:br]
+          (tr "dashboard.trash-info-text-part4")]
          [:div {:class (stl/css :deleted-options)}
           [:> button* {:variant "ghost"
                        :type "button"
                        :on-click on-restore-all}
-           (tr "dashboard.deleted.restore-all")]
+           (tr "dashboard.restore-all-deleted-button")]
           [:> button* {:variant "destructive"
                        :type "button"
                        :icon "delete"
-                       :on-click on-clear}
-           (tr "dashboard.deleted.clear")]]]
+                       :on-click on-delete-all}
+           (tr "dashboard.clear-trash-button")]]]
 
         (when (seq projects)
           (for [{:keys [id] :as project} projects]
@@ -326,6 +304,5 @@
                                (filterv #(= id (:project-id %)))
                                (sort-by :modified-at #(compare %2 %1))))]
               [:> deleted-project-item* {:project project
-                                         :team team
                                          :files files
                                          :key id}])))]]]]))

@@ -12,7 +12,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as clr]
-   [app.main.data.dashboard :as dd]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -206,13 +205,13 @@
       :cmd :export-frames
       :origin origin}]))
 
+;; FIXME: deprecated, should be refactored in two components and use
+;; the generic progress reporter
+
 (mf/defc progress-widget
   {::mf/wrap [mf/memo]}
-  [{:keys [operation] :or {operation :export}}]
-  (let [state             (mf/deref (case operation
-                                      :export  refs/export
-                                      :restore refs/restore
-                                      refs/export))
+  []
+  (let [state             (mf/deref refs/export)
         profile           (mf/deref refs/profile)
         theme             (or (:theme profile) theme/default)
         is-default-theme? (= theme/default theme)
@@ -221,10 +220,7 @@
         detail-visible?   (:detail-visible state)
         widget-visible?   (:widget-visible state)
         progress          (:progress state)
-        items             (case operation
-                            :export  (:exports state)
-                            :restore (:files state)
-                            [])
+        items             (:exports state)
         total             (or (:total state) (count items))
         complete?         (= progress total)
         circ              (* 2 Math/PI 12)
@@ -250,43 +246,23 @@
 
         title
         (cond
-          error?    (case operation
-                      :export  (tr "workspace.options.exporting-object-error")
-                      :restore (tr "workspace.options.restoring-object-error")
-                      (tr "workspace.options.processing-object-error"))
-          complete? (case operation
-                      :export  (tr "workspace.options.exporting-complete")
-                      :restore (tr "workspace.options.restoring-complete")
-                      (tr "workspace.options.processing-complete"))
-          healthy?  (case operation
-                      :export  (tr "workspace.options.exporting-object")
-                      :restore (tr "workspace.options.restoring-object")
-                      (tr "workspace.options.processing-object"))
-          (not healthy?) (case operation
-                           :export  (tr "workspace.options.exporting-object-slow")
-                           :restore (tr "workspace.options.restoring-object-slow")
-                           (tr "workspace.options.processing-object-slow")))
+          error?         (tr "workspace.options.exporting-object-error")
+          complete?      (tr "workspace.options.exporting-complete")
+          healthy?       (tr "workspace.options.exporting-object")
+          (not healthy?) (tr "workspace.options.exporting-object-slow"))
 
         retry-last-operation
         (mf/use-fn
-         (mf/deps operation)
          (fn []
-           (case operation
-             :export  (st/emit! (de/retry-last-export))
-             :restore (st/emit! (dd/retry-last-restore))
-             nil)))
+           (st/emit! (de/retry-last-export))))
 
         toggle-detail-visibility
         (mf/use-fn
-         (mf/deps operation)
          (fn []
-           (case operation
-             :export  (st/emit! (de/toggle-detail-visibililty))
-             :restore (st/emit! (dd/toggle-restore-detail-visibility))
-             nil)))]
+           (st/emit! (de/toggle-detail-visibililty))))]
 
     [:*
-     (when (and widget-visible? (= operation :export))
+     (when widget-visible?
        [:div {:class (stl/css :export-progress-widget)
               :on-click toggle-detail-visibility}
         [:svg {:width "24" :height "24"}

@@ -704,7 +704,6 @@
             f.created_at,
             f.modified_at,
             f.name,
-            f.is_shared,
             f.deleted_at AS will_be_deleted_at,
             ft.media_id AS thumbnail_id,
             row_number() OVER w AS row_num,
@@ -814,7 +813,7 @@
       AND (f.deleted_at IS NULL OR f.deleted_at > now())
     ORDER BY f.created_at ASC;")
 
-(defn- absorb-library-by-file!
+(defn- absorb-library-by-file
   [cfg ldata file-id]
 
   (assert (db/connection-map? cfg)
@@ -838,7 +837,7 @@
                              :modified-at (ct/now)
                              :has-media-trimmed false}))))
 
-(defn- absorb-library
+(defn- absorb-library*
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
   [cfg {:keys [id data] :as library}]
@@ -853,10 +852,10 @@
            :library-id (str id)
            :files (str/join "," (map str ids)))
 
-    (run! (partial absorb-library-by-file! cfg data) ids)
+    (run! (partial absorb-library-by-file cfg data) ids)
     library))
 
-(defn absorb-library!
+(defn absorb-library
   [{:keys [::db/conn] :as cfg} id]
   (let [file (-> (bfc/get-file cfg id
                                :realize? true
@@ -873,7 +872,7 @@
     (-> (cfeat/get-team-enabled-features cf/flags team)
         (cfeat/check-file-features! (:features file)))
 
-    (absorb-library cfg file)))
+    (absorb-library* cfg file)))
 
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -886,14 +885,14 @@
                ;; file, we need to perform more complex operation,
                ;; so in this case we retrieve the complete file and
                ;; perform all required validations.
-               (let [file (-> (absorb-library! cfg id)
+               (let [file (-> (absorb-library cfg id)
                               (assoc :is-shared false))]
                  (db/delete! conn :file-library-rel {:library-file-id id})
                  (db/update! conn :file
                              {:is-shared false
                               :modified-at (ct/now)}
                              {:id id})
-                 (select-keys file [:id :name :is-shared]))
+                 file)
 
                (and (false? (:is-shared file))
                     (true? (:is-shared params)))
@@ -940,6 +939,11 @@
                           {:id file-id}
                           {::db/return-keys [:id :name :is-shared :deleted-at
                                              :project-id :created-at :modified-at]})]
+
+    ;; Remove all possible relations for that file
+    (db/delete! conn :file-library-rel
+                {:library-file-id file-id})
+
     (wrk/submit! {::db/conn conn
                   ::wrk/task :delete-object
                   ::wrk/params {:object :file
@@ -1090,47 +1094,53 @@
 
 ;; --- MUTATION COMMAND: delete-files-immediatelly
 
-(def ^:private sql:delete-team-files
-  "UPDATE file AS uf SET deleted_at = ?::timestamptz
-     FROM (
-        SELECT f.id
-          FROM file AS f
-          JOIN project AS p ON (p.id = f.project_id)
-          JOIN team AS t ON (t.id = p.team_id)
-         WHERE t.deleted_at IS NULL
-           AND t.id = ?
-           AND f.id = ANY(?::uuid[])
-     ) AS subquery
-    WHERE uf.id = subquery.id
-   RETURNING uf.id, uf.deleted_at;")
+(def ^:private sql:get-delete-team-files-candidates
+  "SELECT f.id
+    FROM file AS f
+    JOIN project AS p ON (p.id = f.project_id)
+    JOIN team AS t ON (t.id = p.team_id)
+   WHERE t.deleted_at IS NULL
+     AND t.id = ?
+     AND f.id = ANY(?::uuid[])")
 
 (def ^:private schema:permanently-delete-team-files
   [:map {:title "permanently-delete-team-files"}
    [:team-id ::sm/uuid]
    [:ids [::sm/set ::sm/uuid]]])
 
+(defn- permanently-delete-team-files
+  [{:keys [::db/conn]} {:keys [::rpc/request-at team-id ids]}]
+  (let [ids (into #{}
+                  d/xf:map-id
+                  (db/exec! conn [sql:get-delete-team-files-candidates team-id
+                                  (db/create-array conn "uuid" ids)]))]
+
+    (reduce (fn [acc id]
+              (events/tap :progress {:file-id id :index (inc (count acc)) :total (count ids)})
+              (db/update! conn :file
+                          {:deleted-at request-at}
+                          {:id id}
+                          {::db/return-keys false})
+              (wrk/submit! {::db/conn conn
+                            ::wrk/task :delete-object
+                            ::wrk/params {:object :file
+                                          :deleted-at request-at
+                                          :id id}})
+              (conj acc id))
+            #{}
+            ids)))
+
 (sv/defmethod ::permanently-delete-team-files
   "Mark the specified files to be deleted immediatelly on the
   specified team. The team-id on params will be used to filter and
   check writable permissons on team."
 
-  {::doc/added "2.12"
-   ::sm/params schema:permanently-delete-team-files
-   ::db/transaction true}
+  {::doc/added "2.13"
+   ::sm/params schema:permanently-delete-team-files}
 
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at team-id ids]}]
-  (teams/check-edition-permissions! conn profile-id team-id)
-
-  (reduce (fn [acc {:keys [id deleted-at]}]
-            (wrk/submit! {::db/conn conn
-                          ::wrk/task :delete-object
-                          ::wrk/params {:object :file
-                                        :deleted-at deleted-at
-                                        :id id}})
-            (conj acc id))
-          #{}
-          (db/plan conn [sql:delete-team-files request-at team-id
-                         (db/create-array conn "uuid" ids)])))
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  (teams/check-edition-permissions! pool profile-id team-id)
+  (sse/response #(db/tx-run! cfg permanently-delete-team-files params)))
 
 ;; --- MUTATION COMMAND: restore-files-immediatelly
 
@@ -1194,7 +1204,7 @@
         {:keys [files projects]}
         (reduce (fn [result {:keys [id project-id]}]
                   (let [index (-> result :files count)]
-                    (events/tap :progress {:file-id id :index index :total total-files})
+                    (events/tap :progress {:file-id id :index (inc index) :total total-files})
                     (restore-file conn id)
 
                     (-> result
@@ -1217,7 +1227,7 @@
 (sv/defmethod ::restore-deleted-team-files
   "Removes the deletion mark from the specified files (and respective
   projects) on the specified team."
-  {::doc/added "2.12"
+  {::doc/added "2.13"
    ::sse/stream? true
    ::sm/params schema:restore-deleted-team-files}
   [cfg params]

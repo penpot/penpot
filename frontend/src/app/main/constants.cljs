@@ -302,3 +302,9 @@
     :height 720}])
 
 (def max-input-length 255)
+
+(def ^:const default-slow-progress-threshold
+  "A constant value that represents a threshold in milliseconds when a
+  normal progress becomes tagged as slow if no event received in the
+  specified amount of time"
+  1000)

@@ -20,17 +20,19 @@
   padding-block-end: var(--sp-xxxl);
 }
 
-.deleted-content {
+.deleted-info-content {
   display: flex;
-  gap: var(--sp-l);
   justify-content: space-between;
-  margin-inline-start: var(--sp-l);
-  margin-block-start: var(--sp-xxl);
+  padding: var(--sp-s) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
 }
 
 .deleted-info {
-  @include t.use-typography("body-medium");
+  display: block;
+  height: fit-content;
   color: var(--color-foreground-secondary);
+  @include t.use-typography("body-large");
+  line-height: 0.8;
+  height: var(--sp-xl);
 }
 
 .info-text-highlight {
@@ -43,27 +45,37 @@
   flex-shrink: 0;
 }
 
-.nav-options {
+.nav {
   display: flex;
   gap: var(--sp-l);
   justify-content: space-between;
   border-bottom: $b-1 solid var(--panel-border-color);
-  padding-inline-start: var(--sp-l);
+  //padding-inline-start: var(--sp-l);
   background: var(--color-background-default);
   position: sticky;
   top: 0;
   z-index: var(--z-index-panels);
+
+  /* margin: 0 1.5rem; */
+  /* margin-top: 1rem; */
+
+  margin: var(--sp-xxl) var(--sp-xxl) var(--sp-xxl) var(--sp-xxl);
 }
 
-.selected {
-  @include t.use-typography("headline-small");
+.nav-option {
+  color: var(--color-foreground-secondary);
+  padding: 0.5rem;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-foreground-primary);
   border: $b-1 solid transparent;
+  cursor: pointer;
+}
+
+.selected {
+  color: var(--color-foreground-primary);
   border-bottom: $b-1 solid var(--color-foreground-primary);
-  padding: 0 var(--sp-m);
 }
 
 .project {

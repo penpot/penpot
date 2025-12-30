@@ -87,6 +87,9 @@
    {:stream? true
     :form-data? true}
 
+   ::sse/permanently-delete-team-files
+   {:stream? true}
+
    ::sse/restore-deleted-team-files
    {:stream? true}
 

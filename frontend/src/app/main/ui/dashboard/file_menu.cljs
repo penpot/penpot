@@ -194,39 +194,32 @@
           (st/emit! (dd/restore-files-immediately
                      (with-meta {:team-id (:id current-team)
                                  :ids #{(:id file)}}
-                       {:on-success #(st/emit! (ntf/success (tr "restore-modal.success-restore-immediately" (:name file)))
+                       {:on-success #(st/emit! (ntf/success (tr "dashboard.restore-success-notification" (:name file)))
                                                (dd/fetch-projects (:id current-team))
                                                (dd/fetch-deleted-files (:id current-team)))
-                        :on-error #(st/emit! (ntf/error (tr "restore-modal.error-restore-file" (:name file))))}))))
+                        :on-error #(st/emit! (ntf/error (tr "dashboard.errors.error-on-restore-file" (:name file))))}))))
 
         on-restore-immediately
         (fn []
           (st/emit!
            (modal/show {:type :confirm
-                        :title (tr "restore-modal.restore-file.title")
-                        :message (tr "restore-modal.restore-file.description" (:name file))
+                        :title (tr "dashboard-restore-file-confirmation.title")
+                        :message (tr "dashboard-restore-file-confirmation.description" (:name file))
                         :accept-label (tr "labels.continue")
                         :accept-style :primary
                         :on-accept restore-fn})))
 
-
-        delete-fn
-        (fn [_]
-          (st/emit! (ntf/success (tr "delete-forever-modal.success-delete-immediately" (:name file)))
-                    (dd/delete-files-immediately
-                     {:team-id (:id current-team)
-                      :ids #{(:id file)}})
-                    (dd/fetch-projects (:id current-team))
-                    (dd/fetch-deleted-files (:id current-team))))
-
         on-delete-immediately
         (fn []
-          (st/emit!
-           (modal/show {:type :confirm
-                        :title (tr "delete-forever-modal.title")
-                        :message (tr "delete-forever-modal.delete-file.description" (:name file))
-                        :accept-label (tr "delete-forever-modal.title")
-                        :on-accept delete-fn})))]
+          (let [accept-fn #(st/emit! (dd/delete-files-immediately
+                                      {:team-id (:id current-team)
+                                       :ids #{(:id file)}}))]
+            (st/emit!
+             (modal/show {:type :confirm
+                          :title (tr "dashboard.delete-forever-confirmation.title")
+                          :message (tr "dashboard.delete-file-forever-confirmation.description" (:name file))
+                          :accept-label (tr "dashboard.delete-forever-confirmation.title")
+                          :on-accept accept-fn}))))]
 
     (mf/with-effect []
       (->> (rp/cmd! :get-all-projects)
@@ -268,11 +261,11 @@
           options
           (if can-restore
             [(when can-restore
-               {:name    (tr "dashboard.restore-file")
+               {:name    (tr "dashboard.restore-file-button")
                 :id      "restore-file"
                 :handler on-restore-immediately})
              (when can-restore
-               {:name    (tr "dashboard.delete-file")
+               {:name    (tr "dashboard.delete-file-button")
                 :id      "delete-file"
                 :handler on-delete-immediately})]
             (if multi?

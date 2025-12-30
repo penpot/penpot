@@ -167,7 +167,7 @@
         (open-share-dialog)))
 
     [:div {:class (stl/css :options-zone)}
-     [:& progress-widget {:operation :export}]
+     [:& progress-widget]
 
      (case section
        :interactions [:*
