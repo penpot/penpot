@@ -18,10 +18,9 @@ export VERSION_TAG="${VERSION}-${BUILD_TS}";
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
 
-
 corepack enable;
 corepack install;
-yarn install;
+pnpm install;
 
 rm -rf target/dist;
 rm -rf resources/public;
@@ -33,9 +32,9 @@ pushd ../render-wasm;
 ./build
 popd
 
-yarn run build:app:main $EXTRA_PARAMS;
-yarn run build:app:libs;
-yarn run build:app:assets;
+pnpm run build:app:main $EXTRA_PARAMS;
+pnpm run build:app:libs;
+pnpm run build:app:assets;
 
 sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js/worker/main*.js
 
@@ -43,6 +42,6 @@ rsync -avr resources/public/ target/dist/
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
     # build storybook
-    yarn run build:storybook || exit 1;
+    pnpm run build:storybook || exit 1;
     rsync -avr storybook-static/ target/dist/storybook-static;
 fi
