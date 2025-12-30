@@ -1,5 +1,5 @@
 #!/bin/bash
 
 if [ "$HUSKY_HOOK" = "pre-push" ]; then
-    npm run lint:affected
+    pnpm run lint:affected
 fi

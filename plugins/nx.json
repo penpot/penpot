@@ -1,4 +1,7 @@
 {
+  "cli": {
+    "packageManager": "pnpm"
+  },
   "pluginsConfig": {
     "@nx/js": {
       "analyzeSourceFiles": true

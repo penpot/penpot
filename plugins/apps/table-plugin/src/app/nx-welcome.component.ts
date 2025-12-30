@@ -64,7 +64,8 @@ import { CommonModule } from '@angular/common';
         text-decoration: inherit;
       }
       pre {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           'Liberation Mono', 'Courier New', monospace;
       }
       svg {
@@ -79,7 +80,8 @@ import { CommonModule } from '@angular/common';
         background-color: rgba(55, 65, 81, 1);
         border-radius: 0.25rem;
         color: rgba(229, 231, 235, 1);
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
           'Liberation Mono', 'Courier New', monospace;
         overflow: scroll;
         padding: 0.5rem 0.75rem;
