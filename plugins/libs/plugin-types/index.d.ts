@@ -2,8 +2,10 @@
  * These are methods and properties available on the `penpot` global object.
  *
  */
-export interface Penpot
-  extends Omit<Context, 'addListener' | 'removeListener'> {
+export interface Penpot extends Omit<
+  Context,
+  'addListener' | 'removeListener'
+> {
   ui: {
     /**
      * Opens the plugin UI. It is possible to develop a plugin without interface (see Palette color example) but if you need, the way to open this UI is using `penpot.ui.open`.

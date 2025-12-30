@@ -41,7 +41,6 @@
    ```
 
    **Explanation**:
-
    - `Agent` opens a browser, logs into Penpot, and creates a file.
    - `runCode` executes the plugin code and returns the file state after execution.
 

@@ -26,7 +26,6 @@
     "test": "nx run-many -t test --parallel -p plugins-runtime lorem-ipsum-plugin colors-to-tokens-plugin",
     "test:e2e": "nx test e2e",
     "registry": "nx local-registry",
-    "prepare": "husky",
     "build:doc": "typedoc --tsconfig libs/plugins-runtime/tsconfig.lib.json --customCss ./tools/typedoc.css --out dist/doc",
     "release": "tsx ./tools/scripts/publish.ts"
   },
@@ -44,6 +43,7 @@
     "@commitlint/cli": "^18.6.0",
     "@commitlint/config-conventional": "^18.6.0",
     "@eslint/eslintrc": "^2.1.1",
+    "@eslint/js": "8.57.0",
     "@nx/angular": "20.3.2",
     "@nx/esbuild": "20.3.2",
     "@nx/eslint": "20.3.2",

@@ -63,36 +63,38 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
-          cache: npm
 
       - name: Install deps
         working-directory: ./plugins
-        run: npm ci
         shell: bash
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
 
       - name: Run Lint
         working-directory: ./plugins
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run Format Check
         working-directory: ./plugins
-        run: npm run format:check
+        run: pnpm run format:check
 
       - name: Run Test
         working-directory: ./plugins
-        run: npm run test
+        run: pnpm run test
 
       - name: Build runtime
         working-directory: ./plugins
-        run: npm run build
+        run: pnpm run build
 
       - name: Build plugins
         working-directory: ./plugins
-        run: npm run build:plugins
+        run: pnpm run build:plugins
 
       - name: Build styles
         working-directory: ./plugins
-        run: npm run build:styles-example
+        run: pnpm run build:styles-example
 
   test-frontend:
     name: "Frontend Tests"

@@ -12,7 +12,6 @@ npm run build:doc
 
 Once you've done that, you'll find the result in `./dist/doc`
 
-
 #### Deploy the API Documentation
 
 Just move to the `stable` branch in this repository and rebase it with

@@ -1,5 +1,5 @@
 #!/bin/bash
 
 if [ -z "$HUSKY_HOOK" ] || [ "$HUSKY_HOOK" = "pre-commit" ]; then
-    npm run lint:affected
+    pnpm run lint:affected
 fi
