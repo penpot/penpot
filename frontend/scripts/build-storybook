@@ -14,6 +14,6 @@ export NODE_ENV=production;
 
 corepack enable;
 corepack install || exit 1;
-yarn install || exit 1;
+pnpm install || exit 1;
 
-yarn run build:storybook || exit 1;
+pnpm run build:storybook || exit 1;

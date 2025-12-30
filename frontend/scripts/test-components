@@ -6,5 +6,5 @@ set -ex
 
 $SCRIPT_DIR/setup;
 
-yarn run build:storybook
-yarn run test:storybook
+pnpm run build:storybook
+pnpm run test:storybook
