@@ -197,6 +197,10 @@ impl<'a> State<'a> {
         self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
+    pub fn clear_tile_index(&mut self) {
+        self.render_state.clear_tile_index();
+    }
+
     pub fn rebuild_tiles(&mut self) {
         self.render_state.rebuild_tiles_from(&self.shapes, None);
     }

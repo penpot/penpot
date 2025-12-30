@@ -275,6 +275,14 @@ pub extern "C" fn set_view_end() {
             }
             performance::end_measure!("set_view_end::rebuild_tiles");
             performance::end_timed_log!("rebuild_tiles", _rebuild_start);
+        } else {
+            // During pan, we only clear the tile index without
+            // invalidating cached textures, which is more efficient.
+            let _clear_start = performance::begin_timed_log!("clear_tile_index");
+            performance::begin_measure!("set_view_end::clear_tile_index");
+            state.clear_tile_index();
+            performance::end_measure!("set_view_end::clear_tile_index");
+            performance::end_timed_log!("clear_tile_index", _clear_start);
         }
         performance::end_measure!("set_view_end");
         performance::end_timed_log!("set_view_end", _end_start);
