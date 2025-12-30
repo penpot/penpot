@@ -73,7 +73,7 @@ export function isJsFile(path) {
 export async function compileSass(worker, path, options) {
   path = ph.resolve(path);
 
-  log.info("compile:", path);
+  // log.info("compile:", path);
   return worker.exec("compileSass", [path, options]);
 }
 
