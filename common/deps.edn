@@ -59,7 +59,7 @@
     thheller/shadow-cljs {:mvn/version "3.2.0"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    criterium/criterium {:mvn/version "RELEASE"}
+    criterium/criterium {:mvn/version "0.4.6"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
 

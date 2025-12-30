@@ -3,5 +3,5 @@
 set -ex
 corepack enable;
 corepack install;
-yarn install;
-yarn run test;
+pnpm install;
+pnpm run test;
