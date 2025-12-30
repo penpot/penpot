@@ -30,8 +30,8 @@
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
-    "watch:app": "clojure -M:dev:shadow-cljs watch main",
-    "watch": "yarn run clear:shadow-cache && yarn run watch:app",
+    "watch:app": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs watch main",
+    "watch": "yarn run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",
     "build": "yarn run clear:shadow-cache && yarn run build:app",
     "fmt:clj:check": "cljfmt check --parallel=false src/",

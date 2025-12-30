@@ -47,10 +47,9 @@
     "watch:app:libs": "node ./scripts/build-libs.js --watch",
     "watch:app:main": "clojure -M:dev:shadow-cljs watch main worker storybook",
     "clear:shadow-cache": "rm -rf .shadow-cljs",
-    "watch:app": "yarn run clear:shadow-cache && concurrently \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
-    "watch": "yarn run watch:app:assets",
-    "watch:storybook": "yarn run build:storybook:assets && concurrently \"storybook dev -p 6006 --no-open\" \"yarn run watch:storybook:assets\"",
-    "watch:storybook:assets": "node ./scripts/watch-storybook.js"
+    "watch": "exit 0",
+    "watch:app": "yarn run clear:shadow-cache && concurrently --kill-others-on-fail \"yarn run watch:app:assets\" \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
+    "watch:storybook": "yarn run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\""
   },
   "devDependencies": {
     "@playwright/test": "1.52.0",
