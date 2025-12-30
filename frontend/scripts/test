@@ -3,7 +3,7 @@
 set -ex
 corepack enable;
 corepack install;
-yarn install;
+pnpm install;
 
-yarn run lint:scss;
-yarn run test;
+pnpm run lint:scss;
+pnpm run test;
