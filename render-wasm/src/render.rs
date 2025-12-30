@@ -1962,6 +1962,17 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
+    /// Clears the tile index without invalidating cached tile textures.
+    /// This is useful when tile positions don't change (e.g., during pan operations)
+    /// but the tile index needs to be synchronized. The cached tile textures remain
+    /// valid since they don't depend on the current view position, only on zoom level.
+    /// This is much more efficient than clearing the entire cache surface.
+    pub fn clear_tile_index(&mut self) {
+        performance::begin_measure!("clear_tile_index");
+        self.surfaces.clear_tiles();
+        performance::end_measure!("clear_tile_index");
+    }
+
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
         performance::begin_measure!("rebuild_tiles");
 

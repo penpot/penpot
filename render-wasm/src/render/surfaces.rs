@@ -108,6 +108,10 @@ impl Surfaces {
         }
     }
 
+    pub fn clear_tiles(&mut self) {
+        self.tiles.clear();
+    }
+
     pub fn resize(&mut self, gpu_state: &mut GpuState, new_width: i32, new_height: i32) {
         self.reset_from_target(gpu_state.create_target_surface(new_width, new_height));
     }
