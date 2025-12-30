@@ -15,6 +15,7 @@
    [app.common.time :as ct]
    [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
+   [app.main.constants :as mconst]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
@@ -710,7 +711,8 @@
                                (rx/share))]
         (rx/merge
          (rx/of (dcm/initialize-progress
-                 {:slow-progress-threshold 1000
+                 {:slow-progress-threshold
+                  mconst/default-slow-progress-threshold
                   :total (count ids)
                   :hints {:progress progress-hint
                           :slow slow-hint}}))
@@ -729,14 +731,13 @@
          (->> stream
               (rx/filter sse/end-of-stream?)
               (rx/map sse/get-payload)
-              (rx/mapcat (fn [_]
-                           (rx/concat
-                            (rx/of (dcm/clear-progress)
-                                   (fetch-projects team-id)
-                                   (fetch-deleted-files team-id)
-                                   (fetch-projects team-id))
-                            (on-success))))
-
+              (rx/merge-map (fn [_]
+                              (rx/concat
+                               (rx/of (dcm/clear-progress)
+                                      (fetch-projects team-id)
+                                      (fetch-deleted-files team-id)
+                                      (fetch-projects team-id))
+                               (on-success))))
 
               (rx/catch (fn [error]
                           (rx/concat
@@ -830,7 +831,8 @@
 
         (rx/merge
          (rx/of (dcm/initialize-progress
-                 {:slow-progress-threshold 1000
+                 {:slow-progress-threshold
+                  mconst/default-slow-progress-threshold
                   :total (count ids)
                   :hints {:progress progress-hint
                           :slow slow-hint}}))

@@ -328,8 +328,8 @@
         show-team-hero* (mf/use-state #(get storage/global ::show-team-hero true))
         show-team-hero? (deref show-team-hero*)
 
-        is-my-penpot    (= (:default-team-id profile) team-id)
-        is-defalt-team? (:is-default team)
+        my-penpot?      (= (:default-team-id profile) team-id)
+        default-team?   (:is-default team)
 
         projects
         (mf/with-memo [projects]
@@ -367,14 +367,14 @@
         [:*
          (when (and show-team-hero?
                     can-invite
-                    (not is-defalt-team?))
+                    (not default-team?))
            [:> team-hero* {:team team :on-close on-close}])
 
          [:div {:class (stl/css-case :dashboard-container true
                                      :no-bg true
                                      :dashboard-projects true
-                                     :with-team-hero (and (not is-my-penpot)
-                                                          (not is-defalt-team?)
+                                     :with-team-hero (and (not my-penpot?)
+                                                          (not default-team?)
                                                           show-team-hero?
                                                           can-invite))}
 
