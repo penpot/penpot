@@ -238,12 +238,12 @@
                 :always
                 (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
-                (and (ctl/any-layout-immediate-child? objects shape)
+                (and (or (ctl/any-layout-immediate-child? objects shape) (ctl/any-layout? shape))
                      (not= (:layout-item-h-sizing shape) :fix)
                      ^boolean change-width?)
                 (ctm/change-property :layout-item-h-sizing :fix)
 
-                (and (ctl/any-layout-immediate-child? objects shape)
+                (and (or (ctl/any-layout-immediate-child? objects shape) (ctl/any-layout? shape))
                      (not= (:layout-item-v-sizing shape) :fix)
                      ^boolean change-height?)
                 (ctm/change-property :layout-item-v-sizing :fix)

@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 
 .layer-row {
   --layer-indentation-size: calc(#{deprecated.$s-4} * 6);
@@ -87,7 +88,7 @@
   height: deprecated.$s-32;
   width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
   cursor: pointer;
-
+  min-width: px2rem(140);
   &.filtered {
     width: calc(100% - deprecated.$s-12);
   }

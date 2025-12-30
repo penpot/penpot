@@ -1,0 +1,14 @@
+name: _STAGING RENDER
+
+on:
+  schedule:
+    - cron: '36 5-20 * * 1-5'
+
+jobs:
+  build-bundle:
+    uses: ./.github/workflows/build-bundle.yml
+    secrets: inherit
+    with:
+      gh_ref: "staging-render"
+      build_wasm: "yes"
+      build_storybook: "yes"

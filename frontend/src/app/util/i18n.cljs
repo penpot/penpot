@@ -48,6 +48,7 @@
    {:label "Føroyskt mál (community)" :value "fo"}
    {:label "Korean (community)" :value "ko"}
    {:label "עִבְרִית (community)" :value "he"}
+   {:label "आधुनिक मानक हिन्दी (community)" :value "hi"}
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
    {:label "日本語 (Community)" :value "ja_jp"}
