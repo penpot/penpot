@@ -22,7 +22,7 @@ expected, run the following command:
 
 ```shell
 git checkout main
-npm run release
+pnpm run release
 ```
 
 ### Generating a Real Release
@@ -30,7 +30,7 @@ npm run release
 To create an actual release, disable the dry-run option:
 
 ```shell
-npm run release -- --dry-run false
+pnpm run release -- --dry-run false
 ```
 
 This command will:
@@ -67,7 +67,7 @@ Documentation](https://nx.dev/recipes/nx-release/get-started-with-nx-release).
 To generate a preview version and avoid publishing it as the latest release, use:
 
 ```shell
-npm run release -- --dry-run false --latest false --preid next
+pnpm run release -- --dry-run false --latest false --preid next
 ```
 
 For example, if the current version is `0.8.0` and you select the
@@ -79,7 +79,7 @@ For example, if the current version is `0.8.0` and you select the
 To see more options, run:
 
 ```shell
-npm run release -- --help
+pnpm run release -- --help
 ```
 
 ## Important Reminders

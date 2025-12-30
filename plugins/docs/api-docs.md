@@ -7,7 +7,7 @@ This document shows you how to create API documentation.
 If you want to see what the document will look like (the HTML that's generated), you can run the following command:
 
 ```shell
-npm run build:doc
+pnpm run build:doc
 ```
 
 Once you've done that, you'll find the result in `./dist/doc`
