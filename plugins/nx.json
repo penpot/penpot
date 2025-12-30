@@ -81,5 +81,5 @@
       "projectNameAndRootFormat": "as-provided"
     }
   },
-  "useLegacyCache": true
+  "useLegacyCache": false
 }
