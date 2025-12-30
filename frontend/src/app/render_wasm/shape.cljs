@@ -280,8 +280,18 @@
         :layout-grid-cells
         (api/set-grid-layout-cells v)
 
-        (:layout
-         :layout-flex-dir
+        :layout
+        (do
+          (api/clear-layout)
+          (cond
+            (ctl/grid-layout? shape)
+            (api/set-grid-layout shape)
+
+            (ctl/flex-layout? shape)
+            (api/set-flex-layout shape))
+          (api/set-layout-data shape))
+
+        (:layout-flex-dir
          :layout-gap-type
          :layout-gap
          :layout-align-items
@@ -291,15 +301,12 @@
          :layout-wrap-type
          :layout-padding-type
          :layout-padding)
-        (do
-          (api/clear-layout)
-          (cond
-            (ctl/grid-layout? shape)
-            (api/set-grid-layout-data shape)
+        (cond
+          (ctl/grid-layout? shape)
+          (api/set-grid-layout-data shape)
 
-            (ctl/flex-layout? shape)
-            (api/set-flex-layout shape))
-          (api/set-layout-data shape))
+          (ctl/flex-layout? shape)
+          (api/set-flex-layout shape))
 
         ;; Property not in WASM
         nil))))

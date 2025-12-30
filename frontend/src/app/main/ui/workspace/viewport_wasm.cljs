@@ -16,6 +16,7 @@
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -305,9 +306,15 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (let [init? (wasm.api/init-canvas-context canvas)]
+                         (let [init? (try
+                                       (wasm.api/init-canvas-context canvas)
+                                       (catch :default e
+                                         (js/console.error "Error initializing canvas context:" e)
+                                         false))]
                            (reset! canvas-init? init?)
-                           (when-not init? (js/alert "WebGL not supported")))))))
+                           (when-not init?
+                             (js/alert "WebGL not supported")
+                             (st/emit! (dcm/go-to-dashboard-recent))))))))
         (fn []
           (wasm.api/clear-canvas))))
 

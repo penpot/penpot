@@ -23,7 +23,14 @@
 - Fix wrong board size presets in Android [Taiga #12339](https://tree.taiga.io/project/penpot/issue/12339)
 
 
-## 2.12.0 (Unreleased)
+## 2.12.1
+
+### :bug: Bugs fixed
+
+- Fix setting a portion of text as bold or underline messes things up [Github #7980](https://github.com/penpot/penpot/issues/7980)
+
+
+## 2.12.0
 
 ### :boom: Breaking changes & Deprecations
 

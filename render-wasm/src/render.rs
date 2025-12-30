@@ -999,12 +999,13 @@ impl RenderState {
 
         let viewbox_cache_size = get_cache_size(self.viewbox, scale);
         let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
-        if viewbox_cache_size != cached_viewbox_cache_size {
-            self.surfaces.resize_cache(
-                &mut self.gpu_state,
-                viewbox_cache_size,
-                VIEWPORT_INTEREST_AREA_THRESHOLD,
-            );
+        // Only resize cache if the new size is larger than the cached size
+        // This avoids unnecessary surface recreations when the cache size decreases
+        if viewbox_cache_size.width > cached_viewbox_cache_size.width
+            || viewbox_cache_size.height > cached_viewbox_cache_size.height
+        {
+            self.surfaces
+                .resize_cache(viewbox_cache_size, VIEWPORT_INTEREST_AREA_THRESHOLD);
         }
 
         // FIXME - review debug
@@ -1959,6 +1960,17 @@ impl RenderState {
         }
 
         performance::end_measure!("rebuild_tiles_shallow");
+    }
+
+    /// Clears the tile index without invalidating cached tile textures.
+    /// This is useful when tile positions don't change (e.g., during pan operations)
+    /// but the tile index needs to be synchronized. The cached tile textures remain
+    /// valid since they don't depend on the current view position, only on zoom level.
+    /// This is much more efficient than clearing the entire cache surface.
+    pub fn clear_tile_index(&mut self) {
+        performance::begin_measure!("clear_tile_index");
+        self.surfaces.clear_tiles();
+        performance::end_measure!("clear_tile_index");
     }
 
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
