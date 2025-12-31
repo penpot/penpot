@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-12-31 22:01+0000\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -582,7 +582,6 @@ msgstr ""
 "cosa desideri fare con le loro risorse*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "I file con librerie condivise verranno inclusi nell'esportazione, mantenendo "
@@ -1832,7 +1831,6 @@ msgstr ""
 "loro proprietà e il loro codice"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
-#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Informazioni livello"
 
@@ -8500,3 +8498,13 @@ msgstr "Il nome deve essere di almeno 1 carattere"
 
 msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "Salta per ora e inizia la prova"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "Maggiori informazioni"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Valore del token non valido: puoi fare riferimento solo a un token font-"
+"family"
