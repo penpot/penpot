@@ -331,6 +331,8 @@
         my-penpot?      (= (:default-team-id profile) team-id)
         default-team?   (:is-default team)
 
+        show-deleted?   (:can-edit permisions)
+
         projects
         (mf/with-memo [projects]
           (->> projects
@@ -378,7 +380,8 @@
                                                           show-team-hero?
                                                           can-invite))}
 
-          [:> deleted/menu* {:team-id team-id :section :dashboard-recent}]
+          (when show-deleted?
+            [:> deleted/menu* {:team-id team-id :section :dashboard-recent}])
 
           (for [{:keys [id] :as project} projects]
             ;; FIXME: refactor this, looks inneficient

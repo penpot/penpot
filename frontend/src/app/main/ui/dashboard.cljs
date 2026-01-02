@@ -75,7 +75,13 @@
 
         show-templates?
         (and (contains? cf/flags :dashboard-templates-section)
-             (:can-edit permissions))]
+             (:can-edit permissions))
+
+        show-deleted? (:can-edit permissions)
+
+        section (if (and (not show-deleted?) (= section :dashboard-deleted))
+                  :dashboard-recent
+                  section)]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]
