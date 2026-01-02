@@ -9,8 +9,20 @@
 
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
+
+;; Reference to the HTML canvas element.
+(defonce canvas nil)
+
+;; Reference to the Emscripten GL context wrapper.
 (defonce gl-context-handle nil)
+
+;; Reference to the actual WebGL Context returned
+;; by the `.getContext` method of the canvas.
 (defonce gl-context nil)
+
+(defonce context-initialized? false)
+(defonce context-lost? (atom false))
+
 (defonce serializers
   #js {:blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode
@@ -44,8 +56,3 @@
        :stroke-linecap shared/RawStrokeLineCap
        :stroke-linejoin shared/RawStrokeLineJoin
        :fill-rule shared/RawFillRule})
-
-(defonce context-initialized? false)
-(defonce context-lost? (atom false))
-(defonce context-lost-handler nil)
-(defonce context-lost-canvas nil)
