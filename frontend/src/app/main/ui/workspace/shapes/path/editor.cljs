@@ -65,34 +65,35 @@
 
         on-pointer-down
         (fn [event]
-          (dom/stop-propagation event)
-          (dom/prevent-default event)
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
 
-          ;; FIXME: revisit this, using meta here breaks equality checks
-          (when (and is-new (some? (meta position)))
-            (st/emit! (drp/create-node-at-position (meta position))))
+            ;; FIXME: revisit this, using meta here breaks equality checks
+            (when (and is-new (some? (meta position)))
+              (st/emit! (drp/create-node-at-position (meta position))))
 
-          (let [is-shift (kbd/shift? event)
-                is-mod   (kbd/mod? event)]
-            (cond
-              is-last
-              (st/emit! (drp/reset-last-handler))
+            (let [is-shift (kbd/shift? event)
+                  is-mod   (kbd/mod? event)]
+              (cond
+                is-last
+                (st/emit! (drp/reset-last-handler))
 
-              (and is-move is-mod (not is-curve))
-              (st/emit! (drp/make-curve position))
+                (and is-move is-mod (not is-curve))
+                (st/emit! (drp/make-curve position))
 
-              (and is-move is-mod is-curve)
-              (st/emit! (drp/make-corner position))
+                (and is-move is-mod is-curve)
+                (st/emit! (drp/make-corner position))
 
-              is-move
-              ;; If we're dragging a selected item we don't change the selection
-              (st/emit! (drp/start-move-path-point position is-shift))
+                is-move
+                ;; If we're dragging a selected item we don't change the selection
+                (st/emit! (drp/start-move-path-point position is-shift))
 
-              (and is-draw is-start-path)
-              (st/emit! (drp/start-path-from-point position))
+                (and is-draw is-start-path)
+                (st/emit! (drp/start-path-from-point position))
 
-              (and is-draw (not is-start-path))
-              (st/emit! (drp/close-path-drag-start position)))))]
+                (and is-draw (not is-start-path))
+                (st/emit! (drp/close-path-drag-start position))))))]
 
     [:g.path-point
      [:circle.path-point
