@@ -190,18 +190,19 @@
            (st/emit! (dcm/go-to-dashboard-deleted :team-id team-id))))]
 
     [:div {:class (stl/css :nav)}
-     [:div {:class [(stl/css :nav-option)
-                    (stl/css-case :selected (= section :dashboard-recent))]
-            :data-testid "recent-tab"
-            :on-click on-recent-click}
-      (tr "labels.recent")]
-     [:div {:class [(stl/css :nav-option)
-                    (stl/css-case :selected (= section :dashboard-deleted))]
-            :variant "ghost"
-            :type "button"
-            :data-testid "deleted-tab"
-            :on-click on-deleted-click}
-      (tr "labels.deleted")]]))
+     [:div {:class (stl/css :nav-inside)}
+      [:div {:class [(stl/css :nav-option)
+                     (stl/css-case :selected (= section :dashboard-recent))]
+             :data-testid "recent-tab"
+             :on-click on-recent-click}
+       (tr "labels.recent")]
+      [:div {:class [(stl/css :nav-option)
+                     (stl/css-case :selected (= section :dashboard-deleted))]
+             :variant "ghost"
+             :type "button"
+             :data-testid "deleted-tab"
+             :on-click on-deleted-click}
+       (tr "labels.deleted")]]]))
 
 (mf/defc deleted-section*
   [{:keys [team projects]}]

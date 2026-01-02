@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 @use "../ds/typography.scss" as t;
 @use "../ds/_borders.scss" as *;
@@ -46,20 +47,21 @@
 }
 
 .nav {
+  background: var(--color-background-default);
+  padding: var(--sp-xxl) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
+  position: sticky;
+  top: 0;
+
+  // We need to use the the deprecated z-index so it won't clash with the dashboard
+  // onboarding modals
+  z-index: deprecated.$z-index-3;
+}
+
+.nav-inside {
+  border-bottom: $b-1 solid var(--panel-border-color);
   display: flex;
   gap: var(--sp-l);
   justify-content: space-between;
-  border-bottom: $b-1 solid var(--panel-border-color);
-  //padding-inline-start: var(--sp-l);
-  background: var(--color-background-default);
-  position: sticky;
-  top: 0;
-  z-index: var(--z-index-panels);
-
-  /* margin: 0 1.5rem; */
-  /* margin-top: 1rem; */
-
-  margin: var(--sp-xxl) var(--sp-xxl) var(--sp-xxl) var(--sp-xxl);
 }
 
 .nav-option {
