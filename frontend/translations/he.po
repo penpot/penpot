@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-31 22:01+0000\n"
+"PO-Revision-Date: 2026-01-03 20:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -1774,9 +1774,8 @@ msgid "inspect.empty.select"
 msgstr "ניתן לבחור צורה, לוח או קבוצה ולראות את המאפיינים והקוד שלהם"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
-#, fuzzy
 msgid "inspect.layer-info"
-msgstr "בחירת לשונית חקירה"
+msgstr "פרטי שכבה"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:137
 msgid "inspect.multiple-selected"
@@ -8347,3 +8346,25 @@ msgstr "אורך השם חייב להיות תו אחד לפחות"
 #: src/app/main/data/workspace/tokens/errors.cljs:85
 msgid "workspace.tokens.invalid-text-decoration-token-value"
 msgstr "ערך אסימון שגוי: מותר רק none,‏ underline ו־strike-through"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "פרטים נוספים"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"אפשר להוסיף את פרטי התשלום שלך היית כדי להשאיר את המינוי שלך פעיל ונטול "
+"תקלות גם אחרי תקופת הניסיון וגם כדי להמשיך לתמוך במיזם הקוד הפתוח שלנו. לא "
+"יתבצע שום חיוב עדיין."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr "ערך אסימון שגוי: אפשר להפנות לאסימון font-family (משפחת גופנים) בלבד"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "ערך שגוי: יש להפנות לאסימון הצללה מורכבת."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "נא למלא כינוי הצללת אסימון"
