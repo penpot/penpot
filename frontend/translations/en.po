@@ -421,6 +421,9 @@ msgstr "(copy)"
 msgid "dashboard.create-new-team"
 msgstr "Create new team"
 
+msgid "dashboard.create-new-org"
+msgstr "Create new org"
+
 #: src/app/main/ui/workspace/main_menu.cljs:664
 msgid "dashboard.create-version-menu"
 msgstr "Pin this version"
