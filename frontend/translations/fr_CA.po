@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-31 22:01+0000\n"
+"PO-Revision-Date: 2026-01-03 20:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -98,8 +98,193 @@ msgstr "Nouveau mot de passe"
 
 #: src/app/main/ui/auth/recovery.cljs:36
 msgid "auth.notifications.password-changed-successfully"
-msgstr "Mot de passe modifié avec succès."
+msgstr "Mot de passe modifié avec succès"
 
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
 msgstr "Le profil n'est pas vérifié. Vérifier le profile avant de continuer."
+
+#: src/app/main/ui/auth/verify_token.cljs:49
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Tu as bien rejoint l'équipe"
+
+#: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
+msgid "auth.password"
+msgstr "Mot de passe"
+
+#: src/app/main/ui/auth/register.cljs:173
+msgid "auth.password-length-hint"
+msgstr "Au moins 8 caractères"
+
+#: src/app/main/ui/auth/register.cljs:261
+msgid "auth.privacy-policy"
+msgstr "Politique de confidentialité"
+
+#: src/app/main/ui/auth/recovery_request.cljs:82
+msgid "auth.recovery-request-submit"
+msgstr "Réinitialiser le mot de passe"
+
+#: src/app/main/ui/auth/recovery_request.cljs:95
+msgid "auth.recovery-request-subtitle"
+msgstr "Nous t'enverrons un courriel avec des instructions"
+
+#: src/app/main/ui/auth/recovery_request.cljs:94
+msgid "auth.recovery-request-title"
+msgstr "Mot de passe oublié?"
+
+#: src/app/main/ui/auth/recovery.cljs:71
+msgid "auth.recovery-submit"
+msgstr "Modifier le mot de passe"
+
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
+msgid "auth.register"
+msgstr "Tu n'as pas encore de compte?"
+
+#: src/app/main/ui/auth/register.cljs:351
+msgid "auth.register-account-tagline"
+msgstr ""
+"Comment devrions-nous t'adresser sur les pages de survol et dans les "
+"courriels."
+
+#: src/app/main/ui/auth/register.cljs:350
+msgid "auth.register-account-title"
+msgstr "Ton nom"
+
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
+msgid "auth.register-submit"
+msgstr "Créer un compte"
+
+#: src/app/main/ui/auth/register.cljs:124
+#, unused
+msgid "auth.register-tagline"
+msgstr ""
+"Avec un compte gratuit Penpot, tu peux créer un nombre illimité d'équipes et "
+"collaborer avec des designers et développeurs sur autant de projets que tu "
+"veux. "
+
+#: src/app/main/ui/auth/register.cljs:206
+msgid "auth.register-title"
+msgstr "Créer un compte"
+
+#: src/app/main/ui/auth.cljs
+#, unused
+msgid "auth.sidebar-tagline"
+msgstr "La solution de design et de prototypage à code source ouvert."
+
+#: src/app/main/ui/auth/register.cljs:51
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"J'accepte les [conditions d'utilisation](%s) et la [politique de "
+"confidentialité](%s)."
+
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
+msgid "auth.terms-of-service"
+msgstr "Conditions d'utilisation"
+
+#: src/app/main/ui/auth/recovery_request.cljs:33
+msgid "auth.notifications.recovery-token-sent"
+msgstr ""
+"Un lien de réinitialisation du mot de passe a été envoyé a ta boîte de "
+"réception."
+
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"En te créant un nouveau compte, tu acceptes nos conditions d'utilisation et "
+"politique de confidentialité."
+
+#: src/app/main/ui/auth/register.cljs:239
+msgid "auth.verification-email-sent"
+msgstr "Nous avons envoyé un lien de vérification au"
+
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
+msgid "auth.work-email"
+msgstr "Adresse courriel de travail"
+
+#: src/app/main/ui/onboarding/questions.cljs
+#, unused
+msgid "branding-illustrations-marketing-pieces"
+msgstr "images de marque, illustrations, matériel de marketing..."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:107
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Ce token n'existe pas ou a été supprimé."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Aucun token de couleur disponible. Vérifie les collections/thèmes actifs ou "
+"ajoute de nouveaux tokens."
+
+#: src/app/main/ui/comments.cljs:530
+msgid "comments.mentions.not-found"
+msgstr "Aucune personne trouvée pour @%s"
+
+#: src/app/main/ui/viewer/share_link.cljs:279
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 page partagée"
+msgstr[1] "%s pages partagées"
+
+#: src/app/main/ui/viewer/share_link.cljs:300
+msgid "common.share-link.permissions-can-comment"
+msgstr "Peut commenter"
+
+#: src/app/main/ui/viewer/share_link.cljs:310
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Peut inspecter le code"
+
+#: src/app/main/ui/viewer/share_link.cljs:195
+msgid "common.share-link.permissions-hint"
+msgstr "N'importe qui avec le lien peut accéder"
+
+#: src/app/main/ui/viewer/share_link.cljs:243
+msgid "common.share-link.permissions-pages"
+msgstr "Pages partagées"
+
+#: src/app/main/ui/viewer/share_link.cljs:185
+msgid "common.share-link.placeholder"
+msgstr "Le lien de partage apparaîtra ici"
+
+#: src/app/main/ui/workspace/libraries.cljs:333
+msgid "common.publish"
+msgstr "Publier"
+
+#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+msgid "common.share-link.all-users"
+msgstr "Tous les usagers de Penpot"
+
+#: src/app/main/ui/viewer/share_link.cljs:200
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Veux-tu vraiment supprimer ce lien? Cas advenant, il ne sera plus disponible "
+"à quiconque"
+
+#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+msgid "common.share-link.current-tag"
+msgstr "(courant)"
+
+#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+msgid "common.share-link.destroy-link"
+msgstr "Supprimer le lien"
+
+#: src/app/main/ui/viewer/share_link.cljs:223
+msgid "common.share-link.get-link"
+msgstr "Obtenir le lien"
+
+#: src/app/main/ui/viewer/share_link.cljs:139
+msgid "common.share-link.link-copied-success"
+msgstr "Lien copié avec succès"
+
+#: src/app/main/ui/viewer/share_link.cljs:233
+msgid "common.share-link.manage-ops"
+msgstr "Gérer les permissions"
+
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+msgid "common.share-link.team-members"
+msgstr "Seulement les membres de l'équipe"
+
+#: src/app/main/ui/viewer/share_link.cljs:173
+msgid "common.share-link.title"
+msgstr "Partager les prototypes"
