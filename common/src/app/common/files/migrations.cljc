@@ -1766,6 +1766,59 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0017-remove-unneeded-objects-from-components"
+  [data _]
+  ;; Some components have an `:objects` attribute, despite not being
+  ;; deleted. This migration removes it.
+  (letfn [(check-component [component]
+            (if (and (not (:deleted component))
+                     (contains? component :objects))
+              (dissoc component :objects)
+              component))]
+    (d/update-when data :components d/update-vals check-component)))
+
+(defmethod migrate-data "0018-sync-component-id-with-near-main"
+  [data _]
+  (let [libs (some-> (:libs data) deref)]
+    (letfn [(fix-shape
+              [data page shape]
+              (if (and (ctk/subcopy-head? shape)
+                       (nil? (ctk/get-swap-slot shape)))
+                (let [file {:id (:id data) :data data}
+                      ref-shape  (ctf/find-ref-shape file page libs shape {:include-deleted? true :with-context? true})]
+                  (if (and (some? ref-shape)
+                           (or (not= (:component-id shape) (:component-id ref-shape))
+                               (not= (:component-file shape) (:component-file ref-shape))))
+                    (cond-> shape
+                      (some? (:component-id ref-shape))
+                      (assoc :component-id (:component-id ref-shape))
+
+                      (nil? (:component-id ref-shape))
+                      (dissoc :component-id)
+
+                      (some? (:component-file ref-shape))
+                      (assoc :component-file (:component-file ref-shape))
+
+                      (nil? (:component-file ref-shape))
+                      (dissoc :component-file))
+                    shape))
+                shape))
+
+            (update-page
+              [data page]
+              (d/update-when page :objects d/update-vals (partial fix-shape data page)))
+
+            (fix-data [data]
+              (loop [current-data data
+                     iteration    0]
+                (let [next-data (update current-data :pages-index d/update-vals (partial update-page current-data))]
+                  (if (or (= current-data next-data)
+                          (> iteration 20))     ;; safety bound
+                    next-data
+                    (recur next-data (inc iteration))))))]
+      (fix-data data))))
+
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1839,4 +1892,6 @@
          "0014-clear-components-nil-objects"
          "0015-fix-text-attrs-blank-strings"
          "0015-clean-shadow-color"
-         "0016-copy-fills-from-position-data-to-text-node"]))
+         "0016-copy-fills-from-position-data-to-text-node"
+         "0017-remove-unneeded-objects-from-components"
+         "0018-sync-component-id-with-near-main"]))
