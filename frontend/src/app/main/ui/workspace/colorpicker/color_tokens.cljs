@@ -152,7 +152,6 @@
                        (when path-set
                          (ptk/data-event :expand-token-sets {:paths path-set}))
                        (dwtl/set-selected-token-set-id id)
-                       (dwtl/set-token-type-section-open :color true)
                        (let [{:keys [modal title]} (get dwta/token-properties :color)
                              window-size (dom/get-window-size)
                              left-sidebar (dom/get-element "left-sidebar-aside")
