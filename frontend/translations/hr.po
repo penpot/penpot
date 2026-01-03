@@ -6477,10 +6477,6 @@ msgstr "Alati"
 msgid "workspace.tokens.value-not-valid"
 msgstr "Vrijednost nije važeća"
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Preimenovanje ovog tokena prekinut će sve reference na njegov stari naziv."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Stavke"

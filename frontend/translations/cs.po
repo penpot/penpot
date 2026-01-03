@@ -6456,10 +6456,6 @@ msgstr "Nástroje"
 msgid "workspace.tokens.value-not-valid"
 msgstr "Hodnota není platná"
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Přejmenováním tohoto tokenu se přeruší jakýkoli odkaz na jeho starý název."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Položky"

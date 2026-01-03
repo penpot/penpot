@@ -7300,10 +7300,6 @@ msgstr "मान मान्य नहीं है"
 msgid "workspace.tokens.value-with-units"
 msgstr "अमान्य मान: इकाइयाँ अनुमति नहीं हैं।"
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "इस टोकन का नाम बदलने से इसके पुराने नाम के किसी भी संदर्भ टूट जाएंगे।"
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "एसेट्स"

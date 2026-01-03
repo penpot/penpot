@@ -4420,6 +4420,42 @@ msgstr "Mostrar/ocultar recursos"
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Mostrar/ocultar paleta de colores"
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-token-references"
+msgstr "Actualizar referencias de token"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.renaming-token-from-to"
+msgstr "Renombrando el token de '%s' a '%s'"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.references-found"
+msgstr "%s referencias encontradas en tu diseño"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-explanation"
+msgstr "Todas las referencias a este token se actualizarán automáticamente para usar el nuevo nombre."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-references-found"
+msgstr "No se encontraron referencias"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-remap-needed"
+msgstr "Este token no se utiliza actualmente en tu diseño, por lo que no es necesario actualizar referencias."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Actualizando referencias de token..."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-and-rename"
+msgstr "Actualizar referencias y renombrar"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.rename-only"
+msgstr "Renombrar"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Mostrar/ocultar focus mode"
@@ -7957,10 +7993,6 @@ msgstr "El valor no es válido"
 #: src/app/main/data/workspace/tokens/errors.cljs:65
 msgid "workspace.tokens.value-with-units"
 msgstr "Valor no válido: No se permiten unidades."
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
