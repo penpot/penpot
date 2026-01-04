@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-03 20:01+0000\n"
+"PO-Revision-Date: 2026-01-04 22:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -288,3 +288,399 @@ msgstr "Seulement les membres de l'équipe"
 #: src/app/main/ui/viewer/share_link.cljs:173
 msgid "common.share-link.title"
 msgstr "Partager les prototypes"
+
+#: src/app/main/ui/viewer/share_link.cljs:271
+msgid "common.share-link.view-all"
+msgstr "Tout sélectionner"
+
+#: src/app/main/ui/workspace/libraries.cljs:329
+msgid "common.unpublish"
+msgstr "Dépublier"
+
+#: src/app/main/ui/dashboard/projects.cljs:92
+msgid "dasboard.team-hero.management"
+msgstr "Gestion de l'équipe"
+
+#: src/app/main/ui/dashboard/projects.cljs:91
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot est conçu pour les équipes. Invite des membres à travailler ensemble "
+"sur des projets et fichiers"
+
+#: src/app/main/ui/dashboard/projects.cljs:89
+msgid "dasboard.team-hero.title"
+msgstr "Collaborer!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.info"
+msgstr "Apprends les bases de Penpot en t'amusant avec ce tutoriel pratique."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.start"
+msgstr "Commencer le tutoriel"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutoriel pratique"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Fais le tour de Penpot pour connaître ses principales fonctionnalités."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Commencer le tour"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Visite guidée de l'interface"
+
+#: src/app/main/ui/settings/access_tokens.cljs:103
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Token copié"
+
+#: src/app/main/ui/settings/access_tokens.cljs:189
+msgid "dashboard.access-tokens.create"
+msgstr "Générer un nouveau token"
+
+#: src/app/main/ui/settings/access_tokens.cljs:64
+msgid "dashboard.access-tokens.create.success"
+msgstr "Token d'accès créé avec succès."
+
+#: src/app/main/ui/settings/access_tokens.cljs:286
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Appuie sur le bouton « Générer un nouveau token » pour en générer un."
+
+#: src/app/main/ui/settings/access_tokens.cljs:285
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Tu n'as aucun token pour l'instant."
+
+#: src/app/main/ui/settings/access_tokens.cljs:135
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 jours"
+
+#: src/app/main/ui/settings/access_tokens.cljs:132
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 jours"
+
+#: src/app/main/ui/settings/access_tokens.cljs:133
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 jours"
+
+#: src/app/main/ui/settings/access_tokens.cljs:134
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 jours"
+
+#: src/app/main/ui/settings/access_tokens.cljs:131
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Jamais"
+
+#: src/app/main/ui/settings/access_tokens.cljs:268
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Expiré le %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:269
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Expire le %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:267
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Sans date d'expiration"
+
+#: src/app/main/ui/settings/access_tokens.cljs:184
+msgid "dashboard.access-tokens.personal"
+msgstr "Tokens d'accès personnel"
+
+#: src/app/main/ui/settings/access_tokens.cljs:185
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Les tokens d'accès personnel sont une alternative à notre système "
+"d'authentification par identifiant et mot de passe. Ils peuvent être "
+"utilisés pour permettre à une application d'accéder à l'API interne de Penpot"
+
+#: src/app/main/ui/settings/access_tokens.cljs:142
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Ce token expirera le %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:143
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Ce token n'a pas de date d'expiration"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "Ajouter un fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
+msgid "dashboard.add-shared"
+msgstr "Ajouter une bibliothèque partagée"
+
+#: src/app/main/ui/settings/profile.cljs:75
+msgid "dashboard.change-email"
+msgstr "Changer l'adresse courriel"
+
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
+msgid "dashboard.copy-suffix"
+msgstr "(copier)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:329
+msgid "dashboard.create-new-team"
+msgstr "Créer une nouvelle équipe"
+
+#: src/app/main/ui/workspace/main_menu.cljs:664
+msgid "dashboard.create-version-menu"
+msgstr "Épingler cette version"
+
+#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
+msgid "dashboard.default-team-name"
+msgstr "Ton Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:477
+msgid "dashboard.delete-team"
+msgstr "Supprimer l'équipe"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:694, src/app/main/ui/workspace/main_menu.cljs:703
+msgid "dashboard.download-binary-file"
+msgstr "Télécharger le fichier Penpot (.penpot)"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
+msgid "dashboard.download-standard-file"
+msgstr "Télécharger le fichier standard (.svg + .json)"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
+msgid "dashboard.duplicate"
+msgstr "Dupliquer"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:242
+msgid "dashboard.duplicate-multi"
+msgstr "Dupliquer %s fichiers"
+
+#: src/app/main/ui/dashboard/files.cljs:203, src/app/main/ui/dashboard/projects.cljs:289
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Quand un membre de l'équipe crée un brouillon, il s'affichera ici."
+
+#: src/app/main/ui/dashboard/files.cljs:198, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Aucun brouillon."
+
+#: src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:290
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Quand un membre de l'équipe crée un fichier, il s'affichera ici."
+
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Aucun fichier."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:118
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Les bibliothèques ajoutées au projet apparîtront ici. Pour se faire, partage "
+"tes fichiers ou ajoute-en depuis [Bibliothèques & modèles](https://"
+"penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Les bibliothèques ajoutées au projet apparîtront ici. Pour se faire, partage "
+"tes fichiers ou ajoute-en depuis [Bibliothèques & modèles](https://"
+"penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:114
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Les bibliothèques ajoutées au projet apparîtront ici."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:111
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Il n'y a pas encore de bibliothèque partagée."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "Ajouter une bibliothèque ou un modèle"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "Créer un nouveau fichier"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:61
+msgid "dashboard.empty-project.explore"
+msgstr "Explorer pour ajouter"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Aller à Bibliothèques et Modèles"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:49, src/app/main/ui/dashboard/placeholder.cljs:51
+msgid "dashboard.empty-project.import"
+msgstr "Importer un fichier"
+
+#, unused
+msgid "dashboard.export-multi"
+msgstr "Exporter %s fichiers Penpot"
+
+#: src/app/main/ui/exports/assets.cljs:107
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s éléments sélectionnés"
+
+#: src/app/main/ui/workspace/main_menu.cljs:682
+msgid "dashboard.export-shapes"
+msgstr "Exporter"
+
+#: src/app/main/ui/exports/assets.cljs:178
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Tu peux ajouter des paramètres d'exportation aux éléments dans les "
+"propriétés design (au bas du panneau de droite)."
+
+#: src/app/main/ui/exports/assets.cljs:182
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Info sur la configuration des exportations dans Penpot."
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Aucun élément n'a de paramètres d'exportation."
+
+#: src/app/main/ui/exports/assets.cljs:188
+msgid "dashboard.export-shapes.title"
+msgstr "Exporter la sélection"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:262
+msgid "dashboard.export-standard-multi"
+msgstr "Télécharger %s fichiers standard (.svg + .json)"
+
+#: src/app/main/ui/exports/files.cljs:156
+msgid "dashboard.export.detail"
+msgstr ""
+"* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
+"caractère."
+
+#: src/app/main/ui/exports/files.cljs:155
+msgid "dashboard.export.explain"
+msgstr ""
+"Un ou plus des fichiers que tu veux exporter utilisent une bibliothèque "
+"partagée. Que veux-tu faire avec ces atouts*?"
+
+#: src/app/main/ui/exports/files.cljs:164
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"Les fichiers avec des bibliothèques partagées seront inclus dans "
+"l'exportation, et maintiendront leur liaison."
+
+#: src/app/main/ui/exports/files.cljs:165
+msgid "dashboard.export.options.all.title"
+msgstr "Exporter les bibliothèques partagées"
+
+#: src/app/main/ui/exports/files.cljs:166
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
+"atout ne sera ajouté à la bibliothèque. "
+
+#: src/app/main/ui/exports/files.cljs:167
+msgid "dashboard.export.options.detach.title"
+msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
+
+#: src/app/main/ui/exports/files.cljs:168
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Tous les atouts externes seront intégrés à la bibliothèque du fichier "
+"exporté."
+
+#: src/app/main/ui/exports/files.cljs:169
+msgid "dashboard.export.options.merge.title"
+msgstr ""
+"Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
+"fichier"
+
+#: src/app/main/ui/exports/files.cljs:147
+msgid "dashboard.export.title"
+msgstr "Exporter fichiers"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Police de caractères manquante"
+
+#: src/app/main/ui/dashboard/fonts.cljs:218
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Tout ignorer"
+
+#: src/app/main/ui/dashboard/fonts.cljs:453
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Les polices de caractères téléversées apparaîtront ici."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importer un fichier .penpot"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "Crée des choses incroyables"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:257
+msgid "dashboard.export-binary-multi"
+msgstr "Télécharger %s fichiers Penpot (.penpot)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:720
+msgid "dashboard.export-frames"
+msgstr "Exporter les tableaux en PDF"
+
+#: src/app/main/ui/exports/assets.cljs:200
+msgid "dashboard.export-frames.title"
+msgstr "Exporter en PDF"
+
+#: src/app/main/ui/dashboard/fonts.cljs:456
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Aucune police de caractères personalisée."
+
+#: src/app/main/ui/dashboard/fonts.cljs:457
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Dès qu'un membre du projet téléverse une police de caractères personnalisée, "
+"elle apparaîtra ici."
+
+#: src/app/main/ui/dashboard/fonts.cljs:206
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 police ajoutée"
+msgstr[1] "%s polices ajoutées"
+
+#: src/app/main/ui/dashboard/fonts.cljs:181
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Les polices de caractères web téléversées ici seront ajoutées à la listes "
+"des polices disponibles dans les propriétés typographiques des fichiers de "
+"cette équipe. Les polices avec le même nom de famille seront groupées en "
+"**une seule famille de polices**. Les formats suivants sont supportés: "
+"**TTF, OTF et WOFF** (un seul format est nécessaire)."
+
+#: src/app/main/ui/dashboard/fonts.cljs:194
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Seules les polices de caractères que tu possèdes ou dont tu détiens une "
+"licence devraient être téléversées. En lire davantage dans la section des "
+"droits de contenu des [Conditions d'utilisation de Penpot](%s). Tu peux "
+"aussi en lire plus sur les [licences de police de caractères](https://"
+"www.typography.com/faq)."
+
+#: src/app/main/ui/dashboard/fonts.cljs:214
+msgid "dashboard.fonts.upload-all"
+msgstr "Tout téléverser"
+
+#: src/app/main/ui/dashboard/fonts.cljs:199
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Nous avons détecté un problème possible dans tes polices de caractères en "
+"lien avec les métriques verticales pour différents systèmes d'exploitation. "
+"Pour vérifier, tu peux utiliser [un service de métrie verticale de police de "
+"caractères comme celui-ci](https://vertical-metrics.netlify.app/). De plus, "
+"nous recommendons l'usage de [Transfonter](https://transfonter.org/) pour "
+"générer des polices web et corriger les erreurs. "
