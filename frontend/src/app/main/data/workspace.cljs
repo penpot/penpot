@@ -432,10 +432,12 @@
                                                 :val position-data
                                                 :ignore-touched true
                                                 :ignore-geometry true}]})))]
-                            (dch/commit-changes
-                             {:redo-changes changes :undo-changes []
-                              :save-undo? false
-                              :tags #{:position-data}})))))))
+                            (when (d/not-empty? changes)
+                              (dch/commit-changes
+                               {:redo-changes changes :undo-changes []
+                                :save-undo? false
+                                :tags #{:position-data}})))))
+                       (rx/take-until stoper-s))))
 
               (->> stream
                    (rx/filter dch/commit?)
