@@ -360,7 +360,9 @@
              (st/emit! (modal/show options)))))]
 
     [:div {:class (stl/css :font-item :table-row)}
-     [:div {:class (stl/css :table-field :family)}
+     [:div {:class (stl/css-case :table-field true
+                                 :family true
+                                 :is-edition edition?)}
       (if ^boolean edition?
         [:input {:type "text"
                  :auto-focus true

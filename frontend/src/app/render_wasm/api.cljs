@@ -40,6 +40,7 @@
    ;; FIXME: rename; confunsing name
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.functions :as fns]
    [app.util.globals :as ug]
    [app.util.modules :as mod]
@@ -1230,6 +1231,13 @@
           (re-find #"(?i)edge" user-agent) :edge
           :else :unknown)))))
 
+(defn- on-webgl-context-lost
+  [event]
+  (dom/prevent-default event)
+  (reset! wasm/context-lost? true)
+  (log/warn :hint "WebGL context lost")
+  (st/emit! (drw/context-lost)))
+
 (defn init-canvas-context
   [canvas]
   (let [gl      (unchecked-get wasm/internal-module "GL")
@@ -1257,14 +1265,8 @@
         (set-canvas-size canvas)
 
         ;; Add event listeners for WebGL context lost
-        (let [handler (fn [event]
-                        (.preventDefault event)
-                        (reset! wasm/context-lost? true)
-                        (log/warn :hint "WebGL context lost")
-                        (st/emit! (drw/context-lost)))]
-          (set! wasm/context-lost-handler handler)
-          (set! wasm/context-lost-canvas canvas)
-          (.addEventListener canvas "webglcontextlost" handler))
+        (set! wasm/canvas canvas)
+        (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
         (set! wasm/context-initialized? true)))
 
     context-init?))
@@ -1278,10 +1280,9 @@
       (h/call wasm/internal-module "_clean_up")
 
       ;; Remove event listener for WebGL context lost
-      (when (and wasm/context-lost-handler wasm/context-lost-canvas)
-        (.removeEventListener wasm/context-lost-canvas "webglcontextlost" wasm/context-lost-handler)
-        (set! wasm/context-lost-canvas nil)
-        (set! wasm/context-lost-handler nil))
+      (when wasm/canvas
+        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
+        (set! wasm/canvas nil))
 
       ;; Ensure the WebGL context is properly disposed so browsers do not keep
       ;; accumulating active contexts between page switches.

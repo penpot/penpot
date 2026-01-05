@@ -41,6 +41,8 @@
 ### :bug: Bugs fixed
 
 - Fix setting a portion of text as bold or underline messes things up [Github #7980](https://github.com/penpot/penpot/issues/7980)
+- Fix problem with style in fonts input [Taiga #12935](https://tree.taiga.io/project/penpot/issue/12935)
+- Fix problem with path editor and right click [Github #7917](https://github.com/penpot/penpot/issues/7917)
 
 
 ## 2.12.0
