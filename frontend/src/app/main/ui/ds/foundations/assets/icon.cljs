@@ -300,6 +300,7 @@
   "A collection of all icons"
   (collect-icons))
 
+(def ^:private ^:const icon-size-l 32)
 (def ^:private ^:const icon-size-m 16)
 (def ^:private ^:const icon-size-s 12)
 
@@ -308,7 +309,7 @@
    [:class {:optional true} [:maybe :string]]
    [:icon-id [:and :string [:fn #(contains? icon-list %)]]]
    [:size  {:optional true}
-    [:maybe [:enum "s" "m"]]]])
+    [:maybe [:enum "s" "m" "l"]]]])
 
 (mf/defc icon*
   {::mf/schema schema:icon}
@@ -317,10 +318,14 @@
                                  {:class [class (stl/css :icon)]
                                   :width icon-size-m
                                   :height icon-size-m})
-        size-px (if (= size "s")
-                  icon-size-s
-                  icon-size-m)
-        offset  (/ (- icon-size-m size-px) 2)]
+
+        size-px (cond (= size "l") icon-size-l
+                      (= size "s") icon-size-s
+                      :else        icon-size-m)
+
+        offset  (if (or (= size "s") (= size "m"))
+                  (/ (- icon-size-m size-px) 2)
+                  0)]
 
     [:> :svg props
      [:use {:href (dm/str "#icon-" icon-id)

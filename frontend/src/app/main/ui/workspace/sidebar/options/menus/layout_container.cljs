@@ -42,10 +42,10 @@
 (defn- dir-icons-refactor
   [val]
   (case val
-    :row            deprecated-icon/grid-row
-    :row-reverse    deprecated-icon/row-reverse
-    :column         deprecated-icon/column
-    :column-reverse deprecated-icon/column-reverse))
+    :row            i/grid-row
+    :row-reverse    i/row-reverse
+    :column         i/column
+    :column-reverse i/column-reverse))
 
 
 (mf/defc numeric-input-wrapper*
@@ -111,63 +111,63 @@
     :align-items
     (if column?
       (case val
-        :start    deprecated-icon/align-items-column-start
-        :end      deprecated-icon/align-items-column-end
-        :center   deprecated-icon/align-items-column-center)
+        :start    i/align-items-column-start
+        :end      i/align-items-column-end
+        :center   i/align-items-column-center)
       (case val
-        :start    deprecated-icon/align-items-row-start
-        :end      deprecated-icon/align-items-row-end
-        :center   deprecated-icon/align-items-row-center))
+        :start    i/align-items-row-start
+        :end      i/align-items-row-end
+        :center   i/align-items-row-center))
 
     :justify-content
     (if column?
       (case val
-        :start         deprecated-icon/justify-content-column-start
-        :end           deprecated-icon/justify-content-column-end
-        :center        deprecated-icon/justify-content-column-center
-        :space-around  deprecated-icon/justify-content-column-around
-        :space-evenly  deprecated-icon/justify-content-column-evenly
-        :space-between deprecated-icon/justify-content-column-between)
+        :start         i/justify-content-column-start
+        :end           i/justify-content-column-end
+        :center        i/justify-content-column-center
+        :space-around  i/justify-content-column-around
+        :space-evenly  i/justify-content-column-evenly
+        :space-between i/justify-content-column-between)
       (case val
-        :start         deprecated-icon/justify-content-row-start
-        :end           deprecated-icon/justify-content-row-end
-        :center        deprecated-icon/justify-content-row-center
-        :space-around  deprecated-icon/justify-content-row-around
-        :space-evenly  deprecated-icon/justify-content-row-evenly
-        :space-between deprecated-icon/justify-content-row-between))
+        :start         i/justify-content-row-start
+        :end           i/justify-content-row-end
+        :center        i/justify-content-row-center
+        :space-around  i/justify-content-row-around
+        :space-evenly  i/justify-content-row-evenly
+        :space-between i/justify-content-row-between))
 
     :align-content
     (if column?
       (case val
-        :start         deprecated-icon/align-content-column-start
-        :end           deprecated-icon/align-content-column-end
-        :center        deprecated-icon/align-content-column-center
-        :space-around  deprecated-icon/align-content-column-around
-        :space-evenly  deprecated-icon/align-content-column-evenly
-        :space-between deprecated-icon/align-content-column-between
+        :start         i/align-content-column-start
+        :end           i/align-content-column-end
+        :center        i/align-content-column-center
+        :space-around  i/align-content-column-around
+        :space-evenly  i/align-content-column-evenly
+        :space-between i/align-content-column-between
         :stretch nil)
 
       (case val
-        :start         deprecated-icon/align-content-row-start
-        :end           deprecated-icon/align-content-row-end
-        :center        deprecated-icon/align-content-row-center
-        :space-around  deprecated-icon/align-content-row-around
-        :space-evenly  deprecated-icon/align-content-row-evenly
-        :space-between deprecated-icon/align-content-row-between
+        :start         i/align-content-row-start
+        :end           i/align-content-row-end
+        :center        i/align-content-row-center
+        :space-around  i/align-content-row-around
+        :space-evenly  i/align-content-row-evenly
+        :space-between i/align-content-row-between
         :stretch nil))
 
     :align-self
     (if column?
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-row-left
-        :end      deprecated-icon/align-self-row-right
-        :center   deprecated-icon/align-self-row-center)
+        :auto     i/remove
+        :start    i/align-self-row-left
+        :end      i/align-self-row-right
+        :center   i/align-self-row-center)
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-column-top
-        :end      deprecated-icon/align-self-column-bottom
-        :center   deprecated-icon/align-self-column-center))))
+        :auto     i/remove
+        :start    i/align-self-column-top
+        :end      i/align-self-column-bottom
+        :center   i/align-self-column-center))))
 
 (defn get-layout-grid-icon
   [type val ^boolean column?]
@@ -175,32 +175,32 @@
     :align-items
     (if column?
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-row-left
-        :end      deprecated-icon/align-self-row-right
-        :center   deprecated-icon/align-self-row-center)
+        :auto     i/remove
+        :start    i/align-self-row-left
+        :end      i/align-self-row-right
+        :center   i/align-self-row-center)
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-column-top
-        :end      deprecated-icon/align-self-column-bottom
-        :center   deprecated-icon/align-self-column-center))
+        :auto     i/remove
+        :start    i/align-self-column-top
+        :end      i/align-self-column-bottom
+        :center   i/align-self-column-center))
 
     :justify-items
     (if (not column?)
       (case val
-        :start         deprecated-icon/align-content-column-start
-        :center        deprecated-icon/align-content-column-center
-        :end           deprecated-icon/align-content-column-end
-        :space-around  deprecated-icon/align-content-column-around
-        :space-between deprecated-icon/align-content-column-between
-        :stretch       deprecated-icon/align-content-column-stretch)
+        :start         i/align-content-column-start
+        :center        i/align-content-column-center
+        :end           i/align-content-column-end
+        :space-around  i/align-content-column-around
+        :space-between i/align-content-column-between
+        :stretch       i/align-content-column-stretch)
       (case val
-        :start         deprecated-icon/align-content-row-start
-        :center        deprecated-icon/align-content-row-center
-        :end           deprecated-icon/align-content-row-end
-        :space-around  deprecated-icon/align-content-row-around
-        :space-between deprecated-icon/align-content-row-between
-        :stretch       deprecated-icon/align-content-row-stretch))))
+        :start         i/align-content-row-start
+        :center        i/align-content-row-center
+        :end           i/align-content-row-end
+        :space-around  i/align-content-row-around
+        :space-between i/align-content-row-between
+        :stretch       i/align-content-row-stretch))))
 
 (mf/defc direction-row-flex
   {::mf/props :obj

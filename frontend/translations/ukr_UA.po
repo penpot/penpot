@@ -1766,10 +1766,6 @@ msgstr ""
 "Якщо ви хочете дізнатися більше про інспекцію дизайну, відвідайте "
 "довідковий центр Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Більше інформації про інспекцію"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Оберіть фігуру, дошку або групу, щоб переглянути їх властивості та код"

@@ -1897,15 +1897,15 @@
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-single")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offsetX "0", :offsetY "2px", :blur "4px", :spread "0", :color "#000", :inset false}]
+           (t/is (= [{:offset-x "0", :offset-y "2px", :blur "4px", :spread "0", :color "#000", :inset false}]
                     (:value token)))))
 
        (t/testing "multiple shadow token"
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-multiple")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offsetX "0", :offsetY "2px", :blur "4px", :spread "0", :color "#000", :inset true}
-                     {:offsetX "0", :offsetY "8px", :blur "16px", :spread "0", :color "#000", :inset true}]
+           (t/is (= [{:offset-x "0", :offset-y "2px", :blur "4px", :spread "0", :color "#000", :inset true}
+                     {:offset-x "0", :offset-y "8px", :blur "16px", :spread "0", :color "#000", :inset true}]
                     (:value token)))))
 
        (t/testing "shadow token with reference"
@@ -1918,7 +1918,7 @@
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-with-type")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offsetX "0", :offsetY "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset false}]
+           (t/is (= [{:offset-x "0", :offset-y "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset false}]
                     (:value token)))))
 
        (t/testing "shadow token with description"
@@ -1937,14 +1937,14 @@
                                      (ctob/make-token
                                       {:name "shadow.single"
                                        :type :shadow
-                                       :value [{:offsetX "0" :offsetY "2px" :blur "4px" :spread "0" :color "#0000001A"}]
+                                       :value [{:offset-x "0" :offset-y "2px" :blur "4px" :spread "0" :color "#0000001A"}]
                                        :description "A single shadow"})
                                      "shadow.multiple"
                                      (ctob/make-token
                                       {:name "shadow.multiple"
                                        :type :shadow
-                                       :value [{:offsetX "0" :offsetY "2px" :blur "4px" :spread "0" :color "#0000001A"}
-                                               {:offsetX "0" :offsetY "8px" :blur "16px" :spread "0" :color "#0000001A"}]})
+                                       :value [{:offset-x "0" :offset-y "2px" :blur "4px" :spread "0" :color "#0000001A"}
+                                               {:offset-x "0" :offset-y "8px" :blur "16px" :spread "0" :color "#0000001A"}]})
                                      "shadow.ref"
                                      (ctob/make-token
                                       {:name "shadow.ref"
@@ -1991,7 +1991,7 @@
                                        (ctob/make-token
                                         {:name "shadow.test"
                                          :type :shadow
-                                         :value [{:offsetX "1" :offsetY "1" :blur "1" :spread "1" :color "red" :inset true}]
+                                         :value [{:offset-x "1" :offset-y "1" :blur "1" :spread "1" :color "red" :inset true}]
                                          :description "Round trip test"})
                                        "shadow.ref"
                                        (ctob/make-token

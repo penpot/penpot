@@ -86,7 +86,6 @@
 (def default-theme  "default")
 (def default-language "en")
 
-(def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 
 (def build-date           (parse-build-date global))

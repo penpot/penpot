@@ -30,6 +30,9 @@
 (def profile
   (l/derived (l/key :profile) st/state))
 
+(def current-page-id
+  (l/derived (l/key :current-page-id) st/state))
+
 (def team
   (l/derived (fn [state]
                (let [team-id (:current-team-id state)
@@ -372,6 +375,9 @@
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
 
+(def workspace-wasm-modifiers
+  (l/derived :workspace-wasm-modifiers st/state))
+
 (def ^:private workspace-modifiers-with-objects
   (l/derived
    (fn [state]
@@ -630,3 +636,6 @@
 
 (def persistence-state
   (l/derived (comp :status :persistence) st/state))
+
+(def progress
+  (l/derived :progress st/state))

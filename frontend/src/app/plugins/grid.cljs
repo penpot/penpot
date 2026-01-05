@@ -7,7 +7,7 @@
 (ns app.plugins.grid
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
@@ -126,7 +126,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -141,7 +141,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -156,7 +156,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -171,7 +171,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -186,7 +186,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -201,7 +201,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -216,7 +216,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -231,7 +231,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -248,7 +248,7 @@
           (u/display-not-valid :addRow-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (us/safe-number? value)))
+               (not (sm/valid-safe-number? value)))
           (u/display-not-valid :addRow-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -261,14 +261,14 @@
     (fn [index type value]
       (let [type (keyword type)]
         (cond
-          (not (us/safe-int? index))
+          (not (sm/valid-safe-int? index))
           (u/display-not-valid :addRowAtIndex-index index)
 
           (not (contains? ctl/grid-track-types type))
           (u/display-not-valid :addRowAtIndex-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (us/safe-number? value)))
+               (not (sm/valid-safe-number? value)))
           (u/display-not-valid :addRowAtIndex-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -285,7 +285,7 @@
           (u/display-not-valid :addColumn-type type)
 
           (and (or (= :percent type) (= :flex type) (= :lex type))
-               (not (us/safe-number? value)))
+               (not (sm/valid-safe-number? value)))
           (u/display-not-valid :addColumn-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -297,14 +297,14 @@
     :addColumnAtIndex
     (fn [index type value]
       (cond
-        (not (us/safe-int? index))
+        (not (sm/valid-safe-int? index))
         (u/display-not-valid :addColumnAtIndex-index index)
 
         (not (contains? ctl/grid-track-types type))
         (u/display-not-valid :addColumnAtIndex-type type)
 
         (and (or (= :percent type) (= :flex type) (= :fixed type))
-             (not (us/safe-number? value)))
+             (not (sm/valid-safe-number? value)))
         (u/display-not-valid :addColumnAtIndex-value value)
 
         (not (r/check-permission plugin-id "content:write"))
@@ -317,7 +317,7 @@
     :removeRow
     (fn [index]
       (cond
-        (not (us/safe-int? index))
+        (not (sm/valid-safe-int? index))
         (u/display-not-valid :removeRow index)
 
         (not (r/check-permission plugin-id "content:write"))
@@ -329,7 +329,7 @@
     :removeColumn
     (fn [index]
       (cond
-        (not (us/safe-int? index))
+        (not (sm/valid-safe-int? index))
         (u/display-not-valid :removeColumn index)
 
         (not (r/check-permission plugin-id "content:write"))
@@ -342,14 +342,14 @@
     (fn [index type value]
       (let [type (keyword type)]
         (cond
-          (not (us/safe-int? index))
+          (not (sm/valid-safe-int? index))
           (u/display-not-valid :setColumn-index index)
 
           (not (contains? ctl/grid-track-types type))
           (u/display-not-valid :setColumn-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (us/safe-number? value)))
+               (not (sm/valid-safe-number? value)))
           (u/display-not-valid :setColumn-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -362,14 +362,14 @@
     (fn [index type value]
       (let [type (keyword type)]
         (cond
-          (not (us/safe-int? index))
+          (not (sm/valid-safe-int? index))
           (u/display-not-valid :setRow-index index)
 
           (not (contains? ctl/grid-track-types type))
           (u/display-not-valid :setRow-type type)
 
           (and (or (= :percent type) (= :flex type) (= :fixed type))
-               (not (us/safe-number? value)))
+               (not (sm/valid-safe-number? value)))
           (u/display-not-valid :setRow-value value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -393,10 +393,10 @@
         (not (shape-proxy? child))
         (u/display-not-valid :appendChild-child child)
 
-        (or (< row 0) (not (us/safe-int? row)))
+        (or (< row 0) (not (sm/valid-safe-int? row)))
         (u/display-not-valid :appendChild-row row)
 
-        (or (< column 0) (not (us/safe-int? column)))
+        (or (< column 0) (not (sm/valid-safe-int? column)))
         (u/display-not-valid :appendChild-column column)
 
         (not (r/check-permission plugin-id "content:write"))
@@ -431,7 +431,7 @@
          (let [cell (locate-cell self)
                shape (u/proxy->shape self)]
            (cond
-             (not (us/safe-int? value))
+             (not (sm/valid-safe-int? value))
              (u/display-not-valid :row-value value)
 
              (nil? cell)
@@ -451,7 +451,7 @@
          (let [shape (u/proxy->shape self)
                cell (locate-cell self)]
            (cond
-             (not (us/safe-int? value))
+             (not (sm/valid-safe-int? value))
              (u/display-not-valid :rowSpan-value value)
 
              (nil? cell)
@@ -471,7 +471,7 @@
          (let [shape (u/proxy->shape self)
                cell (locate-cell self)]
            (cond
-             (not (us/safe-int? value))
+             (not (sm/valid-safe-int? value))
              (u/display-not-valid :column-value value)
 
              (nil? cell)
@@ -491,7 +491,7 @@
          (let [shape (u/proxy->shape self)
                cell (locate-cell self)]
            (cond
-             (not (us/safe-int? value))
+             (not (sm/valid-safe-int? value))
              (u/display-not-valid :columnSpan-value value)
 
              (nil? cell)

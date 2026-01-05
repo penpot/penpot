@@ -13,7 +13,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.management.create.form :as token-form]
+   [app.main.ui.workspace.tokens.management.forms.validators :as form-validator]
    [app.main.ui.workspace.tokens.themes.create-modal :as theme-form]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
@@ -51,7 +51,7 @@
      :set
      (fn [_ value]
        (let [tokens-lib (u/locate-tokens-lib file-id)
-             errors     (token-form/validate-token-name
+             errors     (form-validator/validate-token-name
                          (ctob/get-tokens tokens-lib set-id)
                          value)]
          (cond
@@ -194,7 +194,12 @@
 
     :addToken
     (fn [type-str name value]
-      (let [type (cto/dtcg-token-type->token-type type-str)]
+      (let [type (cto/dtcg-token-type->token-type type-str)
+            value (case type
+                    :font-family (ctob/convert-dtcg-font-family (js->clj value))
+                    :typography (ctob/convert-dtcg-typography-composite (js->clj value))
+                    :shadow (ctob/convert-dtcg-shadow-composite (js->clj value))
+                    (js->clj value))]
         (cond
           (nil? type)
           (u/display-not-valid :addTokenType type-str)

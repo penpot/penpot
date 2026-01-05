@@ -1576,10 +1576,6 @@ msgstr "Maiúsculas"
 msgid "inspect.empty.help"
 msgstr "Se quiseres saber mais sobre a inspeção, visita o centro de ajuda do Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Mais informações sobre a inspeção"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

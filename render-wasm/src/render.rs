@@ -9,7 +9,8 @@ mod options;
 mod shadows;
 mod strokes;
 mod surfaces;
-mod text;
+pub mod text;
+
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
@@ -34,9 +35,9 @@ pub use fonts::*;
 pub use images::*;
 
 // This is the extra are used for tile rendering.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
-const NODE_BATCH_THRESHOLD: i32 = 10;
+const NODE_BATCH_THRESHOLD: i32 = 3;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -141,7 +142,20 @@ impl NodeRenderState {
 
         match &element.shape_type {
             Type::Frame(_) => {
-                let bounds = element.get_selrect_shadow_bounds(shadow);
+                let mut bounds = element.get_selrect_shadow_bounds(shadow);
+                let blur_inset = (shadow.blur * 2.).max(0.0);
+                if blur_inset > 0.0 {
+                    let max_inset_x = (bounds.width() * 0.5).max(0.0);
+                    let max_inset_y = (bounds.height() * 0.5).max(0.0);
+                    // Clamp the inset so we never shrink more than half of the width/height;
+                    // otherwise the rect could end up inverted on small frames.
+                    let inset_x = blur_inset.min(max_inset_x);
+                    let inset_y = blur_inset.min(max_inset_y);
+                    if inset_x > 0.0 || inset_y > 0.0 {
+                        bounds.inset((inset_x, inset_y));
+                    }
+                }
+
                 let mut transform = element.transform;
                 transform.post_translate(element.center());
                 transform.pre_translate(-element.center());
@@ -915,6 +929,8 @@ impl RenderState {
     }
 
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
+        let _start = performance::begin_timed_log!("render_from_cache");
+        performance::begin_measure!("render_from_cache");
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -952,6 +968,8 @@ impl RenderState {
 
             self.flush_and_submit();
         }
+        performance::end_measure!("render_from_cache");
+        performance::end_timed_log!("render_from_cache", _start);
     }
 
     pub fn start_render_loop(
@@ -961,6 +979,7 @@ impl RenderState {
         timestamp: i32,
         sync_render: bool,
     ) -> Result<(), String> {
+        let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
 
@@ -980,21 +999,24 @@ impl RenderState {
 
         let viewbox_cache_size = get_cache_size(self.viewbox, scale);
         let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
-        if viewbox_cache_size != cached_viewbox_cache_size {
-            self.surfaces.resize_cache(
-                &mut self.gpu_state,
-                viewbox_cache_size,
-                VIEWPORT_INTEREST_AREA_THRESHOLD,
-            );
+        // Only resize cache if the new size is larger than the cached size
+        // This avoids unnecessary surface recreations when the cache size decreases
+        if viewbox_cache_size.width > cached_viewbox_cache_size.width
+            || viewbox_cache_size.height > cached_viewbox_cache_size.height
+        {
+            self.surfaces
+                .resize_cache(viewbox_cache_size, VIEWPORT_INTEREST_AREA_THRESHOLD);
         }
 
         // FIXME - review debug
         // debug::render_debug_tiles_for_viewbox(self);
 
+        let _tile_start = performance::begin_timed_log!("tile_cache_update");
         performance::begin_measure!("tile_cache");
         self.pending_tiles
             .update(&self.tile_viewbox, &self.surfaces);
         performance::end_measure!("tile_cache");
+        performance::end_timed_log!("tile_cache_update", _tile_start);
 
         self.pending_nodes.clear();
         if self.pending_nodes.capacity() < tree.len() {
@@ -1018,6 +1040,7 @@ impl RenderState {
         }
 
         performance::end_measure!("start_render_loop");
+        performance::end_timed_log!("start_render_loop", _start);
         Ok(())
     }
 
@@ -1466,8 +1489,11 @@ impl RenderState {
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
 
+                // Skip expensive drop shadow rendering in fast mode (during pan/zoom)
+                let skip_shadows = self.options.is_fast_mode();
+
                 // For text shapes, render drop shadow using text rendering logic
-                if !matches!(element.shape_type, Type::Text(_)) {
+                if !skip_shadows && !matches!(element.shape_type, Type::Text(_)) {
                     // Shadow rendering technique: Two-pass approach for proper opacity handling
                     //
                     // The shadow rendering uses a two-pass technique to ensure that overlapping
@@ -1721,6 +1747,7 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
+
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
@@ -1794,17 +1821,21 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
+                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
+                            .iter()
+                            .enumerate()
+                            .map(|(i, id)| (*id, i))
+                            .collect();
+
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
                             .iter()
-                            .filter(|id| root_ids.contains(id))
+                            .filter(|id| root_ids_map.contains_key(id))
                             .copied()
                             .collect();
 
                         // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| {
-                            root_ids.iter().position(|x| x == id).unwrap_or(usize::MAX)
-                        });
+                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -1821,6 +1852,7 @@ impl RenderState {
                 should_stop = true;
             }
         }
+
         self.render_in_progress = false;
 
         self.surfaces.gc();
@@ -1930,6 +1962,17 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
+    /// Clears the tile index without invalidating cached tile textures.
+    /// This is useful when tile positions don't change (e.g., during pan operations)
+    /// but the tile index needs to be synchronized. The cached tile textures remain
+    /// valid since they don't depend on the current view position, only on zoom level.
+    /// This is much more efficient than clearing the entire cache surface.
+    pub fn clear_tile_index(&mut self) {
+        performance::begin_measure!("clear_tile_index");
+        self.surfaces.clear_tiles();
+        performance::end_measure!("clear_tile_index");
+    }
+
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
         performance::begin_measure!("rebuild_tiles");
 
@@ -2033,6 +2076,10 @@ impl RenderState {
 
     pub fn get_cached_scale(&self) -> f32 {
         self.cached_viewbox.zoom() * self.options.dpr()
+    }
+
+    pub fn zoom_changed(&self) -> bool {
+        (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {

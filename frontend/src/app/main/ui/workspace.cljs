@@ -35,7 +35,7 @@
    [app.main.ui.workspace.tokens.export.modal]
    [app.main.ui.workspace.tokens.import]
    [app.main.ui.workspace.tokens.import.modal]
-   [app.main.ui.workspace.tokens.management.create.modals]
+   [app.main.ui.workspace.tokens.management.forms.modals]
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
    [app.main.ui.workspace.viewport :refer [viewport*]]
@@ -165,7 +165,7 @@
                    (dsh/lookup-page state file-id page-id))))
              st/state))
 
-(mf/defc workspace-page*
+(mf/defc workspace-inner*
   {::mf/private true}
   [{:keys [page-id file-id file layout wglobal]}]
   (let [page-ref (mf/with-memo [file-id page-id]
@@ -252,10 +252,16 @@
                             :touch-action "none"}}
           [:> context-menu*]
           (if (and file-loaded? page-id)
-            [:> workspace-page*
+            [:> workspace-inner*
              {:page-id page-id
               :file-id file-id
               :file file
               :wglobal wglobal
               :layout layout}]
             [:> workspace-loader*])]]]]]]))
+
+(mf/defc workspace-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> workspace* props])
+

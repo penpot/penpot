@@ -69,6 +69,11 @@ services:
       - PENPOT_LDAP_ATTRS_FULLNAME=cn
       - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
 
+    networks:
+      default:
+        aliases:
+          - main
+
   minio:
     image: "minio/minio:RELEASE.2025-04-03T14-56-28Z"
     command: minio server /mnt/data --console-address ":9001"
@@ -79,10 +84,6 @@ services:
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
-
-    ports:
-      - 9000:9000
-      - 9001:9001
 
     networks:
       default:

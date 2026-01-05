@@ -112,6 +112,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-shadow-spread
     :error/fn #(tr "workspace.tokens.shadow-spread-range")}
 
+   :error.style-dictionary/invalid-token-value-shadow
+   {:error/code :error.style-dictionary/invalid-token-value-shadow
+    :error/fn #(tr "workspace.tokens.invalid-token-value-shadow" %)}
+
    :error/unknown
    {:error/code :error/unknown
     :error/fn #(tr "labels.unknown-error")}})

@@ -14,7 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
-   [app.render-wasm.svg-fills :as svg-fills]
+   [app.render-wasm.svg-filters :as svg-filters]
    [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
@@ -130,7 +130,11 @@
 (defn- set-wasm-attr!
   [shape k]
   (when wasm/context-initialized?
-    (let [v  (get shape k)
+    (let [shape (case k
+                  :svg-attrs (svg-filters/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
+                  (:fills :blur :shadow) (svg-filters/apply-svg-derived shape)
+                  shape)
+          v  (get shape k)
           id (get shape :id)]
       (case k
         :parent-id
@@ -163,8 +167,7 @@
         (api/set-shape-transform v)
 
         :fills
-        (let [fills (svg-fills/resolve-shape-fills shape)]
-          (into [] (api/set-shape-fills id fills false)))
+        (api/set-shape-fills id v false)
 
         :strokes
         (into [] (api/set-shape-strokes id v false))
@@ -222,12 +225,16 @@
           v])
 
         :svg-attrs
-        (when (cfh/path-shape? shape)
-          (api/set-shape-svg-attrs v))
+        (do
+          (api/set-shape-svg-attrs v)
+          ;; Always update fills/blur/shadow to clear previous state if filters disappear          
+          (api/set-shape-fills id (:fills shape) false)
+          (api/set-shape-blur (:blur shape))
+          (api/set-shape-shadows (:shadow shape)))
 
         :masked-group
-        (when (cfh/mask-shape? shape)
-          (api/set-masked (:masked-group shape)))
+        (when (cfh/group-shape? shape)
+          (api/set-masked (boolean (:masked-group shape))))
 
         :content
         (cond
@@ -262,7 +269,7 @@
          :layout-item-min-w
          :layout-item-absolute
          :layout-item-z-index)
-        (api/set-layout-child shape)
+        (api/set-layout-data shape)
 
         :layout-grid-rows
         (api/set-grid-layout-rows v)
@@ -273,8 +280,18 @@
         :layout-grid-cells
         (api/set-grid-layout-cells v)
 
-        (:layout
-         :layout-flex-dir
+        :layout
+        (do
+          (api/clear-layout)
+          (cond
+            (ctl/grid-layout? shape)
+            (api/set-grid-layout shape)
+
+            (ctl/flex-layout? shape)
+            (api/set-flex-layout shape))
+          (api/set-layout-data shape))
+
+        (:layout-flex-dir
          :layout-gap-type
          :layout-gap
          :layout-align-items
@@ -284,14 +301,12 @@
          :layout-wrap-type
          :layout-padding-type
          :layout-padding)
-        (do
-          (api/clear-layout)
-          (cond
-            (ctl/grid-layout? shape)
-            (api/set-grid-layout-data shape)
+        (cond
+          (ctl/grid-layout? shape)
+          (api/set-grid-layout-data shape)
 
-            (ctl/flex-layout? shape)
-            (api/set-flex-layout shape)))
+          (ctl/flex-layout? shape)
+          (api/set-flex-layout shape))
 
         ;; Property not in WASM
         nil))))
@@ -322,7 +337,7 @@
        (rx/subs! #(api/request-render "set-wasm-attrs"))))
 
 ;; `conj` empty set initialization
-(def conj* (fnil conj #{}))
+(def conj* (fnil conj (d/ordered-set)))
 
 (defn- impl-assoc
   [self k v]

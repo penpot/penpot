@@ -74,6 +74,30 @@
                             :width (max 0.01 (or (dm/get-prop shape :width) 1))
                             :height (max 0.01 (or (dm/get-prop shape :height) 1))}))))
 
+(defn- apply-svg-transform
+  "Applies SVG transform to a point if present."
+  [pt svg-transform]
+  (if svg-transform
+    (gpt/transform pt svg-transform)
+    pt))
+
+(defn- apply-viewbox-transform
+  "Transforms a point from viewBox space to selrect space."
+  [pt viewbox rect]
+  (if viewbox
+    (let [{svg-x :x svg-y :y svg-width :width svg-height :height} viewbox
+          rect-width (max 0.01 (dm/get-prop rect :width))
+          rect-height (max 0.01 (dm/get-prop rect :height))
+          origin-x (or (dm/get-prop rect :x) (dm/get-prop rect :x1) 0)
+          origin-y (or (dm/get-prop rect :y) (dm/get-prop rect :y1) 0)
+          scale-x (/ rect-width svg-width)
+          scale-y (/ rect-height svg-height)
+          ;; Transform from viewBox space to selrect space
+          transformed-x (+ origin-x (* (- (dm/get-prop pt :x) svg-x) scale-x))
+          transformed-y (+ origin-y (* (- (dm/get-prop pt :y) svg-y) scale-y))]
+      (gpt/point transformed-x transformed-y))
+    pt))
+
 (defn- normalize-point
   [pt units shape]
   (if (= units "userspaceonuse")
@@ -81,9 +105,16 @@
           width (max 0.01 (dm/get-prop rect :width))
           height (max 0.01 (dm/get-prop rect :height))
           origin-x (or (dm/get-prop rect :x) (dm/get-prop rect :x1) 0)
-          origin-y (or (dm/get-prop rect :y) (dm/get-prop rect :y1) 0)]
-      (gpt/point (/ (- (dm/get-prop pt :x) origin-x) width)
-                 (/ (- (dm/get-prop pt :y) origin-y) height)))
+          origin-y (or (dm/get-prop rect :y) (dm/get-prop rect :y1) 0)
+          svg-transform (:svg-transform shape)
+          viewbox (:svg-viewbox shape)
+          ;; For userSpaceOnUse, coordinates are in SVG user space
+          ;; We need to transform them to shape space before normalizing
+          pt-after-svg-transform (apply-svg-transform pt svg-transform)
+          transformed-pt (apply-viewbox-transform pt-after-svg-transform viewbox rect)
+          normalized-x (/ (- (dm/get-prop transformed-pt :x) origin-x) width)
+          normalized-y (/ (- (dm/get-prop transformed-pt :y) origin-y) height)]
+      (gpt/point normalized-x normalized-y))
     pt))
 
 (defn- normalize-attrs
@@ -257,18 +288,25 @@
                              (parse-gradient-stop node))))
                    vec)]
     (when (seq stops)
-      (let [[center radius-point]
+      (let [[center point-x point-y]
             (let [points (apply-gradient-transform [(gpt/point cx cy)
-                                                    (gpt/point (+ cx r) cy)]
+                                                    (gpt/point (+ cx r) cy)
+                                                    (gpt/point cx (+ cy r))]
                                                    transform)]
               (map #(normalize-point % units shape) points))
-            radius (gpt/distance center radius-point)]
+            radius-x (gpt/distance center point-x)
+            radius-y (gpt/distance center point-y)
+            ;; Prefer Y as the base radius so width becomes the X/Y ratio.
+            base-radius (if (pos? radius-y) radius-y radius-x)
+            radius-point (if (pos? radius-y) point-y point-x)
+            width (let [safe-radius (max base-radius 1.0e-6)]
+                    (/ radius-x safe-radius))]
         {:type :radial
          :start-x (dm/get-prop center :x)
          :start-y (dm/get-prop center :y)
          :end-x (dm/get-prop radius-point :x)
          :end-y (dm/get-prop radius-point :y)
-         :width radius
+         :width width
          :stops stops}))))
 
 (defn- svg-gradient->fill

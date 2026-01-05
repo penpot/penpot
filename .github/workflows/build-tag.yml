@@ -33,7 +33,7 @@ jobs:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
           MATTERMOST_CHANNEL: bot-alerts-cicd
           TEXT: |
-            🐳 *[PENPOT] Docker image available.*
+            🐳 *[PENPOT] Docker image available: {{ github.ref_name }}*
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             @infra
 

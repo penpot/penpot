@@ -1,0 +1,7 @@
+{
+  "name": "Icons plugin",
+  "code": "/assets/plugin.js",
+  "icon": "/assets/icon.png",
+  "description": "Create icons from the Feather Icons set",
+  "permissions": ["content:read", "content:write"]
+}

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-23 12:51+0000\n"
+"PO-Revision-Date: 2025-11-25 16:51+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -1808,10 +1808,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Ja ir vēlme uzzināt vairāk par dizaina apskati, jāapmeklē Penpot palīdzības "
 "centrs"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Vairāk informācijas par apskatīšanu"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -7966,3 +7962,12 @@ msgstr "Ierosinājums"
 #: src/app/main/ui/settings/feedback.cljs:114
 msgid "feedback.type.issue"
 msgstr "Sarežģījums"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Palīdzi mums attīstīties un padarīt Tavu izmēģinājumu vienkāršāku"
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Pagaidām izlaist un uzsākt izmēģinājumu"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Pievienot maksājumu informāciju"

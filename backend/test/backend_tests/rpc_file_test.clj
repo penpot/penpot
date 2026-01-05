@@ -1921,7 +1921,11 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [result (:result out)]
-          (t/is (= (:ids data) result)))
+          (t/is (fn? result))
+
+          (let [[ev1 ev2 :as events] (th/consume-sse result)]
+            (t/is (= 2 (count events)))
+            (t/is (= (:ids data) (val ev2)))))
 
         (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
           (t/is (= (:deleted-at row) now)))))))

@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -99,10 +100,10 @@
                         :name "frame-orientation"
                         :wide true
                         :class (stl/css :radio-buttons)}
-      [:& radio-button {:icon deprecated-icon/size-vertical
+      [:& radio-button {:icon i/size-vertical
                         :value "vertical"
                         :id "size-vertical"}]
-      [:& radio-button {:icon deprecated-icon/size-horizontal
+      [:& radio-button {:icon i/size-horizontal
                         :value "horizontal"
                         :id "size-horizontal"}]]]))
 

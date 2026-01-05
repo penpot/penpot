@@ -86,7 +86,7 @@
 (mf/defc grid-item-thumbnail*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [can-edit file]}]
+  [{:keys [can-edit file can-restore]}]
   (let [file-id      (get file :id)
         revn         (get file :revn)
         thumbnail-id (get file :thumbnail-id)
@@ -109,7 +109,8 @@
                                           :message (ex-message cause)))))]
           (partial rx/dispose! subscription))))
 
-    [:div {:class (stl/css :grid-item-th)
+    [:div {:class (stl/css-case :grid-item-th true
+                                :deleted-item can-restore)
            :style {:background-color bg-color}
            :ref container}
      (when visible?
@@ -131,13 +132,15 @@
 
 (mf/defc grid-item-library*
   {::mf/props :obj}
-  [{:keys [file]}]
+  [{:keys [file can-restore]}]
   (mf/with-effect [file]
     (when file
       (let [font-ids (map :font-id (get-in file [:library-summary :typographies :sample] []))]
         (run! fonts/ensure-loaded! font-ids))))
 
-  [:div {:class (stl/css :grid-item-th :library)}
+  [:div {:class (stl/css-case :grid-item-th true
+                              :library true
+                              :deleted-item can-restore)}
    (if (nil? file)
      [:> loader* {:class (stl/css :grid-loader)
                   :overlay true
@@ -237,10 +240,13 @@
 
 ;; --- Grid Item
 
-(mf/defc grid-item-metadata
-  [{:keys [modified-at]}]
-  (let [time (ct/timeago modified-at)]
-    [:span {:class (stl/css :date)} time]))
+(mf/defc grid-item-metadata*
+  [{:keys [file]}]
+  (let [time (ct/timeago (or (:will-be-deleted-at file)
+                             (:modified-at file)))]
+    [:span {:class (stl/css :date)
+            :title (tr "dashboard.deleted.will-be-deleted-at" time)}
+     time]))
 
 (defn create-counter-element
   [_element file-count]
@@ -250,7 +256,7 @@
     counter-el))
 
 (mf/defc grid-item*
-  [{:keys [file origin can-edit selected-files]}]
+  [{:keys [file origin can-edit selected-files can-restore]}]
   (let [file-id  (get file :id)
         state    (mf/deref refs/dashboard-local)
 
@@ -289,12 +295,13 @@
 
         on-navigate
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file-id can-restore)
          (fn [event]
-           (let [menu-icon (mf/ref-val menu-ref)
-                 target    (dom/get-target event)]
-             (when-not (dom/child? target menu-icon)
-               (st/emit! (dcm/go-to-workspace :file-id file-id))))))
+           (when-not can-restore
+             (let [menu-icon (mf/ref-val menu-ref)
+                   target    (dom/get-target event)]
+               (when-not (dom/child? target menu-icon)
+                 (st/emit! (dcm/go-to-workspace :file-id file-id)))))))
 
         on-drag-start
         (mf/use-fn
@@ -412,8 +419,8 @@
       [:div {:class (stl/css :overlay)}]
 
       (if ^boolean is-library-view?
-        [:> grid-item-library* {:file file}]
-        [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
+        [:> grid-item-library* {:file file :can-restore can-restore}]
+        [:> grid-item-thumbnail* {:file file :can-edit can-edit :can-restore can-restore}])
 
       (when (and (:is-shared file) (not is-library-view?))
         [:div {:class (stl/css :item-badge)} deprecated-icon/library])
@@ -425,7 +432,7 @@
                               :on-end edit
                               :max-length 250}]
           [:h3 (:name file)])
-        [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+        [:> grid-item-metadata* {:file file}]]
 
        [:div {:class (stl/css-case :project-th-actions true :force-display menu-open?)}
         [:div
@@ -451,11 +458,12 @@
                             :on-edit on-edit
                             :on-close on-menu-close
                             :origin origin
-                            :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
+                            :parent-id (dm/str file-id "-action-menu")
+                            :can-restore can-restore}]])]]]]]))
 
 (mf/defc grid*
   {::mf/props :obj}
-  [{:keys [files project origin limit create-fn can-edit selected-files]}]
+  [{:keys [files project origin limit create-fn can-edit selected-files can-restore]}]
   (let [dragging?  (mf/use-state false)
         project-id (get project :id)
         team-id    (get project :team-id)
@@ -535,7 +543,8 @@
               :key (dm/str (:id item))
               :origin origin
               :selected-files selected-files
-              :can-edit can-edit}])])
+              :can-edit can-edit
+              :can-restore can-restore}])])
 
        :else
        [:> empty-grid-placeholder*
@@ -548,7 +557,7 @@
          :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files dragging? limit can-edit] :as props}]
+  [{:keys [files selected-files dragging? limit can-edit can-restore] :as props}]
   (let [elements limit
         limit (if dragging? (dec limit) limit)]
     [:ul {:class (stl/css :grid-row :no-wrap)
@@ -563,10 +572,11 @@
          :file item
          :selected-files selected-files
          :can-edit can-edit
-         :key (dm/str (:id item))}])]))
+         :key (dm/str (:id item))
+         :can-restore can-restore}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files limit create-fn can-edit] :as props}]
+  [{:keys [project team files limit create-fn can-edit can-restore] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -664,7 +674,8 @@
                           :selected-files selected-files
                           :dragging? @dragging?
                           :can-edit can-edit
-                          :limit limit}]
+                          :limit limit
+                          :can-restore can-restore}]
 
        :else
        [:> empty-grid-placeholder*

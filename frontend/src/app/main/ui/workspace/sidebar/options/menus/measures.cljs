@@ -455,10 +455,10 @@
                            :name "frame-orientation"
                            :wide true
                            :class (stl/css :radio-buttons)}
-         [:& radio-button {:icon deprecated-icon/size-vertical
+         [:& radio-button {:icon i/size-vertical
                            :value "vert"
                            :id "size-vertical"}]
-         [:& radio-button {:icon deprecated-icon/size-horizontal
+         [:& radio-button {:icon i/size-horizontal
                            :value "horiz"
                            :id "size-horizontal"}]]
         [:> icon-button*

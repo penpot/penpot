@@ -1653,10 +1653,6 @@ msgstr ""
 "Jika Anda ingin mengetahui lebih lanjut tentang inspeksi desain kunjungi "
 "pusat bantuan Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Lebih banyak info tentang inspeksi"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Pilih bentuk, papan, atau grup untuk menginskpeksi properti dan kodenya"

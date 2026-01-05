@@ -1,4 +1,4 @@
-import { Point } from './geom';
+import { Point } from "./geom";
 
 export class Viewport {
   #zoom;
@@ -38,7 +38,7 @@ export class Viewport {
   }
 
   pan(dx, dy) {
-    this.#position.x += dx / this.#zoom
-    this.#position.y += dy / this.#zoom
+    this.#position.x += dx / this.#zoom;
+    this.#position.y += dy / this.#zoom;
   }
 }

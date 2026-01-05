@@ -232,12 +232,12 @@ export function mapContentFragmentFromString(string, styleDefaults) {
     if (line === "") {
       fragment.appendChild(createEmptyParagraph(styleDefaults));
     } else {
-      fragment.appendChild(
-        createParagraph(
-          [createTextSpan(new Text(line), styleDefaults)],
-          styleDefaults,
-        ),
-      );
+      const textSpan = createTextSpan(new Text(line), styleDefaults);
+      const paragraph = createParagraph([textSpan], styleDefaults);
+      if (lines.length === 1) {
+        paragraph.dataset.textSpan = "force";
+      }
+      fragment.appendChild(paragraph);
     }
   }
   return fragment;

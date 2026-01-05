@@ -1,7 +1,3 @@
-#[allow(unused_imports)]
-#[cfg(target_arch = "wasm32")]
-use crate::get_now;
-
 #[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn get_time() -> i32 {
@@ -14,6 +10,68 @@ pub fn get_time() -> i32 {
     let now = std::time::Instant::now();
     now.elapsed().as_millis() as i32
 }
+
+/// Log a message to the browser console (only when profile-macros feature is enabled)
+#[macro_export]
+macro_rules! console_log {
+    ($($arg:tt)*) => {
+        #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
+        {
+            use $crate::run_script;
+            run_script!(format!("console.log('{}')", format!($($arg)*)));
+        }
+        #[cfg(all(feature = "profile-macros", not(target_arch = "wasm32")))]
+        {
+            println!($($arg)*);
+        }
+    };
+}
+
+/// Begin a timed section with logging (only when profile-macros feature is enabled)
+/// Returns the start time - store it and pass to end_timed_log!
+#[macro_export]
+macro_rules! begin_timed_log {
+    ($name:expr) => {{
+        #[cfg(feature = "profile-macros")]
+        {
+            $crate::performance::get_time()
+        }
+        #[cfg(not(feature = "profile-macros"))]
+        {
+            0.0
+        }
+    }};
+}
+
+/// End a timed section and log the duration (only when profile-macros feature is enabled)
+#[macro_export]
+macro_rules! end_timed_log {
+    ($name:expr, $start:expr) => {{
+        #[cfg(all(feature = "profile-macros", target_arch = "wasm32"))]
+        {
+            let duration = $crate::performance::get_time() - $start;
+            use $crate::run_script;
+            run_script!(format!(
+                "console.log('[PERF] {}: {:.2}ms')",
+                $name, duration
+            ));
+        }
+        #[cfg(all(feature = "profile-macros", not(target_arch = "wasm32")))]
+        {
+            let duration = $crate::performance::get_time() - $start;
+            println!("[PERF] {}: {:.2}ms", $name, duration);
+        }
+    }};
+}
+
+#[allow(unused_imports)]
+pub use console_log;
+
+#[allow(unused_imports)]
+pub use begin_timed_log;
+
+#[allow(unused_imports)]
+pub use end_timed_log;
 
 #[macro_export]
 macro_rules! mark {

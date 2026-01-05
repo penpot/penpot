@@ -595,8 +595,8 @@
       (px/exec! :virtual #(rcp/write-body-to-stream body nil output))
       (into []
             (map (fn [{:keys [event data]}]
-                   [(keyword event)
-                    (tr/decode-str data)]))
+                   (d/vec2 (keyword event)
+                           (tr/decode-str data))))
             (parse-sse (slurp' input)))
       (finally
         (.close input)))))

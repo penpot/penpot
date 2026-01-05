@@ -28,6 +28,8 @@ export function startWorker() {
 }
 
 export const isDebug = process.env.NODE_ENV !== "production";
+export const CURRENT_VERSION = process.env.CURRENT_VERSION || "develop";
+export const BUILD_DATE = process.env.BUILD_DATE || "" + new Date();
 
 async function findFiles(basePath, predicate, options = {}) {
   predicate =
@@ -47,8 +49,7 @@ async function findFiles(basePath, predicate, options = {}) {
 function syncDirs(originPath, destPath) {
   const command = `rsync -ar --delete ${originPath} ${destPath}`;
 
-  return new Promise((resolve, reject) => {
-    proc.exec(command, (cause, stdout) => {
+  return new Promise((resolve, reject) => {proc.exec(command, (cause, stdout) => {
       if (cause) {
         reject(cause);
       } else {
@@ -186,38 +187,36 @@ async function readManifestFile(resource) {
   return JSON.parse(content);
 }
 
-async function readShadowManifest() {
-  const ts = Date.now();
-  try {
-    const content = await readManifestFile("js/manifest.json");
+async function generateManifest() {
+  const index = {
+    app_main: "./js/main.js",
+    render_main: "./js/render.js",
+    rasterizer_main: "./js/rasterizer.js",
 
-    const index = {
-      ts: ts,
-      config: "js/config.js?ts=" + ts,
-      polyfills: "js/polyfills.js?ts=" + ts,
-    };
+    config: "./js/config.js?version=" + CURRENT_VERSION,
+    polyfills: "./js/polyfills.js?version=" + CURRENT_VERSION,
+    libs: "./js/libs.js?version=" + CURRENT_VERSION,
+    worker_main: "./js/worker/main.js?version=" + CURRENT_VERSION,
+    default_translations: "./js/translation.en.js?version=" + CURRENT_VERSION,
 
-    for (let item of content) {
-      index[item.name] = "js/" + item["output-name"];
-    }
+    importmap: JSON.stringify({
+      "imports": {
+        "./js/shared.js": "./js/shared.js?version=" + CURRENT_VERSION,
+        "./js/main.js": "./js/main.js?version=" + CURRENT_VERSION,
+        "./js/render.js": "./js/render.js?version=" + CURRENT_VERSION,
+        "./js/render-wasm.js": "./js/render-wasm.js?version=" + CURRENT_VERSION,
+        "./js/rasterizer.js": "./js/rasterizer.js?version=" + CURRENT_VERSION,
+        "./js/main-dashboard.js": "./js/main-dashboard.js?version=" + CURRENT_VERSION,
+        "./js/main-auth.js": "./js/main-auth.js?version=" + CURRENT_VERSION,
+        "./js/main-viewer.js": "./js/main-viewer.js?version=" + CURRENT_VERSION,
+        "./js/main-settings.js": "./js/main-settings.js?version=" + CURRENT_VERSION,
+        "./js/main-workspace.js": "./js/main-workspace.js?version=" + CURRENT_VERSION,
+        "./js/util-highlight.js": "./js/util-highlight.js?version=" + CURRENT_VERSION
+      }
+    })
+  };
 
-    const content2 = await readManifestFile("js/worker/manifest.json");
-    for (let item of content2) {
-      index["worker_" + item.name] = "js/worker/" + item["output-name"];
-    }
-
-    return index;
-  } catch (cause) {
-    return {
-      ts: ts,
-      config: "js/config.js?ts=" + ts,
-      polyfills: "js/polyfills.js?ts=" + ts,
-      main: "js/main.js?ts=" + ts,
-      shared: "js/shared.js?ts=" + ts,
-      worker_main: "js/worker/main.js?ts=" + ts,
-      rasterizer: "js/rasterizer.js?ts=" + ts,
-    };
-  }
+  return index;
 }
 
 async function renderTemplate(path, context = {}, partials = {}) {
@@ -257,7 +256,7 @@ const markedOptions = {
 
 marked.use(markedOptions);
 
-async function readTranslations() {
+export async function compileTranslations() {
   const langs = [
     "ar",
     "ca",
@@ -295,9 +294,10 @@ async function readTranslations() {
     ["uk", "ukr_UA"],
     "ha",
   ];
-  const result = {};
 
   for (let lang of langs) {
+    const result = {};
+
     let filename = `${lang}.po`;
     if (l.isArray(lang)) {
       filename = `${lang[1]}.po`;
@@ -316,11 +316,6 @@ async function readTranslations() {
     for (let key of Object.keys(trdata)) {
       if (key === "") continue;
       const comments = trdata[key].comments || {};
-
-      if (l.isNil(result[key])) {
-        result[key] = {};
-      }
-
       const isMarkdown = l.includes(comments.flag, "markdown");
 
       const msgs = trdata[key].msgstr;
@@ -330,9 +325,9 @@ async function readTranslations() {
           message = marked.parseInline(message);
         }
 
-        result[key][lang] = message;
+        result[key] = message;
       } else {
-        result[key][lang] = msgs.map((item) => {
+        result[key] = msgs.map((item) => {
           if (isMarkdown) {
             return marked.parseInline(item);
           } else {
@@ -341,22 +336,12 @@ async function readTranslations() {
         });
       }
     }
+
+    const esm = `export default ${JSON.stringify(result, null, 0)};\n`;
+    const outputDir = "resources/public/js/";
+    const outputFile = ph.join(outputDir, "translation." + lang + ".js");
+    await fs.writeFile(outputFile, esm);
   }
-
-  return result;
-}
-
-function filterTranslations(translations, langs = [], keyFilter) {
-  const filteredEntries = Object.entries(translations)
-    .filter(([translationKey, _]) => keyFilter(translationKey))
-    .map(([translationKey, value]) => {
-      const langEntries = Object.entries(value).filter(([lang, _]) =>
-        langs.includes(lang),
-      );
-      return [translationKey, Object.fromEntries(langEntries)];
-    });
-
-  return Object.fromEntries(filteredEntries);
 }
 
 async function generateSvgSprite(files, prefix) {
@@ -408,15 +393,7 @@ async function generateTemplates() {
   const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
-  let translations = await readTranslations();
-  const storybookTranslations = JSON.stringify(
-    filterTranslations(translations, ["en"], (key) =>
-      key.startsWith("labels."),
-    ),
-  );
-  translations = JSON.stringify(translations);
-
-  const manifest = await readShadowManifest();
+  const manifest = await generateManifest();
   let content;
 
   const iconsSprite = await fs.readFile(
@@ -437,13 +414,16 @@ async function generateTemplates() {
     "../public/images/sprites/assets.svg": assetsSprite,
   };
 
+  const context = {
+    manifest: manifest,
+    version: CURRENT_VERSION,
+    build_date: BUILD_DATE,
+    isDebug,
+  };
+
   content = await renderTemplate(
     "resources/templates/index.mustache",
-    {
-      manifest: manifest,
-      translations: JSON.stringify(translations),
-      isDebug,
-    },
+    context,
     partials,
   );
 
@@ -451,41 +431,30 @@ async function generateTemplates() {
 
   content = await renderTemplate(
     "resources/templates/challenge.mustache",
-    {},
+    context,
     partials,
   );
   await fs.writeFile("./resources/public/challenge.html", content);
 
   content = await renderTemplate(
     "resources/templates/preview-body.mustache",
-    {
-      manifest: manifest,
-    },
+    context,
     partials,
   );
   await fs.writeFile("./.storybook/preview-body.html", content);
 
   content = await renderTemplate(
     "resources/templates/preview-head.mustache",
-    {
-      manifest: manifest,
-      translations: JSON.stringify(storybookTranslations),
-    },
+    context,
     partials,
   );
   await fs.writeFile("./.storybook/preview-head.html", content);
 
-  content = await renderTemplate("resources/templates/render.mustache", {
-    manifest: manifest,
-    translations: JSON.stringify(translations),
-  });
+  content = await renderTemplate("resources/templates/render.mustache", context);
 
   await fs.writeFile("./resources/public/render.html", content);
 
-  content = await renderTemplate("resources/templates/rasterizer.mustache", {
-    manifest: manifest,
-    translations: JSON.stringify(translations),
-  });
+  content = await renderTemplate("resources/templates/rasterizer.mustache", context);
 
   await fs.writeFile("./resources/public/rasterizer.html", content);
 }

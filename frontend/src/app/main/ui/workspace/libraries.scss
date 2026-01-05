@@ -192,7 +192,6 @@
 
 // empty state
 .section-list-empty {
-  @include t.use-typography("body-medium");
   display: grid;
   grid-template-rows: auto 1fr;
   justify-items: center;
@@ -200,17 +199,6 @@
   text-align: center;
   height: fit-content;
   margin-block: var(--sp-l);
-  color: var(--modal-title-foreground-color);
-}
-
-.empty-state-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: $sz-48;
-  height: $sz-48;
-  border-radius: $br-circle;
-  background-color: var(--pill-background-color);
 }
 
 .library-icon {

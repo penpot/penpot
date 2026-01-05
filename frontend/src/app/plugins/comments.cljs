@@ -7,7 +7,7 @@
 (ns app.plugins.comments
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.comments :as dc]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as dwc]
@@ -118,7 +118,8 @@
        (fn [position]
          (let [position (parser/parse-point position)]
            (cond
-             (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
+             (or (not (sm/valid-safe-number? (:x position)))
+                 (not (sm/valid-safe-number? (:y position))))
              (u/display-not-valid :position "Not valid point")
 
              (not (r/check-permission plugin-id "comment:write"))

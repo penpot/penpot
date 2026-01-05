@@ -706,53 +706,58 @@
                                         (= 1 (count tree-root)))]
 
               (cond
+                ;; Paste next to selected frame, if selected is itself or of the same size as the copied
+                (and (selected-frame? state)
+                     (or (any-same-frame-from-selected? state (keys pobjects))
+                         (and only-one-root-shape?
+                              (frame-same-size? pobjects (first tree-root)))))
+                (let [selected-frame-obj (get page-objects (first page-selected))
+                      parent-id          (:parent-id base)
+                      paste-x            (+ (:width selected-frame-obj) (:x selected-frame-obj) 50)
+                      paste-y            (:y selected-frame-obj)
+                      delta              (gpt/subtract (gpt/point paste-x paste-y) orig-pos)]
+
+                  [parent-id delta index])
+
+                ;; Paste inside selected frame otherwise
                 (selected-frame? state)
+                (let [selected-frame-obj (get page-objects (first page-selected))
+                      origin-frame-id (:frame-id first-selected-obj)
+                      origin-frame-object (get page-objects origin-frame-id)
 
-                (if (or (any-same-frame-from-selected? state (keys pobjects))
-                        (and only-one-root-shape?
-                             (frame-same-size? pobjects (first tree-root))))
-                  ;; Paste next to selected frame, if selected is itself or of the same size as the copied
-                  (let [selected-frame-obj (get page-objects (first page-selected))
-                        parent-id          (:parent-id base)
-                        paste-x            (+ (:width selected-frame-obj) (:x selected-frame-obj) 50)
-                        paste-y            (:y selected-frame-obj)
-                        delta              (gpt/subtract (gpt/point paste-x paste-y) orig-pos)]
+                      margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
+                                   (min (- (:width frame-object) (:width wrapper))))
 
-                    [parent-id delta index])
+                      margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
+                                    (min (- (:height frame-object) (:height wrapper))))
 
-                  ;; Paste inside selected frame otherwise
-                  (let [selected-frame-obj (get page-objects (first page-selected))
-                        origin-frame-id (:frame-id first-selected-obj)
-                        origin-frame-object (get page-objects origin-frame-id)
+                      ;; Pasted objects mustn't exceed the selected frame x limit
+                      paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
+                                (+ (- (:x frame-object) (:x orig-pos)) (- (:width frame-object) (:width wrapper) margin-x))
+                                (:x frame-object))
 
-                        margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
-                                     (min (- (:width frame-object) (:width wrapper))))
+                      ;; Pasted objects mustn't exceed the selected frame y limit
+                      paste-y (if (> (+ (:height wrapper) (:y1 wrapper)) (:height frame-object))
+                                (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
+                                (:y frame-object))
 
-                        margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
-                                      (min (- (:height frame-object) (:height wrapper))))
+                      delta (if (= origin-frame-id uuid/zero)
+                              ;; When the origin isn't in a frame the result is pasted in the center.
+                              (gpt/subtract (gsh/shape->center frame-object) (grc/rect->center wrapper))
+                              ;; When pasting from one frame to another frame the object
+                              ;; position must be limited to container boundaries. If
+                              ;; the pasted object doesn't fit we try to:
+                              ;;
+                              ;; - Align it to the limits on the x and y axis
+                              ;; - Respect the distance of the object to the right
+                              ;;   and bottom in the original frame
+                              (gpt/point paste-x paste-y))
 
-                        ;; Pasted objects mustn't exceed the selected frame x limit
-                        paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
-                                  (+ (- (:x frame-object) (:x orig-pos)) (- (:width frame-object) (:width wrapper) margin-x))
-                                  (:x frame-object))
-
-                        ;; Pasted objects mustn't exceed the selected frame y limit
-                        paste-y (if (> (+ (:height wrapper) (:y1 wrapper)) (:height frame-object))
-                                  (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
-                                  (:y frame-object))
-
-                        delta (if (= origin-frame-id uuid/zero)
-                                ;; When the origin isn't in a frame the result is pasted in the center.
-                                (gpt/subtract (gsh/shape->center frame-object) (grc/rect->center wrapper))
-                                ;; When pasting from one frame to another frame the object
-                                ;; position must be limited to container boundaries. If
-                                ;; the pasted object doesn't fit we try to:
-                                ;;
-                                ;; - Align it to the limits on the x and y axis
-                                ;; - Respect the distance of the object to the right
-                                ;;   and bottom in the original frame
-                                (gpt/point paste-x paste-y))]
-                    [frame-id delta (dec (count (:shapes selected-frame-obj)))]))
+                      target-index
+                      (if (and (ctl/flex-layout? selected-frame-obj) (ctl/reverse? selected-frame-obj))
+                        (dec 0) ;; Before the first index 0
+                        (count (:shapes selected-frame-obj)))]
+                  [frame-id delta target-index])
 
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects position)

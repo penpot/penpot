@@ -163,6 +163,19 @@ pub extern "C" fn render_sync() {
 pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
+        state.use_shape(id);
+
+        // look for an existing root shape, and create it if missing
+        let mut was_root_missing = false;
+        if !state.shapes.has(&Uuid::nil()) {
+            state.shapes.add_shape(Uuid::nil());
+            was_root_missing = true;
+        }
+
+        if was_root_missing {
+            state.set_parent_for_current_shape(Uuid::nil());
+        }
+
         state.rebuild_tiles_from(Some(&id));
         state
             .render_sync_shape(&id, performance::get_time())
@@ -217,20 +230,70 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     with_state_mut!(state, {
+        performance::begin_measure!("set_view");
         let render_state = state.render_state_mut();
         render_state.set_view(zoom, x, y);
+        performance::end_measure!("set_view");
+    });
+}
+
+#[cfg(feature = "profile-macros")]
+static mut VIEW_INTERACTION_START: i32 = 0;
+
+#[no_mangle]
+pub extern "C" fn set_view_start() {
+    with_state_mut!(state, {
+        #[cfg(feature = "profile-macros")]
+        unsafe {
+            VIEW_INTERACTION_START = performance::get_time();
+        }
+        performance::begin_measure!("set_view_start");
+        state.render_state.options.set_fast_mode(true);
+        performance::end_measure!("set_view_start");
     });
 }
 
 #[no_mangle]
 pub extern "C" fn set_view_end() {
     with_state_mut!(state, {
-        // We can have renders in progress
+        let _end_start = performance::begin_timed_log!("set_view_end");
+        performance::begin_measure!("set_view_end");
+        state.render_state.options.set_fast_mode(false);
         state.render_state.cancel_animation_frame();
-        if state.render_state.options.is_profile_rebuild_tiles() {
-            state.rebuild_tiles();
+
+        let zoom_changed = state.render_state.zoom_changed();
+        // Only rebuild tile indices when zoom has changed.
+        // During pan-only operations, shapes stay in the same tiles
+        // because tile_size = 1/scale * TILE_SIZE (depends only on zoom).
+        if zoom_changed {
+            let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
+            performance::begin_measure!("set_view_end::rebuild_tiles");
+            if state.render_state.options.is_profile_rebuild_tiles() {
+                state.rebuild_tiles();
+            } else {
+                state.rebuild_tiles_shallow();
+            }
+            performance::end_measure!("set_view_end::rebuild_tiles");
+            performance::end_timed_log!("rebuild_tiles", _rebuild_start);
         } else {
-            state.rebuild_tiles_shallow();
+            // During pan, we only clear the tile index without
+            // invalidating cached textures, which is more efficient.
+            let _clear_start = performance::begin_timed_log!("clear_tile_index");
+            performance::begin_measure!("set_view_end::clear_tile_index");
+            state.clear_tile_index();
+            performance::end_measure!("set_view_end::clear_tile_index");
+            performance::end_timed_log!("clear_tile_index", _clear_start);
+        }
+        performance::end_measure!("set_view_end");
+        performance::end_timed_log!("set_view_end", _end_start);
+        #[cfg(feature = "profile-macros")]
+        {
+            let total_time = performance::get_time() - unsafe { VIEW_INTERACTION_START };
+            performance::console_log!(
+                "[PERF] view_interaction (zoom_changed={}): {}ms",
+                zoom_changed,
+                total_time
+            );
         }
     });
 }
@@ -248,7 +311,7 @@ pub extern "C" fn set_focus_mode() {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .map(|data| Uuid::try_from(data).unwrap())
         .collect();
 
     with_state_mut!(state, {
@@ -330,6 +393,10 @@ fn set_children_set(entries: Vec<Uuid>) {
         parent_id = Some(shape.id);
         (_, deleted) = shape.compute_children_differences(&entries);
         shape.children = entries.clone();
+
+        for id in entries {
+            state.touch_shape(id);
+        }
     });
 
     with_state_mut!(state, {
@@ -339,6 +406,7 @@ fn set_children_set(entries: Vec<Uuid>) {
 
         for id in deleted {
             state.delete_shape_children(parent_id, id);
+            state.touch_shape(id);
         }
     });
 }
@@ -463,7 +531,7 @@ pub extern "C" fn set_children() {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .map(|data| Uuid::try_from(data).unwrap())
         .collect();
 
     set_children_set(entries);
@@ -619,7 +687,7 @@ pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
 
     let entries: Vec<_> = bytes
         .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .map(|data| TransformEntry::try_from(data).unwrap())
         .collect();
 
     with_state!(state, {
@@ -634,7 +702,7 @@ pub extern "C" fn set_modifiers() {
 
     let entries: Vec<_> = bytes
         .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .map(|data| TransformEntry::try_from(data).unwrap())
         .collect();
 
     let mut modifiers = HashMap::new();
@@ -648,6 +716,26 @@ pub extern "C" fn set_modifiers() {
         state.set_modifiers(modifiers);
         state.rebuild_modifier_tiles(ids);
     });
+}
+
+#[no_mangle]
+pub extern "C" fn start_temp_objects() {
+    unsafe {
+        #[allow(static_mut_refs)]
+        let mut state = STATE.take().expect("Got an invalid state pointer");
+        state = Box::new(state.start_temp_objects());
+        STATE = Some(state);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn end_temp_objects() {
+    unsafe {
+        #[allow(static_mut_refs)]
+        let mut state = STATE.take().expect("Got an invalid state pointer");
+        state = Box::new(state.end_temp_objects());
+        STATE = Some(state);
+    }
 }
 
 fn main() {

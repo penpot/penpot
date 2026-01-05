@@ -14,8 +14,7 @@
    [app.common.schema :as sm]
    [clojure.core :as c]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound])
+   [cuerdas.core :as str])
   #?(:clj
      (:import
       clojure.lang.IPersistentMap)))
@@ -109,13 +108,6 @@
     (and (= (:reason data) :integrant.core/build-failed-spec)
          (contains? data :explain))
     (explain (:explain data) opts)
-
-    (and (contains? data ::s/problems)
-         (contains? data ::s/value)
-         (contains? data ::s/spec))
-    (binding [s/*explain-out* expound/printer]
-      (with-out-str
-        (s/explain-out (update data ::s/problems #(take (:length opts 10) %)))))
 
     (contains? data ::sm/explain)
     (sm/humanize-explain (::sm/explain data) opts)))

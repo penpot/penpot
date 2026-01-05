@@ -26,6 +26,7 @@ import LayoutType from "./layout/LayoutType.js";
  * @typedef {Object} TextEditorOptions
  * @property {CSSStyleDeclaration|Object.<string,*>} [styleDefaults]
  * @property {SelectionControllerDebug} [debug]
+ * @property {boolean} [shouldUpdatePositionOnScroll=false]
  * @property {boolean} [allowHTMLPaste=false]
  */
 
@@ -93,6 +94,21 @@ export class TextEditor extends EventTarget {
   #canvas = null;
 
   /**
+   * Text editor options.
+   *
+   * @type {TextEditorOptions}
+   */
+  #options = {};
+
+  /**
+   * A boolean indicating that this instance was
+   * disposed or not.
+   *
+   * @type {boolean}
+   */
+  #isDisposed = false;
+
+  /**
    * Constructor.
    *
    * @param {HTMLElement} element
@@ -101,9 +117,9 @@ export class TextEditor extends EventTarget {
    */
   constructor(element, canvas, options) {
     super();
-    if (!(element instanceof HTMLElement))
+    if (!(element instanceof HTMLElement)) {
       throw new TypeError("Invalid text editor element");
-
+    }
     this.#element = element;
     this.#canvas = canvas;
     this.#events = {
@@ -119,6 +135,7 @@ export class TextEditor extends EventTarget {
       keydown: this.#onKeyDown,
     };
     this.#styleDefaults = options?.styleDefaults;
+    this.#options = options;
     this.#setup(options);
   }
 
@@ -150,14 +167,18 @@ export class TextEditor extends EventTarget {
 
   /**
    * Setups the root element.
+   *
+   * @param {TextEditorOptions} options
    */
-  #setupRoot() {
+  #setupRoot(options) {
     this.#root = createEmptyRoot(this.#styleDefaults);
     this.#element.appendChild(this.#root);
   }
 
   /**
    * Setups event listeners.
+   *
+   * @param {TextEditorOptions} options
    */
   #setupListeners(options) {
     this.#changeController.addEventListener("change", this.#onChange);
@@ -174,18 +195,61 @@ export class TextEditor extends EventTarget {
   }
 
   /**
-   * Setups the elements, the properties and the
-   * initial content.
+   * Disposes everything.
    */
-  #setup(options) {
-    this.#setupElementProperties(options);
-    this.#setupRoot(options);
+  dispose() {
+    if (this.#isDisposed) {
+      return this;
+    }
+    this.#isDisposed = true;
+
+    // Dispose change controller.
+    this.#changeController.removeEventListener("change", this.#onChange);
+    this.#changeController.dispose();
+    this.#changeController = null;
+
+    // Disposes selection controller.
+    this.#selectionController.removeEventListener(
+      "stylechange",
+      this.#onStyleChange,
+    );
+    this.#selectionController.dispose();
+    this.#selectionController = null;
+
+    // Disposes the rest of event listeners.
+    removeEventListeners(this.#element, this.#events);
+    if (this.#options.shouldUpdatePositionOnScroll) {
+      window.removeEventListener("scroll", this.#onScroll);
+    }
+
+    // Disposes references to DOM elements.
+    this.#element = null;
+    this.#root = null;
+    return this;
+  }
+
+  /**
+   * Setups controllers.
+   *
+   * @param {TextEditorOptions} options
+   */
+  #setupControllers(options) {
     this.#changeController = new ChangeController(this);
     this.#selectionController = new SelectionController(
       this,
       document.getSelection(),
       options,
     );
+  }
+
+  /**
+   * Setups the elements, the properties and the
+   * initial content.
+   */
+  #setup(options) {
+    this.#setupElementProperties(options);
+    this.#setupRoot(options);
+    this.#setupControllers(options);
     this.#setupListeners(options);
   }
 
@@ -242,7 +306,9 @@ export class TextEditor extends EventTarget {
    * @param {CustomEvent} e
    * @returns {void}
    */
-  #onChange = (e) => this.dispatchEvent(new e.constructor(e.type, e));
+  #onChange = (e) => {
+    this.dispatchEvent(new e.constructor(e.type, e));
+  };
 
   /**
    * Dispatchs a `stylechange` event.
@@ -422,6 +488,15 @@ export class TextEditor extends EventTarget {
   }
 
   /**
+   * Indicates that the TextEditor was disposed.
+   *
+   * @type {boolean}
+   */
+  get isDisposed() {
+    return this.#isDisposed;
+  }
+
+  /**
    * Root element that contains all the paragraphs.
    *
    * @type {HTMLDivElement}
@@ -476,6 +551,15 @@ export class TextEditor extends EventTarget {
    */
   get currentStyle() {
     return this.#selectionController.currentStyle;
+  }
+
+  /**
+   * Text editor options
+   *
+   * @type {TextEditorOptions}
+   */
+  get options() {
+    return this.#options;
   }
 
   /**
@@ -540,7 +624,8 @@ export class TextEditor extends EventTarget {
    * Applies the current styles to the selection or
    * the current DOM node at the caret.
    *
-   * @param {*} styles
+   * @param {Object.<string, *>} styles
+   * @returns {TextEditor}
    */
   applyStylesToSelection(styles) {
     this.#selectionController.startMutation();
@@ -553,6 +638,8 @@ export class TextEditor extends EventTarget {
 
   /**
    * Selects all content.
+   *
+   * @returns {TextEditor}
    */
   selectAll() {
     this.#selectionController.selectAll();
@@ -562,29 +649,11 @@ export class TextEditor extends EventTarget {
   /**
    * Moves cursor to end.
    *
-   * @returns
+   * @returns {TextEditor}
    */
   cursorToEnd() {
     this.#selectionController.cursorToEnd();
     return this;
-  }
-
-  /**
-   * Disposes everything.
-   */
-  dispose() {
-    this.#changeController.removeEventListener("change", this.#onChange);
-    this.#changeController.dispose();
-    this.#changeController = null;
-    this.#selectionController.removeEventListener(
-      "stylechange",
-      this.#onStyleChange,
-    );
-    this.#selectionController.dispose();
-    this.#selectionController = null;
-    removeEventListeners(this.#element, this.#events);
-    this.#element = null;
-    this.#root = null;
   }
 }
 
@@ -595,8 +664,16 @@ export class TextEditor extends EventTarget {
  * @param {boolean} allowHTMLPaste
  * @returns {Root}
  */
-export function createRootFromHTML(html, style = undefined, allowHTMLPaste = undefined) {
-  const fragment = mapContentFragmentFromHTML(html, style || undefined, allowHTMLPaste || undefined);
+export function createRootFromHTML(
+  html,
+  style = undefined,
+  allowHTMLPaste = undefined,
+) {
+  const fragment = mapContentFragmentFromHTML(
+    html,
+    style || undefined,
+    allowHTMLPaste || undefined,
+  );
   const root = createRoot([], style);
   root.replaceChildren(fragment);
   resetInertElement();
@@ -615,47 +692,98 @@ export function createRootFromString(string) {
   return root;
 }
 
-export function isEditor(instance) {
+/**
+ * Returns true if the passed object is a TextEditor
+ * instance.
+ *
+ * @param {*} instance
+ * @returns {boolean}
+ */
+export function isTextEditor(instance) {
   return instance instanceof TextEditor;
 }
 
-/* Convenience function based API for Text Editor */
+/**
+ * Returns the root element of a TextEditor
+ * instance.
+ *
+ * @param {TextEditor} instance
+ * @returns {HTMLDivElement}
+ */
 export function getRoot(instance) {
-  if (isEditor(instance)) {
+  if (isTextEditor(instance)) {
     return instance.root;
-  } else {
-    return null;
   }
+  return null;
 }
 
+/**
+ * Sets the root of the text editor.
+ *
+ * @param {TextEditor} instance
+ * @param {HTMLDivElement} root
+ * @returns {TextEditor}
+ */
 export function setRoot(instance, root) {
-  if (isEditor(instance)) {
+  if (isTextEditor(instance)) {
     instance.root = root;
   }
 
   return instance;
 }
 
+/**
+ * Creates a new TextEditor instance.
+ *
+ * @param {HTMLDivElement} element
+ * @param {HTMLCanvasElement} canvas
+ * @param {TextEditorOptions} options
+ * @returns {TextEditor}
+ */
 export function create(element, canvas, options) {
   return new TextEditor(element, canvas, { ...options });
 }
 
+/**
+ * Returns the current style of the TextEditor instance.
+ *
+ * @param {TextEditor} instance
+ * @returns {CSSStyleDeclaration|undefined}
+ */
 export function getCurrentStyle(instance) {
-  if (isEditor(instance)) {
+  if (isTextEditor(instance)) {
     return instance.currentStyle;
   }
+  return null;
 }
 
+/**
+ * Applies the specified styles to the TextEditor
+ * passed.
+ *
+ * @param {TextEditor} instance
+ * @param {Object.<string, *>} styles
+ * @returns {TextEditor|null}
+ */
 export function applyStylesToSelection(instance, styles) {
-  if (isEditor(instance)) {
+  if (isTextEditor(instance)) {
     return instance.applyStylesToSelection(styles);
   }
+  return null;
 }
 
+/**
+ * Disposes the current instance resources by nullifying
+ * every property.
+ *
+ * @param {TextEditor} instance
+ * @returns {TextEditor|null}
+ */
 export function dispose(instance) {
-  if (isEditor(instance)) {
-    instance.dispose();
+  if (isTextEditor(instance)) {
+    return instance.dispose();
   }
+  return null;
 }
 
 export default TextEditor;

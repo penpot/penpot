@@ -1545,7 +1545,7 @@ Will return a value that matches this schema:
   (and (not (contains? decoded-json "$metadata"))
        (not (contains? decoded-json "$themes"))))
 
-(defn- convert-dtcg-font-family
+(defn convert-dtcg-font-family
   "Convert font-family token value from DTCG format to internal format.
    - If value is a string, split it into a collection of font families
    - If value is already an array, keep it as is
@@ -1556,7 +1556,7 @@ Will return a value that matches this schema:
     (sequential? value) value
     :else value))
 
-(defn- convert-dtcg-typography-composite
+(defn convert-dtcg-typography-composite
   "Convert typography token value keys from DTCG format to internal format."
   [value]
   (if (map? value)
@@ -1568,17 +1568,17 @@ Will return a value that matches this schema:
     ;; Reference value
     value))
 
-(defn- convert-dtcg-shadow-composite
+(defn convert-dtcg-shadow-composite
   "Convert shadow token value from DTCG format to internal format."
   [value]
   (let [process-shadow (fn [shadow]
                          (if (map? shadow)
                            (let [legacy-shadow-type (get "type" shadow)]
                              (-> shadow
-                                 (set/rename-keys {"x" :offsetX
-                                                   "offsetX" :offsetX
-                                                   "y" :offsetY
-                                                   "offsetY" :offsetY
+                                 (set/rename-keys {"x" :offset-x
+                                                   "offsetX" :offset-x
+                                                   "y" :offset-y
+                                                   "offsetY" :offset-y
                                                    "blur" :blur
                                                    "spread" :spread
                                                    "color" :color
@@ -1589,7 +1589,7 @@ Will return a value that matches this schema:
                                                    (= "false" %) false
                                                    (= legacy-shadow-type "innerShadow") true
                                                    :else false))
-                                 (select-keys [:offsetX :offsetY :blur :spread :color :inset])))
+                                 (select-keys [:offset-x :offset-y :blur :spread :color :inset])))
                            shadow))]
     (cond
       ;; Reference value - keep as string
@@ -1860,8 +1860,8 @@ Will return a value that matches this schema:
     (mapv (fn [shadow]
             (if (map? shadow)
               (-> shadow
-                  (set/rename-keys {:offsetX "offsetX"
-                                    :offsetY "offsetY"
+                  (set/rename-keys {:offset-x "offsetX"
+                                    :offset-y "offsetY"
                                     :blur "blur"
                                     :spread "spread"
                                     :color "color"

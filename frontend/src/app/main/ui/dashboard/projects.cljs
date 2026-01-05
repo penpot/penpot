@@ -17,6 +17,7 @@
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.dashboard.deleted :as deleted]
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
@@ -315,27 +316,29 @@
   {::mf/props :obj}
   [{:keys [team projects profile]}]
 
-  (let [projects
+  (let [team-id         (get team :id)
+
+        recent-map      (mf/deref ref:recent-files)
+        permisions      (:permissions team)
+
+        can-edit        (:can-edit permisions)
+        can-invite      (or (:is-owner permisions)
+                            (:is-admin permisions))
+
+        show-team-hero* (mf/use-state #(get storage/global ::show-team-hero true))
+        show-team-hero? (deref show-team-hero*)
+
+        my-penpot?      (= (:default-team-id profile) team-id)
+        default-team?   (:is-default team)
+
+        show-deleted?   (:can-edit permisions)
+
+        projects
         (mf/with-memo [projects]
           (->> projects
                (remove :deleted-at)
                (sort-by :modified-at)
                (reverse)))
-
-        team-id             (get team :id)
-
-        recent-map          (mf/deref ref:recent-files)
-        permisions          (:permissions team)
-
-        can-edit            (:can-edit permisions)
-        can-invite          (or (:is-owner permisions)
-                                (:is-admin permisions))
-
-        show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))
-        show-team-hero?     (deref show-team-hero*)
-
-        is-my-penpot        (= (:default-team-id profile) team-id)
-        is-defalt-team?     (:is-default team)
 
         on-close
         (mf/use-fn
@@ -366,16 +369,20 @@
         [:*
          (when (and show-team-hero?
                     can-invite
-                    (not is-defalt-team?))
+                    (not default-team?))
            [:> team-hero* {:team team :on-close on-close}])
 
          [:div {:class (stl/css-case :dashboard-container true
                                      :no-bg true
                                      :dashboard-projects true
-                                     :with-team-hero (and (not is-my-penpot)
-                                                          (not is-defalt-team?)
+                                     :with-team-hero (and (not my-penpot?)
+                                                          (not default-team?)
                                                           show-team-hero?
                                                           can-invite))}
+
+          (when show-deleted?
+            [:> deleted/menu* {:team-id team-id :section :dashboard-recent}])
+
           (for [{:keys [id] :as project} projects]
             ;; FIXME: refactor this, looks inneficient
             (let [files (when recent-map

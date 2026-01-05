@@ -151,8 +151,8 @@
 ;; export interface Shadow {
 ;;   id?: string;
 ;;   style?: 'drop-shadow' | 'inner-shadow';
-;;   offsetX?: number;
-;;   offsetY?: number;
+;;   offset-x?: number;
+;;   offset-y?: number;
 ;;   blur?: number;
 ;;   spread?: number;
 ;;   hidden?: boolean;
@@ -164,8 +164,8 @@
     (obj/without-empty
      #js {:id (-> id format-id)
           :style (-> style format-key)
-          :offsetX offset-x
-          :offsetY offset-y
+          :offset-x offset-x
+          :offset-y offset-y
           :blur blur
           :spread spread
           :hidden hidden

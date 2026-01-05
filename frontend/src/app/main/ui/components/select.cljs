@@ -60,6 +60,7 @@
         current-id    (get state :id)
         current-value (get state :current-value)
         current-label (get label-index current-value)
+
         is-open?      (get state :is-open?)
 
         node-ref      (mf/use-ref nil)

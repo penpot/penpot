@@ -10,6 +10,7 @@ import {
   mapContentFragmentFromHTML,
   mapContentFragmentFromString,
 } from "../content/dom/Content.js";
+import { TextEditor } from "../TextEditor.js";
 
 /**
  * Returns a DocumentFragment from text/html.
@@ -17,7 +18,10 @@ import {
  * @param {DataTransfer} clipboardData
  * @returns {DocumentFragment}
  */
-function getFormattedFragmentFromClipboardData(selectionController, clipboardData) {
+function getFormattedFragmentFromClipboardData(
+  selectionController,
+  clipboardData,
+) {
   return mapContentFragmentFromHTML(
     clipboardData.getData("text/html"),
     selectionController.currentStyle,
@@ -38,19 +42,26 @@ function getPlainFragmentFromClipboardData(selectionController, clipboardData) {
 }
 
 /**
- * Returns a DocumentFragment (or null) if it contains
- * a compatible clipboardData type.
+ * Returns a document fragment of html data.
  *
  * @param {DataTransfer} clipboardData
- * @returns {DocumentFragment|null}
+ * @returns {DocumentFragment}
  */
-function getFragmentFromClipboardData(selectionController, clipboardData) {
+function getFormattedOrPlainFragmentFromClipboardData(
+  selectionController,
+  clipboardData,
+) {
   if (clipboardData.types.includes("text/html")) {
-    return getFormattedFragmentFromClipboardData(selectionController, clipboardData)
+    return getFormattedFragmentFromClipboardData(
+      selectionController,
+      clipboardData,
+    );
   } else if (clipboardData.types.includes("text/plain")) {
-    return getPlainFragmentFromClipboardData(selectionController, clipboardData)
+    return getPlainFragmentFromClipboardData(
+      selectionController,
+      clipboardData,
+    );
   }
-  return null
 }
 
 /**
@@ -71,18 +82,40 @@ export function paste(event, editor, selectionController) {
 
   let fragment = null;
   if (editor?.options?.allowHTMLPaste) {
-    fragment = getFragmentFromClipboardData(selectionController, event.clipboardData);
+    fragment = getFormattedOrPlainFragmentFromClipboardData(
+      event.clipboardData,
+    );
   } else {
-    fragment = getPlainFragmentFromClipboardData(selectionController, event.clipboardData);
+    fragment = getPlainFragmentFromClipboardData(
+      selectionController,
+      event.clipboardData,
+    );
   }
 
   if (!fragment) {
+    // NOOP
     return;
   }
 
   if (selectionController.isCollapsed) {
-    selectionController.insertPaste(fragment);
+    const hasOnlyOneParagraph = fragment.children.length === 1;
+    const hasOnlyOneTextSpan = fragment.firstElementChild.children.length === 1;
+    const forceTextSpan =
+      fragment.firstElementChild.dataset.textSpan === "force";
+    if (hasOnlyOneParagraph && hasOnlyOneTextSpan && forceTextSpan) {
+      selectionController.insertIntoFocus(fragment.textContent);
+    } else {
+      selectionController.insertPaste(fragment);
+    }
   } else {
-    selectionController.replaceWithPaste(fragment);
+    const hasOnlyOneParagraph = fragment.children.length === 1;
+    const hasOnlyOneTextSpan = fragment.firstElementChild.children.length === 1;
+    const forceTextSpan =
+      fragment.firstElementChild.dataset.textSpan === "force";
+    if (hasOnlyOneParagraph && hasOnlyOneTextSpan && forceTextSpan) {
+      selectionController.replaceText(fragment.textContent);
+    } else {
+      selectionController.replaceWithPaste(fragment);
+    }
   }
 }

@@ -1575,10 +1575,6 @@ msgstr ""
 "Pokud se chcete dozvědět více o inspektorovi designu, navštivte centrum "
 "nápovědy společnosti Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Více informací o inspektorovi"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""

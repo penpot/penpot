@@ -123,8 +123,10 @@
                         ;; ignore-children-fn is used to ignore some descendants
                         ;; on the deletion process. It should receive a shape and
                         ;; return a boolean
-                        ignore-children-fn]
-                 :or {ignore-children-fn (constantly false)}}]
+                        ignore-children-fn
+                        ignore-mask]
+                 :or {ignore-children-fn (constantly false)
+                      ignore-mask false}}]
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
@@ -162,18 +164,20 @@
          lookup  (d/getf objects)
 
          groups-to-unmask
-         (reduce (fn [group-ids id]
-                  ;; When the shape to delete is the mask of a masked group,
-                  ;; the mask condition must be removed, and it must be
-                  ;; converted to a normal group.
-                   (let [obj    (lookup id)
-                         parent (lookup (:parent-id obj))]
-                     (if (and (:masked-group parent)
-                              (= id (first (:shapes parent))))
-                       (conj group-ids (:id parent))
-                       group-ids)))
-                 #{}
-                 ids-to-delete)
+         (when-not ignore-mask
+           (reduce (fn [group-ids id]
+                    ;; When the shape to delete is the mask of a masked group,
+                    ;; the mask condition must be removed, and it must be
+                    ;; converted to a normal group.
+                     (let [obj    (lookup id)
+                           parent (lookup (:parent-id obj))]
+                       (if (and (:masked-group parent)
+                                (= id (first (:shapes parent))))
+                         (conj group-ids (:id parent))
+                         group-ids)))
+                   #{}
+                   ids-to-delete)
+           [])
 
          interacting-shapes
          (filter (fn [shape]

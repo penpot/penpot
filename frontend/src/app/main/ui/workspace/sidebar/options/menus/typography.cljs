@@ -26,6 +26,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -264,12 +265,16 @@
          (mf/deps font on-change)
          (fn [new-variant-id]
            (let [variant (d/seek #(= new-variant-id (:id %)) (:variants font))]
-             (on-change {:font-id (:id font)
-                         :font-family (:family font)
-                         :font-variant-id new-variant-id
-                         :font-weight (:weight variant)
-                         :font-style (:style variant)})
-             (dom/blur! (dom/get-target new-variant-id)))))
+             (when-not (nil? variant)
+               (on-change {:font-id (:id font)
+                           :font-family (:family font)
+                           :font-variant-id new-variant-id
+                           :font-weight (:weight variant)
+                           :font-style (:style variant)}))
+             ;; NOTE: the select component we are using does not fire on-blur event
+             ;; so we need to call on-blur manually
+             (when (some? on-blur)
+               (on-blur)))))
 
         on-font-select
         (mf/use-fn
@@ -303,7 +308,7 @@
             :title (tr "inspect.attributes.typography.font-family")
             :on-click #(reset! open-selector? true)}
       (cond
-        (= :multiple font-id)
+        (or (= :multiple font-id) (= "mixed" font-id))
         "--"
 
         (some? font)
@@ -341,12 +346,13 @@
                                                {:value (:id variant)
                                                 :key (pr-str variant)
                                                 :label (:name variant)})))
-             variant-options (if (= font-size :multiple)
+             variant-options (if (= font-variant-id :multiple)
                                (conj basic-variant-options
-                                     {:value :multiple
+                                     {:value ""
                                       :key :multiple-variants
                                       :label "--"})
                                basic-variant-options)]
+
          ;;  TODO Add disabled mode
          [:& select
           {:class (stl/css :font-variant-select)
@@ -378,6 +384,7 @@
         :step 0.1
         :default-value "1.2"
         :class (stl/css :line-height-input)
+        :aria-label (tr "inspect.attributes.typography.line-height")
         :value (attr->string line-height)
         :placeholder (if (= :multiple line-height) (tr "settings.multiple") "--")
         :nillable (= :multiple line-height)
@@ -396,6 +403,7 @@
         :step 0.1
         :default-value "0"
         :class (stl/css :letter-spacing-input)
+        :aria-label (tr "inspect.attributes.typography.letter-spacing")
         :value (attr->string letter-spacing)
         :placeholder (if (= :multiple letter-spacing) (tr "settings.multiple") "--")
         :on-change #(handle-change % :letter-spacing)
@@ -418,17 +426,17 @@
      [:& radio-buttons {:selected text-transform
                         :on-change handle-change
                         :name "text-transform"}
-      [:& radio-button {:icon deprecated-icon/text-uppercase
+      [:& radio-button {:icon i/text-uppercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.uppercase")
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
-      [:& radio-button {:icon deprecated-icon/text-mixed
+      [:& radio-button {:icon i/text-mixed
                         :type "checkbox"
                         :value "capitalize"
                         :title (tr "inspect.attributes.typography.text-transform.capitalize")
                         :id "text-transform-capitalize"}]
-      [:& radio-button {:icon deprecated-icon/text-lowercase
+      [:& radio-button {:icon i/text-lowercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.lowercase")
                         :value "lowercase"

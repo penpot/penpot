@@ -1844,8 +1844,8 @@ msgid "inspect.empty.help"
 msgstr "If you want to know more about design inspect visit Penpot's help center"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "More info about inspect"
+msgid "inspect.empty.more"
+msgstr "More info"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -7757,6 +7757,10 @@ msgstr "Invalid token value: only none, underline and strike-through are accepte
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Invalid value: must reference a composite typography token."
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Invalid value: must reference a composite shadow token."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Invalid token value: %s"
@@ -7873,6 +7877,10 @@ msgstr "Reference is not valid or is not in any active set"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
 msgid "workspace.tokens.reference-composite"
 msgstr "Enter a token typography alias"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Enter a token shadow alias"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
@@ -8413,3 +8421,114 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Will be deleted %s"
+
+msgid "labels.recent"
+msgstr "Recent"
+
+msgid "labels.deleted"
+msgstr "Deleted"
+
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Restore All"
+
+msgid "dashboard.clear-trash-button"
+msgstr "Clear trash"
+
+msgid "dashboard.restore-file-button"
+msgstr "Restore file"
+
+msgid "dashboard.delete-file-button"
+msgstr "Delete file"
+
+msgid "dashboard.restore-project-button"
+msgstr "Restore project"
+
+msgid "dashboard.delete-project-button"
+msgstr "Delete project"
+
+msgid "dashboard.trash-info-text-part1"
+msgstr "Deleted files will remain in the trash for"
+
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s days. "
+
+msgid "dashboard.trash-info-text-part3"
+msgstr "After that, they will be permanently deleted."
+
+msgid "dashboard.trash-info-text-part4"
+msgstr "If you change your mind, you can restore them or delete them permanently from each file's menu."
+
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Restore all projects and files"
+
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "You're going to restore all your projects and files. This may take a while."
+
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Restore file"
+
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "You're going to restore %s."
+
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Restore Project"
+
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "You're going to restore %s project and all the files contained in it."
+
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Delete forever"
+
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever all your deleted projects and files? This is a non reversible action."
+
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever %s? This is a non reversible action."
+
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever %s project? You're going to delete it forever an all of the files contained in it. This is a non reversible action."
+
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s files have been successfully restored."
+
+msgid "dashboard.restore-success-notification"
+msgstr "%s has been successfully restored."
+
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s files have been successfully deleted."
+
+msgid "dashboard.delete-success-notification"
+msgstr "%s has been successfully deleted."
+
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "There was an error while restoring the files."
+
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "There was an error while restoring the file %s."
+
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "There was an error while restoring the project %s and its files."
+
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "There was an error while deleting the file %s."
+
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "There was an error while deleting the files."
+
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "There was an error while deleting the project %s."
+
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Restoring files…"
+
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Deleting files…"
+
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restore unexpectedly slow"
+
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Deletion unexpectedly slow"

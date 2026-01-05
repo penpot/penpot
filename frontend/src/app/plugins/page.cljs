@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.color :as cc]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
@@ -299,7 +299,7 @@
     (fn [orientation value board]
       (let [shape (u/proxy->shape board)]
         (cond
-          (not (us/safe-number? value))
+          (not (sm/valid-safe-number? value))
           (u/display-not-valid :addRulerGuide "Value not a safe number")
 
           (not (contains? #{"vertical" "horizontal"} orientation))
@@ -345,8 +345,8 @@
           (or (not (string? content)) (empty? content))
           (u/display-not-valid :addCommentThread "Content not valid")
 
-          (or (not (us/safe-number? (:x position)))
-              (not (us/safe-number? (:y position))))
+          (or (not (sm/valid-safe-number? (:x position)))
+              (not (sm/valid-safe-number? (:y position))))
           (u/display-not-valid :addCommentThread "Position not valid")
 
           (and (some? board) (or (not (shape/shape-proxy? board)) (not (cfh/frame-shape? shape))))

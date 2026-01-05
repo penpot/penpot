@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.types.profile :refer [schema:profile]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -54,11 +53,16 @@
           (assoc :profile-id id)
           (assoc :profile profile)))
 
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile (:profile state)]
+        (->> (rx/from (i18n/set-locale (:lang profile)))
+             (rx/ignore))))
+
     ptk/EffectEvent
     (effect [_ state _]
       (let [profile (:profile state)]
         (swap! storage/user assoc :profile profile)
-        (i18n/set-locale! (:lang profile))
         (plugins.register/init)))))
 
 (def profile-fetched?
@@ -484,7 +488,7 @@
 
 (defn delete-access-token
   [{:keys [id] :as params}]
-  (us/assert! ::us/uuid id)
+  (assert (uuid? id))
   (ptk/reify ::delete-access-token
     ptk/WatchEvent
     (watch [_ _ _]

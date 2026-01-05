@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Deleted User <noreply+94857@weblate.org>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1835,14 +1835,15 @@ msgstr ""
 "de Penpot"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Más información sobre la inspección"
+msgid "inspect.empty.more"
+msgstr "Más información"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Elige una forma, tablero o grupo para inspeccionar sus propiedades y código"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Info. de capa"
 
@@ -7682,6 +7683,10 @@ msgstr "Valor de token no válido: solo none, underline y strike-through son ace
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Valor no válido: debe hacer referencia a un token tipográfico compuesto."
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Valor no válido: debe hacer referencia a un token de sombra compuesto."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Valor de token no válido: %s"
@@ -8272,3 +8277,111 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.recent"
+msgstr "Recientes"
+
+msgid "labels.deleted"
+msgstr "Eliminados"
+
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Restaurar todo"
+
+msgid "dashboard.clear-trash-button"
+msgstr "Vaciar papelera"
+
+msgid "dashboard.restore-file-button"
+msgstr "Restaurar archivo"
+
+msgid "dashboard.delete-file-button"
+msgstr "Eliminar archivo"
+
+msgid "dashboard.restore-project-button"
+msgstr "Restaurar proyecto"
+
+msgid "dashboard.delete-project-button"
+msgstr "Eliminar proyecto"
+
+msgid "dashboard.trash-info-text-part1"
+msgstr "Los archivos eliminados permanecerán en la papelera durante"
+
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s días. "
+
+msgid "dashboard.trash-info-text-part3"
+msgstr "Después de eso, serán eliminados permanentemente."
+
+msgid "dashboard.trash-info-text-part4"
+msgstr "Si cambias de opinión, puedes restaurarlos o eliminarlos permanentemente desde el menú de cada archivo."
+
+msgid "dashboard.deleted.delete-forever"
+msgstr "Eliminar para siempre"
+
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Restaurar todos los proyectos y archivos"
+
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "Vas a restaurar todos tus proyectos y archivos. Esto puede tardar un poco."
+
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Restaurar archivo"
+
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "Vas a restaurar %s."
+
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Restaurar proyecto"
+
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "Vas a restaurar el proyecto %s y todos los archivos que contiene."
+
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Eliminar para siempre"
+
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre todos tus proyectos y archivos eliminados? Esta es una acción irreversible."
+
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre %s? Esta es una acción irreversible."
+
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre el proyecto %s? Vas a eliminarlo para siempre junto con todos los archivos que contiene. Esta es una acción irreversible."
+
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s ficheros han sido restaurado correctamente."
+
+msgid "dashboard.restore-success-notification"
+msgstr "%s ha sido restaurado correctamente."
+
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s ficheros han sido eliminados correctamente."
+
+msgid "dashboard.delete-success-notification"
+msgstr "%s ha sido eliminado correctamente."
+
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "Hubo un error al restaurar los archivos."
+
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "Hubo un error al restaurar el archivo %s."
+
+msgid "dashboard.errors.error-on-restoring-files"
+msgstr "Hubo un error al restaurar archivos."
+
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Hubo un error al eliminar archivos."
+
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Hubo un error al eliminar el proyecto %s"
+
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Restaurando archivos…"
+
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Eliminando archivos…"
+
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restauración inesperadamente lenta"
+
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Eliminación inesperadamente lenta"

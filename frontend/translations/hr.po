@@ -1569,10 +1569,6 @@ msgstr ""
 "Ako želite saznati više o pregledu dizajna, posjetite Penpotov centar za "
 "pomoć"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Više informacija o inspekciji"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Odaberite oblik, ploču ili grupu da provjerite njihova svojstva i kod"

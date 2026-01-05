@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.path-names :as cpn]
-   [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -38,7 +37,6 @@
    [app.util.i18n :as i18n :refer [c tr]]
    [app.util.strings :refer [matches-search]]
    [app.util.timers :as ts]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -96,10 +94,6 @@
       (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
       (cpn/merge-path-item (:name asset))))
-
-(s/def ::asset-name ::us/not-empty-string)
-(s/def ::name-group-form
-  (s/keys :req-un [::asset-name]))
 
 (def initial-context-menu-state
   {:open? false :top nil :left nil})
