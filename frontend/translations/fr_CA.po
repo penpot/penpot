@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-04 22:01+0000\n"
+"PO-Revision-Date: 2026-01-06 14:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -684,3 +684,161 @@ msgstr ""
 "caractères comme celui-ci](https://vertical-metrics.netlify.app/). De plus, "
 "nous recommendons l'usage de [Transfonter](https://transfonter.org/) pour "
 "générer des polices web et corriger les erreurs. "
+
+#: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
+msgid "dashboard.import"
+msgstr "Importer fichiers Penpot"
+
+#: src/app/main/ui/dashboard/import.cljs:293, src/app/worker/import.cljs:121, src/app/worker/import.cljs:124
+msgid "dashboard.import.analyze-error"
+msgstr "Oups! Nous n'avons pas pu importer ce fichier"
+
+#, unused
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Ce fichier est exporté avec des composantes v2 mais l'équipe ne les supporte "
+"pas encore."
+
+#: src/app/main/ui/dashboard.cljs:243
+msgid "dashboard.import.bad-url"
+msgstr "L'importation a échoué. Le modèle d'URL est erroné"
+
+#: src/app/main/ui/dashboard.cljs:241
+#, unused
+msgid "dashboard.import.error"
+msgstr "L'importation a échoué. Essaye à nouveau"
+
+#: src/app/main/ui/dashboard/import.cljs:292
+#, unused
+msgid "dashboard.import.import-error"
+msgstr ""
+"Il y a eu un problème lors de l'importation du fichier. Il n'a pu être "
+"importé."
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "Pas tous les fichiers n'ont pu être importés"
+
+#: src/app/main/ui/dashboard/import.cljs:489
+msgid "dashboard.import.import-error.message1"
+msgstr "Les fichiers suivants contiennent des erreurs :"
+
+#: src/app/main/ui/dashboard/import.cljs:494
+msgid "dashboard.import.import-error.message2"
+msgstr "Les fichier erronés ne sont pas téléversés."
+
+#: src/app/main/ui/dashboard/import.cljs:479
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 fichier correctement importé."
+msgstr[1] "%s fichiers correctement importés."
+
+#: src/app/main/ui/dashboard/import.cljs:474
+msgid "dashboard.import.import-warning"
+msgstr "Certains fichiers contenaient des objets invalides qui ont été retirés."
+
+#: src/app/main/ui/dashboard.cljs:244
+msgid "dashboard.import.no-perms"
+msgstr "Tu n'as pas la permission d'importer dans cette équipe"
+
+#: src/app/main/ui/dashboard/import.cljs:128
+msgid "dashboard.import.progress.process-colors"
+msgstr "Traitement des couleurs"
+
+#: src/app/main/ui/dashboard/import.cljs:137, src/app/main/ui/dashboard/import.cljs:140
+msgid "dashboard.import.progress.process-components"
+msgstr "Traitement des composantes"
+
+#: src/app/main/ui/dashboard/import.cljs:134
+msgid "dashboard.import.progress.process-media"
+msgstr "Traitement des médias"
+
+#: src/app/main/ui/dashboard/import.cljs:125
+msgid "dashboard.import.progress.process-page"
+msgstr "Traitement de la page : %s"
+
+#: src/app/main/ui/dashboard/import.cljs:131
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Traitement des polices de caractères"
+
+#: src/app/main/ui/dashboard/import.cljs:119
+msgid "dashboard.import.progress.upload-data"
+msgstr "Téléversement des données au serveur (%s/%s)"
+
+#: src/app/main/ui/dashboard/import.cljs:122
+msgid "dashboard.import.progress.upload-media"
+msgstr "Téléversement du fichier : %s"
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Tu vas supprimer les invitations de :"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Tu vas envoyer à nouveau les invitations de :"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Supprimer les invitations"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Envoyer les invitations à nouveau"
+
+#: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
+msgid "dashboard.invite-profile"
+msgstr "Inviter des gens"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
+msgid "dashboard.leave-team"
+msgstr "Quitter l'équipe"
+
+#: src/app/main/ui/dashboard/templates.cljs:84, src/app/main/ui/dashboard/templates.cljs:169
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliothèques et modèles"
+
+#: src/app/main/ui/dashboard/templates.cljs:267
+msgid "dashboard.libraries-and-templates.description"
+msgstr "Voici des bibliothèques et modèles que tu peux ajouter à ton projet"
+
+#: src/app/main/ui/dashboard/templates.cljs:170
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explore davantage et découvre comment contribuer"
+
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:152
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Un problème est survenu lors de l'importation du modèle. Le modèle n'a pas "
+"été importé."
+
+#: src/app/main/ui/dashboard/libraries.cljs:69
+msgid "dashboard.libraries-title"
+msgstr "Bibliothèques"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:143
+msgid "dashboard.loading-files"
+msgstr "chargement des fichiers …"
+
+#: src/app/main/ui/dashboard/fonts.cljs:447
+msgid "dashboard.loading-fonts"
+msgstr "chargement des polices de caractères …"
+
+#: src/app/main/data/comments.cljs:473
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Toutes les notifications marquées comme lues"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
+msgid "dashboard.move-to"
+msgstr "Déplacer vers"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:247
+msgid "dashboard.move-to-multi"
+msgstr "Déplacer %s fichiers vers"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:226
+msgid "dashboard.move-to-other-team"
+msgstr "Déplacer vers une autre équipe"
+
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
+msgid "dashboard.new-file"
+msgstr "+ Nouveau fichier"
