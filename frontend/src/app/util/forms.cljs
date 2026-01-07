@@ -47,17 +47,18 @@
   [acc {:keys [schema in value type] :as problem}]
   (let [props  (m/properties schema)
         tprops (m/type-properties schema)
-        field  (or (first in)
-                   (:error/field props))
-
+        field  (or (:error/field props)
+                   in)
         field  (if (vector? field)
                  field
                  [field])]
 
-    (if (contains? acc field)
+    (if (and (= 1 (count field))
+             (contains? acc (first field)))
       acc
       (cond
-        (nil? field)
+        (or (nil? field)
+            (empty? field))
         acc
 
         (or (= type :malli.core/missing-key)
