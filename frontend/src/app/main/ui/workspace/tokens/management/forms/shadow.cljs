@@ -114,7 +114,7 @@
                                           :token inset-token
                                           :tokens tokens
                                           :index index
-                                          :value-subfield value-subfield
+                                          :indexed-type value-subfield
                                           :name :inset}]
       (when show-button
         [:> icon-button* {:variant "ghost"
@@ -269,7 +269,7 @@
 
      [:value
       [:map
-       [:shadow {:optinal true}
+       [:shadow {:optional true}
         [:vector
          [:map
           [:offset-x {:optional true} [:maybe :string]]
