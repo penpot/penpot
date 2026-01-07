@@ -570,7 +570,7 @@ msgstr "* Might include components, graphics, colors and/or typographies."
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
 msgstr ""
-"One or more files that you want to export are using shared libraries. What "
+"One or more files that you want to download are using shared libraries. What "
 "do you want to do with their assets*?"
 
 #: src/app/main/ui/exports/files.cljs:164
@@ -604,8 +604,8 @@ msgid "dashboard.export.options.merge.title"
 msgstr "Include shared library assets in file libraries"
 
 #: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Export files"
+msgid "dashboard.download.title"
+msgstr "Download files"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"
