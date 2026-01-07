@@ -1024,6 +1024,26 @@
       :clj
       (sort comp-fn items))))
 
+(defn obfuscate-string
+  "Obfuscates potentially sensitive values.
+
+  - One-arg arity:
+    * For strings shorter than 10 characters, all characters are replaced by `*`.
+    * For longer strings, the first 5 characters are preserved and the rest obfuscated.
+  - Two-arg arity accepts a boolean `full?` that, when true, replaces the whole value
+    by `*`, preserving only the length."
+  ([v]
+   (obfuscate-string v false))
+  ([v full?]
+   (let [s (str v)
+         n (count s)]
+     (cond
+       (zero? n) s
+       full? (apply str (repeat n "*"))
+       (< n 10) (apply str (repeat n "*"))
+       :else (str (subs s 0 5)
+                  (apply str (repeat (- n 5) "*")))))))
+
 (defn reorder
   "Reorder a vector by moving one of their items from some position to some space between positions.
    It clamps the position numbers to a valid range."
