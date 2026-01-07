@@ -54,5 +54,6 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "workspace.sidebar.options.svg-attrs.title")
-         :class (stl/css :title-spacing-svg)}]
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :svg-attr-title)}]
        [:& svg-block {:shape shape}]])))

@@ -305,7 +305,7 @@ test.describe("Inspect tab - Styles", () => {
       );
       await openInspectTab(workspacePage);
 
-      const panel = await getPanelByTitle(workspacePage, "Size & position");
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
       await expect(panel).toBeVisible();
 
       const propertyRow = panel.getByTestId("property-row");
@@ -335,7 +335,7 @@ test.describe("Inspect tab - Styles", () => {
       );
       await openInspectTab(workspacePage);
 
-      const panel = await getPanelByTitle(workspacePage, "Size & position");
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
       await expect(panel).toBeVisible();
 
       const propertyRow = panel.getByTestId("property-row");
@@ -375,7 +375,7 @@ test.describe("Inspect tab - Styles", () => {
       );
       await openInspectTab(workspacePage);
 
-      const panel = await getPanelByTitle(workspacePage, "Size & position");
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
       await expect(panel).toBeVisible();
 
       const propertyRow = panel.getByTestId("property-row");

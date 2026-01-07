@@ -63,7 +63,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "inspect.attributes.shadow")
-         :class (stl/css :title-spacing-shadow)}]
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :shadow-attr-title)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]
