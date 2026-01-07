@@ -4,22 +4,29 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+// FIXME: we need this import for .asset-element
+@use "refactor/basic-rules.scss" as deprecated;
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/spacing.scss" as *;
 
 .editable-select {
   @extend .asset-element;
   margin: 0;
   padding: 0;
-  border: deprecated.$s-1 solid var(--input-border-color);
+  border: $b-1 solid var(--input-border-color);
   position: relative;
   display: flex;
-  height: deprecated.$s-32;
+  height: $sz-32;
   width: 100%;
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$br-8;
+  padding: var(--sp-s);
+  border-radius: $br-8;
   cursor: pointer;
   .dropdown-button {
-    @include deprecated.flexCenter;
+    display: flex;
+    place-content: center;
     svg {
       @extend .button-icon-small;
       transform: rotate(90deg);
@@ -30,10 +37,10 @@
   .custom-select-dropdown {
     @extend .dropdown-wrapper;
     width: fit-content;
-    max-height: deprecated.$s-320;
+    max-height: px2rem(320); // TODO: when this gets addressed in the DS, use a token
     .separator {
       margin: 0;
-      height: deprecated.$s-12;
+      height: $sz-12;
     }
     .dropdown-element {
       @extend .dropdown-element-base;
@@ -44,7 +51,8 @@
       }
 
       .check-icon {
-        @include deprecated.flexCenter;
+        display: flex;
+        place-content: center;
         svg {
           @extend .button-icon-small;
           visibility: hidden;
