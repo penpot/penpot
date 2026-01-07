@@ -80,7 +80,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     timeout: 2 * 60 * 1000,
-    command: "yarn run e2e:server",
+    command: "pnpm run e2e:server",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
   },
