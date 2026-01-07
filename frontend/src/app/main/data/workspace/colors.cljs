@@ -1122,7 +1122,7 @@
         ref-id     (:stroke-color-ref-id stroke)
 
         colors     (-> libraries
-                       (get ref-id)
+                       (get ref-file)
                        (get :data)
                        (ctl/get-colors))
         shared?    (contains? colors ref-id)
@@ -1167,7 +1167,7 @@
         ref-file (get color :ref-file)
         ref-id   (get color :ref-id)
         colors   (-> libraries
-                     (get ref-id)
+                     (get ref-file)
                      (get :data)
                      (ctl/get-colors))
         shared?  (contains? colors ref-id)
@@ -1184,7 +1184,7 @@
   (let [ref-file (:fill-color-ref-file fill)
         ref-id   (:fill-color-ref-id fill)
         colors   (-> libraries
-                     (get ref-id)
+                     (get ref-file)
                      (get :data)
                      (ctl/get-colors))
 
@@ -1232,7 +1232,7 @@
         ref-id     (:fill-color-ref-id fill)
 
         colors     (-> libraries
-                       (get ref-id)
+                       (get ref-file)
                        (get :data)
                        (ctl/get-colors))
         shared?    (contains? colors ref-id)
