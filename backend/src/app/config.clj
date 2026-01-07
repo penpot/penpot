@@ -59,7 +59,6 @@
 
    :auth-token-cookie-name "auth-token"
 
-   :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
 
@@ -220,7 +219,6 @@
 
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
-    [:assets-path {:optional true} :string]
 
     [:netty-io-threads {:optional true} ::sm/int]
     [:executor-threads {:optional true} ::sm/int]
@@ -236,7 +234,8 @@
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]]))
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
+    [:objects-storage-s3-public-uri {:optional true} ::sm/uri]]))
 
 (defn- parse-flags
   [config]

@@ -91,7 +91,8 @@
    [::region {:optional true} :keyword]
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
-   [::endpoint {:optional true} ::sm/uri]])
+   [::endpoint {:optional true} ::sm/uri]
+   [::public-uri {:optional true} ::sm/uri]])
 
 (defmethod ig/expand-key ::backend
   [k v]
@@ -236,13 +237,13 @@
         (.close ^S3AsyncClient client)))))
 
 (defn- build-s3-presigner
-  [{:keys [::region ::endpoint]}]
-  (let [config (-> (S3Configuration/builder)
-                   (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
+  [{:keys [::region ::endpoint ::public-uri]}]
+  (let [uri    (or public-uri endpoint)
+        config (-> (S3Configuration/builder)
+                   (cond-> (some? uri) (.pathStyleAccessEnabled true))
                    (.build))]
-
     (-> (S3Presigner/builder)
-        (cond-> (some? endpoint) (.endpointOverride (URI. (str endpoint))))
+        (cond-> (some? uri) (.endpointOverride (URI. (str uri))))
         (.region (lookup-region region))
         (.serviceConfiguration ^S3Configuration config)
         (.build))))

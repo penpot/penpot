@@ -305,8 +305,7 @@
     ::session/manager (ig/ref ::session/manager)}
 
    :app.http.assets/routes
-   {::http.assets/path  (cf/get :assets-path)
-    ::http.assets/cache-max-age (ct/duration {:hours 24})
+   {::http.assets/cache-max-age (ct/duration {:hours 24})
     ::http.assets/cache-max-agesignature-max-age (ct/duration {:hours 24 :minutes 5})
     ::sto/storage  (ig/ref ::sto/storage)}
 
@@ -488,6 +487,9 @@
                             (cf/get :objects-storage-s3-region))
     ::sto.s3/endpoint   (or (cf/get :storage-assets-s3-endpoint)
                             (cf/get :objects-storage-s3-endpoint))
+
+    ::sto.s3/public-uri (cf/get :objects-storage-s3-public-uri)
+
     ::sto.s3/bucket     (or (cf/get :storage-assets-s3-bucket)
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)

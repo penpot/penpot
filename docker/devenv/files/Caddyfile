@@ -1,16 +1,169 @@
 {
-    auto_https off
+	auto_https off
 }
 
-localhost:3449 {
-   reverse_proxy localhost:4449
-   tls /home/selfsigned.crt /home/selfsigned.key
+(common_routes) {
+	root * /home/penpot/penpot/frontend/resources/public
+
+	encode zstd gzip
+
+	file_server {
+		browse
+		precompressed br zstd gzip
+	}
+
+	request_body {
+		max_size 300MB
+	}
+
+	handle_path /assets* {
+		rewrite * /assets{path}
+		reverse_proxy http://127.0.0.1:6060 {
+
+			header_up Host {http.request.host}
+			header_up X-Real-IP {http.request.remote}
+
+			@accel header X-Internal-Redirect *
+			@redirectAsset status 307
+
+			handle_response @accel {
+				root * /home/penpot/penpot/backend/assets
+				rewrite * {rp.header.X-Internal-Redirect}
+				header Cache-Control "max-age=86400"
+				method * GET
+				file_server
+			}
+
+			handle_response @redirectAsset {
+				header Location {rp.header.Location}
+				header Cache-Control "max-age=86400"
+				respond "" 302
+			}
+		}
+	}
+
+	handle_path /api/export* {
+		rewrite * /api/export{path}
+		reverse_proxy http://127.0.0.1:6061
+	}
+
+	handle_path /api* {
+		rewrite * /api{path}
+		reverse_proxy http://127.0.0.1:6060 {
+			header_up Host {http.request.host}
+			header_up X-Real-IP {http.request.remote}
+		}
+	}
+
+	handle_path /ws* {
+		rewrite * /ws{path}
+		reverse_proxy http://127.0.0.1:6060 {
+			flush_interval -1
+		}
+	}
+
+	handle_path /webhooks* {
+		rewrite * /webhooks{path}
+		reverse_proxy http://127.0.0.1:6060
+	}
+
+	handle_path /dbg* {
+		rewrite * /dbg{path}
+		reverse_proxy http://127.0.0.1:6060
+	}
+
+	handle_path /telemetry* {
+		rewrite * /telemetry{path}
+		reverse_proxy http://127.0.0.1:6070
+	}
+
+	handle_path /payments* {
+		rewrite * /payments{path}
+		reverse_proxy http://127.0.0.1:5000
+	}
+
+	handle_path /nitrate/* {
+		rewrite * /nitrate{path}
+		reverse_proxy http://127.0.0.1:3000
+	}
+
+	handle_path /storybook* {
+		root * /home/penpot/penpot/frontend/storybook-static
+		file_server browse
+	}
+
+    # -------------------------------
+    # GitHub proxy
+    # -------------------------------
+    @githubFiles path_regexp github ^/github/penpot-files/(.+)$
+    handle @githubFiles {
+        rewrite * /penpot/penpot-files/refs/heads/main/{re.github.1}
+        reverse_proxy https://raw.githubusercontent.com {
+            header_up User-Agent "curl/8.5.0"
+            header_up Host "raw.githubusercontent.com"
+            header_up Accept "*/*"
+            header_down Access-Control-Allow-Origin {http.request.header.Origin}
+            header_down -Cookies
+        }
+    }
+
+    # -------------------------------
+    # Google Fonts proxy
+    # -------------------------------
+    @gfontsStatic path_regexp fs ^/internal/gfonts/font/(.+)$
+    handle @gfontsStatic {
+		rewrite * /s/{re.fs.1}
+
+        reverse_proxy https://fonts.gstatic.com {
+            header_up User-Agent "Mozilla/5.0"
+            header_up Host "fonts.gstatic.com"
+
+            header_down Access-Control-Allow-Origin {http.request.header.Origin}
+            header_down -Cache-Control
+        }
+    }
+
+    handle_path /internal/gfonts/css* {
+		rewrite * /css?{query}
+
+        reverse_proxy https://fonts.googleapis.com {
+            header_up User-Agent "Mozilla/5.0"
+            header_up Host "fonts.googleapis.com"
+
+            header_down Access-Control-Allow-Origin {http.request.header.Origin}
+            header_down Cache-Control "max-age=86400"
+        }
+    }
+
+	@staticExts path_regexp staticExts \.(jpg|png|svg|ttf|woff|woff2)$
+	header @staticExts Cache-Control "public, max-age=604800"
+
+	@jsExts path_regexp jsExts \.(js|css|wasm|html)$
+	header @jsExts Cache-Control "no-store"
+
+	handle {
+		try_files {path} /index.html
+	}
 }
 
-http://localhost:3450 {
-   reverse_proxy localhost:4449
+:3449 {
+	tls /home/selfsigned.crt /home/selfsigned.key
+	import common_routes
 }
 
-http://penpot-devenv-main:3450 {
-    reverse_proxy localhost:4449
+:3450 {
+	import common_routes
+}
+
+# This is a workaround for make the MINIO available on https://localhost:9090
+# and http://localhost:9000. On normal use case, the object storage provider
+# should be publicy available and no specific settings used
+
+:9090 {
+	reverse_proxy http://minio:9000
+	tls /home/selfsigned.crt /home/selfsigned.key
+}
+
+:9091 {
+	reverse_proxy http://minio:9000
 }

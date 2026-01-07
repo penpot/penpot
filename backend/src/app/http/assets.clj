@@ -20,7 +20,7 @@
   (ct/duration {:hours 24}))
 
 (def ^:private signature-max-age
-  (ct/duration {:hours 24 :minutes 15}))
+  (ct/duration {:hours 36}))
 
 (defn get-id
   [{:keys [path-params]}]
@@ -34,7 +34,8 @@
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage] :as cfg} obj]
-  (let [{:keys [host port] :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
+  (let [{:keys [host port] :as url}
+        (sto/get-object-url storage obj {:max-age signature-max-age})]
     {::yres/status  307
      ::yres/headers {"location" (str url)
                      "x-host"   (cond-> host port (str ":" port))
@@ -42,11 +43,11 @@
                      "cache-control" (str "max-age=" (inst-ms cache-max-age))}}))
 
 (defn- serve-object-from-fs
-  [{:keys [::path]} obj]
-  (let [purl    (u/join (u/uri path)
-                        (sto/object->relative-path obj))
-        mdata   (meta obj)
-        headers {"x-accel-redirect" (:path purl)
+  [_ obj]
+  (let [mdata   (meta obj)
+        path    (sto/object->relative-path obj)
+        headers {"x-accel-redirect" (str "/internal/assets/" path)
+                 "x-internal-redirect" path
                  "content-type" (:content-type mdata)
                  "cache-control" (str "max-age=" (inst-ms cache-max-age))}]
     {::yres/status 204
@@ -95,8 +96,7 @@
 
 (defmethod ig/assert-key ::routes
   [_ params]
-  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage instance")
-  (assert (string? (::path params))))
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage instance"))
 
 (defmethod ig/init-key ::routes
   [_ cfg]
