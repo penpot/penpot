@@ -35,8 +35,8 @@
         on-change
         (mf/use-fn
          (mf/deps input-name)
-         (fn [type]
-           (let [is-inner? (= type "inner")]
+         (fn [id]
+           (let [is-inner? (= id "inner")]
              (swap! form assoc-in [:data :value indexed-type index input-name] is-inner?))))
 
         props (mf/spread-props props {:default-selected (if value "inner" "drop")
