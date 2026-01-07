@@ -1,6 +1,6 @@
 (ns app.main.data.tokenscript
   (:require
-   ["./tokenscript_config.js" :refer [COLOR_SCHEMAS]]
+   ["./tokenscript-schemas.js" :refer [makeConfig]]
    ["@tokens-studio/tokenscript-interpreter" :refer [BaseSymbolType
                                                      ColorSymbol Config
                                                      ListSymbol NumberSymbol
@@ -20,9 +20,7 @@
 
 ;; Config ----------------------------------------------------------------------
 
-(def config
-  (-> (Config.)
-      (.registerSchemas COLOR_SCHEMAS)))
+(def config (makeConfig))
 
 ;; Class predicates ------------------------------------------------------------
 ;; Predicates to get information about the tokenscript interpreter symbol type
