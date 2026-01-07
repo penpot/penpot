@@ -5,6 +5,5 @@ SCRIPT_DIR=$(dirname $0);
 set -ex
 
 $SCRIPT_DIR/setup;
-
 pnpm run build:storybook
 pnpm run test:storybook
