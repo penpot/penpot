@@ -29,6 +29,7 @@
 
   .custom-select-dropdown {
     @extend .dropdown-wrapper;
+    width: fit-content;
     max-height: deprecated.$s-320;
     .separator {
       margin: 0;
