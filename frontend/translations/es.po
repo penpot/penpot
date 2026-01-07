@@ -579,7 +579,7 @@ msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o mas ficheros que quieres exportar usan librerias compartidas. ¿Qué "
+"Uno o mas ficheros que quieres descargar usan librerias compartidas. ¿Qué "
 "quieres hacer con los recursos*?"
 
 #: src/app/main/ui/exports/files.cljs:164
@@ -613,8 +613,8 @@ msgid "dashboard.export.options.merge.title"
 msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 #: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Exportar ficheros"
+msgid "dashboard.download.title"
+msgstr "Descargar ficheros"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"

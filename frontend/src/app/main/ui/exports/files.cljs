@@ -121,7 +121,7 @@
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)}
-        (tr "dashboard.export.title")]
+        (tr "dashboard.download.title")]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click on-cancel} deprecated-icon/close]]
 
