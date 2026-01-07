@@ -16,6 +16,7 @@
     "start:plugin:table": "nx run table-plugin:init",
     "start:plugin:renamelayers": "nx run rename-layers-plugin:init",
     "start:plugin:colors-to-tokens": "nx run colors-to-tokens-plugin:init",
+    "start:plugin:poc-tokens": "nx run poc-tokens-plugin:init",
     "build": "nx build plugins-runtime --emptyOutDir=true",
     "build:plugins": "nx run-many -t build --parallel -p tag:type:plugin --exclude=poc-state-plugin",
     "build:styles-example": "nx run example-styles:build",
