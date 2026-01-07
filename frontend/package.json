@@ -23,7 +23,6 @@
     "build:app:main": "clojure -M:dev:shadow-cljs release main worker",
     "build:app:worker": "clojure -M:dev:shadow-cljs release worker",
     "build:app": "pnpm run clear:shadow-cache && pnpm run build:app:main && pnpm run build:app:libs",
-    "e2e:server": "node ./scripts/e2e-server.js",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
     "fmt:js": "pnpx prettier -c src/**/*.stories.jsx -c playwright/**/*.js -c scripts/**/*.js -c text-editor/**/*.js -w",
