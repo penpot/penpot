@@ -7437,10 +7437,6 @@ msgstr "Значення не є дійсним"
 msgid "workspace.tokens.value-with-units"
 msgstr "Помилкове значення: Одиниці не дозволені."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Якщо перейменувати токен, посилання на старе імʼя буде розірвано."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Ресурси"

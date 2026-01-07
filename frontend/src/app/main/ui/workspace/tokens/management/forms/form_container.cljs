@@ -37,6 +37,7 @@
         props
         (mf/spread-props props {:token-type token-type
                                 :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                :tokens-in-selected-set tokens-in-selected-set
                                 :token token})
         text-case-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
         text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})

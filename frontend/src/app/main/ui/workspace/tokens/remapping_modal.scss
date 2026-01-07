@@ -1,0 +1,113 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--overlay-color);
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  width: 100%;
+  max-width: 32rem;
+  max-height: unset;
+  user-select: none;
+  position: relative;
+}
+
+.modal-header {
+  margin-bottom: deprecated.$s-24;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  @include deprecated.headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+  position: absolute;
+  top: deprecated.$s-8;
+  right: deprecated.$s-6;
+}
+
+.modal-content {
+  @include deprecated.bodyLargeTypography;
+  margin-bottom: deprecated.$s-24;
+  padding: deprecated.$s-24 0;
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-16;
+}
+
+.modal-footer {
+  margin-top: deprecated.$s-24;
+
+  gap: deprecated.$s-8;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  gap: deprecated.$s-8;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+}
+
+.modal-scd-msg,
+.modal-msg {
+  @include deprecated.bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+}
+
+.remap-explanation {
+  margin: var(--spacing-sm) 0 0 0;
+  color: var(--color-foreground-secondary);
+  font-size: var(--fs-12);
+  line-height: var(--lh-1-4);
+}
+
+.no-references-info {
+  margin-bottom: var(--spacing-md);
+}
+
+.no-remap-explanation {
+  margin: var(--spacing-sm) 0 0 0;
+  color: var(--color-foreground-secondary);
+  font-size: var(--fs-12);
+  line-height: var(--lh-1-4);
+}
+
+.progress-info {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.modal-actions {
+  @extend .modal-action-btns;
+}

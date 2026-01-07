@@ -7980,10 +7980,6 @@ msgstr "Valoare invalidă: % nu este permis."
 msgid "workspace.tokens.value-with-units"
 msgstr "Valoare invalidă: Unitățile nu sunt permise."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Redenumirea acestui token va distruge orice referință la numele său vechi."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Obiecte"

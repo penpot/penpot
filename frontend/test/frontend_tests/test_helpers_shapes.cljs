@@ -4,13 +4,13 @@
    [app.common.geom.point :as gpt]
    [app.common.types.color :as clr]
    [app.main.data.workspace.libraries :as dwl]
-   [app.test-helpers.events :as the]
-   [app.test-helpers.libraries :as thl]
-   [app.test-helpers.pages :as thp]
    [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]
    [clojure.stacktrace :as stk]
+   [frontend-tests.helpers.events :as the]
+   [frontend-tests.helpers.libraries :as thl]
+   [frontend-tests.helpers.pages :as thp]
    [linked.core :as lks]
    [potok.v2.core :as ptk]))
 

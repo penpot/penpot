@@ -7940,12 +7940,6 @@ msgstr "Valore non valido: % non è consentito."
 msgid "workspace.tokens.value-with-units"
 msgstr "Valore non valido: le unità non sono consentite."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr ""
-"Rinominare questo token interromperà qualsiasi riferimento al suo vecchio "
-"nome."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Risorse"

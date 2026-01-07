@@ -7543,6 +7543,42 @@ msgstr "Color"
 msgid "workspace.tokens.composite-line-height-needs-font-size"
 msgstr "Line Height depends on Font Size. Add a Font Size to get the resolved value."
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-token-references"
+msgstr "Remap Token References"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.renaming-token-from-to"
+msgstr "Renaming token from '%s' to '%s'"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.references-found"
+msgstr "%s references found in your design"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-explanation"
+msgstr "All references to this token will be automatically updated to use the new name."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-references-found"
+msgstr "No references found"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-remap-needed"
+msgstr "This token is not currently used in your design, so no remapping is needed."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Remapping token references..."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-and-rename"
+msgstr "Remap & Rename"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.rename-only"
+msgstr "Rename"
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:78
 msgid "workspace.tokens.create-new-theme"
 msgstr "Create your first theme now."
@@ -8076,7 +8112,7 @@ msgstr "Type '%s' is not supported (%s)\n"
 msgid "workspace.tokens.use-reference"
 msgstr "Use a reference"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:133
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
@@ -8087,10 +8123,6 @@ msgstr "Invalid value: % is not allowed."
 #: src/app/main/data/workspace/tokens/errors.cljs:65
 msgid "workspace.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Renaming this token will break any reference to its old name."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"

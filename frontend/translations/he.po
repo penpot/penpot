@@ -7810,10 +7810,6 @@ msgstr "ערך שגוי: אסור %."
 msgid "workspace.tokens.value-with-units"
 msgstr "ערך שגוי: אסור יחידות."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "שינוי שם האסימון הזה יפגע בכל הפניה לשם הישן שלו."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "משאבים"
