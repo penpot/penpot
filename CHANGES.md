@@ -26,6 +26,7 @@
 - Fix color assets from shared libraries not appearing as assets in Selected colors panel [Taiga #12957](https://tree.taiga.io/project/penpot/issue/12957)
 - Fix CSS generated box-shadow property [Taiga #12997](https://tree.taiga.io/project/penpot/issue/12997)
 - Fix inner shadow selector on shadow token [Taiga #12951](https://tree.taiga.io/project/penpot/issue/12951)
+- Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
 
 
 ## 2.12.1
