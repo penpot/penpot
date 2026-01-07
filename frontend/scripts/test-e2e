@@ -5,5 +5,4 @@ SCRIPT_DIR=$(dirname $0);
 set -ex
 
 $SCRIPT_DIR/setup;
-
 pnpm run test:e2e -x --workers=2 --reporter=list "$@";
