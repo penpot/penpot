@@ -40,7 +40,6 @@ const setupEmptyTokensFile = async (page, options = {}) => {
     tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
     tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
     tokenSetItems: workspacePage.tokenSetItems,
-    tokensSidebar: workspacePage.tokensSidebar,
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,
     tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
   };
@@ -111,12 +110,15 @@ const checkInputFieldWithError = async (
   ).toBeVisible();
 };
 
-const checkInputFieldWithoutError = async (inputLocator) => {
+const checkInputFieldWithoutError = async (
+  tokenThemeUpdateCreateModal,
+  inputLocator,
+) => {
   expect(await inputLocator.getAttribute("aria-invalid")).toBeNull();
   expect(await inputLocator.getAttribute("aria-describedby")).toBeNull();
 };
 
-const testTokenCreationFlow = async (
+async function testTokenCreationFlow(
   page,
   {
     tokenLabel,
@@ -130,7 +132,7 @@ const testTokenCreationFlow = async (
     resolvedValueText,
     secondResolvedValueText,
   },
-) => {
+) {
   const invalidValueError = "Invalid token value";
   const emptyNameError = "Name should be at least 1 character";
   const selfReferenceError = "Token has self reference";
@@ -240,45 +242,7 @@ const testTokenCreationFlow = async (
   await expect(
     tokensTabPanel.getByRole("button", { name: "my-token-2" }),
   ).toBeEnabled();
-};
-
-const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
-  const tokenSegments = tokenName.split(".");
-  const tokenFolderTree = tokenSegments.slice(0, -1);
-  const tokenLeafName = tokenSegments.pop();
-
-  const typeParentWrapper = tokensTabPanel.getByTestId(`section-${type}`);
-  const typeSectionButton = typeParentWrapper
-    .getByRole("button", {
-      name: type,
-    })
-    .first();
-
-  const isSectionExpanded =
-    await typeSectionButton.getAttribute("aria-expanded");
-
-  if (isSectionExpanded === "false") {
-    await typeSectionButton.click();
-  }
-
-  for (const segment of tokenFolderTree) {
-    const segmentButton = typeParentWrapper
-      .getByRole("listitem")
-      .getByRole("button", { name: segment })
-      .first();
-
-    const isExpanded = await segmentButton.getAttribute("aria-expanded");
-    if (isExpanded === "false") {
-      await segmentButton.click();
-    }
-  }
-
-  await expect(
-    typeParentWrapper.getByRole("button", {
-      name: tokenLeafName,
-    }),
-  ).toBeEnabled();
-};
+}
 
 test.describe("Tokens: Tokens Tab", () => {
   test("Clicking tokens tab button opens tokens sidebar tab", async ({
@@ -434,12 +398,15 @@ test.describe("Tokens: Tokens Tab", () => {
     const emptyNameError = "Name should be at least 1 character";
     const selfReferenceError = "Token has self reference";
     const missingReferenceError = "Missing token references";
-    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFile(page);
 
-    await tokensSidebar
-      .getByRole("button", { name: "Add Token: Color" })
-      .click();
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: `Add Token: Color`,
+    });
+
+    await addTokenButton.click();
     await expect(tokensUpdateCreateModal).toBeVisible();
 
     // Placeholder checks
@@ -504,34 +471,38 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await unfoldTokenTree(tokensSidebar, "color", "color.primary");
+    await expect(
+      tokensTabPanel.getByRole("button", {
+        name: "color.primary",
+      }),
+    ).toBeEnabled();
 
     // Create token referencing the previous one with keyboard
 
-    await tokensSidebar
+    await tokensTabPanel
       .getByRole("button", { name: "Add Token: Color" })
       .click();
     await expect(tokensUpdateCreateModal).toBeVisible();
 
     await nameField.click();
-    await nameField.fill("secondary");
+    await nameField.fill("color.secondary");
     await nameField.press("Tab");
 
     await valueField.click();
     await valueField.fill("{color.primary}");
 
     await expect(submitButton).toBeEnabled();
-    await submitButton.press("Enter");
+    await nameField.press("Enter");
 
     await expect(
-      tokensSidebar.getByRole("button", {
-        name: "secondary",
+      tokensTabPanel.getByRole("button", {
+        name: "color.secondary",
       }),
     ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
     await expect(
-      tokensSidebar.getByRole("button", { name: "#ff0000" }),
+      tokensTabPanel.getByRole("button", { name: "#ff0000" }),
     ).toHaveCount(2);
 
     // Global set has been auto created and is active
@@ -547,7 +518,7 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toHaveAttribute("aria-checked", "true");
 
     // Check color picker
-    await tokensSidebar
+    await tokensTabPanel
       .getByRole("button", { name: "Add Token: Color" })
       .click();
     await expect(tokensUpdateCreateModal).toBeVisible();
@@ -1108,7 +1079,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page, { flags: ["enable-token-shadow"] });
+      await setupEmptyTokensFile(page, {flags: ["enable-token-shadow"]});
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1536,15 +1507,24 @@ test.describe("Tokens: Tokens Tab", () => {
   test("User edits token and auto created set show up in the sidebar", async ({
     page,
   }) => {
-    const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+    const {
+      workspacePage,
+      tokensUpdateCreateModal,
+      tokenThemesSetsSidebar,
+      tokensSidebar,
+      tokenContextMenuForToken,
+    } = await setupTokensFile(page);
 
     await expect(tokensSidebar).toBeVisible();
 
-    await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+    await expect(tokensColorGroup).toBeVisible();
+    await tokensColorGroup.click();
 
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
     await colorToken.click({ button: "right" });
@@ -1561,10 +1541,8 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-    await unfoldTokenTree(tokensSidebar, "color", "colors.blue.100.changed");
-
     const colorTokenChanged = tokensSidebar.getByRole("button", {
-      name: "changed",
+      name: "colors.blue.100.changed",
     });
     await expect(colorTokenChanged).toBeVisible();
   });
@@ -1655,10 +1633,11 @@ test.describe("Tokens: Tokens Tab", () => {
   });
 
   test("User creates grouped color token", async ({ page }) => {
-    const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
+    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFile(page);
 
-    await tokensSidebar
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
       .getByRole("button", { name: "Add Token: Color" })
       .click();
 
@@ -1670,7 +1649,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const valueField = tokensUpdateCreateModal.getByLabel("Value");
 
     await nameField.click();
-    await nameField.fill("dark.primary");
+    await nameField.fill("color.dark.primary");
 
     await valueField.click();
     await valueField.fill("red");
@@ -1681,9 +1660,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await unfoldTokenTree(tokensSidebar, "color", "dark.primary");
-
-    await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
+    await expect(tokensTabPanel.getByLabel("color.dark.primary")).toBeEnabled();
   });
 
   test("User cant create regular token with value missing", async ({
@@ -1699,6 +1676,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensUpdateCreateModal).toBeVisible();
 
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
     const submitButton = tokensUpdateCreateModal.getByRole("button", {
       name: "Save",
     });
@@ -1708,7 +1686,7 @@ test.describe("Tokens: Tokens Tab", () => {
 
     // Fill in name but leave value empty
     await nameField.click();
-    await nameField.fill("primary");
+    await nameField.fill("color.primary");
 
     // Submit button should remain disabled when value is empty
     await expect(submitButton).toBeDisabled();
@@ -1726,6 +1704,7 @@ test.describe("Tokens: Tokens Tab", () => {
       .click();
 
     await expect(tokensUpdateCreateModal).toBeVisible();
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
     const valueField = tokensUpdateCreateModal.getByLabel("Value");
 
     await valueField.click();
@@ -1775,10 +1754,15 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await expect(tokensSidebar).toBeVisible();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+
+    await expect(tokensColorGroup).toBeVisible();
+    await tokensColorGroup.click();
 
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
 
     await colorToken.click({ button: "right" });
@@ -1798,10 +1782,15 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await expect(tokensSidebar).toBeVisible();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+    await expect(tokensColorGroup).toBeVisible();
+
+    await tokensColorGroup.click();
 
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
     await colorToken.click({ button: "right" });
@@ -1814,7 +1803,8 @@ test.describe("Tokens: Tokens Tab", () => {
   });
 
   test("User fold/unfold color tokens", async ({ page }) => {
-    const { tokensSidebar } = await setupTokensFile(page);
+    const { tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
 
     await expect(tokensSidebar).toBeVisible();
 
@@ -1824,10 +1814,8 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
-
     const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
+      name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
     await tokensColorGroup.click();
@@ -2230,10 +2218,13 @@ test.describe("Tokens: Apply token", () => {
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
 
-    unfoldTokenTree(tokensSidebar, "color", "colors.black");
+    await tokensSidebar
+      .getByRole("button")
+      .filter({ hasText: "Color" })
+      .click();
 
     await tokensSidebar
-      .getByRole("button", { name: "black" })
+      .getByRole("button", { name: "colors.black" })
       .click({ button: "right" });
     await tokenContextMenuForToken.getByText("Fill").click();
 
@@ -2471,7 +2462,7 @@ test.describe("Tokens: Apply token", () => {
       await expect(tokensUpdateCreateModal).toBeVisible();
 
       const nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("primary");
+      await nameField.fill("shadow.primary");
 
       // User adds first shadow with a color from the color ramp
       const firstShadowFields = tokensUpdateCreateModal.getByTestId(
@@ -2718,11 +2709,9 @@ test.describe("Tokens: Apply token", () => {
       await submitButton.click();
       await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-      unfoldTokenTree(tokensSidebar, "shadow", "primary");
-
       // Verify token appears in sidebar
       const shadowToken = tokensSidebar.getByRole("button", {
-        name: "primary",
+        name: "shadow.primary",
       });
       await expect(shadowToken).toBeEnabled();
 
