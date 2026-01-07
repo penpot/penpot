@@ -148,11 +148,12 @@
         (mf/use-fn
          (mf/deps index prefix is-move)
          (fn [event]
-           (dom/stop-propagation event)
-           (dom/prevent-default event)
+           (when (dom/left-mouse? event)
+             (dom/stop-propagation event)
+             (dom/prevent-default event)
 
-           (when ^boolean is-move
-             (st/emit! (drp/start-move-handler index prefix)))))]
+             (when ^boolean is-move
+               (st/emit! (drp/start-move-handler index prefix))))))]
 
     [:g.handler {:pointer-events (if ^boolean is-draw "none" "visible")}
      [:line
