@@ -112,8 +112,10 @@
                 (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
               content))]
 
-    (impl/path-data
-     (reduce apply-to-index (vec content) modifiers))))
+    (if (some? modifiers)
+      (impl/path-data
+       (reduce apply-to-index (vec content) modifiers))
+      content)))
 
 (defn transform-content
   "Applies a transformation matrix over content and returns a new
