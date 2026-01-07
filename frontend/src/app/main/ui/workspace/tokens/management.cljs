@@ -44,6 +44,39 @@
         [(seq (array/sort! empty))
          (seq (array/sort! filled))]))))
 
+(mf/defc selected-set-info*
+  {::mf/private true}
+  [{:keys [tokens-lib selected-token-set-id]}]
+  (let [selected-token-set
+        (mf/with-memo [tokens-lib]
+          (when selected-token-set-id
+            (some-> tokens-lib (ctob/get-set selected-token-set-id))))
+
+        active-token-sets-names
+        (mf/with-memo [tokens-lib]
+          (some-> tokens-lib (ctob/get-active-themes-set-names)))
+
+        token-set-active?
+        (mf/use-fn
+         (mf/deps active-token-sets-names)
+         (fn [name]
+           (contains? active-token-sets-names name)))]
+    [:div {:class (stl/css :sets-header-container)}
+     [:> text* {:as "span"
+                :typography "headline-small"
+                :class (stl/css :sets-header)}
+      (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
+     [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
+        ;; NOTE: when no set in tokens-lib, the selected-token-set-id
+        ;; will be `nil`, so for properly hide the inactive message we
+        ;; check that at least `selected-token-set-id` has a value
+      (when (and (some? selected-token-set-id)
+                 (not (token-set-active? (ctob/get-name selected-token-set))))
+        [:*
+         [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
+         [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
+          (tr "workspace.tokens.inactive-set")]])]]))
+
 (mf/defc tokens-section*
   {::mf/private true}
   [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
@@ -65,9 +98,7 @@
         selected-token-set-id
         (mf/deref refs/selected-token-set-id)
 
-        selected-token-set
-        (when selected-token-set-id
-          (some-> tokens-lib (ctob/get-set selected-token-set-id)))
+
 
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
@@ -92,15 +123,9 @@
                                   tokens)]
             (ctob/group-by-type tokens)))
 
-        active-token-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
 
-        token-set-active?
-        (mf/use-fn
-         (mf/deps active-token-sets-names)
-         (fn [name]
-           (contains? active-token-sets-names name)))
+
+
 
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
@@ -118,34 +143,27 @@
 
     [:*
      [:& token-context-menu]
-     [:div {:class (stl/css :sets-header-container)}
-      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
-      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
-       ;; NOTE: when no set in tokens-lib, the selected-token-set-id
-       ;; will be `nil`, so for properly hide the inactive message we
-       ;; check that at least `selected-token-set-id` has a value
-       (when (and (some? selected-token-set-id)
-                  (not (token-set-active? (ctob/get-name selected-token-set))))
-         [:*
-          [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
-          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
-           (tr "workspace.tokens.inactive-set")]])]]
+
+     [:& selected-set-info* {:tokens-lib tokens-lib
+                             :selected-token-set-id selected-token-set-id}]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
          [:> token-group* {:key (name type)
-                           :is-open (get open-status type false)
+                           :tokens tokens
+                           :is-expanded (get open-status type false)
                            :type type
                            :selected-ids selected
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens
-                           :tokens tokens}]))
+                           :tokens-lib tokens-lib
+                           :selected-token-set-id selected-token-set-id}]))
 
      (for [type empty-group]
        [:> token-group* {:key (name type)
+                         :tokens []
                          :type type
                          :selected-shapes selected-shapes
-                         :is-selected-inside-layout :is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens
-                         :tokens []}])]))
+                         :is-selected-inside-layout is-selected-inside-layout
+                         :active-theme-tokens resolved-active-tokens}])]))
