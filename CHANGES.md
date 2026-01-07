@@ -24,7 +24,7 @@
 - Fix problem with grid layout components and auto sizing [Github #7797](https://github.com/penpot/penpot/issues/7797)
 - Fix some alignments on inspect tab [Taiga #12915](https://tree.taiga.io/project/penpot/issue/12915)
 - Fix color assets from shared libraries not appearing as assets in Selected colors panel [Taiga #12957](https://tree.taiga.io/project/penpot/issue/12957)
-
+- Fix CSS generated box-shadow property [Taiga #12997](https://tree.taiga.io/project/penpot/issue/12997)
 
 ## 2.12.1
 
