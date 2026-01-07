@@ -44,7 +44,8 @@
   [:div {:class (stl/css :attributes-block)}
    [:> inspect-title-bar*
     {:title (tr "inspect.attributes.size")
-     :class (stl/css :title-spacing-geometry)}
+     :class (stl/css :title-wrapper)
+     :title-class (stl/css :geometry-attr-title)}
 
     (when (= (count shapes) 1)
       [:> copy-button* {:data (css/get-shape-properties-css objects (first shapes) properties)

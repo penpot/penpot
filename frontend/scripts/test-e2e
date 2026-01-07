@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR=$(dirname $0);
+
 set -ex
-corepack enable;
-corepack install;
-yarn install;
-yarn run playwright install chromium --with-deps;
+
+$SCRIPT_DIR/setup;
+
 yarn run test:e2e -x --workers=2 --reporter=list "$@";

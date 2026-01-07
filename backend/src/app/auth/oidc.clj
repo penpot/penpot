@@ -37,17 +37,6 @@
    [yetti.response :as-alias yres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HELPERS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn obfuscate-string
-  [s]
-  (if (< (count s) 10)
-    (apply str (take (count s) (repeat "*")))
-    (str (subs s 0 5)
-         (apply str (take (- (count s) 5) (repeat "*"))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OIDC PROVIDER (GENERIC)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -177,7 +166,7 @@
         (l/inf :hint "provider initialized"
                :provider (:id provider)
                :client-id (:client-id provider)
-               :client-secret (obfuscate-string (:client-secret provider)))
+               :client-secret (d/obfuscate-string (:client-secret provider)))
         provider)
 
       (catch Throwable cause
@@ -222,7 +211,7 @@
         (l/inf :hint "provider initialized"
                :provider (:id provider)
                :client-id (:client-id provider)
-               :client-secret (obfuscate-string (:client-secret provider)))
+               :client-secret (d/obfuscate-string (:client-secret provider)))
         provider)
 
       (catch Throwable cause
@@ -299,7 +288,7 @@
         (l/inf :hint "provider initialized"
                :provider (:id provider)
                :client-id (:client-id provider)
-               :client-secret (obfuscate-string (:client-secret provider)))
+               :client-secret (d/obfuscate-string (:client-secret provider)))
         provider)
 
       (catch Throwable cause
@@ -341,7 +330,7 @@
              :provider "gitlab"
              :base-uri (:base-uri provider)
              :client-id (:client-id provider)
-             :client-secret (obfuscate-string (:client-secret provider)))
+             :client-secret (d/obfuscate-string (:client-secret provider)))
       provider)
     (catch Throwable cause
       (ex/raise :type ::internal
@@ -361,7 +350,7 @@
         (l/inf :hint "provider initialized"
                :provider (:id provider)
                :client-id (:client-id provider)
-               :client-secret (obfuscate-string (:client-secret provider)))
+               :client-secret (d/obfuscate-string (:client-secret provider)))
         provider)
 
       (catch Throwable cause
@@ -459,7 +448,7 @@
     (l/trc :hint "fetch access token"
            :provider (:id provider)
            :client-id (:client-id provider)
-           :client-secret (obfuscate-string (:client-secret provider))
+           :client-secret (d/obfuscate-string (:client-secret provider))
            :grant-type (:grant_type params)
            :redirect-uri (:redirect_uri params))
 
@@ -512,7 +501,7 @@
   [cfg provider tdata]
   (l/trc :hint "fetch user info"
          :uri (:user-uri provider)
-         :token (obfuscate-string (:token/access tdata)))
+         :token (d/obfuscate-string (:token/access tdata)))
 
   (let [params   {:uri (:user-uri provider)
                   :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}

@@ -69,7 +69,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> title-bar* {:collapsable false
                        :title       menu-title
-                       :class       (stl/css :title-spacing-layout-element)}
+                       :class       (stl/css :title-wrapper)
+                       :title-class (stl/css :layout-element-attr-title)}
         (when (= (count shapes) 1)
           [:> copy-button* {:data  (css/get-shape-properties-css objects (first shapes) properties)
                             :class (stl/css :copy-btn-title)}])]
