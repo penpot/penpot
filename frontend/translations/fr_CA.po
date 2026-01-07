@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-06 14:01+0000\n"
+"PO-Revision-Date: 2026-01-08 02:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -842,3 +842,308 @@ msgstr "Déplacer vers une autre équipe"
 #: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
 msgid "dashboard.new-file"
 msgstr "+ Nouveau fichier"
+
+#: src/app/main/data/dashboard.cljs:501, src/app/main/data/dashboard.cljs:613
+msgid "dashboard.new-file-prefix"
+msgstr "Nouveau fichier"
+
+#: src/app/main/ui/dashboard/projects.cljs:61
+msgid "dashboard.new-project"
+msgstr "+ Nouveau projet"
+
+#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:616
+msgid "dashboard.new-project-prefix"
+msgstr "Nouveau projet"
+
+#: src/app/main/ui/dashboard/search.cljs:77
+msgid "dashboard.no-matches-for"
+msgstr "Aucun résultat de recherche pour « %s »"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:764
+msgid "dashboard.no-projects-placeholder"
+msgstr "Les projets épinglés sont affichés ici"
+
+#: src/app/main/ui/dashboard/comments.cljs:91
+msgid "dashboard.notifications"
+msgstr "Notifications"
+
+#: src/app/main/ui/auth/verify_token.cljs:34
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Ton adresse courriel a été mise à jour"
+
+#: src/app/main/ui/auth/verify_token.cljs:28
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Ton adresse courriel a été vérifiée avec succès"
+
+#: src/app/main/data/profile.cljs:273
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Paramètres de notification mis à jour"
+
+#: src/app/main/ui/settings/password.cljs:36
+msgid "dashboard.notifications.password-saved"
+msgstr "Mot de passe sauvegardé!"
+
+#: src/app/main/ui/dashboard/comments.cljs:45
+msgid "dashboard.notifications.view"
+msgstr "Voir les notifications"
+
+#: src/app/main/ui/dashboard/team.cljs:1340
+msgid "dashboard.num-of-members"
+msgstr "%s membres"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:277
+msgid "dashboard.open-in-new-tab"
+msgstr "Ouvrir le fichier dans un nouvel onglet"
+
+#: src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:265, src/app/main/ui/dashboard/projects.cljs:266
+msgid "dashboard.options"
+msgstr "Options"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Ordre par rôle"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Ordre par statut"
+
+#: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
+msgid "dashboard.password-change"
+msgstr "Modifier le mot de passe"
+
+#: src/app/main/data/common.cljs:191
+msgid "dashboard.permissions-change.admin"
+msgstr "Tu es maintenant un admin de cette équipe."
+
+#: src/app/main/data/common.cljs:190
+msgid "dashboard.permissions-change.editor"
+msgstr "Tu es maintenant un éditeur sur cette équipe."
+
+#: src/app/main/data/common.cljs:192
+msgid "dashboard.permissions-change.owner"
+msgstr "Tu es maintenant propriétaire de cette équipe."
+
+#: src/app/main/data/common.cljs:189
+msgid "dashboard.permissions-change.viewer"
+msgstr "Tu es maintenant visionneur.e sur cette équipe."
+
+#: src/app/main/ui/dashboard/pin_button.cljs:23, src/app/main/ui/dashboard/project_menu.cljs:96
+msgid "dashboard.pin-unpin"
+msgstr "Épingler/Désépingler"
+
+#: src/app/main/ui/dashboard.cljs:207
+msgid "dashboard.plugins.bad-url"
+msgstr "L'URL du plugiciel est erroné"
+
+#: src/app/main/ui/dashboard.cljs:205
+msgid "dashboard.plugins.parse-error"
+msgstr "Impossible d'analyser le manifeste du plugiciel"
+
+#: src/app/main/ui/dashboard.cljs:168
+msgid "dashboard.plugins.try-plugin"
+msgstr "Essayer le plugiciel : "
+
+#: src/app/main/ui/dashboard/projects.cljs:56
+msgid "dashboard.projects-title"
+msgstr "Projets"
+
+#: src/app/main/ui/settings/profile.cljs:86
+msgid "dashboard.remove-account"
+msgstr "Tu veux supprimer ton compte ?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "dashboard.remove-shared"
+msgstr "Retirer la bibliothèque partagée"
+
+#: src/app/main/data/common.cljs:224
+msgid "dashboard.removed-from-team"
+msgstr "Tu ne fais plus partie de l'équipe « %s »."
+
+#: src/app/main/ui/settings/profile.cljs:78
+msgid "dashboard.save-settings"
+msgstr "Sauvegarder les paramètres"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
+msgid "dashboard.search-placeholder"
+msgstr "Recherche…"
+
+#: src/app/main/ui/dashboard/search.cljs:72
+msgid "dashboard.searching-for"
+msgstr "Recherche pour « %s »…"
+
+#: src/app/main/ui/settings/options.cljs:58
+msgid "dashboard.select-ui-language"
+msgstr "Changer la langue d'interface"
+
+#: src/app/main/ui/settings/options.cljs:65
+msgid "dashboard.select-ui-theme"
+msgstr "Choisir un thème"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot sombre (défaut)"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot clair"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "Thème du système"
+
+#: src/app/main/ui/settings/notifications.cljs:57
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Tous les commentaires, mentions et réponses"
+
+#: src/app/main/ui/settings/notifications.cljs:59
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Aucun"
+
+#: src/app/main/ui/settings/notifications.cljs:58
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Seulement les mentions et réponses"
+
+#: src/app/main/ui/settings/notifications.cljs:54
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Commentaires de fichier"
+
+#: src/app/main/ui/settings/notifications.cljs:53
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Notifications du survol"
+
+#: src/app/main/ui/settings/notifications.cljs:67
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Tous les commentaires, mentions et réponses"
+
+#: src/app/main/ui/settings/notifications.cljs:69
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Aucun"
+
+#: src/app/main/ui/settings/notifications.cljs:68
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Seulement les mentions et réponses"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Commentaires de fichier"
+
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
+msgid "ds.confirm-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:216, src/app/main/ui/settings/subscription.cljs:228, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
+msgid "ds.confirm-cancel"
+msgstr "Annuler"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Toutes les invitations et demandes"
+
+#: src/app/main/ui/settings/notifications.cljs:79
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Aucun"
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Invitations et demandes"
+
+#: src/app/main/ui/settings/notifications.cljs:63
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notifications courriel"
+
+#: src/app/main/ui/settings/notifications.cljs:84
+msgid "dashboard.settings.notifications.submit"
+msgstr "Sauvegarder les paramètres"
+
+#: src/app/main/ui/settings/notifications.cljs:52
+msgid "dashboard.settings.notifications.title"
+msgstr "Notifications"
+
+#: src/app/main/ui/dashboard/projects.cljs:308
+msgid "dashboard.show-all-files"
+msgstr "Voir tous les fichiers"
+
+#: src/app/main/ui/workspace/main_menu.cljs:671
+msgid "dashboard.show-version-history"
+msgstr "Historique des versions"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:98
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Le fichier a été supprimé avec succès"
+msgstr[1] "Les fichiers ont été supprimés avec succès"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:63
+msgid "dashboard.success-delete-project"
+msgstr "Le projet a été supprimé avec succès"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:93
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Le fichier a été dupliqué avec succès"
+msgstr[1] "Les fichiers ont été dupliqués avec succès"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:35
+msgid "dashboard.success-duplicate-project"
+msgstr "Le projet a été dupliqué avec succès"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
+msgid "dashboard.success-move-file"
+msgstr "Le fichier a été déplacé avec succès"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:131
+msgid "dashboard.success-move-files"
+msgstr "Les fichiers ont été déplacés avec succès"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:57
+msgid "dashboard.success-move-project"
+msgstr "Le projet a été déplacé avec succès"
+
+#: src/app/main/ui/dashboard/team.cljs:1323
+msgid "dashboard.team-info"
+msgstr "Information de l'équipe"
+
+#: src/app/main/ui/dashboard/team.cljs:1329
+msgid "dashboard.team-members"
+msgstr "Membres de l'équipe"
+
+#: src/app/main/ui/dashboard/team.cljs:1344
+msgid "dashboard.team-projects"
+msgstr "Projets de l'équipe"
+
+#: src/app/main/ui/dashboard/templates.cljs:134
+msgid "dashboard.template.add-to-project"
+msgstr "Ajouter à ton projet"
+
+#: src/app/main/ui/settings/options.cljs:63
+msgid "dashboard.theme-change"
+msgstr "Thème visuel"
+
+#: src/app/main/ui/dashboard/search.cljs:59
+msgid "dashboard.title-search"
+msgstr "Résultats de recherche"
+
+#: src/app/main/ui/dashboard/search.cljs:67
+msgid "dashboard.type-something"
+msgstr "Écris quelque chose pour lancer une recherche"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:645
+msgid "dashboard.unpublish-shared"
+msgstr "Dépublier la bibliothèque"
+
+#: src/app/main/ui/settings/options.cljs:74
+msgid "dashboard.update-settings"
+msgstr "Sauvegarder les paramètres"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:977
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Sans limite de créativité"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:975
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot gratuit"
+
+#: src/app/main/ui/dashboard/team.cljs:1115
+msgid "dashboard.webhooks.active"
+msgstr "Actif"
