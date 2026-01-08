@@ -8,7 +8,9 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.main.refs :as refs]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:layer-button
@@ -19,17 +21,19 @@
    [:expandable {:optional true} :boolean]
    [:expanded {:optional true} :boolean]
    [:icon {:optional true} :string]
-   [:on-toggle-expand fn?]])
+   [:on-toggle-expand {:optional true} fn?]
+   [:on-context-menu {:optional true} fn?]])
 
 (mf/defc layer-button*
   {::mf/schema schema:layer-button}
-  [{:keys [label description class is-expandable expanded icon on-toggle-expand children] :rest props}]
+  [{:keys [label description class is-expandable expanded icon on-toggle-expand on-context-menu children] :rest props}]
   (let [button-props (mf/spread-props props
                                       {:class [class (stl/css-case :layer-button true
                                                                    :layer-button--expandable is-expandable
                                                                    :layer-button--expanded expanded)]
                                        :type "button"
-                                       :on-click on-toggle-expand})]
+                                       :on-click on-toggle-expand
+                                       :on-context-menu on-context-menu})]
     [:div {:class (stl/css :layer-button-wrapper)}
      [:> "button" button-props
       [:div {:class (stl/css :layer-button-content)}

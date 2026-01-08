@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pprint :as pp]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -88,7 +89,7 @@
 
         expandable? (d/nilv (seq tokens) false)
 
-        on-context-menu
+        on-pill-context-menu
         (mf/use-fn
          (fn [event token]
            (dom/prevent-default event)
@@ -97,6 +98,17 @@
                        :position (dom/get-client-position event)
                        :errors (:errors token)
                        :token-id (:id token)}))))
+
+        on-node-context-menu
+        (mf/use-fn
+         (fn [event node]
+           (dom/prevent-default event)
+           (pp/pprint node)
+           #_(st/emit! (dwtl/assign-token-context-menu
+                        {:type :token
+                         :position (dom/get-client-position event)
+                         :errors (:errors token)
+                         :token-id (:id token)}))))
 
         on-toggle-open-click
         (mf/use-fn
@@ -159,4 +171,5 @@
                         :selected-token-set-id selected-token-set-id
                         :is-selected-inside-layout is-selected-inside-layout
                         :on-token-pill-click on-token-pill-click
-                        :on-context-menu on-context-menu}])]))
+                        :on-pill-context-menu on-pill-context-menu
+                        :on-node-context-menu on-node-context-menu}])]))
