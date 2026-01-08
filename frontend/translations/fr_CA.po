@@ -2,11 +2,11 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-01-08 02:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
-"frontend/fr_CA/>\n"
+"Language-Team: French (Canada) "
+"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 "X-Generator: Weblate 5.15.1\n"
@@ -23,8 +23,8 @@ msgstr "Vérifie ta boîte courriel"
 #, unused
 msgid "auth.check-your-email"
 msgstr ""
-"Vérifie ta boîte courriel et clique le lien de vérification pour commencer à "
-"utiliser Penpot."
+"Vérifie ta boîte courriel et clique le lien de vérification pour commencer "
+"à utiliser Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -104,6 +104,12 @@ msgstr "Mot de passe modifié avec succès"
 msgid "auth.notifications.profile-not-verified"
 msgstr "Le profil n'est pas vérifié. Vérifier le profile avant de continuer."
 
+#: src/app/main/ui/auth/recovery_request.cljs:33
+msgid "auth.notifications.recovery-token-sent"
+msgstr ""
+"Un lien de réinitialisation du mot de passe a été envoyé a ta boîte de "
+"réception."
+
 #: src/app/main/ui/auth/verify_token.cljs:49
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Tu as bien rejoint l'équipe"
@@ -158,9 +164,9 @@ msgstr "Créer un compte"
 #, unused
 msgid "auth.register-tagline"
 msgstr ""
-"Avec un compte gratuit Penpot, tu peux créer un nombre illimité d'équipes et "
-"collaborer avec des designers et développeurs sur autant de projets que tu "
-"veux. "
+"Avec un compte gratuit Penpot, tu peux créer un nombre illimité d'équipes "
+"et collaborer avec des designers et développeurs sur autant de projets que "
+"tu veux. "
 
 #: src/app/main/ui/auth/register.cljs:206
 msgid "auth.register-title"
@@ -182,12 +188,6 @@ msgstr ""
 msgid "auth.terms-of-service"
 msgstr "Conditions d'utilisation"
 
-#: src/app/main/ui/auth/recovery_request.cljs:33
-msgid "auth.notifications.recovery-token-sent"
-msgstr ""
-"Un lien de réinitialisation du mot de passe a été envoyé a ta boîte de "
-"réception."
-
 #, unused
 msgid "auth.terms-privacy-agreement"
 msgstr ""
@@ -207,7 +207,7 @@ msgstr "Adresse courriel de travail"
 msgid "branding-illustrations-marketing-pieces"
 msgstr "images de marque, illustrations, matériel de marketing..."
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:107
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
 msgid "color-row.token-color-row.deleted-token"
 msgstr "Ce token n'existe pas ou a été supprimé."
 
@@ -220,6 +220,40 @@ msgstr ""
 #: src/app/main/ui/comments.cljs:530
 msgid "comments.mentions.not-found"
 msgstr "Aucune personne trouvée pour @%s"
+
+#: src/app/main/ui/workspace/libraries.cljs:331
+msgid "common.publish"
+msgstr "Publier"
+
+#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+msgid "common.share-link.all-users"
+msgstr "Tous les usagers de Penpot"
+
+#: src/app/main/ui/viewer/share_link.cljs:200
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Veux-tu vraiment supprimer ce lien? Cas advenant, il ne sera plus "
+"disponible à quiconque"
+
+#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+msgid "common.share-link.current-tag"
+msgstr "(courant)"
+
+#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+msgid "common.share-link.destroy-link"
+msgstr "Supprimer le lien"
+
+#: src/app/main/ui/viewer/share_link.cljs:223
+msgid "common.share-link.get-link"
+msgstr "Obtenir le lien"
+
+#: src/app/main/ui/viewer/share_link.cljs:139
+msgid "common.share-link.link-copied-success"
+msgstr "Lien copié avec succès"
+
+#: src/app/main/ui/viewer/share_link.cljs:233
+msgid "common.share-link.manage-ops"
+msgstr "Gérer les permissions"
 
 #: src/app/main/ui/viewer/share_link.cljs:279
 msgid "common.share-link.page-shared"
@@ -247,40 +281,6 @@ msgstr "Pages partagées"
 msgid "common.share-link.placeholder"
 msgstr "Le lien de partage apparaîtra ici"
 
-#: src/app/main/ui/workspace/libraries.cljs:333
-msgid "common.publish"
-msgstr "Publier"
-
-#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
-msgid "common.share-link.all-users"
-msgstr "Tous les usagers de Penpot"
-
-#: src/app/main/ui/viewer/share_link.cljs:200
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"Veux-tu vraiment supprimer ce lien? Cas advenant, il ne sera plus disponible "
-"à quiconque"
-
-#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
-msgid "common.share-link.current-tag"
-msgstr "(courant)"
-
-#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
-msgid "common.share-link.destroy-link"
-msgstr "Supprimer le lien"
-
-#: src/app/main/ui/viewer/share_link.cljs:223
-msgid "common.share-link.get-link"
-msgstr "Obtenir le lien"
-
-#: src/app/main/ui/viewer/share_link.cljs:139
-msgid "common.share-link.link-copied-success"
-msgstr "Lien copié avec succès"
-
-#: src/app/main/ui/viewer/share_link.cljs:233
-msgid "common.share-link.manage-ops"
-msgstr "Gérer les permissions"
-
 #: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.team-members"
 msgstr "Seulement les membres de l'équipe"
@@ -293,21 +293,21 @@ msgstr "Partager les prototypes"
 msgid "common.share-link.view-all"
 msgstr "Tout sélectionner"
 
-#: src/app/main/ui/workspace/libraries.cljs:329
+#: src/app/main/ui/workspace/libraries.cljs:327
 msgid "common.unpublish"
 msgstr "Dépublier"
 
-#: src/app/main/ui/dashboard/projects.cljs:92
+#: src/app/main/ui/dashboard/projects.cljs:93
 msgid "dasboard.team-hero.management"
 msgstr "Gestion de l'équipe"
 
-#: src/app/main/ui/dashboard/projects.cljs:91
+#: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot est conçu pour les équipes. Invite des membres à travailler ensemble "
 "sur des projets et fichiers"
 
-#: src/app/main/ui/dashboard/projects.cljs:89
+#: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.title"
 msgstr "Collaborer!"
 
@@ -402,7 +402,8 @@ msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "Les tokens d'accès personnel sont une alternative à notre système "
 "d'authentification par identifiant et mot de passe. Ils peuvent être "
-"utilisés pour permettre à une application d'accéder à l'API interne de Penpot"
+"utilisés pour permettre à une application d'accéder à l'API interne de "
+"Penpot"
 
 #: src/app/main/ui/settings/access_tokens.cljs:142
 msgid "dashboard.access-tokens.token-will-expire"
@@ -416,7 +417,7 @@ msgstr "Ce token n'a pas de date d'expiration"
 msgid "dashboard.add-file"
 msgstr "Ajouter un fichier"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
+#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "Ajouter une bibliothèque partagée"
 
@@ -424,7 +425,7 @@ msgstr "Ajouter une bibliothèque partagée"
 msgid "dashboard.change-email"
 msgstr "Changer l'adresse courriel"
 
-#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(copier)"
 
@@ -432,11 +433,11 @@ msgstr "(copier)"
 msgid "dashboard.create-new-team"
 msgstr "Créer une nouvelle équipe"
 
-#: src/app/main/ui/workspace/main_menu.cljs:664
+#: src/app/main/ui/workspace/main_menu.cljs:661
 msgid "dashboard.create-version-menu"
 msgstr "Épingler cette version"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
 msgstr "Ton Penpot"
 
@@ -444,35 +445,36 @@ msgstr "Ton Penpot"
 msgid "dashboard.delete-team"
 msgstr "Supprimer l'équipe"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:694, src/app/main/ui/workspace/main_menu.cljs:703
+#: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
 msgstr "Télécharger le fichier Penpot (.penpot)"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
+#, unused
 msgid "dashboard.download-standard-file"
 msgstr "Télécharger le fichier standard (.svg + .json)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Dupliquer"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:242
+#: src/app/main/ui/dashboard/file_menu.cljs:273
 msgid "dashboard.duplicate-multi"
 msgstr "Dupliquer %s fichiers"
 
-#: src/app/main/ui/dashboard/files.cljs:203, src/app/main/ui/dashboard/projects.cljs:289
+#: src/app/main/ui/dashboard/files.cljs:203, src/app/main/ui/dashboard/projects.cljs:290
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "Quand un membre de l'équipe crée un brouillon, il s'affichera ici."
 
-#: src/app/main/ui/dashboard/files.cljs:198, src/app/main/ui/dashboard/projects.cljs:284
+#: src/app/main/ui/dashboard/files.cljs:198, src/app/main/ui/dashboard/projects.cljs:285
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "Aucun brouillon."
 
-#: src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:290
+#: src/app/main/ui/dashboard/deleted.cljs:166, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "Quand un membre de l'équipe crée un fichier, il s'affichera ici."
 
-#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
+#: src/app/main/ui/dashboard/deleted.cljs:163, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Aucun fichier."
 
@@ -480,17 +482,17 @@ msgstr "Aucun fichier."
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
-"Les bibliothèques ajoutées au projet apparîtront ici. Pour se faire, partage "
-"tes fichiers ou ajoute-en depuis [Bibliothèques & modèles](https://"
-"penpot.app/libraries-templates)."
+"Les bibliothèques ajoutées au projet apparîtront ici. Pour se faire, "
+"partage tes fichiers ou ajoute-en depuis [Bibliothèques & "
+"modèles](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs
 #, markdown, unused
 msgid "dashboard.empty-placeholder-libraries-subtitle"
 msgstr ""
-"Les bibliothèques ajoutées au projet apparîtront ici. Pour se faire, partage "
-"tes fichiers ou ajoute-en depuis [Bibliothèques & modèles](https://"
-"penpot.app/libraries-templates)."
+"Les bibliothèques ajoutées au projet apparîtront ici. Pour se faire, "
+"partage tes fichiers ou ajoute-en depuis [Bibliothèques & "
+"modèles](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs:114
 msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
@@ -520,100 +522,6 @@ msgstr "Aller à Bibliothèques et Modèles"
 msgid "dashboard.empty-project.import"
 msgstr "Importer un fichier"
 
-#, unused
-msgid "dashboard.export-multi"
-msgstr "Exporter %s fichiers Penpot"
-
-#: src/app/main/ui/exports/assets.cljs:107
-msgid "dashboard.export-multiple.selected"
-msgstr "%s de %s éléments sélectionnés"
-
-#: src/app/main/ui/workspace/main_menu.cljs:682
-msgid "dashboard.export-shapes"
-msgstr "Exporter"
-
-#: src/app/main/ui/exports/assets.cljs:178
-msgid "dashboard.export-shapes.how-to"
-msgstr ""
-"Tu peux ajouter des paramètres d'exportation aux éléments dans les "
-"propriétés design (au bas du panneau de droite)."
-
-#: src/app/main/ui/exports/assets.cljs:182
-msgid "dashboard.export-shapes.how-to-link"
-msgstr "Info sur la configuration des exportations dans Penpot."
-
-#: src/app/main/ui/exports/assets.cljs:177
-msgid "dashboard.export-shapes.no-elements"
-msgstr "Aucun élément n'a de paramètres d'exportation."
-
-#: src/app/main/ui/exports/assets.cljs:188
-msgid "dashboard.export-shapes.title"
-msgstr "Exporter la sélection"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:262
-msgid "dashboard.export-standard-multi"
-msgstr "Télécharger %s fichiers standard (.svg + .json)"
-
-#: src/app/main/ui/exports/files.cljs:156
-msgid "files-download-modal.description-2"
-msgstr ""
-"* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
-"caractère."
-
-#: src/app/main/ui/exports/files.cljs:155
-msgid "dashboard.export.explain"
-msgstr ""
-"Un ou plus des fichiers que tu veux exporter utilisent une bibliothèque "
-"partagée. Que veux-tu faire avec ces atouts*?"
-
-#: src/app/main/ui/exports/files.cljs:164
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Les fichiers avec des bibliothèques partagées seront inclus dans "
-"l'exportation, et maintiendront leur liaison."
-
-#: src/app/main/ui/exports/files.cljs:165
-msgid "files-download-modal.options.all.title"
-msgstr "Exporter les bibliothèques partagées"
-
-#: src/app/main/ui/exports/files.cljs:166
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
-"atout ne sera ajouté à la bibliothèque. "
-
-#: src/app/main/ui/exports/files.cljs:167
-msgid "files-download-modal.options.detach.title"
-msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
-
-#: src/app/main/ui/exports/files.cljs:168
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Tous les atouts externes seront intégrés à la bibliothèque du fichier "
-"exporté."
-
-#: src/app/main/ui/exports/files.cljs:169
-msgid "files-download-modal.options.merge.title"
-msgstr ""
-"Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
-"fichier"
-
-#: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Exporter fichiers"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
-msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Police de caractères manquante"
-
-#: src/app/main/ui/dashboard/fonts.cljs:218
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Tout ignorer"
-
-#: src/app/main/ui/dashboard/fonts.cljs:453
-msgid "dashboard.fonts.empty-placeholder"
-msgstr "Les polices de caractères téléversées apparaîtront ici."
-
 #: src/app/main/ui/dashboard/placeholder.cljs:53
 msgid "dashboard.empty-project.import-penpot"
 msgstr "Importer un fichier .penpot"
@@ -622,27 +530,81 @@ msgstr "Importer un fichier .penpot"
 msgid "dashboard.empty-project.start"
 msgstr "Crée des choses incroyables"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:257
+#: src/app/main/ui/dashboard/file_menu.cljs:282
 msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:720
+#: src/app/main/ui/workspace/main_menu.cljs:698
 msgid "dashboard.export-frames"
 msgstr "Exporter les tableaux en PDF"
 
-#: src/app/main/ui/exports/assets.cljs:200
+#: src/app/main/ui/exports/assets.cljs:201
 msgid "dashboard.export-frames.title"
 msgstr "Exporter en PDF"
 
-#: src/app/main/ui/dashboard/fonts.cljs:456
+#, unused
+msgid "dashboard.export-multi"
+msgstr "Exporter %s fichiers Penpot"
+
+#: src/app/main/ui/exports/assets.cljs:108
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s éléments sélectionnés"
+
+#: src/app/main/ui/workspace/main_menu.cljs:679
+msgid "dashboard.export-shapes"
+msgstr "Exporter"
+
+#: src/app/main/ui/exports/assets.cljs:179
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Tu peux ajouter des paramètres d'exportation aux éléments dans les "
+"propriétés design (au bas du panneau de droite)."
+
+#: src/app/main/ui/exports/assets.cljs:183
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Info sur la configuration des exportations dans Penpot."
+
+#: src/app/main/ui/exports/assets.cljs:178
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Aucun élément n'a de paramètres d'exportation."
+
+#: src/app/main/ui/exports/assets.cljs:189
+msgid "dashboard.export-shapes.title"
+msgstr "Exporter la sélection"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:262
+#, unused
+msgid "dashboard.export-standard-multi"
+msgstr "Télécharger %s fichiers standard (.svg + .json)"
+
+#: src/app/main/ui/exports/files.cljs:155
+#, unused
+msgid "dashboard.export.explain"
+msgstr ""
+"Un ou plus des fichiers que tu veux exporter utilisent une bibliothèque "
+"partagée. Que veux-tu faire avec ces atouts*?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Police de caractères manquante"
+
+#: src/app/main/ui/dashboard/fonts.cljs:218
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Tout ignorer"
+
+#: src/app/main/ui/dashboard/fonts.cljs:455
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Les polices de caractères téléversées apparaîtront ici."
+
+#: src/app/main/ui/dashboard/fonts.cljs:458
 msgid "dashboard.fonts.empty-placeholder-viewer"
 msgstr "Aucune police de caractères personalisée."
 
-#: src/app/main/ui/dashboard/fonts.cljs:457
+#: src/app/main/ui/dashboard/fonts.cljs:459
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr ""
-"Dès qu'un membre du projet téléverse une police de caractères personnalisée, "
-"elle apparaîtra ici."
+"Dès qu'un membre du projet téléverse une police de caractères "
+"personnalisée, elle apparaîtra ici."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.fonts-added"
@@ -667,8 +629,8 @@ msgstr ""
 "Seules les polices de caractères que tu possèdes ou dont tu détiens une "
 "licence devraient être téléversées. En lire davantage dans la section des "
 "droits de contenu des [Conditions d'utilisation de Penpot](%s). Tu peux "
-"aussi en lire plus sur les [licences de police de caractères](https://"
-"www.typography.com/faq)."
+"aussi en lire plus sur les [licences de police de "
+"caractères](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:214
 msgid "dashboard.fonts.upload-all"
@@ -680,10 +642,10 @@ msgid "dashboard.fonts.warning-text"
 msgstr ""
 "Nous avons détecté un problème possible dans tes polices de caractères en "
 "lien avec les métriques verticales pour différents systèmes d'exploitation. "
-"Pour vérifier, tu peux utiliser [un service de métrie verticale de police de "
-"caractères comme celui-ci](https://vertical-metrics.netlify.app/). De plus, "
-"nous recommendons l'usage de [Transfonter](https://transfonter.org/) pour "
-"générer des polices web et corriger les erreurs. "
+"Pour vérifier, tu peux utiliser [un service de métrie verticale de police "
+"de caractères comme celui-ci](https://vertical-metrics.netlify.app/). De "
+"plus, nous recommendons l'usage de [Transfonter](https://transfonter.org/) "
+"pour générer des polices web et corriger les erreurs. "
 
 #: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
@@ -696,10 +658,10 @@ msgstr "Oups! Nous n'avons pas pu importer ce fichier"
 #, unused
 msgid "dashboard.import.analyze-error.components-v2"
 msgstr ""
-"Ce fichier est exporté avec des composantes v2 mais l'équipe ne les supporte "
-"pas encore."
+"Ce fichier est exporté avec des composantes v2 mais l'équipe ne les "
+"supporte pas encore."
 
-#: src/app/main/ui/dashboard.cljs:243
+#: src/app/main/ui/dashboard.cljs:259
 msgid "dashboard.import.bad-url"
 msgstr "L'importation a échoué. Le modèle d'URL est erroné"
 
@@ -737,7 +699,7 @@ msgstr[1] "%s fichiers correctement importés."
 msgid "dashboard.import.import-warning"
 msgstr "Certains fichiers contenaient des objets invalides qui ont été retirés."
 
-#: src/app/main/ui/dashboard.cljs:244
+#: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "Tu n'as pas la permission d'importer dans cette équipe"
 
@@ -805,7 +767,7 @@ msgstr "Voici des bibliothèques et modèles que tu peux ajouter à ton projet"
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Explore davantage et découvre comment contribuer"
 
-#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:152
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:150
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr ""
 "Un problème est survenu lors de l'importation du modèle. Le modèle n'a pas "
@@ -819,7 +781,7 @@ msgstr "Bibliothèques"
 msgid "dashboard.loading-files"
 msgstr "chargement des fichiers …"
 
-#: src/app/main/ui/dashboard/fonts.cljs:447
+#: src/app/main/ui/dashboard/fonts.cljs:449
 msgid "dashboard.loading-fonts"
 msgstr "chargement des polices de caractères …"
 
@@ -827,31 +789,31 @@ msgstr "chargement des polices de caractères …"
 msgid "dashboard.mark-all-as-read.success"
 msgstr "Toutes les notifications marquées comme lues"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Déplacer vers"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:247
+#: src/app/main/ui/dashboard/file_menu.cljs:278
 msgid "dashboard.move-to-multi"
 msgstr "Déplacer %s fichiers vers"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:226
+#: src/app/main/ui/dashboard/file_menu.cljs:248
 msgid "dashboard.move-to-other-team"
 msgstr "Déplacer vers une autre équipe"
 
-#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:257, src/app/main/ui/dashboard/projects.cljs:258
 msgid "dashboard.new-file"
 msgstr "+ Nouveau fichier"
 
-#: src/app/main/data/dashboard.cljs:501, src/app/main/data/dashboard.cljs:613
+#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
 msgid "dashboard.new-file-prefix"
 msgstr "Nouveau fichier"
 
-#: src/app/main/ui/dashboard/projects.cljs:61
+#: src/app/main/ui/dashboard/projects.cljs:62
 msgid "dashboard.new-project"
 msgstr "+ Nouveau projet"
 
-#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:616
+#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
 msgid "dashboard.new-project-prefix"
 msgstr "Nouveau projet"
 
@@ -875,11 +837,11 @@ msgstr "Ton adresse courriel a été mise à jour"
 msgid "dashboard.notifications.email-verified-successfully"
 msgstr "Ton adresse courriel a été vérifiée avec succès"
 
-#: src/app/main/data/profile.cljs:273
+#: src/app/main/data/profile.cljs:280
 msgid "dashboard.notifications.notifications-saved"
 msgstr "Paramètres de notification mis à jour"
 
-#: src/app/main/ui/settings/password.cljs:36
+#: src/app/main/ui/settings/password.cljs:38
 msgid "dashboard.notifications.password-saved"
 msgstr "Mot de passe sauvegardé!"
 
@@ -891,11 +853,11 @@ msgstr "Voir les notifications"
 msgid "dashboard.num-of-members"
 msgstr "%s membres"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:277
+#: src/app/main/ui/dashboard/file_menu.cljs:297
 msgid "dashboard.open-in-new-tab"
 msgstr "Ouvrir le fichier dans un nouvel onglet"
 
-#: src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:265, src/app/main/ui/dashboard/projects.cljs:266
+#: src/app/main/ui/dashboard/deleted.cljs:147, src/app/main/ui/dashboard/deleted.cljs:148, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
 msgid "dashboard.options"
 msgstr "Options"
 
@@ -907,23 +869,23 @@ msgstr "Ordre par rôle"
 msgid "dashboard.order-invitations-by-status"
 msgstr "Ordre par statut"
 
-#: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
+#: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
 msgid "dashboard.password-change"
 msgstr "Modifier le mot de passe"
 
-#: src/app/main/data/common.cljs:191
+#: src/app/main/data/common.cljs:192
 msgid "dashboard.permissions-change.admin"
 msgstr "Tu es maintenant un admin de cette équipe."
 
-#: src/app/main/data/common.cljs:190
+#: src/app/main/data/common.cljs:191
 msgid "dashboard.permissions-change.editor"
 msgstr "Tu es maintenant un éditeur sur cette équipe."
 
-#: src/app/main/data/common.cljs:192
+#: src/app/main/data/common.cljs:193
 msgid "dashboard.permissions-change.owner"
 msgstr "Tu es maintenant propriétaire de cette équipe."
 
-#: src/app/main/data/common.cljs:189
+#: src/app/main/data/common.cljs:190
 msgid "dashboard.permissions-change.viewer"
 msgstr "Tu es maintenant visionneur.e sur cette équipe."
 
@@ -931,19 +893,19 @@ msgstr "Tu es maintenant visionneur.e sur cette équipe."
 msgid "dashboard.pin-unpin"
 msgstr "Épingler/Désépingler"
 
-#: src/app/main/ui/dashboard.cljs:207
+#: src/app/main/ui/dashboard.cljs:223
 msgid "dashboard.plugins.bad-url"
 msgstr "L'URL du plugiciel est erroné"
 
-#: src/app/main/ui/dashboard.cljs:205
+#: src/app/main/ui/dashboard.cljs:221
 msgid "dashboard.plugins.parse-error"
 msgstr "Impossible d'analyser le manifeste du plugiciel"
 
-#: src/app/main/ui/dashboard.cljs:168
+#: src/app/main/ui/dashboard.cljs:184
 msgid "dashboard.plugins.try-plugin"
 msgstr "Essayer le plugiciel : "
 
-#: src/app/main/ui/dashboard/projects.cljs:56
+#: src/app/main/ui/dashboard/deleted.cljs:41, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
 msgstr "Projets"
 
@@ -956,7 +918,7 @@ msgstr "Tu veux supprimer ton compte ?"
 msgid "dashboard.remove-shared"
 msgstr "Retirer la bibliothèque partagée"
 
-#: src/app/main/data/common.cljs:224
+#: src/app/main/data/common.cljs:225
 msgid "dashboard.removed-from-team"
 msgstr "Tu ne fais plus partie de l'équipe « %s »."
 
@@ -1028,14 +990,6 @@ msgstr "Seulement les mentions et réponses"
 msgid "dashboard.settings.notifications.email-comments.title"
 msgstr "Commentaires de fichier"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
-msgid "ds.confirm-ok"
-msgstr "Ok"
-
-#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:216, src/app/main/ui/settings/subscription.cljs:228, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
-msgid "ds.confirm-cancel"
-msgstr "Annuler"
-
 #: src/app/main/ui/settings/notifications.cljs:76
 msgid "dashboard.settings.notifications.email-invites.all"
 msgstr "Toutes les invitations et demandes"
@@ -1060,15 +1014,15 @@ msgstr "Sauvegarder les paramètres"
 msgid "dashboard.settings.notifications.title"
 msgstr "Notifications"
 
-#: src/app/main/ui/dashboard/projects.cljs:308
+#: src/app/main/ui/dashboard/projects.cljs:309
 msgid "dashboard.show-all-files"
 msgstr "Voir tous les fichiers"
 
-#: src/app/main/ui/workspace/main_menu.cljs:671
+#: src/app/main/ui/workspace/main_menu.cljs:668
 msgid "dashboard.show-version-history"
 msgstr "Historique des versions"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:98
+#: src/app/main/ui/dashboard/file_menu.cljs:97
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Le fichier a été supprimé avec succès"
@@ -1078,7 +1032,7 @@ msgstr[1] "Les fichiers ont été supprimés avec succès"
 msgid "dashboard.success-delete-project"
 msgstr "Le projet a été supprimé avec succès"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:93
+#: src/app/main/ui/dashboard/file_menu.cljs:92
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Le fichier a été dupliqué avec succès"
@@ -1088,11 +1042,11 @@ msgstr[1] "Les fichiers ont été dupliqués avec succès"
 msgid "dashboard.success-duplicate-project"
 msgstr "Le projet a été dupliqué avec succès"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Le fichier a été déplacé avec succès"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131
+#: src/app/main/ui/dashboard/file_menu.cljs:130
 msgid "dashboard.success-move-files"
 msgstr "Les fichiers ont été déplacés avec succès"
 
@@ -1128,7 +1082,7 @@ msgstr "Résultats de recherche"
 msgid "dashboard.type-something"
 msgstr "Écris quelque chose pour lancer une recherche"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:645
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:642
 msgid "dashboard.unpublish-shared"
 msgstr "Dépublier la bibliothèque"
 
@@ -1147,3 +1101,49 @@ msgstr "Penpot gratuit"
 #: src/app/main/ui/dashboard/team.cljs:1115
 msgid "dashboard.webhooks.active"
 msgstr "Actif"
+
+#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:273, src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
+msgid "ds.confirm-cancel"
+msgstr "Annuler"
+
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
+msgid "ds.confirm-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/exports/files.cljs:133
+msgid "files-download-modal.description-2"
+msgstr ""
+"* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
+"caractère."
+
+#: src/app/main/ui/exports/files.cljs:141
+msgid "files-download-modal.options.all.message"
+msgstr ""
+"Les fichiers avec des bibliothèques partagées seront inclus dans "
+"l'exportation, et maintiendront leur liaison."
+
+#: src/app/main/ui/exports/files.cljs:142
+msgid "files-download-modal.options.all.title"
+msgstr "Exporter les bibliothèques partagées"
+
+#: src/app/main/ui/exports/files.cljs:143
+msgid "files-download-modal.options.detach.message"
+msgstr ""
+"Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
+"atout ne sera ajouté à la bibliothèque. "
+
+#: src/app/main/ui/exports/files.cljs:144
+msgid "files-download-modal.options.detach.title"
+msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
+
+#: src/app/main/ui/exports/files.cljs:145
+msgid "files-download-modal.options.merge.message"
+msgstr ""
+"Tous les atouts externes seront intégrés à la bibliothèque du fichier "
+"exporté."
+
+#: src/app/main/ui/exports/files.cljs:146
+msgid "files-download-modal.options.merge.title"
+msgstr ""
+"Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
+"fichier"
