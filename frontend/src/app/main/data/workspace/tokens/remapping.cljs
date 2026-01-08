@@ -57,7 +57,7 @@
     (when-let [value (:value token)]
       (for [referenced-token-name (find-all-token-value-references value)]
         {:type :token-alias
-         :source-token-name (:name token)
+         :source-token-id (:id token)
          :referenced-token-name referenced-token-name}))))
 
 (defn scan-workspace-token-references
@@ -134,8 +134,8 @@
             ;; Create changes for updating token alias references
             token-changes (reduce
                            (fn [changes ref]
-                             (let [source-token-name (:source-token-name ref)]
-                               (when-let [{:keys [token set]} (some #(when (= (:name (:token %)) source-token-name) %) tokens-with-sets)]
+                             (let [source-token-id (:source-token-id ref)]
+                               (when-let [{:keys [token set]} (some #(when (= (:id (:token %)) source-token-id) %) tokens-with-sets)]
                                  (let [old-value (:value token)
                                        new-value (cto/update-token-value-references old-value old-token-name new-token-name)]
                                    (pcb/set-token changes (ctob/get-id set) (:id token)

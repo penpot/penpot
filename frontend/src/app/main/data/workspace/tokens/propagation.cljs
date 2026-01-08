@@ -22,6 +22,9 @@
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
 
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
+(l/set-level! :warn)
+
 ;; Helpers ---------------------------------------------------------------------
 
 ;; TODO: see if this can be replaced by more standard functions
