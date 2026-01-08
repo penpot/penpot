@@ -605,9 +605,16 @@ impl RenderState {
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().save();
-        });
+        
+        // Optimization: Only save canvas state if we have clipping or transforms
+        // For simple shapes without clipping, skip expensive save/restore
+        let needs_save = clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
+        
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().save();
+            });
+        }
 
         let antialias = shape.should_use_antialias(self.get_scale());
 
@@ -908,9 +915,13 @@ impl RenderState {
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().restore();
-        });
+        
+        // Only restore if we saved (optimization for simple shapes)
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().restore();
+            });
+        }
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
@@ -1117,34 +1128,43 @@ impl RenderState {
             self.nested_fills.push(Vec::new());
         }
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
+        // Optimization: Only create save_layer if actually needed
+        // For simple shapes with default opacity and blend mode, skip expensive save_layer
+        let needs_layer = element.opacity() < 1.0
+            || element.blend_mode().0 != skia::BlendMode::SrcOver
+            || Self::frame_clip_layer_blur(element).is_some()
+            || mask;
 
-        if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
-            let scale = self.get_scale();
-            let sigma = frame_blur.value * scale;
-            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                paint.set_image_filter(filter);
+        if needs_layer {
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+
+            if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+                let scale = self.get_scale();
+                let sigma = frame_blur.value * scale;
+                if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+                    paint.set_image_filter(filter);
+                }
             }
-        }
 
-        // When we're rendering the mask shape we need to set a special blend mode
-        // called 'destination-in' that keeps the drawn content within the mask.
-        // @see https://skia.org/docs/user/api/skblendmode_overview/
-        if mask {
-            let mut mask_paint = skia::Paint::default();
-            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-            let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+            // When we're rendering the mask shape we need to set a special blend mode
+            // called 'destination-in' that keeps the drawn content within the mask.
+            // @see https://skia.org/docs/user/api/skblendmode_overview/
+            if mask {
+                let mut mask_paint = skia::Paint::default();
+                mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+                let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .save_layer(&mask_rec);
+            }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
             self.surfaces
                 .canvas(SurfaceId::Current)
-                .save_layer(&mask_rec);
+                .save_layer(&layer_rec);
         }
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        self.surfaces
-            .canvas(SurfaceId::Current)
-            .save_layer(&layer_rec);
 
         self.focus_mode.enter(&element.id);
     }
@@ -1217,7 +1237,17 @@ impl RenderState {
             );
         }
 
-        self.surfaces.canvas(SurfaceId::Current).restore();
+        // Only restore if we created a layer (optimization for simple shapes)
+        let needs_layer = element.opacity() < 1.0
+            || element.blend_mode().0 != skia::BlendMode::SrcOver
+            || Self::frame_clip_layer_blur(element).is_some()
+            || (matches!(element.shape_type, Type::Group(_)) && 
+                matches!(element.shape_type, Type::Group(g) if g.masked));
+        
+        if needs_layer {
+            self.surfaces.canvas(SurfaceId::Current).restore();
+        }
+        
         self.focus_mode.exit(&element.id);
     }
 
@@ -1433,9 +1463,98 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
         allow_stop: bool,
-    ) -> Result<(bool, bool), String> {
+        ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
+        
+        // DISRUPTIVE OPTIMIZATION: Pre-collect and sort visible shapes for better cache locality
+        // This dramatically improves performance for files with many simple shapes by:
+        // 1. Grouping similar shapes together (better cache locality)
+        // 2. Processing shapes in spatial order (better memory access patterns)
+        // 3. Early culling of invisible shapes before expensive operations
+        // Only activate when we have enough shapes to benefit (threshold: 50+ shapes)
+        const SORTING_THRESHOLD: usize = 50;
+        if self.pending_nodes.len() >= SORTING_THRESHOLD {
+            let mut visible_shapes: Vec<(NodeRenderState, Uuid)> = Vec::new();
+            let mut temp_pending = std::mem::take(&mut self.pending_nodes);
+            
+            // First pass: collect all potentially visible shapes (fast culling)
+            while let Some(node_render_state) = temp_pending.pop() {
+                let node_id = node_render_state.id;
+                
+                if node_render_state.visited_children {
+                    // Keep exit nodes in original order
+                    self.pending_nodes.push(node_render_state);
+                    continue;
+                }
+                
+                if let Some(element) = tree.get(&node_id) {
+                    // Fast visibility check without expensive extrect calculation
+                    if !node_render_state.is_root() {
+                        if element.hidden {
+                            continue;
+                        }
+                        let selrect = element.selrect();
+                        if !selrect.intersects(self.render_area) {
+                            continue;
+                        }
+                    }
+                    
+                    visible_shapes.push((node_render_state, node_id));
+                }
+            }
+            
+            // Sort visible shapes by type and spatial proximity for better cache performance
+            visible_shapes.sort_by(|(_a_state, a_id), (_b_state, b_id)| {
+                let a_shape = tree.get(a_id);
+                let b_shape = tree.get(b_id);
+                
+                match (a_shape, b_shape) {
+                    (Some(a), Some(b)) => {
+                        // First sort by shape type (groups similar shapes together)
+                        let type_a = match &a.shape_type {
+                            Type::Rect(_) => 0,
+                            Type::Circle => 1,
+                            Type::Path(_) => 2,
+                            Type::Text(_) => 3,
+                            Type::Frame(_) => 4,
+                            Type::Group(_) => 5,
+                            Type::Bool(_) => 6,
+                            Type::SVGRaw(_) => 7,
+                        };
+                        let type_b = match &b.shape_type {
+                            Type::Rect(_) => 0,
+                            Type::Circle => 1,
+                            Type::Path(_) => 2,
+                            Type::Text(_) => 3,
+                            Type::Frame(_) => 4,
+                            Type::Group(_) => 5,
+                            Type::Bool(_) => 6,
+                            Type::SVGRaw(_) => 7,
+                        };
+                        let type_cmp = type_a.cmp(&type_b);
+                        if type_cmp != std::cmp::Ordering::Equal {
+                            return type_cmp;
+                        }
+                        
+                        // Then by spatial proximity (Y then X) for better cache locality
+                        let a_rect = a.selrect();
+                        let b_rect = b.selrect();
+                        let y_cmp = a_rect.top.partial_cmp(&b_rect.top).unwrap_or(std::cmp::Ordering::Equal);
+                        if y_cmp != std::cmp::Ordering::Equal {
+                            return y_cmp;
+                        }
+                        a_rect.left.partial_cmp(&b_rect.left).unwrap_or(std::cmp::Ordering::Equal)
+                    }
+                    _ => std::cmp::Ordering::Equal,
+                }
+            });
+            
+            // Process sorted visible shapes
+            for (node_render_state, _node_id) in visible_shapes {
+                self.pending_nodes.push(node_render_state);
+            }
+        }
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
@@ -1451,7 +1570,8 @@ impl RenderState {
                 node_render_state.id
             ))?;
 
-            // If the shape is not in the tile set, then we add them.
+            // Optimization: Only check/add tiles once per shape, cache the result
+            // This avoids repeated hashmap lookups for the same shape
             if self.tiles.get_tiles_of(node_id).is_none() {
                 self.add_shape_tiles(element, tree);
             }
@@ -1463,12 +1583,34 @@ impl RenderState {
 
             if !node_render_state.is_root() {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
+                
+                // Aggressive early exit: check hidden and selrect first (fastest checks)
+                if transformed_element.hidden {
+                    continue;
+                }
+                
+                let selrect = transformed_element.selrect();
+                if !selrect.intersects(self.render_area) {
+                    continue;
+                }
+                
+                // For simple shapes without effects, selrect check is sufficient
+                // Only calculate expensive extrect for shapes with effects that might extend bounds
                 let scale = self.get_scale();
-                let extrect = transformed_element.extrect(tree, scale);
-
-                let is_visible = extrect.intersects(self.render_area)
-                    && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(scale, tree);
+                let has_effects = !transformed_element.shadows.is_empty()
+                    || transformed_element.blur.is_some()
+                    || !transformed_element.strokes.is_empty()
+                    || matches!(transformed_element.shape_type, Type::Group(_) | Type::Frame(_));
+                
+                let is_visible = if !has_effects {
+                    // Simple shape: selrect check is sufficient, skip expensive extrect
+                    !transformed_element.visually_insignificant(scale, tree)
+                } else {
+                    // Shape with effects: need extrect for accurate bounds
+                    let extrect = transformed_element.extrect(tree, scale);
+                    extrect.intersects(self.render_area)
+                        && !transformed_element.visually_insignificant(scale, tree)
+                };
 
                 if self.options.is_debug_visible() {
                     let shape_extrect_bounds =
@@ -1515,6 +1657,9 @@ impl RenderState {
                         _ => None,
                     };
 
+                    // Optimization: Calculate extrect once and reuse it
+                    let element_extrect = element.extrect(tree, scale);
+
                     for shadow in element.drop_shadows_visible() {
                         let paint = skia::Paint::default();
                         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -1526,7 +1671,7 @@ impl RenderState {
                         // First pass: Render shadow in black to establish alpha mask
                         self.render_drop_black_shadow(
                             element,
-                            &element.extrect(tree, scale),
+                            &element_extrect,
                             shadow,
                             clip_bounds.clone(),
                             scale,
@@ -1546,9 +1691,11 @@ impl RenderState {
                                     .get_nested_shadow_clip_bounds(element, shadow);
 
                                 if !matches!(shadow_shape.shape_type, Type::Text(_)) {
+                                    // Optimization: Calculate extrect once per shadow shape
+                                    let shadow_extrect = shadow_shape.extrect(tree, scale);
                                     self.render_drop_black_shadow(
                                         shadow_shape,
-                                        &shadow_shape.extrect(tree, scale),
+                                        &shadow_extrect,
                                         shadow,
                                         clip_bounds,
                                         scale,

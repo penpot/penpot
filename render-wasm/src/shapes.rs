@@ -920,10 +920,27 @@ impl Shape {
             }
 
             Type::Group(_) | Type::Frame(_) if !self.clip_content => {
+                // Optimization: Use selrect as a fast approximation first, then calculate
+                // extrect only if needed. This avoids expensive recursive extrect calculations
+                // for children that don't significantly expand the bounds.
                 for child_id in self.children_ids_iter(false) {
                     if let Some(child_shape) = shapes_pool.get(child_id) {
-                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
-                        rect.join(child_extrect);
+                        // Fast path: check if child has effects that might expand bounds
+                        // If no effects, selrect is likely sufficient
+                        let has_effects = !child_shape.shadows.is_empty() 
+                            || child_shape.blur.is_some()
+                            || !child_shape.strokes.is_empty()
+                            || matches!(child_shape.shape_type, Type::Group(_) | Type::Frame(_));
+                        
+                        if has_effects {
+                            // Calculate full extrect for shapes with effects
+                            let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+                            rect.join(child_extrect);
+                        } else {
+                            // No effects, selrect is sufficient (much faster)
+                            let child_selrect = child_shape.selrect();
+                            rect.join(child_selrect);
+                        }
                     }
                 }
             }
