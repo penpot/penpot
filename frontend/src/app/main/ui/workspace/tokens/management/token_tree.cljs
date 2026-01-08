@@ -47,7 +47,7 @@
                               (mf/deps (:path node) type)
                               (fn []
                                 (let [path (str (name type)  "." (:path node))]
-                                  (st/emit! (dwtl/toggle-path path)))))]
+                                  (st/emit! (dwtl/toggle-token-path path)))))]
     [:li {:class (stl/css :folder-node)}
      [:> layer-button* {:label (:name node)
                         :expanded is-folder-expanded

@@ -462,16 +462,16 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn clean-paths
+(defn clean-tokens-paths
   []
-  (ptk/reify ::clean-paths
+  (ptk/reify ::clean-tokens-paths
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
 
-(defn toggle-path
+(defn toggle-token-path
   [path]
-  (ptk/reify ::toggle-path
+  (ptk/reify ::toggle-token-path
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-tokens :unfolded-token-paths]

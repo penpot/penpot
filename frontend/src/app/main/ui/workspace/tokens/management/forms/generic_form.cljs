@@ -221,7 +221,7 @@
                                                {:name name
                                                 :value (:value valid-token)
                                                 :description description}))
-                          (dwtl/toggle-path path)
+                          (dwtl/toggle-token-path path)
                           (dwtp/propagate-workspace-tokens)
                           (modal/hide!))))))))))]
 
