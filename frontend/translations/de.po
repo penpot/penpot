@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -581,12 +581,11 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s Standarddateien herunterladen (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, unused
+#, fuzzy, unused
 msgid "dashboard.export.explain"
 msgstr ""
 "Eine oder mehrere Dateien, die Sie exportieren möchten, verwenden geteilte "
-"Bibliotheken. Was möchten Sie mit den Assets* aus diesen Bibliotheken "
-"machen?"
+"Bibliotheken. Was möchten Sie mit den Assets* aus diesen Bibliotheken machen?"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
