@@ -20,6 +20,9 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
@@ -171,10 +174,11 @@
       [:div {:class (stl/css :share-link-header)}
        [:h2 {:class (stl/css :share-link-title)}
         (tr "common.share-link.title")]
-       [:button {:class (stl/css :modal-close-button)
-                 :on-click on-close
-                 :title (tr "labels.close")}
-        deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :class (stl/css :modal-close-button)
+                         :aria-label (tr "labels.close")
+                         :on-click on-close
+                         :icon i/close}]]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :share-link-section)}
         (when (and (not confirm?) (some? current-link))
@@ -185,10 +189,10 @@
                     :placeholder (tr "common.share-link.placeholder")
                     :read-only true}]
 
-           [:button {:class (stl/css :copy-button)
-                     :title (tr "viewer.header.share.copy-link")
-                     :on-click copy-link}
-            deprecated-icon/clipboard]])
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "viewer.header.share.copy-link")
+                             :on-click copy-link
+                             :icon i/clipboard}]])
 
         [:div {:class (stl/css :hint-wrapper)}
          (when (not ^boolean confirm?)
@@ -199,28 +203,22 @@
             [:div {:class (stl/css :description)}
              (tr "common.share-link.confirm-deletion-link-description")]
             [:div {:class (stl/css :actions)}
-             [:input  {:type "button"
-                       :class (stl/css :button-cancel)
-                       :on-click #(reset! confirm* false)
-                       :value (tr "labels.cancel")}]
-             [:input {:type "button"
-                      :class (stl/css :button-danger)
-                      :on-click delete-link
-                      :value (tr "common.share-link.destroy-link")}]]]
+             [:> button* {:variant "secondary"
+                          :on-click #(reset! confirm* false)}
+              (tr "labels.cancel")]
+             [:> button* {:variant "destructive"
+                          :on-click delete-link}
+              (tr "common.share-link.destroy-link")]]]
 
            (some? current-link)
-           [:input
-            {:type "button"
-             :class (stl/css :button-danger)
-             :on-click try-delete-link
-             :value (tr "common.share-link.destroy-link")}]
+           [:> button* {:variant "destructive"
+                        :on-click try-delete-link}
+            (tr "common.share-link.destroy-link")]
 
            :else
-           [:input
-            {:type "button"
-             :class (stl/css :button-active)
-             :on-click create-link
-             :value (tr "common.share-link.get-link")}])]]
+           [:> button* {:variant "primary"
+                        :on-click create-link}
+            (tr "common.share-link.get-link")])]]
 
 
        (when (not ^boolean confirm?)
@@ -305,6 +303,7 @@
                  :options [{:value "team" :label (tr "common.share-link.team-members")}
                            {:value "all" :label (tr "common.share-link.all-users")}]
                  :on-change on-comment-change}]]]
+
              [:div {:class (stl/css :inspect-mode)}
               [:div {:class (stl/css :subtitle)}
                (tr "common.share-link.permissions-can-inspect")]
@@ -315,6 +314,3 @@
                  :options [{:value "team" :label (tr "common.share-link.team-members")}
                            {:value "all" :label (tr "common.share-link.all-users")}]
                  :on-change on-inspect-change}]]]])])]]]))
-
-
-

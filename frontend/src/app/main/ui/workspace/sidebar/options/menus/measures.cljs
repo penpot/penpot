@@ -26,11 +26,11 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :as deprecated-input]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
    [app.util.dom :as dom]
@@ -237,12 +237,6 @@
         proportion-lock
         (get values :proportion-lock)
 
-        clip-content-ref
-        (mf/use-ref nil)
-
-        show-in-viewer-ref
-        (mf/use-ref nil)
-
         ;; PRESETS
         preset-state*
         (mf/use-state false)
@@ -390,19 +384,19 @@
         ;; CLIP CONTENT AND SHOW IN VIEWER
         on-change-clip-content
         (mf/use-fn
-         (mf/deps ids)
-         (fn [event]
-           (let [value (-> event dom/get-target dom/checked?)]
-             (st/emit! (dwsh/update-shapes ids (fn [shape] (assoc shape :show-content (not value))))))))
+         (mf/deps ids values)
+         (fn []
+           (let [value (not (:show-content values))]
+             (st/emit! (dwsh/update-shapes ids (fn [shape] (assoc shape :show-content value)))))))
 
         on-change-show-in-viewer
         (mf/use-fn
-         (mf/deps ids)
-         (fn [event]
-           (let [value (-> event dom/get-target dom/checked?)
+         (mf/deps ids values)
+         (fn []
+           (let [value (not (:hide-in-viewer values))
                  undo-id (js/Symbol)]
              (st/emit! (dwu/start-undo-transaction undo-id)
-                       (dwsh/update-shapes ids (fn [shape] (cls/change-show-in-viewer shape (not value)))))
+                       (dwsh/update-shapes ids (fn [shape] (cls/change-show-in-viewer shape value))))
 
              (when-not value
                ;; when a frame is no longer shown in view mode, cannot
@@ -450,22 +444,23 @@
                   (when preset-match
                     [:span {:class (stl/css :check-icon)} deprecated-icon/tick])])))]]]
 
-        [:& radio-buttons {:selected (or (d/name orientation) "")
-                           :on-change on-orientation-change
-                           :name "frame-orientation"
-                           :wide true
-                           :class (stl/css :radio-buttons)}
-         [:& radio-button {:icon i/size-vertical
-                           :value "vert"
-                           :id "size-vertical"}]
-         [:& radio-button {:icon i/size-horizontal
-                           :value "horiz"
-                           :id "size-horizontal"}]]
-        [:> icon-button*
-         {:variant "ghost"
-          :aria-label (tr "workspace.options.fit-content")
-          :on-pointer-down handle-fit-content
-          :icon i/fit-content}]])
+        [:> radio-buttons* {:class (stl/css :radio-buttons)
+                            :selected (or (d/name orientation) "")
+                            :on-change on-orientation-change
+                            :name "frame-orientation"
+                            :options [{:id "size-vertical"
+                                       :icon i/size-vertical
+                                       :label (tr "workspace.options.orientation.vertical")
+                                       :value "vert"}
+                                      {:id "size-horizontal"
+                                       :icon i/size-horizontal
+                                       :label (tr "workspace.options.orientation.horizontal")
+                                       :value "horiz"}]}]
+
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.fit-content")
+                          :on-pointer-down handle-fit-content
+                          :icon i/fit-content}]])
 
      (when (options :size)
        [:div {:class (stl/css :size)}
@@ -522,8 +517,8 @@
         [:> icon-button* {:variant "ghost"
                           :tooltip-placement "top-left"
                           :icon (if proportion-lock "lock" "unlock")
-                          :class (stl/css-case :selected (true? proportion-lock))
                           :disabled (= proportion-lock :multiple)
+                          :aria-pressed (true? proportion-lock)
                           :aria-label (if proportion-lock (tr "workspace.options.size.unlock") (tr "workspace.options.size.lock"))
                           :on-click on-proportion-lock-change}]])
 
@@ -608,34 +603,20 @@
                                    :applied-tokens applied-tokens
                                    :shapes shapes
                                    :shape shape}])])
-     (when (or (options :clip-content) (options :show-in-viewer))
+
+     (when (or (options :clip-content)
+               (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)
-          [:div {:class (stl/css :clip-content)}
-           [:input {:type "checkbox"
-                    :id "clip-content"
-                    :ref clip-content-ref
-                    :class (stl/css :clip-content-input)
-                    :checked (not (:show-content values))
-                    :on-change on-change-clip-content}]
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed (not (:show-content values))
+                            :aria-label (tr "workspace.options.clip-content")
+                            :on-click on-change-clip-content
+                            :icon i/clip-content}])
 
-           [:label {:for "clip-content"
-                    :title (tr "workspace.options.clip-content")
-                    :class (stl/css-case  :clip-content-label true
-                                          :selected (not (:show-content values)))}
-
-            [:> icon* {:icon-id i/clip-content}]]])
         (when (options :show-in-viewer)
-          [:div {:class (stl/css :show-in-viewer)}
-           [:input {:type "checkbox"
-                    :id "show-in-viewer"
-                    :ref show-in-viewer-ref
-                    :class (stl/css :clip-content-input)
-                    :checked (not (:hide-in-viewer values))
-                    :on-change on-change-show-in-viewer}]
-
-           [:label {:for "show-in-viewer"
-                    :title (tr "workspace.options.show-in-viewer")
-                    :class (stl/css-case  :clip-content-label true
-                                          :selected (not (:hide-in-viewer values)))}
-            [:> icon* {:icon-id i/play}]]])])]))
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed (not (:hide-in-viewer values))
+                            :aria-label (tr "workspace.options.show-in-viewer")
+                            :on-click on-change-show-in-viewer
+                            :icon i/play}])])]))

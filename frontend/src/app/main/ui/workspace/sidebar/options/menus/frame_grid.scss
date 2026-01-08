@@ -38,18 +38,7 @@
   border-radius: deprecated.$br-8;
   background-color: var(--input-details-color);
   .show-options {
-    @extend .button-secondary;
-    height: deprecated.$s-32;
-    width: deprecated.$s-28;
     border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
-    box-sizing: border-box;
-    border: deprecated.$s-1 solid var(--input-border-color);
-    svg {
-      @extend .button-icon;
-    }
-    &.selected {
-      @extend .button-icon-selected;
-    }
   }
   .type-select-wrapper {
     flex-grow: 1;
@@ -108,7 +97,6 @@
 
   &.hidden {
     .show-options {
-      @include deprecated.hiddenElement;
       border: deprecated.$s-1 solid var(--input-border-color-disabled);
     }
     .type-select-wrapper,
@@ -176,17 +164,7 @@
   .color-wrapper {
     width: deprecated.$s-156;
   }
-  .show-more-options {
-    @extend .button-tertiary;
-    height: deprecated.$s-32;
-    width: deprecated.$s-32;
-    svg {
-      @extend .button-icon;
-    }
-    &.selected {
-      @extend .button-icon-selected;
-    }
-  }
+
   .height {
     @extend .input-element;
     @include deprecated.bodySmallTypography;

@@ -22,10 +22,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-label :refer [editable-label*]]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -563,27 +563,27 @@
      [:> cmm/asset-section-block* {:role :title-button}
       (when ^boolean is-open
         [:div
-         [:& radio-buttons {:selected (if is-listing-thumbs "grid" "list")
-                            :on-change toggle-list-style
-                            :name "listing-style"}
-          [:& radio-button {:icon i/view-as-list
-                            :value "list"
-                            :title (tr "workspace.assets.list-view")
-                            :id "opt-list"}]
-          [:& radio-button {:icon i/flex-grid
-                            :value "grid"
-                            :title (tr "workspace.assets.grid-view")
-                            :id "opt-grid"}]]])
+         [:> radio-buttons* {:selected (if is-listing-thumbs "grid" "list")
+                             :on-change toggle-list-style
+                             :name "listing-style"
+                             :options [{:id "opt-list"
+                                        :icon i/view-as-list
+                                        :label (tr "workspace.assets.list-view")
+                                        :value "list"}
+                                       {:id "opt-grid"
+                                        :icon i/flex-grid
+                                        :label (tr "workspace.assets.grid-view")
+                                        :value "grid"}]}]])
 
       (when (and (not read-only?) is-local)
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.assets.components.add-component")
                           :on-click add-component
                           :icon i/add}
-         [:& file-uploader {:accept dwm/accept-image-types
-                            :multi true
-                            :ref input-ref
-                            :on-selected on-file-selected}]])]
+         [:> file-uploader* {:accept dwm/accept-image-types
+                             :multi true
+                             :ref input-ref
+                             :on-selected on-file-selected}]])]
 
      [:> cmm/asset-section-block* {:role :content}
       (when ^boolean is-open

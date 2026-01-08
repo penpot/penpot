@@ -189,8 +189,8 @@ test("BUG 7760 - Layout losing properties when changing parents", async ({
   await workspacePage.clickLeafLayer("Flex Board");
 
   // Move the first board into the second
-  const hAuto = await workspacePage.page.getByTitle("Fit content (Horizontal)");
-  const vAuto = await workspacePage.page.getByTitle("Fit content (Vertical)");
+  const hAuto = await workspacePage.page.getByTestId("behaviour-h-auto");
+  const vAuto = await workspacePage.page.getByTestId("behaviour-v-auto");
 
   await expect(vAuto.locator("input")).toBeChecked();
   await expect(hAuto.locator("input")).toBeChecked();

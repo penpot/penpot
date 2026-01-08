@@ -10,9 +10,9 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc file-uploader
+(mf/defc file-uploader*
   {::mf/forward-ref true}
-  [{:keys [accept multi label-text label-class input-id on-selected data-testid] :as props} input-ref]
+  [{:keys [accept multi label-text label-class input-id on-selected data-testid]} input-ref]
   (let [opt-pick-one #(if multi % (first %))
 
         on-files-selected

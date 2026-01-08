@@ -16,11 +16,11 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -85,20 +85,20 @@
                     :on-click create-theme}
         (tr "workspace.tokens.add-new-theme")]]]]))
 
-(mf/defc switch
+(mf/defc switch*
   [{:keys [selected? name on-change]}]
   (let [selected (if selected? :on :off)]
-    [:& radio-buttons {:selected selected
-                       :on-change on-change
-                       :name name}
-     [:& radio-button {:id :on
-                       :value :on
-                       :icon i/tick
-                       :label ""}]
-     [:& radio-button {:id :off
-                       :value :off
-                       :icon i/close
-                       :label ""}]]))
+    [:> radio-buttons* {:selected selected
+                        :on-change on-change
+                        :name name
+                        :options [{:id "on"
+                                   :icon i/tick
+                                   :label (tr "workspace.tokens.theme.enable")
+                                   :value :on}
+                                  {:id "off"
+                                   :icon i/close
+                                   :label (tr "workspace.tokens.theme.disable")
+                                   :value :off}]}]))
 
 (mf/defc themes-overview
   [{:keys [change-view]}]
@@ -151,9 +151,9 @@
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
                                  (st/emit! (dwtl/toggle-token-theme-active id)))}
-               [:& switch {:name (tr "workspace.tokens.theme-name" name)
-                           :on-change (constantly nil)
-                           :selected? selected?}]]]
+               [:> switch* {:name (tr "workspace.tokens.theme-name" name)
+                            :on-change (constantly nil)
+                            :selected? selected?}]]]
              [:div {:class (stl/css :theme-name-row)}
               [:> text* {:as "span"  :typography "body-medium" :class (stl/css :theme-name) :title name} name]]
 

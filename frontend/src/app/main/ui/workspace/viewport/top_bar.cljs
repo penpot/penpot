@@ -10,6 +10,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -34,8 +35,9 @@
        [:> i18n/tr-html*
         {:tag-name "span"
          :content (tr "workspace.top-bar.view-only")}]]
-      [:button {:class (stl/css :done-btn)
-                :on-click handle-close-view-mode}
+      [:> button* {:variant "primary"
+                   :class (stl/css :done-btn)
+                   :on-click handle-close-view-mode}
        (tr "workspace.top-bar.read-only.done")]]]))
 
 (mf/defc path-edition-bar*

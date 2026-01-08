@@ -5481,55 +5481,55 @@ msgid "workspace.header.zoom-selected"
 msgstr "התמקדות על הנבחר"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
-msgid "workspace.layout_grid.editor.options.edit-grid"
+msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "עריכת רשת"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1554
-msgid "workspace.layout_grid.editor.options.exit"
+msgid "workspace.layout-grid.editor.options.exit"
 msgstr "יציאה מהמערכת"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:612, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618
-msgid "workspace.layout_grid.editor.padding.bottom"
+msgid "workspace.layout-grid.editor.padding.bottom"
 msgstr "ריפוד מלמטה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:685, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:686
-msgid "workspace.layout_grid.editor.padding.expand"
+msgid "workspace.layout-grid.editor.padding.expand"
 msgstr "הצגת אפשרויות ריפוד עם 4 צדדים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:470
-msgid "workspace.layout_grid.editor.padding.horizontal"
+msgid "workspace.layout-grid.editor.padding.horizontal"
 msgstr "ריפוד אופקי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:636, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:641, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:647
-msgid "workspace.layout_grid.editor.padding.left"
+msgid "workspace.layout-grid.editor.padding.left"
 msgstr "ריפוד משמאל"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:590
-msgid "workspace.layout_grid.editor.padding.right"
+msgid "workspace.layout-grid.editor.padding.right"
 msgstr "ריפוד מימין"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:561
-msgid "workspace.layout_grid.editor.padding.top"
+msgid "workspace.layout-grid.editor.padding.top"
 msgstr "ריפוד מלמעלה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:428, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:440
-msgid "workspace.layout_grid.editor.padding.vertical"
+msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "ריפוד אנכי"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
-msgid "workspace.layout_grid.editor.title"
+msgid "workspace.layout-grid.editor.title"
 msgstr "רשת עריכה"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:67
-msgid "workspace.layout_grid.editor.top-bar.done"
+msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "בוצע"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:64
-msgid "workspace.layout_grid.editor.top-bar.locate"
+msgid "workspace.layout-grid.editor.top-bar.locate"
 msgstr "איתור"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1580
-msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "איתור פריסת הרשת"
 
 #: src/app/main/ui/workspace/libraries.cljs

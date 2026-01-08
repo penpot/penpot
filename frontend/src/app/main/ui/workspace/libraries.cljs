@@ -30,6 +30,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -43,12 +44,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private close-icon
-  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
-
-(def ^:private add-icon
-  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (defn- get-library-summary
   "Given a library data return a summary representation of this library"
@@ -168,12 +163,10 @@
     [:div {:class (stl/css :sample-library-item)
            :key (dm/str id)}
      [:div {:class (stl/css :sample-library-item-name)} (:name library)]
-     [:input {:class (stl/css-case :sample-library-button true
-                                   :sample-library-add (nil? importing?)
-                                   :sample-library-adding (some? importing?))
-              :type "button"
-              :value (if (= importing? id) (tr "labels.adding") (tr "labels.add"))
-              :on-click import-library}]]))
+     [:> button* {:variant "secondary"
+                  :on-click import-library
+                  :disabled (some? importing?)}
+      (if (= importing? id) (tr "labels.adding") (tr "labels.add"))]]))
 
 (defn- empty-library?
   "Check if currentt library summary has elements or not"
@@ -322,14 +315,12 @@
           [:> library-description* {:summary summary}]]]
 
         (if ^boolean is-shared
-          [:input {:class (stl/css :item-unpublish)
-                   :type "button"
-                   :value (tr "common.unpublish")
-                   :on-click unpublish}]
-          [:input {:class (stl/css :item-publish)
-                   :type "button"
-                   :value (tr "common.publish")
-                   :on-click publish}])]
+          [:> button* {:variant "secondary"
+                       :on-click unpublish}
+           (tr "common.unpublish")]
+          [:> button* {:variant "primary"
+                       :on-click publish}
+           (tr "common.publish")])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
          (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)]
@@ -377,12 +368,11 @@
               (let [summary (-> (:library-summary library)
                                 (adapt-backend-summary))]
                 [:> library-description* {:summary summary}])]]
-
-            [:button {:class (stl/css :item-button-shared)
-                      :data-library-id (dm/str id)
-                      :title (tr "workspace.libraries.shared-library-btn")
-                      :on-click link-library}
-             add-icon]])]
+            [:> icon-button* {:variant "secondary"
+                              :aria-label (tr "workspace.libraries.shared-library-btn")
+                              :icon i/add
+                              :data-library-id (dm/str id)
+                              :on-click link-library}]])]
 
         (when (empty? shared-libraries)
           [:div {:class (stl/css :section-list-empty)}
@@ -647,11 +637,13 @@
            :on-click close-dialog-outside
            :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn)
-                :on-click close-dialog
-                :aria-label (tr "labels.close")
-                :data-testid "close-libraries"}
-       close-icon]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :close-btn)
+                        :icon i/close
+                        :aria-label (tr "labels.close")
+                        :data-testid "close-libraries"
+                        :on-click close-dialog}]
+
       [:div {:class (stl/css :modal-title)}
        (tr "workspace.libraries.libraries")]
 

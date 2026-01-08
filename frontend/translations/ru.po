@@ -4808,31 +4808,31 @@ msgid "workspace.header.zoom-selected"
 msgstr "Масштабировать до выбранного"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
-msgid "workspace.layout_grid.editor.options.edit-grid"
+msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Изменить сетку"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1554
-msgid "workspace.layout_grid.editor.options.exit"
+msgid "workspace.layout-grid.editor.options.exit"
 msgstr "Выход"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:685, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:686
-msgid "workspace.layout_grid.editor.padding.expand"
+msgid "workspace.layout-grid.editor.padding.expand"
 msgstr "Настроить внутренний отступ по отдельности"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
-msgid "workspace.layout_grid.editor.title"
+msgid "workspace.layout-grid.editor.title"
 msgstr "Редактирование сетки"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:67
-msgid "workspace.layout_grid.editor.top-bar.done"
+msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "Готово"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:64
-msgid "workspace.layout_grid.editor.top-bar.locate"
+msgid "workspace.layout-grid.editor.top-bar.locate"
 msgstr "Разместить"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1580
-msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Размещение макета сетки"
 
 #: src/app/main/ui/workspace/libraries.cljs

@@ -25,10 +25,11 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
@@ -415,24 +416,25 @@
              :on-change handle-change-mode}]])
 
         (when (and (= origin :sidebar) show-tokens? token-color)
-          [:& radio-buttons {:selected color-style
-                             :on-change toggle-token-color
-                             :name "color-style"}
-           [:& radio-button {:icon i/swatches
-                             :value :direct-color
-                             :title (tr "labels.color")
-                             :id "opt-color"}]
-           [:& radio-button {:icon i/tokens
-                             :value :token-color
-                             :title (tr "workspace.colorpicker.color-tokens")
-                             :id "opt-token-color"}]])]
+          [:> radio-buttons* {:selected color-style
+                              :on-change toggle-token-color
+                              :name "color-style"
+                              :options [{:id "swap-opt-list"
+                                         :icon i/swatches
+                                         :label (tr "labels.color")
+                                         :value :direct-color}
+                                        {:id "swap-opt-grid"
+                                         :icon i/tokens
+                                         :label (tr "workspace.colorpicker.color-tokens")
+                                         :value :token-color}]}])]
 
        (when (and (not= selected-mode :image)
                   (= color-style :direct-color))
-         [:button {:class (stl/css-case :picker-btn true
-                                        :selected picking-color?)
-                   :on-click handle-click-picker}
-          deprecated-icon/picker])
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.colorpicker.get-color")
+                           :aria-pressed picking-color?
+                           :on-click handle-click-picker
+                           :icon i/picker}])
 
        (when (= color-style :token-color)
          [:div {:class (stl/css :token-color-title)}
@@ -483,12 +485,11 @@
                 :aria-label (tr "media.choose-image")
                 :on-click on-fill-image-click}
                (tr "media.choose-image")
-               [:& file-uploader
-                {:input-id "fill-image-upload"
-                 :accept "image/jpeg,image/png"
-                 :multi false
-                 :ref fill-image-ref
-                 :on-selected on-fill-image-selected}]]])
+               [:> file-uploader* {:input-id "fill-image-upload"
+                                   :accept "image/jpeg,image/png"
+                                   :multi false
+                                   :ref fill-image-ref
+                                   :on-selected on-fill-image-selected}]]])
 
            [:*
             [:div {:class (stl/css :colorpicker-tabs)}

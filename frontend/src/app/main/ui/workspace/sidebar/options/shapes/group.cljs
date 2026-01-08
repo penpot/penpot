@@ -169,7 +169,7 @@
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:> ot/text-menu* {:type type :ids text-ids :values text-values}])
 
      (when-not (empty? svg-values)
        [:& svg-attrs-menu {:ids ids :values svg-values}])

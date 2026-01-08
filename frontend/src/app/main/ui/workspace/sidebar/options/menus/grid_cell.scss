@@ -30,17 +30,6 @@
   @include deprecated.flexRow;
 }
 
-.cell-mode :global(label) {
-  padding: 0 deprecated.$s-12;
-}
-
-.edit-grid-btn {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
-  width: 100%;
-  padding: deprecated.$s-8;
-}
-
 .area-input {
   @extend .input-element;
   @include deprecated.bodySmallTypography;
@@ -65,4 +54,8 @@
   @include deprecated.bodySmallTypography;
   border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
   border-left: deprecated.$s-1 solid var(--panel-background-color);
+}
+
+.edit-grid-btn {
+  flex-grow: 1;
 }

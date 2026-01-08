@@ -18,9 +18,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
    [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
    [app.main.ui.workspace.text-palette :refer [text-palette]]
@@ -178,27 +179,27 @@
         [:ul {:class (dm/str size-classname " " (stl/css-case :palette-btn-list true
                                                               :hidden-bts hide-palettes?))}
          [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :class (stl/css-case :palette-btn true
-                                         :selected color-palette?)
-                    :on-click on-select-color-palette}
-           deprecated-icon/drop-icon]]
-
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed (some? color-palette?)
+                            :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+                            :on-click on-select-color-palette
+                            :icon i/drop}]]
          [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :class (stl/css-case :palette-btn true
-                                         :selected text-palette?)
-                    :on-click on-select-text-palette}
-           deprecated-icon/text-palette]]]
-
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed (some? text-palette?)
+                            :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+                            :on-click on-select-text-palette
+                            :icon i/text-palette}]]]
 
         (if any-palette?
           [:*
-           [:button {:class (stl/css :palette-actions)
-                     :on-click #(swap! state* update :show-menu not)}
-            deprecated-icon/menu]
+           [:div {:class (stl/css :menu-btn)}
+            [:> icon-button* {:variant "ghost"
+                              :aria-pressed show-menu?
+                              :aria-label (tr "labels.options")
+                              :on-click #(swap! state* update :show-menu not)
+                              :icon i/menu}]]
+
            [:div {:class (stl/css :palette)
                   :ref container}
             (when text-palette?

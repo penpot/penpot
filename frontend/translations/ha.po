@@ -3585,7 +3585,7 @@ msgid "workspace.header.zoom-selected"
 msgstr "zuko zababbe"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
-msgid "workspace.layout_grid.editor.title"
+msgid "workspace.layout-grid.editor.title"
 msgstr "tace akwati"
 
 #: src/app/main/ui/workspace/libraries.cljs

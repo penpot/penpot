@@ -2987,7 +2987,7 @@ msgid "workspace.header.zoom-selected"
 msgstr "Apropa la selecció"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:67
-msgid "workspace.layout_grid.editor.top-bar.done"
+msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "Fet"
 
 #: src/app/main/ui/workspace/libraries.cljs

@@ -45,10 +45,7 @@
 }
 
 .done-btn {
-  @extend .button-primary;
-  text-transform: uppercase;
-  padding: deprecated.$s-8 deprecated.$s-20;
-  font-size: deprecated.$fs-11;
+  padding: 0 var(--sp-xl);
 }
 
 .viewport-actions-no-rulers {

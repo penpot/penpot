@@ -11,8 +11,8 @@
   justify-content: space-between;
   align-items: center;
   min-width: deprecated.$s-256;
-  padding: deprecated.$s-8;
-  gap: deprecated.$s-8;
+  padding: deprecated.$s-8 deprecated.$s-12;
+  gap: deprecated.$s-4;
   background-color: var(--panel-background-color);
 }
 
@@ -28,19 +28,14 @@
 }
 
 .zoom-widget {
-  @include deprecated.buttonStyle;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: deprecated.$s-28;
-  max-width: deprecated.$s-48;
   width: deprecated.$s-48;
-  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
 
   .label {
     @include deprecated.bodySmallTypography;
-    height: 100%;
-    padding: deprecated.$s-8 0;
     color: var(--button-tertiary-foreground-color-rest);
   }
 
@@ -84,13 +79,6 @@
   color: var(--modal-title-foreground-color);
 }
 
-.reset-btn {
-  @extend .button-tertiary;
-  color: var(--button-tertiary-foreground-color-hover);
-  height: deprecated.$s-28;
-  border-radius: deprecated.$br-8;
-}
-
 .zoom-option {
   @extend .menu-item-base;
 
@@ -113,127 +101,11 @@
   }
 }
 
-.comments-btn {
-  @extend .button-tertiary;
-  border-radius: deprecated.$br-8;
-  margin: 0;
-  height: deprecated.$s-28;
-  width: deprecated.$s-28;
-  border: none;
-
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-  }
-
-  &:hover {
-    background-color: transparent;
-    border: none;
-  }
-
-  &.selected {
-    background-color: var(--button-tertiary-background-color-selected);
-
-    svg {
-      stroke: var(--button-tertiary-foreground-color-active);
-    }
-  }
+.comments-button-wrapper {
+  position: relative;
 }
 
-.history-button {
-  @extend .button-tertiary;
-  border-radius: deprecated.$br-8;
-  margin: 0;
-  height: deprecated.$s-28;
-  width: deprecated.$s-28;
-  border: none;
-
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-  }
-
-  &:hover {
-    background-color: transparent;
-    border: none;
-  }
-
-  &.selected {
-    background-color: var(--button-tertiary-background-color-selected);
-
-    svg {
-      stroke: var(--button-tertiary-foreground-color-active);
-    }
-  }
-}
-
-.persistence-status-widget {
-  @include deprecated.flexCenter;
-  width: deprecated.$s-28;
-  height: deprecated.$s-28;
-}
-
-.status-icon {
-  @include deprecated.flexCenter;
-  width: deprecated.$s-24;
-  height: deprecated.$s-24;
-  margin: 0;
-  border-radius: deprecated.$br-circle;
-
-  svg {
-    @extend .button-icon;
-    stroke: var(--status-widget-icon-foreground-color);
-  }
-}
-
-.pending-status {
-  background-color: var(--status-widget-background-color-warning);
-}
-
-.saving-status {
-  background-color: var(--status-widget-background-color-pending);
-
-  svg {
-    animation: spin-animation 1s infinite;
-    animation-timing-function: linear;
-  }
-}
-
-.saved-status {
-  background-color: var(--status-widget-background-color-success);
-}
-
-.error-status {
-  background-color: var(--status-widget-background-color-error);
-}
-
-.share-btn,
-.viewer-btn {
-  @extend .button-tertiary;
-  border-radius: deprecated.$br-8;
-  margin: 0;
-  width: deprecated.$s-28;
-  height: deprecated.$s-28;
-  border: none;
-
-  svg {
-    @extend .button-icon;
-    height: deprecated.$s-16;
-    width: deprecated.$s-16;
-    stroke: var(--icon-foreground);
-  }
-
-  &:hover {
-    background-color: transparent;
-    border: none;
-  }
-}
-
-.unread {
+.comments-button-unread {
   position: absolute;
   width: 8px;
   height: 8px;

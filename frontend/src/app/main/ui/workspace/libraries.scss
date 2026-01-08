@@ -33,7 +33,7 @@
   background-color: var(--modal-background-color);
   border: $b-2 solid var(--modal-border-color);
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 0 auto 1fr;
   min-width: $sz-364;
   min-height: $sz-192;
   height: $sz-520;
@@ -42,21 +42,10 @@
   max-width: $sz-712;
 }
 
-// TODO: Remove this extended creating modal component
 .close-btn {
-  @extend .modal-close-btn-base;
-}
-
-.close-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: $sz-16;
-  width: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
+  position: absolute;
+  top: var(--sp-s);
+  right: var(--sp-s);
 }
 
 .modal-title {
@@ -120,46 +109,6 @@
   height: fit-content;
 }
 
-.item-publish,
-.item-unpublish {
-  // TODO: remove this extended by using DS button component
-  @extend .button-primary;
-  @include t.use-typography("headline-small");
-  height: $sz-32;
-  min-width: px2rem(92);
-  padding: var(--sp-s) var(--sp-xxl);
-  margin: 0;
-  border-radius: $br-8;
-}
-
-.item-unpublish {
-  // TODO: remove this extended by using DS button component
-  @extend .button-secondary;
-}
-
-.item-button,
-.item-button-shared {
-  // TODO: remove this extended by using DS button component
-  @extend .button-secondary;
-  height: $sz-32;
-  width: $sz-32;
-  margin-inline-start: var(--sp-xxs);
-  padding: var(--sp-s);
-}
-
-.detach-icon,
-.add-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: $sz-16;
-  width: $sz-16;
-  color: transparent;
-  fill: none;
-  stroke-width: $b-1;
-  stroke: var(--icon-foreground);
-}
-
 .section-list-shared {
   max-height: px2rem(272);
 }
@@ -168,26 +117,6 @@
   @include t.use-typography("headline-small");
   margin-block-end: var(--sp-m);
   color: var(--title-foreground-color);
-}
-
-.search-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: px2rem(20);
-  padding: 0 0 0 var(--sp-s);
-
-  svg {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: transparent;
-    fill: none;
-    height: px2rem(12);
-    width: px2rem(12);
-    stroke-width: 1.33px;
-    stroke: var(--icon-foreground);
-  }
 }
 
 // empty state
@@ -427,25 +356,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: px2rem(232);
-}
-
-// TODO: Remove this extended using a DS component
-.sample-library-add {
-  @extend .button-secondary;
-}
-
-// TODO: Remove this extended using a DS component
-.sample-library-adding {
-  @extend .button-disabled;
-}
-
-.sample-library-button {
-  @include t.use-typography("headline-small");
-  height: $sz-32;
-  width: px2rem(80);
-  margin: 0;
-  border-radius: $br-8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }

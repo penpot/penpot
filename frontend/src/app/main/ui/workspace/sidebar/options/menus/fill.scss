@@ -50,14 +50,5 @@
 }
 
 .fill-checkbox {
-  // TODO create a checkbox component in the DS
-  @extend .input-checkbox;
   padding-inline-start: var(--sp-s);
-  span.checked {
-    background-color: var(--color-accent-primary);
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--color-background-primary);
-    }
-  }
 }

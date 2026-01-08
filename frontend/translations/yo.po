@@ -3355,7 +3355,7 @@ msgid "workspace.header.zoom-selected"
 msgstr "Ṣuum lati yan"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
-msgid "workspace.layout_grid.editor.title"
+msgid "workspace.layout-grid.editor.title"
 msgstr "Ilànà àyípàdà"
 
 #: src/app/main/ui/workspace/libraries.cljs
