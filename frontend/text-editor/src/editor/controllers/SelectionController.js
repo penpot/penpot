@@ -242,7 +242,6 @@ export class SelectionController extends EventTarget {
         continue;
       }
       let styleValue = element.style.getPropertyValue(styleName);
-
       if (styleName === "font-family") {
         styleValue = sanitizeFontFamily(styleValue);
       }
@@ -277,22 +276,29 @@ export class SelectionController extends EventTarget {
     this.#applyDefaultStylesToCurrentStyle();
     const root = startNode.parentElement.parentElement.parentElement;
     this.#applyStylesFromElementToCurrentStyle(root);
-    // FIXME: I don't like this approximation. Having to iterate nodes twice
-    // is bad for performance. I think we need another way of "computing"
-    // the cascade.
-    for (const textNode of this.#textNodeIterator.iterateFrom(
-      startNode,
-      endNode,
-    )) {
-      const paragraph = textNode.parentElement.parentElement;
+    if (startNode === endNode) {
+      const paragraph = startNode.parentElement.parentElement;
       this.#applyStylesFromElementToCurrentStyle(paragraph);
-    }
-    for (const textNode of this.#textNodeIterator.iterateFrom(
-      startNode,
-      endNode,
-    )) {
-      const textSpan = textNode.parentElement;
-      this.#mergeStylesFromElementToCurrentStyle(textSpan);
+      const textSpan = startNode.parentElement;
+      this.#applyStylesFromElementToCurrentStyle(textSpan);
+    } else {
+      // FIXME: I don't like this approximation. Having to iterate nodes twice
+      // is bad for performance. I think we need another way of "computing"
+      // the cascade.
+      for (const textNode of this.#textNodeIterator.iterateFrom(
+        startNode,
+        endNode,
+      )) {
+        const paragraph = textNode.parentElement.parentElement;
+        this.#applyStylesFromElementToCurrentStyle(paragraph);
+      }
+      for (const textNode of this.#textNodeIterator.iterateFrom(
+        startNode,
+        endNode,
+      )) {
+        const textSpan = textNode.parentElement;
+        this.#mergeStylesFromElementToCurrentStyle(textSpan);
+      }
     }
     return this;
   }
