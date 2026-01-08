@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-03 20:01+0000\n"
+"PO-Revision-Date: 2026-01-08 17:06+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -556,7 +556,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "הורדת %s קבצים תקניים (‎.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, unused
+#, fuzzy, unused
 msgid "dashboard.export.explain"
 msgstr ""
 "אחד או יותר מהקבצים שברצונך לייצא משתמשים בספריות משותפות. מה לעשות עם "
