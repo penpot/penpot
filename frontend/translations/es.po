@@ -8354,9 +8354,6 @@ msgstr "Después de eso, serán eliminados permanentemente."
 msgid "dashboard.trash-info-text-part4"
 msgstr "Si cambias de opinión, puedes restaurarlos o eliminarlos permanentemente desde el menú de cada archivo."
 
-msgid "dashboard.deleted.delete-forever"
-msgstr "Eliminar para siempre"
-
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Restaurar todos los proyectos y archivos"
 
@@ -8404,9 +8401,6 @@ msgstr "Hubo un error al restaurar los archivos."
 
 msgid "dashboard.errors.error-on-restore-file"
 msgstr "Hubo un error al restaurar el archivo %s."
-
-msgid "dashboard.errors.error-on-restoring-files"
-msgstr "Hubo un error al restaurar archivos."
 
 msgid "dashboard.errors.error-on-delete-files"
 msgstr "Hubo un error al eliminar archivos."
