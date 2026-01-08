@@ -667,6 +667,9 @@
 }
 
 // UI ELEMENTS
+
+// FIXME: This is used multiple times accross the app. We should design this in
+// the DS and create a proper component for it.
 .asset-element {
   @include bodySmallTypography;
   display: flex;
