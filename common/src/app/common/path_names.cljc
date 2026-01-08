@@ -99,11 +99,11 @@ Some naming conventions:
 
 (defn butlast-path
   "Remove the last item of the path."
-  [path separator]
-  (let [split (split-path path :separator separator)]
+  [path]
+  (let [split (split-path path)]
     (if (= 1 (count split))
       ""
-      (join-path (butlast split) :separator separator))))
+      (join-path (butlast split)))))
 
 (defn butlast-path-with-dots
   "Remove the last item of the path."
