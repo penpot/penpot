@@ -571,7 +571,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Lejupielādēt %s standarta datnes (. svg +. json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* var ietvert sastāvdaļas, attēlus, krāsas un/vai burtu stilus un veidus."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -581,33 +581,33 @@ msgstr ""
 "iesākt ar to līdzekļiem*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Izguvē tiks iekļautas datnes ar koplietojamām bibliotēkām, saglabājot to "
 "sasaisti."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Izgūt koplietojamās bibliotēkas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Koplietojamās bibliotēkas netiks iekļautas izguvē, un bibliotēkai netiks "
 "pievienoti līdzekļi. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Attiekties pret koplietojamo bibliotēku līdzekļiem kā pret pamatobjektiem"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Datne tiks izgūta ar visiem ārējiem līdzekļiem, kas tiks apvienoti datnes "
 "bibliotēkā."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Iekļaut koplietojamos bibliotēkas līdzekļus datņu bibliotēkās"
 
 #: src/app/main/ui/exports/files.cljs:147

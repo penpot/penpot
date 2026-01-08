@@ -571,7 +571,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s standart dosyayı indir (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Bileşenleri, grafikleri, renkleri ve/veya tipografileri içerebilir."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -581,33 +581,33 @@ msgstr ""
 "kütüphaneleri kullanıyor. Bunların varlıklarıyla ne yapmak istiyorsunuz*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Paylaşılan kütüphanelere sahip dosyalar, bağlantılarını koruyarak dışarı "
 "aktarmaya dahil edilecek."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Paylaşılan kütüphaneleri dışarı aktar"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Paylaşılan kütüphaneler dışarı aktarmaya dahil edilmeyecek ve kütüphaneye "
 "hiçbir varlık eklenmeyecek. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Paylaşılan kütüphane varlıklarını temel nesneler olarak ele al"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Dosyanız, tüm harici varlıklar kütüphane dosyasına birleştirilmiş olarak "
 "dışarı aktarılacak."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Dosya kütüphanelerine paylaşılan kütüphane varlıklarını dahil et"
 
 #: src/app/main/ui/exports/files.cljs:147

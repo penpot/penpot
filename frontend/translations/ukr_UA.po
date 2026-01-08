@@ -565,7 +565,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Завантажити %s стандартних файлів (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* цебто компоненти, графіки, кольори та/або типографіки."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -575,33 +575,33 @@ msgstr ""
 "плануєте зробити з їхніми ресурсами*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Файли з спільними бібліотеками буде додано до експорту зі збереженням "
 "зв'язків між ними."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Експортувати спільні бібліотеки"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Спільні бібліотеки не буде додано до експорту, а ресурси не будуть додані "
 "до бібліотеки. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Розглядати ресурси спільної бібліотеки як базові об'єкти"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Ваш файл буде експортовано зі всіма зовнішніми ресурсами, об'єднаними у "
 "файл бібліотеки."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Додати ресурси спільної бібліотеки до файлу бібліотеки"
 
 #: src/app/main/ui/exports/files.cljs:147

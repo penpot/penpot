@@ -530,7 +530,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Stáhnout %s soubory (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Může obsahovat komponenty, grafiku, barvy a/nebo typografii."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -540,33 +540,33 @@ msgstr ""
 "Co chcete dělat s jejich položkami*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Soubory se sdílenými knihovnami budou zahrnuty do exportu, čímž se zachová "
 "jejich propojení."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportovat sdílené knihovny"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Sdílené knihovny nebudou zahrnuty do exportu a do knihovny nebudou přidány "
 "žádné položky. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Zacházet s položkami sdílené knihovny jako se základními objekty"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Váš soubor bude exportován se všemi externími položkami sloučenými do "
 "knihovny souborů."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Zahrnout sdílené položky knihovny do knihoven souborů"
 
 #: src/app/main/ui/exports/files.cljs:147
