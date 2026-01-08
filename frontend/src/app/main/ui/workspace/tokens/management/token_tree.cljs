@@ -122,6 +122,7 @@
          (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
            [:> token-pill*
             {:token token
+             :key (:id (:leaf node))
              :selected-shapes selected-shapes
              :is-selected-inside-layout is-selected-inside-layout
              :active-theme-tokens active-theme-tokens
