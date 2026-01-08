@@ -6295,10 +6295,6 @@ msgstr "工具"
 msgid "workspace.tokens.value-not-valid"
 msgstr "該值無效"
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "重新命名此權杖(token)將會中斷對其舊名稱的任何參照。"
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "資源"

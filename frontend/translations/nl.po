@@ -7968,12 +7968,6 @@ msgstr "Ongeldige waarde: % is niet toegestaan."
 msgid "workspace.tokens.value-with-units"
 msgstr "Ongeldige waarde: Eenheden zijn niet toegestaan."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr ""
-"Met het wijzigen van de naam van dit token, worden alle verwijzingen naar "
-"de oude naam verbroken."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Assets"

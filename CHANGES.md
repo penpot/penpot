@@ -10,6 +10,8 @@
 
 ### :sparkles: New features & Enhancements
 
+- Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
+
 ### :bug: Bugs fixed
 
 

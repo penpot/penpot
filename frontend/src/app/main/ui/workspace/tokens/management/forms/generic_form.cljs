@@ -12,19 +12,21 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
+   [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
-   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
+   [app.main.ui.workspace.tokens.remapping-modal :as remapping-modal]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -92,6 +94,7 @@
            initial
            type
            value-subfield
+           tokens-in-selected-set
            input-value-placeholder] :as props}]
 
   (let [make-schema           (or make-schema default-make-schema)
@@ -121,11 +124,11 @@
         (mf/deref refs/workspace-active-theme-sets-tokens)
 
         tokens
-        (mf/with-memo [tokens token]
+        (mf/with-memo [tokens tokens-in-selected-set token]
           ;; Ensure that the resolved value uses the currently editing token
           ;; even if the name has been overriden by a token with the same name
           ;; in another set below.
-          (cond-> tokens
+          (cond-> (merge tokens tokens-in-selected-set)
             (and (:name token) (:value token))
             (assoc (:name token) token)))
 
@@ -143,10 +146,6 @@
         form
         (fm/use-form :schema schema
                      :initial initial)
-
-        warning-name-change?
-        (not= (get-in @form [:data :name])
-              (:name initial))
 
         on-cancel
         (mf/use-fn
@@ -191,19 +190,38 @@
                                    :tokens tokens})
                   (rx/subs!
                    (fn [valid-token]
-                     (st/emit!
-                      (if is-create
-                        (dwtl/create-token (ctob/make-token {:name name
-                                                             :type token-type
-                                                             :value (:value valid-token)
-                                                             :description description}))
-
-                        (dwtl/update-token (:id token)
-                                           {:name name
-                                            :value (:value valid-token)
-                                            :description description}))
-                      (dwtp/propagate-workspace-tokens)
-                      (modal/hide))))))))]
+                     (let [state @st/state
+                           file-data (dh/lookup-file-data state)
+                           old-name (:name token)
+                           is-rename (and (= action "edit") (not= name old-name))
+                           references-count (remap/count-token-references file-data old-name)]
+                       (if (and is-rename (> references-count 0))
+                         (remapping-modal/show-remapping-modal
+                          {:old-token-name old-name
+                           :new-token-name name
+                           :references-count references-count
+                           :on-confirm (fn []
+                                         (st/emit!
+                                          (dwtl/update-token (:id token)
+                                                             {:name name
+                                                              :value (:value valid-token)
+                                                              :description description})
+                                          (remap/remap-tokens old-name name)
+                                          (dwtp/propagate-workspace-tokens)
+                                          (modal/hide!)))
+                           :on-cancel #(modal/hide!)})
+                         (st/emit!
+                          (if is-create
+                            (dwtl/create-token (ctob/make-token {:name name
+                                                                 :type token-type
+                                                                 :value (:value valid-token)
+                                                                 :description description}))
+                            (dwtl/update-token (:id token)
+                                               {:name name
+                                                :value (:value valid-token)
+                                                :description description}))
+                          (dwtp/propagate-workspace-tokens)
+                          (modal/hide!))))))))))]
 
     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form
@@ -222,12 +240,7 @@
                            :placeholder (tr "workspace.tokens.enter-token-name" token-title)
                            :max-length max-input-length
                            :variant "comfortable"
-                           :auto-focus true}]
-
-       (when (and warning-name-change? (= action "edit"))
-         [:div {:class (stl/css :warning-name-change-notification-wrapper)}
-          [:> context-notification*
-           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
+                           :auto-focus true}]]
 
       [:div {:class (stl/css :input-row)}
        (case type

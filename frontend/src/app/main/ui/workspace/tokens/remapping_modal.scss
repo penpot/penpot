@@ -1,0 +1,113 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--overlay-color);
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  width: 100%;
+  max-width: 32rem;
+  max-height: unset;
+  user-select: none;
+  position: relative;
+}
+
+.modal-header {
+  margin-block-end: var(--sp-xxl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  @include t.use-typography("headline-medium");
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+  position: absolute;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
+}
+
+.modal-content {
+  @include t.use-typography("body-large");
+  margin-block-end: var(--sp-xxl);
+  padding: var(--sp-xxl) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.modal-footer {
+  margin-block-start: var(--sp-xxl);
+  gap: var(--sp-s);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  gap: var(--sp-s);
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+}
+
+.modal-scd-msg,
+.modal-msg {
+  @include t.use-typography("body-large");
+  color: var(--modal-text-foreground-color);
+}
+
+.remap-explanation {
+  margin: var(--spacing-sm) 0 0 0;
+  color: var(--color-foreground-secondary);
+  font-size: var(--fs-12);
+  line-height: var(--lh-1-4);
+}
+
+.no-references-info {
+  margin-block-end: var(--spacing-md);
+}
+
+.no-remap-explanation {
+  margin: var(--spacing-sm) 0 0 0;
+  color: var(--color-foreground-secondary);
+  font-size: var(--fs-12);
+  line-height: var(--lh-1-4);
+}
+
+.progress-info {
+  margin-block-end: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.modal-actions {
+  @extend .modal-action-btns;
+}

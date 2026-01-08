@@ -7928,10 +7928,6 @@ msgstr "Ogiltigt värde: % är inte tillåtet."
 msgid "workspace.tokens.value-with-units"
 msgstr "Ogiltigt värde: Enheter är ej tillåtna."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Om du byter namn på denna token bryts alla referenser till dess gamla namn."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Tillgångar"

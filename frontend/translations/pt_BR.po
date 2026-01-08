@@ -5661,10 +5661,6 @@ msgstr "Ferramentas"
 msgid "workspace.tokens.value-not-valid"
 msgstr "O valor não é válido"
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Renomear este token quebrará quaisquer referência para o nome antigo."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Ativos"
