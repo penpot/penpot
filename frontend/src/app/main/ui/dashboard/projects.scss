@@ -84,12 +84,15 @@
 
 .project-name {
   @include t.use-typography("body-large");
-  width: fit-content;
-  margin-inline-end: var(--sp-m);
-  line-height: 0.8;
   color: var(--title-foreground-color-hover);
   cursor: pointer;
   height: var(--sp-l);
+  line-height: 0.8;
+  margin-inline-end: var(--sp-m);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: fit-content;
+  white-space: nowrap;
 }
 
 .info-wrapper {
