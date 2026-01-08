@@ -27,12 +27,14 @@
   [old-props new-props]
   (let [old-values (unchecked-get old-props "values")
         new-values (unchecked-get new-props "values")
-        old-applied-tokens (unchecked-get old-props "applied-tokens")
-        new-applied-tokens (unchecked-get new-props "applied-tokens")]
+        old-applied-tokens (unchecked-get old-props "appliedTokens")
+        new-applied-tokens (unchecked-get new-props "appliedTokens")]
     (and (identical? (unchecked-get old-props "class")
                      (unchecked-get new-props "class"))
          (identical? (unchecked-get old-props "ids")
                      (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "shapes")
+                     (unchecked-get new-props "shapes"))
          (identical? old-applied-tokens
                      new-applied-tokens)
          (identical? (get old-values :r1)
@@ -53,35 +55,48 @@
                    (-> (deref tokens)
                        (select-keys (get tk/tokens-by-input name))
                        (not-empty))))
-        
+
         on-detach-attr
         (mf/use-fn
          (mf/deps on-detach name)
          #(on-detach % name))
 
         r1-value   (get applied-tokens :r1)
-        all-token-equal? (all-equal? applied-tokens)
+        all-token-equal? (and (seq applied-tokens) (all-equal? applied-tokens))
         all-values-equal? (all-equal? values)
 
         applied-token (cond
                         (not (seq applied-tokens))
                         nil
-                        
+
                         (and (= radius :all) (or (not all-values-equal?) (not all-token-equal?)))
                         :multiple
-                        
+
                         (and all-token-equal? all-values-equal? (= radius :all))
                         r1-value
-                        
+
                         :else
                         (get applied-tokens radius))
 
 
+        placeholder (if (= radius :all)
+                      (cond
+                        (or (not all-values-equal?)
+                            (not all-token-equal?))
+                        (tr "settings.multiple")
+                        :else
+                        "--")
+
+                      (cond
+                        (or (= :multiple (:applied-tokens values))
+                            (= :multiple (get values name)))
+                        (tr "settings.multiple")
+                        :else
+                        "--"))
+
+
         props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple (get values name)))
-                                                (tr "settings.multiple")
-                                                "--")
+                                {:placeholder placeholder
                                  :applied-token applied-token
                                  :tokens (if (delay? tokens) @tokens tokens)
                                  :align align
@@ -151,51 +166,49 @@
                                {:reg-objects? true
                                 :attrs [:r1 :r2 :r3 :r4]})))
 
+        change-one-radius
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [update-fn attr]
+           (dwsh/update-shapes ids
+                               (fn [shape]
+                                 (if (ctsr/has-radius? shape)
+                                   (update-fn shape)
+                                   shape))
+                               {:reg-objects? true
+                                :attrs [attr]})))
+
         toggle-radius-mode
         (mf/use-fn
          (mf/deps radius-expanded)
          (fn []
            (swap! radius-expanded* not)))
 
-        do-all-radius-change
-        (mf/use-fn
-         (mf/deps change-radius)
-         (fn [value]
-           (st/emit!
-            (change-radius (fn [shape]
-                             (ctsr/set-radius-to-all-corners shape value))))))
 
         on-all-radius-change
         (mf/use-fn
-         (mf/deps do-all-radius-change ids)
+         (mf/deps change-radius ids)
          (fn [value]
            (if (or (string? value) (number? value))
-             (do-all-radius-change value)
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{:r1 :r2 :r3 :r4}
-                                               :shape-ids ids}))
-                 (do-all-radius-change resolved-value))))))
+             (st/emit!
+              (change-radius (fn [shape]
+                               (ctsr/set-radius-to-all-corners shape value))))
+             (doseq [attr [:r1 :r2 :r3 :r4]]
+               (st/emit!
+                (dwta/toggle-token {:token     (first value)
+                                    :attrs     #{attr}
+                                    :shape-ids ids}))))))
 
-        do-single-radius-change
-        (mf/use-fn
-         (mf/deps change-radius)
-         (fn [value attr]
-           (st/emit! (change-radius #(ctsr/set-radius-to-single-corner % attr value)))))
-        
+
         on-single-radius-change
         (mf/use-fn
-         (mf/deps do-all-radius-change ids)
+         (mf/deps change-one-radius ids)
          (fn [value attr]
            (if (or (string? value) (number? value))
-           (do-single-radius-change value attr)
-           (do
-             (let [resolved-value (:resolved-value (first value))]
-               (st/emit! (dwta/toggle-token {:token (first value)
-                                             :attrs #{attr}
-                                             :shape-ids ids}))
-               (do-single-radius-change resolved-value attr))))))
+             (st/emit! (change-one-radius #(ctsr/set-radius-to-single-corner % attr value) attr))
+             (st/emit! (dwta/toggle-border-radius-token {:token (first value)
+                                                         :attrs #{attr}
+                                                         :shape-ids ids})))))
 
         on-radius-r1-change #(on-single-radius-change % :r1)
         on-radius-r2-change #(on-single-radius-change % :r2)
@@ -214,7 +227,8 @@
     (mf/with-effect [ids]
       (reset! radius-expanded* false))
 
-    [:div {:class (dm/str class " " (stl/css :radius))}
+    [:section {:class (dm/str class " " (stl/css :radius))
+               :aria-label "border-radius-section"}
      (if (not radius-expanded)
        (if token-numeric-inputs
          [:> numeric-input-wrapper*
@@ -234,7 +248,7 @@
                        0
                        (:r1 values))
                      nil)}]
-       
+
          [:div {:class (stl/css :radius-1)
                 :title (tr "workspace.options.radius")}
           [:> icon* {:icon-id i/corner-radius
@@ -267,11 +281,11 @@
             :property (tr "workspace.options.radius-top-left")
             :applied-tokens applied-tokens
             :radius :r1
-            :align :right-adjust
-            :class (stl/css :radius-wrapper :dropdown-adjustment)
+            :align :right
+            :class (stl/css :radius-wrapper :dropdown-offset)
             :inner-class (stl/css :no-icon-input)
             :values  (:r1 values)}]
-          
+
           [:> numeric-input-wrapper*
            {:on-change on-radius-r2-change
             :on-detach on-detach-r2
@@ -285,7 +299,7 @@
             :inner-class (stl/css :no-icon-input)
             :radius :r2
             :values (:r2 values)}]
-          
+
           [:> numeric-input-wrapper*
            {:on-change on-radius-r4-change
             :on-detach on-detach-r4
@@ -294,12 +308,12 @@
             :nillable true
             :property (tr "workspace.options.radius-bottom-left")
             :applied-tokens applied-tokens
-            :class (stl/css :radius-wrapper :dropdown-adjustment)
+            :class (stl/css :radius-wrapper :dropdown-offset)
             :inner-class (stl/css :no-icon-input)
             :radius :r4
-            :align :right-adjust
+            :align :right
             :values (:r4 values)}]
-          
+
           [:> numeric-input-wrapper*
            {:on-change on-radius-r3-change
             :on-detach on-detach-r3

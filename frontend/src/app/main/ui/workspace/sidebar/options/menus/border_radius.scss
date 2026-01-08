@@ -5,6 +5,8 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography" as t;
+@use "ds/_utils.scss" as *;
 
 .radius {
   display: grid;
@@ -14,7 +16,7 @@
 
 .radius-1 {
   @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @include t.use-typography("body-small");
 }
 
 .radius-4 {
@@ -25,11 +27,17 @@
 
 .small-input {
   @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @include t.use-typography("body-small");
+}
+
+.selected {
+  border-color: var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--color-accent-primary);
 }
 
 .icon {
-  margin-inline: deprecated.$s-4;
+  margin-inline: var(--sp-xs);
 }
 
 .radius-wrapper {
@@ -37,9 +45,9 @@
 }
 
 .no-icon-input {
-  padding-inline-start: 6px;
+  padding-inline-start: px2rem(6);
 }
 
-.dropdown-adjustment {
-  --dropdown-adjustment: -68px;
+.dropdown-offset {
+  --dropdown-offset: #{px2rem(-65)};
 }

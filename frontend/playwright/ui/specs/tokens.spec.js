@@ -50,7 +50,7 @@ const setupTokensFile = async (page, options = {}) => {
   const {
     file = "workspace/get-file-tokens.json",
     fileFragment = "workspace/get-file-fragment-tokens.json",
-    flags = [],
+    flags = ["enable-feature-token-input"],
   } = options;
 
   const workspacePage = new WorkspacePage(page);
@@ -2242,6 +2242,56 @@ test.describe("Tokens: Apply token", () => {
     ).toBeVisible();
   });
 
+  test("User applies border-radius token to a shape from sidebar", async ({ page }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+    
+    // Open tokens sections on left sidebar
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+
+    // Unfold border radius tokens
+    await page.getByRole("button", { name: "Border Radius 3" }).click();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "borderRadius" }),
+    ).toBeVisible();
+    await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
+    ).toBeVisible();
+
+    // Apply border radius token from token panels
+    await tokensSidebar.getByRole("button", { name: "borderRadius.sm" }).click();
+
+    // Check if border radius sections is visible on right sidebar
+    const borderRadiusSection = page.getByRole("region", {name: "border-radius-section"});
+    await expect(borderRadiusSection).toBeVisible();
+
+    // Check if token pill is visible on design tab on right sidebar
+    const brTokenPillSM = borderRadiusSection.getByRole('button', { name: 'borderRadius.sm' });
+    await expect(brTokenPillSM).toBeVisible();
+    await brTokenPillSM.click();
+
+    // Change token from dropdown
+    const brTokenOptionXl = borderRadiusSection.getByLabel('borderRadius.xl')
+    await expect(brTokenOptionXl).toBeVisible();
+    await brTokenOptionXl.click();
+
+    await expect(brTokenPillSM).not.toBeVisible();
+    const brTokenPillXL = borderRadiusSection.getByRole('button', { name: 'borderRadius.xl' });
+    await expect(brTokenPillXL).toBeVisible();
+
+    // Detach token from design tab on right sidebar
+    const detachButton = borderRadiusSection.getByRole('button', { name: 'Detach token' });
+    await detachButton.click();
+    await expect(brTokenPillXL).not.toBeVisible();
+  });
+
   test("User applies typography token to a text shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
       await setupTypographyTokensFile(page);
@@ -2417,12 +2467,13 @@ test.describe("Tokens: Apply token", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill(newTokenTitle);
 
-    const referenceTabButton =
-      tokensUpdateCreateModal.getByRole('button', { name: 'Use a reference' });
+    const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Use a reference",
+    });
     referenceTabButton.click();
 
-    const referenceField = tokensUpdateCreateModal.getByRole('textbox', {
-      name: 'Reference'
+    const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Reference",
     });
     await referenceField.fill("{Full}");
 
@@ -2782,14 +2833,18 @@ test.describe("Tokens: Remapping Feature", () => {
         .click();
       await expect(tokensUpdateCreateModal).toBeVisible();
 
-      nameField = tokensUpdateCreateModal.getByRole("textbox", {name: "Name"});
+      nameField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Name",
+      });
       await nameField.fill("derived-shadow");
 
       const referenceToggle =
         tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceToggle.click();
 
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {name: "Reference"});
+      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Reference",
+      });
       await referenceField.fill("{base-shadow}");
 
       submitButton = tokensUpdateCreateModal.getByRole("button", {
@@ -2878,7 +2933,9 @@ test.describe("Tokens: Remapping Feature", () => {
         tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceToggle.click();
 
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {name: "Reference"});
+      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Reference",
+      });
       await referenceField.fill("{primary-shadow}");
 
       submitButton = tokensUpdateCreateModal.getByRole("button", {
@@ -2950,7 +3007,8 @@ test.describe("Tokens: Remapping Feature", () => {
 
       // Verify the shape still has the shadow applied with the UPDATED color value
       // Expand the shadow section to access the color field
-      const shadowSection = workspacePage.rightSidebar.getByTestId("shadow-section");
+      const shadowSection =
+        workspacePage.rightSidebar.getByTestId("shadow-section");
       await expect(shadowSection).toBeVisible();
 
       // Click to expand the shadow options (the menu button)
@@ -3008,14 +3066,18 @@ test.describe("Tokens: Remapping Feature", () => {
         .click();
       await expect(tokensUpdateCreateModal).toBeVisible();
 
-      nameField = tokensUpdateCreateModal.getByRole("textbox", {name: "Name"});
+      nameField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Name",
+      });
       await nameField.fill("body-text");
 
       const referenceToggle =
         tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceToggle.click();
 
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {name: "Reference"})
+      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Reference",
+      });
       await referenceField.fill("{base-text}");
 
       submitButton = tokensUpdateCreateModal.getByRole("button", {
@@ -3096,14 +3158,18 @@ test.describe("Tokens: Remapping Feature", () => {
         .click();
       await expect(tokensUpdateCreateModal).toBeVisible();
 
-      nameField = tokensUpdateCreateModal.getByRole("textbox", {name: "Name"});
+      nameField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Name",
+      });
       await nameField.fill("paragraph-style");
 
       const referenceToggle =
         tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceToggle.click();
 
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {name: "Reference"});
+      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+        name: "Reference",
+      });
       await referenceField.fill("{body-style}");
 
       submitButton = tokensUpdateCreateModal.getByRole("button", {

@@ -30,15 +30,11 @@
 }
 
 .left-align {
-  left: 0;
+  left: var(--dropdown-offset, 0);
 }
 
 .right-align {
-  right: 0;
-}
-
-.adjust-align {
-  right: var(--dropdown-adjustment);
+  right: var(--dropdown-offset, 0);
 }
 
 .option-separator {

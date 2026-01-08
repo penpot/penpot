@@ -18,7 +18,6 @@
   --token-field-height: var(--sp-xxxl);
   --token-field-margin: unset;
   display: grid;
-  width: inherit;
   column-gap: var(--sp-xs);
   align-items: center;
   position: relative;
@@ -60,15 +59,15 @@
   @include t.use-typography("code-font");
   @include textEllipsis;
   display: block;
-  height: var(--sp-xxl);
-  width: fit-content;
+  block-size: var(--sp-xxl);
+  inline-size: fit-content;
   background: var(--pill-bg-color);
   cursor: pointer;
   border: $b-1 solid var(--pill-border-color);
   color: var(--pill-fg-color);
   border-radius: $br-6;
   padding-inline: $sz-6;
-  max-width: 100%;
+  max-inline-size: 100%;
   &:hover {
     --pill-bg-color: var(--color-token-background);
     --pill-fg-color: var(--color-foreground-primary);
@@ -107,27 +106,29 @@
 }
 
 .pill-dot {
-  width: $sz-6;
-  height: $sz-6;
+  inline-size: $sz-6;
+  block-size: $sz-6;
   outline: var(--sp-xxs) solid var(--color-background-primary);
   border-radius: 50%;
   background-color: var(--color-foreground-error);
-  margin-left: var(--sp-xs);
+  margin-inline-start: var(--sp-xs);
   position: absolute;
-  right: 0;
-  top: 0;
+  inset-inline-end: 0;
+  inset-block-start: 0;
 }
 
 .invisible-button {
   position: absolute;
-  right: 0;
-  top: 0;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   opacity: var(--opacity-button);
-
+  background-color: var(--color-background-quaternary);
   &:hover {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
   &:focus {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
 }

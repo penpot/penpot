@@ -206,11 +206,11 @@
    [:on-focus {:optional true} fn?]
    [:on-detach {:optional true} fn?]
    [:property {:optional true} :string]
-   [:align {:optional true} [:maybe [:enum :left :right :right-adjust]]]])
+   [:align {:optional true} [:maybe [:enum :left :right]]]])
 
 (mf/defc numeric-input*
   {::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder 
+  [{:keys [id class value default placeholder
            icon disabled inner-class
            min max max-length step
            is-selected-on-focus nillable
@@ -647,7 +647,7 @@
                                                                    :class (stl/css :icon)}]]))
                                 :slot-end (when-not disabled
                                             (when (some? tokens)
-                                              (mf/html [:> icon-button* {:variant "action"
+                                              (mf/html [:> icon-button* {:variant "ghost"
                                                                          :icon i/tokens
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")

@@ -40,7 +40,7 @@
    [:selected {:optional true} :any]
    [:focused {:optional true} :any]
    [:empty-to-end {:optional true} [:maybe :boolean]]
-   [:align {:optional true} [:maybe [:enum :left :right :right-adjust]]]])
+   [:align {:optional true} [:maybe [:enum :left :right]]]])
 
 (def ^:private
   xf:filter-blank-id
@@ -109,8 +109,7 @@
         (mf/spread-props props
                          {:class (stl/css-case :option-list true
                                                :left-align (= align :left)
-                                               :right-align (= align :right)
-                                               :adjust-align (= align :right-adjust))
+                                               :right-align (= align :right))
                           :tab-index "-1"
                           :role "listbox"})
 
