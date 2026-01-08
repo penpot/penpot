@@ -214,7 +214,7 @@
 
      [:> icon-button* {:variant "ghost"
                        :aria-pressed (= type :multiple)
-                       :aria-label (tr "workspace.layout_grid.editor.margin.expand")
+                       :aria-label (tr "workspace.layout-grid.editor.margin.expand")
                        :on-click on-type-change'
                        :icon i/margin}]]))
 
@@ -231,17 +231,17 @@
                        :options (remove nil?
                                         [{:id "behaviour-h-fix"
                                           :icon i/fixed-width
-                                          :label (tr "workspace.layout_item.fix-width")
+                                          :label (tr "workspace.layout-item.fix-width")
                                           :value "fix"}
                                          (when has-fill
                                            {:id "behaviour-h-fill"
                                             :icon i/fill-content
-                                            :label (tr "workspace.layout_item.width-100")
+                                            :label (tr "workspace.layout-item.width-100")
                                             :value "fill"})
                                          (when is-auto
                                            {:id "behaviour-h-auto"
                                             :icon i/hug-content
-                                            :label (tr "workspace.layout_item.fit-content-horizontal")
+                                            :label (tr "workspace.layout-item.fit-content-horizontal")
                                             :value "auto"})])}]])
 
 (mf/defc element-behaviour-vertical*
@@ -257,19 +257,19 @@
                        :options (remove nil?
                                         [{:id "behaviour-v-fix"
                                           :icon i/fixed-width
-                                          :label (tr "workspace.layout_item.fix-height")
+                                          :label (tr "workspace.layout-item.fix-height")
                                           :class (stl/css :rotated)
                                           :value "fix"}
                                          (when has-fill
                                            {:id "behaviour-v-fill"
                                             :icon i/fill-content
-                                            :label (tr "workspace.layout_item.height-100")
+                                            :label (tr "workspace.layout-item.height-100")
                                             :class (stl/css :rotated)
                                             :value "fill"})
                                          (when is-auto
                                            {:id "behaviour-v-auto"
                                             :icon i/hug-content
-                                            :label (tr "workspace.layout_item.fit-content-vertical")
+                                            :label (tr "workspace.layout-item.fit-content-vertical")
                                             :class (stl/css :rotated)
                                             :value "auto"})])}]])
 

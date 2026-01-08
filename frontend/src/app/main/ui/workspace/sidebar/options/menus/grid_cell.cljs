@@ -272,4 +272,4 @@
          [:> button* {:variant "secondary"
                       :class (stl/css :edit-grid-btn)
                       :on-click toggle-edit-mode}
-          (tr "workspace.layout_grid.editor.options.edit-grid")]]])]))
+          (tr "workspace.layout-grid.editor.options.edit-grid")]]])]))

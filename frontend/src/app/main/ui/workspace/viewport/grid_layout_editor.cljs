@@ -59,15 +59,15 @@
   [:div {:class (stl/css :grid-actions)}
    [:div {:class (stl/css :grid-actions-container)}
     [:div {:class (stl/css :grid-actions-title)}
-     (tr "workspace.layout_grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
+     (tr "workspace.layout-grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
     [:> button* {:variant "secondary"
                  :class (stl/css :action-btn)
                  :on-click #(st/emit! (dwge/locate-board (:id shape)))}
-     (tr "workspace.layout_grid.editor.top-bar.locate")]
+     (tr "workspace.layout-grid.editor.top-bar.locate")]
     [:> button* {:variant "primary"
                  :class (stl/css :action-btn)
                  :on-click #(st/emit! (dw/clear-edition-mode))}
-     (tr "workspace.layout_grid.editor.top-bar.done")]]])
+     (tr "workspace.layout-grid.editor.top-bar.done")]]])
 
 (mf/defc grid-editor-frame
   {::mf/wrap-props false}

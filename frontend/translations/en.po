@@ -5688,83 +5688,83 @@ msgid "workspace.header.zoom-selected"
 msgstr "Zoom to selected"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:217
-msgid "workspace.layout_grid.editor.margin.expand"
+msgid "workspace.layout-grid.editor.margin.expand"
 msgstr "Show 4 sided margin options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
-msgid "workspace.layout_grid.editor.options.edit-grid"
+msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Edit grid"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1554
-msgid "workspace.layout_grid.editor.options.exit"
+msgid "workspace.layout-grid.editor.options.exit"
 msgstr "Exit"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:612, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618
-msgid "workspace.layout_grid.editor.padding.bottom"
+msgid "workspace.layout-grid.editor.padding.bottom"
 msgstr "Bottom padding"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:685, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:686
-msgid "workspace.layout_grid.editor.padding.expand"
+msgid "workspace.layout-grid.editor.padding.expand"
 msgstr "Show 4 sided padding options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:470
-msgid "workspace.layout_grid.editor.padding.horizontal"
+msgid "workspace.layout-grid.editor.padding.horizontal"
 msgstr "Horizontal padding"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:636, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:641, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:647
-msgid "workspace.layout_grid.editor.padding.left"
+msgid "workspace.layout-grid.editor.padding.left"
 msgstr "Left padding"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:590
-msgid "workspace.layout_grid.editor.padding.right"
+msgid "workspace.layout-grid.editor.padding.right"
 msgstr "Right padding"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:561
-msgid "workspace.layout_grid.editor.padding.top"
+msgid "workspace.layout-grid.editor.padding.top"
 msgstr "Top padding"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:428, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:440
-msgid "workspace.layout_grid.editor.padding.vertical"
+msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Vertical padding"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
-msgid "workspace.layout_grid.editor.title"
+msgid "workspace.layout-grid.editor.title"
 msgstr "Editing grid"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:67
-msgid "workspace.layout_grid.editor.top-bar.done"
+msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "Done"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:64
-msgid "workspace.layout_grid.editor.top-bar.locate"
+msgid "workspace.layout-grid.editor.top-bar.locate"
 msgstr "Locate"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1580
-msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Locate grid layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:234
-msgid "workspace.layout_item.fix-width"
+msgid "workspace.layout-item.fix-width"
 msgstr "Fix width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:238
-msgid "workspace.layout_item.width-100"
+msgid "workspace.layout-item.width-100"
 msgstr "Width 100%"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:242
-msgid "workspace.layout_item.fit-content-horizontal"
+msgid "workspace.layout-item.fit-content-horizontal"
 msgstr "Fit content (Horizontal)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:260
-msgid "workspace.layout_item.fix-height"
+msgid "workspace.layout-item.fix-height"
 msgstr "Fix height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:264
-msgid "workspace.layout_item.height-100"
+msgid "workspace.layout-item.height-100"
 msgstr "Height 100%"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:268
-msgid "workspace.layout_item.fit-content-vertical"
+msgid "workspace.layout-item.fit-content-vertical"
 msgstr "Fit content (Vertical)"
 
 #: src/app/main/ui/workspace/libraries.cljs

@@ -416,19 +416,19 @@
          :icon i/padding-top-bottom
          :min 0
          :name :p1
-         :property (tr "workspace.layout_grid.editor.padding.vertical")
+         :property (tr "workspace.layout-grid.editor.padding.vertical")
          :nillable true
          :applied-tokens {:p1 applied-to-p1}
          :values {:p1 p1}}]
 
        [:div {:class (stl/css :padding-simple)
-              :title (tr "workspace.layout_grid.editor.padding.vertical")}
+              :title (tr "workspace.layout-grid.editor.padding.vertical")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-top-bottom]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
-          :aria-label (tr "workspace.layout_grid.editor.padding.vertical")
+          :aria-label (tr "workspace.layout-grid.editor.padding.vertical")
           :on-change on-p1-change
           :on-focus on-focus-p1
           :on-blur on-padding-blur
@@ -446,19 +446,19 @@
          :min 0
          :name :p2
          :align :right
-         :property (tr "workspace.layout_grid.editor.padding.horizontal")
+         :property (tr "workspace.layout-grid.editor.padding.horizontal")
          :nillable true
          :applied-tokens {:p2 applied-to-p2}
          :values {:p2 p2}}]
 
        [:div {:class (stl/css :padding-simple)
-              :title (tr "workspace.layout_grid.editor.padding.horizontal")}
+              :title (tr "workspace.layout-grid.editor.padding.horizontal")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left-right]
         [:> deprecated-input/numeric-input*
          {:className (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
-          :aria-label (tr "workspace.layout_grid.editor.padding.horizontal")
+          :aria-label (tr "workspace.layout-grid.editor.padding.horizontal")
           :on-change on-p2-change
           :on-focus on-focus-p2
           :on-blur on-padding-blur
@@ -538,18 +538,18 @@
          :icon i/padding-top
          :min 0
          :name :p1
-         :property (tr "workspace.layout_grid.editor.padding.top")
+         :property (tr "workspace.layout-grid.editor.padding.top")
          :applied-tokens applied-tokens
          :values value}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.top")}
+              :title (tr "workspace.layout-grid.editor.padding.top")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-top]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.top")
+          :aria-label (tr "workspace.layout-grid.editor.padding.top")
           :data-attr "p1"
           :on-change on-p1-change
           :on-focus on-focus-p1
@@ -567,18 +567,18 @@
          :min 0
          :name :p2
          :align :right
-         :property (tr "workspace.layout_grid.editor.padding.right")
+         :property (tr "workspace.layout-grid.editor.padding.right")
          :applied-tokens applied-tokens
          :values value}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.right")}
+              :title (tr "workspace.layout-grid.editor.padding.right")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-right]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.right")
+          :aria-label (tr "workspace.layout-grid.editor.padding.right")
           :data-attr "p2"
           :on-change on-p2-change
           :on-focus on-focus-p2
@@ -595,18 +595,18 @@
          :icon i/padding-bottom
          :min 0
          :name :p3
-         :property (tr "workspace.layout_grid.editor.padding.bottom")
+         :property (tr "workspace.layout-grid.editor.padding.bottom")
          :applied-tokens applied-tokens
          :values value}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.bottom")}
+              :title (tr "workspace.layout-grid.editor.padding.bottom")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-bottom]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
+          :aria-label (tr "workspace.layout-grid.editor.padding.bottom")
           :data-attr "p3"
           :on-change on-p3-change
           :on-focus on-focus-p3
@@ -624,18 +624,18 @@
          :min 0
          :align :right
          :name :p4
-         :property (tr "workspace.layout_grid.editor.padding.left")
+         :property (tr "workspace.layout-grid.editor.padding.left")
          :applied-tokens applied-tokens
          :values value}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.left")}
+              :title (tr "workspace.layout-grid.editor.padding.left")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.left")
+          :aria-label (tr "workspace.layout-grid.editor.padding.left")
           :data-attr "p4"
           :on-change on-p4-change
           :on-focus on-focus-p4
@@ -671,7 +671,7 @@
         [:> multiple-padding-selection* props])]
 
      [:> icon-button* {:variant "ghost"
-                       :aria-label (tr "workspace.layout_grid.editor.padding.expand")
+                       :aria-label (tr "workspace.layout-grid.editor.padding.expand")
                        :aria-pressed (= type :multiple)
                        :data-type (d/name type)
                        :on-click on-type-change'
@@ -851,7 +851,7 @@
     [:> button* {:variant "secondary"
                  :class (stl/css :edit-mode-btn)
                  :on-click toggle-edit-mode}
-     (tr "workspace.layout_grid.editor.options.edit-grid")]))
+     (tr "workspace.layout-grid.editor.options.edit-grid")]))
 
 (mf/defc align-grid-row*
   {::mf/private true}
@@ -1531,7 +1531,7 @@
       [:> button* {:variant "secondary"
                    :class (stl/css :exit-btn)
                    :on-click #(st/emit! (udw/clear-edition-mode))}
-       (tr "workspace.layout_grid.editor.options.exit")]]
+       (tr "workspace.layout-grid.editor.options.exit")]]
 
      [:div {:class (stl/css :row :first-row)}
       [:div {:class (stl/css :direction-edit)}
@@ -1557,7 +1557,7 @@
 
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :locate-button)
-                        :aria-label (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")
+                        :aria-label (tr "workspace.layout-grid.editor.top-bar.locate.tooltip")
                         :on-click handle-locate-grid
                         :icon i/locate}]]
 
