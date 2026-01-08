@@ -110,12 +110,9 @@
 
 (defn- normalize-uri
   [uri-str]
-  (let [uri (u/uri uri-str)]
-    ;; Ensure that the path always ends with "/"; this ensures that
-    ;; all path join operations works as expected.
-    (cond-> uri
-      (not (str/ends-with? (:path uri) "/"))
-      (update :path #(str % "/")))))
+  ;; Ensure that the path always ends with "/"; this ensures that
+  ;; all path join operations works as expected.
+  (u/ensure-path-slash uri-str))
 
 (def public-uri
   (normalize-uri (or (obj/get global "penpotPublicURI")
