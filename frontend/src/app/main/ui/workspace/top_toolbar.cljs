@@ -230,7 +230,9 @@
                               :aria-pressed (contains? layout :debug-panel)
                               :aria-label "Debugging tool"
                               :tooltip-placement "bottom"
-                              :on-click toggle-debug-panel}]])]]
+                              :on-click toggle-debug-panel}]])
+
+         [:span {:id "mcp-status"} "disconnected"]]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")

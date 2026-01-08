@@ -24,6 +24,10 @@ export function createModal(
     inlineStart: window.innerWidth - width - 290,
   };
 
+  if ((options as any)?.hidden) {
+    modal.style.setProperty('display', 'none');
+  }
+
   modal.style.setProperty(
     '--modal-block-start',
     `${initialPosition.blockStart}px`,
