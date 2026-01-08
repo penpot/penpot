@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-30 16:00+0000\n"
-"Last-Translator: Anton Palmqvist <apq@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -572,7 +572,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Ladda ner %s standardfiler (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, unused
+#, fuzzy, unused
 msgid "dashboard.export.explain"
 msgstr ""
 "En eller flera filer som du vill exportera använder delade bibliotek. Vad "
