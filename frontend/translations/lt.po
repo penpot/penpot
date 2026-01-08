@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Lithuanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lt/>\n"
+"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"Last-Translator: Vincas Dundzys <dundzys.vincas@gmail.com>\n"
+"Language-Team: Lithuanian <https://hosted.weblate.org/projects/penpot/"
+"frontend/lt/>\n"
 "Language: lt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "(n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -334,11 +334,11 @@ msgid "dashboard.export-shapes.title"
 msgstr "Eksportuoti pažymėtą sritį"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, unused
+#, fuzzy, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos "
-"bendros bibliotekos. Ką norite daryti su jų komponentais*?"
+"Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos bendros "
+"bibliotekos. Ką norite daryti su jų komponentais*?"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
