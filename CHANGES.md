@@ -38,6 +38,11 @@
 - Fix wrong board size presets in Android [Taiga #12339](https://tree.taiga.io/project/penpot/issue/12339)
 - Fix problem with grid layout components and auto sizing [Github #7797](https://github.com/penpot/penpot/issues/7797)
 - Fix some alignments on inspect tab [Taiga #12915](https://tree.taiga.io/project/penpot/issue/12915)
+- Fix color assets from shared libraries not appearing as assets in Selected colors panel [Taiga #12957](https://tree.taiga.io/project/penpot/issue/12957)
+- Fix CSS generated box-shadow property [Taiga #12997](https://tree.taiga.io/project/penpot/issue/12997)
+- Fix inner shadow selector on shadow token [Taiga #12951](https://tree.taiga.io/project/penpot/issue/12951)
+- Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
+- Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
 
 
 ## 2.12.1

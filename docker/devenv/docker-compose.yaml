@@ -41,7 +41,10 @@ services:
       - 6062:6062
       - 6063:6063
       - 6064:6064
+      - 9000:9000
+      - 9001:9001
       - 9090:9090
+      - 9091:9091
 
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}

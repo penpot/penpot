@@ -8068,6 +8068,14 @@ msgstr "Name"
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "A token already exists at the path: %s"
 
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "Blur value cannot be negative"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "Spread value cannot be negative"
+
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Name should be at least 1 character"

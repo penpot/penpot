@@ -76,7 +76,7 @@
   [token index prop value-subfield]
   (let [value (get-in token [:value value-subfield index prop])]
     (d/without-nils
-     {:type  (if (= prop :color) :color :number)
+     {:type  (if (= prop :color) :color :dimensions)
       :value value})))
 
 (mf/defc shadow-formset*
@@ -114,7 +114,7 @@
                                           :token inset-token
                                           :tokens tokens
                                           :index index
-                                          :value-subfield value-subfield
+                                          :indexed-type value-subfield
                                           :name :inset}]
       (when show-button
         [:> icon-button* {:variant "ghost"
@@ -269,13 +269,25 @@
 
      [:value
       [:map
-       [:shadow {:optinal true}
+       [:shadow {:optional true}
         [:vector
          [:map
           [:offset-x {:optional true} [:maybe :string]]
           [:offset-y {:optional true} [:maybe :string]]
-          [:blur {:optional true} [:maybe :string]]
-          [:spread {:optional true} [:maybe :string]]
+          [:blur {:optional true}
+           [:and
+            [:maybe :string]
+            [:fn {:error/fn #(tr "workspace.tokens.shadow-token-blur-value-error")}
+             (fn [blur]
+               (let [n (d/parse-double blur)]
+                 (or (nil? n) (not (< n 0)))))]]]
+          [:spread {:optional true}
+           [:and
+            [:maybe :string]
+            [:fn {:error/fn #(tr "workspace.tokens.shadow-token-spread-value-error")}
+             (fn [spread]
+               (let [n (d/parse-double spread)]
+                 (or (nil? n) (not (< n 0)))))]]]
           [:color {:optional true} [:maybe :string]]
           [:color-result {:optional true} ::sm/any]
           [:inset {:optional true} [:maybe :boolean]]]]]
