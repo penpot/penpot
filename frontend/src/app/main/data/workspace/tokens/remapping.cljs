@@ -20,6 +20,9 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
+(log/set-level! :warn)
+
 ;; Token Reference Scanning
 ;; ========================
 
@@ -72,7 +75,7 @@
         ;; Scan tokens library for alias references to the specific token
         matching-aliases (if tokens-lib
                            (let [all-tokens (ctob/get-all-tokens tokens-lib)]
-                             (mapcat #(scan-token-value-references % old-token-name) (vals all-tokens)))
+                             (mapcat #(scan-token-value-references % old-token-name) all-tokens))
                            [])]
     (log/info :hint "token-scan-details"
               :token-name old-token-name

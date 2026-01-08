@@ -909,7 +909,8 @@ Will return a value that matches this schema:
 `:all`     All of the nested sets are active
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
-  (get-all-tokens [_] "all tokens in the lib")
+  (get-all-tokens [_] "all tokens in the lib, as a sequence")
+  (get-all-tokens-map [_] "all tokens in the lib, as a map name -> token")
   (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
 
 (declare parse-multi-set-dtcg-json)
@@ -1306,6 +1307,10 @@ Will return a value that matches this schema:
       tokens))
 
   (get-all-tokens [this]
+    (mapcat #(vals (get-tokens- %))
+            (get-sets this)))
+
+  (get-all-tokens-map [this]
     (reduce
      (fn [tokens' set]
        (into tokens' (map (fn [x] [(:name x) x]) (vals (get-tokens- set)))))
