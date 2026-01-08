@@ -8,6 +8,7 @@
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
 @use "ds/colors.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .token-field {
   --token-field-bg-color: var(--color-background-tertiary);
@@ -16,9 +17,8 @@
   --token-field-outline-color: none;
   --token-field-height: var(--sp-xxxl);
   --token-field-margin: unset;
-
   display: grid;
-  grid-template-columns: 1fr auto;
+  width: inherit;
   column-gap: var(--sp-xs);
   align-items: center;
   position: relative;
@@ -27,6 +27,7 @@
   border-radius: $br-8;
   padding: var(--sp-xs);
   outline: $b-1 solid var(--token-field-outline-color);
+  position: relative;
 
   &:hover {
     --token-field-bg-color: var(--color-background-quaternary);
@@ -39,7 +40,7 @@
 }
 
 .with-icon {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
 }
 
 .token-field-disabled {
@@ -57,6 +58,8 @@
   --pill-bg-color: var(--color-background-tertiary);
   --pill-fg-color: var(--color-token-foreground);
   @include t.use-typography("code-font");
+  @include textEllipsis;
+  display: block;
   height: var(--sp-xxl);
   width: fit-content;
   background: var(--pill-bg-color);
@@ -65,6 +68,7 @@
   color: var(--pill-fg-color);
   border-radius: $br-6;
   padding-inline: $sz-6;
+  max-width: 100%;
   &:hover {
     --pill-bg-color: var(--color-token-background);
     --pill-fg-color: var(--color-foreground-primary);
@@ -115,6 +119,9 @@
 }
 
 .invisible-button {
+  position: absolute;
+  right: 0;
+  top: 0;
   opacity: var(--opacity-button);
 
   &:hover {

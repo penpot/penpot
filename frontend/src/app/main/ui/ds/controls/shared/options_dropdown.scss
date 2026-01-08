@@ -37,6 +37,10 @@
   right: 0;
 }
 
+.adjust-align {
+  right: var(--dropdown-adjustment);
+}
+
 .option-separator {
   border: $b-1 solid var(--options-dropdown-border-color);
   margin-top: var(--sp-xs);
