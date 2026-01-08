@@ -14,6 +14,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.util.dom :as dom]
@@ -26,7 +27,9 @@
 (defonce instance nil)
 (defonce msgbus (rx/subject))
 (defonce origin
-  (dm/str (assoc cf/rasterizer-uri :path "/rasterizer.html")))
+  (-> cf/rasterizer-uri
+      (u/join "rasterizer.html")
+      (dm/str)))
 
 (declare send-message!)
 
@@ -129,7 +132,9 @@
                          (dom/append-child! js/document.body iframe)
                          (set! instance iframe))
 
-                       (let [new-origin (dm/str (assoc cf/public-uri :path "/rasterizer.html"))]
+                       (let [new-origin (-> cf/public-uri
+                                            (u/join "rasterizer.html")
+                                            (dm/str))]
                          (log/warn :hint "fallback to main domain" :origin new-origin)
 
                          (dom/set-attribute! iframe "src" new-origin)
