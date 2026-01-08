@@ -570,7 +570,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s standaardbestanden downloaden (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Kan componenten, afbeeldingen, kleuren en/of typografie bevatten."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -580,33 +580,33 @@ msgstr ""
 "bibliotheken. Wat wil je doen met hun assets*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Bestanden met gedeelde bibliotheken worden meegenomen in de export, incl. "
 "behoud van hun koppelingen."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Gedeelde bibliotheken exporteren"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Gedeelde bibliotheken worden niet opgenomen in de export en er worden geen "
 "assets aan de bibliotheek toegevoegd. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Gedeelde bibliotheek-assets als basisobjecten behandelen"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Je bestand wordt geëxporteerd met alle externe assets samengevoegd in de "
 "bestandsbibliotheek."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Inclusief gedeelde bibliotheek-assets in bestandsbibliotheken"
 
 #: src/app/main/ui/exports/files.cljs:147

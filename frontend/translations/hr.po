@@ -529,7 +529,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Preuzmi %s standardne datoteke (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Može uključivati komponente, grafike, boje i/ili tipografije."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -539,33 +539,33 @@ msgstr ""
 "Što želiš učiniti s njihovim stavkama*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Datoteke sa zajedničkim bibliotekama bit će uključene u izvoz, održavajući "
 "njihovu poveznicu."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Izvezi zajedničke biblioteke"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Zajedničke biblioteke neće biti uključene u izvoz i nikakve stavke neće "
 "biti dodani u biblioteku. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Tretiraj stavke zajedničke biblioteke kao osnovne objekte"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Tvoja će datoteka biti izvezena sa svim vanjskim stavkama spojenim u "
 "biblioteku datoteka."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Uključi stavke zajedničke biblioteke u biblioteke datoteka"
 
 #: src/app/main/ui/exports/files.cljs:147

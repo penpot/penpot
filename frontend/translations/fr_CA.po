@@ -555,7 +555,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr ""
 "* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
 "caractère."
@@ -567,33 +567,33 @@ msgstr ""
 "partagée. Que veux-tu faire avec ces atouts*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Les fichiers avec des bibliothèques partagées seront inclus dans "
 "l'exportation, et maintiendront leur liaison."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exporter les bibliothèques partagées"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
 "atout ne sera ajouté à la bibliothèque. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Tous les atouts externes seront intégrés à la bibliothèque du fichier "
 "exporté."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr ""
 "Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
 "fichier"

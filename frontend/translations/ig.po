@@ -398,28 +398,28 @@ msgid "dashboard.export-standard-multi"
 msgstr "Buto %s ederede tozuru etozu (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Nwere Ike ịgụnye ngwa , esereese gasị, agwụgwara na/ma ọ bụ akara nkụpụta."
 
 #: src/app/main/ui/exports/files.cljs:164
 #, fuzzy
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "A ga-atinye ederede nwere ọba ederede nkekọrịta ma gụnyere mbupu  , ma "
 "jidekwa ụkpụrụ njikọ ha"
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Bupu ọba ederede nkekọrịta"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Agaghị a tinye ọba ederede nkekọrịta na mbupu ma o nweghị ihe nnwe a ga a "
 "tinye ọ a ederede . "
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Tinye ihe nnwe ọba ederede nkekọrịta n'ime ọ a ederede."
 
 #: src/app/main/ui/exports/files.cljs:147
