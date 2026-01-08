@@ -60,7 +60,90 @@ impl NodeRenderState {
     pub fn is_root(&self) -> bool {
         self.id.is_nil()
     }
+}
 
+// Render signature that represents all properties affecting how a path is rendered
+// This allows efficient comparison of paths to determine if they can be combined
+#[derive(Debug, Clone)]
+struct PathRenderSignature<'a> {
+    clip_bounds: &'a Option<ClipStack>,
+    fills: &'a [Fill],
+    strokes: &'a [Stroke],
+    opacity: u32, // Converted to fixed-point for comparison (multiply by 1000)
+    blend_mode: crate::shapes::BlendMode,
+    transform: &'a Matrix,
+}
+
+impl<'a> PathRenderSignature<'a> {
+    fn from_shape(shape: &'a Shape, clip_bounds: &'a Option<ClipStack>) -> Option<Self> {
+        use crate::shapes::Type;
+        
+        // Only paths can have this signature
+        if !matches!(shape.shape_type, Type::Path(_) | Type::Bool(_)) {
+            return None;
+        }
+        
+        // Cannot combine paths with shadows or blur
+        if !shape.shadows.is_empty() || shape.blur.is_some() {
+            return None;
+        }
+        
+        Some(Self {
+            clip_bounds,
+            fills: &shape.fills,
+            strokes: &shape.strokes,
+            opacity: (shape.opacity * 1000.0) as u32, // Convert to fixed-point
+            blend_mode: shape.blend_mode(),
+            transform: &shape.transform,
+        })
+    }
+    
+    // Manual comparison since Matrix doesn't implement Eq
+    fn equals(&self, other: &Self) -> bool {
+        // Compare clip_bounds
+        if self.clip_bounds != other.clip_bounds {
+            return false;
+        }
+        
+        // Compare fills (using PartialEq)
+        if self.fills != other.fills {
+            return false;
+        }
+        
+        // Compare strokes (using PartialEq)
+        if self.strokes != other.strokes {
+            return false;
+        }
+        
+        // Compare opacity
+        if self.opacity != other.opacity {
+            return false;
+        }
+        
+        // Compare blend_mode
+        if self.blend_mode != other.blend_mode {
+            return false;
+        }
+        
+        // Compare transform (Matrix comparison - check if they're approximately equal)
+        // For now, use exact equality, but we could add epsilon comparison if needed
+        self.transform == other.transform
+    }
+}
+
+// SIMPLE OPTIMIZATION: Helper to check if two shapes can be rendered together
+// Uses render signatures for efficient comparison
+fn can_render_paths_together(shape1: &Shape, shape2: &Shape, clip_bounds1: &Option<ClipStack>, clip_bounds2: &Option<ClipStack>) -> bool {
+    let sig1 = PathRenderSignature::from_shape(shape1, clip_bounds1);
+    let sig2 = PathRenderSignature::from_shape(shape2, clip_bounds2);
+    
+    match (sig1, sig2) {
+        (Some(sig1), Some(sig2)) => sig1.equals(&sig2),
+        _ => false,
+    }
+}
+
+impl NodeRenderState {
     /// Calculates the clip bounds for child elements of a given shape.
     ///
     /// This function determines the clipping region that should be applied to child elements
@@ -1859,8 +1942,82 @@ impl RenderState {
                     .canvas(SurfaceId::DropShadows)
                     .clear(skia::Color::TRANSPARENT);
 
+                // SIMPLE OPTIMIZATION: If this is a path, check if consecutive siblings
+                // are also paths with the same properties and combine them all
+                // We check BEFORE rendering to avoid rendering the first path twice
+                let shape_to_render = if matches!(element.shape_type, Type::Path(_) | Type::Bool(_)) {
+                    // Collect all consecutive paths with same properties
+                    let mut path_ids = vec![element.id];
+                    let mut path_selrects = vec![element.selrect()];
+                    
+                    // Keep checking and collecting consecutive compatible paths
+                    while let Some(next_node) = self.pending_nodes.last() {
+                        if next_node.visited_children || next_node.is_root() {
+                            break;
+                        }
+                        
+                        if let Some(next_element) = tree.get(&next_node.id) {
+                            // Check if next element is also a path with same properties
+                            if can_render_paths_together(element, next_element, &clip_bounds, &next_node.clip_bounds) {
+                                // Remove it from pending_nodes and add to our collection
+                                let _next_node = self.pending_nodes.pop().unwrap();
+                                path_ids.push(next_element.id);
+                                path_selrects.push(next_element.selrect());
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // If we collected more than one path, combine them all
+                    if path_ids.len() > 1 {
+                        // Combine paths by joining their segments (simpler than boolean union)
+                        // This avoids the complexity and potential errors of boolean operations
+                        use crate::shapes::{ToPath, Path as ShapePath};
+                        
+                        let mut combined_path = element.to_path(tree);
+                        for path_id in path_ids.iter().skip(1) {
+                            if let Some(path_shape) = tree.get(path_id) {
+                                let other_path = path_shape.to_path(tree);
+                                // Simple join: concatenate segments (like join_paths does)
+                                let mut segments = combined_path.segments().clone();
+                                segments.extend(other_path.segments().iter().cloned());
+                                combined_path = ShapePath::new(segments);
+                            }
+                        }
+                        
+                        // Create a temporary shape with the combined path
+                        // Use properties from the first shape (they're the same anyway)
+                        let mut combined_shape = element.clone();
+                        combined_shape.shape_type = crate::shapes::Type::Path(combined_path);
+                        
+                        // Update selrect to encompass all paths
+                        let mut left = path_selrects[0].left();
+                        let mut top = path_selrects[0].top();
+                        let mut right = path_selrects[0].right();
+                        let mut bottom = path_selrects[0].bottom();
+                        for selrect in path_selrects.iter().skip(1) {
+                            left = left.min(selrect.left());
+                            top = top.min(selrect.top());
+                            right = right.max(selrect.right());
+                            bottom = bottom.max(selrect.bottom());
+                        }
+                        combined_shape.set_selrect(left, top, right, bottom);
+                        
+                        Some(combined_shape)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                
+                // Render the shape (either combined or original)
+                let final_shape = shape_to_render.as_ref().unwrap_or(element);
                 self.render_shape(
-                    element,
+                    final_shape,
                     clip_bounds.clone(),
                     SurfaceId::Fills,
                     SurfaceId::Strokes,
@@ -1870,6 +2027,11 @@ impl RenderState {
                     None,
                     None,
                 );
+                
+                // If we combined paths, skip normal processing of the remaining nodes
+                if shape_to_render.is_some() {
+                    continue;
+                }
 
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)
