@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-12-23 17:00+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
 "Language: nl\n"
@@ -580,11 +580,10 @@ msgstr ""
 "bibliotheken. Wat wil je doen met hun assets*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-#, fuzzy
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"Bestanden met gedeelde bibliotheken worden opgenomen in de export en hun "
-"koppelingen worden behouden."
+"Bestanden met gedeelde bibliotheken worden meegenomen in de export, incl. "
+"behoud van hun koppelingen."
 
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.title"
@@ -1833,7 +1832,6 @@ msgstr ""
 "inspecteren"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
-#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Laaginfo"
 
@@ -7968,12 +7966,6 @@ msgstr "Ongeldige waarde: % is niet toegestaan."
 msgid "workspace.tokens.value-with-units"
 msgstr "Ongeldige waarde: Eenheden zijn niet toegestaan."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr ""
-"Met het wijzigen van de naam van dit token, worden alle verwijzingen naar "
-"de oude naam verbroken."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
@@ -8487,3 +8479,20 @@ msgstr "Nu overslaan en proefperiode starten"
 
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "Betalingsgegevens toevoegen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "Meer info"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Ongeldige tokenwaarde: je kunt alleen verwijzen naar een font-family-token"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Ongeldige waarde: moet verwijzen naar een samengesteld schaduwtoken."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Voer een alias voor een schaduwtoken in"
