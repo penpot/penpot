@@ -23,15 +23,15 @@
   [node]
   (is-element node "br"))
 
-(defn is-inline-child
+(defn is-text-span-child
   [node]
   (or (is-line-break node)
       (is-text-node node)))
 
-(defn get-inline-text
+(defn get-text-span-text
   [element]
-  (when-not (is-inline-child (.-firstChild element))
-    (throw (js/TypeError. "Invalid inline child")))
+  (when-not (is-text-span-child (.-firstChild element))
+    (throw (js/TypeError. "Invalid text span child")))
   (if (is-line-break (.-firstChild element))
     ""
     (.-textContent element)))
@@ -54,7 +54,7 @@
                 (assoc acc key (if (value-empty? value) (get defaults key) value))))
             {} attrs)))
 
-(defn get-inline-styles
+(defn get-text-span-styles
   [element]
   (get-attrs-from-styles element txt/text-node-attrs (txt/get-default-text-attrs)))
 
@@ -66,18 +66,18 @@
   [element]
   (get-attrs-from-styles element txt/root-attrs txt/default-root-attrs))
 
-(defn create-inline
+(defn create-text-span
   [element]
-  (let [text (get-inline-text element)]
+  (let [text (get-text-span-text element)]
     (d/merge {:text text
               :key (.-id element)}
-             (get-inline-styles element))))
+             (get-text-span-styles element))))
 
 (defn create-paragraph
   [element]
   (d/merge {:type "paragraph"
             :key (.-id element)
-            :children (mapv create-inline (.-children element))}
+            :children (mapv create-text-span (.-children element))}
            (get-paragraph-styles element)))
 
 (defn create-root

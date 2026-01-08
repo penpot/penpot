@@ -58,10 +58,10 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     async waitForTextSpan(nth = 0) {
       if (!nth) {
-        return this.page.waitForSelector('[data-itype="inline"]');
+        return this.page.waitForSelector('[data-itype="span"]');
       }
       return this.page.waitForSelector(
-        `[data-itype="inline"]:nth-child(${nth})`,
+        `[data-itype="span"]:nth-child(${nth})`,
       );
     }
 
