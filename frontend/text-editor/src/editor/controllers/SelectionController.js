@@ -274,9 +274,11 @@ export class SelectionController extends EventTarget {
    * @param {HTMLSpanElement} endNode
    */
   #updateCurrentStyleFrom(startNode, endNode) {
+    console.log("A");
     this.#applyDefaultStylesToCurrentStyle();
     const root = startNode.parentElement.parentElement.parentElement;
     this.#applyStylesFromElementToCurrentStyle(root);
+<<<<<<< Updated upstream
     // FIXME: I don't like this approximation. Having to iterate nodes twice
     // is bad for performance. I think we need another way of "computing"
     // the cascade.
@@ -293,6 +295,33 @@ export class SelectionController extends EventTarget {
     )) {
       const textSpan = textNode.parentElement;
       this.#mergeStylesFromElementToCurrentStyle(textSpan);
+=======
+    if (startNode === endNode) {
+      console.log("A1");
+      const paragraph = startNode.parentElement.parentElement;
+      this.#applyStylesFromElementToCurrentStyle(paragraph);
+      const textSpan = startNode.parentElement;
+      this.#applyStylesFromElementToCurrentStyle(textSpan);
+    } else {
+      console.log("A2");
+      // FIXME: I don't like this approximation. Having to iterate nodes twice
+      // is bad for performance. I think we need another way of "computing"
+      // the cascade.
+      for (const textNode of this.#textNodeIterator.iterateFrom(
+        startNode,
+        endNode,
+      )) {
+        const paragraph = textNode.parentElement.parentElement;
+        this.#applyStylesFromElementToCurrentStyle(paragraph);
+      }
+      for (const textNode of this.#textNodeIterator.iterateFrom(
+        startNode,
+        endNode,
+      )) {
+        const textSpan = textNode.parentElement;
+        this.#mergeStylesFromElementToCurrentStyle(textSpan);
+      }
+>>>>>>> Stashed changes
     }
     return this;
   }
@@ -304,6 +333,7 @@ export class SelectionController extends EventTarget {
    * @returns {SelectionController}
    */
   #updateCurrentStyle(textSpan) {
+    console.log("B");
     this.#applyDefaultStylesToCurrentStyle();
     const root = textSpan.parentElement.parentElement;
     this.#applyStylesFromElementToCurrentStyle(root);

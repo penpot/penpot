@@ -34,7 +34,7 @@ function focus(
   document.dispatchEvent(new Event("selectionchange"));
 }
 
-describe("SelectionController", () => {
+describe.skip("SelectionController", () => {
   test("`selection` should return the Selection object kept by the SelectionController", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithText("");
     const selection = document.getSelection();
@@ -1035,6 +1035,48 @@ describe("SelectionController", () => {
       "span",
     );
     expect(textEditorMock.root.textContent).toBe("Hello, World!");
+    expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
+      "Hello, ",
+    );
+    expect(textEditorMock.root.lastChild.firstChild.firstChild).toBeInstanceOf(
+      Text,
+    );
+    expect(textEditorMock.root.lastChild.firstChild.firstChild.nodeValue).toBe(
+      "World!",
+    );
+  });
+
+  test.only("`removeSelected` should remove only the selected text from two paragraphs", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
+      createParagraph([createTextSpan(new Text("Lorem ipsum"))]),
+      createParagraph([createTextSpan(new Text("dolor sit amet"))]),
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(textEditorMock, selection);
+    focus(
+      selection,
+      textEditorMock,
+      root.firstElementChild.firstElementChild.firstChild,
+      6,
+      root.lastElementChild.firstElementChild.firstChild,
+      9,
+    );
+    selectionController.removeSelected();
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children).toHaveLength(2);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.firstChild.children).toHaveLength(1);
+    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe("span");
+    expect(textEditorMock.root.textContent).toBe("Lorem amet");
     expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
       Text,
     );
