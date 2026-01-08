@@ -92,7 +92,7 @@
   [root]
   (get-styles-from-attrs root txt/root-attrs txt/default-text-attrs))
 
-(defn get-inline-styles
+(defn get-text-span-styles
   [inline paragraph]
   (let [node (if (= "" (:text inline)) paragraph inline)
         styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)]
@@ -104,7 +104,7 @@
   (when text
     (.replace text (js/RegExp "/" "g") "/\u200B")))
 
-(defn get-inline-children
+(defn get-text-span-children
   [inline paragraph]
   [(if (and (= "" (:text inline))
             (= 1 (count (:children paragraph))))
@@ -119,14 +119,14 @@
   [paragraph]
   (some #(not= "" (:text % "")) (:children paragraph)))
 
-(defn create-inline
+(defn create-text-span
   [inline paragraph]
   (create-element
    "span"
    {:id (or (:key inline) (create-random-key))
-    :data {:itype "inline"}
-    :style (get-inline-styles inline paragraph)}
-   (get-inline-children inline paragraph)))
+    :data {:itype "span"}
+    :style (get-text-span-styles inline paragraph)}
+   (get-text-span-children inline paragraph)))
 
 (defn create-paragraph
   [paragraph]
@@ -135,7 +135,7 @@
    {:id (or (:key paragraph) (create-random-key))
     :data {:itype "paragraph"}
     :style (get-paragraph-styles paragraph)}
-   (mapv #(create-inline % paragraph) (:children paragraph))))
+   (mapv #(create-text-span % paragraph) (:children paragraph))))
 
 (defn create-root
   [root]
