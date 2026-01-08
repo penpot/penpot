@@ -33,6 +33,8 @@
                      (unchecked-get new-props "class"))
          (identical? (unchecked-get old-props "ids")
                      (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "shapes")
+                     (unchecked-get new-props "shapes"))
          (identical? old-applied-tokens
                      new-applied-tokens)
          (identical? (get old-values :r1)
@@ -91,7 +93,7 @@
 
 (mf/defc border-radius-menu*
   {::mf/wrap [#(mf/memo' % check-border-radius-menu-props)]}
-  [{:keys [class ids values applied-tokens]}]
+  [{:keys [class ids values applied-tokens shapes shape]}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
 
@@ -150,6 +152,18 @@
                                    shape))
                                {:reg-objects? true
                                 :attrs [:r1 :r2 :r3 :r4]})))
+        
+        change-one-radius
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [update-fn attr]
+           (dwsh/update-shapes ids
+                               (fn [shape]
+                                 (if (ctsr/has-radius? shape)
+                                   (update-fn shape)
+                                   shape))
+                               {:reg-objects? true
+                                :attrs [attr]})))
 
         toggle-radius-mode
         (mf/use-fn
@@ -169,6 +183,7 @@
         (mf/use-fn
          (mf/deps do-all-radius-change ids)
          (fn [value]
+           (prn "entro en el all?")
            (if (or (string? value) (number? value))
              (do-all-radius-change value)
              (do
@@ -182,12 +197,14 @@
         (mf/use-fn
          (mf/deps change-radius)
          (fn [value attr]
-           (st/emit! (change-radius #(ctsr/set-radius-to-single-corner % attr value)))))
+           (prn "entro")
+           (st/emit! (change-one-radius #(ctsr/set-radius-to-single-corner % attr value) attr))))
         
         on-single-radius-change
         (mf/use-fn
          (mf/deps do-all-radius-change ids)
          (fn [value attr]
+           (prn "entro por on-sigle-change" attr)
            (if (or (string? value) (number? value))
            (do-single-radius-change value attr)
            (do
