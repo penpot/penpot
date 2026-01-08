@@ -10,8 +10,11 @@ mod shadows;
 mod strokes;
 mod surfaces;
 pub mod text;
+mod tree_simplifier;
 
 mod ui;
+
+use tree_simplifier::SimplifiedTree;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
@@ -276,6 +279,10 @@ pub(crate) struct RenderState {
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
     pub ignore_nested_blurs: bool,
+    /// DISRUPTIVE OPTIMIZATION: Simplified tree that flattens unnecessary frames/groups
+    /// This reduces tree depth and rendering overhead by removing containers that don't
+    /// visually affect their children (no clipping, transforms, opacity, etc.)
+    simplified_tree: SimplifiedTree,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -348,6 +355,7 @@ impl RenderState {
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
+            simplified_tree: SimplifiedTree::new(),
         }
     }
 
@@ -1066,6 +1074,12 @@ impl RenderState {
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
+        
+        // DISRUPTIVE OPTIMIZATION: Build simplified tree to flatten unnecessary containers
+        // This reduces tree depth and rendering overhead
+        let root_id = base_object.copied().unwrap_or(Uuid::nil());
+        self.simplified_tree.build_from_tree(tree, root_id);
+        
         self.apply_drawing_to_render_canvas(None);
 
         if sync_render {
@@ -1601,7 +1615,11 @@ impl RenderState {
             }
 
             if visited_children {
-                self.render_shape_exit(element, visited_mask);
+                // DISRUPTIVE OPTIMIZATION: Skip render_shape_exit for flattened containers
+                let is_flattened = self.simplified_tree.is_flattened(&node_id);
+                if !is_flattened {
+                    self.render_shape_exit(element, visited_mask);
+                }
                 continue;
             }
 
@@ -1642,12 +1660,19 @@ impl RenderState {
                     debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
-                if !is_visible {
-                    continue;
-                }
+            if !is_visible {
+                continue;
             }
+        }
 
+        // DISRUPTIVE OPTIMIZATION: Skip render_shape_enter/exit for flattened containers
+        // If a container was flattened, it doesn't affect children visually, so we skip
+        // the expensive enter/exit operations and process children directly
+        let is_flattened = self.simplified_tree.is_flattened(&node_id);
+        
+        if !is_flattened {
             self.render_shape_enter(element, mask);
+        }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
                 let scale: f32 = self.get_scale();
@@ -1853,14 +1878,18 @@ impl RenderState {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
 
-            match element.shape_type {
-                Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
-                    self.nested_blurs.push(None);
+            // DISRUPTIVE OPTIMIZATION: Skip nested state updates for flattened containers
+            // Flattened containers don't affect children, so we don't need to track their state
+            if !is_flattened {
+                match element.shape_type {
+                    Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                        self.nested_blurs.push(None);
+                    }
+                    Type::Frame(_) | Type::Group(_) => {
+                        self.nested_blurs.push(element.blur);
+                    }
+                    _ => {}
                 }
-                Type::Frame(_) | Type::Group(_) => {
-                    self.nested_blurs.push(element.blur);
-                }
-                _ => {}
             }
 
             // Set the node as visited_children before processing children
@@ -1875,24 +1904,41 @@ impl RenderState {
             if element.is_recursive() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
-                let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
+                
+                // DISRUPTIVE OPTIMIZATION: Use simplified tree to skip flattened containers
+                // If this container was flattened, get children from simplified tree
+                // Otherwise, use original children
+                let children_ids: Vec<_> = if self.simplified_tree.is_flattened(&node_id) {
+                    // Container was flattened: get simplified children (which skip this level)
+                    self.simplified_tree
+                        .get_children(&node_id)
+                        .map(|ids| ids.iter().copied().collect())
+                        .unwrap_or_else(|| element.children_ids_iter(false).copied().collect())
+                } else {
+                    // Container not flattened: use original children
+                    element.children_ids_iter(false).copied().collect()
+                };
 
                 // Z-index ordering on Layouts
-                if element.has_layout() {
+                let children_ids = if element.has_layout() {
+                    let mut ids = children_ids;
                     if element.is_flex() && !element.is_flex_reverse() {
-                        children_ids.reverse();
+                        ids.reverse();
                     }
 
-                    children_ids.sort_by(|id1, id2| {
+                    ids.sort_by(|id1, id2| {
                         let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
                         let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
                         z2.cmp(&z1)
                     });
-                }
+                    ids
+                } else {
+                    children_ids
+                };
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
-                        id: **child_id,
+                        id: *child_id,
                         visited_children: false,
                         clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
@@ -2108,6 +2154,10 @@ impl RenderState {
 
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
+        
+        // DISRUPTIVE OPTIMIZATION: Invalidate simplified tree when tiles are rebuilt
+        // The tree will be rebuilt on the next render loop
+        self.simplified_tree.invalidate();
 
         let mut all_tiles = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
