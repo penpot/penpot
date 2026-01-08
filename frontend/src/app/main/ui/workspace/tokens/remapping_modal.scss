@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -14,8 +15,8 @@
   justify-content: center;
   align-items: center;
   position: fixed;
-  left: 0;
-  top: 0;
+  inset-inline-start: 0;
+  inset-block-start: 0;
   height: 100%;
   width: 100%;
   background-color: var(--overlay-color);
@@ -31,42 +32,41 @@
 }
 
 .modal-header {
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include t.use-typography("headline-medium");
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
   @extend .modal-close-btn-base;
   position: absolute;
-  top: deprecated.$s-8;
-  right: deprecated.$s-6;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: var(--sp-xs);
 }
 
 .modal-content {
-  @include deprecated.bodyLargeTypography;
-  margin-bottom: deprecated.$s-24;
-  padding: deprecated.$s-24 0;
+  @include t.use-typography("body-large");
+  margin-block-end: var(--sp-xxl);
+  padding: var(--sp-xxl) 0;
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-16;
+  gap: var(--sp-l);
 }
 
 .modal-footer {
-  margin-top: deprecated.$s-24;
-
-  gap: deprecated.$s-8;
+  margin-block-start: var(--sp-xxl);
+  gap: var(--sp-s);
 }
 
 .action-buttons {
   @extend .modal-action-btns;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .cancel-button {
@@ -79,7 +79,7 @@
 
 .modal-scd-msg,
 .modal-msg {
-  @include deprecated.bodyLargeTypography;
+  @include t.use-typography("body-large");
   color: var(--modal-text-foreground-color);
 }
 
@@ -91,7 +91,7 @@
 }
 
 .no-references-info {
-  margin-bottom: var(--spacing-md);
+  margin-block-end: var(--spacing-md);
 }
 
 .no-remap-explanation {
@@ -102,7 +102,7 @@
 }
 
 .progress-info {
-  margin-bottom: var(--spacing-md);
+  margin-block-end: var(--spacing-md);
   padding: var(--spacing-sm);
   background: var(--color-background-secondary);
   border-radius: var(--radius-sm);

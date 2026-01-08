@@ -45,25 +45,6 @@
   align-items: center;
 }
 
-.form-modal-title {
-  @include t.use-typography("headline-medium");
-  color: var(--color-foreground-primary);
-  display: flex;
-  align-items: center;
-}
-
-.button-row {
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: end;
-  gap: var(--sp-m);
-  padding-block-start: var(--sp-s);
-}
-
-.with-delete {
-  grid-template-columns: 1fr auto auto;
-}
-
 .delete-btn {
   justify-self: start;
 }
