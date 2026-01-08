@@ -10,7 +10,6 @@ mod shadows;
 mod strokes;
 mod surfaces;
 pub mod text;
-
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
@@ -51,6 +50,25 @@ pub struct NodeRenderState {
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
     mask: bool,
+}
+
+/// Get simplified children of a container, flattening nested flattened containers
+fn get_simplified_children<'a>(tree: ShapesPoolRef<'a>, shape: &'a Shape) -> Vec<Uuid> {
+    let mut result = Vec::new();
+
+    for child_id in shape.children_ids_iter(false) {
+        if let Some(child) = tree.get(child_id) {
+            if child.can_flatten() {
+                // Child is flattened: recursively get its simplified children
+                result.extend(get_simplified_children(tree, child));
+            } else {
+                // Child is not flattened: add it directly
+                result.push(*child_id);
+            }
+        }
+    }
+
+    result
 }
 
 impl NodeRenderState {
@@ -1038,6 +1056,7 @@ impl RenderState {
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
+
         self.apply_drawing_to_render_canvas(None);
 
         if sync_render {
@@ -1478,7 +1497,10 @@ impl RenderState {
             }
 
             if visited_children {
-                self.render_shape_exit(element, visited_mask);
+                // Skip render_shape_exit for flattened containers
+                if !element.can_flatten() {
+                    self.render_shape_exit(element, visited_mask);
+                }
                 continue;
             }
 
@@ -1521,7 +1543,12 @@ impl RenderState {
                 }
             }
 
-            self.render_shape_enter(element, mask);
+            // Skip render_shape_enter/exit for flattened containers
+            // If a container was flattened, it doesn't affect children visually, so we skip
+            // the expensive enter/exit operations and process children directly
+            if !element.can_flatten() {
+                self.render_shape_enter(element, mask);
+            }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
                 let scale: f32 = self.get_scale();
@@ -1725,14 +1752,18 @@ impl RenderState {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
 
-            match element.shape_type {
-                Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
-                    self.nested_blurs.push(None);
+            // Skip nested state updates for flattened containers
+            // Flattened containers don't affect children, so we don't need to track their state
+            if !element.can_flatten() {
+                match element.shape_type {
+                    Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                        self.nested_blurs.push(None);
+                    }
+                    Type::Frame(_) | Type::Group(_) => {
+                        self.nested_blurs.push(element.blur);
+                    }
+                    _ => {}
                 }
-                Type::Frame(_) | Type::Group(_) => {
-                    self.nested_blurs.push(element.blur);
-                }
-                _ => {}
             }
 
             // Set the node as visited_children before processing children
@@ -1747,24 +1778,35 @@ impl RenderState {
             if element.is_recursive() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
-                let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
+
+                let children_ids: Vec<_> = if element.can_flatten() {
+                    // Container was flattened: get simplified children (which skip this level)
+                    get_simplified_children(tree, element)
+                } else {
+                    // Container not flattened: use original children
+                    element.children_ids_iter(false).copied().collect()
+                };
 
                 // Z-index ordering on Layouts
-                if element.has_layout() {
+                let children_ids = if element.has_layout() {
+                    let mut ids = children_ids;
                     if element.is_flex() && !element.is_flex_reverse() {
-                        children_ids.reverse();
+                        ids.reverse();
                     }
 
-                    children_ids.sort_by(|id1, id2| {
+                    ids.sort_by(|id1, id2| {
                         let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
                         let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
                         z2.cmp(&z1)
                     });
-                }
+                    ids
+                } else {
+                    children_ids
+                };
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
-                        id: **child_id,
+                        id: *child_id,
                         visited_children: false,
                         clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
