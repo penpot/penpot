@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -575,7 +575,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, unused
+#, fuzzy, unused
 msgid "dashboard.export.explain"
 msgstr ""
 "Un ou plusieurs fichiers que vous souhaitez exporter utilisent des "
