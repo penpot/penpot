@@ -226,7 +226,7 @@ msgid "dashboard.export-shapes"
 msgstr "എക്സ്പോർട്ട്"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."
 
 #: src/app/main/ui/auth/recovery.cljs:32

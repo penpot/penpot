@@ -563,7 +563,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Скачать стандартные файлы (.svg + .json) (%s)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Могут содержать компоненты, цвета, графику, и/или типографику."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -573,32 +573,32 @@ msgstr ""
 "сделать с их ресурсами*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Экспорт общих библиотек"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не "
 "попадут в библиотеку экспорта. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Воспринимать ресурсы общей библиотеки как обычные объекты"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Ваш файл будет экспортирован с включением всех внешних ресурсов в "
 "библиотеку экспорта."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Включить ресурсы общей библиотеки в файловые библиотеки"
 
 #: src/app/main/ui/exports/files.cljs:147

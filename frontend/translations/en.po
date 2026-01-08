@@ -564,48 +564,48 @@ msgid "dashboard.export-standard-multi"
 msgstr "Download %s standard files (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Might include components, graphics, colors and/or typographies."
 
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
 msgstr ""
-"One or more files that you want to export are using shared libraries. What "
+"One or more files that you want to download are using shared libraries. What "
 "do you want to do with their assets*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Files with shared libraries will be included in the export, maintaining "
 "their linkage."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Export shared libraries"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Shared libraries will not be included in the export and no assets will be "
 "added to the library. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Treat shared library assets as basic objects"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Your file will be exported with all external assets merged into the file "
 "library."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Include shared library assets in file libraries"
 
 #: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Export files"
+msgid "files-download-modal.title"
+msgstr "Download files"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"

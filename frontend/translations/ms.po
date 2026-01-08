@@ -426,7 +426,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Muat turun %s fail standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Mungkin termasuk komponen, grafik, warna dan/atau tipografi."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -436,33 +436,33 @@ msgstr ""
 "kongsi. Apa yang anda mahu lakukan dengan aset mereka*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Fail dengan perpustakaan kongsi akan disertakan dalam eksport, mengekalkan "
 "hubungannya."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Eksport perpustakaan kongsi"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Perpustakaan kongsi tidak akan disertakan dalam eksport dan tiada aset akan "
 "ditambahkan ke perpustakaan. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Anggap aset perpustakaan kongsi sebagai objek asas"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Fail anda akan dieksport dengan semua aset luaran digabungkan ke dalam "
 "pustaka fail."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Sertakan aset perpustakaan kongsi dalam pustaka fail"
 
 #: src/app/main/ui/exports/files.cljs:147

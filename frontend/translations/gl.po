@@ -356,7 +356,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s ficheiros estándar (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Pode incluir compoñentes, gráficos, cores e/ou fontes."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -366,33 +366,33 @@ msgstr ""
 "Que queres facer cos recursos?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Os ficheiros con bibliotecas compartidas incluiranse na exportación "
 "mantendo os vínculos."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportar bibliotecas compartidas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "As bibliotecas compartidas non se incluirán na exportación e non se "
 "engadirán recursos á biblioteca. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Tratar os recursos da biblioteca compartida coma obxetos básicos"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "O teu ficheiro exportarase con todos os recursos externos metidos na "
 "biblioteca do ficheiro."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
 
 #: src/app/main/ui/exports/files.cljs:147

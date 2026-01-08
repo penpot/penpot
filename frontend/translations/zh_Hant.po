@@ -508,7 +508,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "下載%s個標準檔案 (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* 可能會包含元件、圖像、顏色及／或文字編排。"
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -517,27 +517,27 @@ msgstr "你想匯出的單個或多個檔案中使用了共用資料庫，你想
 
 #: src/app/main/ui/exports/files.cljs:164
 #, fuzzy
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr "使用了共用資料庫的檔案將被包含在匯出內，並保持他們的連結關係。"
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "匯出共享媒體庫"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr "共用資料庫將不包含在匯出檔案內，且資產不會被加入資料庫。 "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "將檔案庫資源視為基本物件"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr "您的檔案將連同所有外部資源將一併匯出到檔案庫中。"
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "將共享資料庫的內容加入檔案資料庫"
 
 #: src/app/main/ui/exports/files.cljs:147

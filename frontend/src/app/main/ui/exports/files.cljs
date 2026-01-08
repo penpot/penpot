@@ -121,7 +121,7 @@
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)}
-        (tr "dashboard.export.title")]
+        (tr "files-download-modal.title")]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click on-cancel} deprecated-icon/close]]
 
@@ -129,8 +129,8 @@
         (= status :prepare)
         [:*
          [:div {:class (stl/css :modal-content)}
-          [:p {:class (stl/css :modal-msg)} (tr "dashboard.export.explain")]
-          [:p {:class (stl/css :modal-scd-msg)} (tr "dashboard.export.detail")]
+          [:p {:class (stl/css :modal-msg)} (tr "files-download-modal.description-1")]
+          [:p {:class (stl/css :modal-scd-msg)} (tr "files-download-modal.description-2")]
 
           (for [type fexp/valid-types]
             [:div {:class (stl/css :export-option true)
@@ -138,20 +138,20 @@
              [:label {:for (str "export-" type)
                       :class (stl/css-case :global/checked (= selected type))}
               ;; Execution time translation strings:
-              ;;   (tr "dashboard.export.options.all.message")
-              ;;   (tr "dashboard.export.options.all.title")
-              ;;   (tr "dashboard.export.options.detach.message")
-              ;;   (tr "dashboard.export.options.detach.title")
-              ;;   (tr "dashboard.export.options.merge.message")
-              ;;   (tr "dashboard.export.options.merge.title")
+              ;;   (tr "files-download-modal.options.all.message")
+              ;;   (tr "files-download-modal.options.all.title")
+              ;;   (tr "files-download-modal.options.detach.message")
+              ;;   (tr "files-download-modal.options.detach.title")
+              ;;   (tr "files-download-modal.options.merge.message")
+              ;;   (tr "files-download-modal.options.merge.title")
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
                  deprecated-icon/status-tick)]
               [:div {:class (stl/css :option-content)}
                [:h3 {:class (stl/css :modal-subtitle)}
-                (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]
+                (tr (dm/str "files-download-modal.options." (d/name type) ".title"))]
                [:p  {:class (stl/css :modal-msg)}
-                (tr (dm/str "dashboard.export.options." (d/name type) ".message"))]]
+                (tr (dm/str "files-download-modal.options." (d/name type) ".message"))]]
 
               [:input {:type "radio"
                        :class (stl/css :option-input)

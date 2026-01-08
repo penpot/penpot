@@ -537,7 +537,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "下载 %s 标准文件 (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* 可能包含组件、图形、颜色和/或排版。"
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -546,27 +546,27 @@ msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处
 
 #: src/app/main/ui/exports/files.cljs:164
 #, fuzzy
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr "使用了共享库的文件将会在导出时保持引用关系。"
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "导出共享库"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr "导出文件中将不包含共享库，素材也不会被添加到库中。 "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "将共享库素材作为基本对象"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr "导出您的文件时所有的外部素材将会被合并到库中。"
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "将共享库素材加入文件库"
 
 #: src/app/main/ui/exports/files.cljs:147

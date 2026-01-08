@@ -573,48 +573,48 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s archivos estándar (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
 
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o mas ficheros que quieres exportar usan librerias compartidas. ¿Qué "
+"Uno o mas ficheros que quieres descargar usan librerias compartidas. ¿Qué "
 "quieres hacer con los recursos*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Ficheros con librerias compartidas se inclurán en el paquete de exportación "
 "y mantendrán los enlaces."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportar librerias compartidas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Las biblioteca compartidas no se incluirán en la exportación y ningún "
 "recurso será incluido en la biblioteca. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Usar los recursos como objetos básicos"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Tu fichero será exportado con todos los recursos dentro de la libreria del "
 "propio fichero."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 #: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Exportar ficheros"
+msgid "files-download-modal.title"
+msgstr "Descargar ficheros"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"

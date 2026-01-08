@@ -380,7 +380,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Baixa %s fitxers estàndard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Pot incloure components, gràfics, colors i/o tipografies."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -390,33 +390,33 @@ msgstr ""
 "voleu fer amb els seus recursos*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Els fitxers amb biblioteques compartides s’inclouran a l’exportació, "
 "mantenint la vinculació."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exporta les biblioteques compartides"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Les biblioteques compartides no s'inclouran en l'exportació i no s'afegiran "
 "recursos a la biblioteca. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Tracta els recursos de la biblioteca compartida com a objectes bàsics"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "El fitxer s'exportarà amb tots els recursos externs fusionats a la "
 "biblioteca de fitxers."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr ""
 "Inclou els recursos de la biblioteca compartida a les biblioteques del "
 "fitxer"

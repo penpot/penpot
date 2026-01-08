@@ -559,7 +559,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s मानक फ़ाइलें डाउनलोड करें (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* इसमें कॉम्पोनेंट्स, ग्राफिक्स, रंग और/या टाइपोग्राफ़ी शामिल हो सकते हैं।"
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -569,33 +569,33 @@ msgstr ""
 "लाइब्रेरीज़ का उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "साझा की गई लाइब्रेरीज़ वाली फ़ाइलें निर्यात में शामिल की जाएँगी, और उनका लिंक बनाए रखा "
 "जाएगा।"
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "साझा लाइब्रेरीज़ निर्यात करें"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "साझा की गई लाइब्रेरीज़ निर्यात में शामिल नहीं की जाएँगी और लाइब्रेरी में "
 "कोई एसेट्स नहीं जोड़े जाएँगे। "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "साझा की गई लाइब्रेरी के एसेट्स को बुनियादी ऑब्जेक्ट्स के रूप में मानें"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "आपकी फ़ाइल निर्यात की जाएगी और सभी बाहरी एसेट्स(assets) फ़ाइल लाइब्रेरी में "
 "विलय कर दिए जाएँगे।"
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "साझा की गई लाइब्रेरी के एसेट्स को फ़ाइल लाइब्रेरी में शामिल करें"
 
 #: src/app/main/ui/exports/files.cljs:147

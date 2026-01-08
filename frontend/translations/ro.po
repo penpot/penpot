@@ -578,7 +578,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descarcă %s fișiere standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Poate include componente, elemente grafice, culori și/sau tipografii."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -588,33 +588,33 @@ msgstr ""
 "biblioteci partajate. Ce vrei să faci cu obiectele lor*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Fișierele cu biblioteci partajate vor fi incluse în export, menținându-le "
 "legătura."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportă biblioteci partajate"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Bibliotecile partajate nu vor fi incluse în export și nu vor fi adăugate "
 "elemente în bibliotecă. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Tratează obiectele bibliotecii partajate ca obiecte de bază"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Fișierul dvs. va fi exportat cu toate activele externe îmbinate în "
 "biblioteca de fișiere."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Include obiectele bibliotecii partajate în bibliotecile de fișiere"
 
 #: src/app/main/ui/exports/files.cljs:147

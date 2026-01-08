@@ -570,7 +570,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Scarica %s file standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr ""
 "* Può includere componenti, elementi grafici, colori e/o elementi "
 "tipografici."
@@ -582,33 +582,33 @@ msgstr ""
 "cosa desideri fare con le loro risorse*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "I file con librerie condivise verranno inclusi nell'esportazione, mantenendo "
 "il loro collegamento."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Esporta le librerie condivise"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Le librerie condivise non saranno incluse nell'esportazione e nessuna "
 "risorsa verrà aggiunta alla libreria. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Considera le risorse delle librerie condivise come oggetti di base"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Il tuo file verrà esportato con tutte le risorse esterne riunite nella "
 "libreria dei file."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Includi le risorse delle librerie condivise nelle librerie del file"
 
 #: src/app/main/ui/exports/files.cljs:147
