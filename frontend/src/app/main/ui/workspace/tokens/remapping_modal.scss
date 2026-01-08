@@ -43,13 +43,6 @@
   color: var(--modal-title-foreground-color);
 }
 
-.modal-close-btn {
-  @extend .modal-close-btn-base;
-  position: absolute;
-  inset-block-start: var(--sp-s);
-  inset-inline-end: var(--sp-xs);
-}
-
 .modal-content {
   @include t.use-typography("body-large");
   margin-block-end: var(--sp-xxl);
@@ -69,45 +62,8 @@
   gap: var(--sp-s);
 }
 
-.cancel-button {
-  @extend .modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend .modal-accept-btn;
-}
-
 .modal-scd-msg,
 .modal-msg {
   @include t.use-typography("body-large");
   color: var(--modal-text-foreground-color);
-}
-
-.remap-explanation {
-  margin: var(--spacing-sm) 0 0 0;
-  color: var(--color-foreground-secondary);
-  font-size: var(--fs-12);
-  line-height: var(--lh-1-4);
-}
-
-.no-references-info {
-  margin-block-end: var(--spacing-md);
-}
-
-.no-remap-explanation {
-  margin: var(--spacing-sm) 0 0 0;
-  color: var(--color-foreground-secondary);
-  font-size: var(--fs-12);
-  line-height: var(--lh-1-4);
-}
-
-.progress-info {
-  margin-block-end: var(--spacing-md);
-  padding: var(--spacing-sm);
-  background: var(--color-background-secondary);
-  border-radius: var(--radius-sm);
-}
-
-.modal-actions {
-  @extend .modal-action-btns;
 }
