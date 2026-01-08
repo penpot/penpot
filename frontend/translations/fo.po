@@ -185,79 +185,79 @@ msgstr "Treytir"
 msgid "auth.verification-email-sent"
 msgstr "Vit hava sent ein váttanar teldupost til"
 
-#: src/app/main/ui/workspace/libraries.cljs:331
+#: src/app/main/ui/workspace/libraries.cljs:323
 msgid "common.publish"
 msgstr "Gev út"
 
-#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
 msgstr "Allir Penpot brúkarar"
 
-#: src/app/main/ui/viewer/share_link.cljs:200
+#: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Ert tú vís(ur) í, at tú vilt strika hetta leinkið? Gert tú tað, er tað ikki "
 "longur tøkt hjá nøkrum"
 
-#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
 msgstr "(núverandi)"
 
-#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
 msgstr "Strika leinki"
 
-#: src/app/main/ui/viewer/share_link.cljs:223
+#: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
 msgstr "Fá leinkið"
 
-#: src/app/main/ui/viewer/share_link.cljs:139
+#: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
 msgstr "Leinkið avritað"
 
-#: src/app/main/ui/viewer/share_link.cljs:233
+#: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
 msgstr "Fyrisit heimildir"
 
-#: src/app/main/ui/viewer/share_link.cljs:279
+#: src/app/main/ui/viewer/share_link.cljs:277
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 síða deild"
 msgstr[1] "%s síður deildar"
 
-#: src/app/main/ui/viewer/share_link.cljs:300
+#: src/app/main/ui/viewer/share_link.cljs:298
 msgid "common.share-link.permissions-can-comment"
 msgstr "Kann viðmerkja"
 
-#: src/app/main/ui/viewer/share_link.cljs:310
+#: src/app/main/ui/viewer/share_link.cljs:309
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Kann skoða kotu"
 
-#: src/app/main/ui/viewer/share_link.cljs:195
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.permissions-hint"
 msgstr "Ein og hvør við leinkjuni hevur atgongd"
 
-#: src/app/main/ui/viewer/share_link.cljs:243
+#: src/app/main/ui/viewer/share_link.cljs:241
 msgid "common.share-link.permissions-pages"
 msgstr "Síður deildar"
 
-#: src/app/main/ui/viewer/share_link.cljs:185
+#: src/app/main/ui/viewer/share_link.cljs:189
 msgid "common.share-link.placeholder"
 msgstr "Leinkja, ið kann deilast, verur at síggja her"
 
-#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
 msgstr "Einans limir í toymi"
 
-#: src/app/main/ui/viewer/share_link.cljs:173
+#: src/app/main/ui/viewer/share_link.cljs:176
 msgid "common.share-link.title"
 msgstr "Deil frumsnið"
 
-#: src/app/main/ui/viewer/share_link.cljs:271
+#: src/app/main/ui/viewer/share_link.cljs:269
 msgid "common.share-link.view-all"
 msgstr "Vel alt"
 
-#: src/app/main/ui/workspace/libraries.cljs:327
+#: src/app/main/ui/workspace/libraries.cljs:320
 msgid "common.unpublish"
 msgstr "Angra útgevan"
 
@@ -678,19 +678,19 @@ msgstr "Ert tú vísur í, at tú vil strikað %s fílur?"
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Strikar %s fílur"
 
-#: src/app/main/ui/delete_shared.cljs:52
+#: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Strike fílu"
 msgstr[1] "Strika fílur"
 
-#: src/app/main/ui/delete_shared.cljs:47
+#: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Ert tú vísur í, at tú vilt strikað hesa fílu?"
 msgstr[1] "Ert tú vísur í, at tú vilt strikað hesar fílur?"
 
-#: src/app/main/ui/delete_shared.cljs:42
+#: src/app/main/ui/delete_shared.cljs:44
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Strikar fílu"
@@ -714,6 +714,6 @@ msgstr "%s - Penpot"
 msgid "title.settings.profile"
 msgstr "Vangamynd - Penpot"
 
-#: src/app/main/ui/workspace/main_menu.cljs:872
+#: src/app/main/ui/workspace/main_menu.cljs:873
 msgid "workspace.header.menu.option.file"
 msgstr "Fílu"

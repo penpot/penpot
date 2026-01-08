@@ -155,79 +155,79 @@ msgstr "Condicions del servei"
 msgid "auth.verification-email-sent"
 msgstr "S'ha enviat un correu de verificació a"
 
-#: src/app/main/ui/workspace/libraries.cljs:331
+#: src/app/main/ui/workspace/libraries.cljs:323
 msgid "common.publish"
 msgstr "Publica"
 
-#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
 msgstr "Tots els usuaris de Penpot"
 
-#: src/app/main/ui/viewer/share_link.cljs:200
+#: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Segur que voleu eliminar l'enllaç? Si ho feu, ja no estarà disponible per a "
 "ningú"
 
-#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
 msgstr "(actual)"
 
-#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
 msgstr "Destrueix l'enllaç"
 
-#: src/app/main/ui/viewer/share_link.cljs:223
+#: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
 msgstr "Obtén l'enllaç"
 
-#: src/app/main/ui/viewer/share_link.cljs:139
+#: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
 msgstr "S'ha copiat l'enllaç correctament"
 
-#: src/app/main/ui/viewer/share_link.cljs:233
+#: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
 msgstr "Gestió de permisos"
 
-#: src/app/main/ui/viewer/share_link.cljs:279
+#: src/app/main/ui/viewer/share_link.cljs:277
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 pàgina compartida"
 msgstr[1] "%s pàgines compartides"
 
-#: src/app/main/ui/viewer/share_link.cljs:300
+#: src/app/main/ui/viewer/share_link.cljs:298
 msgid "common.share-link.permissions-can-comment"
 msgstr "Pot comentar"
 
-#: src/app/main/ui/viewer/share_link.cljs:310
+#: src/app/main/ui/viewer/share_link.cljs:309
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Pot inspeccionar el codi"
 
-#: src/app/main/ui/viewer/share_link.cljs:195
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.permissions-hint"
 msgstr "Qualsevol persona amb l'enllaç hi tindrà accés"
 
-#: src/app/main/ui/viewer/share_link.cljs:243
+#: src/app/main/ui/viewer/share_link.cljs:241
 msgid "common.share-link.permissions-pages"
 msgstr "Pàgines compartides"
 
-#: src/app/main/ui/viewer/share_link.cljs:185
+#: src/app/main/ui/viewer/share_link.cljs:189
 msgid "common.share-link.placeholder"
 msgstr "L'enllaç per a compartir apareixerà aquí"
 
-#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
 msgstr "Només membres de l'equip"
 
-#: src/app/main/ui/viewer/share_link.cljs:173
+#: src/app/main/ui/viewer/share_link.cljs:176
 msgid "common.share-link.title"
 msgstr "Compartiu prototips"
 
-#: src/app/main/ui/viewer/share_link.cljs:271
+#: src/app/main/ui/viewer/share_link.cljs:269
 msgid "common.share-link.view-all"
 msgstr "Selecciona-ho tot"
 
-#: src/app/main/ui/workspace/libraries.cljs:327
+#: src/app/main/ui/workspace/libraries.cljs:320
 msgid "common.unpublish"
 msgstr "Despublica"
 
@@ -495,7 +495,7 @@ msgstr "Biblioteques i plantilles"
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Explora'n més i coneix com contribuir-hi"
 
-#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:150
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:145
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr ""
 "Hi ha hagut un problema en importar la plantilla. La plantilla no s'ha "
@@ -929,7 +929,7 @@ msgstr "S'ha produït un error"
 msgid "inspect.attributes.blur"
 msgstr "Difuminat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:125
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:126
 msgid "inspect.attributes.blur.value"
 msgstr "Valor"
 
@@ -1081,11 +1081,11 @@ msgstr "Subratllat"
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Transformació del text"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:437
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:435
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Inicials en majúscules"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:441
+#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:439
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Minúscules"
 
@@ -1184,11 +1184,11 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Error del servidor (Bad Gateway)"
 
-#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:295, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:295, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
 msgid "labels.cancel"
 msgstr "Cancel·la"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:652, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/delete_shared.cljs:105, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:179, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:643, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
 msgid "labels.close"
 msgstr "Tanca"
 
@@ -1196,7 +1196,7 @@ msgstr "Tanca"
 msgid "labels.code"
 msgstr "Codi"
 
-#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:128
+#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:128
 msgid "labels.comments"
 msgstr "Comentaris"
 
@@ -1324,11 +1324,11 @@ msgstr "Envia opinions"
 msgid "labels.go-back"
 msgstr "Enrere"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1333, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1361, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1549
+#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1312, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1528
 msgid "labels.help-center"
 msgstr "Centre d'ajuda"
 
-#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:75
+#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:75
 msgid "labels.hide-resolved-comments"
 msgstr "Amaga els comentaris resolts"
 
@@ -1356,7 +1356,7 @@ msgstr "Llengua"
 msgid "labels.libraries-and-templates"
 msgstr "Biblioteques i plantilles"
 
-#: src/app/main/ui/viewer/header.cljs:208
+#: src/app/main/ui/viewer/header.cljs:205
 msgid "labels.log-or-sign"
 msgstr "Inicia sessió o registra'm"
 
@@ -1487,7 +1487,7 @@ msgstr "Rol"
 msgid "labels.save"
 msgstr "Desa"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:421, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
+#: src/app/main/ui/workspace/sidebar/layers.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
 msgid "labels.search"
 msgstr "Cerca"
 
@@ -1515,7 +1515,7 @@ msgstr "Servei no disponible"
 msgid "labels.settings"
 msgstr "Configuració"
 
-#: src/app/main/ui/viewer/header.cljs:204
+#: src/app/main/ui/viewer/header.cljs:201
 msgid "labels.share"
 msgstr "Comparteix"
 
@@ -1527,15 +1527,15 @@ msgstr "Comparteix prototip"
 msgid "labels.shared-libraries"
 msgstr "Biblioteques compartides"
 
-#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
 msgid "labels.show-all-comments"
 msgstr "Mostra tots els comentaris"
 
-#: src/app/main/ui/viewer/comments.cljs:116
+#: src/app/main/ui/viewer/comments.cljs:115
 msgid "labels.show-comments-list"
 msgstr "Mostra la llista de comentaris"
 
-#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
 msgid "labels.show-your-comments"
 msgstr "Mostra només els meus comentaris"
 
@@ -1587,7 +1587,7 @@ msgstr "(jo)"
 msgid "labels.your-account"
 msgstr "El meu compte"
 
-#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:258, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
 msgid "media.image"
 msgstr "Imatge"
 
@@ -1734,13 +1734,13 @@ msgstr "Segur que voleu eliminar el projecte?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Elimina el projecte"
 
-#: src/app/main/ui/delete_shared.cljs:52
+#: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Suprimeix el fitxer"
 msgstr[1] "Suprimeix els fitxers"
 
-#: src/app/main/ui/delete_shared.cljs:47
+#: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Esteu segur que voleu suprimir aquest fitxer?"
@@ -1828,7 +1828,7 @@ msgstr "Segur que voleu deixar l'equip?"
 msgid "modals.leave-confirm.title"
 msgstr "S'està abandonant l'equip"
 
-#: src/app/main/ui/delete_shared.cljs:54
+#: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
 msgstr[0] "Mou"
@@ -1858,7 +1858,7 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Ascendeix a propietari"
 
-#: src/app/main/ui/workspace/libraries.cljs:293
+#: src/app/main/ui/workspace/libraries.cljs:286
 msgid "modals.publish-empty-library.accept"
 msgstr "Publica"
 
@@ -1989,7 +1989,7 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Vés a l'inici de sessió"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1058, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1298, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:78, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:439, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:469, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:505, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:560, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
 msgid "settings.multiple"
 msgstr "Mixt"
 
@@ -2027,7 +2027,7 @@ msgstr "Genèric"
 msgid "shortcut-subsection.general-viewer"
 msgstr "Genèric"
 
-#: src/app/main/ui/workspace/main_menu.cljs:856, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
+#: src/app/main/ui/workspace/main_menu.cljs:857, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"
 msgstr "Menú principal"
 
@@ -2155,7 +2155,7 @@ msgstr "Crea nou"
 msgid "shortcuts.cut"
 msgstr "Retalla"
 
-#: src/app/main/ui/workspace/right_header.cljs:85, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
+#: src/app/main/ui/viewer/header.cljs:82, src/app/main/ui/workspace/right_header.cljs:82, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
 msgid "shortcuts.decrease-zoom"
 msgstr "Disminueix el zoom"
 
@@ -2247,7 +2247,7 @@ msgstr "Distribueix horitzontalment"
 msgid "shortcuts.hide-ui"
 msgstr "Mostra/Amaga la interfície"
 
-#: src/app/main/ui/workspace/right_header.cljs:90, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
+#: src/app/main/ui/viewer/header.cljs:88, src/app/main/ui/workspace/right_header.cljs:87, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
 msgid "shortcuts.increase-zoom"
 msgstr "Amplia"
 
@@ -2611,7 +2611,7 @@ msgstr "No s'ha trobat cap tauler a la pàgina."
 msgid "viewer.frame-not-found"
 msgstr "No s'ha trobat el tauler."
 
-#: src/app/main/ui/viewer/header.cljs:341
+#: src/app/main/ui/viewer/header.cljs:336
 msgid "viewer.header.comments-section"
 msgstr "Comentaris (%s)"
 
@@ -2619,7 +2619,7 @@ msgstr "Comentaris (%s)"
 msgid "viewer.header.dont-show-interactions"
 msgstr "No mostris les interaccions"
 
-#: src/app/main/ui/viewer/header.cljs:195
+#: src/app/main/ui/viewer/header.cljs:193
 msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
@@ -2627,11 +2627,11 @@ msgstr "Pantalla completa"
 msgid "viewer.header.interactions"
 msgstr "Interaccions"
 
-#: src/app/main/ui/viewer/header.cljs:332
+#: src/app/main/ui/viewer/header.cljs:327
 msgid "viewer.header.interactions-section"
 msgstr "Interaccions (%s)"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:193
 msgid "viewer.header.share.copy-link"
 msgstr "Copia l'enllaç"
 
@@ -2643,15 +2643,15 @@ msgstr "Mostra les interaccions"
 msgid "viewer.header.show-interactions-on-click"
 msgstr "Mostra les interaccions en fer clic"
 
-#: src/app/main/ui/viewer/header.cljs:236
+#: src/app/main/ui/viewer/header.cljs:233
 msgid "viewer.header.sitemap"
 msgstr "Mapa del lloc"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:56
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:55
 msgid "workspace.align.hcenter"
 msgstr "Alinea el centre horitzontal (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:72
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:69
 msgid "workspace.align.hdistribute"
 msgstr "Distribueix l'espaiat horitzontal (%s)"
 
@@ -2659,23 +2659,23 @@ msgstr "Distribueix l'espaiat horitzontal (%s)"
 msgid "workspace.align.hleft"
 msgstr "Alinea a l'esquerra (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:64
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:62
 msgid "workspace.align.hright"
 msgstr "Alinea a la dreta (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:97
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
 msgid "workspace.align.vbottom"
 msgstr "Alinea la part inferior (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:89
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
 msgid "workspace.align.vcenter"
 msgstr "Alinea el centre vertical (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:102
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:98
 msgid "workspace.align.vdistribute"
 msgstr "Distribueix l'espaiat vertical (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:81
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:77
 msgid "workspace.align.vtop"
 msgstr "Alinea la part superior (%s)"
 
@@ -2684,15 +2684,15 @@ msgstr "Alinea la part superior (%s)"
 msgid "workspace.assets.assets"
 msgstr "Recursos"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:151
+#: src/app/main/ui/workspace/sidebar/assets.cljs:152
 msgid "workspace.assets.box-filter-all"
 msgstr "Tots els recursos"
 
-#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:157
+#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
 msgid "workspace.assets.colors"
 msgstr "Colors"
 
-#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:154
+#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.components"
 msgstr "Components"
 
@@ -2706,7 +2706,7 @@ msgstr ""
 "Els elements s'anomenaran automàticament com a \"nom del grup / nom de "
 "l'element\""
 
-#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:443
+#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
 msgid "workspace.assets.delete"
 msgstr "Elimina"
 
@@ -2714,7 +2714,7 @@ msgstr "Elimina"
 msgid "workspace.assets.duplicate"
 msgstr "Duplica"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:439
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:438
 msgid "workspace.assets.edit"
 msgstr "Edita"
 
@@ -2723,7 +2723,7 @@ msgstr "Edita"
 msgid "workspace.assets.graphics"
 msgstr "Gràfics"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:448
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
 msgid "workspace.assets.group"
 msgstr "Agrupa"
 
@@ -2739,7 +2739,7 @@ msgstr "llibreria local"
 msgid "workspace.assets.not-found"
 msgstr "No s'han trobat recursos"
 
-#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:434
+#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
 msgid "workspace.assets.rename"
 msgstr "Canvia el nom"
 
@@ -2747,7 +2747,7 @@ msgstr "Canvia el nom"
 msgid "workspace.assets.rename-group"
 msgstr "Canvia el nom del grup"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:182
+#: src/app/main/ui/workspace/sidebar/assets.cljs:181
 msgid "workspace.assets.search"
 msgstr "Cerca recursos"
 
@@ -2758,7 +2758,7 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s element seleccionat"
 msgstr[1] "%s elements seleccionats"
 
-#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:397, src/app/main/ui/workspace/sidebar/assets.cljs:160
+#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:161
 msgid "workspace.assets.typography"
 msgstr "Tipografies"
 
@@ -2767,31 +2767,31 @@ msgstr "Tipografies"
 msgid "workspace.assets.typography.font-id"
 msgstr "Tipografia"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
 msgid "workspace.assets.typography.font-size"
 msgstr "Mida"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-style"
 msgstr "Estil de la lletra"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:548
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:544
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Vés al fitxer de la biblioteca d'estils per a editar-lo"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
 msgid "workspace.assets.typography.letter-spacing"
 msgstr "Espaiat de la lletra"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
 msgid "workspace.assets.typography.line-height"
 msgstr "Alçada de la línia"
 
-#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:576, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:488, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:514, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:621, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:641
+#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:485, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:510, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:617, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:637
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:542
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
 msgid "workspace.assets.typography.text-transform"
 msgstr "Transforma el text"
 
@@ -2799,7 +2799,7 @@ msgstr "Transforma el text"
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupa"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:513
+#: src/app/main/ui/workspace/sidebar/layers.cljs:512
 msgid "workspace.focus.focus-mode"
 msgstr "Mode d'enfocament"
 
@@ -2881,23 +2881,23 @@ msgstr "Amaga les regles"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Amaga la paleta de tipografies"
 
-#: src/app/main/ui/workspace/main_menu.cljs:883
+#: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Edita"
 
-#: src/app/main/ui/workspace/main_menu.cljs:872
+#: src/app/main/ui/workspace/main_menu.cljs:873
 msgid "workspace.header.menu.option.file"
 msgstr "Fixer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:929
+#: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ajuda i informació"
 
-#: src/app/main/ui/workspace/main_menu.cljs:905
+#: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"
 msgstr "Preferències"
 
-#: src/app/main/ui/workspace/main_menu.cljs:894
+#: src/app/main/ui/workspace/main_menu.cljs:895
 msgid "workspace.header.menu.option.view"
 msgstr "Mostra"
 
@@ -2941,7 +2941,7 @@ msgstr "Canvia al mode clar"
 msgid "workspace.header.menu.undo"
 msgstr "Desfés"
 
-#: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:95
+#: src/app/main/ui/viewer/header.cljs:93, src/app/main/ui/workspace/right_header.cljs:92
 msgid "workspace.header.reset-zoom"
 msgstr "Restableix"
 
@@ -2962,31 +2962,31 @@ msgstr "S'està desant"
 msgid "workspace.header.unsaved"
 msgstr "Canvis sense desar"
 
-#: src/app/main/ui/workspace/right_header.cljs:245
+#: src/app/main/ui/workspace/right_header.cljs:237
 msgid "workspace.header.viewer"
 msgstr "Visor (%s)"
 
-#: src/app/main/ui/viewer/header.cljs:109
+#: src/app/main/ui/viewer/header.cljs:104
 msgid "workspace.header.zoom-fill"
 msgstr "Emplena - Amplia per a omplir"
 
-#: src/app/main/ui/viewer/header.cljs:102
+#: src/app/main/ui/viewer/header.cljs:97
 msgid "workspace.header.zoom-fit"
 msgstr "Ajusta - Redueix per a encaixar"
 
-#: src/app/main/ui/workspace/right_header.cljs:98
+#: src/app/main/ui/workspace/right_header.cljs:96
 msgid "workspace.header.zoom-fit-all"
 msgstr "Apropa per a omplir-ho tot"
 
-#: src/app/main/ui/viewer/header.cljs:116
+#: src/app/main/ui/viewer/header.cljs:111
 msgid "workspace.header.zoom-full-screen"
 msgstr "Pantalla completa"
 
-#: src/app/main/ui/workspace/right_header.cljs:105
+#: src/app/main/ui/workspace/right_header.cljs:104
 msgid "workspace.header.zoom-selected"
 msgstr "Apropa la selecció"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:67
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:70
 msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "Fet"
 
@@ -3013,23 +3013,23 @@ msgstr "Colors recents"
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "Complementari d'RGB"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:354
+#: src/app/main/ui/workspace/colorpicker.cljs:355
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:554
+#: src/app/main/ui/workspace/colorpicker.cljs:555
 msgid "workspace.libraries.colors.save-color"
 msgstr "Desa l'estil de color"
 
-#: src/app/main/ui/workspace/libraries.cljs:320
+#: src/app/main/ui/workspace/libraries.cljs:313
 msgid "workspace.libraries.file-library"
 msgstr "Biblioteca del fitxer"
 
-#: src/app/main/ui/workspace/libraries.cljs:314
+#: src/app/main/ui/workspace/libraries.cljs:307
 msgid "workspace.libraries.in-this-file"
 msgstr "BIBLIOTEQUES EN AQUEST FITXER"
 
-#: src/app/main/ui/workspace/libraries.cljs:638, src/app/main/ui/workspace/libraries.cljs:656
+#: src/app/main/ui/workspace/libraries.cljs:628, src/app/main/ui/workspace/libraries.cljs:648
 msgid "workspace.libraries.libraries"
 msgstr "BIBLIOTEQUES"
 
@@ -3038,51 +3038,51 @@ msgstr "BIBLIOTEQUES"
 msgid "workspace.libraries.library"
 msgstr "BIBLIOTECA"
 
-#: src/app/main/ui/workspace/libraries.cljs:495
+#: src/app/main/ui/workspace/libraries.cljs:485
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "No hi ha biblioteques compartides pendents d'actualitzar"
 
-#: src/app/main/ui/workspace/libraries.cljs:409
+#: src/app/main/ui/workspace/libraries.cljs:399
 msgid "workspace.libraries.no-matches-for"
 msgstr "No s'ha trobat cap coincidència per a “%s“"
 
-#: src/app/main/ui/workspace/libraries.cljs:365
+#: src/app/main/ui/workspace/libraries.cljs:356
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "Cerca biblioteques compartides"
 
-#: src/app/main/ui/workspace/libraries.cljs:361
+#: src/app/main/ui/workspace/libraries.cljs:352
 msgid "workspace.libraries.shared-libraries"
 msgstr "BIBLIOTEQUES COMPARTIDES"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:326
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:331
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Diverses tipografies"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:334
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Desvincula totes les tipografies"
 
-#: src/app/main/ui/workspace/libraries.cljs:517
+#: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.update"
 msgstr "Actualitza"
 
-#: src/app/main/ui/workspace/libraries.cljs:640
+#: src/app/main/ui/workspace/libraries.cljs:630
 msgid "workspace.libraries.updates"
 msgstr "ACTUALITZACIONS"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:782
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "Feu clic en el botó de + per a afegir interaccions."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:93, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:111
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title"
 msgstr "Difuminat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "Difuminat del grup"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "Difuminat de selecció"
 
@@ -3090,51 +3090,51 @@ msgstr "Difuminat de selecció"
 msgid "workspace.options.canvas-background"
 msgstr "Fons del llenç"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:623
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:613
 msgid "workspace.options.clip-content"
 msgstr "Trunca el contingut"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1023, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1029, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1278
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1033, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
 msgid "workspace.options.component"
 msgstr "Component"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:164
 msgid "workspace.options.constraints"
 msgstr "Restriccions"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
 msgid "workspace.options.constraints.bottom"
 msgstr "Inferior"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
 msgid "workspace.options.constraints.center"
 msgstr "Centre"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:224
 msgid "workspace.options.constraints.fix-when-scrolling"
 msgstr "Fixa en desplaçar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
 msgid "workspace.options.constraints.left"
 msgstr "Esquerra"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141
 msgid "workspace.options.constraints.leftright"
 msgstr "Esquerra i dreta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
 msgid "workspace.options.constraints.right"
 msgstr "Dreta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:143, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:154
 msgid "workspace.options.constraints.scale"
 msgstr "Escala"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
 msgid "workspace.options.constraints.top"
 msgstr "Superior"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
 msgid "workspace.options.constraints.topbottom"
 msgstr "Superior i inferior"
 
@@ -3151,11 +3151,11 @@ msgstr "Exporta"
 msgid "workspace.options.export-multiple"
 msgstr "Exporta la selecció"
 
-#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:274
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.export-object"
 msgstr "Exporta 1 element"
 
-#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:254
+#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:255
 msgid "workspace.options.export.suffix"
 msgstr "Sufix"
 
@@ -3163,7 +3163,7 @@ msgstr "Sufix"
 msgid "workspace.options.exporting-complete"
 msgstr "Exportació completa"
 
-#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:272
 msgid "workspace.options.exporting-object"
 msgstr "S'està exportant…"
 
@@ -3179,7 +3179,7 @@ msgstr "Exportació inesperadament lenta"
 msgid "workspace.options.fill"
 msgstr "Emplenat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:702
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:704
 msgid "workspace.options.flows.add-flow-start"
 msgstr "Afegeix l'inici del flux"
 
@@ -3187,7 +3187,7 @@ msgstr "Afegeix l'inici del flux"
 msgid "workspace.options.flows.flow-start"
 msgstr "Inici del flux"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:670
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:672
 msgid "workspace.options.flows.flow-starts"
 msgstr "S'inicia el flux"
 
@@ -3195,7 +3195,7 @@ msgstr "S'inicia el flux"
 msgid "workspace.options.grid.auto"
 msgstr "Automàtic"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:163
 msgid "workspace.options.grid.column"
 msgstr "Columnes"
 
@@ -3204,7 +3204,7 @@ msgstr "Columnes"
 msgid "workspace.options.grid.grid-title"
 msgstr "Graella"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:201, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:243
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:204, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
 msgid "workspace.options.grid.params.color"
 msgstr "Color"
 
@@ -3213,15 +3213,15 @@ msgstr "Color"
 msgid "workspace.options.grid.params.columns"
 msgstr "Columnes"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:266
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
 msgid "workspace.options.grid.params.gutter"
 msgstr "Espaiat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:253
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:257
 msgid "workspace.options.grid.params.height"
 msgstr "Alçada"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:277
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:281
 msgid "workspace.options.grid.params.margin"
 msgstr "Marge"
 
@@ -3230,7 +3230,7 @@ msgstr "Marge"
 msgid "workspace.options.grid.params.rows"
 msgstr "Files"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:297
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
 msgid "workspace.options.grid.params.set-default"
 msgstr "Estableix com a predeterminat"
 
@@ -3244,43 +3244,43 @@ msgstr "Mida"
 msgid "workspace.options.grid.params.type"
 msgstr "Tipus"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:241
 msgid "workspace.options.grid.params.type.bottom"
 msgstr "Inferior"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:239
 msgid "workspace.options.grid.params.type.center"
 msgstr "Centre"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:234
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
 msgid "workspace.options.grid.params.type.left"
 msgstr "Esquerra"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:242
 msgid "workspace.options.grid.params.type.right"
 msgstr "Dreta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
 msgid "workspace.options.grid.params.type.stretch"
 msgstr "Estira"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:233
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
 msgid "workspace.options.grid.params.type.top"
 msgstr "Superior"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:295
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:300
 msgid "workspace.options.grid.params.use-default"
 msgstr "Usa valors predeterminats"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:254
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:258
 msgid "workspace.options.grid.params.width"
 msgstr "Ample"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:164
 msgid "workspace.options.grid.row"
 msgstr "Files"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:162
 msgid "workspace.options.grid.square"
 msgstr "Quadrat"
 
@@ -3292,7 +3292,7 @@ msgstr "Emplenament del grup"
 msgid "workspace.options.group-stroke"
 msgstr "Traç del grup"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:493, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:512
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:488, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:507
 msgid "workspace.options.height"
 msgstr "Altura"
 
@@ -3352,11 +3352,11 @@ msgstr "Retard"
 msgid "workspace.options.interaction-destination"
 msgstr "Destinació"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:626
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:628
 msgid "workspace.options.interaction-duration"
 msgstr "Durada"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:639
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:641
 msgid "workspace.options.interaction-easing"
 msgstr "Suavització"
 
@@ -3393,7 +3393,7 @@ msgstr "El ratolí entra"
 msgid "workspace.options.interaction-mouse-leave"
 msgstr "El ratolí abandona"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:630
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:632
 msgid "workspace.options.interaction-ms"
 msgstr "ms"
 
@@ -3409,7 +3409,7 @@ msgstr "Navega a: %s"
 msgid "workspace.options.interaction-none"
 msgstr "(sense definir)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:652
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:654
 msgid "workspace.options.interaction-offset-effect"
 msgstr "Efecte de desplaçament"
 
@@ -3506,7 +3506,7 @@ msgstr "Mentre el cursor està damunt"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "Mentre es prem"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:741
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "Interaccions"
 
@@ -3674,11 +3674,11 @@ msgstr "espaiat"
 msgid "workspace.options.layout.top"
 msgstr "Dalt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:240
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:241
 msgid "workspace.options.more-colors"
 msgstr "Més colors"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:222
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:223
 msgid "workspace.options.more-lib-colors"
 msgstr "Més llibreries de colors"
 
@@ -3723,7 +3723,7 @@ msgstr "Recent"
 msgid "workspace.options.retry"
 msgstr "Torna-ho a provar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:593
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:583, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588
 msgid "workspace.options.rotation"
 msgstr "Rotació"
 
@@ -3731,13 +3731,13 @@ msgstr "Rotació"
 msgid "workspace.options.search-font"
 msgstr "Cerca tipografia"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr ""
 "Seleccioneu una forma, un tauler o un grup per a arrossegar una connexió a "
 "un altre tauler."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:200
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:201
 msgid "workspace.options.selection-color"
 msgstr "Colors seleccionats"
 
@@ -3749,11 +3749,11 @@ msgstr "Emplenament de selecció"
 msgid "workspace.options.selection-stroke"
 msgstr "Traç de la selecció"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:180, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:182
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:181, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:183
 msgid "workspace.options.shadow-options.blur"
 msgstr "Difuminat"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:210
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:211
 msgid "workspace.options.shadow-options.color"
 msgstr "Color de l'ombra"
 
@@ -3765,15 +3765,15 @@ msgstr "Ombra caiguda"
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Ombra interior"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:171
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:172
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:200
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:201
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:190, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:192
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:191, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:193
 msgid "workspace.options.shadow-options.spread"
 msgstr "Difusió"
 
@@ -3789,19 +3789,19 @@ msgstr "Ombra del grup"
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Ombres de selecció"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:262
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:258
 msgid "workspace.options.show-fill-on-export"
 msgstr "Mostra en l'exportació"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:638
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:620
 msgid "workspace.options.show-in-viewer"
 msgstr "Mostra al visor"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:168
 msgid "workspace.options.size"
 msgstr "Mida"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:426
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:420
 msgid "workspace.options.size-presets"
 msgstr "Mides predefinides"
 
@@ -3883,19 +3883,19 @@ msgstr "Exterior"
 msgid "workspace.options.stroke.solid"
 msgstr "Sòlid"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:123
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:126
 msgid "workspace.options.text-options.align-bottom"
 msgstr "Alinea a baix"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:122
 msgid "workspace.options.text-options.align-middle"
 msgstr "Alinea al centre"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:115
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
 msgid "workspace.options.text-options.align-top"
 msgstr "Alinea a dalt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:90
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:91
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
 
@@ -3903,15 +3903,15 @@ msgstr "LTR"
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:164
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "Alt automàtic"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "Ample automàtic"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Fix"
 
@@ -3933,35 +3933,35 @@ msgstr "Minúscules"
 msgid "workspace.options.text-options.none"
 msgstr "Cap"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:191
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Ratllat (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:59
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:60
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Alinea el centre"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:67
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:68
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Justifica"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:55
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:56
 msgid "workspace.options.text-options.text-align-left"
 msgstr "Alinea a l'esquerra"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:63
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:64
 msgid "workspace.options.text-options.text-align-right"
 msgstr "Alinea a la dreta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:200
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:204
 msgid "workspace.options.text-options.title"
 msgstr "Text"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:203
 msgid "workspace.options.text-options.title-group"
 msgstr "Text del grup"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:198
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:202
 msgid "workspace.options.text-options.title-selection"
 msgstr "Text de la selecció"
 
@@ -3970,7 +3970,7 @@ msgstr "Text de la selecció"
 msgid "workspace.options.text-options.titlecase"
 msgstr "Inicials en majúscules"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:182
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
 msgid "workspace.options.text-options.underline"
 msgstr "Subratllat (%s)"
 
@@ -3979,61 +3979,61 @@ msgstr "Subratllat (%s)"
 msgid "workspace.options.text-options.uppercase"
 msgstr "Majúscules"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr ""
 "Utilitzeu el botó de «play» de la capçalera per a executar la vista de "
 "prototip."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:476, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:495
 msgid "workspace.options.width"
 msgstr "Ample"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:540, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:557
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:535, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:552
 msgid "workspace.options.x"
 msgstr "X"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:568
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:545, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:563
 msgid "workspace.options.y"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:140
 msgid "workspace.path.actions.add-node"
 msgstr "Afegeix un node (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:173
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
 msgid "workspace.path.actions.delete-node"
 msgstr "Elimina el node (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:151
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:123
 msgid "workspace.path.actions.draw-nodes"
 msgstr "Dibuixa els nodes (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:188
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
 msgid "workspace.path.actions.join-nodes"
 msgstr "Uneix els nodes (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:184
 msgid "workspace.path.actions.make-corner"
 msgstr "Converteix a cantó (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:210
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:192
 msgid "workspace.path.actions.make-curve"
 msgstr "Converteix a corba (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:181
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
 msgid "workspace.path.actions.merge-nodes"
 msgstr "Combina els nodes (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:131
 msgid "workspace.path.actions.move-nodes"
 msgstr "Mou els nodes (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:195
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:174
 msgid "workspace.path.actions.separate-nodes"
 msgstr "Separa els nodes (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:217
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Alinea els nodes (%s)"
 
@@ -4073,7 +4073,7 @@ msgstr "Crea components múltiples"
 msgid "workspace.shape.menu.cut"
 msgstr "Retalla"
 
-#: src/app/main/ui/workspace/context_menu.cljs:628, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1306
+#: src/app/main/ui/workspace/context_menu.cljs:628, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:996, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1285
 msgid "workspace.shape.menu.delete"
 msgstr "Elimina"
 
@@ -4089,7 +4089,7 @@ msgstr "Desconnecta la instància"
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Desenganxa les instàncies"
 
-#: src/app/main/ui/workspace/context_menu.cljs:446, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:90
+#: src/app/main/ui/workspace/context_menu.cljs:446, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
 msgid "workspace.shape.menu.difference"
 msgstr "Diferència"
 
@@ -4101,7 +4101,7 @@ msgstr "Duplica"
 msgid "workspace.shape.menu.edit"
 msgstr "Edita"
 
-#: src/app/main/ui/workspace/context_menu.cljs:452, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:100
+#: src/app/main/ui/workspace/context_menu.cljs:452, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
 msgid "workspace.shape.menu.exclude"
 msgstr "Exclou"
 
@@ -4146,7 +4146,7 @@ msgstr "Amaga"
 msgid "workspace.shape.menu.hide-ui"
 msgstr "Mostra/Amaga la interfície"
 
-#: src/app/main/ui/workspace/context_menu.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:95
+#: src/app/main/ui/workspace/context_menu.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
 msgid "workspace.shape.menu.intersection"
 msgstr "Intersecció"
 
@@ -4199,7 +4199,7 @@ msgstr "Transforma en camí"
 msgid "workspace.shape.menu.ungroup"
 msgstr "Desagrupa"
 
-#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
+#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
 msgid "workspace.shape.menu.union"
 msgstr "Unió"
 
@@ -4220,31 +4220,31 @@ msgstr "Actualitza els components principals"
 msgid "workspace.shape.menu.update-main"
 msgstr "Actualitza el component principal"
 
-#: src/app/main/ui/workspace/right_header.cljs:231, src/app/main/ui/workspace/right_header.cljs:232
+#: src/app/main/ui/workspace/right_header.cljs:226
 msgid "workspace.sidebar.history"
 msgstr "Historial"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:510, src/app/main/ui/workspace/sidebar.cljs:149, src/app/main/ui/workspace/sidebar.cljs:152, src/app/main/ui/workspace/sidebar.cljs:159
+#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:149, src/app/main/ui/workspace/sidebar.cljs:152, src/app/main/ui/workspace/sidebar.cljs:159
 msgid "workspace.sidebar.layers"
 msgstr "Capes"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:375
+#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:374
 msgid "workspace.sidebar.layers.components"
 msgstr "Components"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
 msgid "workspace.sidebar.layers.frames"
 msgstr "Taulers"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:351
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:350
 msgid "workspace.sidebar.layers.groups"
 msgstr "Grups"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:399
+#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:398
 msgid "workspace.sidebar.layers.images"
 msgstr "Imatges"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:363
+#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:362
 msgid "workspace.sidebar.layers.masks"
 msgstr "Màscares"
 
@@ -4252,11 +4252,11 @@ msgstr "Màscares"
 msgid "workspace.sidebar.layers.search"
 msgstr "Cerca capes"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:317, src/app/main/ui/workspace/sidebar/layers.cljs:411
+#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Formes"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:387
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
 msgid "workspace.sidebar.layers.texts"
 msgstr "Textos"
 
@@ -4276,39 +4276,39 @@ msgstr "Mapa del lloc"
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
 
-#: src/app/main/ui/workspace/palette.cljs:181, src/app/main/ui/workspace/palette.cljs:182
+#: src/app/main/ui/workspace/palette.cljs:184
 msgid "workspace.toolbar.color-palette"
 msgstr "Paleta de colors (%s)"
 
-#: src/app/main/ui/workspace/right_header.cljs:217, src/app/main/ui/workspace/right_header.cljs:218
+#: src/app/main/ui/workspace/right_header.cljs:217
 msgid "workspace.toolbar.comments"
 msgstr "Comentaris (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:188, src/app/main/ui/workspace/top_toolbar.cljs:189
+#: src/app/main/ui/workspace/top_toolbar.cljs:195
 msgid "workspace.toolbar.curve"
 msgstr "Corba (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:168, src/app/main/ui/workspace/top_toolbar.cljs:169
+#: src/app/main/ui/workspace/top_toolbar.cljs:172
 msgid "workspace.toolbar.ellipse"
 msgstr "El·lipse (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:130, src/app/main/ui/workspace/top_toolbar.cljs:151
+#: src/app/main/ui/workspace/top_toolbar.cljs:130
 msgid "workspace.toolbar.frame"
 msgstr "Tauler (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:57, src/app/main/ui/workspace/top_toolbar.cljs:58
+#: src/app/main/ui/workspace/top_toolbar.cljs:60
 msgid "workspace.toolbar.image"
 msgstr "Imatge (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:140, src/app/main/ui/workspace/top_toolbar.cljs:141
+#: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "Mou (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:197, src/app/main/ui/workspace/top_toolbar.cljs:198
+#: src/app/main/ui/workspace/top_toolbar.cljs:205
 msgid "workspace.toolbar.path"
 msgstr "Camí (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:159, src/app/main/ui/workspace/top_toolbar.cljs:160
+#: src/app/main/ui/workspace/top_toolbar.cljs:162
 msgid "workspace.toolbar.rect"
 msgstr "Rectangle (%s)"
 
@@ -4317,19 +4317,19 @@ msgstr "Rectangle (%s)"
 msgid "workspace.toolbar.shortcuts"
 msgstr "Dreceres (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:177, src/app/main/ui/workspace/top_toolbar.cljs:178
+#: src/app/main/ui/workspace/top_toolbar.cljs:182
 msgid "workspace.toolbar.text"
 msgstr "Text (%s)"
 
-#: src/app/main/ui/workspace/palette.cljs:189, src/app/main/ui/workspace/palette.cljs:190
+#: src/app/main/ui/workspace/palette.cljs:190
 msgid "workspace.toolbar.text-palette"
 msgstr "Tipografies (%s)"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:39
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:41
 msgid "workspace.top-bar.read-only.done"
 msgstr "Fet"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:36
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:37
 #, markdown
 msgid "workspace.top-bar.view-only"
 msgstr "**S'està inspeccionant el codi** (només lectura)"

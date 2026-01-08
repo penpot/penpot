@@ -211,79 +211,79 @@ msgstr "कोई रंग tokens उपलब्ध नहीं है। स
 msgid "comments.mentions.not-found"
 msgstr "@%s के लिए कोई व्यक्ति नहीं मिला"
 
-#: src/app/main/ui/workspace/libraries.cljs:331
+#: src/app/main/ui/workspace/libraries.cljs:323
 msgid "common.publish"
 msgstr "प्रकाशित"
 
-#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
 msgstr "सभी पेनपॉट उपयोगकर्ता"
 
-#: src/app/main/ui/viewer/share_link.cljs:200
+#: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "क्या आप वाकई इस लिंक को हटाना चाहते हैं? अगर आप इसे हटाते हैं, तो यह किसी "
 "के लिए भी उपलब्ध नहीं रहेगा"
 
-#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
 msgstr "(वर्तमान)"
 
-#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
 msgstr "लिंक नष्ट करें"
 
-#: src/app/main/ui/viewer/share_link.cljs:223
+#: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
 msgstr "लिंक प्राप्त करें"
 
-#: src/app/main/ui/viewer/share_link.cljs:139
+#: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
 msgstr "लिंक सफलतापूर्वक कॉपी किया गया"
 
-#: src/app/main/ui/viewer/share_link.cljs:233
+#: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
 msgstr "अनुमतियाँ सेट करें"
 
-#: src/app/main/ui/viewer/share_link.cljs:279
+#: src/app/main/ui/viewer/share_link.cljs:277
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 पृष्ठ साझा किया गया"
 msgstr[1] "%s पृष्ठ साझा किए गए"
 
-#: src/app/main/ui/viewer/share_link.cljs:300
+#: src/app/main/ui/viewer/share_link.cljs:298
 msgid "common.share-link.permissions-can-comment"
 msgstr "टिप्पणी कर सकते हैं"
 
-#: src/app/main/ui/viewer/share_link.cljs:310
+#: src/app/main/ui/viewer/share_link.cljs:309
 msgid "common.share-link.permissions-can-inspect"
 msgstr "कोड देख सकते हैं"
 
-#: src/app/main/ui/viewer/share_link.cljs:195
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.permissions-hint"
 msgstr "लिंक रखने वाला कोई भी व्यक्ति पहुंच सकता है"
 
-#: src/app/main/ui/viewer/share_link.cljs:243
+#: src/app/main/ui/viewer/share_link.cljs:241
 msgid "common.share-link.permissions-pages"
 msgstr "साझा किए गए पृष्ठ"
 
-#: src/app/main/ui/viewer/share_link.cljs:185
+#: src/app/main/ui/viewer/share_link.cljs:189
 msgid "common.share-link.placeholder"
 msgstr "साझा करने योग्य लिंक यहां दिखाई देगा"
 
-#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
 msgstr "केवल टीम के सदस्य"
 
-#: src/app/main/ui/viewer/share_link.cljs:173
+#: src/app/main/ui/viewer/share_link.cljs:176
 msgid "common.share-link.title"
 msgstr "प्रोटोटाइप्स साझा करें"
 
-#: src/app/main/ui/viewer/share_link.cljs:271
+#: src/app/main/ui/viewer/share_link.cljs:269
 msgid "common.share-link.view-all"
 msgstr "सभी चुनें"
 
-#: src/app/main/ui/workspace/libraries.cljs:327
+#: src/app/main/ui/workspace/libraries.cljs:320
 msgid "common.unpublish"
 msgstr "अप्रकाशित"
 
@@ -756,7 +756,7 @@ msgstr ""
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "इनमें से और अधिक एक्सप्लोर करें और जानें कि आप कैसे योगदान दे सकते हैं"
 
-#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:150
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:145
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "टेम्पलेट आयात करने में समस्या आई। टेम्पलेट आयात नहीं किया गया।"
 
@@ -1291,7 +1291,7 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "फीचर '%s' समर्थित नहीं है।"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:238
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
 msgid "errors.field-max-length"
 msgstr "इसमें अधिकतम %s वर्ण होने चाहिए।"
 
@@ -1645,7 +1645,7 @@ msgstr "एक त्रुटि हुई है"
 msgid "inspect.attributes.blur"
 msgstr "धुंधला"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:125
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:126
 msgid "inspect.attributes.blur.value"
 msgstr "मान"
 
@@ -1823,11 +1823,11 @@ msgstr "रेखांकित (अंडरलाइन)"
 msgid "inspect.attributes.typography.text-transform"
 msgstr "पाठ रूपांतरण"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:437
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:435
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "प्रमुख अक्षर करना"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:441
+#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:439
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "छोटे अक्षर"
 
@@ -1996,7 +1996,7 @@ msgstr "एक्सेस टोकन"
 msgid "labels.active"
 msgstr "सक्रिय"
 
-#: src/app/main/ui/workspace/libraries.cljs:175
+#: src/app/main/ui/workspace/libraries.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1035
 msgid "labels.add"
 msgstr "जोड़ें"
 
@@ -2004,7 +2004,7 @@ msgstr "जोड़ें"
 msgid "labels.add-custom-font"
 msgstr "कस्टम फ़ॉन्ट जोड़ें"
 
-#: src/app/main/ui/workspace/libraries.cljs:175
+#: src/app/main/ui/workspace/libraries.cljs:169
 msgid "labels.adding"
 msgstr "जोड़ा जा रहा है..।"
 
@@ -2043,7 +2043,7 @@ msgstr "खराब गेटवे"
 msgid "labels.blur"
 msgstr "धुंधला"
 
-#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:295, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:295, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
 msgid "labels.cancel"
 msgstr "रद्द करें"
 
@@ -2051,7 +2051,7 @@ msgstr "रद्द करें"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:652, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/delete_shared.cljs:105, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:179, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:643, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
 msgid "labels.close"
 msgstr "बंद करें"
 
@@ -2063,7 +2063,7 @@ msgstr "कोड"
 msgid "labels.collapse"
 msgstr "संकुचित करें"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:423
+#: src/app/main/ui/workspace/colorpicker.cljs:424
 msgid "labels.color"
 msgstr "रंग"
 
@@ -2075,7 +2075,7 @@ msgstr "टिप्पणी"
 msgid "labels.comment.mark-as-solved"
 msgstr "समाधान के रूप में चिह्नित करें"
 
-#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:128
+#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:128
 msgid "labels.comments"
 msgstr "टिप्पणियाँ"
 
@@ -2287,7 +2287,7 @@ msgstr "वापस जाएँ"
 msgid "labels.graphic-design"
 msgstr "ग्राफ़िक डिज़ाइन"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1333, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1361, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1549
+#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1312, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1528
 msgid "labels.help-center"
 msgstr "सहायता केंद्र"
 
@@ -2299,7 +2299,7 @@ msgstr "मदद & सीखना"
 msgid "labels.hide"
 msgstr "छुपाएँ"
 
-#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:75
+#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:75
 msgid "labels.hide-resolved-comments"
 msgstr "सुलझाए गए टिप्पणियाँ छुपाएँ"
 
@@ -2365,7 +2365,7 @@ msgstr "लोड हो रहा है…"
 msgid "labels.lock"
 msgstr "ताला"
 
-#: src/app/main/ui/viewer/header.cljs:208
+#: src/app/main/ui/viewer/header.cljs:205
 msgid "labels.log-or-sign"
 msgstr "लॉग इन या साइन अप"
 
@@ -2461,7 +2461,7 @@ msgstr "पुराना पासवर्ड"
 msgid "labels.only-yours"
 msgstr "केवल तुम्हारा"
 
-#: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:310, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:339
+#: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1026, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:315, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:344, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
 msgid "labels.options"
 msgstr "विकल्प"
 
@@ -2525,7 +2525,7 @@ msgstr "प्रोफ़ाइल"
 msgid "labels.projects"
 msgstr "परियोजनाओं"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:177
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:205, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:179
 msgid "labels.reference"
 msgstr "संदर्भ"
 
@@ -2602,7 +2602,7 @@ msgstr "भूमिका"
 msgid "labels.save"
 msgstr "सहेजें"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:421, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
+#: src/app/main/ui/workspace/sidebar/layers.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
 msgid "labels.search"
 msgstr "खोज"
 
@@ -2638,11 +2638,11 @@ msgstr "सेट्स"
 msgid "labels.settings"
 msgstr "सेटिंग्स"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:27, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:228
+#: src/app/main/ui/inspect/styles/style_box.cljs:27, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:229
 msgid "labels.shadow"
 msgstr "छाया"
 
-#: src/app/main/ui/viewer/header.cljs:204
+#: src/app/main/ui/viewer/header.cljs:201
 msgid "labels.share"
 msgstr "साझा करें"
 
@@ -2658,11 +2658,11 @@ msgstr "लाइब्रेरीज़"
 msgid "labels.show"
 msgstr "दिखाएँ"
 
-#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
 msgid "labels.show-all-comments"
 msgstr "सभी टिप्पणियाँ दिखाएँ"
 
-#: src/app/main/ui/viewer/comments.cljs:116
+#: src/app/main/ui/viewer/comments.cljs:115
 msgid "labels.show-comments-list"
 msgstr "टिप्पणियाँ सूची दिखाएँ"
 
@@ -2670,7 +2670,7 @@ msgstr "टिप्पणियाँ सूची दिखाएँ"
 msgid "labels.show-mentions"
 msgstr "सिर्फ आपके उल्लेख दिखाएँ"
 
-#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
 msgid "labels.show-your-comments"
 msgstr "सिर्फ आपकी टिप्पणियाँ दिखाएँ"
 
@@ -2732,7 +2732,7 @@ msgstr "थीम्स"
 msgid "labels.tutorials"
 msgstr "ट्यूटोरियल्स"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:187
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:189
 msgid "labels.typography"
 msgstr "अक्षर विन्यास"
 
@@ -2768,7 +2768,7 @@ msgstr "कस्टम फ़ॉन्ट्स अपलोड करें"
 msgid "labels.uploading"
 msgstr "अपलोड हो रहा है…"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:66, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1035
+#: src/app/main/ui/inspect/right_sidebar.cljs:66, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1039
 msgid "labels.variant"
 msgstr "रूपांतर"
 
@@ -2893,15 +2893,15 @@ msgstr ""
 msgid "loader.tips.10.title"
 msgstr "प्लगइन्स समर्थन"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:482, src/app/main/ui/workspace/colorpicker.cljs:483, src/app/main/ui/workspace/colorpicker.cljs:485
+#: src/app/main/ui/workspace/colorpicker.cljs:484, src/app/main/ui/workspace/colorpicker.cljs:485, src/app/main/ui/workspace/colorpicker.cljs:487
 msgid "media.choose-image"
 msgstr "छवि चुनें"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:256
+#: src/app/main/ui/workspace/colorpicker.cljs:257
 msgid "media.gradient"
 msgstr "ग्रेडिएंट"
 
-#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:258, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
 msgid "media.image"
 msgstr "छवि"
 
@@ -2909,7 +2909,7 @@ msgstr "छवि"
 msgid "media.image.short"
 msgstr "img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:475
+#: src/app/main/ui/workspace/colorpicker.cljs:477
 msgid "media.keep-aspect-ratio"
 msgstr "आकार अनुपात बनाए रखें"
 
@@ -2927,7 +2927,7 @@ msgstr "छवि लोड हो रही है…"
 msgid "media.radial"
 msgstr "विकिरणीय"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:254
+#: src/app/main/ui/workspace/colorpicker.cljs:255
 msgid "media.solid"
 msgstr "ठोस"
 
@@ -3132,31 +3132,31 @@ msgstr "क्या आप वाकई इस परियोजना को 
 msgid "modals.delete-project-confirm.title"
 msgstr "परियोजना हटाएँ"
 
-#: src/app/main/ui/delete_shared.cljs:52
+#: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "फ़ाइल हटाएँ"
 msgstr[1] "फ़ाइलें हटाएँ"
 
-#: src/app/main/ui/delete_shared.cljs:56
+#: src/app/main/ui/delete_shared.cljs:58
 msgid "modals.delete-shared-confirm.activated.no-files-message"
 msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
 msgstr[0] "यह किसी भी फ़ाइल में सक्रिय नहीं है।"
 msgstr[1] "वे किसी भी फ़ाइल में सक्रिय नहीं हैं।"
 
-#: src/app/main/ui/delete_shared.cljs:58
+#: src/app/main/ui/delete_shared.cljs:60
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "यह लाइब्रेरी यहाँ सक्रिय है: "
 msgstr[1] "ये लाइब्रेरियाँ यहाँ सक्रिय हैं: "
 
-#: src/app/main/ui/delete_shared.cljs:47
+#: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "क्या आप वाकई इस फ़ाइल को हटाना चाहते हैं?"
 msgstr[1] "क्या आप वाकई इन फ़ाइलों को हटाना चाहते हैं?"
 
-#: src/app/main/ui/delete_shared.cljs:42
+#: src/app/main/ui/delete_shared.cljs:44
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "फ़ाइल हटाई जा रही है"
@@ -3188,7 +3188,7 @@ msgstr "क्या आप वाकई इस सदस्य को टीम
 msgid "modals.delete-team-member-confirm.title"
 msgstr "टीम सदस्य हटाएँ"
 
-#: src/app/main/ui/delete_shared.cljs:60
+#: src/app/main/ui/delete_shared.cljs:62
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
 msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
@@ -3286,19 +3286,19 @@ msgstr "क्या आप सचमुच इस टीम को छोड़
 msgid "modals.leave-confirm.title"
 msgstr "टीम छोड़ रहे हैं"
 
-#: src/app/main/ui/delete_shared.cljs:54
+#: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
 msgstr[0] "स्थानांतरित करें"
 msgstr[1] "स्थानांतरित करें"
 
-#: src/app/main/ui/delete_shared.cljs:49
+#: src/app/main/ui/delete_shared.cljs:51
 msgid "modals.move-shared-confirm.message"
 msgid_plural "modals.move-shared-confirm.message"
 msgstr[0] "क्या आप वाकई इस लाइब्रेरी को स्थानांतरित करना चाहते हैं?"
 msgstr[1] "क्या आप वाकई इन लाइब्रेरियों को स्थानांतरित करना चाहते हैं?"
 
-#: src/app/main/ui/delete_shared.cljs:44
+#: src/app/main/ui/delete_shared.cljs:46
 msgid "modals.move-shared-confirm.title"
 msgid_plural "modals.move-shared-confirm.title"
 msgstr[0] "लाइब्रेरी स्थानांतरित करें"
@@ -3328,15 +3328,15 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "नई टीम स्वामी"
 
-#: src/app/main/ui/workspace/libraries.cljs:293
+#: src/app/main/ui/workspace/libraries.cljs:286
 msgid "modals.publish-empty-library.accept"
 msgstr "प्रकाशित"
 
-#: src/app/main/ui/workspace/libraries.cljs:292
+#: src/app/main/ui/workspace/libraries.cljs:285
 msgid "modals.publish-empty-library.message"
 msgstr "आपकी लाइब्रेरी खाली है। क्या आप वाकई इसे प्रकाशित करना चाहते हैं?"
 
-#: src/app/main/ui/workspace/libraries.cljs:291
+#: src/app/main/ui/workspace/libraries.cljs:284
 msgid "modals.publish-empty-library.title"
 msgstr "खाली लाइब्रेरी प्रकाशित करें"
 
@@ -3361,19 +3361,19 @@ msgstr "“%s” को साझा लाइब्रेरी से हट�
 msgid "modals.small-nudge"
 msgstr "छोटा धक्का"
 
-#: src/app/main/ui/delete_shared.cljs:53
+#: src/app/main/ui/delete_shared.cljs:55
 msgid "modals.unpublish-shared-confirm.accept"
 msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "अप्रकाशित करें"
 msgstr[1] "अप्रकाशित करें"
 
-#: src/app/main/ui/delete_shared.cljs:48
+#: src/app/main/ui/delete_shared.cljs:50
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "क्या आप वाकई इस लाइब्रेरी को अप्रकाशित करना चाहते हैं?"
 msgstr[1] "क्या आप वाकई इन लाइब्रेरियों को अप्रकाशित करना चाहते हैं?"
 
-#: src/app/main/ui/delete_shared.cljs:43
+#: src/app/main/ui/delete_shared.cljs:45
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "लाइब्रेरी अप्रकाशित करें"
@@ -3901,7 +3901,7 @@ msgstr "लॉगइन पर जाएं"
 msgid "settings.detach"
 msgstr "अलग करें"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1058, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1298, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:78, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:439, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:469, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:505, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:560, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
 msgid "settings.multiple"
 msgstr "मिश्रित"
 
@@ -3947,7 +3947,7 @@ msgstr "सार्वभौमिक"
 msgid "shortcut-subsection.general-viewer"
 msgstr "सार्वभौमिक"
 
-#: src/app/main/ui/workspace/main_menu.cljs:856, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
+#: src/app/main/ui/workspace/main_menu.cljs:857, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"
 msgstr "मुख्य मेन्यू"
 
@@ -4104,7 +4104,7 @@ msgstr "नया निर्माण"
 msgid "shortcuts.cut"
 msgstr "काटना"
 
-#: src/app/main/ui/workspace/right_header.cljs:85, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
+#: src/app/main/ui/viewer/header.cljs:82, src/app/main/ui/workspace/right_header.cljs:82, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
 msgid "shortcuts.decrease-zoom"
 msgstr "ज़ूम आउट"
 
@@ -4204,7 +4204,7 @@ msgstr "क्षैतिज रूप से वितरित करें"
 msgid "shortcuts.hide-ui"
 msgstr "UI दिखाएँ/छिपाएँ"
 
-#: src/app/main/ui/workspace/right_header.cljs:90, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
+#: src/app/main/ui/viewer/header.cljs:88, src/app/main/ui/workspace/right_header.cljs:87, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
 msgid "shortcuts.increase-zoom"
 msgstr "ज़ूम इन करें"
 
@@ -4879,7 +4879,7 @@ msgstr "मासिक बिल की सीमा"
 msgid "subscription.settings.unlimited.storage-benefit"
 msgstr "25GB स्टोरेज"
 
-#: src/app/main/ui/dashboard/subscription.cljs:175, src/app/main/ui/workspace/main_menu.cljs:944
+#: src/app/main/ui/dashboard/subscription.cljs:175, src/app/main/ui/workspace/main_menu.cljs:945
 msgid "subscription.workspace.header.menu.option.power-up"
 msgstr "अपनी योजना को सशक्त बनाएं"
 
@@ -5004,7 +5004,7 @@ msgstr "पृष्ठ पर कोई बोर्ड नहीं मिल�
 msgid "viewer.frame-not-found"
 msgstr "बोर्ड नहीं मिला।"
 
-#: src/app/main/ui/viewer/header.cljs:341
+#: src/app/main/ui/viewer/header.cljs:336
 msgid "viewer.header.comments-section"
 msgstr "टिप्पणियाँ (%s)"
 
@@ -5012,11 +5012,11 @@ msgstr "टिप्पणियाँ (%s)"
 msgid "viewer.header.dont-show-interactions"
 msgstr "इंटरैक्शन न दिखाएं"
 
-#: src/app/main/ui/viewer/header.cljs:195
+#: src/app/main/ui/viewer/header.cljs:193
 msgid "viewer.header.fullscreen"
 msgstr "पूर्ण स्क्रीन"
 
-#: src/app/main/ui/viewer/header.cljs:350
+#: src/app/main/ui/viewer/header.cljs:346
 msgid "viewer.header.inspect-section"
 msgstr "निरीक्षण करें (%s)"
 
@@ -5024,11 +5024,11 @@ msgstr "निरीक्षण करें (%s)"
 msgid "viewer.header.interactions"
 msgstr "इंटरैक्शन"
 
-#: src/app/main/ui/viewer/header.cljs:332
+#: src/app/main/ui/viewer/header.cljs:327
 msgid "viewer.header.interactions-section"
 msgstr "अंतर्क्रियाएँ (%s)"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:193
 msgid "viewer.header.share.copy-link"
 msgstr "लिंक कॉपी करें"
 
@@ -5040,7 +5040,7 @@ msgstr "इंटरैक्शन दिखाएँ"
 msgid "viewer.header.show-interactions-on-click"
 msgstr "क्लिक पर इंटरैक्शन दिखाएं"
 
-#: src/app/main/ui/viewer/header.cljs:236
+#: src/app/main/ui/viewer/header.cljs:233
 msgid "viewer.header.sitemap"
 msgstr "साइटमैप"
 
@@ -5048,11 +5048,11 @@ msgstr "साइटमैप"
 msgid "webhooks.last-delivery.success"
 msgstr "पिछली डिलीवरी सफल रही।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:56
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:55
 msgid "workspace.align.hcenter"
 msgstr "क्षैतिज केंद्र पर संरेखित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:72
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:69
 msgid "workspace.align.hdistribute"
 msgstr "क्षैतिज अंतराल वितरित करें (%s)"
 
@@ -5060,27 +5060,27 @@ msgstr "क्षैतिज अंतराल वितरित करें
 msgid "workspace.align.hleft"
 msgstr "बाएँ संरेखित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:64
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:62
 msgid "workspace.align.hright"
 msgstr "दाएँ संरेखित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:97
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
 msgid "workspace.align.vbottom"
 msgstr "नीचे संरेखित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:89
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
 msgid "workspace.align.vcenter"
 msgstr "ऊर्ध्वाधर केंद्र पर संरेखित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:102
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:98
 msgid "workspace.align.vdistribute"
 msgstr "ऊर्ध्वाधर अंतराल वितरित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:81
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:77
 msgid "workspace.align.vtop"
 msgstr "ऊपर संरेखित करें (%s)"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:171
+#: src/app/main/ui/workspace/sidebar/assets.cljs:172
 msgid "workspace.assets.add-library"
 msgstr "लाइब्रेरी जोड़ें"
 
@@ -5089,11 +5089,11 @@ msgstr "लाइब्रेरी जोड़ें"
 msgid "workspace.assets.assets"
 msgstr "एसेट्स"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:151
+#: src/app/main/ui/workspace/sidebar/assets.cljs:152
 msgid "workspace.assets.box-filter-all"
 msgstr "सभी एसेट्स"
 
-#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:157
+#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
 msgid "workspace.assets.colors"
 msgstr "रंगों"
 
@@ -5105,7 +5105,7 @@ msgstr "रंग जोड़ें"
 msgid "workspace.assets.component-group-options"
 msgstr "घटक समूह विकल्प"
 
-#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:154
+#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.components"
 msgstr "घटकों"
 
@@ -5125,7 +5125,7 @@ msgstr "एक समूह बनाएं"
 msgid "workspace.assets.create-group-hint"
 msgstr "आपके आइटम अपने आप “ग्रुप नाम / आइटम नाम” के रूप में नामित किए जाएंगे"
 
-#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:443
+#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
 msgid "workspace.assets.delete"
 msgstr "मिटाना"
 
@@ -5137,11 +5137,11 @@ msgstr "नकल करें"
 msgid "workspace.assets.duplicate-main"
 msgstr "मुख्य की नकल करें"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:439
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:438
 msgid "workspace.assets.edit"
 msgstr "संपादन"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:185
+#: src/app/main/ui/workspace/sidebar/assets.cljs:186
 msgid "workspace.assets.filter"
 msgstr "फिल्टर"
 
@@ -5150,11 +5150,11 @@ msgstr "फिल्टर"
 msgid "workspace.assets.graphics"
 msgstr "ग्राफ़िक्स"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:575
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
 msgid "workspace.assets.grid-view"
 msgstr "जाल दृश्य"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:448
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
 msgid "workspace.assets.group"
 msgstr "समूह"
 
@@ -5162,7 +5162,7 @@ msgstr "समूह"
 msgid "workspace.assets.group-name"
 msgstr "समूह नाम"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:191, src/app/main/ui/workspace/sidebar/assets/components.cljs:571
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:191, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
 msgid "workspace.assets.list-view"
 msgstr "सूची दृश्य"
 
@@ -5182,7 +5182,7 @@ msgstr "कोई एसेट्स नहीं मिले"
 msgid "workspace.assets.open-library"
 msgstr "लाइब्रेरी फ़ाइल खोलें"
 
-#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:434
+#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
 msgid "workspace.assets.rename"
 msgstr "नाम बदलें"
 
@@ -5190,7 +5190,7 @@ msgstr "नाम बदलें"
 msgid "workspace.assets.rename-group"
 msgstr "समूह का नाम बदलें"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:182
+#: src/app/main/ui/workspace/sidebar/assets.cljs:181
 msgid "workspace.assets.search"
 msgstr "एसेट्स खोजें"
 
@@ -5212,15 +5212,15 @@ msgid_plural "workspace.assets.sidebar.components"
 msgstr[0] "1 घटक"
 msgstr[1] "%s घटकों"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:203
+#: src/app/main/ui/workspace/sidebar/assets.cljs:201
 msgid "workspace.assets.sort"
 msgstr "क्रमबद्ध"
 
-#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:397, src/app/main/ui/workspace/sidebar/assets.cljs:160
+#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:161
 msgid "workspace.assets.typography"
 msgstr "टाइपोग्राफ़ी"
 
-#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:405
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
 msgid "workspace.assets.typography.add-typography"
 msgstr "टाइपोग्राफी जोड़ें"
 
@@ -5229,27 +5229,27 @@ msgstr "टाइपोग्राफी जोड़ें"
 msgid "workspace.assets.typography.font-id"
 msgstr "फ़ॉन्ट"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
 msgid "workspace.assets.typography.font-size"
 msgstr "आकार"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-style"
 msgstr "फ़ॉन्ट शैली"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:548
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:544
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "संपादन के लिए स्टाइल लाइब्रेरी फ़ाइल पर जाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
 msgid "workspace.assets.typography.letter-spacing"
 msgstr "पत्र अंतराल"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
 msgid "workspace.assets.typography.line-height"
 msgstr "रेखा ऊँचाई"
 
-#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:576, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:488, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:514, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:621, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:641
+#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:485, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:510, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:617, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:637
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -5257,7 +5257,7 @@ msgstr "Ag"
 msgid "workspace.assets.typography.text-styles"
 msgstr "पाठ शैलियाँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:542
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
 msgid "workspace.assets.typography.text-transform"
 msgstr "पाठ रूपांतरण"
 
@@ -5265,7 +5265,7 @@ msgstr "पाठ रूपांतरण"
 msgid "workspace.assets.ungroup"
 msgstr "असमूहीकृत"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:427, src/app/main/ui/workspace/colorpicker.cljs:439
+#: src/app/main/ui/workspace/colorpicker.cljs:428, src/app/main/ui/workspace/colorpicker.cljs:441
 msgid "workspace.colorpicker.color-tokens"
 msgstr "रंग टोकन"
 
@@ -5331,7 +5331,7 @@ msgstr "पंक्ति और आकृतियाँ हटाएँ"
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "डुप्लिकेट पंक्ति"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:513
+#: src/app/main/ui/workspace/sidebar/layers.cljs:512
 msgid "workspace.focus.focus-mode"
 msgstr "फोकस मोड"
 
@@ -5429,15 +5429,15 @@ msgstr "रूलर छुपाएं"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "फ़ॉन्ट पैलेट छुपाएं"
 
-#: src/app/main/ui/workspace/main_menu.cljs:883
+#: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "संपादन"
 
-#: src/app/main/ui/workspace/main_menu.cljs:872
+#: src/app/main/ui/workspace/main_menu.cljs:873
 msgid "workspace.header.menu.option.file"
 msgstr "फ़ाइल"
 
-#: src/app/main/ui/workspace/main_menu.cljs:929
+#: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "सहायता और जानकारी"
 
@@ -5446,11 +5446,11 @@ msgstr "सहायता और जानकारी"
 msgid "workspace.header.menu.option.power-up"
 msgstr "अपनी योजना को सशक्त बनाएं"
 
-#: src/app/main/ui/workspace/main_menu.cljs:905
+#: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"
 msgstr "प्राथमिकताएँ"
 
-#: src/app/main/ui/workspace/main_menu.cljs:894
+#: src/app/main/ui/workspace/main_menu.cljs:895
 msgid "workspace.header.menu.option.view"
 msgstr "देखना"
 
@@ -5502,7 +5502,7 @@ msgstr "सिस्टम थीम पर स्विच करें"
 msgid "workspace.header.menu.undo"
 msgstr "पूर्ववत"
 
-#: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:95
+#: src/app/main/ui/viewer/header.cljs:93, src/app/main/ui/workspace/right_header.cljs:92
 msgid "workspace.header.reset-zoom"
 msgstr "रीसेट करें"
 
@@ -5518,7 +5518,7 @@ msgstr "सहेजा गया"
 msgid "workspace.header.saving"
 msgstr "सहेजा जा रहा है"
 
-#: src/app/main/ui/workspace/right_header.cljs:240
+#: src/app/main/ui/workspace/right_header.cljs:232
 msgid "workspace.header.share"
 msgstr "शेयर"
 
@@ -5527,83 +5527,83 @@ msgstr "शेयर"
 msgid "workspace.header.unsaved"
 msgstr "सहेजे न गए परिवर्तन"
 
-#: src/app/main/ui/workspace/right_header.cljs:245
+#: src/app/main/ui/workspace/right_header.cljs:237
 msgid "workspace.header.viewer"
 msgstr "दृश्य मोड (%s)"
 
-#: src/app/main/ui/viewer/header.cljs:79, src/app/main/ui/workspace/right_header.cljs:78
+#: src/app/main/ui/viewer/header.cljs:74, src/app/main/ui/workspace/right_header.cljs:74
 msgid "workspace.header.zoom"
 msgstr "ज़ूम"
 
-#: src/app/main/ui/viewer/header.cljs:109
+#: src/app/main/ui/viewer/header.cljs:104
 msgid "workspace.header.zoom-fill"
 msgstr "भरें - भरने के लिए पैमाना"
 
-#: src/app/main/ui/viewer/header.cljs:102
+#: src/app/main/ui/viewer/header.cljs:97
 msgid "workspace.header.zoom-fit"
 msgstr "फिट - फिट करने के लिए स्केल डाउन करें"
 
-#: src/app/main/ui/workspace/right_header.cljs:98
+#: src/app/main/ui/workspace/right_header.cljs:96
 msgid "workspace.header.zoom-fit-all"
 msgstr "सभी को फिट करने के लिए ज़ूम करें"
 
-#: src/app/main/ui/viewer/header.cljs:116
+#: src/app/main/ui/viewer/header.cljs:111
 msgid "workspace.header.zoom-full-screen"
 msgstr "पूर्ण स्क्रीन"
 
-#: src/app/main/ui/workspace/right_header.cljs:105
+#: src/app/main/ui/workspace/right_header.cljs:104
 msgid "workspace.header.zoom-selected"
 msgstr "चयनित पर ज़ूम करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "ग्रिड संपादित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1554
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1534
 msgid "workspace.layout-grid.editor.options.exit"
 msgstr "प्रस्थान"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:612, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:598, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:603, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:609
 msgid "workspace.layout-grid.editor.padding.bottom"
 msgstr "नीचे पैडिंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:685, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:686
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:674
 msgid "workspace.layout-grid.editor.padding.expand"
 msgstr "4 ओर के पैडिंग विकल्प दिखाएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:470
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:455, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:461
 msgid "workspace.layout-grid.editor.padding.horizontal"
 msgstr "क्षैतिज पैडिंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:636, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:641, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:647
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:632, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:638
 msgid "workspace.layout-grid.editor.padding.left"
 msgstr "बाएँ पैडिंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:590
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:570, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:581
 msgid "workspace.layout-grid.editor.padding.right"
 msgstr "दाएँ पैडिंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:561
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:541, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:546, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:552
 msgid "workspace.layout-grid.editor.padding.top"
 msgstr "ऊपर पैडिंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:428, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:440
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:419, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:431
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "लंबवत पैडिंग"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
 msgid "workspace.layout-grid.editor.title"
 msgstr "संपादन ग्रिड"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:67
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:70
 msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "पूर्ण"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:64
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:66
 msgid "workspace.layout-grid.editor.top-bar.locate"
 msgstr "स्थान खोजें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1580
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1560
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "ग्रिड लेआउट का स्थान खोजें"
 
@@ -5612,7 +5612,7 @@ msgstr "ग्रिड लेआउट का स्थान खोजें"
 msgid "workspace.libraries.add"
 msgstr "जोड़ना"
 
-#: src/app/main/ui/workspace/libraries.cljs:105, src/app/main/ui/workspace/libraries.cljs:131
+#: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:126
 msgid "workspace.libraries.colors"
 msgid_plural "workspace.libraries.colors"
 msgstr[0] "1 रंग"
@@ -5644,51 +5644,51 @@ msgstr "हाल के रंग"
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "RGB पूरक"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:354
+#: src/app/main/ui/workspace/colorpicker.cljs:355
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:554
+#: src/app/main/ui/workspace/colorpicker.cljs:555
 msgid "workspace.libraries.colors.save-color"
 msgstr "रंग शैली सहेजें"
 
-#: src/app/main/ui/workspace/libraries.cljs:99, src/app/main/ui/workspace/libraries.cljs:123
+#: src/app/main/ui/workspace/libraries.cljs:94, src/app/main/ui/workspace/libraries.cljs:118
 msgid "workspace.libraries.components"
 msgid_plural "workspace.libraries.components"
 msgstr[0] "1 घटक"
 msgstr[1] "%s घटक"
 
-#: src/app/main/ui/workspace/libraries.cljs:347
+#: src/app/main/ui/workspace/libraries.cljs:338
 msgid "workspace.libraries.connected-to"
 msgstr "से जुड़ा"
 
-#: src/app/main/ui/workspace/libraries.cljs:402
+#: src/app/main/ui/workspace/libraries.cljs:392
 msgid "workspace.libraries.empty.add-some"
 msgstr "या इनमें से कुछ को जोड़कर देखें:"
 
-#: src/app/main/ui/workspace/libraries.cljs:396
+#: src/app/main/ui/workspace/libraries.cljs:386
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "आपकी टीम में कोई साझा लाइब्रेरी नहीं है, आप खोज सकते हैं"
 
-#: src/app/main/ui/workspace/libraries.cljs:400
+#: src/app/main/ui/workspace/libraries.cljs:390
 msgid "workspace.libraries.empty.some-templates"
 msgstr "यहाँ कुछ टेम्पलेट्स हैं"
 
-#: src/app/main/ui/workspace/libraries.cljs:320
+#: src/app/main/ui/workspace/libraries.cljs:313
 msgid "workspace.libraries.file-library"
 msgstr "फ़ाइल लाइब्रेरी"
 
-#: src/app/main/ui/workspace/libraries.cljs:102, src/app/main/ui/workspace/libraries.cljs:127
+#: src/app/main/ui/workspace/libraries.cljs:97, src/app/main/ui/workspace/libraries.cljs:122
 msgid "workspace.libraries.graphics"
 msgid_plural "workspace.libraries.graphics"
 msgstr[0] "1 ग्राफ़िक"
 msgstr[1] "%s ग्राफ़िक्स"
 
-#: src/app/main/ui/workspace/libraries.cljs:314
+#: src/app/main/ui/workspace/libraries.cljs:307
 msgid "workspace.libraries.in-this-file"
 msgstr "इस फ़ाइल में लाइब्रेरीज़"
 
-#: src/app/main/ui/workspace/libraries.cljs:638, src/app/main/ui/workspace/libraries.cljs:656
+#: src/app/main/ui/workspace/libraries.cljs:628, src/app/main/ui/workspace/libraries.cljs:648
 msgid "workspace.libraries.libraries"
 msgstr "लाइब्रेरीज़"
 
@@ -5697,11 +5697,11 @@ msgstr "लाइब्रेरीज़"
 msgid "workspace.libraries.library"
 msgstr "लाइब्रेरी"
 
-#: src/app/main/ui/workspace/libraries.cljs:497
+#: src/app/main/ui/workspace/libraries.cljs:487
 msgid "workspace.libraries.library-updates"
 msgstr "लाइब्रेरी अपडेट"
 
-#: src/app/main/ui/workspace/libraries.cljs:391
+#: src/app/main/ui/workspace/libraries.cljs:381
 msgid "workspace.libraries.loading"
 msgstr "लोड हो रहा है…"
 
@@ -5710,53 +5710,53 @@ msgstr "लोड हो रहा है…"
 msgid "workspace.libraries.more-templates"
 msgstr "आप ढूंढ सकते हैं "
 
-#: src/app/main/ui/workspace/libraries.cljs:495
+#: src/app/main/ui/workspace/libraries.cljs:485
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "ऐसी कोई साझा लाइब्रेरी नहीं है जिसे अद्यतन करने की आवश्यकता हो"
 
-#: src/app/main/ui/workspace/libraries.cljs:409
+#: src/app/main/ui/workspace/libraries.cljs:399
 msgid "workspace.libraries.no-matches-for"
 msgstr "“%s“ के लिए कोई मिलान नहीं मिला"
 
-#: src/app/main/ui/workspace/libraries.cljs:365
+#: src/app/main/ui/workspace/libraries.cljs:356
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "साझा लाइब्रेरी खोजें"
 
-#: src/app/main/ui/workspace/libraries.cljs:361
+#: src/app/main/ui/workspace/libraries.cljs:352
 msgid "workspace.libraries.shared-libraries"
 msgstr "साझा लाइब्रेरीज़"
 
-#: src/app/main/ui/workspace/libraries.cljs:383
+#: src/app/main/ui/workspace/libraries.cljs:372
 msgid "workspace.libraries.shared-library-btn"
 msgstr "लाइब्रेरी कनेक्ट करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:326
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:331
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "एकाधिक टाइपोग्राफी"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:334
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "सभी टाइपोग्राफ़ी अनलिंक करें"
 
-#: src/app/main/ui/workspace/libraries.cljs:108, src/app/main/ui/workspace/libraries.cljs:135
+#: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
 msgid "workspace.libraries.typography"
 msgid_plural "workspace.libraries.typography"
 msgstr[0] "1 अक्षर विन्यास"
 msgstr[1] "%s अक्षर विन्यास"
 
-#: src/app/main/ui/workspace/libraries.cljs:352
+#: src/app/main/ui/workspace/libraries.cljs:343
 msgid "workspace.libraries.unlink-library-btn"
 msgstr "लाइब्रेरी डिस्कनेक्ट करें"
 
-#: src/app/main/ui/workspace/libraries.cljs:517
+#: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.update"
 msgstr "अद्यतन"
 
-#: src/app/main/ui/workspace/libraries.cljs:593
+#: src/app/main/ui/workspace/libraries.cljs:583
 msgid "workspace.libraries.update.see-all-changes"
 msgstr "सभी परिवर्तन देखें"
 
-#: src/app/main/ui/workspace/libraries.cljs:640
+#: src/app/main/ui/workspace/libraries.cljs:630
 msgid "workspace.libraries.updates"
 msgstr "अपडेट"
 
@@ -5764,31 +5764,31 @@ msgstr "अपडेट"
 msgid "workspace.notification-pill.detail"
 msgstr "विवरण"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:782
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "इंटरैक्शन जोड़ने के लिए + बटन पर क्लिक करें।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:97
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:96
 msgid "workspace.options.blur-options.add-blur"
 msgstr "धुंधलापन जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:118
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:119
 msgid "workspace.options.blur-options.remove-blur"
 msgstr "धुंधलापन हटाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:93, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:111
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title"
 msgstr "धुंधला"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "समूह धुंधला"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "चयन धुंधला"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:114
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:115
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "धुंधलापन टॉगल करें"
 
@@ -5796,11 +5796,11 @@ msgstr "धुंधलापन टॉगल करें"
 msgid "workspace.options.canvas-background"
 msgstr "कैनवास पृष्ठभूमि"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:623
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:613
 msgid "workspace.options.clip-content"
 msgstr "क्लिप सामग्री"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1023, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1029, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1278
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1033, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
 msgid "workspace.options.component"
 msgstr "घटक"
 
@@ -5808,7 +5808,7 @@ msgstr "घटक"
 msgid "workspace.options.component.annotation"
 msgstr "व्याख्या"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1037
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1041
 msgid "workspace.options.component.copy"
 msgstr "कापी"
 
@@ -5820,7 +5820,7 @@ msgstr "एक व्याख्या बनाएं"
 msgid "workspace.options.component.edit-annotation"
 msgstr "व्याख्या संपादित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1036, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1040, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1286
 msgid "workspace.options.component.main"
 msgstr "मुख्य"
 
@@ -5828,11 +5828,11 @@ msgstr "मुख्य"
 msgid "workspace.options.component.swap"
 msgstr "स्वैप घटक"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:818
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:820
 msgid "workspace.options.component.swap.empty"
 msgstr "इस लाइब्रेरी में अभी तक कोई संपत्ति नहीं है"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1066
 msgid "workspace.options.component.unlinked"
 msgstr "अनलिंक"
 
@@ -5846,11 +5846,11 @@ msgstr ""
 "इस घटक में परस्पर विरोधी वैरिएंट हैं। सुनिश्चित करें कि प्रत्येक वैरिएंट "
 "में गुण मानों का एक विशिष्ट सेट हो।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1337
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1341
 msgid "workspace.options.component.variant.duplicated.group.locate"
 msgstr "डुप्लिकेट वेरिएंट का पता लगाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1334
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1338
 msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "कुछ वेरिएंट में समान गुण और मूल्य होते हैं"
 
@@ -5878,11 +5878,11 @@ msgstr ""
 "इस घटक के कुछ वेरिएंट अमान्य नामों वाले हैं। सुनिश्चित करें कि प्रत्येक "
 "वेरिएंट सही संरचना का पालन कर रहा है।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1327
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1331
 msgid "workspace.options.component.variant.malformed.group.locate"
 msgstr "अमान्य वेरिएंट का पता लगाएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1324
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1328
 msgid "workspace.options.component.variant.malformed.group.title"
 msgstr "कुछ वेरिएंट के नाम अमान्य हैं"
 
@@ -5942,47 +5942,47 @@ msgstr "समान पदानुक्रम स्तर रखें।"
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
 msgstr "समूह, बोर्ड और लेआउट को समतुल्य माना जाता है।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1041, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1285, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1045, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1289, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
 msgid "workspace.options.component.variants-help-modal.title"
 msgstr "वेरिएंट कैसे जुड़े रहते हैं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:164
 msgid "workspace.options.constraints"
 msgstr "बाध्यताएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
 msgid "workspace.options.constraints.bottom"
 msgstr "तल"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
 msgid "workspace.options.constraints.center"
 msgstr "केंद्र"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:224
 msgid "workspace.options.constraints.fix-when-scrolling"
 msgstr "स्क्रॉल करते समय ठीक करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
 msgid "workspace.options.constraints.left"
 msgstr "बाएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141
 msgid "workspace.options.constraints.leftright"
 msgstr "बाएँ दांए"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
 msgid "workspace.options.constraints.right"
 msgstr "दाहिने"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:143, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:154
 msgid "workspace.options.constraints.scale"
 msgstr "आकार बदलना"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
 msgid "workspace.options.constraints.top"
 msgstr "शीर्ष"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
 msgid "workspace.options.constraints.topbottom"
 msgstr "शीर्ष और तल"
 
@@ -5999,21 +5999,21 @@ msgstr "निर्यात"
 msgid "workspace.options.export-multiple"
 msgstr "निर्यात चयन"
 
-#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:274
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "1 तत्व निर्यात करें"
 msgstr[1] "%s तत्व निर्यात करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:213
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:214
 msgid "workspace.options.export.add-export"
 msgstr "निर्यात जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:260
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:261
 msgid "workspace.options.export.remove-export"
 msgstr "निर्यात हटाएँ"
 
-#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:254
+#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:255
 msgid "workspace.options.export.suffix"
 msgstr "प्रत्यय"
 
@@ -6021,7 +6021,7 @@ msgstr "प्रत्यय"
 msgid "workspace.options.exporting-complete"
 msgstr "निर्यात पूर्ण"
 
-#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:272
 msgid "workspace.options.exporting-object"
 msgstr "निर्यात हो रहा है…"
 
@@ -6045,15 +6045,15 @@ msgstr "भरण जोड़ें"
 msgid "workspace.options.fill.remove-fill"
 msgstr "भराव हटाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:466
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:461
 msgid "workspace.options.fit-content"
 msgstr "सामग्री को फिट करने के लिए बोर्ड का आकार बदलें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:702
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:704
 msgid "workspace.options.flows.add-flow-start"
 msgstr "प्रवाह प्रारंभ जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:698
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:700
 msgid "workspace.options.flows.flow"
 msgstr "प्रवाह"
 
@@ -6061,7 +6061,7 @@ msgstr "प्रवाह"
 msgid "workspace.options.flows.flow-start"
 msgstr "प्रवाह प्रारंभ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:670
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:672
 msgid "workspace.options.flows.flow-starts"
 msgstr "प्रवाह प्रारंभ हो जाता है"
 
@@ -6074,7 +6074,7 @@ msgstr "प्रवाह हटाएँ"
 msgid "workspace.options.grid.auto"
 msgstr "स्वत:"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:163
 msgid "workspace.options.grid.column"
 msgstr "कॉलम"
 
@@ -6083,7 +6083,7 @@ msgstr "कॉलम"
 msgid "workspace.options.grid.grid-title"
 msgstr "ग्रिड"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:201, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:243
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:204, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
 msgid "workspace.options.grid.params.color"
 msgstr "रंग"
 
@@ -6092,15 +6092,15 @@ msgstr "रंग"
 msgid "workspace.options.grid.params.columns"
 msgstr "कॉलम"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:266
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
 msgid "workspace.options.grid.params.gutter"
 msgstr "मध्य अंतराल"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:253
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:257
 msgid "workspace.options.grid.params.height"
 msgstr "ऊंचाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:277
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:281
 msgid "workspace.options.grid.params.margin"
 msgstr "मार्जिन"
 
@@ -6109,7 +6109,7 @@ msgstr "मार्जिन"
 msgid "workspace.options.grid.params.rows"
 msgstr "पंक्तियाँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:297
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
 msgid "workspace.options.grid.params.set-default"
 msgstr "डिफ़ॉल्ट के रूप में सेट करें"
 
@@ -6123,43 +6123,43 @@ msgstr "आकार"
 msgid "workspace.options.grid.params.type"
 msgstr "प्रकार"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:241
 msgid "workspace.options.grid.params.type.bottom"
 msgstr "तल"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:239
 msgid "workspace.options.grid.params.type.center"
 msgstr "केंद्र"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:234
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
 msgid "workspace.options.grid.params.type.left"
 msgstr "बाएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:242
 msgid "workspace.options.grid.params.type.right"
 msgstr "दाहिने"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
 msgid "workspace.options.grid.params.type.stretch"
 msgstr "खींचना"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:233
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
 msgid "workspace.options.grid.params.type.top"
 msgstr "शीर्ष"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:295
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:300
 msgid "workspace.options.grid.params.use-default"
 msgstr "डिफ़ॉल्ट उपयोग करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:254
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:258
 msgid "workspace.options.grid.params.width"
 msgstr "चौड़ाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:164
 msgid "workspace.options.grid.row"
 msgstr "पंक्तियाँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:162
 msgid "workspace.options.grid.square"
 msgstr "चौकोर"
 
@@ -6171,23 +6171,23 @@ msgstr "समूह भरण"
 msgid "workspace.options.group-stroke"
 msgstr "समूह स्ट्रोक"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:327
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:332
 msgid "workspace.options.guides.add-guide"
 msgstr "मार्गदर्शक जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:188
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:191
 msgid "workspace.options.guides.remove-guide"
 msgstr "मार्गदर्शक हटाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:324
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:329
 msgid "workspace.options.guides.title"
 msgstr "मार्गदर्शक"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:184
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
 msgid "workspace.options.guides.toggle-guide"
 msgstr "मार्गदर्शक टॉगल करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:493, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:512
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:488, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:507
 msgid "workspace.options.height"
 msgstr "ऊंचाई"
 
@@ -6251,11 +6251,11 @@ msgstr "देरी"
 msgid "workspace.options.interaction-destination"
 msgstr "गंतव्य"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:626
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:628
 msgid "workspace.options.interaction-duration"
 msgstr "अवधि"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:639
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:641
 msgid "workspace.options.interaction-easing"
 msgstr "सरलीकरण"
 
@@ -6292,7 +6292,7 @@ msgstr "माउस प्रवेश"
 msgid "workspace.options.interaction-mouse-leave"
 msgstr "माउस बाहर"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:630
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:632
 msgid "workspace.options.interaction-ms"
 msgstr "ms"
 
@@ -6308,7 +6308,7 @@ msgstr "यहाँ जाएँ: %s"
 msgid "workspace.options.interaction-none"
 msgstr "(सेट नहीं)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:652
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:654
 msgid "workspace.options.interaction-offset-effect"
 msgstr "ऑफसेट प्रभाव"
 
@@ -6409,11 +6409,11 @@ msgstr "माउस कर्सर hover करते समय"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "दबाते समय"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:741
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "इंटरैक्शन"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:744
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
 msgid "workspace.options.interactions.add-interaction"
 msgstr "इंटरैक्शन जोड़ें"
 
@@ -6510,19 +6510,19 @@ msgstr "परत दृश्यता टॉगल करें"
 msgid "workspace.options.layout-item.advanced-ops"
 msgstr "उन्नत विकल्प"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:561
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "अधिकतम.ऊंचाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:528
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "अधिकतम.चौड़ाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:545
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "न्यूनतम.ऊंचाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:512
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "न्यूनतम.चौड़ाई"
 
@@ -6636,15 +6636,15 @@ msgstr "बीच का स्थान"
 msgid "workspace.options.layout.top"
 msgstr "शीर्ष"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:240
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:241
 msgid "workspace.options.more-colors"
 msgstr "और अधिक रंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:222
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:223
 msgid "workspace.options.more-lib-colors"
 msgstr "और लाइब्रेरी रंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:264
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
 msgid "workspace.options.more-token-colors"
 msgstr "अधिक रंग के टोकन"
 
@@ -6697,7 +6697,7 @@ msgstr "हाल ही का"
 msgid "workspace.options.retry"
 msgstr "पुन: प्रयास करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:593
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:583, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588
 msgid "workspace.options.rotation"
 msgstr "चक्कर"
 
@@ -6705,11 +6705,11 @@ msgstr "चक्कर"
 msgid "workspace.options.search-font"
 msgstr "फ़ॉन्ट खोजें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr "किसी कनेक्शन को दूसरे बोर्ड तक ले जाने के लिए एक शेप, बोर्ड या ग्रुप चुनें।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:200
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:201
 msgid "workspace.options.selection-color"
 msgstr "चयनित रंग"
 
@@ -6725,11 +6725,11 @@ msgstr "चयन स्ट्रोक"
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "छाया जोड़ें"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:180, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:182
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:181, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:183
 msgid "workspace.options.shadow-options.blur"
 msgstr "धुंधला"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:210
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:211
 msgid "workspace.options.shadow-options.color"
 msgstr "छाया रंग"
 
@@ -6741,19 +6741,19 @@ msgstr "परछाई डालना"
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "भीतरी छाया"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:171
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:172
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:200
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:201
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:156, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:156, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:161
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "छाया हटाओ"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:190, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:192
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:191, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:193
 msgid "workspace.options.shadow-options.spread"
 msgstr "फैलाना"
 
@@ -6769,31 +6769,31 @@ msgstr "समूह छाया"
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "चयन छाया"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:157
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "छाया टॉगल करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:262
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:258
 msgid "workspace.options.show-fill-on-export"
 msgstr "निर्यात में दिखाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:638
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:620
 msgid "workspace.options.show-in-viewer"
 msgstr "दृश्य मोड में दिखाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:168
 msgid "workspace.options.size"
 msgstr "आकार"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:426
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:420
 msgid "workspace.options.size-presets"
 msgstr "आकार प्रीसेट"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:527
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:522
 msgid "workspace.options.size.lock"
 msgstr "लॉक अनुपात"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:527
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:522
 msgid "workspace.options.size.unlock"
 msgstr "अनलॉक अनुपात"
 
@@ -6903,19 +6903,19 @@ msgstr "स्ट्रोक हटाओ"
 msgid "workspace.options.stroke.solid"
 msgstr "ठोस"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:123
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:126
 msgid "workspace.options.text-options.align-bottom"
 msgstr "नीचे संरेखित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:122
 msgid "workspace.options.text-options.align-middle"
 msgstr "मध्य संरेखित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:115
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
 msgid "workspace.options.text-options.align-top"
 msgstr "ऊपर संरेखित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:90
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:91
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
 
@@ -6923,15 +6923,15 @@ msgstr "LTR"
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:164
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "ऑटो ऊंचाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "ऑटो चौड़ाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "निश्चित"
 
@@ -6953,35 +6953,35 @@ msgstr "निम्नाक्षर"
 msgid "workspace.options.text-options.none"
 msgstr "कोई नहीं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:191
 msgid "workspace.options.text-options.strikethrough"
 msgstr "स्ट्राइकथ्रू (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:59
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:60
 msgid "workspace.options.text-options.text-align-center"
 msgstr "केंद्र संरेखित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:67
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:68
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "जस्टिफ़ाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:55
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:56
 msgid "workspace.options.text-options.text-align-left"
 msgstr "बाएँ संरेखित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:63
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:64
 msgid "workspace.options.text-options.text-align-right"
 msgstr "दाएँ संरेखित करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:200
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:204
 msgid "workspace.options.text-options.title"
 msgstr "पाठ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:203
 msgid "workspace.options.text-options.title-group"
 msgstr "समूह पाठ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:198
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:202
 msgid "workspace.options.text-options.title-selection"
 msgstr "चयन पाठ"
 
@@ -6990,7 +6990,7 @@ msgstr "चयन पाठ"
 msgid "workspace.options.text-options.titlecase"
 msgstr "टाइटल केस"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:182
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
 msgid "workspace.options.text-options.underline"
 msgstr "अंडरलाइन (%s)"
 
@@ -6999,59 +6999,59 @@ msgstr "अंडरलाइन (%s)"
 msgid "workspace.options.text-options.uppercase"
 msgstr "बड़ेअक्षर"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr "प्रोटोटाइप व्यू चलाने के लिए हेडर में प्ले बटन का उपयोग करें।"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:476, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:495
 msgid "workspace.options.width"
 msgstr "चौड़ाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:540, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:557
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:535, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:552
 msgid "workspace.options.x"
 msgstr "X अक्ष"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:550, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:568
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:545, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:563
 msgid "workspace.options.y"
 msgstr "Y अक्ष"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:140
 msgid "workspace.path.actions.add-node"
 msgstr "नोड जोड़ें (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:173
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
 msgid "workspace.path.actions.delete-node"
 msgstr "नोड हटाएं (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:151
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:123
 msgid "workspace.path.actions.draw-nodes"
 msgstr "नोड ड्रा करें (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:188
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
 msgid "workspace.path.actions.join-nodes"
 msgstr "नोड्स जोड़ें (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:184
 msgid "workspace.path.actions.make-corner"
 msgstr "कोने तक (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:210
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:192
 msgid "workspace.path.actions.make-curve"
 msgstr "वक्र बनाएं (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:181
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
 msgid "workspace.path.actions.merge-nodes"
 msgstr "नोड्स मर्ज करें (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:131
 msgid "workspace.path.actions.move-nodes"
 msgstr "नोड्स ले जाएँ (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:195
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:174
 msgid "workspace.path.actions.separate-nodes"
 msgstr "अलग नोड्स (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:217
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
 msgid "workspace.path.actions.snap-nodes"
 msgstr "स्नैप नोड्स (%s)"
 
@@ -7092,7 +7092,7 @@ msgstr "इंस्टॉल किए गए प्लगइन्स"
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "प्लगइन्स मैनेजर"
 
-#: src/app/main/ui/workspace/main_menu.cljs:917
+#: src/app/main/ui/workspace/main_menu.cljs:918
 msgid "workspace.plugins.menu.title"
 msgstr "प्लग-इन"
 
@@ -7203,15 +7203,15 @@ msgstr "फ्लेक्स लेआउट जोड़ें"
 msgid "workspace.shape.menu.add-grid"
 msgstr "ग्रिड लेआउट जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1264, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1288
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1243, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1267
 msgid "workspace.shape.menu.add-layout"
 msgstr "लेआउट जोड़ें"
 
-#: src/app/main/ui/workspace/context_menu.cljs:611, src/app/main/ui/workspace/sidebar/assets/common.cljs:508, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1047, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1215, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1289
+#: src/app/main/ui/workspace/context_menu.cljs:611, src/app/main/ui/workspace/sidebar/assets/common.cljs:508, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1051, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1219, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1293
 msgid "workspace.shape.menu.add-variant"
 msgstr "वैरिएंट बनाएं"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1069, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1217, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1303
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1073, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1221, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1307
 msgid "workspace.shape.menu.add-variant-property"
 msgstr "नई संपत्ति जोड़ें"
 
@@ -7223,7 +7223,7 @@ msgstr "वापस भेजो"
 msgid "workspace.shape.menu.backward"
 msgstr "पीछे भेजें"
 
-#: src/app/main/ui/workspace/context_menu.cljs:618, src/app/main/ui/workspace/sidebar/assets/components.cljs:633, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1102
+#: src/app/main/ui/workspace/context_menu.cljs:618, src/app/main/ui/workspace/sidebar/assets/components.cljs:633, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1106
 msgid "workspace.shape.menu.combine-as-variants"
 msgstr "वैरिएंट के रूप में संयोजित करें"
 
@@ -7283,7 +7283,7 @@ msgstr "अनेक घटक बनाएँ"
 msgid "workspace.shape.menu.cut"
 msgstr "काटना"
 
-#: src/app/main/ui/workspace/context_menu.cljs:628, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1306
+#: src/app/main/ui/workspace/context_menu.cljs:628, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:996, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1285
 msgid "workspace.shape.menu.delete"
 msgstr "मिटाना"
 
@@ -7299,7 +7299,7 @@ msgstr "उदाहरण अलग करें"
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "उदाहरणों को अलग करें"
 
-#: src/app/main/ui/workspace/context_menu.cljs:446, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:90
+#: src/app/main/ui/workspace/context_menu.cljs:446, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
 msgid "workspace.shape.menu.difference"
 msgstr "भेद"
 
@@ -7311,7 +7311,7 @@ msgstr "नकल करें"
 msgid "workspace.shape.menu.edit"
 msgstr "संपादन"
 
-#: src/app/main/ui/workspace/context_menu.cljs:452, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:100
+#: src/app/main/ui/workspace/context_menu.cljs:452, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
 msgid "workspace.shape.menu.exclude"
 msgstr "बहिष्कृत"
 
@@ -7356,7 +7356,7 @@ msgstr "छुपाएँ"
 msgid "workspace.shape.menu.hide-ui"
 msgstr "UI दिखाएँ / छिपाएँ"
 
-#: src/app/main/ui/workspace/context_menu.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:95
+#: src/app/main/ui/workspace/context_menu.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
 msgid "workspace.shape.menu.intersection"
 msgstr "चौराहा"
 
@@ -7388,15 +7388,15 @@ msgstr "फ्लेक्स लेआउट हटाएँ"
 msgid "workspace.shape.menu.remove-grid"
 msgstr "ग्रिड लेआउट हटाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1282
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1261
 msgid "workspace.shape.menu.remove-layout"
 msgstr "लेआउट हटाएँ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1153
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1157
 msgid "workspace.shape.menu.remove-variant-property"
 msgstr "संपत्ति हटाएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1152
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1156
 msgid "workspace.shape.menu.remove-variant-property.last-property"
 msgstr "वैरिएंट में कम से कम एक प्रॉपर्टी होनी चाहिए"
 
@@ -7424,7 +7424,7 @@ msgstr "परत चुनें"
 msgid "workspace.shape.menu.show"
 msgstr "दिखाएँ"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1213
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1217
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "संपत्ति पैनल में दिखाएँ"
 
@@ -7449,7 +7449,7 @@ msgstr "पथ में परिवर्तन"
 msgid "workspace.shape.menu.ungroup"
 msgstr "असमूहीकृत"
 
-#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
+#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
 msgid "workspace.shape.menu.union"
 msgstr "संघ"
 
@@ -7478,31 +7478,31 @@ msgstr "साइडबार को संक्षिप्त करें"
 msgid "workspace.sidebar.expand"
 msgstr "साइडबार का विस्तार करें"
 
-#: src/app/main/ui/workspace/right_header.cljs:231, src/app/main/ui/workspace/right_header.cljs:232
+#: src/app/main/ui/workspace/right_header.cljs:226
 msgid "workspace.sidebar.history"
 msgstr "इतिहास"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:510, src/app/main/ui/workspace/sidebar.cljs:149, src/app/main/ui/workspace/sidebar.cljs:152, src/app/main/ui/workspace/sidebar.cljs:159
+#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:149, src/app/main/ui/workspace/sidebar.cljs:152, src/app/main/ui/workspace/sidebar.cljs:159
 msgid "workspace.sidebar.layers"
 msgstr "परतें"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:375
+#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:374
 msgid "workspace.sidebar.layers.components"
 msgstr "घटकों"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
 msgid "workspace.sidebar.layers.frames"
 msgstr "बोर्ड्स"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:351
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:350
 msgid "workspace.sidebar.layers.groups"
 msgstr "कई समूह"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:399
+#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:398
 msgid "workspace.sidebar.layers.images"
 msgstr "छवियाँ"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:363
+#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:362
 msgid "workspace.sidebar.layers.masks"
 msgstr "मास्क्स"
 
@@ -7510,11 +7510,11 @@ msgstr "मास्क्स"
 msgid "workspace.sidebar.layers.search"
 msgstr "परतें खोजें"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:317, src/app/main/ui/workspace/sidebar/layers.cljs:411
+#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
 msgstr "आकृतियाँ"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:387
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
 msgid "workspace.sidebar.layers.texts"
 msgstr "टेक्स्ट"
 
@@ -7585,11 +7585,11 @@ msgstr "फाइलें चुनें"
 msgid "workspace.tokens.choose-folder"
 msgstr "फोल्डर को चुनो"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:284, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:284, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
 msgid "workspace.tokens.color"
 msgstr "रंग"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:249
+#: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:250
 msgid "workspace.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "पंक्ति की ऊँचाई फ़ॉन्ट आकार पर निर्भर करती है। हल किया गया मान प्राप्त करने "
@@ -7675,7 +7675,7 @@ msgstr "पूर्व दर्शन:"
 msgid "workspace.tokens.export.single-file"
 msgstr "एक फाइल"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:127
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:129
 msgid "workspace.tokens.font-size-value-enter"
 msgstr "फ़ॉन्ट आकार या {उपनाम}"
 
@@ -7685,7 +7685,7 @@ msgstr ""
 "फ़ॉन्ट वज़न/शैली सेट करते समय त्रुटि हुई। यह फ़ॉन्ट शैली वर्तमान फ़ॉन्ट में "
 "मौजूद नहीं है"
 
-#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:44, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:135
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:44, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:137
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "फ़ॉन्ट वज़न (300, बोल्ड इटैलिक...) या {उपनाम}"
 
@@ -7758,7 +7758,7 @@ msgstr ""
 "यह सेट सक्रिय नहीं है। व्यूपोर्ट में परिवर्तन देखने के लिए थीम बदलें या इस "
 "सेट को सक्रिय करें"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:240, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:194
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:240, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:195
 msgid "workspace.tokens.individual-tokens"
 msgstr "व्यक्तिगत टोकन का प्रयोग करें"
 
@@ -7835,11 +7835,11 @@ msgstr "थिम"
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "एक थीम जोड़ें (अर्थात् प्रकाश)"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:151
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
 msgid "workspace.tokens.letter-spacing-value-enter-composite"
 msgstr "अक्षर रिक्ति या {उपनाम}"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:143
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:145
 msgid "workspace.tokens.line-height-value-enter"
 msgstr "पंक्ति ऊँचाई (गुणक, पिक्सेल, %) या {उपनाम}"
 
@@ -7928,11 +7928,11 @@ msgstr "त्रिज्या"
 msgid "workspace.tokens.ref-not-valid"
 msgstr "संदर्भ मान्य नहीं है या किसी सक्रिय सेट में नहीं है"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:178
 msgid "workspace.tokens.reference-composite"
 msgstr "token टाइपोग्राफी उपनाम दर्ज करें"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:203
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204
 msgid "workspace.tokens.reference-composite-shadow"
 msgstr "एक token छाया आलिया दर्ज करें"
 
@@ -7954,7 +7954,7 @@ msgstr "थीम सहेजें"
 msgid "workspace.tokens.select-set"
 msgstr "सेट का चयन करें।"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:79, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:241
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:79, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
 msgid "workspace.tokens.self-reference"
 msgstr "टोकन में स्व-संदर्भ होता है"
 
@@ -7987,11 +7987,11 @@ msgstr ""
 msgid "workspace.tokens.settings"
 msgstr "टोकन सेटिंग्स"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:231
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:232
 msgid "workspace.tokens.shadow-add-shadow"
 msgstr "छाया जोड़ें"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:160, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:161, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:164
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:161, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:162, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:165
 msgid "workspace.tokens.shadow-blur"
 msgstr "धुंधला"
 
@@ -8004,15 +8004,15 @@ msgstr "छाया धुंधलापन 0 से अधिक या उ�
 msgid "workspace.tokens.shadow-color"
 msgstr "रंग"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:113
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:114
 msgid "workspace.tokens.shadow-inset"
 msgstr "अंतर्भूत"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:122
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:123
 msgid "workspace.tokens.shadow-remove-shadow"
 msgstr "छाया हटाएँ"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:172, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:176
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:174, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
 msgid "workspace.tokens.shadow-spread"
 msgstr "फैलाना"
 
@@ -8025,11 +8025,11 @@ msgstr "छाया प्रसार 0 से अधिक या उसक�
 msgid "workspace.tokens.shadow-title"
 msgstr "छायाएँ"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:138, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:140
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:139, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:141
 msgid "workspace.tokens.shadow-x"
 msgstr "X"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:149, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:151
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:150, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
@@ -8041,11 +8041,11 @@ msgstr "आकार"
 msgid "workspace.tokens.stroke-width-range"
 msgstr "स्ट्रोक की चौड़ाई 0 से बड़ी या उसके बराबर होनी चाहिए।"
 
-#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:42, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:159
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:42, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
 msgid "workspace.tokens.text-case-value-enter"
 msgstr "कोई नहीं | अपरकेस | लोअरकेस | कैपिटलाइज़ या {उपनाम}"
 
-#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:43, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:167
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:43, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:169
 msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "कोई नहीं | रेखांकित | स्ट्राइक-थ्रू या {उपनाम}"
 
@@ -8076,11 +8076,11 @@ msgstr "वर्णन"
 msgid "workspace.tokens.token-font-family-select"
 msgstr "फ़ॉन्ट परिवार चुनें"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:119
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:121
 msgid "workspace.tokens.token-font-family-value"
 msgstr "फॉन्ट परिवार"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:118
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:120
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "फ़ॉन्ट परिवार या अल्पविराम (,) द्वारा अलग किए गए फ़ॉन्ट की सूची"
 
@@ -8088,15 +8088,15 @@ msgstr "फ़ॉन्ट परिवार या अल्पविराम
 msgid "workspace.tokens.token-name"
 msgstr "नाम"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:33, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:104
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:33, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:104
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "पथ पर एक token पहले से मौजूद है: %s"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:31, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:68, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:264, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:218, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:102
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:31, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:68, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:264, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:219, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:102
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "नाम कम से कम 1 अक्षर का होना चाहिए"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:69, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:69, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " एक मान्य टोकन नाम नहीं है।\n"
@@ -8112,7 +8112,7 @@ msgstr "नाम: '%s' वाला संदर्भ टोकन हल न�
 msgid "workspace.tokens.token-value"
 msgstr "मान"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:264, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:128
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:264, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
 msgid "workspace.tokens.token-value-enter"
 msgstr "{alias} के साथ एक मान या उपनाम दर्ज करें"
 
@@ -8132,7 +8132,7 @@ msgstr "आयात सफल रहा। कुछ टोकन शामि�
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "टाइप '%s' समर्थित नहीं है (%s)\n"
 
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:198
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
 msgid "workspace.tokens.use-reference"
 msgstr "एक संदर्भ का प्रयोग करें"
 
@@ -8152,23 +8152,23 @@ msgstr "अमान्य मान: इकाइयाँ अनुमति �
 msgid "workspace.toolbar.assets"
 msgstr "एसेट्स"
 
-#: src/app/main/ui/workspace/palette.cljs:181, src/app/main/ui/workspace/palette.cljs:182
+#: src/app/main/ui/workspace/palette.cljs:184
 msgid "workspace.toolbar.color-palette"
 msgstr "रंग पैलेट (%s)"
 
-#: src/app/main/ui/workspace/right_header.cljs:217, src/app/main/ui/workspace/right_header.cljs:218
+#: src/app/main/ui/workspace/right_header.cljs:217
 msgid "workspace.toolbar.comments"
 msgstr "टिप्पणियाँ (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:188, src/app/main/ui/workspace/top_toolbar.cljs:189
+#: src/app/main/ui/workspace/top_toolbar.cljs:195
 msgid "workspace.toolbar.curve"
 msgstr "वक्र (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:168, src/app/main/ui/workspace/top_toolbar.cljs:169
+#: src/app/main/ui/workspace/top_toolbar.cljs:172
 msgid "workspace.toolbar.ellipse"
 msgstr "दीर्घवृत्त (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:130, src/app/main/ui/workspace/top_toolbar.cljs:151
+#: src/app/main/ui/workspace/top_toolbar.cljs:130
 msgid "workspace.toolbar.frame"
 msgstr "बोर्ड (%s)"
 
@@ -8176,23 +8176,23 @@ msgstr "बोर्ड (%s)"
 msgid "workspace.toolbar.frame-first-time"
 msgstr "बोर्ड बनाएं। इसका आकार निर्धारित करने के लिए क्लिक करें और खींचें। (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:57, src/app/main/ui/workspace/top_toolbar.cljs:58
+#: src/app/main/ui/workspace/top_toolbar.cljs:60
 msgid "workspace.toolbar.image"
 msgstr "छवि (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:140, src/app/main/ui/workspace/top_toolbar.cljs:141
+#: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "स्थानांतरित करें (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:197, src/app/main/ui/workspace/top_toolbar.cljs:198
+#: src/app/main/ui/workspace/top_toolbar.cljs:205
 msgid "workspace.toolbar.path"
 msgstr "पथ (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:208, src/app/main/ui/workspace/top_toolbar.cljs:209
+#: src/app/main/ui/workspace/top_toolbar.cljs:216
 msgid "workspace.toolbar.plugins"
 msgstr "प्लगइन्स (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:159, src/app/main/ui/workspace/top_toolbar.cljs:160
+#: src/app/main/ui/workspace/top_toolbar.cljs:162
 msgid "workspace.toolbar.rect"
 msgstr "आयत (%s)"
 
@@ -8201,23 +8201,23 @@ msgstr "आयत (%s)"
 msgid "workspace.toolbar.shortcuts"
 msgstr "शॉर्टकट (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:177, src/app/main/ui/workspace/top_toolbar.cljs:178
+#: src/app/main/ui/workspace/top_toolbar.cljs:182
 msgid "workspace.toolbar.text"
 msgstr "पाठ (%s)"
 
-#: src/app/main/ui/workspace/palette.cljs:189, src/app/main/ui/workspace/palette.cljs:190
+#: src/app/main/ui/workspace/palette.cljs:190
 msgid "workspace.toolbar.text-palette"
 msgstr "टाइपोग्राफी (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:227, src/app/main/ui/workspace/top_toolbar.cljs:228
+#: src/app/main/ui/workspace/top_toolbar.cljs:235, src/app/main/ui/workspace/top_toolbar.cljs:236
 msgid "workspace.toolbar.toggle-toolbar"
 msgstr "टूलबार टॉगल करें"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:39
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:41
 msgid "workspace.top-bar.read-only.done"
 msgstr "पूर्ण"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:36
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:37
 #, markdown
 msgid "workspace.top-bar.view-only"
 msgstr "**निरीक्षण कोड** (केवल देखें)"

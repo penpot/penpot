@@ -151,29 +151,29 @@ msgstr "ഉപയോഗനിബന്ധനകൾ"
 msgid "auth.verification-email-sent"
 msgstr "സാധൂകരിക്കാനുള്ള ഇമെയിൽ ഞങ്ങൾ അയച്ചിരിക്കുന്നു"
 
-#: src/app/main/ui/viewer/share_link.cljs:200
+#: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "ഈ കണ്ണി നീക്കം ചെയ്യണമെന്നത് നിങ്ങൾക്ക് തീർച്ചയാണോ? നിങ്ങളത് ചെയ്താൽ, അത് "
 "ആർക്കും ലഭ്യമല്ലാതാകും"
 
-#: src/app/main/ui/viewer/share_link.cljs:223
+#: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
 msgstr "കണ്ണി നേടുക"
 
-#: src/app/main/ui/viewer/share_link.cljs:139
+#: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
 msgstr "കണ്ണി വിജയകരമായി പകർത്തി"
 
-#: src/app/main/ui/viewer/share_link.cljs:195
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.permissions-hint"
 msgstr "കണ്ണിയുള്ള ആർക്കും പ്രാപ്യമാകും"
 
-#: src/app/main/ui/viewer/share_link.cljs:185
+#: src/app/main/ui/viewer/share_link.cljs:189
 msgid "common.share-link.placeholder"
 msgstr "പങ്കുവെക്കാവുന്ന കണ്ണി ഇവിടെ ലഭ്യമാകും"
 
-#: src/app/main/ui/viewer/share_link.cljs:173
+#: src/app/main/ui/viewer/share_link.cljs:176
 msgid "common.share-link.title"
 msgstr "പ്രോട്ടോടൈപ്പുകൾ പങ്കുവെയ്ക്കുക"
 
