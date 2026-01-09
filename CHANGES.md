@@ -11,9 +11,9 @@
 ### :sparkles: New features & Enhancements
 
 - Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
+- Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 
 ### :bug: Bugs fixed
-
 
 ## 2.13.0 (Unreleased)
 
@@ -46,7 +46,6 @@
 - Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
 - Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
 
-
 ## 2.12.1
 
 ### :bug: Bugs fixed
@@ -54,7 +53,6 @@
 - Fix setting a portion of text as bold or underline messes things up [Github #7980](https://github.com/penpot/penpot/issues/7980)
 - Fix problem with style in fonts input [Taiga #12935](https://tree.taiga.io/project/penpot/issue/12935)
 - Fix problem with path editor and right click [Github #7917](https://github.com/penpot/penpot/issues/7917)
-
 
 ## 2.12.0
 
@@ -66,7 +64,6 @@ The backend RPC API URLS are changed from `/api/rpc/command/<name>` to
 `/api/main/methods/<name>`. The previous PATH is preserved for backward
 compatibility; however, if you are a user of this API, it is strongly
 recommended that you adapt your code to use the new PATH.
-
 
 #### Updated SSO Callback URL
 
@@ -99,7 +96,6 @@ result in authentication failures after upgrading.
 This update standardizes all authentication flows under the single URL
 and makis it more modular, enabling the ability to configure SSO auth
 provider dinamically.
-
 
 #### Changes on default docker compose
 
