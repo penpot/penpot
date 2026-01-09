@@ -284,37 +284,44 @@
 
     [:*
      [:> header* {:team team}]
-     [:section {:class (stl/css :dashboard-container :no-bg)}
+     [:section {:class (stl/css :dashboard-container :no-bg)
+                :data-testid "deleted-page-section"}
       [:*
        [:div {:class (stl/css :no-bg)}
 
         [:> menu* {:team-id team-id :section :dashboard-deleted}]
 
-        [:div {:class (stl/css :deleted-info-content)}
-         [:p {:class (stl/css :deleted-info)}
-          (tr "dashboard.trash-info-text-part1")
-          [:span {:class (stl/css :info-text-highlight)}
-           (tr "dashboard.trash-info-text-part2" deletion-days)]
-          (tr "dashboard.trash-info-text-part3")
-          [:br]
-          (tr "dashboard.trash-info-text-part4")]
-         [:div {:class (stl/css :deleted-options)}
-          [:> button* {:variant "ghost"
-                       :type "button"
-                       :on-click on-restore-all}
-           (tr "dashboard.restore-all-deleted-button")]
-          [:> button* {:variant "destructive"
-                       :type "button"
-                       :icon "delete"
-                       :on-click on-delete-all}
-           (tr "dashboard.clear-trash-button")]]]
+        (if (seq projects)
+          [:*
+           [:div {:class (stl/css :deleted-info-content)}
+            [:p {:class (stl/css :deleted-info)}
+             (tr "dashboard.trash-info-text-part1")
+             [:span {:class (stl/css :info-text-highlight)}
+              (tr "dashboard.trash-info-text-part2" deletion-days)]
+             (tr "dashboard.trash-info-text-part3")
+             [:br]
+             (tr "dashboard.trash-info-text-part4")]
+            [:div {:class (stl/css :deleted-options)}
+             [:> button* {:variant "ghost"
+                          :type "button"
+                          :on-click on-restore-all}
+              (tr "dashboard.restore-all-deleted-button")]
+             [:> button* {:variant "destructive"
+                          :type "button"
+                          :icon "delete"
+                          :on-click on-delete-all}
+              (tr "dashboard.clear-trash-button")]]]
 
-        (when projects
-          (for [{:keys [id] :as project} projects]
-            (let [files (when deleted-map
-                          (->> (vals deleted-map)
-                               (filterv #(= id (:project-id %)))
-                               (sort-by :modified-at #(compare %2 %1))))]
-              [:> deleted-project-item* {:project project
-                                         :files files
-                                         :key id}])))]]]]))
+           (for [{:keys [id] :as project} projects]
+             (let [files (when deleted-map
+                           (->> (vals deleted-map)
+                                (filterv #(= id (:project-id %)))
+                                (sort-by :modified-at #(compare %2 %1))))]
+               [:> deleted-project-item* {:project project
+                                          :files files
+                                          :key id}]))]
+
+          ;; when no deleted projects
+          [:div {:class (stl/css :deleted-info-content)}
+           [:p {:class (stl/css :deleted-info)}
+            (tr "dashboard.deleted.empty-state-description")]])]]]]))

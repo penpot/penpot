@@ -8419,3 +8419,6 @@ msgstr "Restauración inesperadamente lenta"
 
 msgid "dashboard.progress-notification.slow-delete"
 msgstr "Eliminación inesperadamente lenta"
+
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Tu papelera está vacía. Los archivos y proyectos eliminados aparecerán aquí."

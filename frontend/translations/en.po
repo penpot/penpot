@@ -8572,3 +8572,6 @@ msgstr "Restore unexpectedly slow"
 
 msgid "dashboard.progress-notification.slow-delete"
 msgstr "Deletion unexpectedly slow"
+
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Your trash is empty. Deleted files and projects will appear here."
