@@ -127,7 +127,8 @@
                                                           (-> shadow
                                                               (assoc attr value)
                                                               (ctss/check-shadow))))))))))]
-    [:div {:class (stl/css :shadow-section)}
+    [:div {:data-testid "shadow-section"
+           :class (stl/css :shadow-section)}
      [:div {:class (stl/css :shadow-title)}
       [:> title-bar* {:collapsable  has-shadows?
                       :collapsed    (not show-content?)

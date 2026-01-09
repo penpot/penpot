@@ -2950,36 +2950,23 @@ test.describe("Tokens: Remapping Feature", () => {
 
       // Verify the shape still has the shadow applied with the UPDATED color value
       // Expand the shadow section to access the color field
-      const shadowSection = workspacePage.rightSidebar.getByText("Drop shadow");
+      const shadowSection = workspacePage.rightSidebar.getByTestId("shadow-section");
       await expect(shadowSection).toBeVisible();
 
       // Click to expand the shadow options (the menu button)
-      const shadowMenuButton = workspacePage.rightSidebar
+      const shadowMenuButton = shadowSection
         .getByRole("button", { name: "options" })
         .first();
       await shadowMenuButton.click();
+
       // Wait for the advanced options to appear
       await page.waitForTimeout(500);
 
-      // // Verify the color value has updated from #000000 to #FF0000
-      // // Find the color input - it should be a textbox with a 6-character hex value
-      // // We look for all textboxes and find the one with a hex color pattern
-      // const allInputs = await workspacePage.rightSidebar
-      //   .locator('input[type="text"]')
-      //   .all();
-
-      // let colorInput = null;
-      // for (const input of allInputs) {
-      //   const value = await input.inputValue().catch(() => '');
-      //   if (/^[A-Fa-f0-9]{6}$/.test(value)) {
-      //     colorInput = input;
-      //     break;
-      //   }
-      // }
-
-      // expect(colorInput).not.toBeNull();
-      // const colorValue = await colorInput.inputValue();
-      // expect(colorValue.toUpperCase()).toBe("FF0000");
+      // Verify the color value has updated from #000000 to #FF0000
+      const colorInput = shadowSection.getByRole("textbox", { name: "Color" });
+      expect(colorInput).not.toBeNull();
+      const colorValue = await colorInput.inputValue();
+      expect(colorValue.toUpperCase()).toBe("FF0000");
     });
   });
 
