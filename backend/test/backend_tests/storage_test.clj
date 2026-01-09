@@ -11,7 +11,6 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -99,14 +98,14 @@
                                            ::sto/expired-at (ct/in-future {:hours 1})
                                            :content-type "text/plain"})]
 
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:minutes 0}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 0}))]
       (let [res (th/run-task! :storage-gc-deleted {})]
         (t/is (= 1 (:deleted res)))))
 
     (let [res (th/db-exec-one! ["select count(*) from storage_object;"])]
       (t/is (= 2 (:count res))))
 
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:minutes 61}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 61}))]
       (let [res (th/run-task! :storage-gc-deleted {})]
         (t/is (= 1 (:deleted res)))))
 
@@ -331,22 +330,22 @@
                                            :content-type "text/plain"})]
 
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 0 (:delete res)))))
 
 
-    (binding [ct/*clock* (clock/fixed (ct/plus now {:minutes 1}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:minutes 1}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 1 (:delete res)))))
 
 
-    (binding [ct/*clock* (clock/fixed (ct/plus now {:hours 1}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 1}))]
       (let [res (th/run-task! :storage-gc-deleted {})]
         (t/is (= 0 (:deleted res)))))
 
-    (binding [ct/*clock* (clock/fixed (ct/plus now {:hours 2}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 2}))]
       (let [res (th/run-task! :storage-gc-deleted {})]
         (t/is (= 0 (:deleted res)))))))
