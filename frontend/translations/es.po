@@ -8342,6 +8342,9 @@ msgstr "Restaurar proyecto"
 msgid "dashboard.delete-project-button"
 msgstr "Eliminar proyecto"
 
+msgid "dashboard.trash-info-text-no-projects"
+msgstr "Tu papelera está vacía. Los archivos y proyectos eliminados aparecerán aquí."
+
 msgid "dashboard.trash-info-text-part1"
 msgstr "Los archivos eliminados permanecerán en la papelera durante"
 
