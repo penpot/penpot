@@ -284,7 +284,8 @@
 
     [:*
      [:> header* {:team team}]
-     [:section {:class (stl/css :dashboard-container :no-bg)}
+     [:section {:class (stl/css :dashboard-container :no-bg)
+                :data-testid "deleted-page-section"}
       [:*
        [:div {:class (stl/css :no-bg)}
 

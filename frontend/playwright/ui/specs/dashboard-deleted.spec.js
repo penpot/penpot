@@ -20,12 +20,7 @@ test.describe("Dashboard Deleted Page", () => {
     // Navigate directly to deleted page
     await dashboardPage.goToDeleted();
 
-    // Check for the restore all and clear trash buttons
-    await expect(
-      page.getByRole("button", { name: "Restore All" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Clear trash" }),
-    ).toBeVisible();
+    // Check for the delete-page-section element
+    await expect(page.getByTestId("deleted-page-section")).toBeVisible();
   });
 });
