@@ -19,7 +19,7 @@
       inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
       where tpr.profile_id = ?
         and p.team_id = ?
-        and (p.deleted_at is null or p.deleted_at > now())
+        and (p.deleted_at is null)
         and (tpr.is_admin = true or
              tpr.is_owner = true or
              tpr.can_edit = true)
@@ -29,7 +29,7 @@
       inner join project_profile_rel as ppr on (ppr.project_id = p.id)
       where ppr.profile_id = ?
         and p.team_id = ?
-        and (p.deleted_at is null or p.deleted_at > now())
+        and (p.deleted_at is null)
         and (ppr.is_admin = true or
              ppr.is_owner = true or
              ppr.can_edit = true)
@@ -47,7 +47,7 @@
      left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn)
     inner join projects as pr on (f.project_id = pr.id)
     where f.name ilike ('%' || ? || '%')
-      and (f.deleted_at is null or f.deleted_at > now())
+      and (f.deleted_at is null)
     order by f.created_at asc")
 
 (defn search-files
