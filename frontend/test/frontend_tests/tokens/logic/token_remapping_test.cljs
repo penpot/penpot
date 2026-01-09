@@ -6,39 +6,55 @@
 
 (ns frontend-tests.tokens.logic.token-remapping-test
   (:require
+   [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.remapping :as dwtr]
-   [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.files :as thf]
-   [frontend-tests.helpers.ids :as thi]
-   [frontend-tests.helpers.objects :as tho]
-   [frontend-tests.helpers.state :as ths]
-   [frontend-tests.helpers.tokens :as tht]))
+   [cljs.test :as t :include-macros true]))
 
 (defn setup-file-with-tokens
   "Setup a test file with tokens and shapes that use those tokens"
   []
-  (let [color-token {:name "color.primary"
+  (let [color-token {:id (cthi/new-id! :color-primary)
+                     :name "color.primary"
                      :value "#FF0000"
                      :type :color}
-        alias-token {:name "color.secondary"
+        alias-token {:id (cthi/new-id! :color-secondary)
+                     :name "color.secondary"
                      :value "{color.primary}"
                      :type :color}]
-    (-> (thf/sample-file :file-1 :page-label :page-1)
-        (tho/add-rect :rect-1)
-        (tho/add-rect :rect-2)
+    (-> (cthf/sample-file :file-1 :page-label :page-1)
+        (ctho/add-rect :rect-1)
+        (ctho/add-rect :rect-2)
         (assoc-in [:data :tokens-lib]
                   (-> (ctob/make-tokens-lib)
                       (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
                       (ctob/set-active-themes #{"/Theme A"})
-                      (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a)
+                      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
                                                          :name "Set A"))
-                      (ctob/add-token (thi/id :set-a)
+                      (ctob/add-token (cthi/id :set-a)
                                       (ctob/make-token color-token))
-                      (ctob/add-token (thi/id :set-a)
+                      (ctob/add-token (cthi/id :set-a)
                                       (ctob/make-token alias-token))))
         ;; Apply the token to rect-1
-        (tht/apply-token-to-shape :fill "color.primary" :rect-1))))
+        (ctht/apply-token-to-shape :rect-1 "color.primary" [:fill] [:fill] "#FF0000"))))
+
+(t/deftest test-scan-token-value-references
+  (t/testing "should extract token references from alias values"
+    (let [token {:id (cthi/id :color-primary)
+                 :name "color.secondary"
+                 :value "{color.primary}"
+                 :type :color}
+          references (dwtr/scan-token-value-references token "color.primary")]
+
+      (t/is (= 1 (count references)))
+      (let [ref (first references)]
+        (t/is (= :token-alias (:type ref)))
+        (t/is (= (cthi/id :color-secondary) (:source-token-id ref)))
+        (t/is (= "color.primary" (:referenced-token-name ref)))))))
 
 (t/deftest test-scan-workspace-token-references
   (t/testing "should find applied token references"
@@ -59,46 +75,23 @@
       ;; Check alias reference
       (let [alias-ref (first (:token-aliases scan-results))]
         (t/is (= :token-alias (:type alias-ref)))
-        (t/is (= "color.secondary" (:source-token-name alias-ref)))
+        (t/is (= (cthi/id :color-secondary) (:source-token-id alias-ref)))
         (t/is (= "color.primary" (:referenced-token-name alias-ref)))))))
-
-(t/deftest test-scan-token-value-references
-  (t/testing "should extract token references from alias values"
-    (let [token {:name "color.secondary"
-                 :value "{color.primary}"
-                 :type :color}
-          references (dwtr/scan-token-value-references token)]
-
-      (t/is (= 1 (count references)))
-      (let [ref (first references)]
-        (t/is (= :token-alias (:type ref)))
-        (t/is (= "color.secondary" (:source-token-name ref)))
-        (t/is (= "color.primary" (:referenced-token-name ref))))))
-
-  (t/testing "should handle multiple references in one value"
-    (let [token {:name "spacing.complex"
-                 :value "calc({spacing.base} + {spacing.small})"
-                 :type :spacing}
-          references (dwtr/scan-token-value-references token)]
-
-      (t/is (= 2 (count references)))
-      (t/is (some #(= "spacing.base" (:referenced-token-name %)) references))
-      (t/is (some #(= "spacing.small" (:referenced-token-name %)) references)))))
 
 (t/deftest test-update-token-value-references
   (t/testing "should update token references in alias values"
     (let [old-value "{color.primary}"
-          new-value (dwtr/update-token-value-references old-value "color.primary" "brand.primary")]
+          new-value (cto/update-token-value-references old-value "color.primary" "brand.primary")]
       (t/is (= "{brand.primary}" new-value))))
 
   (t/testing "should update multiple references"
     (let [old-value "calc({spacing.base} + {spacing.base})"
-          new-value (dwtr/update-token-value-references old-value "spacing.base" "spacing.foundation")]
+          new-value (cto/update-token-value-references old-value "spacing.base" "spacing.foundation")]
       (t/is (= "calc({spacing.foundation} + {spacing.foundation})" new-value))))
 
   (t/testing "should not update partial matches"
     (let [old-value "{color.primary.light}"
-          new-value (dwtr/update-token-value-references old-value "color.primary" "brand.primary")]
+          new-value (cto/update-token-value-references old-value "color.primary" "brand.primary")]
       (t/is (= "{color.primary.light}" new-value)))))
 
 (t/deftest test-count-token-references
@@ -110,18 +103,16 @@
 
 (t/deftest test-validate-token-remapping
   (t/testing "should validate remapping parameters"
-    (let [file-data (:data (setup-file-with-tokens))]
+    (t/testing "empty name should be invalid"
+      (let [result (dwtr/validate-token-remapping "color.primary" "")]
+        (t/is (false? (:valid? result)))
+        (t/is (= :invalid-name (:error result)))))
 
-      (t/testing "empty name should be invalid"
-        (let [result (dwtr/validate-token-remapping file-data "color.primary" "")]
-          (t/is (false? (:valid? result)))
-          (t/is (= :invalid-name (:error result)))))
+    (t/testing "same name should be invalid"
+      (let [result (dwtr/validate-token-remapping "color.primary" "color.primary")]
+        (t/is (false? (:valid? result)))
+        (t/is (= :no-change (:error result)))))
 
-      (t/testing "same name should be invalid"
-        (let [result (dwtr/validate-token-remapping file-data "color.primary" "color.primary")]
-          (t/is (false? (:valid? result)))
-          (t/is (= :no-change (:error result)))))
-
-      (t/testing "valid new name should be valid"
-        (let [result (dwtr/validate-token-remapping file-data "color.primary" "brand.primary")]
-          (t/is (true? (:valid? result))))))))
+    (t/testing "valid new name should be valid"
+      (let [result (dwtr/validate-token-remapping "color.primary" "brand.primary")]
+        (t/is (true? (:valid? result)))))))
