@@ -10,6 +10,7 @@
    ["react-dom/server" :as rds]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.math :as mth]
@@ -21,7 +22,6 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.render-wasm :as drw]
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -1236,7 +1236,8 @@
   (dom/prevent-default event)
   (reset! wasm/context-lost? true)
   (log/warn :hint "WebGL context lost")
-  (st/emit! (drw/context-lost)))
+  (ex/raise :type :webgl-context-lost
+            :hint "WebGL context lost"))
 
 (defn init-canvas-context
   [canvas]
