@@ -21,6 +21,7 @@
 .rebel_readline_history
 .repl
 .shadow-cljs
+.pnpm-store/
 /*.jpg
 /*.md
 /*.png
@@ -72,6 +73,7 @@
 /library/target/
 /library/*.zip
 /external
+/penpot-nitrate
 
 clj-profiler/
 node_modules
