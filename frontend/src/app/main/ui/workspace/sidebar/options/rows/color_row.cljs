@@ -147,11 +147,7 @@
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]
 
-  (let [;; TODO: Remove this workaround fixing `get-attrs*` fn on sidebar/options/shapes/multiple.cljs
-        applied-token (if (= :multiple applied-token)
-                        nil
-                        applied-token)
-        token-color      (contains? cfg/flags :token-color)
+  (let [token-color      (contains? cfg/flags :token-color)
         libraries        (mf/deref refs/files)
 
         color-without-hash (mf/use-memo
