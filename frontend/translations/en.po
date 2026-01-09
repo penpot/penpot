@@ -8489,6 +8489,9 @@ msgstr "Restore project"
 msgid "dashboard.delete-project-button"
 msgstr "Delete project"
 
+msgid "dashboard.trash-info-text-no-projects"
+msgstr "Your trash is empty. Deleted files and projects will appear here."
+
 msgid "dashboard.trash-info-text-part1"
 msgstr "Deleted files will remain in the trash for"
 
