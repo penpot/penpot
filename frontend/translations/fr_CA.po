@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"PO-Revision-Date: 2026-01-10 01:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -578,10 +578,10 @@ msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, fuzzy, unused
+#, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"Un ou plus des fichiers que tu veux exporter utilisent une bibliothèque "
+"Un ou plus des fichiers que tu veux télécharger utilisent une bibliothèque "
 "partagée. Que veux-tu faire avec ces atouts*?"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
@@ -1147,3 +1147,94 @@ msgid "files-download-modal.options.merge.title"
 msgstr ""
 "Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
 "fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:207
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "Tu vas restaurer %s."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:206
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Restaurer le fichier"
+
+#: src/app/main/ui/dashboard/deleted.cljs:299
+msgid "dashboard.clear-trash-button"
+msgstr "Vider la corbeille"
+
+#: src/app/main/ui/dashboard/deleted.cljs:251
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"Es-tu certain de supprimer pour toujours tous tes projets et fichiers "
+"supprimés ? Ceci est une action irréversible."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:268
+msgid "dashboard.delete-file-button"
+msgstr "Supprimer le fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:220
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr ""
+"Es-tu certain de vouloir supprimer %s pour toujours ? Ceci est une action "
+"irréversible."
+
+#: src/app/main/data/dashboard.cljs:764
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s fichiers ont été supprimés avec succès."
+
+#: src/app/main/ui/dashboard/deleted.cljs:66, src/app/main/ui/dashboard/deleted.cljs:68, src/app/main/ui/dashboard/deleted.cljs:250, src/app/main/ui/dashboard/deleted.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:219, src/app/main/ui/dashboard/file_menu.cljs:221
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Supprimer pour toujours"
+
+#: src/app/main/ui/dashboard/deleted.cljs:75
+msgid "dashboard.delete-project-button"
+msgstr "Supprimer le projet"
+
+#: src/app/main/ui/dashboard/deleted.cljs:67
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"Es-tu certain de vouloir supprimer le projet %s pour toujours ? Tu vas le "
+"supprimer pour toujours ainsi que tous ses fichiers inclus. Ceci est une "
+"action irréversible."
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s a été supprimé avec succès."
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Sera supprimé %s"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "Une erreur s'est produite en supprimant le fichier %s."
+
+#: src/app/main/data/dashboard.cljs:767
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Une erreur s'est produite en supprimant les fichiers."
+
+#: src/app/main/data/dashboard.cljs:800
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Une erreur s'est produite en supprimant le projet %s."
+
+#: src/app/main/data/dashboard.cljs:895, src/app/main/ui/dashboard/file_menu.cljs:200
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "Une erreur s'est produite en restaurant le fichier %s."
+
+#: src/app/main/data/dashboard.cljs:896
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "Une erreur s'est produite en restaurant les fichiers."
+
+#: src/app/main/data/dashboard.cljs:928
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "Une erreur s'est produite en restaurant le projet %s et ses fichiers."
+
+#: src/app/main/data/dashboard.cljs:708
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Suppression des fichiers…"
+
+#: src/app/main/data/dashboard.cljs:829
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Restauration des fichiers…"
+
+#: src/app/main/data/dashboard.cljs:709
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "La suppression est inopinément lente"
