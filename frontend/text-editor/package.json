@@ -1,7 +1,7 @@
 {
   "name": "@penpot/text-editor",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "src/editor/TextEditor.js",
   "scripts": {
@@ -9,23 +9,23 @@
     "coverage": "vitest run --coverage",
     "wasm:update": "cp ../resources/public/js/render_wasm.wasm ./src/wasm/render_wasm.wasm && cp ../resources/public/js/render_wasm.js ./src/wasm/render_wasm.js",
     "test": "vitest --run",
-    "fmt:js": "yarn run prettier -c src/**/*.js",
+    "fmt:js": "pnpx prettier -c src/**/*.js",
     "test:watch": "vitest",
     "test:watch:ui": "vitest --ui",
     "test:watch:e2e": "vitest --browser"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.1",
-    "@types/node": "^20.14.10",
+    "@types/node": "^25.0.3",
     "@vitest/browser": "^1.6.0",
     "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
-    "esbuild": "^0.24.0",
-    "jsdom": "^25.0.0",
+    "esbuild": "^0.27.2",
+    "jsdom": "^27.4.0",
     "playwright": "^1.45.1",
-    "prettier": "^3.3.3",
+    "prettier": "^3.7.4",
     "vite": "^5.3.1",
     "vitest": "^1.6.0"
   },
-  "packageManager": "yarn@4.3.1"
+  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6"
 }
