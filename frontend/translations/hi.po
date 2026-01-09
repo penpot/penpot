@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"PO-Revision-Date: 2026-01-10 01:01+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
 "hi/>\n"
@@ -8477,3 +8477,68 @@ msgstr "स्वतः सहेजे गए संस्करण %s दि�
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "पथ बंद करने के लिए क्लिक करें"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:207
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "आप %s को पुनर्स्थापित करने जा रहे हैं।"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:206
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "फ़ाइल पुनर्स्थापित करें"
+
+#: src/app/main/ui/dashboard/deleted.cljs:299
+msgid "dashboard.clear-trash-button"
+msgstr "कचरा साफ़ करें"
+
+#: src/app/main/ui/dashboard/deleted.cljs:251
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"क्या आप वाकई अपने सभी डिलीट किए गए प्रोजेक्ट और फाइलों को हमेशा के लिए डिलीट करना "
+"चाहते हैं? यह एक अपरिवर्तनीय प्रक्रिया है।"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:268
+msgid "dashboard.delete-file-button"
+msgstr "फ़ाइल हटाएँ"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:220
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr ""
+"क्या आप वाकई %s को हमेशा के लिए हटाना चाहते हैं? यह एक अपरिवर्तनीय कार्रवाई है।"
+
+#: src/app/main/data/dashboard.cljs:764
+msgid "dashboard.delete-files-success-notification"
+msgstr "% फ़ाइलों को सफलतापूर्वक हटा दिया गया है।।"
+
+#: src/app/main/ui/dashboard/deleted.cljs:66, src/app/main/ui/dashboard/deleted.cljs:68, src/app/main/ui/dashboard/deleted.cljs:250, src/app/main/ui/dashboard/deleted.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:219, src/app/main/ui/dashboard/file_menu.cljs:221
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "हमेशा के लिए हटाएं"
+
+#: src/app/main/ui/dashboard/deleted.cljs:75
+msgid "dashboard.delete-project-button"
+msgstr "प्रोजेक्ट हटाएँ"
+
+#: src/app/main/ui/dashboard/deleted.cljs:67
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"क्या आप वाकई %s प्रोजेक्ट को हमेशा के लिए हटाना चाहते हैं? आप इसे और इसमें मौजूद सभी "
+"फाइलों को हमेशा के लिए हटाने जा रहे हैं। यह एक अपरिवर्तनीय प्रक्रिया है।"
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s सफलतापूर्वक हटा दिया गया है।"
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "% हटा दिया जाएगा"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "फाइल %s को डिलीट करते समय एक त्रुटि हुई।"
+
+#: src/app/main/data/dashboard.cljs:767
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "फ़ाइलों को हटाने के दौरान त्रुटि हुई।"
+
+#: src/app/main/data/dashboard.cljs:800
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "प्रोजेक्ट %s को डिलीट करते समय एक त्रुटि हुई।"
