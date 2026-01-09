@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"PO-Revision-Date: 2026-01-10 01:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -573,15 +573,15 @@ msgid "dashboard.export-standard-multi"
 msgstr "Lejupielādēt %s standarta datnes (. svg +. json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, fuzzy, unused
+#, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"Viena vai vairākas izgūstamās datnes izmanto koplietojamas bibliotēkas. Ko "
-"iesākt ar to līdzekļiem*?"
+"Viena vai vairākas lejupielādējamās datnes izmanto koplietojamas "
+"bibliotēkas. Ko iesākt ar to līdzekļiem*?"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Fonts izdzēsts"
+msgstr "Trūkstošs fonts"
 
 #: src/app/main/ui/dashboard/fonts.cljs:218
 msgid "dashboard.fonts.dismiss-all"
@@ -5289,7 +5289,7 @@ msgstr "Rādīt četrpusējas atbīdes iespējas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:455, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:461
 msgid "workspace.layout-grid.editor.padding.horizontal"
-msgstr "Guleniskā atbīde"
+msgstr "Līmeniskā atbīde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:632, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:638
 msgid "workspace.layout-grid.editor.padding.left"
@@ -7975,3 +7975,55 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+msgid "workspace.tokens.theme.enable"
+msgstr "Iespējot"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+msgid "workspace.tokens.theme.disable"
+msgstr "Atspējot"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:297
+msgid "workspace.sidebar.layers.filter"
+msgstr "Atsijāt"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:453
+msgid "workspace.options.orientation.vertical"
+msgstr "Stateniski"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:457
+msgid "workspace.options.orientation.horizontal"
+msgstr "Līmeniski"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "Uz augšu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Pa labi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "Uz āru"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Pa kreisi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "Uz iekšu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "Uz leju"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:239
+msgid "workspace.layout-item.width-100"
+msgstr "100% platums"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:266
+msgid "workspace.layout-item.height-100"
+msgstr "100% augstums"
