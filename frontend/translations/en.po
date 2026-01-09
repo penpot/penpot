@@ -2521,6 +2521,9 @@ msgstr "Release notes"
 msgid "labels.reload-file"
 msgstr "Reload file"
 
+msgid "labels.reload-page"
+msgstr "Reload page"
+
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 #, unused
 msgid "labels.remove"
@@ -8438,6 +8441,12 @@ msgstr "Recent"
 
 msgid "labels.deleted"
 msgstr "Deleted"
+
+msgid "labels.webgl-context-lost.main-message"
+msgstr "Oops! The canvas context was lost"
+
+msgid "labels.webgl-context-lost.desc-message"
+msgstr "WebGL has stopped working. Please reload the page to reset it"
 
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restore All"
