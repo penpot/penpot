@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.management.forms.controls.input
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.format :as dwtf]
@@ -292,7 +293,7 @@
                 (mf/spread-props props {:hint-formated true})
                 props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name]
+    (mf/with-effect [resolve-stream tokens token input-name name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token))
@@ -317,11 +318,21 @@
                              (reset! hint* {:message error' :type "error"}))
 
                            :else
-                           (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))
-                                 input-value (get-in @form [:data :value input-name] "")]
+                           (let [input-value (get-in @form [:data :value input-name] "")
+                                 resolved-value (if (= name :line-height)
+                                                  (when-let [{:keys [unit value]} (cft/parse-token-value input-value)]
+                                                    (let [font-size (get-in @form [:data :value :font-size] "")
+                                                          calculated (case unit
+                                                                       "%" (/ (d/parse-double value) 100)
+                                                                       "px" (/ (d/parse-double value) (d/parse-double font-size))
+                                                                       nil value
+                                                                       nil)]
+                                                      (dwtf/format-token-value calculated)))
+                                                  (dwtf/format-token-value value))
+                                 message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (if (= input-value (str value))
+                             (if (= input-value (str resolved-value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
         (fn []
