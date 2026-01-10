@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-10 01:01+0000\n"
+"PO-Revision-Date: 2026-01-11 11:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -1238,3 +1238,163 @@ msgstr "Restauration des fichiers…"
 #: src/app/main/data/dashboard.cljs:709
 msgid "dashboard.progress-notification.slow-delete"
 msgstr "La suppression est inopinément lente"
+
+#: src/app/main/ui/dashboard/team.cljs:1264
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Aucun lien de rappel (webhook) n'a été créé."
+
+#, unused
+msgid "dashboard.webhooks.update.success"
+msgstr "Lien de rappel (webhook) mis à jour avec succès."
+
+#: src/app/main/ui/settings.cljs:34
+msgid "dashboard.your-account-title"
+msgstr "Ton compte"
+
+#: src/app/main/ui/settings/profile.cljs:70
+msgid "dashboard.your-email"
+msgstr "Adresse courriel"
+
+#: src/app/main/ui/settings/profile.cljs:62
+msgid "dashboard.your-name"
+msgstr "Ton nom"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+msgid "dashboard.your-penpot"
+msgstr "Ton Penpot"
+
+#: src/app/main/ui/alert.cljs:35
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs:34, src/app/main/ui/alert.cljs:37
+msgid "ds.alert-title"
+msgstr "Attention"
+
+#: src/app/main/ui/confirm.cljs:86
+msgid "ds.component-subtitle"
+msgstr "Composantes à mettre à jour :"
+
+#: src/app/main/ui/workspace/plugins.cljs:340, src/app/main/ui/workspace/plugins.cljs:394
+msgid "ds.confirm-allow"
+msgstr "Permettre"
+
+#: src/app/main/ui/confirm.cljs:36, src/app/main/ui/confirm.cljs:40
+msgid "ds.confirm-title"
+msgstr "Es-tu certain?"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Aucun token applicable dans les collections ou thèmes actifs."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:100
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Aucun résultat trouvé."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:650, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Ouvrir la liste de tokens"
+
+#: src/app/main/data/dashboard.cljs:830
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restauration inopinément lente"
+
+#: src/app/main/ui/dashboard/deleted.cljs:263
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "Tu vas restaurer tous tes projets et fichiers. Ça pourrait être long."
+
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Restaurer tous les projets et fichiers"
+
+#: src/app/main/ui/dashboard/deleted.cljs:294
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Tout restaurer"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:264
+msgid "dashboard.restore-file-button"
+msgstr "Restaurer le fichier"
+
+#: src/app/main/data/dashboard.cljs:889
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s fichiers ont été restaurés avec succès."
+
+#: src/app/main/ui/dashboard/deleted.cljs:72
+msgid "dashboard.restore-project-button"
+msgstr "Restaurer le projet"
+
+#: src/app/main/ui/dashboard/deleted.cljs:55
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "Tu vas restaurer le projet %s et tous les fichiers qu'il contient."
+
+#: src/app/main/ui/dashboard/deleted.cljs:54
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Restaurer le projet"
+
+#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:197
+msgid "dashboard.restore-success-notification"
+msgstr "%s a été restauré avec succès."
+
+#: src/app/main/ui/dashboard/deleted.cljs:284
+msgid "dashboard.trash-info-text-part1"
+msgstr "Les fichiers supprimés resteront dans la corbeille pour"
+
+#: src/app/main/ui/dashboard/deleted.cljs:286
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s jours. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:287
+msgid "dashboard.trash-info-text-part3"
+msgstr "Ensuite, ils sont supprimés de manière permanente."
+
+#: src/app/main/ui/dashboard/deleted.cljs:289
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"Si tu changes d'avis, tu peux les restaurer ou les supprimer de manière "
+"permanente à partir du menu de chaque fichier."
+
+#: src/app/main/ui/dashboard/team.cljs:1116
+msgid "dashboard.webhooks.active.explain"
+msgstr ""
+"Les détails de l'événement sont envoyés à l'activation du lien de rappel "
+"(webhook)"
+
+#: src/app/main/ui/dashboard/team.cljs:1160
+msgid "dashboard.webhooks.cant-edit"
+msgstr ""
+"Tu peux seulement supprimer ou modifier les liens de rappel que tu as créés."
+
+#: src/app/main/ui/dashboard/team.cljs:1106
+msgid "dashboard.webhooks.content-type"
+msgstr "Type de contenu"
+
+#: src/app/main/ui/dashboard/team.cljs:1139
+msgid "dashboard.webhooks.create"
+msgstr "Créer un lien de rappel"
+
+#: src/app/main/ui/dashboard/team.cljs:1031
+msgid "dashboard.webhooks.create.success"
+msgstr "Lien de rappel créé avec succès."
+
+#: src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Les liens de rappel (webhooks) permettent à d'autres sites ou applis d'être "
+"notifiés de certains événements Penpot. Nous envoyons une requête POST à "
+"chacune des URLs fournies."
+
+#: src/app/main/ui/dashboard/team.cljs:1265
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Clique le bouton \"Créer un lien de rappel\" pour en créer un."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Détacher du token"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:41, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Ce token n'est disponible dans aucune collection ou est invalide."
+
+#: src/app/main/data/auth.cljs:339
+msgid "errors.auth-provider-not-allowed"
+msgstr "Fournisseur d'authentification non permis pour ce profil utilisateur"
