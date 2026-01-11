@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-11 11:01+0000\n"
+"PO-Revision-Date: 2026-01-12 08:33+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -1398,3 +1398,109 @@ msgstr "Ce token n'est disponible dans aucune collection ou est invalide."
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "Fournisseur d'authentification non permis pour ce profil utilisateur"
+
+#: src/app/main/data/auth.cljs:189
+msgid "errors.auth-provider-not-configured"
+msgstr "Fournisseur d'authentification non configuré."
+
+#: src/app/main/errors.cljs:119
+msgid "errors.auth.unable-to-login"
+msgstr "Tu n'es pas authentifié ou la session a expiré."
+
+#: src/app/main/data/fonts.cljs:192, src/app/main/ui/dashboard/fonts.cljs:120
+msgid "errors.bad-font"
+msgstr "La police de caractères %s n'a pu être chargée"
+
+#: src/app/main/data/fonts.cljs:191
+msgid "errors.bad-font-plural"
+msgstr "Les polices de caractères %s n'ont pu être chargées"
+
+#: src/app/main/data/workspace/media.cljs:204
+msgid "errors.cannot-upload"
+msgstr "Impossible de téléverser le fichier média."
+
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/comments.cljs:749, src/app/main/ui/comments.cljs:846
+msgid "errors.character-limit-exceeded"
+msgstr "Limite de caractères dépassée"
+
+#: src/app/main/data/workspace/clipboard.cljs:481
+msgid "errors.clipboard-not-implemented"
+msgstr "Le navigateur ne peut faire cette opération"
+
+#: src/app/main/errors.cljs:238
+msgid "errors.comment-error"
+msgstr "Une erreur est survenue avec le commentaire"
+
+#: src/app/main/errors.cljs:307
+msgid "errors.deprecated"
+msgstr ""
+"Désolé! Il est impossible d'ouvrir ce fichier car ce dernier utilise un type "
+"d'atout Penpot désuet."
+
+#: src/app/main/errors.cljs:310
+msgid "errors.deprecated.contact.after"
+msgstr "pour que nous puissions t'aider."
+
+#: src/app/main/errors.cljs:308
+msgid "errors.deprecated.contact.before"
+msgstr "Même si Penpot ne supporte plus ce type d'atout, tu peux"
+
+#: src/app/main/errors.cljs:309
+msgid "errors.deprecated.contact.text"
+msgstr "nous contacter"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:305
+msgid "errors.drop-token-set-parent-to-child"
+msgstr "Impossible de placer une collection parente à l'intérieur d'elle-même."
+
+#: src/app/main/ui/auth/verify_token.cljs:84, src/app/main/ui/settings/change_email.cljs:29
+msgid "errors.email-already-exists"
+msgstr "Ce courriel est déjà en utilisation"
+
+#: src/app/main/ui/auth/verify_token.cljs:89
+msgid "errors.email-already-validated"
+msgstr "Ce courriel est déjà validé."
+
+#: src/app/main/ui/auth/register.cljs:105, src/app/main/ui/settings/password.cljs:29
+msgid "errors.email-as-password"
+msgstr "Tu ne peux pas utiliser ton adresse courriel comme mot de passe"
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "L'adresse courriel ne correspond pas à l'invitation."
+
+#: src/app/main/data/auth.cljs:341, src/app/main/ui/auth/register.cljs:95
+msgid "errors.email-domain-not-allowed"
+msgstr "Ce domaine n'est pas permis"
+
+#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:627, src/app/main/ui/settings/change_email.cljs:37
+msgid "errors.email-has-permanent-bounces"
+msgstr ""
+"L'adresse courriel « %s » a généré plusieurs rapports de rebond permanent."
+
+#: src/app/main/ui/dashboard/team.cljs:196, src/app/main/ui/dashboard/team.cljs:858, src/app/main/ui/onboarding/team_choice.cljs:110
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr ""
+"L'adresse courriel « %s » est rapportée comme pourriel ou rebond permanent."
+
+#: src/app/main/errors.cljs:284
+msgid "errors.feature-mismatch"
+msgstr ""
+"Il sembe que tu ouvres un fichier qui utilise la fonctionalité « %s » mais "
+"la version actuelle de Penpot ne la supporte pas ou elle a été désactivée."
+
+#: src/app/main/errors.cljs:288, src/app/main/errors.cljs:302
+msgid "errors.feature-not-supported"
+msgstr "La fonction « %s » n'est pas supportée."
+
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+msgid "errors.field-max-length"
+msgstr "Doit contenier un maximum de %s caractères."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Doit contenir au moins 1 caractère."
+
+#: src/app/util/forms.cljs:66
+msgid "errors.field-missing"
+msgstr "Champ vide"
