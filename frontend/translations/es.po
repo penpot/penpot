@@ -8330,10 +8330,10 @@ msgstr "Restaurar todo"
 msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
 
-msgid "dashboard.restore-file-button"
+msgid "dashboard.file-menu.restore-files-option"
 msgstr "Restaurar archivo"
 
-msgid "dashboard.delete-file-button"
+msgid "dashboard.file-menu.delete-files-permanently-option"
 msgstr "Eliminar archivo"
 
 msgid "dashboard.restore-project-button"

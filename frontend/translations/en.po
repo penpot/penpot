@@ -8477,10 +8477,10 @@ msgstr "Restore All"
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
 
-msgid "dashboard.restore-file-button"
+msgid "dashboard.file-menu.restore-files-option"
 msgstr "Restore file"
 
-msgid "dashboard.delete-file-button"
+msgid "dashboard.file-menu.delete-files-permanently-option"
 msgstr "Delete file"
 
 msgid "dashboard.restore-project-button"
