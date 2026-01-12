@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-11 11:01+0000\n"
+"PO-Revision-Date: 2026-01-13 14:01+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 5.15.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -658,11 +658,13 @@ msgstr ""
 msgid "dashboard.file-menu.delete-files-permanently-option"
 msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Dosyayı sil"
+msgstr[1] "Dosyaları sil"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:265
 msgid "dashboard.file-menu.restore-files-option"
 msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "Dosyayı geri yükle"
+msgstr[1] "Dosyaları geri yükle"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
@@ -2090,7 +2092,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Etkin temalar"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS kısaltmasını panoya kopyala"
 
@@ -5009,7 +5010,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "%s oldunuz!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Bu planla bizi şu zamandan beri destekliyorsunuz: %s"
 
@@ -8153,7 +8153,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "Opaklık 0 ile %100 veya 0 ile 1 arasında olmalıdır (örneğin %50 veya 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Orijinal değer: %s"
 
@@ -8214,7 +8213,6 @@ msgid "workspace.tokens.renaming-token-from-to"
 msgstr "'%s' tokeni '%s' olarak yeniden adlandırılıyor"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Çözülen değer: %s"
 
@@ -8356,7 +8354,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Tema listesi"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:277
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Açıklama"
 
@@ -8765,3 +8762,7 @@ msgstr "Otomatik kaydedilen sürümler %s gün boyunca saklanacaktır."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Çöp kutunuz boş. Silinen dosyalar ve projeler burada görünecektir."
