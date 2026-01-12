@@ -8331,10 +8331,12 @@ msgid "dashboard.clear-trash-button"
 msgstr "Vaciar papelera"
 
 msgid "dashboard.file-menu.restore-files-option"
-msgstr "Restaurar archivo"
+msgstr[0] "Restaurar archivo"
+msgstr[1] "Restaurar archivos"
 
 msgid "dashboard.file-menu.delete-files-permanently-option"
-msgstr "Eliminar archivo"
+msgstr[0] "Eliminar archivo"
+msgstr[1] "Eliminar archivos"
 
 msgid "dashboard.restore-project-button"
 msgstr "Restaurar proyecto"
