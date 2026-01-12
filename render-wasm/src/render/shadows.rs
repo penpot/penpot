@@ -135,7 +135,7 @@ pub fn render_text_shadows(
 
     let canvas = render_state
         .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::TextDropShadows));
+        .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::TextDropShadows));
 
     for shadow in shadows {
         let shadow_layer = SaveLayerRec::default().paint(shadow);
