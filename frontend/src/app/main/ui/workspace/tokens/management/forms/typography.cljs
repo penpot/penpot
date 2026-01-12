@@ -95,9 +95,9 @@
         line-height-sub-token
         (mf/with-memo [token]
           (if-let [value (get token :value)]
-            {:type :number
+            {:type :dimensions
              :value (get value :line-height)}
-            {:type :number}))
+            {:type :dimensions}))
 
         text-case-sub-token
         (mf/with-memo [token]

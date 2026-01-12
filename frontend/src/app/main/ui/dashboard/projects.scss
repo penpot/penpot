@@ -4,35 +4,36 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
-@use "../ds/typography.scss" as t;
-@use "../ds/_borders.scss" as *;
-@use "../ds/spacing.scss" as *;
-@use "../ds/_sizes.scss" as *;
-@use "../ds/z-index.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-container {
   flex: 1 0 0;
-  width: 100%;
+  inline-size: 100%;
   margin-inline-end: var(--sp-l);
-  border-top: $b-1 solid var(--panel-border-color);
+  border-block-start: $b-1 solid var(--panel-border-color);
   overflow-y: auto;
-  padding-bottom: var(--sp-xxxl);
+  padding-block-end: var(--sp-xxxl);
 }
 
 .dashboard-projects {
   user-select: none;
-  height: calc(100vh - deprecated.$s-64);
+  block-size: calc(100vh - px2rem(64));
 }
 
 .with-team-hero {
-  height: calc(100vh - deprecated.$s-280);
+  block-size: calc(100vh - px2rem(280));
 }
 
 .dashboard-shared {
-  width: calc(100vw - deprecated.$s-320);
-  margin-inline-end: deprecated.$s-52;
+  inline-size: calc(100vw - px2rem(320));
+  margin-inline-end: px2rem(52);
 }
 
 .search {
@@ -66,8 +67,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-s);
-  width: 99%;
-  max-height: $sz-40;
+  inline-size: 99%;
+  max-block-size: $sz-40;
   padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l);
   margin-block-start: var(--sp-l);
   border-radius: $br-4;
@@ -77,19 +78,19 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  width: 100%;
-  min-height: var(--sp-xxxl);
+  inline-size: 100%;
+  min-block-size: $sz-32;
   margin-inline-start: var(--sp-s);
 }
 
 .project-name {
+  @include textEllipsis;
   @include t.use-typography("body-large");
-  width: fit-content;
-  margin-inline-end: var(--sp-m);
-  line-height: 0.8;
   color: var(--title-foreground-color-hover);
   cursor: pointer;
-  height: var(--sp-l);
+  block-size: $sz-16;
+  line-height: 0.8;
+  margin-inline-end: var(--sp-m);
 }
 
 .info-wrapper {
@@ -116,8 +117,8 @@
 .add-file-btn,
 .options-btn {
   @extend .button-tertiary;
-  height: var(--sp-xxxl);
-  width: var(--sp-xxxl);
+  block-size: $sz-32;
+  inline-size: $sz-32;
   margin: 0 var(--sp-s);
   padding: var(--sp-s);
 }
@@ -129,7 +130,7 @@
 }
 
 .grid-container {
-  width: 100%;
+  inline-size: 100%;
   padding: 0 var(--sp-xs);
 }
 
@@ -139,11 +140,13 @@
 
 .show-more {
   --show-more-color: var(--button-secondary-foreground-color-rest);
-  @include deprecated.buttonStyle;
   @include t.use-typography("body-medium");
+  border: none;
+  background: none;
+  cursor: pointer;
   position: absolute;
-  top: var(--sp-s);
-  right: deprecated.$s-52;
+  inset-block-start: var(--sp-s);
+  inset-inline-end: px2rem(52);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -156,8 +159,8 @@
 }
 
 .show-more-icon {
-  height: var(--sp-l);
-  width: var(--sp-l);
+  block-size: $sz-16;
+  inline-size: $sz-16;
   fill: none;
   stroke: var(--show-more-color);
 }
@@ -165,7 +168,7 @@
 // Team hero
 .team-hero {
   background-color: var(--color-background-tertiary);
-  border-radius: deprecated.$br-8;
+  border-radius: $br-8;
   border: none;
   display: flex;
   margin: var(--sp-l);
@@ -174,12 +177,11 @@
 
   img {
     border-radius: $br-4;
-    height: var(--sp-xl) 0;
-    width: auto;
+    inline-size: auto;
 
     @media (max-width: 1200px) {
       display: none;
-      width: 0;
+      inline-size: 0;
     }
   }
 }
@@ -193,9 +195,8 @@
 }
 
 .title {
-  font-size: $sz-24;
   color: var(--color-foreground-primary);
-  font-weight: deprecated.$fw400;
+  font-size: px2rem(24);
 }
 
 .info {
@@ -215,8 +216,8 @@
   --close-icon-foreground-color: var(--icon-foreground);
   position: absolute;
   top: var(--sp-xl);
-  right: var(--sp-xxl);
-  width: var(--sp-xxl);
+  inset-inline-end: var(--sp-xxl);
+  inline-size: var(--sp-xxl);
   background-color: transparent;
   border: none;
   cursor: pointer;
@@ -231,20 +232,20 @@
 }
 
 .invite {
-  height: var(--sp-xxxl);
-  width: deprecated.$s-180;
+  block-size: $sz-32;
+  inline-size: px2rem(180);
 }
 
 .img-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--sp-xl) 0;
-  height: var(--sp-xl) 0;
+  inline-size: var(--sp-xl) 0;
+  block-size: var(--sp-xl) 0;
   overflow: hidden;
-  border-radius: deprecated.$br-4;
+  border-radius: $br-4;
   @media (max-width: 1200px) {
     display: none;
-    width: 0;
+    inline-size: 0;
   }
 }

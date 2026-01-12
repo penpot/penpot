@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
+   [app.common.data :as d]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as-alias ev]
@@ -89,12 +90,12 @@
         on-duplicate
         (fn [_]
           (apply st/emit! (map dd/duplicate-file files))
-          (st/emit! (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
+          (st/emit! (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c file-count)))))
 
         on-delete-accept
         (fn [_]
           (apply st/emit! (map dd/delete-file files))
-          (st/emit! (ntf/success (tr "dashboard.success-delete-file" (i18n/c (count files))))
+          (st/emit! (ntf/success (tr "dashboard.success-delete-file" (i18n/c file-count)))
                     (dd/clear-selected-files)))
 
         on-delete
@@ -193,7 +194,7 @@
         (fn [_]
           (st/emit! (dd/restore-files-immediately
                      (with-meta {:team-id (:id current-team)
-                                 :ids #{(:id file)}}
+                                 :ids (into #{} d/xf:map-id files)}
                        {:on-success #(st/emit! (ntf/success (tr "dashboard.restore-success-notification" (:name file)))
                                                (dd/fetch-projects (:id current-team))
                                                (dd/fetch-deleted-files (:id current-team)))
@@ -201,6 +202,7 @@
 
         on-restore-immediately
         (fn []
+          (prn files)
           (st/emit!
            (modal/show {:type :confirm
                         :title (tr "dashboard-restore-file-confirmation.title")
@@ -213,7 +215,7 @@
         (fn []
           (let [accept-fn #(st/emit! (dd/delete-files-immediately
                                       {:team-id (:id current-team)
-                                       :ids #{(:id file)}}))]
+                                       :ids (into #{} d/xf:map-id files)}))]
             (st/emit!
              (modal/show {:type :confirm
                           :title (tr "dashboard.delete-forever-confirmation.title")
@@ -260,14 +262,12 @@
 
           options
           (if can-restore
-            [(when can-restore
-               {:name    (tr "dashboard.restore-file-button")
-                :id      "restore-file"
-                :handler on-restore-immediately})
-             (when can-restore
-               {:name    (tr "dashboard.delete-file-button")
-                :id      "delete-file"
-                :handler on-delete-immediately})]
+            [{:name    (tr "dashboard.file-menu.restore-files-option" (i18n/c file-count))
+              :id      "restore-file"
+              :handler on-restore-immediately}
+             {:name    (tr "dashboard.file-menu.delete-files-permanently-option" (i18n/c file-count))
+              :id      "delete-file"
+              :handler on-delete-immediately}]
             (if multi?
               [(when can-edit
                  {:name    (tr "dashboard.duplicate-multi" file-count)

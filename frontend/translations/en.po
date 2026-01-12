@@ -8717,3 +8717,14 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restore file"
+msgstr[1] "Restore files"
+
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Delete file"
+msgstr[1] "Delete files"
+
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Your trash is empty. Deleted files and projects will appear here."

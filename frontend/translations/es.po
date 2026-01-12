@@ -8564,3 +8564,14 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restaurar archivo"
+msgstr[1] "Restaurar archivos"
+
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Eliminar archivo"
+msgstr[1] "Eliminar archivos"
+
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Tu papelera está vacía. Los archivos y proyectos eliminados aparecerán aquí."
