@@ -7,7 +7,7 @@ jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
     environment: release-admins
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
