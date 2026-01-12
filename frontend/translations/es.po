@@ -8566,10 +8566,12 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
 msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "Restaurar archivo"
 msgstr[1] "Restaurar archivos"
 
 msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Eliminar archivo"
 msgstr[1] "Eliminar archivos"
 
