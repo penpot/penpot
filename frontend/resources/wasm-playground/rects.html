@@ -71,10 +71,10 @@
 
       performance.mark('render:begin');
       Module._set_view(1, 0, 0);
-      Module._render(Date.now());
+      Module._render_sync();
       performance.mark('render:end');
       const { duration } = performance.measure('render', 'render:begin', 'render:end');
-      // alert(`render time: ${duration.toFixed(2)}ms`);
+      alert(`render time: ${duration.toFixed(2)}ms`);
     });
     
   </script>
