@@ -55,6 +55,8 @@ pub struct Surfaces {
     tiles: TileTextureCache,
     sampling_options: skia::SamplingOptions,
     margins: skia::ISize,
+    // Tracks which surfaces have content (dirty flag bitmask)
+    dirty_surfaces: u32,
 }
 
 #[allow(dead_code)]
@@ -105,6 +107,7 @@ impl Surfaces {
             tiles,
             sampling_options,
             margins,
+            dirty_surfaces: 0,
         }
     }
 
@@ -148,7 +151,38 @@ impl Surfaces {
     }
 
     pub fn canvas(&mut self, id: SurfaceId) -> &skia::Canvas {
+        // Automatically mark render surfaces as dirty when accessed
+        // This tracks which surfaces have content for optimization
+        match id {
+            SurfaceId::Fills
+            | SurfaceId::Strokes
+            | SurfaceId::InnerShadows
+            | SurfaceId::TextDropShadows => {
+                self.mark_dirty(id);
+            }
+            _ => {}
+        }
         self.get_mut(id).canvas()
+    }
+
+    /// Marks a surface as having content (dirty)
+    pub fn mark_dirty(&mut self, id: SurfaceId) {
+        self.dirty_surfaces |= id as u32;
+    }
+
+    /// Checks if a surface has content
+    pub fn is_dirty(&self, id: SurfaceId) -> bool {
+        (self.dirty_surfaces & id as u32) != 0
+    }
+
+    /// Clears the dirty flag for a surface or set of surfaces
+    pub fn clear_dirty(&mut self, ids: u32) {
+        self.dirty_surfaces &= !ids;
+    }
+
+    /// Clears all dirty flags
+    pub fn clear_all_dirty(&mut self) {
+        self.dirty_surfaces = 0;
     }
 
     pub fn flush_and_submit(&mut self, gpu_state: &mut GpuState, id: SurfaceId) {
@@ -212,18 +246,33 @@ impl Surfaces {
 
     pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
         let translation = self.get_render_context_translation(render_area, scale);
-        self.apply_mut(
-            SurfaceId::Fills as u32
-                | SurfaceId::Strokes as u32
-                | SurfaceId::InnerShadows as u32
-                | SurfaceId::TextDropShadows as u32,
-            |s| {
-                let canvas = s.canvas();
-                canvas.reset_matrix();
-                canvas.scale((scale, scale));
-                canvas.translate(translation);
-            },
-        );
+        
+        // When context changes (zoom/pan/tile), clear all render surfaces first
+        // to remove any residual content from previous tiles, then mark as dirty
+        // so they get redrawn with new transformations
+        let surface_ids = SurfaceId::Fills as u32
+            | SurfaceId::Strokes as u32
+            | SurfaceId::InnerShadows as u32
+            | SurfaceId::TextDropShadows as u32;
+        
+        // Clear surfaces before updating transformations to remove residual content
+        self.apply_mut(surface_ids, |s| {
+            s.canvas().clear(skia::Color::TRANSPARENT);
+        });
+        
+        // Mark all render surfaces as dirty so they get redrawn
+        self.mark_dirty(SurfaceId::Fills);
+        self.mark_dirty(SurfaceId::Strokes);
+        self.mark_dirty(SurfaceId::InnerShadows);
+        self.mark_dirty(SurfaceId::TextDropShadows);
+        
+        // Update transformations
+        self.apply_mut(surface_ids, |s| {
+            let canvas = s.canvas();
+            canvas.reset_matrix();
+            canvas.scale((scale, scale));
+            canvas.translate(translation);
+        });
     }
 
     #[inline]
@@ -268,15 +317,18 @@ impl Surfaces {
         } else {
             self.canvas(id).draw_rect(shape.selrect, paint);
         }
+        self.mark_dirty(id);
     }
 
     pub fn draw_circle_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
         self.canvas(id).draw_oval(shape.selrect, paint);
+        self.mark_dirty(id);
     }
 
     pub fn draw_path_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
         if let Some(path) = shape.get_skia_path() {
             self.canvas(id).draw_path(&path, paint);
+            self.mark_dirty(id);
         }
     }
 
@@ -304,6 +356,9 @@ impl Surfaces {
         self.canvas(SurfaceId::UI)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
+
+        // Clear all dirty flags after reset
+        self.clear_all_dirty();
     }
 
     pub fn cache_current_tile_texture(

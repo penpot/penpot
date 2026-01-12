@@ -623,38 +623,65 @@ impl RenderState {
 
         let paint = skia::Paint::default();
 
-        self.surfaces
-            .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        // Only draw surfaces that have content (dirty flag optimization)
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            self.surfaces
+                .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        }
 
-        self.surfaces
-            .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            self.surfaces
+                .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        }
 
         let mut render_overlay_below_strokes = false;
         if let Some(shape) = shape {
             render_overlay_below_strokes = shape.has_fills();
         }
 
-        if render_overlay_below_strokes {
+        if render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        self.surfaces
-            .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            self.surfaces
+                .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        }
 
-        if !render_overlay_below_strokes {
+        if !render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
+        // Only clear surfaces that were actually used (have dirty flag set)
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
             | SurfaceId::TextDropShadows as u32;
 
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().clear(skia::Color::TRANSPARENT);
-        });
+        // Build mask of dirty surfaces that need clearing
+        let mut dirty_surfaces_to_clear = 0u32;
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            dirty_surfaces_to_clear |= SurfaceId::Strokes as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            dirty_surfaces_to_clear |= SurfaceId::Fills as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::InnerShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::InnerShadows as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::TextDropShadows as u32;
+        }
+
+        if dirty_surfaces_to_clear != 0 {
+            self.surfaces.apply_mut(dirty_surfaces_to_clear, |s| {
+                s.canvas().clear(skia::Color::TRANSPARENT);
+            });
+            // Clear dirty flags for surfaces we just cleared
+            self.surfaces.clear_dirty(dirty_surfaces_to_clear);
+        }
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -796,7 +823,7 @@ impl RenderState {
                 self.surfaces.canvas(fills_surface_id).concat(&matrix);
 
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.surfaces.canvas(fills_surface_id))
+                    svg.render(self.surfaces.canvas(fills_surface_id));
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
                     let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
