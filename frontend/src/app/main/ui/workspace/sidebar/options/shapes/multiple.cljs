@@ -223,6 +223,7 @@
             (cond
               (= existing ::not-found) (assoc acc t-attr new-val)
               (= existing new-val)     acc
+              (nil? new-val)           acc
               :else                    (assoc acc t-attr :multiple))))
 
         merge-shape-attr
