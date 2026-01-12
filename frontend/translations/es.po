@@ -457,7 +457,7 @@ msgstr ""
 "archivos eliminados? Esta es una acción irreversible."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.delete-file-button"
+msgid "dashboard.file-menu.delete-files-permanently-option"
 msgstr "Eliminar archivo"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:220
@@ -1011,7 +1011,7 @@ msgid "dashboard.restore-all-deleted-button"
 msgstr "Restaurar todo"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:264
-msgid "dashboard.restore-file-button"
+msgid "dashboard.file-menu.restore-files-option"
 msgstr "Restaurar archivo"
 
 #: src/app/main/data/dashboard.cljs:889

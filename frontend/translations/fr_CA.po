@@ -1167,8 +1167,9 @@ msgstr ""
 "supprimés ? Ceci est une action irréversible."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.delete-file-button"
-msgstr "Supprimer le fichier"
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Supprimer le fichier"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:220
 msgid "dashboard.delete-file-forever-confirmation.description"
@@ -1312,8 +1313,9 @@ msgid "dashboard.restore-all-deleted-button"
 msgstr "Tout restaurer"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:264
-msgid "dashboard.restore-file-button"
-msgstr "Restaurer le fichier"
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restaurer le fichier"
 
 #: src/app/main/data/dashboard.cljs:889
 msgid "dashboard.restore-files-success-notification"

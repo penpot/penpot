@@ -8497,8 +8497,9 @@ msgstr ""
 "चाहते हैं? यह एक अपरिवर्तनीय प्रक्रिया है।"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.delete-file-button"
-msgstr "फ़ाइल हटाएँ"
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "फ़ाइल हटाएँ"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:220
 msgid "dashboard.delete-file-forever-confirmation.description"

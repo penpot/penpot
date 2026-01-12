@@ -8537,8 +8537,9 @@ msgstr ""
 "wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.delete-file-button"
-msgstr "Bestand verwijderen"
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Bestand verwijderen"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:220
 msgid "dashboard.delete-file-forever-confirmation.description"
@@ -8628,8 +8629,9 @@ msgid "dashboard.restore-all-deleted-button"
 msgstr "Alles herstellen"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:264
-msgid "dashboard.restore-file-button"
-msgstr "Bestand herstellen"
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Bestand herstellen"
 
 #: src/app/main/data/dashboard.cljs:889
 msgid "dashboard.restore-files-success-notification"
