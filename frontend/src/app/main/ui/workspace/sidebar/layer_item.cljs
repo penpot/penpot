@@ -139,30 +139,29 @@
                         :variant-properties variant-properties
                         :variant-error variant-error
                         :component-id (:id component)
-                        :is-hidden hidden?}]
-
-       (when (not read-only?)
-         [:div {:class (stl/css-case
-                        :element-actions true
-                        :is-parent has-shapes?
-                        :selected hidden?
-                        :selected blocked?)}
-          [:button {:class (stl/css-case
-                            :toggle-element true
-                            :selected hidden?)
-                    :title (if hidden?
-                             (tr "workspace.shape.menu.show")
-                             (tr "workspace.shape.menu.hide"))
-                    :on-click on-toggle-visibility}
-           (if ^boolean hidden? deprecated-icon/hide deprecated-icon/shown)]
-          [:button {:class (stl/css-case
-                            :block-element true
-                            :selected blocked?)
-                    :title (if (:blocked item)
-                             (tr "workspace.shape.menu.unlock")
-                             (tr "workspace.shape.menu.lock"))
-                    :on-click on-toggle-blocking}
-           (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]])]]
+                        :is-hidden hidden?}]]
+      (when (not read-only?)
+        [:div {:class (stl/css-case
+                       :element-actions true
+                       :is-parent has-shapes?
+                       :selected hidden?
+                       :selected blocked?)}
+         [:button {:class (stl/css-case
+                           :toggle-element true
+                           :selected hidden?)
+                   :title (if hidden?
+                            (tr "workspace.shape.menu.show")
+                            (tr "workspace.shape.menu.hide"))
+                   :on-click on-toggle-visibility}
+          (if ^boolean hidden? deprecated-icon/hide deprecated-icon/shown)]
+         [:button {:class (stl/css-case
+                           :block-element true
+                           :selected blocked?)
+                   :title (if (:blocked item)
+                            (tr "workspace.shape.menu.unlock")
+                            (tr "workspace.shape.menu.lock"))
+                   :on-click on-toggle-blocking}
+          (if ^boolean blocked? deprecated-icon/lock deprecated-icon/unlock)]])]
 
      children]))
 

@@ -12,6 +12,9 @@
 
 - Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
+- Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
+
+### :bug: Bugs fixed
 
 ### :bug: Bugs fixed
 

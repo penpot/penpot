@@ -4,79 +4,81 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_utils.scss" as *;
+@use "ds/borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .layer-row {
-  --layer-indentation-size: calc(#{deprecated.$s-4} * 6);
+  --layer-indentation-size: var(--sp-xxl);
+  --layer-background-color: var(--color-background-primary);
+  --layer-foreground-color: inherit;
+  --shadow-color: transparent;
+  box-shadow: px2rem(16) px2rem(0) px2rem(0) px2rem(0) var(--shadow-color);
+
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: 100%;
-  background-color: var(--layer-row-background-color);
-  border: deprecated.$s-2 solid transparent;
+  inline-size: 100%;
+  background-color: var(--layer-background-color);
+  border: $b-2 solid transparent;
+  color: var(--layer-foreground-color);
 
   &.highlight,
   &:hover {
+    --layer-background-color: var(--color-background-secondary);
+    --shadow-color: var(--color-background-secondary);
     --context-hover-color: var(--layer-row-foreground-color-hover);
-    --context-hover-opacity: deprecated.$op-10;
-    background-color: var(--layer-row-background-color-hover);
-    color: var(--layer-row-foreground-color-hover);
-    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-      var(--layer-row-background-color-hover);
+    --context-hover-opacity: 1;
+    --layer-foreground-color: var(--layer-row-foreground-color-hover);
     &.hidden {
-      opacity: deprecated.$op-10;
+      opacity: 1;
     }
   }
 
   &.selected {
-    background-color: var(--layer-row-background-color-selected);
-    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-      var(--layer-row-background-color-selected);
+    --layer-background-color: var(--color-background-quaternary);
+    --shadow-color: var(--color-background-quaternary);
   }
 
   &.selected.highlight,
   &.selected:hover {
-    background-color: var(--layer-row-background-color-selected);
+    --layer-background-color: var(--color-background-quaternary);
   }
 
   .parent-selected & {
-    background-color: var(--layer-child-row-background-color);
-    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-      var(--layer-child-row-background-color);
+    --layer-background-color: var(--color-background-tertiary);
+    --shadow-color: var(--color-background-tertiary);
   }
 
   .parent-selected &.highlight,
   .parent-selected &:hover {
-    background-color: var(--layer-row-background-color-hover);
-    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-      var(--layer-row-background-color-hover);
+    --layer-background-color: var(--color-background-secondary);
+    --shadow-color: var(--color-background-secondary);
   }
 
   &.dnd-over-bot {
-    border-bottom: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
+    border-block-end: $b-2 solid var(--color-accent-primary);
   }
   &.dnd-over-top {
-    border-top: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
+    border-block-start: $b-2 solid var(--color-accent-primary);
   }
   &.dnd-over {
-    border: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
+    border: $b-2 solid var(--color-accent-primary);
   }
 }
 
 .element-children {
   .layer-row.highlight &,
   .layer-row:hover & {
-    background-color: var(--layer-row-background-color-selected);
-    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-      var(--layer-row-background-color-selected);
+    --layer-background-color: var(--color-background-quaternary);
+    --shadow-color: var(--color-background-quaternary);
   }
   .layer-row.type-comp & {
-    color: var(--layer-row-component-foreground-color);
+    --layer-foreground-color: var(--color-accent-secondary);
   }
   .layer-row.selected & {
-    background-color: transparent;
-    color: var(--layer-row-foreground-color-selected);
+    --layer-background-color: transparent;
+    --layer-foreground-color: var(--color-accent-primary);
   }
 }
 
@@ -84,21 +86,22 @@
   align-items: center;
   display: grid;
   grid-template-columns: auto 1fr auto;
-  column-gap: deprecated.$s-4;
-  height: deprecated.$s-32;
-  width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
+  column-gap: var(--sp-xs);
+  block-size: $sz-32;
+  inline-size: calc(100% - (var(--depth) * var(--layer-indentation-size)));
   cursor: pointer;
-  min-width: px2rem(140);
+  min-inline-size: px2rem(140);
   &.filtered {
-    width: calc(100% - deprecated.$s-12);
+    inline-size: calc(100% - $sz-12);
   }
 }
 
 .element-actions {
-  display: none;
-  height: 100%;
   display: flex;
   align-items: end;
+  position: sticky;
+  inset-inline-end: 0;
+  block-size: $sz-32;
 
   &.selected {
     display: flex;
@@ -111,95 +114,107 @@
 
 .button-content {
   display: flex;
-  height: 100%;
+  block-size: 100%;
 }
 
 .icon-shape {
-  @include deprecated.flexCenter;
-  @include deprecated.buttonStyle;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: none;
+  cursor: pointer;
   position: relative;
   justify-self: flex-end;
-  width: deprecated.$s-16;
-  height: 100%;
-  width: deprecated.$s-24;
-  padding-inline-start: deprecated.$s-4;
-  color: var(--icon-foreground);
+  block-size: 100%;
+  inline-size: $sz-24;
+  padding-inline-start: var(--sp-xs);
+  color: var(--color-foreground-secondary);
   .layer-row.selected & {
-    color: var(--layer-row-foreground-color-selected);
+    color: var(--color-accent-primary);
   }
   .layer-row.type-comp & {
-    color: var(--layer-row-component-foreground-color);
+    color: var(--color-accent-secondary);
   }
   .inverse & {
     transform: rotate(-90deg);
   }
   .layer-row.hidden & {
-    opacity: deprecated.$op-7;
+    opacity: 0.7;
   }
   .layer-row.highlight &,
   .layer-row:hover & {
-    opacity: deprecated.$op-10;
+    opacity: 1;
     svg {
-      stroke: var(--layer-row-foreground-color-hover);
+      stroke: var(--color-accent-primary);
     }
   }
 }
 
 .absolute {
   position: absolute;
-  background-color: var(--layer-row-foreground-color);
-  opacity: deprecated.$op-4;
-  width: deprecated.$s-12;
-  height: deprecated.$s-12;
-  border-radius: deprecated.$br-2;
+  background-color: var(--color-foreground-secondary);
+  opacity: 0.4;
+  inline-size: $sz-12;
+  block-size: $sz-12;
+  border-radius: px2rem(2);
 
   .layer-row.hidden & {
-    opacity: deprecated.$op-1;
+    opacity: 0.1;
   }
   .layer-row.type-comp & {
-    background-color: var(--layer-row-component-foreground-color);
+    background-color: var(--color-accent-secondary);
   }
   .layer-row.highlight &,
   .layer-row:hover & {
-    opacity: deprecated.$op-4;
-    background-color: var(--layer-row-foreground-color-hover);
+    opacity: 0.4;
+    background-color: var(--color-accent-primary);
   }
   .layer-row.selected & {
-    background-color: var(--layer-row-foreground-color-selected);
+    background-color: var(--color-accent-primary);
   }
 }
 
 .toggle-content {
-  @include deprecated.buttonStyle;
+  border: none;
+  background: none;
+  cursor: pointer;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
-  height: 100%;
-  width: deprecated.$s-24;
-  padding-inline-start: deprecated.$s-8;
+  block-size: 100%;
+  inline-size: $sz-24;
+  padding-inline-start: var(--sp-s);
 
   svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+    fill: none;
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke-width: 1.33px;
+    stroke: var(--color-foreground-secondary);
 
     .layer-row.hidden & {
-      opacity: deprecated.$op-7;
+      opacity: 0.7;
     }
     .layer-row.selected & {
-      stroke: var(--layer-row-foreground-color-selected);
+      stroke: var(--color-accent-primary);
     }
     .layer-row.type-comp & {
-      stroke: var(--layer-row-component-foreground-color);
+      stroke: var(--color-accent-secondary);
     }
     .layer-row.highlight &,
     .layer-row:hover & {
-      opacity: deprecated.$op-10;
-      stroke: var(--layer-row-foreground-color-hover);
+      opacity: 1;
+      stroke: var(--color-accent-primary);
     }
   }
 
   .layer-row.selected & {
-    background-color: var(--layer-row-background-color-selected);
+    background-color: var(--color-background-quaternary);
   }
   &.inverse svg {
     transform: rotate(90deg);
@@ -208,65 +223,78 @@
 
 .toggle-element,
 .block-element {
-  @include deprecated.buttonStyle;
-  @include deprecated.flexCenter;
-  height: 100%;
-  width: deprecated.$s-24;
+  --layer-row-action-btn-background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: 100%;
+  inline-size: $sz-24;
   margin: 0;
   display: none;
-
+  background: var(--layer-row-action-btn-background);
+  padding-inline-end: px2rem(6);
   svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+    fill: none;
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke-width: 1.33px;
+    stroke: var(--color-foreground-secondary);
 
     .layer-row.hidden & {
-      opacity: deprecated.$op-7;
+      opacity: 0.7;
     }
     .type-comp & {
-      stroke: var(--layer-row-component-foreground-color);
+      stroke: var(--color-accent-secondary);
     }
   }
 
   .element-actions.selected & {
     display: flex;
-    opacity: deprecated.$op-0;
-
+    opacity: 0;
     &.selected {
-      opacity: deprecated.$op-10;
+      opacity: 1;
     }
   }
 
   .layer-row:hover .element-actions.selected & {
-    opacity: deprecated.$op-10;
+    opacity: 1;
   }
 
   .layer-row.highlight &,
   .layer-row:hover & {
     display: flex;
+    --layer-row-action-btn-background: var(--color-background-secondary);
     svg {
-      opacity: deprecated.$op-10;
-      stroke: var(--layer-row-foreground-color-hover);
+      opacity: 1;
+      stroke: var(--color-accent-primary);
     }
   }
   .layer-row.selected & {
     display: flex;
+    --layer-row-action-btn-background: var(--color-background-quaternary);
     svg {
-      stroke: var(--layer-row-foreground-color-selected);
+      stroke: var(--color-accent-primary);
     }
   }
 }
 
 :global(.sticky) {
   position: sticky;
-  top: deprecated.$s-0;
-  z-index: deprecated.$z-index-4;
+  inset-block-start: 0;
+  z-index: 4;
 }
 
 .tab-indentation {
   display: block;
-  height: deprecated.$s-16;
-  min-width: calc(var(--depth) * var(--layer-indentation-size));
+  block-size: $sz-16;
+  min-inline-size: calc(var(--depth) * var(--layer-indentation-size));
 }
 .filtered {
-  min-width: deprecated.$s-12;
+  min-inline-size: $sz-12;
 }
