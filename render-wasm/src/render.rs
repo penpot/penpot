@@ -294,6 +294,10 @@ pub(crate) struct RenderState {
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
     pub ignore_nested_blurs: bool,
+    /// Cached root_ids and root_ids_map to avoid recalculating them every frame
+    /// These are invalidated when the tree structure changes
+    cached_root_ids: Option<Vec<Uuid>>,
+    cached_root_ids_map: Option<std::collections::HashMap<Uuid, usize>>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -366,6 +370,8 @@ impl RenderState {
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
+            cached_root_ids: None,
+            cached_root_ids_map: None,
         }
     }
 
@@ -1896,14 +1902,37 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            let root_ids = {
-                if let Some(shape_id) = base_object {
+            // Get or compute root_ids and root_ids_map (cached to avoid recalculation every frame)
+            let root_ids_map = {
+                let root_ids = if let Some(shape_id) = base_object {
                     vec![*shape_id]
                 } else {
                     let Some(root) = tree.get(&Uuid::nil()) else {
                         return Err(String::from("Root shape not found"));
                     };
                     root.children_ids(false)
+                };
+
+                // Check if cache is valid (same root_ids)
+                let cache_valid = self.cached_root_ids.as_ref()
+                    .map(|cached| cached.as_slice() == root_ids.as_slice())
+                    .unwrap_or(false);
+
+                if cache_valid {
+                    // Use cached map
+                    self.cached_root_ids_map.as_ref().unwrap().clone()
+                } else {
+                    // Recompute and cache
+                    let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
+                        .iter()
+                        .enumerate()
+                        .map(|(i, id)| (*id, i))
+                        .collect();
+                    
+                    self.cached_root_ids = Some(root_ids.clone());
+                    self.cached_root_ids_map = Some(root_ids_map.clone());
+                    
+                    root_ids_map
                 }
             };
 
@@ -1914,12 +1943,6 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
-                            .iter()
-                            .enumerate()
-                            .map(|(i, id)| (*id, i))
-                            .collect();
-
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
                             .iter()
