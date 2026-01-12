@@ -145,8 +145,8 @@ services:
       ## Default configuration for assets storage: using filesystem based with all files
       ## stored in a docker volume.
 
-      PENPOT_ASSETS_STORAGE_BACKEND: assets-fs
-      PENPOT_STORAGE_ASSETS_FS_DIRECTORY: /opt/data/assets
+      PENPOT_OBJECTS_STORAGE_BACKEND: fs
+      PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
 
       ## Also can be configured to to use a S3 compatible storage.
 
