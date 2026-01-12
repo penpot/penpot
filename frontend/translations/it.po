@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
-"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
+"PO-Revision-Date: 2026-01-12 08:33+0000\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -572,10 +572,10 @@ msgid "dashboard.export-standard-multi"
 msgstr "Scarica %s file standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, fuzzy, unused
+#, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o più file che desideri esportare utilizzano librerie condivise. Che "
+"Uno o più file che desideri scaricare utilizzano librerie condivise. Che "
 "cosa desideri fare con le loro risorse*?"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
@@ -8517,3 +8517,208 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:207
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "Stai per ripristinare %s."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:206
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Ripristina file"
+
+#: src/app/main/ui/dashboard/deleted.cljs:299
+msgid "dashboard.clear-trash-button"
+msgstr "Svuota il cestino"
+
+#: src/app/main/ui/dashboard/deleted.cljs:251
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"Sei sicuro di voler eliminare definitivamente tutti i progetti e file "
+"eliminati? Questa azione è irreversibile."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:268
+msgid "dashboard.delete-file-button"
+msgstr "Elimina file"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:220
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr ""
+"Sei sicuro di voler eliminare definitivamente %s? Questa azione è "
+"irreversibile."
+
+#: src/app/main/data/dashboard.cljs:764
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s file sono stati eliminati con successo."
+
+#: src/app/main/ui/dashboard/deleted.cljs:66, src/app/main/ui/dashboard/deleted.cljs:68, src/app/main/ui/dashboard/deleted.cljs:250, src/app/main/ui/dashboard/deleted.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:219, src/app/main/ui/dashboard/file_menu.cljs:221
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Elimina definitivamente"
+
+#: src/app/main/ui/dashboard/deleted.cljs:75
+msgid "dashboard.delete-project-button"
+msgstr "Elimina progetto"
+
+#: src/app/main/ui/dashboard/deleted.cljs:67
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"Sei sicuro di voler eliminare definitivamente il progetto %s? Eliminerai "
+"definitivamente anche tutti i file al suo interno. Questa azione è "
+"irreversibile."
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s è stato eliminato con successo."
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Sarà eliminato %s"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "Si è verificato un errore durante l'eliminazione del file %s."
+
+#: src/app/main/data/dashboard.cljs:767
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Si è verificato un errore durante l'eliminazione dei file."
+
+#: src/app/main/data/dashboard.cljs:800
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Si è verificato un errore durante l'eliminazione del progetto %s."
+
+#: src/app/main/data/dashboard.cljs:895, src/app/main/ui/dashboard/file_menu.cljs:200
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "Si è verificato un errore durante il ripristino del file %s."
+
+#: src/app/main/data/dashboard.cljs:896
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "Si è verificato un errore durante il ripristino dei file."
+
+#: src/app/main/data/dashboard.cljs:928
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr ""
+"Si è verificato un errore durante il ripristino del progetto %s e dei suoi "
+"file."
+
+#: src/app/main/data/dashboard.cljs:708
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Eliminazione file…"
+
+#: src/app/main/data/dashboard.cljs:829
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Ripristino file…"
+
+#: src/app/main/data/dashboard.cljs:709
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Eliminazione inaspettatamente lenta"
+
+#: src/app/main/data/dashboard.cljs:830
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Ripristino inaspettatamente lento"
+
+#: src/app/main/ui/dashboard/deleted.cljs:263
+msgid "dashboard.restore-all-confirmation.description"
+msgstr ""
+"Stai per ripristinare tutti i tuoi progetti e file. Potrebbe richiedere un "
+"po' di tempo."
+
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Ripristina tutti i progetti e file"
+
+#: src/app/main/ui/dashboard/deleted.cljs:294
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Ripristina tutto"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:264
+msgid "dashboard.restore-file-button"
+msgstr "Ripristina file"
+
+#: src/app/main/data/dashboard.cljs:889
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s file sono stati ripristinati con successo."
+
+#: src/app/main/ui/dashboard/deleted.cljs:72
+msgid "dashboard.restore-project-button"
+msgstr "Ripristina progetto"
+
+#: src/app/main/ui/dashboard/deleted.cljs:55
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "Stai per ripristinare il progetto %s e tutti i file al suo interno."
+
+#: src/app/main/ui/dashboard/deleted.cljs:54
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Ripristina progetto"
+
+#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:197
+msgid "dashboard.restore-success-notification"
+msgstr "%s è stato ripristinato con successo."
+
+#: src/app/main/ui/dashboard/deleted.cljs:284
+msgid "dashboard.trash-info-text-part1"
+msgstr "I file eliminati rimarranno nel cestino per"
+
+#: src/app/main/ui/dashboard/deleted.cljs:286
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s giorni. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:287
+msgid "dashboard.trash-info-text-part3"
+msgstr "In seguito, verranno eliminati definitivamente."
+
+#: src/app/main/ui/dashboard/deleted.cljs:289
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"Se cambi idea, puoi ripristinarli o eliminarlo definitivamente dal menu di "
+"ciascun file."
+
+#: src/app/main/ui/exports/files.cljs:124
+msgid "files-download-modal.title"
+msgstr "Scarica file"
+
+#: src/app/main/ui/dashboard/deleted.cljs:205
+msgid "labels.deleted"
+msgstr "Eliminati"
+
+#: src/app/main/ui/dashboard/deleted.cljs:198
+msgid "labels.recent"
+msgstr "Recenti"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "Modifica nello spazio di lavoro"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "Ottieni colore"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:217
+msgid "workspace.layout-grid.editor.margin.expand"
+msgstr "Mostra margini a 4 lati"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:244
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "Adatta al contenuto (Orizzontale)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:272
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "Adatta al contenuto (Verticale)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:260
+msgid "workspace.layout-item.fix-height"
+msgstr "Altezza fissa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:234
+msgid "workspace.layout-item.fix-width"
+msgstr "Larghezza fissa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:266
+msgid "workspace.layout-item.height-100"
+msgstr "Altezza 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:239
+msgid "workspace.layout-item.width-100"
+msgstr "Larghezza 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr ""
