@@ -207,93 +207,93 @@ msgstr "...branding, ilustrações, materiais de marketing, etc."
 msgid "comments.mentions.not-found"
 msgstr "Nenhuma pessoa encontrada para @%s"
 
-#: src/app/main/ui/workspace/libraries.cljs:323
+#: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
 msgstr "Publicar"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
 msgid "common.share-link.all-users"
 msgstr "Todos os usuários do Penpot"
 
-#: src/app/main/ui/viewer/share_link.cljs:204
+#: src/app/main/ui/viewer/share_link.cljs:200
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Tem certeza de que deseja remover este link? Se fizer isso, ele não estará "
 "mais disponível para ninguém"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
 msgid "common.share-link.current-tag"
 msgstr "(atual)"
 
-#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
 msgstr "Excluir link"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
 msgstr "Obter link"
 
-#: src/app/main/ui/viewer/share_link.cljs:142
+#: src/app/main/ui/viewer/share_link.cljs:139
 msgid "common.share-link.link-copied-success"
 msgstr "Link copiado com sucesso"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:233
 msgid "common.share-link.manage-ops"
 msgstr "Gerenciar permissões"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:279
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "Página compartilhada"
 msgstr[1] "%s páginas compartilhadas"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:300
 msgid "common.share-link.permissions-can-comment"
 msgstr "Pode comentar"
 
-#: src/app/main/ui/viewer/share_link.cljs:309
+#: src/app/main/ui/viewer/share_link.cljs:310
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Pode inspecionar o código"
 
-#: src/app/main/ui/viewer/share_link.cljs:199
+#: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.permissions-hint"
 msgstr "Qualquer pessoa com o link terá acesso"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:243
 msgid "common.share-link.permissions-pages"
 msgstr "Páginas compartilhadas"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:185
 msgid "common.share-link.placeholder"
 msgstr "O link compartilhável aparecerá aqui"
 
-#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.team-members"
 msgstr "Somente membros da equipe"
 
-#: src/app/main/ui/viewer/share_link.cljs:176
+#: src/app/main/ui/viewer/share_link.cljs:173
 msgid "common.share-link.title"
 msgstr "Compartilhar protótipos"
 
-#: src/app/main/ui/viewer/share_link.cljs:269
+#: src/app/main/ui/viewer/share_link.cljs:271
 msgid "common.share-link.view-all"
 msgstr "Selecionar tudo"
 
-#: src/app/main/ui/workspace/libraries.cljs:320
+#: src/app/main/ui/workspace/libraries.cljs:329
 msgid "common.unpublish"
 msgstr "Despublicar"
 
-#: src/app/main/ui/dashboard/projects.cljs:93
+#: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.management"
 msgstr "Gestão da equipe"
 
-#: src/app/main/ui/dashboard/projects.cljs:92
+#: src/app/main/ui/dashboard/projects.cljs:91
 msgid "dasboard.team-hero.text"
 msgstr ""
 "O Penpot foi feito para equipes. Convide membros para trabalharem juntos em "
 "projetos e arquivos"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.title"
 msgstr "Monte sua equipe!"
 
@@ -402,7 +402,7 @@ msgstr "O token não tem data de expiração"
 msgid "dashboard.add-file"
 msgstr "Adicionar arquivo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
 msgid "dashboard.add-shared"
 msgstr "Adicionar como Biblioteca Compartilhada"
 
@@ -410,7 +410,7 @@ msgstr "Adicionar como Biblioteca Compartilhada"
 msgid "dashboard.change-email"
 msgstr "Alterar e-mail"
 
-#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(copiar)"
 

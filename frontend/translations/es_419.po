@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
 "Last-Translator: Yessenia Villarte Vaca <yesseniavillarte@gmail.com>\n"
 "Language-Team: Spanish (Latin America) <https://hosted.weblate.org/projects/"
 "penpot/frontend/es_419/>\n"
@@ -164,93 +164,93 @@ msgstr "Hemos enviado un correo electrónico de verificación"
 msgid "branding-illustrations-marketing-pieces"
 msgstr "...marca, ilustraciones, piezas de marketing, etc."
 
-#: src/app/main/ui/workspace/libraries.cljs:323
+#: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
 msgstr "Publicar"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
 msgid "common.share-link.all-users"
 msgstr "Todos los usuarios de Penpot"
 
-#: src/app/main/ui/viewer/share_link.cljs:204
+#: src/app/main/ui/viewer/share_link.cljs:200
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "¿Estás seguro de que deseas eliminar este enlace? Si lo haces ya no estará "
 "disponible para nadie"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
 msgid "common.share-link.current-tag"
 msgstr "(actual)"
 
-#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
 msgstr "Borrar enlace"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
 msgstr "Conseguir enlace"
 
-#: src/app/main/ui/viewer/share_link.cljs:142
+#: src/app/main/ui/viewer/share_link.cljs:139
 msgid "common.share-link.link-copied-success"
 msgstr "Enlace copiado exitosamente"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:233
 msgid "common.share-link.manage-ops"
 msgstr "Administrar permisos"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:279
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 página compartida"
 msgstr[1] "%s paginas compartidas"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:300
 msgid "common.share-link.permissions-can-comment"
 msgstr "Puedes comentar"
 
-#: src/app/main/ui/viewer/share_link.cljs:309
+#: src/app/main/ui/viewer/share_link.cljs:310
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Puedes inspeccionar el código"
 
-#: src/app/main/ui/viewer/share_link.cljs:199
+#: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquier persona con enlace tendrá acceso"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:243
 msgid "common.share-link.permissions-pages"
 msgstr "Páginas compartidas"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:185
 msgid "common.share-link.placeholder"
 msgstr "El enlace para compartir aparecerá aquí"
 
-#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.team-members"
 msgstr "Solo miembros del equipo"
 
-#: src/app/main/ui/viewer/share_link.cljs:176
+#: src/app/main/ui/viewer/share_link.cljs:173
 msgid "common.share-link.title"
 msgstr "Compartir prototipos"
 
-#: src/app/main/ui/viewer/share_link.cljs:269
+#: src/app/main/ui/viewer/share_link.cljs:271
 msgid "common.share-link.view-all"
 msgstr "Seleccionar todo"
 
-#: src/app/main/ui/workspace/libraries.cljs:320
+#: src/app/main/ui/workspace/libraries.cljs:329
 msgid "common.unpublish"
 msgstr "Despublicar"
 
-#: src/app/main/ui/dashboard/projects.cljs:93
+#: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.management"
 msgstr "Gestión de equipos"
 
-#: src/app/main/ui/dashboard/projects.cljs:92
+#: src/app/main/ui/dashboard/projects.cljs:91
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot está destinado a equipos. Invite a miembros a trabajar juntos en "
 "proyectos y archivos"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.title"
 msgstr "¡En equipo!"
 
@@ -357,7 +357,7 @@ msgstr "El token caducará el %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "El token no tiene fecha de vencimiento"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
 msgid "dashboard.add-shared"
 msgstr "Agregar como biblioteca compartida"
 
@@ -365,7 +365,7 @@ msgstr "Agregar como biblioteca compartida"
 msgid "dashboard.change-email"
 msgstr "Cambiar el correo electrónico"
 
-#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(copiar)"
 
@@ -373,7 +373,7 @@ msgstr "(copiar)"
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
 msgstr "Tu Penpot"
 
@@ -381,32 +381,31 @@ msgstr "Tu Penpot"
 msgid "dashboard.delete-team"
 msgstr "Eliminar equipo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:694, src/app/main/ui/workspace/main_menu.cljs:703
 msgid "dashboard.download-binary-file"
 msgstr "Descargar el archivo Penpot (.penpot)"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
-#, unused
 msgid "dashboard.download-standard-file"
 msgstr "Descargar archivo estándar (.svg + .json)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Duplicar"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:273
+#: src/app/main/ui/dashboard/file_menu.cljs:242
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicar %s archivos"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:282
+#: src/app/main/ui/dashboard/file_menu.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:257
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:698
+#: src/app/main/ui/workspace/main_menu.cljs:720
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros como PDF"
 
-#: src/app/main/ui/exports/assets.cljs:201
+#: src/app/main/ui/exports/assets.cljs:200
 msgid "dashboard.export-frames.title"
 msgstr "Exportar como PDF"
 
@@ -414,43 +413,76 @@ msgstr "Exportar como PDF"
 msgid "dashboard.export-multi"
 msgstr "Exportar %s archivos de Penpot"
 
-#: src/app/main/ui/exports/assets.cljs:108
+#: src/app/main/ui/exports/assets.cljs:107
 msgid "dashboard.export-multiple.selected"
 msgstr "%s de %s elementos seleccionados"
 
-#: src/app/main/ui/workspace/main_menu.cljs:679
+#: src/app/main/ui/workspace/main_menu.cljs:682
 msgid "dashboard.export-shapes"
 msgstr "Exportar"
 
-#: src/app/main/ui/exports/assets.cljs:179
+#: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "Puede agregar configuraciones de exportación a elementos desde las "
 "propiedades de diseño (en la parte inferior de la barra lateral derecha)."
 
-#: src/app/main/ui/exports/assets.cljs:183
+#: src/app/main/ui/exports/assets.cljs:182
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "Información sobre cómo configurar las exportaciones en Penpot."
 
-#: src/app/main/ui/exports/assets.cljs:178
+#: src/app/main/ui/exports/assets.cljs:177
 msgid "dashboard.export-shapes.no-elements"
 msgstr "No hay elementos con configuración de exportación."
 
-#: src/app/main/ui/exports/assets.cljs:189
+#: src/app/main/ui/exports/assets.cljs:188
 msgid "dashboard.export-shapes.title"
 msgstr "Selección de exportación"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:262
-#, unused
 msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s archivos estándar (.svg + .json)"
 
+#: src/app/main/ui/exports/files.cljs:156
+msgid "files-download-modal.description-2"
+msgstr "* Puede incluir componentes, gráficos, colores y/o tipografías."
+
 #: src/app/main/ui/exports/files.cljs:155
-#, fuzzy, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. ¿Qué "
-"quiere hacer con sus activos*?"
+"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. "
+"¿Qué quiere hacer con sus activos*?"
+
+#: src/app/main/ui/exports/files.cljs:164
+#, fuzzy
+msgid "files-download-modal.options.all.message"
+msgstr ""
+"Los archivos con bibliotecas compartidas se incluirán en la exportación, "
+"manteniendo su vinculación."
+
+#: src/app/main/ui/exports/files.cljs:165
+msgid "files-download-modal.options.all.title"
+msgstr "Exportar bibliotecas compartidas"
+
+#: src/app/main/ui/exports/files.cljs:166
+msgid "files-download-modal.options.detach.message"
+msgstr ""
+"Las bibliotecas compartidas no se incluirán en la exportación y no se "
+"agregarán activos a la biblioteca. "
+
+#: src/app/main/ui/exports/files.cljs:167
+msgid "files-download-modal.options.detach.title"
+msgstr "Trate los activos de biblioteca compartidos como objetos básicos"
+
+#: src/app/main/ui/exports/files.cljs:168
+msgid "files-download-modal.options.merge.message"
+msgstr ""
+"Su archivo se exportará con todos los activos externos combinados en la "
+"biblioteca de archivos."
+
+#: src/app/main/ui/exports/files.cljs:169
+msgid "files-download-modal.options.merge.title"
+msgstr "Incluir recursos de biblioteca compartidos en bibliotecas de archivos"
 
 #: src/app/main/ui/dashboard/import.cljs:131
 msgid "dashboard.import.progress.process-typographies"
@@ -480,7 +512,7 @@ msgstr "Bibliotecas y plantillas"
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Explore más de ellos y sepa cómo contribuir"
 
-#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:145
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:152
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "Hubo un problema al importar la plantilla. La plantilla no fue importada."
 
@@ -492,35 +524,35 @@ msgstr "Bibliotecas"
 msgid "dashboard.loading-files"
 msgstr "cargando tus archivos…"
 
-#: src/app/main/ui/dashboard/fonts.cljs:449
+#: src/app/main/ui/dashboard/fonts.cljs:447
 msgid "dashboard.loading-fonts"
 msgstr "cargando tus fuentes…"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Mover a"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278
+#: src/app/main/ui/dashboard/file_menu.cljs:247
 msgid "dashboard.move-to-multi"
 msgstr "Mover %s archivos a"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.move-to-other-team"
 msgstr "Pasar a otro equipo"
 
-#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:257, src/app/main/ui/dashboard/projects.cljs:258
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
 msgid "dashboard.new-file"
 msgstr "+ Nuevo archivo"
 
-#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
+#: src/app/main/data/dashboard.cljs:501, src/app/main/data/dashboard.cljs:613
 msgid "dashboard.new-file-prefix"
 msgstr "Archivo nuevo"
 
-#: src/app/main/ui/dashboard/projects.cljs:62
+#: src/app/main/ui/dashboard/projects.cljs:61
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
+#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:616
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo proyecto"
 
@@ -536,7 +568,7 @@ msgstr "Los proyectos fijados aparecerán aquí"
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Su dirección de correo electrónico se ha actualizado correctamente"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:52, src/app/main/ui/workspace/tokens/management/create/form.cljs:80
 msgid "errors.field-max-length"
 msgstr "El nombre debe contener como máximo %s caracteres."
 
@@ -548,37 +580,3 @@ msgstr "El nombre debe contener algún carácter distinto al del espacio."
 #: src/app/main/ui/auth/recovery.cljs:32
 msgid "errors.invalid-recovery-token"
 msgstr "El token de recuperación no es válido."
-
-#: src/app/main/ui/exports/files.cljs:133
-msgid "files-download-modal.description-2"
-msgstr "* Puede incluir componentes, gráficos, colores y/o tipografías."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Los archivos con bibliotecas compartidas se incluirán en la exportación, "
-"manteniendo su vinculación."
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.all.title"
-msgstr "Exportar bibliotecas compartidas"
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Las bibliotecas compartidas no se incluirán en la exportación y no se "
-"agregarán activos a la biblioteca. "
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.detach.title"
-msgstr "Trate los activos de biblioteca compartidos como objetos básicos"
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Su archivo se exportará con todos los activos externos combinados en la "
-"biblioteca de archivos."
-
-#: src/app/main/ui/exports/files.cljs:146
-msgid "files-download-modal.options.merge.title"
-msgstr "Incluir recursos de biblioteca compartidos en bibliotecas de archivos"

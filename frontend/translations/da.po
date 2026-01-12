@@ -143,7 +143,7 @@ msgstr "Open-source løsningen for design og prototyping."
 msgid "auth.verification-email-sent"
 msgstr "Vi har sendt en bekræftelsesmail til"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:653
 msgid "dashboard.add-shared"
 msgstr "Tilføj som Delt Bibliotek"
 
@@ -151,7 +151,7 @@ msgstr "Tilføj som Delt Bibliotek"
 msgid "dashboard.change-email"
 msgstr "Skift email"
 
-#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(kopi)"
 
@@ -159,7 +159,7 @@ msgstr "(kopi)"
 msgid "dashboard.create-new-team"
 msgstr "Opret nyt team"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
 msgstr "Dit Penpot"
 
@@ -167,11 +167,11 @@ msgstr "Dit Penpot"
 msgid "dashboard.delete-team"
 msgstr "Slet team"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Dublikér"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:273
+#: src/app/main/ui/dashboard/file_menu.cljs:242
 msgid "dashboard.duplicate-multi"
 msgstr "Dublikér %s filer"
 
@@ -209,31 +209,31 @@ msgstr "Delte Biblioteker"
 msgid "dashboard.loading-files"
 msgstr "indlæser dine filer…"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Flyt til"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278
+#: src/app/main/ui/dashboard/file_menu.cljs:247
 msgid "dashboard.move-to-multi"
 msgstr "Flyt %s filer til"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.move-to-other-team"
 msgstr "Flyt til andet team"
 
-#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:257, src/app/main/ui/dashboard/projects.cljs:258
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:256, src/app/main/ui/dashboard/projects.cljs:257
 msgid "dashboard.new-file"
 msgstr "+ Ny Fil"
 
-#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
+#: src/app/main/data/dashboard.cljs:501, src/app/main/data/dashboard.cljs:613
 msgid "dashboard.new-file-prefix"
 msgstr "Ny Fil"
 
-#: src/app/main/ui/dashboard/projects.cljs:62
+#: src/app/main/ui/dashboard/projects.cljs:61
 msgid "dashboard.new-project"
 msgstr "+ Nyt projekt"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
+#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:616
 msgid "dashboard.new-project-prefix"
 msgstr "Nyt Projekt"
 
@@ -253,7 +253,7 @@ msgstr "Din email-adresse er blevet opdateret med succes"
 msgid "dashboard.notifications.email-verified-successfully"
 msgstr "Din email-adresse er blevet bekræftet med succes"
 
-#: src/app/main/ui/settings/password.cljs:38
+#: src/app/main/ui/settings/password.cljs:36
 msgid "dashboard.notifications.password-saved"
 msgstr "Adgangskode gemt med succes!"
 
@@ -261,11 +261,11 @@ msgstr "Adgangskode gemt med succes!"
 msgid "dashboard.num-of-members"
 msgstr "%s medlemmer"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:297
+#: src/app/main/ui/dashboard/file_menu.cljs:277
 msgid "dashboard.open-in-new-tab"
 msgstr "Åben fil i en ny fane"
 
-#: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
+#: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
 msgid "dashboard.password-change"
 msgstr "Skift adgangskode"
 
@@ -273,7 +273,7 @@ msgstr "Skift adgangskode"
 msgid "dashboard.pin-unpin"
 msgstr "Fastgør/Løsne"
 
-#: src/app/main/ui/dashboard/deleted.cljs:41, src/app/main/ui/dashboard/projects.cljs:57
+#: src/app/main/ui/dashboard/projects.cljs:56
 msgid "dashboard.projects-title"
 msgstr "Projekter"
 
@@ -302,11 +302,11 @@ msgstr "Vælg UI sprog"
 msgid "dashboard.select-ui-theme"
 msgstr "Vælg tema"
 
-#: src/app/main/ui/dashboard/projects.cljs:309
+#: src/app/main/ui/dashboard/projects.cljs:308
 msgid "dashboard.show-all-files"
 msgstr "Vis alle filer"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:97
+#: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
 msgstr "Din fil er blevet slettet med succes"
 
@@ -314,7 +314,7 @@ msgstr "Din fil er blevet slettet med succes"
 msgid "dashboard.success-delete-project"
 msgstr "Dit projekt er blevet slettet med succes"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:93
 msgid "dashboard.success-duplicate-file"
 msgstr "Din fil er blevet dublikeret med succes"
 
@@ -322,11 +322,11 @@ msgstr "Din fil er blevet dublikeret med succes"
 msgid "dashboard.success-duplicate-project"
 msgstr "Dit projekt er blevet dublikeret med succes"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Din fil er blevet flyttet med succes"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
 msgstr "Dine filer er blevet flyttet med succes"
 
@@ -374,15 +374,15 @@ msgstr "Email"
 msgid "dashboard.your-name"
 msgstr "Dit navn"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Dit Penpot"
 
-#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:273, src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
+#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:216, src/app/main/ui/settings/subscription.cljs:228, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
 msgid "ds.confirm-cancel"
 msgstr "Fortryd"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
 msgid "ds.confirm-ok"
 msgstr "Ok"
 
@@ -390,7 +390,7 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Er du sikker?"
 
-#: src/app/main/data/workspace/clipboard.cljs:481
+#: src/app/main/data/workspace/clipboard.cljs:283, src/app/main/data/workspace/clipboard.cljs:501
 msgid "errors.clipboard-not-implemented"
 msgstr "Din browser kan ikke gøre denne operation"
 
@@ -402,7 +402,7 @@ msgstr "Genopretningspoletten er ugyldig."
 msgid "labels.custom-fonts"
 msgstr "Brugerdefinerede skrifttyper"
 
-#: src/app/main/ui/dashboard/fonts.cljs:432
+#: src/app/main/ui/dashboard/fonts.cljs:430
 msgid "labels.font-family"
 msgstr "Skrifttypefamilie"
 
@@ -418,11 +418,11 @@ msgstr "Skrifttyper"
 msgid "labels.go-back"
 msgstr "Gå tilbage!"
 
-#: src/app/main/ui/dashboard/fonts.cljs:430
+#: src/app/main/ui/dashboard/fonts.cljs:428
 msgid "labels.installed-fonts"
 msgstr "Installeret skrifttyper"
 
-#: src/app/main/ui/dashboard/fonts.cljs:435
+#: src/app/main/ui/dashboard/fonts.cljs:433
 msgid "labels.search-font"
 msgstr "Søg efter skrifttype"
 
