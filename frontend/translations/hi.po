@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-01-10 01:01+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
-"hi/>\n"
+"Language-Team: Hindi "
+"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -333,6 +333,14 @@ msgstr "दौरा शुरू करें"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "इंटरफ़ेस का परिचय"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:209
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "आप %s को पुनर्स्थापित करने जा रहे हैं।"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:208
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "फ़ाइल पुनर्स्थापित करें"
+
 #: src/app/main/ui/settings/access_tokens.cljs:103
 msgid "dashboard.access-tokens.copied-success"
 msgstr "टोकन कॉपी किया गया"
@@ -416,6 +424,10 @@ msgstr "साझी लाइब्रेरी के रूप में ज�
 msgid "dashboard.change-email"
 msgstr "ईमेल बदलें"
 
+#: src/app/main/ui/dashboard/deleted.cljs:313
+msgid "dashboard.clear-trash-button"
+msgstr "कचरा साफ़ करें"
+
 #: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(कॉपी)"
@@ -432,9 +444,48 @@ msgstr "इस संस्करण को पिन करें"
 msgid "dashboard.default-team-name"
 msgstr "आपका पेनपॉट"
 
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"क्या आप वाकई अपने सभी डिलीट किए गए प्रोजेक्ट और फाइलों को हमेशा के लिए "
+"डिलीट करना चाहते हैं? यह एक अपरिवर्तनीय प्रक्रिया है।"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr ""
+"क्या आप वाकई %s को हमेशा के लिए हटाना चाहते हैं? यह एक अपरिवर्तनीय कार्रवाई "
+"है।"
+
+#: src/app/main/data/dashboard.cljs:764
+msgid "dashboard.delete-files-success-notification"
+msgstr "% फ़ाइलों को सफलतापूर्वक हटा दिया गया है।।"
+
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "हमेशा के लिए हटाएं"
+
+#: src/app/main/ui/dashboard/deleted.cljs:85
+msgid "dashboard.delete-project-button"
+msgstr "प्रोजेक्ट हटाएँ"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"क्या आप वाकई %s प्रोजेक्ट को हमेशा के लिए हटाना चाहते हैं? आप इसे और इसमें "
+"मौजूद सभी फाइलों को हमेशा के लिए हटाने जा रहे हैं। यह एक अपरिवर्तनीय "
+"प्रक्रिया है।"
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s सफलतापूर्वक हटा दिया गया है।"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.delete-team"
 msgstr "टीम हटाएं"
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "% हटा दिया जाएगा"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
@@ -461,11 +512,11 @@ msgstr "जैसे ही एक परियोजना सदस्य ए�
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "अभी तक कोई ड्राफ्ट नहीं है।"
 
-#: src/app/main/ui/dashboard/deleted.cljs:166, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
+#: src/app/main/ui/dashboard/deleted.cljs:176, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "जैसे ही एक परियोजना सदस्य एक फ़ाइल बनाता है, वह यहाँ प्रदर्शित होगी।"
 
-#: src/app/main/ui/dashboard/deleted.cljs:163, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/deleted.cljs:173, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "अभी तक कोई फ़ाइल नहीं।"
 
@@ -521,6 +572,18 @@ msgstr "एक .penpot फ़ाइल आयात करें"
 msgid "dashboard.empty-project.start"
 msgstr "शानदार चीज़ें बनाना शुरू करें"
 
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "फाइल %s को डिलीट करते समय एक त्रुटि हुई।"
+
+#: src/app/main/data/dashboard.cljs:767
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "फ़ाइलों को हटाने के दौरान त्रुटि हुई।"
+
+#: src/app/main/data/dashboard.cljs:800
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "प्रोजेक्ट %s को डिलीट करते समय एक त्रुटि हुई।"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:282
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot फ़ाइलें (.penpot) डाउनलोड करें"
@@ -569,11 +632,16 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s मानक फ़ाइलें डाउनलोड करें (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, fuzzy, unused
+#, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"एक या एक से अधिक फ़ाइलें जिन्हें आप निर्यात करना चाहते हैं, वे साझा की गई लाइब्रेरीज़ का "
-"उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"
+"एक या एक से अधिक फ़ाइलें जिन्हें आप निर्यात करना चाहते हैं, वे साझा की गई "
+"लाइब्रेरीज़ का उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:268
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "फ़ाइल हटाएँ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
@@ -784,7 +852,7 @@ msgstr "में स्थानांतरित करें"
 msgid "dashboard.move-to-multi"
 msgstr "%s फ़ाइलों को स्थानांतरित करें"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:250
 msgid "dashboard.move-to-other-team"
 msgstr "दूसरी टीम में स्थानांतरित करें"
 
@@ -844,7 +912,7 @@ msgstr "%s सदस्य"
 msgid "dashboard.open-in-new-tab"
 msgstr "फ़ाइल को नए टैब में खोलें"
 
-#: src/app/main/ui/dashboard/deleted.cljs:147, src/app/main/ui/dashboard/deleted.cljs:148, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
+#: src/app/main/ui/dashboard/deleted.cljs:157, src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
 msgid "dashboard.options"
 msgstr "विकल्प"
 
@@ -892,7 +960,7 @@ msgstr "प्लगइन मैनिफेस्ट को पार्स �
 msgid "dashboard.plugins.try-plugin"
 msgstr "प्लगइन प्रयास करें: "
 
-#: src/app/main/ui/dashboard/deleted.cljs:41, src/app/main/ui/dashboard/projects.cljs:57
+#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
 msgstr "प्रोजेक्ट्स"
 
@@ -1009,7 +1077,7 @@ msgstr "सभी फ़ाइलें दिखाएँ"
 msgid "dashboard.show-version-history"
 msgstr "संस्करण इतिहास"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:97
+#: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "आपकी फ़ाइल सफलतापूर्वक हटा दी गई है"
@@ -1019,7 +1087,7 @@ msgstr[1] "आपकी फ़ाइलें सफलतापूर्वक 
 msgid "dashboard.success-delete-project"
 msgstr "आपका प्रोजेक्ट सफलतापूर्वक हटा दिया गया है"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:93
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "आपकी फ़ाइल को सफलतापूर्वक डुप्लिकेट किया गया है"
@@ -1029,11 +1097,11 @@ msgstr[1] "आपकी फ़ाइलों को सफलतापूर्
 msgid "dashboard.success-duplicate-project"
 msgstr "आपका प्रोजेक्ट सफलतापूर्वक डुप्लिकेट किया गया है"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "आपकी फ़ाइल सफलतापूर्वक स्थानांतरित कर दी गई है"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
 msgstr "आपकी फ़ाइलें सफलतापूर्वक स्थानांतरित कर दी गई हैं"
 
@@ -1140,7 +1208,7 @@ msgstr "ईमेल"
 msgid "dashboard.your-name"
 msgstr "आपका नाम"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "आपका पेनपॉट"
 
@@ -1246,7 +1314,7 @@ msgstr "हालाँकि पेनपॉट अब इस प्रका�
 msgid "errors.deprecated.contact.text"
 msgstr "हमसे संपर्क करें"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:305
+#: src/app/main/data/workspace/tokens/library_edit.cljs:307
 msgid "errors.drop-token-set-parent-to-child"
 msgstr "किसी पैरेंट को उसकी स्वयं की चाइल्ड पथ पर ड्रॉप नहीं किया जा सकता।"
 
@@ -1291,7 +1359,7 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "फीचर '%s' समर्थित नहीं है।"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:77, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
 msgid "errors.field-max-length"
 msgstr "इसमें अधिकतम %s वर्ण होने चाहिए।"
 
@@ -1460,7 +1528,7 @@ msgstr "जिस सदस्य को आप असाइन करने क
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "मालिक टीम नहीं छोड़ सकता, आपको मालिक की भूमिका पुनः असाइन करनी होगी।"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:162, src/app/main/data/workspace/tokens/library_edit.cljs:192
+#: src/app/main/data/workspace/tokens/library_edit.cljs:164, src/app/main/data/workspace/tokens/library_edit.cljs:194
 msgid "errors.token-set-already-exists"
 msgstr "एक समान नाम वाला सेट पहले से मौजूद है"
 
@@ -1469,11 +1537,11 @@ msgstr "एक समान नाम वाला सेट पहले से
 msgid "errors.token-set-doesnt-exists"
 msgstr "एक अज्ञात सेट को डुप्लिकेट नहीं किया जा सकता"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:304
+#: src/app/main/data/workspace/tokens/library_edit.cljs:306
 msgid "errors.token-set-exists-on-drop"
 msgstr "ड्रॉप पूरा नहीं किया जा सकता, उसी नाम का सेट पथ पर पहले से मौजूद है।"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:77, src/app/main/data/workspace/tokens/library_edit.cljs:96
+#: src/app/main/data/workspace/tokens/library_edit.cljs:79, src/app/main/data/workspace/tokens/library_edit.cljs:98
 msgid "errors.token-theme-already-exists"
 msgstr "समान नाम वाला थीम विकल्प मौजूद है"
 
@@ -1956,7 +2024,7 @@ msgstr "क्लिपबोर्ड पर कॉपी करें"
 msgid "inspect.tabs.styles.geometry-panel"
 msgstr "आकार & स्थिति"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:178
 msgid "inspect.tabs.styles.toggle-style"
 msgstr "टॉगल पैनल %s"
 
@@ -2043,7 +2111,7 @@ msgstr "खराब गेटवे"
 msgid "labels.blur"
 msgstr "धुंधला"
 
-#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:295, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
 msgid "labels.cancel"
 msgstr "रद्द करें"
 
@@ -2103,7 +2171,7 @@ msgstr "समर्थन से संपर्क करें"
 msgid "labels.contact-us"
 msgstr "हमसे संपर्क करें"
 
-#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:57, src/app/main/ui/dashboard/deleted.cljs:264, src/app/main/ui/dashboard/file_menu.cljs:208, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
 msgid "labels.continue"
 msgstr "जारी रखें"
 
@@ -2151,7 +2219,7 @@ msgstr "कस्टम फ़ॉन्ट्स"
 msgid "labels.dashboard"
 msgstr "डैशबोर्ड"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:288, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
+#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:291, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
 msgid "labels.delete"
 msgstr "मिटाना"
 
@@ -2188,7 +2256,7 @@ msgstr "छोड़ना"
 msgid "labels.download"
 msgstr "%s डाउनलोड करें"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
 msgid "labels.drafts"
 msgstr "ड्राफ्ट्स"
 
@@ -2598,7 +2666,7 @@ msgstr "पुन: प्रयास करें"
 msgid "labels.role"
 msgstr "भूमिका"
 
-#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:299, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
+#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:302, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
 msgid "labels.save"
 msgstr "सहेजें"
 
@@ -3068,27 +3136,27 @@ msgstr "क्या आप वाकई इस एनोटेशन को ह
 msgid "modals.delete-component-annotation.title"
 msgstr "एनोटेशन हटाएँ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:124
+#: src/app/main/ui/dashboard/file_menu.cljs:125
 msgid "modals.delete-file-confirm.accept"
 msgstr "फ़ाइल हटाएँ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:123
+#: src/app/main/ui/dashboard/file_menu.cljs:124
 msgid "modals.delete-file-confirm.message"
 msgstr "क्या आप वाकई इस फ़ाइल को हटाना चाहते हैं?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:122
+#: src/app/main/ui/dashboard/file_menu.cljs:123
 msgid "modals.delete-file-confirm.title"
 msgstr "फ़ाइल हटाई जा रही है"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:118
+#: src/app/main/ui/dashboard/file_menu.cljs:119
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "फ़ाइलें हटाएँ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:117
+#: src/app/main/ui/dashboard/file_menu.cljs:118
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "क्या आप वाकई %s फ़ाइलें हटाना चाहते हैं?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:116
+#: src/app/main/ui/dashboard/file_menu.cljs:117
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "%s फ़ाइलें हटाई जा रही हैं"
 
@@ -3901,7 +3969,7 @@ msgstr "लॉगइन पर जाएं"
 msgid "settings.detach"
 msgstr "अलग करें"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
 msgid "settings.multiple"
 msgstr "मिश्रित"
 
@@ -5150,7 +5218,7 @@ msgstr "फिल्टर"
 msgid "workspace.assets.graphics"
 msgstr "ग्राफ़िक्स"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:189, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
 msgid "workspace.assets.grid-view"
 msgstr "जाल दृश्य"
 
@@ -5162,7 +5230,7 @@ msgstr "समूह"
 msgid "workspace.assets.group-name"
 msgstr "समूह नाम"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:191, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
 msgid "workspace.assets.list-view"
 msgstr "सूची दृश्य"
 
@@ -6721,7 +6789,7 @@ msgstr "चयन भरें"
 msgid "workspace.options.selection-stroke"
 msgstr "चयन स्ट्रोक"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:143
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:144
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "छाया जोड़ें"
 
@@ -6749,7 +6817,7 @@ msgstr "X"
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:156, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:157, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:161
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "छाया हटाओ"
 
@@ -6757,15 +6825,15 @@ msgstr "छाया हटाओ"
 msgid "workspace.options.shadow-options.spread"
 msgstr "फैलाना"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:139
 msgid "workspace.options.shadow-options.title"
 msgstr "छाया"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
 msgid "workspace.options.shadow-options.title.group"
 msgstr "समूह छाया"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:136
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "चयन छाया"
 
@@ -7551,7 +7619,7 @@ msgstr "नई थीम जोड़ें"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "इस समूह में सेट जोड़ें"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:197, src/app/main/ui/workspace/tokens/management/group.cljs:140
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:147
 msgid "workspace.tokens.add-token"
 msgstr "टोकन जोड़ें: %s"
 
@@ -7603,7 +7671,7 @@ msgstr "अभी अपनी पहली थीम बनाएं।"
 msgid "workspace.tokens.create-one"
 msgstr "एक बनाएं।"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:234
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:237
 msgid "workspace.tokens.create-token"
 msgstr "नया %s टोकन बनाएं"
 
@@ -7619,7 +7687,7 @@ msgstr "थीम हटाएँ"
 msgid "workspace.tokens.duplicate"
 msgstr "डुप्लीकेट टोकन"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:209, src/app/main/data/workspace/tokens/library_edit.cljs:452
+#: src/app/main/data/workspace/tokens/library_edit.cljs:211, src/app/main/data/workspace/tokens/library_edit.cljs:454
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "कापी"
 
@@ -7635,15 +7703,15 @@ msgstr "थीम संपादित करें"
 msgid "workspace.tokens.edit-themes"
 msgstr "थीम्स संपादित करें"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:233
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:236
 msgid "workspace.tokens.edit-token"
 msgstr "%s token संपादित करें"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/management/forms/color.cljs:22, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:42
+#: src/app/main/data/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/management/forms/color.cljs:22, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:43
 msgid "workspace.tokens.empty-input"
 msgstr "टोकन मान रिक्त नहीं हो सकता"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:240
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:243
 msgid "workspace.tokens.enter-token-name"
 msgstr "%s टोकन नाम दर्ज करें"
 
@@ -7748,11 +7816,11 @@ msgstr "JSON फ़ाइल आयात करने से आपके स�
 msgid "workspace.tokens.import-warning"
 msgstr "टोकन आयात करने से आपके सभी वर्तमान टोकन, सेट और थीम ओवरराइट हो जाएँगे।"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:78
+#: src/app/main/ui/workspace/tokens/management.cljs:74
 msgid "workspace.tokens.inactive-set"
 msgstr "निष्क्रिय"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:69
+#: src/app/main/ui/workspace/tokens/management.cljs:65
 msgid "workspace.tokens.inactive-set-description"
 msgstr ""
 "यह सेट सक्रिय नहीं है। व्यूपोर्ट में परिवर्तन देखने के लिए थीम बदलें या इस "
@@ -7941,7 +8009,7 @@ msgstr "एक token छाया आलिया दर्ज करें"
 msgid "workspace.tokens.reference-error"
 msgstr "संदर्भ त्रुटियाँ: "
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:224, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:320, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:421, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 #, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "हल किया गया मान: %s"
@@ -7954,7 +8022,7 @@ msgstr "थीम सहेजें"
 msgid "workspace.tokens.select-set"
 msgstr "सेट का चयन करें।"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:79, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:80, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
 msgid "workspace.tokens.self-reference"
 msgstr "टोकन में स्व-संदर्भ होता है"
 
@@ -8067,7 +8135,7 @@ msgstr ""
 msgid "workspace.tokens.themes-list"
 msgstr "थीम्स सूची"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:273, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:274
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:277
 #, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "वर्णन"
@@ -8084,19 +8152,19 @@ msgstr "फॉन्ट परिवार"
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "फ़ॉन्ट परिवार या अल्पविराम (,) द्वारा अलग किए गए फ़ॉन्ट की सूची"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:239
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:242
 msgid "workspace.tokens.token-name"
 msgstr "नाम"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:33, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:104
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:33, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:71, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:104
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "पथ पर एक token पहले से मौजूद है: %s"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:31, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:68, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:264, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:219, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:102
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:31, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:69, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:264, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:219, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:102
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "नाम कम से कम 1 अक्षर का होना चाहिए"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:69, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " एक मान्य टोकन नाम नहीं है।\n"
@@ -8108,15 +8176,15 @@ msgstr ""
 msgid "workspace.tokens.token-not-resolved"
 msgstr "नाम: '%s' वाला संदर्भ टोकन हल नहीं किया जा सका"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:265
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:268
 msgid "workspace.tokens.token-value"
 msgstr "मान"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:264, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
 msgid "workspace.tokens.token-value-enter"
 msgstr "{alias} के साथ एक मान या उपनाम दर्ज करें"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:68
+#: src/app/main/ui/workspace/tokens/management.cljs:64
 msgid "workspace.tokens.tokens-section-title"
 msgstr "टोकन - %s"
 
@@ -8477,68 +8545,3 @@ msgstr "स्वतः सहेजे गए संस्करण %s दि�
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "पथ बंद करने के लिए क्लिक करें"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:207
-msgid "dashboard-restore-file-confirmation.description"
-msgstr "आप %s को पुनर्स्थापित करने जा रहे हैं।"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:206
-msgid "dashboard-restore-file-confirmation.title"
-msgstr "फ़ाइल पुनर्स्थापित करें"
-
-#: src/app/main/ui/dashboard/deleted.cljs:299
-msgid "dashboard.clear-trash-button"
-msgstr "कचरा साफ़ करें"
-
-#: src/app/main/ui/dashboard/deleted.cljs:251
-msgid "dashboard.delete-all-forever-confirmation.description"
-msgstr ""
-"क्या आप वाकई अपने सभी डिलीट किए गए प्रोजेक्ट और फाइलों को हमेशा के लिए डिलीट करना "
-"चाहते हैं? यह एक अपरिवर्तनीय प्रक्रिया है।"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.delete-file-button"
-msgstr "फ़ाइल हटाएँ"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:220
-msgid "dashboard.delete-file-forever-confirmation.description"
-msgstr ""
-"क्या आप वाकई %s को हमेशा के लिए हटाना चाहते हैं? यह एक अपरिवर्तनीय कार्रवाई है।"
-
-#: src/app/main/data/dashboard.cljs:764
-msgid "dashboard.delete-files-success-notification"
-msgstr "% फ़ाइलों को सफलतापूर्वक हटा दिया गया है।।"
-
-#: src/app/main/ui/dashboard/deleted.cljs:66, src/app/main/ui/dashboard/deleted.cljs:68, src/app/main/ui/dashboard/deleted.cljs:250, src/app/main/ui/dashboard/deleted.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:219, src/app/main/ui/dashboard/file_menu.cljs:221
-msgid "dashboard.delete-forever-confirmation.title"
-msgstr "हमेशा के लिए हटाएं"
-
-#: src/app/main/ui/dashboard/deleted.cljs:75
-msgid "dashboard.delete-project-button"
-msgstr "प्रोजेक्ट हटाएँ"
-
-#: src/app/main/ui/dashboard/deleted.cljs:67
-msgid "dashboard.delete-project-forever-confirmation.description"
-msgstr ""
-"क्या आप वाकई %s प्रोजेक्ट को हमेशा के लिए हटाना चाहते हैं? आप इसे और इसमें मौजूद सभी "
-"फाइलों को हमेशा के लिए हटाने जा रहे हैं। यह एक अपरिवर्तनीय प्रक्रिया है।"
-
-#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
-msgid "dashboard.delete-success-notification"
-msgstr "%s सफलतापूर्वक हटा दिया गया है।"
-
-#: src/app/main/ui/dashboard/grid.cljs:248
-msgid "dashboard.deleted.will-be-deleted-at"
-msgstr "% हटा दिया जाएगा"
-
-#, unused
-msgid "dashboard.errors.error-on-delete-file"
-msgstr "फाइल %s को डिलीट करते समय एक त्रुटि हुई।"
-
-#: src/app/main/data/dashboard.cljs:767
-msgid "dashboard.errors.error-on-delete-files"
-msgstr "फ़ाइलों को हटाने के दौरान त्रुटि हुई।"
-
-#: src/app/main/data/dashboard.cljs:800
-msgid "dashboard.errors.error-on-delete-project"
-msgstr "प्रोजेक्ट %s को डिलीट करते समय एक त्रुटि हुई।"

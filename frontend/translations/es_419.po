@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-01-08 17:06+0000\n"
 "Last-Translator: Yessenia Villarte Vaca <yesseniavillarte@gmail.com>\n"
-"Language-Team: Spanish (Latin America) <https://hosted.weblate.org/projects/"
-"penpot/frontend/es_419/>\n"
+"Language-Team: Spanish (Latin America) "
+"<https://hosted.weblate.org/projects/penpot/frontend/es_419/>\n"
 "Language: es_419\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -446,11 +446,11 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s archivos estándar (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:155
-#, fuzzy, unused
+#, unused
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. ¿Qué "
-"quiere hacer con sus activos*?"
+"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. "
+"¿Qué quiere hacer con sus activos*?"
 
 #: src/app/main/ui/dashboard/import.cljs:131
 msgid "dashboard.import.progress.process-typographies"
@@ -504,7 +504,7 @@ msgstr "Mover a"
 msgid "dashboard.move-to-multi"
 msgstr "Mover %s archivos a"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:250
 msgid "dashboard.move-to-other-team"
 msgstr "Pasar a otro equipo"
 
@@ -536,7 +536,7 @@ msgstr "Los proyectos fijados aparecerán aquí"
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Su dirección de correo electrónico se ha actualizado correctamente"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:77, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
 msgid "errors.field-max-length"
 msgstr "El nombre debe contener como máximo %s caracteres."
 

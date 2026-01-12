@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-01-12 08:33+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
-"frontend/fr_CA/>\n"
+"Language-Team: French (Canada) "
+"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -341,6 +341,14 @@ msgstr "Commencer le tour"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Visite guidée de l'interface"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:209
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "Tu vas restaurer %s."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:208
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Restaurer le fichier"
+
 #: src/app/main/ui/settings/access_tokens.cljs:103
 msgid "dashboard.access-tokens.copied-success"
 msgstr "Token copié"
@@ -425,6 +433,10 @@ msgstr "Ajouter une bibliothèque partagée"
 msgid "dashboard.change-email"
 msgstr "Changer l'adresse courriel"
 
+#: src/app/main/ui/dashboard/deleted.cljs:313
+msgid "dashboard.clear-trash-button"
+msgstr "Vider la corbeille"
+
 #: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(copier)"
@@ -441,9 +453,48 @@ msgstr "Épingler cette version"
 msgid "dashboard.default-team-name"
 msgstr "Ton Penpot"
 
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"Es-tu certain de supprimer pour toujours tous tes projets et fichiers "
+"supprimés ? Ceci est une action irréversible."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr ""
+"Es-tu certain de vouloir supprimer %s pour toujours ? Ceci est une action "
+"irréversible."
+
+#: src/app/main/data/dashboard.cljs:764
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s fichiers ont été supprimés avec succès."
+
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Supprimer pour toujours"
+
+#: src/app/main/ui/dashboard/deleted.cljs:85
+msgid "dashboard.delete-project-button"
+msgstr "Supprimer le projet"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"Es-tu certain de vouloir supprimer le projet %s pour toujours ? Tu vas le "
+"supprimer pour toujours ainsi que tous ses fichiers inclus. Ceci est une "
+"action irréversible."
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s a été supprimé avec succès."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.delete-team"
 msgstr "Supprimer l'équipe"
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Sera supprimé %s"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
@@ -470,11 +521,11 @@ msgstr "Quand un membre de l'équipe crée un brouillon, il s'affichera ici."
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "Aucun brouillon."
 
-#: src/app/main/ui/dashboard/deleted.cljs:166, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
+#: src/app/main/ui/dashboard/deleted.cljs:176, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "Quand un membre de l'équipe crée un fichier, il s'affichera ici."
 
-#: src/app/main/ui/dashboard/deleted.cljs:163, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/deleted.cljs:173, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Aucun fichier."
 
@@ -530,6 +581,30 @@ msgstr "Importer un fichier .penpot"
 msgid "dashboard.empty-project.start"
 msgstr "Crée des choses incroyables"
 
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "Une erreur s'est produite en supprimant le fichier %s."
+
+#: src/app/main/data/dashboard.cljs:767
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Une erreur s'est produite en supprimant les fichiers."
+
+#: src/app/main/data/dashboard.cljs:800
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Une erreur s'est produite en supprimant le projet %s."
+
+#: src/app/main/data/dashboard.cljs:895, src/app/main/ui/dashboard/file_menu.cljs:201
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "Une erreur s'est produite en restaurant le fichier %s."
+
+#: src/app/main/data/dashboard.cljs:896
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "Une erreur s'est produite en restaurant les fichiers."
+
+#: src/app/main/data/dashboard.cljs:928
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "Une erreur s'est produite en restaurant le projet %s et ses fichiers."
+
 #: src/app/main/ui/dashboard/file_menu.cljs:282
 msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"
@@ -583,6 +658,16 @@ msgid "dashboard.export.explain"
 msgstr ""
 "Un ou plus des fichiers que tu veux télécharger utilisent une bibliothèque "
 "partagée. Que veux-tu faire avec ces atouts*?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:268
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Supprimer le fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:265
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restaurer le fichier"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
@@ -797,7 +882,7 @@ msgstr "Déplacer vers"
 msgid "dashboard.move-to-multi"
 msgstr "Déplacer %s fichiers vers"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:250
 msgid "dashboard.move-to-other-team"
 msgstr "Déplacer vers une autre équipe"
 
@@ -857,7 +942,7 @@ msgstr "%s membres"
 msgid "dashboard.open-in-new-tab"
 msgstr "Ouvrir le fichier dans un nouvel onglet"
 
-#: src/app/main/ui/dashboard/deleted.cljs:147, src/app/main/ui/dashboard/deleted.cljs:148, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
+#: src/app/main/ui/dashboard/deleted.cljs:157, src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
 msgid "dashboard.options"
 msgstr "Options"
 
@@ -905,7 +990,23 @@ msgstr "Impossible d'analyser le manifeste du plugiciel"
 msgid "dashboard.plugins.try-plugin"
 msgstr "Essayer le plugiciel : "
 
-#: src/app/main/ui/dashboard/deleted.cljs:41, src/app/main/ui/dashboard/projects.cljs:57
+#: src/app/main/data/dashboard.cljs:708
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Suppression des fichiers…"
+
+#: src/app/main/data/dashboard.cljs:829
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Restauration des fichiers…"
+
+#: src/app/main/data/dashboard.cljs:709
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "La suppression est inopinément lente"
+
+#: src/app/main/data/dashboard.cljs:830
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restauration inopinément lente"
+
+#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
 msgstr "Projets"
 
@@ -921,6 +1022,38 @@ msgstr "Retirer la bibliothèque partagée"
 #: src/app/main/data/common.cljs:225
 msgid "dashboard.removed-from-team"
 msgstr "Tu ne fais plus partie de l'équipe « %s »."
+
+#: src/app/main/ui/dashboard/deleted.cljs:274
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "Tu vas restaurer tous tes projets et fichiers. Ça pourrait être long."
+
+#: src/app/main/ui/dashboard/deleted.cljs:273
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Restaurer tous les projets et fichiers"
+
+#: src/app/main/ui/dashboard/deleted.cljs:308
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Tout restaurer"
+
+#: src/app/main/data/dashboard.cljs:889
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s fichiers ont été restaurés avec succès."
+
+#: src/app/main/ui/dashboard/deleted.cljs:82
+msgid "dashboard.restore-project-button"
+msgstr "Restaurer le projet"
+
+#: src/app/main/ui/dashboard/deleted.cljs:41
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "Tu vas restaurer le projet %s et tous les fichiers qu'il contient."
+
+#: src/app/main/ui/dashboard/deleted.cljs:40
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Restaurer le projet"
+
+#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:198
+msgid "dashboard.restore-success-notification"
+msgstr "%s a été restauré avec succès."
 
 #: src/app/main/ui/settings/profile.cljs:78
 msgid "dashboard.save-settings"
@@ -1022,7 +1155,7 @@ msgstr "Voir tous les fichiers"
 msgid "dashboard.show-version-history"
 msgstr "Historique des versions"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:97
+#: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Le fichier a été supprimé avec succès"
@@ -1032,7 +1165,7 @@ msgstr[1] "Les fichiers ont été supprimés avec succès"
 msgid "dashboard.success-delete-project"
 msgstr "Le projet a été supprimé avec succès"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:93
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Le fichier a été dupliqué avec succès"
@@ -1042,11 +1175,11 @@ msgstr[1] "Les fichiers ont été dupliqués avec succès"
 msgid "dashboard.success-duplicate-project"
 msgstr "Le projet a été dupliqué avec succès"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Le fichier a été déplacé avec succès"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
 msgstr "Les fichiers ont été déplacés avec succès"
 
@@ -1078,6 +1211,24 @@ msgstr "Thème visuel"
 msgid "dashboard.title-search"
 msgstr "Résultats de recherche"
 
+#: src/app/main/ui/dashboard/deleted.cljs:298
+msgid "dashboard.trash-info-text-part1"
+msgstr "Les fichiers supprimés resteront dans la corbeille pour"
+
+#: src/app/main/ui/dashboard/deleted.cljs:300
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s jours. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:301
+msgid "dashboard.trash-info-text-part3"
+msgstr "Ensuite, ils sont supprimés de manière permanente."
+
+#: src/app/main/ui/dashboard/deleted.cljs:303
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"Si tu changes d'avis, tu peux les restaurer ou les supprimer de manière "
+"permanente à partir du menu de chaque fichier."
+
 #: src/app/main/ui/dashboard/search.cljs:67
 msgid "dashboard.type-something"
 msgstr "Écris quelque chose pour lancer une recherche"
@@ -1102,257 +1253,6 @@ msgstr "Penpot gratuit"
 msgid "dashboard.webhooks.active"
 msgstr "Actif"
 
-#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:273, src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
-msgid "ds.confirm-cancel"
-msgstr "Annuler"
-
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
-msgid "ds.confirm-ok"
-msgstr "Ok"
-
-#: src/app/main/ui/exports/files.cljs:133
-msgid "files-download-modal.description-2"
-msgstr ""
-"* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
-"caractère."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Les fichiers avec des bibliothèques partagées seront inclus dans "
-"l'exportation, et maintiendront leur liaison."
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.all.title"
-msgstr "Exporter les bibliothèques partagées"
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
-"atout ne sera ajouté à la bibliothèque. "
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.detach.title"
-msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Tous les atouts externes seront intégrés à la bibliothèque du fichier "
-"exporté."
-
-#: src/app/main/ui/exports/files.cljs:146
-msgid "files-download-modal.options.merge.title"
-msgstr ""
-"Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
-"fichier"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:207
-msgid "dashboard-restore-file-confirmation.description"
-msgstr "Tu vas restaurer %s."
-
-#: src/app/main/ui/dashboard/file_menu.cljs:206
-msgid "dashboard-restore-file-confirmation.title"
-msgstr "Restaurer le fichier"
-
-#: src/app/main/ui/dashboard/deleted.cljs:299
-msgid "dashboard.clear-trash-button"
-msgstr "Vider la corbeille"
-
-#: src/app/main/ui/dashboard/deleted.cljs:251
-msgid "dashboard.delete-all-forever-confirmation.description"
-msgstr ""
-"Es-tu certain de supprimer pour toujours tous tes projets et fichiers "
-"supprimés ? Ceci est une action irréversible."
-
-#: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.delete-file-button"
-msgstr "Supprimer le fichier"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:220
-msgid "dashboard.delete-file-forever-confirmation.description"
-msgstr ""
-"Es-tu certain de vouloir supprimer %s pour toujours ? Ceci est une action "
-"irréversible."
-
-#: src/app/main/data/dashboard.cljs:764
-msgid "dashboard.delete-files-success-notification"
-msgstr "%s fichiers ont été supprimés avec succès."
-
-#: src/app/main/ui/dashboard/deleted.cljs:66, src/app/main/ui/dashboard/deleted.cljs:68, src/app/main/ui/dashboard/deleted.cljs:250, src/app/main/ui/dashboard/deleted.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:219, src/app/main/ui/dashboard/file_menu.cljs:221
-msgid "dashboard.delete-forever-confirmation.title"
-msgstr "Supprimer pour toujours"
-
-#: src/app/main/ui/dashboard/deleted.cljs:75
-msgid "dashboard.delete-project-button"
-msgstr "Supprimer le projet"
-
-#: src/app/main/ui/dashboard/deleted.cljs:67
-msgid "dashboard.delete-project-forever-confirmation.description"
-msgstr ""
-"Es-tu certain de vouloir supprimer le projet %s pour toujours ? Tu vas le "
-"supprimer pour toujours ainsi que tous ses fichiers inclus. Ceci est une "
-"action irréversible."
-
-#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
-msgid "dashboard.delete-success-notification"
-msgstr "%s a été supprimé avec succès."
-
-#: src/app/main/ui/dashboard/grid.cljs:248
-msgid "dashboard.deleted.will-be-deleted-at"
-msgstr "Sera supprimé %s"
-
-#, unused
-msgid "dashboard.errors.error-on-delete-file"
-msgstr "Une erreur s'est produite en supprimant le fichier %s."
-
-#: src/app/main/data/dashboard.cljs:767
-msgid "dashboard.errors.error-on-delete-files"
-msgstr "Une erreur s'est produite en supprimant les fichiers."
-
-#: src/app/main/data/dashboard.cljs:800
-msgid "dashboard.errors.error-on-delete-project"
-msgstr "Une erreur s'est produite en supprimant le projet %s."
-
-#: src/app/main/data/dashboard.cljs:895, src/app/main/ui/dashboard/file_menu.cljs:200
-msgid "dashboard.errors.error-on-restore-file"
-msgstr "Une erreur s'est produite en restaurant le fichier %s."
-
-#: src/app/main/data/dashboard.cljs:896
-msgid "dashboard.errors.error-on-restore-files"
-msgstr "Une erreur s'est produite en restaurant les fichiers."
-
-#: src/app/main/data/dashboard.cljs:928
-msgid "dashboard.errors.error-on-restoring-project"
-msgstr "Une erreur s'est produite en restaurant le projet %s et ses fichiers."
-
-#: src/app/main/data/dashboard.cljs:708
-msgid "dashboard.progress-notification.deleting-files"
-msgstr "Suppression des fichiers…"
-
-#: src/app/main/data/dashboard.cljs:829
-msgid "dashboard.progress-notification.restoring-files"
-msgstr "Restauration des fichiers…"
-
-#: src/app/main/data/dashboard.cljs:709
-msgid "dashboard.progress-notification.slow-delete"
-msgstr "La suppression est inopinément lente"
-
-#: src/app/main/ui/dashboard/team.cljs:1264
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Aucun lien de rappel (webhook) n'a été créé."
-
-#, unused
-msgid "dashboard.webhooks.update.success"
-msgstr "Lien de rappel (webhook) mis à jour avec succès."
-
-#: src/app/main/ui/settings.cljs:34
-msgid "dashboard.your-account-title"
-msgstr "Ton compte"
-
-#: src/app/main/ui/settings/profile.cljs:70
-msgid "dashboard.your-email"
-msgstr "Adresse courriel"
-
-#: src/app/main/ui/settings/profile.cljs:62
-msgid "dashboard.your-name"
-msgstr "Ton nom"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
-msgid "dashboard.your-penpot"
-msgstr "Ton Penpot"
-
-#: src/app/main/ui/alert.cljs:35
-msgid "ds.alert-ok"
-msgstr "Ok"
-
-#: src/app/main/ui/alert.cljs:34, src/app/main/ui/alert.cljs:37
-msgid "ds.alert-title"
-msgstr "Attention"
-
-#: src/app/main/ui/confirm.cljs:86
-msgid "ds.component-subtitle"
-msgstr "Composantes à mettre à jour :"
-
-#: src/app/main/ui/workspace/plugins.cljs:340, src/app/main/ui/workspace/plugins.cljs:394
-msgid "ds.confirm-allow"
-msgstr "Permettre"
-
-#: src/app/main/ui/confirm.cljs:36, src/app/main/ui/confirm.cljs:40
-msgid "ds.confirm-title"
-msgstr "Es-tu certain?"
-
-#: src/app/main/ui/ds/controls/numeric_input.cljs:99
-msgid "ds.inputs.numeric-input.no-applicable-tokens"
-msgstr "Aucun token applicable dans les collections ou thèmes actifs."
-
-#: src/app/main/ui/ds/controls/numeric_input.cljs:100
-msgid "ds.inputs.numeric-input.no-matches"
-msgstr "Aucun résultat trouvé."
-
-#: src/app/main/ui/ds/controls/numeric_input.cljs:650, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141
-msgid "ds.inputs.numeric-input.open-token-list-dropdown"
-msgstr "Ouvrir la liste de tokens"
-
-#: src/app/main/data/dashboard.cljs:830
-msgid "dashboard.progress-notification.slow-restore"
-msgstr "Restauration inopinément lente"
-
-#: src/app/main/ui/dashboard/deleted.cljs:263
-msgid "dashboard.restore-all-confirmation.description"
-msgstr "Tu vas restaurer tous tes projets et fichiers. Ça pourrait être long."
-
-#: src/app/main/ui/dashboard/deleted.cljs:262
-msgid "dashboard.restore-all-confirmation.title"
-msgstr "Restaurer tous les projets et fichiers"
-
-#: src/app/main/ui/dashboard/deleted.cljs:294
-msgid "dashboard.restore-all-deleted-button"
-msgstr "Tout restaurer"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:264
-msgid "dashboard.restore-file-button"
-msgstr "Restaurer le fichier"
-
-#: src/app/main/data/dashboard.cljs:889
-msgid "dashboard.restore-files-success-notification"
-msgstr "%s fichiers ont été restaurés avec succès."
-
-#: src/app/main/ui/dashboard/deleted.cljs:72
-msgid "dashboard.restore-project-button"
-msgstr "Restaurer le projet"
-
-#: src/app/main/ui/dashboard/deleted.cljs:55
-msgid "dashboard.restore-project-confirmation.description"
-msgstr "Tu vas restaurer le projet %s et tous les fichiers qu'il contient."
-
-#: src/app/main/ui/dashboard/deleted.cljs:54
-msgid "dashboard.restore-project-confirmation.title"
-msgstr "Restaurer le projet"
-
-#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:197
-msgid "dashboard.restore-success-notification"
-msgstr "%s a été restauré avec succès."
-
-#: src/app/main/ui/dashboard/deleted.cljs:284
-msgid "dashboard.trash-info-text-part1"
-msgstr "Les fichiers supprimés resteront dans la corbeille pour"
-
-#: src/app/main/ui/dashboard/deleted.cljs:286
-msgid "dashboard.trash-info-text-part2"
-msgstr " %s jours. "
-
-#: src/app/main/ui/dashboard/deleted.cljs:287
-msgid "dashboard.trash-info-text-part3"
-msgstr "Ensuite, ils sont supprimés de manière permanente."
-
-#: src/app/main/ui/dashboard/deleted.cljs:289
-msgid "dashboard.trash-info-text-part4"
-msgstr ""
-"Si tu changes d'avis, tu peux les restaurer ou les supprimer de manière "
-"permanente à partir du menu de chaque fichier."
-
 #: src/app/main/ui/dashboard/team.cljs:1116
 msgid "dashboard.webhooks.active.explain"
 msgstr ""
@@ -1361,8 +1261,7 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/team.cljs:1160
 msgid "dashboard.webhooks.cant-edit"
-msgstr ""
-"Tu peux seulement supprimer ou modifier les liens de rappel que tu as créés."
+msgstr "Tu peux seulement supprimer ou modifier les liens de rappel que tu as créés."
 
 #: src/app/main/ui/dashboard/team.cljs:1106
 msgid "dashboard.webhooks.content-type"
@@ -1386,6 +1285,70 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:1265
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "Clique le bouton \"Créer un lien de rappel\" pour en créer un."
+
+#: src/app/main/ui/dashboard/team.cljs:1264
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Aucun lien de rappel (webhook) n'a été créé."
+
+#, unused
+msgid "dashboard.webhooks.update.success"
+msgstr "Lien de rappel (webhook) mis à jour avec succès."
+
+#: src/app/main/ui/settings.cljs:34
+msgid "dashboard.your-account-title"
+msgstr "Ton compte"
+
+#: src/app/main/ui/settings/profile.cljs:70
+msgid "dashboard.your-email"
+msgstr "Adresse courriel"
+
+#: src/app/main/ui/settings/profile.cljs:62
+msgid "dashboard.your-name"
+msgstr "Ton nom"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+msgid "dashboard.your-penpot"
+msgstr "Ton Penpot"
+
+#: src/app/main/ui/alert.cljs:35
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs:34, src/app/main/ui/alert.cljs:37
+msgid "ds.alert-title"
+msgstr "Attention"
+
+#: src/app/main/ui/confirm.cljs:86
+msgid "ds.component-subtitle"
+msgstr "Composantes à mettre à jour :"
+
+#: src/app/main/ui/workspace/plugins.cljs:340, src/app/main/ui/workspace/plugins.cljs:394
+msgid "ds.confirm-allow"
+msgstr "Permettre"
+
+#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:273, src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
+msgid "ds.confirm-cancel"
+msgstr "Annuler"
+
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
+msgid "ds.confirm-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/confirm.cljs:36, src/app/main/ui/confirm.cljs:40
+msgid "ds.confirm-title"
+msgstr "Es-tu certain?"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Aucun token applicable dans les collections ou thèmes actifs."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:100
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Aucun résultat trouvé."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:650, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Ouvrir la liste de tokens"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
 msgid "ds.inputs.token-field.detach-token"
@@ -1434,8 +1397,8 @@ msgstr "Une erreur est survenue avec le commentaire"
 #: src/app/main/errors.cljs:307
 msgid "errors.deprecated"
 msgstr ""
-"Désolé! Il est impossible d'ouvrir ce fichier car ce dernier utilise un type "
-"d'atout Penpot désuet."
+"Désolé! Il est impossible d'ouvrir ce fichier car ce dernier utilise un "
+"type d'atout Penpot désuet."
 
 #: src/app/main/errors.cljs:310
 msgid "errors.deprecated.contact.after"
@@ -1449,7 +1412,7 @@ msgstr "Même si Penpot ne supporte plus ce type d'atout, tu peux"
 msgid "errors.deprecated.contact.text"
 msgstr "nous contacter"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:305
+#: src/app/main/data/workspace/tokens/library_edit.cljs:307
 msgid "errors.drop-token-set-parent-to-child"
 msgstr "Impossible de placer une collection parente à l'intérieur d'elle-même."
 
@@ -1475,13 +1438,11 @@ msgstr "Ce domaine n'est pas permis"
 
 #: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:627, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
-msgstr ""
-"L'adresse courriel « %s » a généré plusieurs rapports de rebond permanent."
+msgstr "L'adresse courriel « %s » a généré plusieurs rapports de rebond permanent."
 
 #: src/app/main/ui/dashboard/team.cljs:196, src/app/main/ui/dashboard/team.cljs:858, src/app/main/ui/onboarding/team_choice.cljs:110
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr ""
-"L'adresse courriel « %s » est rapportée comme pourriel ou rebond permanent."
+msgstr "L'adresse courriel « %s » est rapportée comme pourriel ou rebond permanent."
 
 #: src/app/main/errors.cljs:284
 msgid "errors.feature-mismatch"
@@ -1493,7 +1454,7 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "La fonction « %s » n'est pas supportée."
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:77, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
 msgid "errors.field-max-length"
 msgstr "Doit contenier un maximum de %s caractères."
 
@@ -1504,3 +1465,41 @@ msgstr "Doit contenir au moins 1 caractère."
 #: src/app/util/forms.cljs:66
 msgid "errors.field-missing"
 msgstr "Champ vide"
+
+#: src/app/main/ui/exports/files.cljs:133
+msgid "files-download-modal.description-2"
+msgstr ""
+"* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
+"caractère."
+
+#: src/app/main/ui/exports/files.cljs:141
+msgid "files-download-modal.options.all.message"
+msgstr ""
+"Les fichiers avec des bibliothèques partagées seront inclus dans "
+"l'exportation, et maintiendront leur liaison."
+
+#: src/app/main/ui/exports/files.cljs:142
+msgid "files-download-modal.options.all.title"
+msgstr "Exporter les bibliothèques partagées"
+
+#: src/app/main/ui/exports/files.cljs:143
+msgid "files-download-modal.options.detach.message"
+msgstr ""
+"Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
+"atout ne sera ajouté à la bibliothèque. "
+
+#: src/app/main/ui/exports/files.cljs:144
+msgid "files-download-modal.options.detach.title"
+msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
+
+#: src/app/main/ui/exports/files.cljs:145
+msgid "files-download-modal.options.merge.message"
+msgstr ""
+"Tous les atouts externes seront intégrés à la bibliothèque du fichier "
+"exporté."
+
+#: src/app/main/ui/exports/files.cljs:146
+msgid "files-download-modal.options.merge.title"
+msgstr ""
+"Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
+"fichier"
