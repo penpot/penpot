@@ -330,11 +330,11 @@ msgstr "Start the tour"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Interface Walkthrough"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:207
+#: src/app/main/ui/dashboard/file_menu.cljs:209
 msgid "dashboard-restore-file-confirmation.description"
 msgstr "You're going to restore %s."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:206
+#: src/app/main/ui/dashboard/file_menu.cljs:208
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restore file"
 
@@ -421,7 +421,7 @@ msgstr "Add as Shared Library"
 msgid "dashboard.change-email"
 msgstr "Change email"
 
-#: src/app/main/ui/dashboard/deleted.cljs:299
+#: src/app/main/ui/dashboard/deleted.cljs:313
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
 
@@ -441,17 +441,13 @@ msgstr "Pin this version"
 msgid "dashboard.default-team-name"
 msgstr "Your Penpot"
 
-#: src/app/main/ui/dashboard/deleted.cljs:251
+#: src/app/main/ui/dashboard/deleted.cljs:262
 msgid "dashboard.delete-all-forever-confirmation.description"
 msgstr ""
 "Are you sure you want to delete forever all your deleted projects and "
 "files? This is a non reversible action."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.file-menu.delete-files-permanently-option"
-msgstr "Delete file"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:220
+#: src/app/main/ui/dashboard/file_menu.cljs:222
 msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr "Are you sure you want to delete forever %s? This is a non reversible action."
 
@@ -459,15 +455,15 @@ msgstr "Are you sure you want to delete forever %s? This is a non reversible act
 msgid "dashboard.delete-files-success-notification"
 msgstr "%s files have been successfully deleted."
 
-#: src/app/main/ui/dashboard/deleted.cljs:66, src/app/main/ui/dashboard/deleted.cljs:68, src/app/main/ui/dashboard/deleted.cljs:250, src/app/main/ui/dashboard/deleted.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:219, src/app/main/ui/dashboard/file_menu.cljs:221
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
 msgid "dashboard.delete-forever-confirmation.title"
 msgstr "Delete forever"
 
-#: src/app/main/ui/dashboard/deleted.cljs:75
+#: src/app/main/ui/dashboard/deleted.cljs:85
 msgid "dashboard.delete-project-button"
 msgstr "Delete project"
 
-#: src/app/main/ui/dashboard/deleted.cljs:67
+#: src/app/main/ui/dashboard/deleted.cljs:52
 msgid "dashboard.delete-project-forever-confirmation.description"
 msgstr ""
 "Are you sure you want to delete forever %s project? You're going to delete "
@@ -481,6 +477,10 @@ msgstr "%s has been successfully deleted."
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.delete-team"
 msgstr "Delete team"
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Your trash is empty. Deleted files and projects will appear here."
 
 #: src/app/main/ui/dashboard/grid.cljs:248
 msgid "dashboard.deleted.will-be-deleted-at"
@@ -511,11 +511,11 @@ msgstr "Once a project member creates a draft, it will be displayed here."
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "No drafts yet."
 
-#: src/app/main/ui/dashboard/deleted.cljs:166, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
+#: src/app/main/ui/dashboard/deleted.cljs:176, src/app/main/ui/dashboard/files.cljs:204, src/app/main/ui/dashboard/projects.cljs:291
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "Once a project member creates a file, it will be displayed here."
 
-#: src/app/main/ui/dashboard/deleted.cljs:163, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/deleted.cljs:173, src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "No files yet."
 
@@ -583,7 +583,7 @@ msgstr "There was an error while deleting the files."
 msgid "dashboard.errors.error-on-delete-project"
 msgstr "There was an error while deleting the project %s."
 
-#: src/app/main/data/dashboard.cljs:895, src/app/main/ui/dashboard/file_menu.cljs:200
+#: src/app/main/data/dashboard.cljs:895, src/app/main/ui/dashboard/file_menu.cljs:201
 msgid "dashboard.errors.error-on-restore-file"
 msgstr "There was an error while restoring the file %s."
 
@@ -648,6 +648,18 @@ msgid "dashboard.export.explain"
 msgstr ""
 "One or more files that you want to download are using shared libraries. "
 "What do you want to do with their assets*?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:268
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Delete file"
+msgstr[1] "Delete files"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:265
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restore file"
+msgstr[1] "Restore files"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
@@ -853,7 +865,7 @@ msgstr "Move to"
 msgid "dashboard.move-to-multi"
 msgstr "Move %s files to"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:250
 msgid "dashboard.move-to-other-team"
 msgstr "Move to other team"
 
@@ -913,7 +925,7 @@ msgstr "%s members"
 msgid "dashboard.open-in-new-tab"
 msgstr "Open file in a new tab"
 
-#: src/app/main/ui/dashboard/deleted.cljs:147, src/app/main/ui/dashboard/deleted.cljs:148, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
+#: src/app/main/ui/dashboard/deleted.cljs:157, src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
 msgid "dashboard.options"
 msgstr "Options"
 
@@ -977,7 +989,7 @@ msgstr "Deletion unexpectedly slow"
 msgid "dashboard.progress-notification.slow-restore"
 msgstr "Restore unexpectedly slow"
 
-#: src/app/main/ui/dashboard/deleted.cljs:41, src/app/main/ui/dashboard/projects.cljs:57
+#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
 msgstr "Projects"
 
@@ -994,39 +1006,35 @@ msgstr "Remove as Shared Library"
 msgid "dashboard.removed-from-team"
 msgstr "You are not part of the team “%s“ anymore."
 
-#: src/app/main/ui/dashboard/deleted.cljs:263
+#: src/app/main/ui/dashboard/deleted.cljs:274
 msgid "dashboard.restore-all-confirmation.description"
 msgstr "You're going to restore all your projects and files. This may take a while."
 
-#: src/app/main/ui/dashboard/deleted.cljs:262
+#: src/app/main/ui/dashboard/deleted.cljs:273
 msgid "dashboard.restore-all-confirmation.title"
 msgstr "Restore all projects and files"
 
-#: src/app/main/ui/dashboard/deleted.cljs:294
+#: src/app/main/ui/dashboard/deleted.cljs:308
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restore All"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:264
-msgid "dashboard.file-menu.restore-files-option"
-msgstr "Restore file"
 
 #: src/app/main/data/dashboard.cljs:889
 msgid "dashboard.restore-files-success-notification"
 msgstr "%s files have been successfully restored."
 
-#: src/app/main/ui/dashboard/deleted.cljs:72
+#: src/app/main/ui/dashboard/deleted.cljs:82
 msgid "dashboard.restore-project-button"
 msgstr "Restore project"
 
-#: src/app/main/ui/dashboard/deleted.cljs:55
+#: src/app/main/ui/dashboard/deleted.cljs:41
 msgid "dashboard.restore-project-confirmation.description"
 msgstr "You're going to restore %s project and all the files contained in it."
 
-#: src/app/main/ui/dashboard/deleted.cljs:54
+#: src/app/main/ui/dashboard/deleted.cljs:40
 msgid "dashboard.restore-project-confirmation.title"
 msgstr "Restore Project"
 
-#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:197
+#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:198
 msgid "dashboard.restore-success-notification"
 msgstr "%s has been successfully restored."
 
@@ -1130,7 +1138,7 @@ msgstr "Show all files"
 msgid "dashboard.show-version-history"
 msgstr "Version history"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:97
+#: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Your file has been deleted successfully"
@@ -1140,7 +1148,7 @@ msgstr[1] "Your files have been deleted successfully"
 msgid "dashboard.success-delete-project"
 msgstr "Your project has been deleted successfully"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:93
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Your file has been duplicated successfully"
@@ -1150,11 +1158,11 @@ msgstr[1] "Your files have been duplicated successfully"
 msgid "dashboard.success-duplicate-project"
 msgstr "Your project has been duplicated successfully"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Your file has been moved successfully"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
 msgstr "Your files have been moved successfully"
 
@@ -1186,19 +1194,19 @@ msgstr "UI theme"
 msgid "dashboard.title-search"
 msgstr "Search results"
 
-#: src/app/main/ui/dashboard/deleted.cljs:284
+#: src/app/main/ui/dashboard/deleted.cljs:298
 msgid "dashboard.trash-info-text-part1"
 msgstr "Deleted files will remain in the trash for"
 
-#: src/app/main/ui/dashboard/deleted.cljs:286
+#: src/app/main/ui/dashboard/deleted.cljs:300
 msgid "dashboard.trash-info-text-part2"
 msgstr " %s days. "
 
-#: src/app/main/ui/dashboard/deleted.cljs:287
+#: src/app/main/ui/dashboard/deleted.cljs:301
 msgid "dashboard.trash-info-text-part3"
 msgstr "After that, they will be permanently deleted."
 
-#: src/app/main/ui/dashboard/deleted.cljs:289
+#: src/app/main/ui/dashboard/deleted.cljs:303
 msgid "dashboard.trash-info-text-part4"
 msgstr ""
 "If you change your mind, you can restore them or delete them permanently "
@@ -1279,7 +1287,7 @@ msgstr "Email"
 msgid "dashboard.your-name"
 msgstr "Your name"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
@@ -1385,7 +1393,7 @@ msgstr "Although Penpot no longer support this type of Assets, you can"
 msgid "errors.deprecated.contact.text"
 msgstr "contact us"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:305
+#: src/app/main/data/workspace/tokens/library_edit.cljs:307
 msgid "errors.drop-token-set-parent-to-child"
 msgstr "Cannot drop a parent set to an own child path."
 
@@ -1427,7 +1435,7 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Feature '%s' is not supported."
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:76, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:77, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
 msgid "errors.field-max-length"
 msgstr "Must contain at most %s characters."
 
@@ -1590,7 +1598,7 @@ msgstr "The member you try to assign does not exist."
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "Owner can't leave team, you must reassign the owner role."
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:162, src/app/main/data/workspace/tokens/library_edit.cljs:192
+#: src/app/main/data/workspace/tokens/library_edit.cljs:164, src/app/main/data/workspace/tokens/library_edit.cljs:194
 msgid "errors.token-set-already-exists"
 msgstr "A set with the same name already exists"
 
@@ -1599,11 +1607,11 @@ msgstr "A set with the same name already exists"
 msgid "errors.token-set-doesnt-exists"
 msgstr "Can't duplicate an unkown set"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:304
+#: src/app/main/data/workspace/tokens/library_edit.cljs:306
 msgid "errors.token-set-exists-on-drop"
 msgstr "Cannot complete drop, a set with same name already exists at path."
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:77, src/app/main/data/workspace/tokens/library_edit.cljs:96
+#: src/app/main/data/workspace/tokens/library_edit.cljs:79, src/app/main/data/workspace/tokens/library_edit.cljs:98
 msgid "errors.token-theme-already-exists"
 msgstr "Theme Option with the same name exists"
 
@@ -2093,7 +2101,7 @@ msgstr "Copy to clipboard"
 msgid "inspect.tabs.styles.geometry-panel"
 msgstr "Size & Position"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:178
 msgid "inspect.tabs.styles.toggle-style"
 msgstr "Toggle panel %s"
 
@@ -2180,7 +2188,7 @@ msgstr "Bad Gateway"
 msgid "labels.blur"
 msgstr "Blur"
 
-#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:295, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
 msgid "labels.cancel"
 msgstr "Cancel"
 
@@ -2240,7 +2248,7 @@ msgstr "Contact support"
 msgid "labels.contact-us"
 msgstr "Contact us"
 
-#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:57, src/app/main/ui/dashboard/deleted.cljs:264, src/app/main/ui/dashboard/file_menu.cljs:208, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
 msgid "labels.continue"
 msgstr "Continue"
 
@@ -2288,7 +2296,7 @@ msgstr "Custom fonts"
 msgid "labels.dashboard"
 msgstr "Dashboard"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:288, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
+#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:291, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
 msgid "labels.delete"
 msgstr "Delete"
 
@@ -2308,7 +2316,7 @@ msgstr "Delete invitation"
 msgid "labels.delete-multi-files"
 msgstr "Delete %s files"
 
-#: src/app/main/ui/dashboard/deleted.cljs:205
+#: src/app/main/ui/dashboard/deleted.cljs:215
 msgid "labels.deleted"
 msgstr "Deleted"
 
@@ -2329,7 +2337,7 @@ msgstr "Discard"
 msgid "labels.download"
 msgstr "Download %s"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
 msgid "labels.drafts"
 msgstr "Drafts"
 
@@ -2664,7 +2672,7 @@ msgstr "Profile"
 msgid "labels.projects"
 msgstr "Projects"
 
-#: src/app/main/ui/dashboard/deleted.cljs:198
+#: src/app/main/ui/dashboard/deleted.cljs:208
 msgid "labels.recent"
 msgstr "Recent"
 
@@ -2741,7 +2749,7 @@ msgstr "Retry"
 msgid "labels.role"
 msgstr "Role"
 
-#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:299, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
+#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:302, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
 msgid "labels.save"
 msgstr "Save"
 
@@ -3205,27 +3213,27 @@ msgstr "Are you sure you want to delete this annotation?"
 msgid "modals.delete-component-annotation.title"
 msgstr "Delete annotation"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:124
+#: src/app/main/ui/dashboard/file_menu.cljs:125
 msgid "modals.delete-file-confirm.accept"
 msgstr "Delete file"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:123
+#: src/app/main/ui/dashboard/file_menu.cljs:124
 msgid "modals.delete-file-confirm.message"
 msgstr "Are you sure you want to delete this file?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:122
+#: src/app/main/ui/dashboard/file_menu.cljs:123
 msgid "modals.delete-file-confirm.title"
 msgstr "Deleting file"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:118
+#: src/app/main/ui/dashboard/file_menu.cljs:119
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "Delete files"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:117
+#: src/app/main/ui/dashboard/file_menu.cljs:118
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "Are you sure you want to delete %s files?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:116
+#: src/app/main/ui/dashboard/file_menu.cljs:117
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Deleting %s files"
 
@@ -4032,7 +4040,7 @@ msgstr "Go to login"
 msgid "settings.detach"
 msgstr "Detach"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:154, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
 msgid "settings.multiple"
 msgstr "Mixed"
 
@@ -5278,7 +5286,7 @@ msgstr "Filter"
 msgid "workspace.assets.graphics"
 msgstr "Graphics"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:189, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
 msgid "workspace.assets.grid-view"
 msgstr "Grid view"
 
@@ -5290,7 +5298,7 @@ msgstr "Group"
 msgid "workspace.assets.group-name"
 msgstr "Group name"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:191, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
 msgid "workspace.assets.list-view"
 msgstr "List view"
 
@@ -6913,7 +6921,7 @@ msgstr "Selection fill"
 msgid "workspace.options.selection-stroke"
 msgstr "Selection stroke"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:143
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:144
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "Add shadow"
 
@@ -6941,7 +6949,7 @@ msgstr "X"
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:156, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:157, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:161
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "Remove shadow"
 
@@ -6949,15 +6957,15 @@ msgstr "Remove shadow"
 msgid "workspace.options.shadow-options.spread"
 msgstr "Spread"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:139
 msgid "workspace.options.shadow-options.title"
 msgstr "Shadow"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Group shadow"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:136
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Selection shadows"
 
@@ -7743,7 +7751,7 @@ msgstr "Add new theme"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "Add set to this group"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:197, src/app/main/ui/workspace/tokens/management/group.cljs:140
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:147
 msgid "workspace.tokens.add-token"
 msgstr "Add token: %s"
 
@@ -7793,7 +7801,7 @@ msgstr "Create your first theme now."
 msgid "workspace.tokens.create-one"
 msgstr "Create one."
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:234
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:237
 msgid "workspace.tokens.create-token"
 msgstr "Create new %s token"
 
@@ -7809,7 +7817,7 @@ msgstr "Delete theme"
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicate token"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:209, src/app/main/data/workspace/tokens/library_edit.cljs:452
+#: src/app/main/data/workspace/tokens/library_edit.cljs:211, src/app/main/data/workspace/tokens/library_edit.cljs:454
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "copy"
 
@@ -7825,15 +7833,15 @@ msgstr "Edit theme"
 msgid "workspace.tokens.edit-themes"
 msgstr "Edit themes"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:233
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:236
 msgid "workspace.tokens.edit-token"
 msgstr "Edit %s token"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/management/forms/color.cljs:22, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:42
+#: src/app/main/data/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/management/forms/color.cljs:22, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:43
 msgid "workspace.tokens.empty-input"
 msgstr "Token value cannot be empty"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:240
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:243
 msgid "workspace.tokens.enter-token-name"
 msgstr "Enter %s token name"
 
@@ -7938,11 +7946,11 @@ msgstr "Importing a JSON file will override all your current tokens, sets and th
 msgid "workspace.tokens.import-warning"
 msgstr "Importing tokens will override all your current tokens, sets and themes."
 
-#: src/app/main/ui/workspace/tokens/management.cljs:78
+#: src/app/main/ui/workspace/tokens/management.cljs:74
 msgid "workspace.tokens.inactive-set"
 msgstr "Inactive"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:69
+#: src/app/main/ui/workspace/tokens/management.cljs:65
 msgid "workspace.tokens.inactive-set-description"
 msgstr ""
 "This set is not active. Change theme or activate this set to see changes in "
@@ -8169,7 +8177,7 @@ msgstr "Rename"
 msgid "workspace.tokens.renaming-token-from-to"
 msgstr "Renaming token from '%s' to '%s'"
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:224, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:320, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:421, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 #, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Resolved value: %s"
@@ -8182,7 +8190,7 @@ msgstr "Save theme"
 msgid "workspace.tokens.select-set"
 msgstr "Select set."
 
-#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:79, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:80, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
 msgid "workspace.tokens.self-reference"
 msgstr "Token has self reference"
 
@@ -8307,7 +8315,7 @@ msgstr ""
 msgid "workspace.tokens.themes-list"
 msgstr "Themes list"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:273, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:274
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:277
 #, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Description"
@@ -8324,19 +8332,19 @@ msgstr "Font family"
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "Font family or list of fonts separated by comma (,)"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:239
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:242
 msgid "workspace.tokens.token-name"
 msgstr "Name"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:33, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:104
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:33, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:71, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:104
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "A token already exists at the path: %s"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:31, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:68, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:264, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:219, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:102
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:31, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:69, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:264, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:219, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:102
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Name should be at least 1 character"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:69, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
+#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " is not a valid token name.\n"
@@ -8348,15 +8356,15 @@ msgstr ""
 msgid "workspace.tokens.token-not-resolved"
 msgstr "Could not resolve reference token with the name: %s"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:265
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:268
 msgid "workspace.tokens.token-value"
 msgstr "Value"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:264, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
 msgid "workspace.tokens.token-value-enter"
 msgstr "Enter a value or alias with {alias}"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:68
+#: src/app/main/ui/workspace/tokens/management.cljs:64
 msgid "workspace.tokens.tokens-section-title"
 msgstr "TOKENS -  %s"
 
@@ -8717,16 +8725,3 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "dashboard.file-menu.restore-files-option"
-msgid_plural "dashboard.file-menu.restore-files-option"
-msgstr[0] "Restore file"
-msgstr[1] "Restore files"
-
-msgid "dashboard.file-menu.delete-files-permanently-option"
-msgid_plural "dashboard.file-menu.delete-files-permanently-option"
-msgstr[0] "Delete file"
-msgstr[1] "Delete files"
-
-msgid "dashboard.deleted.empty-state-description"
-msgstr "Your trash is empty. Deleted files and projects will appear here."

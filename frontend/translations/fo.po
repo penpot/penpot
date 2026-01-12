@@ -471,7 +471,7 @@ msgstr "Flyt til"
 msgid "dashboard.move-to-multi"
 msgstr "Flyt %s fílur til"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:248
+#: src/app/main/ui/dashboard/file_menu.cljs:250
 msgid "dashboard.move-to-other-team"
 msgstr "Flyt til eitt annað toymi"
 
@@ -519,7 +519,7 @@ msgstr "%s limir"
 msgid "dashboard.open-in-new-tab"
 msgstr "Lat fílu upp í nýggjum skiljiblaði"
 
-#: src/app/main/ui/dashboard/deleted.cljs:147, src/app/main/ui/dashboard/deleted.cljs:148, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
+#: src/app/main/ui/dashboard/deleted.cljs:157, src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
 msgid "dashboard.options"
 msgstr "Valmøguleikar"
 
@@ -531,7 +531,7 @@ msgstr "Broyt loyniorð"
 msgid "dashboard.pin-unpin"
 msgstr "Fest/Loys"
 
-#: src/app/main/ui/dashboard/deleted.cljs:41, src/app/main/ui/dashboard/projects.cljs:57
+#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
 msgstr "Verkætlanir"
 
@@ -568,7 +568,7 @@ msgstr "Vel tema"
 msgid "dashboard.show-all-files"
 msgstr "Vís allar fílurnar"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:97
+#: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
 msgstr "Tín fíla er strikað"
 
@@ -576,11 +576,11 @@ msgstr "Tín fíla er strikað"
 msgid "dashboard.success-delete-project"
 msgstr "Tín verkætlan er strikað"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Tín fíla er flutt"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
 msgstr "Tínar fílur eru fluttar"
 
@@ -654,27 +654,27 @@ msgstr "Legg afturat sum Deilt Savn"
 msgid "modals.add-shared-confirm.message"
 msgstr "Legg \"%s\" afturat sum Deilt Savn"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:124
+#: src/app/main/ui/dashboard/file_menu.cljs:125
 msgid "modals.delete-file-confirm.accept"
 msgstr "Strikað fílu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:123
+#: src/app/main/ui/dashboard/file_menu.cljs:124
 msgid "modals.delete-file-confirm.message"
 msgstr "Ert tú vísur í, at tú ynskjur at strikað fílu?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:122
+#: src/app/main/ui/dashboard/file_menu.cljs:123
 msgid "modals.delete-file-confirm.title"
 msgstr "Strikar fílu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:118
+#: src/app/main/ui/dashboard/file_menu.cljs:119
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "Strikar fílur"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:117
+#: src/app/main/ui/dashboard/file_menu.cljs:118
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "Ert tú vísur í, at tú vil strikað %s fílur?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:116
+#: src/app/main/ui/dashboard/file_menu.cljs:117
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Strikar %s fílur"
 
