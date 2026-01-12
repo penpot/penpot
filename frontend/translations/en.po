@@ -8478,10 +8478,12 @@ msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
 
 msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "Restore file"
 msgstr[1] "Restore files"
 
 msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Delete file"
 msgstr[1] "Delete files"
 
