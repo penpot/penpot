@@ -61,7 +61,7 @@
    [:div#dashboard-deleted-title {:class (stl/css :dashboard-title)}
     [:h1 (tr "dashboard.projects-title")]]])
 
-(mf/defc deleted-project-menu*
+(mf/defc project-context-menu*
   {::mf/private true}
   [{:keys [project  show on-close top left]}]
   (let [top  (d/nilv top 0)
@@ -161,7 +161,7 @@
             menu-icon]]
 
           (when (:menu-open @local)
-            [:> deleted-project-menu*
+            [:> project-context-menu*
              {:project project
               :show (:menu-open @local)
               :left (+ 24 (:x (:menu-pos @local)))
