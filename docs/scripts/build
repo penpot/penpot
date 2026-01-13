@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-source ~/.bashrc
-
 set -ex
+
+corepack enable;
+corepack install;
+
 rm -rf ./_dist
-yarn
+yarn install
 yarn run build
