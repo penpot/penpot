@@ -103,9 +103,9 @@
         (mf/use-fn
          (fn [event node]
            (dom/prevent-default event)
-           (pp/pprint node)
            (st/emit! (dwtl/assign-token-node-context-menu
                       {:node node
+                       :type type
                        :position (dom/get-client-position event)}))))
 
         on-toggle-open-click

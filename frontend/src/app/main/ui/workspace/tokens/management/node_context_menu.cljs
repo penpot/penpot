@@ -2,6 +2,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.pprint :as pp]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -9,6 +10,10 @@
    [app.util.dom :as dom]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(def ^:private schema:token-node-context-menu
+  [:map
+   [:on-delete-node fn?]])
 
 (def ^:private tokens-node-menu-ref
   (l/derived :token-node-context-menu refs/workspace-tokens))
@@ -18,24 +23,25 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
-(mf/defc token-node-context-menu
-  []
+(mf/defc token-node-context-menu*
+  {::mf/schema schema:token-node-context-menu}
+  [{:keys [on-delete-node]}]
   (let [mdata               (mf/deref tokens-node-menu-ref)
         is-open?            (boolean mdata)
-        width               (mf/use-state 0)
-        width!               (deref width)
         dropdown-ref        (mf/use-ref)
         dropdown-direction* (mf/use-state "down")
         dropdown-direction  (deref dropdown-direction*)
         dropdown-direction-change* (mf/use-ref 0)
         top                 (+ (get-in mdata [:position :y]) 5)
-        left                (+ (get-in mdata [:position :x]) 5)]
+        left                (+ (get-in mdata [:position :x]) 5)
 
-    (mf/use-effect
-     (mf/deps is-open?)
-     (fn []
-       (when-let [node (mf/ref-val dropdown-ref)]
-         (reset! width (.-offsetWidth node)))))
+        delete-node          (mf/use-fn
+                              (mf/deps mdata)
+                              (fn []
+                                (let [node (get mdata :node)
+                                      type (get mdata :type)]
+                                  (when node
+                                    (on-delete-node node type)))))]
 
     (mf/with-effect [is-open?]
       (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
@@ -67,5 +73,8 @@
                         :left (dm/str left "px")}
                 :on-context-menu prevent-default}
           (when mdata
-            "Patata")]])
+            [:ul
+             [:li
+              {:on-click delete-node}
+              "Delete node"]])]])
        (dom/get-body)))))
