@@ -29,6 +29,7 @@
   (let [mdata               (mf/deref tokens-node-menu-ref)
         is-open?            (boolean mdata)
         dropdown-ref        (mf/use-ref)
+        dropdown-action    (mf/use-ref)
         dropdown-direction* (mf/use-state "down")
         dropdown-direction  (deref dropdown-direction*)
         dropdown-direction-change* (mf/use-ref 0)
@@ -48,8 +49,10 @@
         (reset! dropdown-direction* "down")
         (mf/set-ref-val! dropdown-direction-change* 0)))
 
-    (mf/with-effect [is-open? dropdown-ref]
-      (let [dropdown-element (mf/ref-val dropdown-ref)]
+    (mf/with-effect [is-open? dropdown-ref dropdown-action]
+      (let [dropdown-element (mf/ref-val dropdown-ref)
+            dropdown-action (mf/ref-val dropdown-action)]
+        (dom/focus! dropdown-action)
         (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
           (let [is-outside? (dom/is-element-outside? dropdown-element)]
             (reset! dropdown-direction* (if is-outside? "up" "down"))
@@ -73,8 +76,10 @@
                         :left (dm/str left "px")}
                 :on-context-menu prevent-default}
           (when mdata
-            [:ul
-             [:li
-              {:on-click delete-node}
-              "Delete node"]])]])
+            [:ul {:class (stl/css :token-node-context-menu-list)}
+             [:li {:class (stl/css :token-node-context-menu-listitem)}
+              [:button {:class (stl/css :token-node-context-menu-action)
+                        :ref dropdown-action
+                        :on-click delete-node}
+               "Delete node"]]])]])
        (dom/get-body)))))
