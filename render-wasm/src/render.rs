@@ -398,12 +398,7 @@ impl RenderState {
     }
 
     fn frame_clip_layer_blur(shape: &Shape) -> Option<Blur> {
-        match shape.shape_type {
-            Type::Frame(_) if shape.clip() => shape.blur.filter(|blur| {
-                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.
-            }),
-            _ => None,
-        }
+        shape.frame_clip_layer_blur()
     }
 
     /// Runs `f` with `ignore_nested_blurs` temporarily forced to `true`.
@@ -605,9 +600,17 @@ impl RenderState {
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().save();
-        });
+
+        // Only save canvas state if we have clipping or transforms
+        // For simple shapes without clipping, skip expensive save/restore
+        let needs_save =
+            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
+
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().save();
+            });
+        }
 
         let antialias = shape.should_use_antialias(self.get_scale());
 
@@ -908,9 +911,13 @@ impl RenderState {
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().restore();
-        });
+
+        // Only restore if we saved (optimization for simple shapes)
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().restore();
+            });
+        }
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
@@ -1117,34 +1124,40 @@ impl RenderState {
             self.nested_fills.push(Vec::new());
         }
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
+        // Only create save_layer if actually needed
+        // For simple shapes with default opacity and blend mode, skip expensive save_layer
+        let needs_layer = element.needs_layer() || mask;
 
-        if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
-            let scale = self.get_scale();
-            let sigma = frame_blur.value * scale;
-            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                paint.set_image_filter(filter);
+        if needs_layer {
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+
+            if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+                let scale = self.get_scale();
+                let sigma = frame_blur.value * scale;
+                if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+                    paint.set_image_filter(filter);
+                }
             }
-        }
 
-        // When we're rendering the mask shape we need to set a special blend mode
-        // called 'destination-in' that keeps the drawn content within the mask.
-        // @see https://skia.org/docs/user/api/skblendmode_overview/
-        if mask {
-            let mut mask_paint = skia::Paint::default();
-            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-            let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+            // When we're rendering the mask shape we need to set a special blend mode
+            // called 'destination-in' that keeps the drawn content within the mask.
+            // @see https://skia.org/docs/user/api/skblendmode_overview/
+            if mask {
+                let mut mask_paint = skia::Paint::default();
+                mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+                let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .save_layer(&mask_rec);
+            }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
             self.surfaces
                 .canvas(SurfaceId::Current)
-                .save_layer(&mask_rec);
+                .save_layer(&layer_rec);
         }
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        self.surfaces
-            .canvas(SurfaceId::Current)
-            .save_layer(&layer_rec);
 
         self.focus_mode.enter(&element.id);
     }
@@ -1217,7 +1230,15 @@ impl RenderState {
             );
         }
 
-        self.surfaces.canvas(SurfaceId::Current).restore();
+        // Only restore if we created a layer (optimization for simple shapes)
+        let needs_layer = element.needs_layer()
+            || (matches!(element.shape_type, Type::Group(_))
+                && matches!(element.shape_type, Type::Group(g) if g.masked));
+
+        if needs_layer {
+            self.surfaces.canvas(SurfaceId::Current).restore();
+        }
+
         self.focus_mode.exit(&element.id);
     }
 
@@ -1463,12 +1484,31 @@ impl RenderState {
 
             if !node_render_state.is_root() {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
-                let scale = self.get_scale();
-                let extrect = transformed_element.extrect(tree, scale);
 
-                let is_visible = extrect.intersects(self.render_area)
-                    && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(scale, tree);
+                // Aggressive early exit: check hidden and selrect first (fastest checks)
+                if transformed_element.hidden {
+                    continue;
+                }
+
+                let selrect = transformed_element.selrect();
+                if !selrect.intersects(self.render_area) {
+                    continue;
+                }
+
+                // For simple shapes without effects, selrect check is sufficient
+                // Only calculate expensive extrect for shapes with effects that might extend bounds
+                let scale = self.get_scale();
+                let has_effects = transformed_element.has_effects_that_extend_bounds();
+
+                let is_visible = if !has_effects {
+                    // Simple shape: selrect check is sufficient, skip expensive extrect
+                    !transformed_element.visually_insignificant(scale, tree)
+                } else {
+                    // Shape with effects: need extrect for accurate bounds
+                    let extrect = transformed_element.extrect(tree, scale);
+                    extrect.intersects(self.render_area)
+                        && !transformed_element.visually_insignificant(scale, tree)
+                };
 
                 if self.options.is_debug_visible() {
                     let shape_extrect_bounds =
@@ -1515,6 +1555,8 @@ impl RenderState {
                         _ => None,
                     };
 
+                    let element_extrect = element.extrect(tree, scale);
+
                     for shadow in element.drop_shadows_visible() {
                         let paint = skia::Paint::default();
                         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -1526,7 +1568,7 @@ impl RenderState {
                         // First pass: Render shadow in black to establish alpha mask
                         self.render_drop_black_shadow(
                             element,
-                            &element.extrect(tree, scale),
+                            &element_extrect,
                             shadow,
                             clip_bounds.clone(),
                             scale,
@@ -1546,9 +1588,10 @@ impl RenderState {
                                     .get_nested_shadow_clip_bounds(element, shadow);
 
                                 if !matches!(shadow_shape.shape_type, Type::Text(_)) {
+                                    let shadow_extrect = shadow_shape.extrect(tree, scale);
                                     self.render_drop_black_shadow(
                                         shadow_shape,
-                                        &shadow_shape.extrect(tree, scale),
+                                        &shadow_extrect,
                                         shadow,
                                         clip_bounds,
                                         scale,
