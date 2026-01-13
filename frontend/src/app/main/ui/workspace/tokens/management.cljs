@@ -14,6 +14,7 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
+   [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -134,6 +135,7 @@
 
     [:*
      [:& token-context-menu]
+     [:& token-node-context-menu]
 
      [:& selected-set-info* {:tokens-lib tokens-lib
                              :selected-token-set-id selected-token-set-id}]

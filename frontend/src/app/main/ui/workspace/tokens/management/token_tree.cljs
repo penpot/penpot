@@ -72,9 +72,9 @@
             (let [children (children-fn)]
               (for [child children]
                 (if (not (:leaf child))
-                  [:ul {:class (stl/css :node-parent)}
-                   [:> folder-node* {:key (:path child)
-                                     :type type
+                  [:ul {:class (stl/css :node-parent)
+                        :key (:path child)}
+                   [:> folder-node* {:type type
                                      :node child
                                      :unfolded-token-paths unfolded-token-paths
                                      :selected-shapes selected-shapes
@@ -156,5 +156,6 @@
                             :active-theme-tokens active-theme-tokens
                             :on-token-pill-click on-token-pill-click
                             :on-node-context-menu on-node-context-menu
+                            :on-pill-context-menu on-pill-context-menu
                             :tokens-lib tokens-lib
                             :selected-token-set-id selected-token-set-id}]]))]))
