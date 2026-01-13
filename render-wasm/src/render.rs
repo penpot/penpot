@@ -1172,12 +1172,22 @@ impl RenderState {
             self.nested_fills.push(Vec::new());
         }
 
+        // When we're rendering the mask shape we need to set a special blend mode
+        // called 'destination-in' that keeps the drawn content within the mask.
+        // @see https://skia.org/docs/user/api/skblendmode_overview/
+        if mask {
+            let mut mask_paint = skia::Paint::default();
+            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+            let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+            self.surfaces
+                .canvas(SurfaceId::Current)
+                .save_layer(&mask_rec);
+        }
+
         // Only create save_layer if actually needed
         // For simple shapes with default opacity and blend mode, skip expensive save_layer
         // Groups with masks need a layer to properly handle the mask rendering
-        let needs_layer = element.needs_layer()
-            || (matches!(element.shape_type, Type::Group(g) if g.masked))
-            || mask;
+        let needs_layer = element.needs_layer();
 
         if needs_layer {
             let mut paint = skia::Paint::default();
@@ -1190,18 +1200,6 @@ impl RenderState {
                 if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
                     paint.set_image_filter(filter);
                 }
-            }
-
-            // When we're rendering the mask shape we need to set a special blend mode
-            // called 'destination-in' that keeps the drawn content within the mask.
-            // @see https://skia.org/docs/user/api/skblendmode_overview/
-            if mask {
-                let mut mask_paint = skia::Paint::default();
-                mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-                let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
-                self.surfaces
-                    .canvas(SurfaceId::Current)
-                    .save_layer(&mask_rec);
             }
 
             let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -1283,8 +1281,7 @@ impl RenderState {
 
         // Only restore if we created a layer (optimization for simple shapes)
         // Groups with masks need restore to properly handle the mask rendering
-        let needs_layer =
-            element.needs_layer() || (matches!(element.shape_type, Type::Group(g) if g.masked));
+        let needs_layer = element.needs_layer();
 
         if needs_layer {
             self.surfaces.canvas(SurfaceId::Current).restore();

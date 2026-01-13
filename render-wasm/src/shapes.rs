@@ -1485,6 +1485,7 @@ impl Shape {
         self.opacity() < 1.0
             || self.blend_mode().0 != skia::BlendMode::SrcOver
             || self.has_frame_clip_layer_blur()
+            || (matches!(self.shape_type, Type::Group(g) if g.masked))
     }
 
     /// Checks if this frame has clip layer blur (affects children)
