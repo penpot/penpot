@@ -1,7 +1,7 @@
 import "./style.css";
 import "./fonts.css";
 import "./editor/TextEditor.css";
-import initWasmModule from "./wasm/render_wasm.js";
+import initWasmModule from "./wasm/render-wasm.js";
 import { UUID } from "./playground/uuid.js";
 import { Rect, Point } from "./playground/geom.js";
 import { WASMModuleWrapper } from "./playground/wasm.js";

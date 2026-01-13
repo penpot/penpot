@@ -7,7 +7,7 @@
 To start the development environment run:
 
 ```sh
-yarn run dev
+pnpm run dev
 ```
 
 ### Testing
@@ -15,14 +15,14 @@ yarn run dev
 For running unit tests and running coverage:
 
 ```sh
-yarn run test
-yarn run coverage
+pnpm run test
+pnpm run coverage
 ```
 
 > If you want, you can run the [vitest](https://vitest.dev/) UI by running:
 
 ```sh
-yarn run test:ui
+pnpm run test:ui
 ```
 
 ## How to build it
@@ -30,7 +30,7 @@ yarn run test:ui
 The editor can be built and updated inside Penpot using the following command:
 
 ```sh
-PENPOT_SOURCE_PATH=/path/to/penpot/repository yarn build:update
+PENPOT_SOURCE_PATH=/path/to/penpot/repository pnpm build:update
 ```
 
 This command is going to search for the file located in `frontend/src/app/main/ui/workspace/shapes/text/new_editor/TextEditor.js` and update it.
