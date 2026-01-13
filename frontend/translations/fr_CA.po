@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-12 08:33+0000\n"
+"PO-Revision-Date: 2026-01-13 14:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 5.15.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1503,3 +1503,99 @@ msgid "files-download-modal.options.merge.title"
 msgstr ""
 "Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
 "fichier"
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr ""
+"La corbeille est vide. Les fichiers et projets supprimés s'afficheront ici."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "Doit contenir un caractère autre qu'un espace."
+
+#: src/app/main/errors.cljs:280
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Il semble y avoir une différence entre les fonctionnalités activées et les "
+"fonctionnalités du fichier que tu essayes d'ouvrir. Les migrations pour « %s "
+"» doivent être appliquées avant d'ouvrir le fichier."
+
+#: src/app/main/data/auth.cljs:347, src/app/main/ui/auth/login.cljs:104, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:84
+msgid "errors.generic"
+msgstr "Une erreur est survenue."
+
+#: src/app/main/errors.cljs:200
+msgid "errors.internal-assertion-error"
+msgstr "Erreur interne d'affirmation"
+
+#: src/app/main/errors.cljs:216
+msgid "errors.internal-worker-error"
+msgstr ""
+"Il y a eu une erreur avec le travailleur web en arrière-plan (web worker)."
+
+#: src/app/main/ui/components/color_input.cljs:51
+msgid "errors.invalid-color"
+msgstr "Couleur invalide"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:89
+msgid "errors.invalid-data"
+msgstr "Données invalides"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#, unused
+msgid "errors.invalid-email"
+msgstr "Saisis une adresse courriel valide s'il te plaît"
+
+#: src/app/main/ui/settings/change_email.cljs:62
+msgid "errors.invalid-email-confirmation"
+msgstr "La confirmation de l'adresse courriel doit correspondre"
+
+#: src/app/main/ui/auth/recovery.cljs:32
+msgid "errors.invalid-recovery-token"
+msgstr "Le jeton de recouvrement est invalide."
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "Texte invalide"
+
+#: src/app/main/ui/static.cljs:75
+msgid "errors.invite-invalid"
+msgstr "Invitation invalide"
+
+#: src/app/main/ui/static.cljs:76
+msgid "errors.invite-invalid.info"
+msgstr "Cette invitation peut avoir été annulée ou est expirée."
+
+#: src/app/main/ui/auth/login.cljs:89
+msgid "errors.ldap-disabled"
+msgstr "L'authentification LDAP est désactivée."
+
+#: src/app/main/errors.cljs:296, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
+msgid "errors.max-quota-reached"
+msgstr "Tu as atteint le quota « %s ». Contacte le support technique."
+
+#: src/app/main/ui/dashboard/team.cljs:187, src/app/main/ui/dashboard/team.cljs:849, src/app/main/ui/onboarding/team_choice.cljs:101
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Le nombre maximal (%s) de courriels invitables en une seule requête a été "
+"atteint"
+
+#: src/app/main/data/workspace/media.cljs:190
+msgid "errors.media-too-large"
+msgstr "L'image est trop grande pour être insérée."
+
+#: src/app/main/data/media.cljs:70, src/app/main/data/workspace/media.cljs:193
+msgid "errors.media-type-mismatch"
+msgstr "Le contenu de l'image ne correspond pas avec l'extension du fichier."
+
+#: src/app/main/data/media.cljs:67, src/app/main/data/workspace/media.cljs:178, src/app/main/data/workspace/media.cljs:181, src/app/main/data/workspace/media.cljs:184, src/app/main/data/workspace/media.cljs:187
+msgid "errors.media-type-not-allowed"
+msgstr "Cette image n'est pas valide."
+
+#: src/app/main/ui/dashboard/team.cljs:622
+msgid "errors.member-is-muted"
+msgstr ""
+"Le profil invité a tu ses courriels (selon les rapports de pourriels ou un "
+"haut taux de rebond)."
