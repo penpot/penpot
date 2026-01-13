@@ -40,7 +40,7 @@ on:
 jobs:
   build-bundle:
     name: Build and Upload Penpot Bundle
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
