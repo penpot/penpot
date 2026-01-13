@@ -51,6 +51,7 @@
                               (fn []
                                 (let [path (str (name type)  "." (:path node))]
                                   (st/emit! (dwtl/toggle-token-path path)))))
+
         node-context-menu-prep (mf/use-fn
                                 (mf/deps on-node-context-menu node)
                                 (fn [event]
@@ -81,6 +82,7 @@
                                      :is-selected-inside-layout is-selected-inside-layout
                                      :active-theme-tokens active-theme-tokens
                                      :on-token-pill-click on-token-pill-click
+                                     :on-pill-context-menu on-pill-context-menu
                                      :on-node-context-menu on-node-context-menu
                                      :tokens-lib tokens-lib
                                      :selected-token-set-id selected-token-set-id}]]
