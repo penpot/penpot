@@ -1174,7 +1174,10 @@ impl RenderState {
 
         // Only create save_layer if actually needed
         // For simple shapes with default opacity and blend mode, skip expensive save_layer
-        let needs_layer = element.needs_layer() || mask;
+        // Groups with masks need a layer to properly handle the mask rendering
+        let needs_layer = element.needs_layer()
+            || (matches!(element.shape_type, Type::Group(g) if g.masked))
+            || mask;
 
         if needs_layer {
             let mut paint = skia::Paint::default();
@@ -1279,9 +1282,9 @@ impl RenderState {
         }
 
         // Only restore if we created a layer (optimization for simple shapes)
-        let needs_layer = element.needs_layer()
-            || (matches!(element.shape_type, Type::Group(_))
-                && matches!(element.shape_type, Type::Group(g) if g.masked));
+        // Groups with masks need restore to properly handle the mask rendering
+        let needs_layer =
+            element.needs_layer() || (matches!(element.shape_type, Type::Group(g) if g.masked));
 
         if needs_layer {
             self.surfaces.canvas(SurfaceId::Current).restore();
