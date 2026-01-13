@@ -3,48 +3,48 @@
 set -e
 
 echo "################ test common ################"
-cd common
-yarn install
-yarn run fmt:clj:check
-yarn run lint:clj
+pushd common
+pnpm install
+pnpm run fmt:clj:check
+pnpm run lint:clj
 clojure -M:dev:test
-yarn run test
-cd ..
+pnpm run test
+popd
 
 echo "################ test frontend ################"
-cd frontend
-yarn install
-yarn run fmt:clj:check
-yarn run fmt:js:check
-yarn run lint:scss
-yarn run lint:clj
-yarn run test
-cd ..
+pushd frontend
+pnpm install
+pnpm run fmt:clj:check
+pnpm run fmt:js:check
+pnpm run lint:scss
+pnpm run lint:clj
+pnpm run test
+popd
 
 echo "################ test integration ################"
-cd frontend
-yarn install
-yarn run test:e2e -x --workers=4
-cd ..
+pushd frontend
+pnpm install
+pnpm run test:e2e -x --workers=4
+popd
 
 echo "################ test backend ################"
-cd backend
-yarn install
-yarn run fmt:clj:check
-yarn run lint:clj
+pushd backend
+pnpm install
+pnpm run fmt:clj:check
+pnpm run lint:clj
 clojure -M:dev:test --reporter kaocha.report/documentation
-cd ..
+popd
 
 echo "################ test exporter ################"
-cd exporter
-yarn install
-yarn run fmt:clj:check
-yarn run lint:clj
-cd ..
+pushd exporter
+pnpm install
+pnpm run fmt:clj:check
+pnpm run lint:clj
+popd
 
 echo "################ test render-wasm ################"
-cd render-wasm
+pushd render-wasm
 cargo fmt --check
 ./lint --debug
 ./test
-cd ..
+popd

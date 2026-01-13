@@ -10,7 +10,7 @@ all the necessary data to import them into a Penpot application).
 ### How to install
 
 ```bash
-yarn add @penpot/library
+pnpm add @penpot/library
 ```
 
 ### Example of use
