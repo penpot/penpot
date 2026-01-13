@@ -920,27 +920,15 @@ impl Shape {
             }
 
             Type::Group(_) | Type::Frame(_) if !self.clip_content => {
-                // Use selrect as a fast approximation first, then calculate
-                // extrect only if needed. This avoids expensive recursive extrect calculations
-                // for children that don't significantly expand the bounds.
+                // For frames and groups, we must always calculate extrect for all children
+                // to ensure accurate bounds that include nested content across all tiles.
+                // Using selrect for children can cause frames to be incorrectly omitted from
+                // tiles where they have nested content.
                 for child_id in self.children_ids_iter(false) {
                     if let Some(child_shape) = shapes_pool.get(child_id) {
-                        // Fast path: check if child has effects that might expand bounds
-                        // If no effects, selrect is likely sufficient
-                        let has_effects = !child_shape.shadows.is_empty()
-                            || child_shape.blur.is_some()
-                            || !child_shape.strokes.is_empty()
-                            || matches!(child_shape.shape_type, Type::Group(_) | Type::Frame(_));
-
-                        if has_effects {
-                            // Calculate full extrect for shapes with effects
-                            let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
-                            rect.join(child_extrect);
-                        } else {
-                            // No effects, selrect is sufficient (much faster)
-                            let child_selrect = child_shape.selrect();
-                            rect.join(child_selrect);
-                        }
+                        // Always calculate full extrect for children to ensure accurate bounds
+                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+                        rect.join(child_extrect);
                     }
                 }
             }
@@ -1434,6 +1422,61 @@ impl Shape {
 
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
+    }
+
+    /// Determines if this frame or group can be flattened (doesn't affect children visually)
+    /// A container can be flattened if it has no visual effects that affect its children
+    /// and doesn't render its own content (no fills/strokes)
+    pub fn can_flatten(&self) -> bool {
+        // Only frames and groups can be flattened
+        if !matches!(self.shape_type, Type::Frame(_) | Type::Group(_)) {
+            return false;
+        }
+
+        // Cannot flatten if it has visual effects that affect children:
+
+        if self.clip_content {
+            return false;
+        }
+
+        if !self.transform.is_identity() {
+            return false;
+        }
+
+        if self.opacity != 1.0 {
+            return false;
+        }
+
+        if self.blend_mode() != BlendMode::default() {
+            return false;
+        }
+
+        if self.blur.is_some() {
+            return false;
+        }
+
+        if !self.shadows.is_empty() {
+            return false;
+        }
+
+        if let Type::Group(group) = &self.shape_type {
+            if group.masked {
+                return false;
+            }
+        }
+
+        if self.hidden {
+            return false;
+        }
+
+        // If the container itself has fills/strokes, it renders something visible
+        // We cannot flatten containers that render their own background/border
+        // because they need to be rendered even if they don't affect children
+        if self.has_fills() || self.has_visible_strokes() {
+            return false;
+        }
+
+        true
     }
 
     /// Checks if this shape needs a layer for rendering due to visual effects
