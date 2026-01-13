@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -223,7 +224,7 @@
       (some? tnow)
       (assoc :tracked-at tnow))))
 
-(defn- append-audit-entry!
+(defn- append-audit-entry
   [cfg params]
   (let [params (-> params
                    (update :props db/tjson)
@@ -236,6 +237,16 @@
   (let [params (event->params event)
         tnow   (ct/now)]
 
+    (when (contains? cf/flags :audit-log-logger)
+      (l/log! ::l/logger "app.audit"
+              ::l/level :info
+              :profile-id (str (::profile-id event))
+              :ip-addr (str (::ip-addr event))
+              :type (::type event)
+              :name (::name event)
+              :props (json/encode (::props event) :key-fn json/write-camel-key)
+              :context (json/encode (::context event) :key-fn json/write-camel-key)))
+
     (when (contains? cf/flags :audit-log)
       ;; NOTE: this operation may cause primary key conflicts on inserts
       ;; because of the timestamp precission (two concurrent requests), in
@@ -243,7 +254,7 @@
       (let [params (-> params
                        (assoc :created-at tnow)
                        (update :tracked-at #(or % tnow)))]
-        (append-audit-entry! cfg params)))
+        (append-audit-entry cfg params)))
 
     (when (and (or (contains? cf/flags :telemetry)
                    (cf/get :telemetry-enabled))
@@ -258,7 +269,7 @@
                        (update :tracked-at #(or % tnow))
                        (assoc :props {})
                        (assoc :context {}))]
-        (append-audit-entry! cfg params)))
+        (append-audit-entry cfg params)))
 
     (when (and (contains? cf/flags :webhooks)
                (::webhooks/event? event))
@@ -312,4 +323,4 @@
                            params (-> (event->params event)
                                       (assoc :created-at tnow)
                                       (update :tracked-at #(or % tnow)))]
-                       (append-audit-entry! cfg params)))))))
+                       (append-audit-entry cfg params)))))))
