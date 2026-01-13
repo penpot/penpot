@@ -387,7 +387,7 @@ fn draw_image_stroke_in_container(
     }
 
     let size = image.unwrap().dimensions();
-    let canvas = render_state.surfaces.canvas(surface_id);
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = shape.svg_attrs.as_ref();
@@ -606,7 +606,7 @@ fn render_internal(
 
     let scale = render_state.get_scale();
     let target_surface = surface_id.unwrap_or(SurfaceId::Strokes);
-    let canvas = render_state.surfaces.canvas(target_surface);
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = shape.svg_attrs.as_ref();
@@ -688,7 +688,7 @@ pub fn render_text_paths(
     let scale = render_state.get_scale();
     let canvas = render_state
         .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::Strokes));
+        .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::Strokes));
     let selrect = &shape.selrect;
     let svg_attrs = shape.svg_attrs.as_ref();
     let mut paint: skia_safe::Handle<_> =

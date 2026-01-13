@@ -294,6 +294,10 @@ pub(crate) struct RenderState {
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
     pub ignore_nested_blurs: bool,
+    /// Cached root_ids and root_ids_map to avoid recalculating them every frame
+    /// These are invalidated when the tree structure changes
+    cached_root_ids: Option<Vec<Uuid>>,
+    cached_root_ids_map: Option<std::collections::HashMap<Uuid, usize>>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -366,6 +370,8 @@ impl RenderState {
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
+            cached_root_ids: None,
+            cached_root_ids_map: None,
         }
     }
 
@@ -534,38 +540,59 @@ impl RenderState {
 
         let paint = skia::Paint::default();
 
-        self.surfaces
-            .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        // Only draw surfaces that have content (dirty flag optimization)
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            self.surfaces
+                .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        }
 
-        self.surfaces
-            .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            self.surfaces
+                .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        }
 
         let mut render_overlay_below_strokes = false;
         if let Some(shape) = shape {
             render_overlay_below_strokes = shape.has_fills();
         }
 
-        if render_overlay_below_strokes {
+        if render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        self.surfaces
-            .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            self.surfaces
+                .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        }
 
-        if !render_overlay_below_strokes {
+        if !render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::InnerShadows as u32
-            | SurfaceId::TextDropShadows as u32;
+        // Build mask of dirty surfaces that need clearing
+        let mut dirty_surfaces_to_clear = 0u32;
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            dirty_surfaces_to_clear |= SurfaceId::Strokes as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            dirty_surfaces_to_clear |= SurfaceId::Fills as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::InnerShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::InnerShadows as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::TextDropShadows as u32;
+        }
 
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().clear(skia::Color::TRANSPARENT);
-        });
+        if dirty_surfaces_to_clear != 0 {
+            self.surfaces.apply_mut(dirty_surfaces_to_clear, |s| {
+                s.canvas().clear(skia::Color::TRANSPARENT);
+            });
+            // Clear dirty flags for surfaces we just cleared
+            self.surfaces.clear_dirty(dirty_surfaces_to_clear);
+        }
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -704,16 +731,18 @@ impl RenderState {
                     matrix.pre_concat(&svg_transform);
                 }
 
-                self.surfaces.canvas(fills_surface_id).concat(&matrix);
+                self.surfaces
+                    .canvas_and_mark_dirty(fills_surface_id)
+                    .concat(&matrix);
 
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.surfaces.canvas(fills_surface_id))
+                    svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
                     let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
                     match dom_result {
                         Ok(dom) => {
-                            dom.render(self.surfaces.canvas(fills_surface_id));
+                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                             shape.to_mut().set_svg(dom);
                         }
                         Err(e) => {
@@ -1896,14 +1925,39 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            let root_ids = {
-                if let Some(shape_id) = base_object {
+            // Get or compute root_ids and root_ids_map (cached to avoid recalculation every frame)
+            let root_ids_map = {
+                let root_ids = if let Some(shape_id) = base_object {
                     vec![*shape_id]
                 } else {
                     let Some(root) = tree.get(&Uuid::nil()) else {
                         return Err(String::from("Root shape not found"));
                     };
                     root.children_ids(false)
+                };
+
+                // Check if cache is valid (same root_ids)
+                let cache_valid = self
+                    .cached_root_ids
+                    .as_ref()
+                    .map(|cached| cached.as_slice() == root_ids.as_slice())
+                    .unwrap_or(false);
+
+                if cache_valid {
+                    // Use cached map
+                    self.cached_root_ids_map.as_ref().unwrap().clone()
+                } else {
+                    // Recompute and cache
+                    let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
+                        .iter()
+                        .enumerate()
+                        .map(|(i, id)| (*id, i))
+                        .collect();
+
+                    self.cached_root_ids = Some(root_ids.clone());
+                    self.cached_root_ids_map = Some(root_ids_map.clone());
+
+                    root_ids_map
                 }
             };
 
@@ -1914,12 +1968,6 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
-                            .iter()
-                            .enumerate()
-                            .map(|(i, id)| (*id, i))
-                            .collect();
-
                         // We only need first level shapes
                         let mut valid_ids: Vec<Uuid> = ids
                             .iter()

@@ -41,7 +41,7 @@ where
     F: FnOnce(&mut RenderState, SurfaceId),
 {
     if let Some((image, scale)) = render_into_filter_surface(render_state, bounds, draw_fn) {
-        let canvas = render_state.surfaces.canvas(target_surface);
+        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
 
         // If we scaled down, we need to scale the source rect and adjust the destination
         if scale < 1.0 {
