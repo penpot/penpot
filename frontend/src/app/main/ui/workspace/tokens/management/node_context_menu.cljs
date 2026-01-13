@@ -2,12 +2,12 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.pprint :as pp]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -81,5 +81,5 @@
               [:button {:class (stl/css :token-node-context-menu-action)
                         :ref dropdown-action
                         :on-click delete-node}
-               "Delete node"]]])]])
+               (tr "labels.delete")]]])]])
        (dom/get-body)))))
