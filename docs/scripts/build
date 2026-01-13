@@ -6,5 +6,5 @@ corepack enable;
 corepack install;
 
 rm -rf ./_dist
-yarn install
-yarn run build
+pnpm install
+pnpm run build

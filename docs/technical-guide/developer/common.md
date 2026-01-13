@@ -281,8 +281,8 @@ for how to define custom metadata and other ways of selecting tests.
 it, but for now we use shadow-cljs with <code class="language-text">package.json</code> scripts:
 
 ```bash
-yarn run test
-yarn run test:watch
+pnpm run test
+pnpm run test:watch
 ```
 
 #### Test output
