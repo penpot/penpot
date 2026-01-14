@@ -1,0 +1,604 @@
+import { test, expect } from "@playwright/test";
+import { WorkspacePage } from "../../pages/WorkspacePage";
+import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
+import {
+  setupEmptyTokensFile,
+  setupTokensFile,
+  setupTypographyTokensFile,
+  unfoldTokenTree,
+} from "./helpers";
+
+test.beforeEach(async ({ page }) => {
+  await WorkspacePage.init(page);
+  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
+});
+
+test.describe("Tokens: Apply token", () => {
+  test("User applies color token to a shape", async ({ page }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: "Button" })
+      .click();
+
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+
+    unfoldTokenTree(tokensSidebar, "color", "colors.black");
+
+    await tokensSidebar
+      .getByRole("button", { name: "black" })
+      .click({ button: "right" });
+    await tokenContextMenuForToken.getByText("Fill").click();
+
+    await expect(
+      workspacePage.page.getByLabel("Name: colors.black"),
+    ).toBeVisible();
+  });
+
+  test("User applies border-radius token to a shape from sidebar", async ({
+    page,
+  }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+    // Open tokens sections on left sidebar
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+
+    // Unfold border radius tokens
+    await page.getByRole("button", { name: "Border Radius 3" }).click();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "borderRadius" }),
+    ).toBeVisible();
+    await tokensSidebar.getByRole("button", { name: "borderRadius" }).click();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "borderRadius.sm" }),
+    ).toBeVisible();
+
+    // Apply border radius token from token panels
+    await tokensSidebar
+      .getByRole("button", { name: "borderRadius.sm" })
+      .click();
+
+    // Check if border radius sections is visible on right sidebar
+    const borderRadiusSection = page.getByRole("region", {
+      name: "border-radius-section",
+    });
+    await expect(borderRadiusSection).toBeVisible();
+
+    // Check if token pill is visible on design tab on right sidebar
+    const brTokenPillSM = borderRadiusSection.getByRole("button", {
+      name: "borderRadius.sm",
+    });
+    await expect(brTokenPillSM).toBeVisible();
+    await brTokenPillSM.click();
+
+    // Change token from dropdown
+    const brTokenOptionXl = borderRadiusSection.getByLabel("borderRadius.xl");
+    await expect(brTokenOptionXl).toBeVisible();
+    await brTokenOptionXl.click();
+
+    await expect(brTokenPillSM).not.toBeVisible();
+    const brTokenPillXL = borderRadiusSection.getByRole("button", {
+      name: "borderRadius.xl",
+    });
+    await expect(brTokenPillXL).toBeVisible();
+
+    // Detach token from design tab on right sidebar
+    const detachButton = borderRadiusSection.getByRole("button", {
+      name: "Detach token",
+    });
+    await detachButton.click();
+    await expect(brTokenPillXL).not.toBeVisible();
+  });
+
+  test("User applies typography token to a text shape", async ({ page }) => {
+    const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+      await setupTypographyTokensFile(page);
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+
+    await workspacePage.layers
+      .getByTestId("layer-row")
+      .filter({ hasText: "Some Text" })
+      .click();
+
+    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+    await tokensTabButton.click();
+
+    await tokensSidebar
+      .getByRole("button")
+      .filter({ hasText: "Typography" })
+      .click();
+
+    await tokensSidebar.getByRole("button", { name: "Full" }).click();
+
+    const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
+      name: "Font Size",
+    });
+    await expect(fontSizeInput).toBeVisible();
+    await expect(fontSizeInput).toHaveValue("100");
+  });
+
+  test("User edits typography token and all fields are valid", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTypographyTokensFile(page);
+
+    await tokensSidebar
+      .getByRole("button")
+      .filter({ hasText: "Typography" })
+      .click();
+
+    // Open edit modal for "Full" typography token
+    const token = tokensSidebar.getByRole("button", { name: "Full" });
+    await token.click({ button: "right" });
+    await page.getByText("Edit token").click();
+
+    // Modal opens
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const saveButton = tokensUpdateCreateModal.getByRole("button", {
+      name: /save/i,
+    });
+
+    // Fill font-family to verify to verify that input value doesn't get split into list of characters
+    const fontFamilyField = tokensUpdateCreateModal
+      .getByLabel("Font family")
+      .first();
+    await fontFamilyField.fill("OneWord");
+
+    // Invalidate incorrect values for font size
+    const fontSizeField = tokensUpdateCreateModal.getByLabel(/Font Size/i);
+    await fontSizeField.fill("invalid");
+    await expect(
+      tokensUpdateCreateModal.getByText(/Invalid token value:/),
+    ).toBeVisible();
+    await expect(saveButton).toBeDisabled();
+
+    // Show error with line-height depending on invalid font-size
+    await fontSizeField.fill("");
+    await expect(saveButton).toBeDisabled();
+
+    // Fill in values for all fields and verify they persist when switching tabs
+    await fontSizeField.fill("16");
+    await expect(saveButton).toBeEnabled();
+
+    const fontWeightField = tokensUpdateCreateModal.getByLabel(/Font Weight/i);
+    const letterSpacingField =
+      tokensUpdateCreateModal.getByLabel(/Letter Spacing/i);
+    const lineHeightField = tokensUpdateCreateModal.getByLabel(/Line Height/i);
+    const textCaseField = tokensUpdateCreateModal.getByLabel(/Text Case/i);
+    const textDecorationField =
+      tokensUpdateCreateModal.getByLabel(/Text Decoration/i);
+
+    // Capture all values before switching tabs
+    const originalValues = {
+      fontSize: await fontSizeField.inputValue(),
+      fontFamily: await fontFamilyField.inputValue(),
+      fontWeight: await fontWeightField.inputValue(),
+      letterSpacing: await letterSpacingField.inputValue(),
+      lineHeight: await lineHeightField.inputValue(),
+      textCase: await textCaseField.inputValue(),
+      textDecoration: await textDecorationField.inputValue(),
+    };
+
+    // Switch to reference tab and back to composite tab
+    const referenceTabButton =
+      tokensUpdateCreateModal.getByTestId("reference-opt");
+    await referenceTabButton.click();
+
+    // Empty reference tab should be disabled
+    await expect(saveButton).toBeDisabled();
+
+    const compositeTabButton =
+      tokensUpdateCreateModal.getByTestId("composite-opt");
+    await compositeTabButton.click();
+
+    // Filled composite tab should be enabled
+    await expect(saveButton).toBeEnabled();
+
+    // Verify all values are preserved after switching tabs
+    await expect(fontSizeField).toHaveValue(originalValues.fontSize);
+    await expect(fontFamilyField).toHaveValue(originalValues.fontFamily);
+    await expect(fontWeightField).toHaveValue(originalValues.fontWeight);
+    await expect(letterSpacingField).toHaveValue(originalValues.letterSpacing);
+    await expect(lineHeightField).toHaveValue(originalValues.lineHeight);
+    await expect(textCaseField).toHaveValue(originalValues.textCase);
+    await expect(textDecorationField).toHaveValue(
+      originalValues.textDecoration,
+    );
+
+    await saveButton.click();
+
+    // Modal should close, token should be visible (with new name) in sidebar
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+  });
+
+  test("User cant submit empty typography token or reference", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTypographyTokensFile(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Typography" })
+      .click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("typography.empty");
+
+    const valueField = tokensUpdateCreateModal.getByLabel("Font Size");
+
+    // Insert a value and then delete it
+    await valueField.fill("1");
+    await valueField.fill("");
+
+    // Submit button should be disabled when field is empty
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(submitButton).toBeDisabled();
+
+    // Switch to reference tab, should not be submittable either
+    const referenceTabButton =
+      tokensUpdateCreateModal.getByTestId("reference-opt");
+    await referenceTabButton.click();
+    await expect(submitButton).toBeDisabled();
+  });
+
+  test("User adds typography token with reference", async ({ page }) => {
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTypographyTokensFile(page);
+
+    const newTokenTitle = "NewReference";
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Typography" })
+      .click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill(newTokenTitle);
+
+    const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Use a reference",
+    });
+    referenceTabButton.click();
+
+    const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Reference",
+    });
+    await referenceField.fill("{Full}");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    const resolvedValue =
+      await tokensUpdateCreateModal.getByText("Resolved value:");
+    await expect(resolvedValue).toBeVisible();
+    await expect(resolvedValue).toContainText("Font Family: 42dot Sans");
+    await expect(resolvedValue).toContainText("Font Size: 100");
+    await expect(resolvedValue).toContainText("Font Weight: 300");
+    await expect(resolvedValue).toContainText("Letter Spacing: 2");
+    await expect(resolvedValue).toContainText("Text Case: uppercase");
+    await expect(resolvedValue).toContainText("Text Decoration: underline");
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+    const newToken = tokensSidebar.getByRole("button", {
+      name: newTokenTitle,
+    });
+
+    await expect(newToken).toBeVisible();
+  });
+
+  test("User adds shadow token with multiple shadows and applies it to shape", async ({
+    page,
+  }) => {
+    const {
+      tokensUpdateCreateModal,
+      tokensSidebar,
+      workspacePage,
+      tokenContextMenuForToken,
+    } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    await test.step("Stage 1: Basic open", async () => {
+      // User adds shadow via the sidebar
+      await tokensTabPanel
+        .getByRole("button", { name: "Add Token: Shadow" })
+        .click();
+
+      await expect(tokensUpdateCreateModal).toBeVisible();
+
+      const nameField = tokensUpdateCreateModal.getByLabel("Name");
+      await nameField.fill("primary");
+
+      // User adds first shadow with a color from the color ramp
+      const firstShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-0",
+      );
+      await expect(firstShadowFields).toBeVisible();
+
+      // Fill in the shadow values
+      const offsetXInput = firstShadowFields.getByLabel("X");
+      const offsetYInput = firstShadowFields.getByLabel("Y");
+      const blurInput = firstShadowFields.getByRole("textbox", {
+        name: "Blur",
+      });
+      const spreadInput = firstShadowFields.getByRole("textbox", {
+        name: "Spread",
+      });
+
+      await offsetXInput.fill("2");
+      await offsetYInput.fill("2");
+      await blurInput.fill("4");
+      await spreadInput.fill("0");
+
+      // Add color using the color picker
+      const colorBullet = firstShadowFields.getByTestId(
+        "token-form-color-bullet",
+      );
+      await colorBullet.click();
+
+      // Click on the color ramp to select a color
+      const valueSaturationSelector = tokensUpdateCreateModal.getByTestId(
+        "value-saturation-selector",
+      );
+      await expect(valueSaturationSelector).toBeVisible();
+      await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
+
+      // Verify that a color value was set
+      const colorInput = firstShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
+      await expect(colorInput).toHaveValue(/^rgb(.*)$/);
+
+      // Wait for validation to complete
+      await expect(
+        tokensUpdateCreateModal.getByText(/Resolved value:/).first(),
+      ).toBeVisible();
+
+      // Save button should be enabled
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Save",
+      });
+      await expect(submitButton).toBeEnabled();
+    });
+
+    await test.step("Stage 2: Shadow adding/removing works", async () => {
+      const firstShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-0",
+      );
+      const colorInput = firstShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
+      const firstColorValue = await colorInput.inputValue();
+
+      // User adds a second shadow
+      const addButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Add Shadow",
+      });
+      await addButton.click();
+
+      const secondShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-1",
+      );
+      await expect(secondShadowFields).toBeVisible();
+
+      // User adds a third shadow
+      await addButton.click();
+
+      const thirdShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-2",
+      );
+      await expect(thirdShadowFields).toBeVisible();
+
+      // User adds values for the third shadow
+      const thirdOffsetXInput = thirdShadowFields.getByLabel("X");
+      const thirdOffsetYInput = thirdShadowFields.getByLabel("Y");
+      const thirdBlurInput = thirdShadowFields.getByRole("textbox", {
+        name: "Blur",
+      });
+      const thirdSpreadInput = thirdShadowFields.getByRole("textbox", {
+        name: "Spread",
+      });
+      const thirdColorInput = thirdShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
+
+      await thirdOffsetXInput.fill("10");
+      await thirdOffsetYInput.fill("10");
+      await thirdBlurInput.fill("20");
+      await thirdSpreadInput.fill("5");
+      await thirdColorInput.fill("#FF0000");
+
+      // User removes the 2nd shadow
+      const removeButton2 = secondShadowFields.getByRole("button", {
+        name: "Remove Shadow",
+      });
+      await removeButton2.click();
+
+      // Verify that we have only two shadow fields
+      await expect(thirdShadowFields).not.toBeVisible();
+
+      // Verify that the first shadow kept its values
+      const firstOffsetXValue = await firstShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const firstOffsetYValue = await firstShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const firstBlurValue = await firstShadowFields
+        .getByRole("textbox", { name: "Blur" })
+        .inputValue();
+      const firstSpreadValue = await firstShadowFields
+        .getByRole("textbox", { name: "Spread" })
+        .inputValue();
+      const firstColorValueAfter = await firstShadowFields
+        .getByRole("textbox", { name: "Color" })
+        .inputValue();
+
+      await expect(firstOffsetXValue).toBe("2");
+      await expect(firstOffsetYValue).toBe("2");
+      await expect(firstBlurValue).toBe("4");
+      await expect(firstSpreadValue).toBe("0");
+      await expect(firstColorValueAfter).toBe(firstColorValue);
+
+      // Verify that the second kept its values (after shadow 3)
+      // After removing index 1, the third shadow becomes the second shadow at index 1
+      const newSecondShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-1",
+      );
+      await expect(newSecondShadowFields).toBeVisible();
+
+      const secondOffsetXValue = await newSecondShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const secondOffsetYValue = await newSecondShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const secondBlurValue = await newSecondShadowFields
+        .getByRole("textbox", { name: "Blur" })
+        .inputValue();
+      const secondSpreadValue = await newSecondShadowFields
+        .getByRole("textbox", { name: "Spread" })
+        .inputValue();
+      const secondColorValue = await newSecondShadowFields
+        .getByRole("textbox", { name: "Color" })
+        .inputValue();
+
+      await expect(secondOffsetXValue).toBe("10");
+      await expect(secondOffsetYValue).toBe("10");
+      await expect(secondBlurValue).toBe("20");
+      await expect(secondSpreadValue).toBe("5");
+      await expect(secondColorValue).toBe("#FF0000");
+    });
+
+    await test.step("Stage 3: Restore when switching tabs works", async () => {
+      const firstShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-0",
+      );
+      const newSecondShadowFields = tokensUpdateCreateModal.getByTestId(
+        "shadow-input-fields-1",
+      );
+      const colorInput = firstShadowFields.getByRole("textbox", {
+        name: "Color",
+      });
+      const firstColorValue = await colorInput.inputValue();
+
+      // Switch to reference tab
+      const referenceTabButton =
+        tokensUpdateCreateModal.getByTestId("reference-opt");
+      await referenceTabButton.click();
+
+      // Verify we're in reference mode - the composite fields should not be visible
+      await expect(firstShadowFields).not.toBeVisible();
+
+      // Switch back to composite tab
+      const compositeTabButton =
+        tokensUpdateCreateModal.getByTestId("composite-opt");
+      await compositeTabButton.click();
+
+      // Verify that shadows are restored
+      await expect(firstShadowFields).toBeVisible();
+      await expect(newSecondShadowFields).toBeVisible();
+
+      // Verify first shadow values are still there
+      const restoredFirstOffsetX = await firstShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const restoredFirstOffsetY = await firstShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const restoredFirstBlur = await firstShadowFields
+        .getByRole("textbox", { name: "Blur" })
+        .inputValue();
+      const restoredFirstSpread = await firstShadowFields
+        .getByRole("textbox", { name: "Spread" })
+        .inputValue();
+      const restoredFirstColor = await firstShadowFields
+        .getByRole("textbox", { name: "Color" })
+        .inputValue();
+
+      await expect(restoredFirstOffsetX).toBe("2");
+      await expect(restoredFirstOffsetY).toBe("2");
+      await expect(restoredFirstBlur).toBe("4");
+      await expect(restoredFirstSpread).toBe("0");
+      await expect(restoredFirstColor).toBe(firstColorValue);
+
+      // Verify second shadow values are still there
+      const restoredSecondOffsetX = await newSecondShadowFields
+        .getByLabel("X")
+        .inputValue();
+      const restoredSecondOffsetY = await newSecondShadowFields
+        .getByLabel("Y")
+        .inputValue();
+      const restoredSecondBlur = await newSecondShadowFields
+        .getByRole("textbox", { name: "Blur" })
+        .inputValue();
+      const restoredSecondSpread = await newSecondShadowFields
+        .getByRole("textbox", { name: "Spread" })
+        .inputValue();
+      const restoredSecondColor = await newSecondShadowFields
+        .getByRole("textbox", { name: "Color" })
+        .inputValue();
+
+      await expect(restoredSecondOffsetX).toBe("10");
+      await expect(restoredSecondOffsetY).toBe("10");
+      await expect(restoredSecondBlur).toBe("20");
+      await expect(restoredSecondSpread).toBe("5");
+      await expect(restoredSecondColor).toBe("#FF0000");
+    });
+
+    await test.step("Stage 4: Layer application works", async () => {
+      // Save the token
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Save",
+      });
+      await submitButton.click();
+      await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+      unfoldTokenTree(tokensSidebar, "shadow", "primary");
+
+      // Verify token appears in sidebar
+      const shadowToken = tokensSidebar.getByRole("button", {
+        name: "primary",
+      });
+      await expect(shadowToken).toBeEnabled();
+
+      // Apply the shadow
+      await workspacePage.clickLayers();
+      await workspacePage.clickLeafLayer("Button");
+
+      const shadowSection = workspacePage.rightSidebar.getByText("Drop shadow");
+      await expect(shadowSection).toHaveCount(0);
+
+      await page.getByRole("tab", { name: "Tokens" }).click();
+      await shadowToken.click();
+
+      await expect(shadowSection).toHaveCount(2);
+    });
+  });
+});
