@@ -36,11 +36,13 @@
 (s/def ::scale ::us/number)
 (s/def ::suffix ::us/string)
 (s/def ::type ::us/keyword)
+(s/def ::quality (s/and ::us/integer #(<= 0 % 100)))
+(s/def ::renderer ::us/keyword)
 (s/def ::wait ::us/boolean)
 
 (s/def ::export
   (s/keys :req-un [::page-id ::file-id ::object-id ::type ::suffix ::scale ::name]
-          :opt-un [::share-id]))
+          :opt-un [::share-id ::quality ::renderer]))
 
 (s/def ::exports
   (s/coll-of ::export :kind vector? :min-count 1))
@@ -157,6 +159,25 @@
 (def ^:const ^:private
   default-partition-size 50)
 
+(def ^:const ^:private
+  default-jpeg-quality 95)
+
+(def ^:const ^:private
+  valid-renderers #{:rasterizer :render-wasm})
+
+(defn- normalize-quality
+  [{:keys [type quality]}]
+  (when (= :jpeg type)
+    (-> (or quality default-jpeg-quality)
+        (max 0)
+        (min 100))))
+
+(defn- normalize-renderer
+  [{:keys [type renderer]}]
+  (when (#{:png :jpeg :webp} type)
+    (when (contains? valid-renderers renderer)
+      renderer)))
+
 (defn prepare-exports
   [exports token]
   (letfn [(process-group [group]
@@ -172,6 +193,8 @@
              :token   token
              :type    (:type part1)
              :scale   (:scale part1)
+             :quality (:quality part1)
+             :renderer (:renderer part1)
              :objects (mapv part-entry->object part)})
 
           (part-entry->object [entry]
@@ -181,9 +204,18 @@
              :suffix (:suffix entry)})]
 
     (let [xform (comp
-                 (map #(assoc % :token token))
+                 (map (fn [export]
+                        (let [quality (normalize-quality export)]
+                          (cond-> (assoc export :token token)
+                            (some? quality) (assoc :quality quality)
+                            (nil? quality) (dissoc :quality))))
+                 (map (fn [export]
+                        (let [renderer (normalize-renderer export)]
+                          (cond-> export
+                            (some? renderer) (assoc :renderer renderer)
+                            (nil? renderer) (dissoc :renderer))))))
                  (assoc-file-name))]
       (->> (sequence xform exports)
-           (d/group-by (juxt :scale :type))
+           (d/group-by (juxt :scale :type :quality :renderer))
            (map second)
            (into [] (mapcat process-group))))))

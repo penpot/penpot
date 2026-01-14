@@ -8,9 +8,12 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.main.data.exports.assets :as de]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.icons :as deprecated-icon]
@@ -23,6 +26,8 @@
   {::mf/wrap [#(mf/memo % =)]}
   [{:keys [shapes page-id file-id share-id type] :as props}]
   (let [exports     (mf/use-state [])
+        renderer-menu* (mf/use-state nil)
+        renderer-menu-index (deref renderer-menu*)
         xstate      (mf/deref refs/export)
         vstate      (mf/deref refs/viewer-data)
         page        (get-in vstate [:pages page-id])
@@ -34,10 +39,30 @@
                           (str suffix)))
                       (:name page))
 
+        default-jpeg-quality 95
+
         scale-enabled?
         (mf/use-callback
          (fn [export]
            (#{:png :jpeg :webp} (:type export))))
+
+        quality-enabled?
+        (mf/use-callback
+         (fn [export]
+           (= :jpeg (:type export))))
+
+        renderer-enabled?
+        (mf/use-callback
+         (fn [export]
+           (#{:png :jpeg :webp} (:type export))))
+
+        renderer-label
+        (mf/use-callback
+         (fn [renderer]
+           (tr (case renderer
+                 :rasterizer "workspace.options.export.renderer.rasterizer"
+                 :render-wasm "workspace.options.export.renderer.render-wasm"
+                 "workspace.options.export.renderer.default"))))
 
         in-progress? (:in-progress xstate)
 
@@ -99,12 +124,52 @@
                            (d/parse-integer))]
              (swap! exports assoc-in [index :suffix] value))))
 
+        on-quality-change
+        (mf/use-callback
+         (mf/deps shapes)
+         (fn [index event]
+           (when-let [quality (-> event dom/get-target-val d/parse-integer)]
+             (let [quality (mth/clamp quality 0 100)]
+               (swap! exports assoc-in [index :quality] quality)))))
+
+        open-renderer-menu
+        (mf/use-callback
+         (fn [event index]
+           (dom/stop-propagation event)
+           (reset! renderer-menu* index)))
+
+        close-renderer-menu
+        (mf/use-callback
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! renderer-menu* nil)))
+
+        on-renderer-change
+        (mf/use-callback
+         (mf/deps renderer-menu*)
+         (fn [index renderer]
+           (reset! renderer-menu* nil)
+           (swap! exports update index
+                  (fn [export]
+                    (if (= renderer :default)
+                      (dissoc export :renderer)
+                      (assoc export :renderer renderer))))))
+
         on-type-change
         (mf/use-callback
          (mf/deps shapes)
          (fn [index event]
            (let [type (keyword event)]
-             (swap! exports assoc-in [index :type] type))))
+             (swap! exports update index
+                    (fn [export]
+                      (let [export (assoc export :type type)]
+                        (-> export
+                            (cond-> (= :jpeg type)
+                              (assoc :quality (or (:quality export) default-jpeg-quality))
+                              (not= :jpeg type)
+                              (dissoc :quality))
+                            (cond-> (not (renderer-enabled? export))
+                              (dissoc :renderer)))))))))
 
         manage-key-down
         (mf/use-callback
@@ -162,7 +227,31 @@
               {:default-value (d/name (:type export))
                :options format-options
                :dropdown-class (stl/css :dropdown-upwards)
-               :on-change (partial on-type-change index)}]]
+               :on-change (partial on-type-change index)}]
+             (when (renderer-enabled? export)
+               [:div {:class (stl/css :renderer-select)}
+                [:button {:class (stl/css :renderer-button)
+                          :type "button"
+                          :data-testid "export-renderer-button"
+                          :aria-label (tr "workspace.options.export.renderer")
+                          :on-click (fn [event] (open-renderer-menu event index))}
+                 (renderer-label (:renderer export))]
+                [:> dropdown-menu* {:show (= renderer-menu-index index)
+                                    :on-close close-renderer-menu
+                                    :id (str "export-renderer-menu-" index)
+                                    :class (stl/css :renderer-menu)}
+                 [:> dropdown-menu-item* {:class (stl/css-case :renderer-menu-item true
+                                                               :renderer-menu-item-selected (nil? (:renderer export)))
+                                          :on-click #(on-renderer-change index :default)}
+                  (tr "workspace.options.export.renderer.default")]
+                 [:> dropdown-menu-item* {:class (stl/css-case :renderer-menu-item true
+                                                               :renderer-menu-item-selected (= :rasterizer (:renderer export)))
+                                          :on-click #(on-renderer-change index :rasterizer)}
+                  (tr "workspace.options.export.renderer.rasterizer")]
+                 [:> dropdown-menu-item* {:class (stl/css-case :renderer-menu-item true
+                                                               :renderer-menu-item-selected (= :render-wasm (:renderer export)))
+                                          :on-click #(on-renderer-change index :render-wasm)}
+                  (tr "workspace.options.export.renderer.render-wasm")]]])]
             (when (scale-enabled? export)
               [:div {:class (stl/css :size-select)}
                [:& select
@@ -170,7 +259,22 @@
                  :options size-options
                  :dropdown-class (stl/css :dropdown-upwards)
                  :on-change (partial on-scale-change index)}]])
-            [:label {:class (stl/css :suffix-input)
+            (when (quality-enabled? export)
+              [:label {:class (stl/css :quality-input)
+                       :for "quality-export-input"}
+               [:input {:class (stl/css :type-input)
+                        :id "quality-export-input"
+                        :type "number"
+                        :min 0
+                        :max 100
+                        :step 1
+                        :value (or (:quality export) default-jpeg-quality)
+                        :placeholder (tr "workspace.options.export.quality")
+                        :aria-label (tr "workspace.options.export.quality")
+                        :on-change (partial on-quality-change index)
+                        :on-key-down manage-key-down}]])
+            [:label {:class (stl/css-case :suffix-input true
+                                          :suffix-input-wide (not (quality-enabled? export)))
                      :for "suffix-export-input"}
              [:input {:class (stl/css :type-input)
                       :id "suffix-export-input"
@@ -194,4 +298,3 @@
         (if in-progress?
           (tr "workspace.options.exporting-object")
           (tr "workspace.options.export-object" (c (count shapes))))])]))
-

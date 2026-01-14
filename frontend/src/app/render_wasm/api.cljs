@@ -1183,17 +1183,27 @@
 
         (request-render "set-modifiers")))))
 
+(defn- initialize-viewport*
+  [base-objects zoom vbox background alpha callback]
+  (let [rgba         (sr-clr/hex->u32argb background alpha)
+        shapes       (into [] (vals base-objects))
+        total-shapes (count shapes)]
+    (h/call wasm/internal-module "_set_canvas_background" rgba)
+    (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
+    (set-objects base-objects callback)))
+
 (defn initialize-viewport
   ([base-objects zoom vbox background]
-   (initialize-viewport base-objects zoom vbox background nil))
+   (initialize-viewport* base-objects zoom vbox background 1 nil))
   ([base-objects zoom vbox background callback]
-   (let [rgba         (sr-clr/hex->u32argb background 1)
-         shapes       (into [] (vals base-objects))
-         total-shapes (count shapes)]
-     (h/call wasm/internal-module "_set_canvas_background" rgba)
-     (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
-     (set-objects base-objects callback))))
+   (initialize-viewport* base-objects zoom vbox background 1 callback)))
+
+(defn initialize-viewport-with-alpha
+  ([base-objects zoom vbox background alpha]
+   (initialize-viewport* base-objects zoom vbox background alpha nil))
+  ([base-objects zoom vbox background alpha callback]
+   (initialize-viewport* base-objects zoom vbox background alpha callback)))
 
 (def ^:private default-context-options
   #js {:antialias false

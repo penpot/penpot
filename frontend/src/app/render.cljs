@@ -7,25 +7,32 @@
 (ns app.render
   "The main entry point for UI part needed by the exporter."
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.main.data.fonts :as df]
    [app.main.features :as features]
+   [app.main.rasterizer :as rasterizer]
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.globals :as glob]
+   [app.util.object :as obj]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [garden.core :refer [css]]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
+   [promesa.core :as p]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (log/setup! {:app :info})
@@ -287,8 +294,170 @@
   (let [href (unchecked-get loc "href")]
     (some-> href u/uri :query u/query-string->map)))
 
+(def ^:private default-jpeg-quality 95)
+
+(defn- rx->promise
+  [stream]
+  (p/create (fn [resolve reject]
+              (rx/subs! resolve reject stream))))
+
+(defn- normalize-object-id
+  [value]
+  (cond
+    (uuid? value) value
+    (string? value) (uuid/parse* value)
+    :else nil))
+
+(defn- normalize-scale
+  [value]
+  (let [scale (d/parse-double value 1)]
+    (if (and (number? scale) (pos? scale)) scale 1)))
+
+(defn- normalize-type
+  [value]
+  (let [type (keyword (d/nilv value "png"))]
+    (if (#{:png :jpeg :webp} type) type :png)))
+
+(defn- normalize-quality
+  [value]
+  (when-let [quality (d/parse-integer value nil)]
+    (mth/clamp quality 0 100)))
+
+(defn- encode-quality
+  [quality]
+  (/ (mth/clamp (or quality default-jpeg-quality) 0 100) 100))
+
+(defn- export-mime-type
+  [type]
+  (case type
+    :jpeg "image/jpeg"
+    :png "image/png"
+    :webp "image/webp"
+    nil))
+
+(defn- parse-export-request
+  [payload]
+  (let [object-id (normalize-object-id (unchecked-get payload "objectId"))
+        scale (normalize-scale (unchecked-get payload "scale"))
+        type (normalize-type (unchecked-get payload "type"))
+        quality (normalize-quality (unchecked-get payload "quality"))
+        skip-children (boolean (unchecked-get payload "skipChildren"))]
+    (when-not object-id
+      (throw (js/Error. "Export request is missing a valid objectId.")))
+    {:object-id object-id
+     :scale scale
+     :type type
+     :quality quality
+     :skip-children skip-children}))
+
+(defn- object-bounds
+  [objects object-id]
+  (when-let [shape (get objects object-id)]
+    (gsb/get-object-bounds objects shape {:ignore-margin? false})))
+
+(defn- object-node
+  [object-id]
+  (let [node (dom/get-element (clojure.core/str "screenshot-" object-id))]
+    (when-not node
+      (throw (js/Error. "Export SVG node not found in the render DOM.")))
+    node))
+
+(defn- svg-with-background
+  [svg-node]
+  (let [clone (.cloneNode svg-node true)
+        rect (dom/make-node "http://www.w3.org/2000/svg" "rect")]
+    (dom/set-property! rect "x" "0")
+    (dom/set-property! rect "y" "0")
+    (dom/set-property! rect "width" "100%")
+    (dom/set-property! rect "height" "100%")
+    (dom/set-property! rect "fill" "#ffffff")
+    (if-let [first-child (.-firstChild clone)]
+      (.insertBefore clone rect first-child)
+      (dom/append-child! clone rect))
+    clone))
+
+(defn- render-with-rasterizer
+  [{:keys [object-id scale type quality]}]
+  (let [objects (deref ref:objects)
+        bounds (object-bounds objects object-id)
+        width (:width bounds)
+        target-width (mth/ceil (* (d/nilv width 0) scale))
+        svg-node (object-node object-id)
+        svg-node (if (= type :jpeg) (svg-with-background svg-node) svg-node)
+        svg-data (dom/node->xml svg-node)
+        payload (d/without-nils
+                 {:data svg-data
+                  :styles ""
+                  :width target-width
+                  :result "blob"
+                  :format (export-mime-type type)
+                  :encode-quality (when (= type :jpeg) (encode-quality quality))})]
+    (when-not (and (some? svg-data) (pos? target-width))
+      (throw (js/Error. "Export rasterizer requires a valid SVG and dimensions.")))
+    (p/let [blob (rx->promise (rasterizer/render payload))
+            data-url (rx->promise (wapi/read-file-as-data-url blob))]
+      data-url)))
+
+(defn- render-with-wasm
+  [{:keys [object-id scale type quality skip-children]}]
+  (p/let [module-ok? @wasm.api/module]
+    (when-not module-ok?
+      (throw (js/Error. "Render-WASM module failed to initialize.")))
+    (let [objects (deref ref:objects)]
+      (when-not objects
+        (throw (js/Error. "Render objects not loaded yet.")))
+      (let [objects (if (and skip-children (contains? objects object-id))
+                      (update objects object-id #(assoc % :shapes []))
+                      objects)
+            bounds (object-bounds objects object-id)
+            base-width (:width bounds)
+            base-height (:height bounds)
+            target-width (mth/ceil (* (d/nilv base-width 0) scale))
+            target-height (mth/ceil (* (d/nilv base-height 0) scale))]
+        (when-not (and (pos? target-width) (pos? target-height))
+          (throw (js/Error. "Render-WASM requires valid bounds.")))
+        (let [zoom (/ target-width base-width)
+              canvas (wapi/create-offscreen-canvas target-width target-height)
+              init? (wasm.api/init-canvas-context canvas)
+              alpha (if (= type :jpeg) 1 0)
+              options (let [opts (obj/create)]
+                        (when-let [mtype (export-mime-type type)]
+                          (obj/set! opts "type" mtype))
+                        (when (= type :jpeg)
+                          (obj/set! opts "quality" (encode-quality quality)))
+                        opts)]
+          (when-not init?
+            (throw (js/Error. "Render-WASM canvas initialization failed.")))
+          (-> (p/create
+               (fn [resolve reject]
+                 (let [on-render
+                       (fn []
+                         (-> (wapi/create-blob-from-canvas canvas options)
+                             (p/then #(rx->promise (wapi/read-file-as-data-url %)))
+                             (p/then resolve)
+                             (p/catch reject)))]
+                   (try
+                     (wasm.api/initialize-viewport-with-alpha objects zoom bounds "#ffffff" alpha
+                                                             (fn []
+                                                               (wasm.api/render-sync-shape object-id)
+                                                               (on-render)))
+                     (catch :default cause
+                       (reject cause))))))
+              (p/fnly (fn [_ _] (wasm.api/clear-canvas)))))))))
+
+(defn- register-export-api!
+  []
+  (set! (.-penpotExport js/globalThis)
+        #js {:rasterize (fn [payload]
+                          (let [request (parse-export-request payload)]
+                            (render-with-rasterizer request)))
+             :renderWasm (fn [payload]
+                           (let [request (parse-export-request payload)]
+                             (render-with-wasm request)))}))
+
 (defn init-ui
   []
+  (register-export-api!)
   (when-let [params (parse-params glob/location)]
     (when-let [component (case (:route params)
                            "objects"    (render-objects params)
@@ -307,6 +476,3 @@
 (defn ^:dev/after-load after-load
   []
   (reinit))
-
-
-

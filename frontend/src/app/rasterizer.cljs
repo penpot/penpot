@@ -227,7 +227,7 @@
 
 (defn- bitmap->blob
   "Converts an ImageBitmap to a Blob."
-  [bitmap]
+  [bitmap options]
   (rx/create
    (fn [subs]
      (let [canvas (dom/create-element "canvas")]
@@ -236,7 +236,8 @@
        (let [context (.getContext ^js canvas "bitmaprenderer")]
          (.transferFromImageBitmap ^js context bitmap)
          (.toBlob canvas #(do (rx/push! subs %)
-                              (rx/end! subs))))
+                              (rx/end! subs))
+                  options))
 
        (constantly nil)))))
 
@@ -246,21 +247,26 @@
   (let [data   (unchecked-get payload "data")
         styles (unchecked-get payload "styles")
         width  (d/nilv (unchecked-get payload "width") 300)
-        quality (d/nilv (unchecked-get payload "quality") "medium")]
+        resize-quality (d/nilv (unchecked-get payload "quality") "medium")]
     (->> (svg-prepare data styles width)
          (rx/map #(wapi/create-blob % "image/svg+xml"))
          (rx/map wapi/create-uri)
          (rx/mapcat (fn [uri]
                       (->> (create-image uri)
                            (rx/mapcat #(wapi/create-image-bitmap-with-workaround % #js {:resizeWidth width
-                                                                                        :resizeQuality quality}))
+                                                                                        :resizeQuality resize-quality}))
                            (rx/tap #(wapi/revoke-uri uri))))))))
 
 (defn- render-blob
   "Renders a thumbnail using it's SVG and returns a Blob of the image."
   [payload]
-  (->> (render-image-bitmap payload)
-       (rx/mapcat bitmap->blob)))
+  (let [format (unchecked-get payload "format")
+        encode-quality (unchecked-get payload "encodeQuality")
+        options (cond-> #js {}
+                  (string? format) (obj/set! "type" format)
+                  (number? encode-quality) (obj/set! "quality" encode-quality))]
+    (->> (render-image-bitmap payload)
+         (rx/mapcat #(bitmap->blob % options)))))
 
 (defn- render
   "Renders a thumbnail and returns a stream."

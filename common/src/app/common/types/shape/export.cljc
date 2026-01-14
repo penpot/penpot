@@ -9,9 +9,12 @@
    [app.common.schema :as sm]))
 
 (def types #{:png :jpeg :webp :svg :pdf})
+(def renderers #{:default :rasterizer :render-wasm})
 
 (def schema:export
   [:map {:title "ShapeExport"}
    [:type [::sm/one-of types]]
    [:scale ::sm/safe-number]
-   [:suffix :string]])
+   [:suffix :string]
+   [:quality {:optional true} [::sm/int {:min 0 :max 100}]]
+   [:renderer {:optional true} [::sm/one-of renderers]]])

@@ -156,6 +156,9 @@ export class WorkspacePage extends BaseWebSocketPage {
         "logged-in-user/get-team-users-single-user.json",
       "get-comment-threads?file-id=*":
         "workspace/get-comment-threads-empty.json",
+      "get-unread-comment-threads?team-id=*":
+        "workspace/get-unread-comment-threads-empty.json",
+      "get-projects?team-id=*": "logged-in-user/get-projects-default.json",
       "get-project?id=*": "workspace/get-project-default.json",
       "get-team?id=*": "workspace/get-team-default.json",
       "get-teams": "get-teams.json",
@@ -164,6 +167,34 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-profiles-for-file-comments?file-id=*":
         "workspace/get-profile-for-file-comments.json",
       "update-profile-props": "workspace/update-profile-empty.json",
+    });
+
+    await page.route("**/api/main/methods/get-file-info?id=*", (route) => {
+      const url = new URL(route.request().url());
+      const id = url.searchParams.get("id") ?? WorkspacePage.anyFileId;
+
+      route.fulfill({
+        status: 200,
+        contentType: "application/transit+json",
+        body: JSON.stringify({
+          "~:id": `~u${id}`,
+          "~:deleted-at": null,
+        }),
+      });
+    });
+
+    await page.route("**/api/main/methods/get-team-info?id=*", (route) => {
+      const url = new URL(route.request().url());
+      const id = url.searchParams.get("id") ?? WorkspacePage.anyTeamId;
+
+      route.fulfill({
+        status: 200,
+        contentType: "application/transit+json",
+        body: JSON.stringify({
+          "~:id": `~u${id}`,
+          "~:is-default": true,
+        }),
+      });
     });
   }
 
@@ -268,7 +299,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.mockRPCs({
       "get-profile": "logged-in-user/get-profile-logged-in.json",
       "get-team-users?file-id=*":
-        "logged-in-user/get-team-users-single-user.json ",
+        "logged-in-user/get-team-users-single-user.json",
       "get-comment-threads?file-id=*":
         "workspace/get-comment-threads-empty.json",
       "get-project?id=*": "workspace/get-project-default.json",
@@ -433,10 +464,20 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async clickLeafLayer(name, clickOptions = {}) {
-    const layer = this.layers.getByText(name).first();
-    await layer.waitFor();
-    await layer.click(clickOptions);
-    await this.page.waitForTimeout(500);
+    const candidates = this.layers.getByText(name);
+    await candidates.first().waitFor({ state: "attached" });
+
+    const count = await candidates.count();
+    for (let i = 0; i < count; i++) {
+      const candidate = candidates.nth(i);
+      if (await candidate.isVisible()) {
+        await candidate.click(clickOptions);
+        await this.page.waitForTimeout(500);
+        return;
+      }
+    }
+
+    throw new Error(`Layer "${name}" not visible (found ${count} matches)`);
   }
 
   async doubleClickLeafLayer(name, clickOptions = {}) {

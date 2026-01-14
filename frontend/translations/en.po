@@ -3048,7 +3048,7 @@ msgstr "Choose image"
 msgid "media.gradient"
 msgstr "Gradient"
 
-#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:403
 msgid "media.image"
 msgstr "Image"
 
@@ -4036,19 +4036,19 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Go to login"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:378
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:374
 msgid "settings.detach"
 msgstr "Detach"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/inspect/exports.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:423, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
 msgid "settings.multiple"
 msgstr "Mixed"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:436
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:432
 msgid "settings.remove-color"
 msgstr "Remove color"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:441
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:437
 msgid "settings.select-this-color"
 msgstr "Select items using this style"
 
@@ -6158,7 +6158,7 @@ msgstr "Top & Bottom"
 msgid "workspace.options.design"
 msgstr "Design"
 
-#: src/app/main/ui/inspect/exports.cljs:140
+#: src/app/main/ui/inspect/exports.cljs:205
 msgid "workspace.options.export"
 msgstr "Export"
 
@@ -6167,21 +6167,41 @@ msgstr "Export"
 msgid "workspace.options.export-multiple"
 msgstr "Export selection"
 
-#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
+#: src/app/main/ui/inspect/exports.cljs:300, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:384
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Export 1 element"
 msgstr[1] "Export %s elements"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:214
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:286
 msgid "workspace.options.export.add-export"
 msgstr "Add export"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:261
+#: src/app/main/ui/inspect/exports.cljs:272, src/app/main/ui/inspect/exports.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:356
+msgid "workspace.options.export.quality"
+msgstr "Quality"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:298, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:372
 msgid "workspace.options.export.remove-export"
 msgstr "Remove export"
 
-#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:255
+#: src/app/main/ui/inspect/exports.cljs:236, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:319
+msgid "workspace.options.export.renderer"
+msgstr "Renderer"
+
+#: src/app/main/ui/inspect/exports.cljs:246, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:329
+msgid "workspace.options.export.renderer.default"
+msgstr "Default"
+
+#: src/app/main/ui/inspect/exports.cljs:250, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:333
+msgid "workspace.options.export.renderer.rasterizer"
+msgstr "Rasterizer"
+
+#: src/app/main/ui/inspect/exports.cljs:254, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:337
+msgid "workspace.options.export.renderer.render-wasm"
+msgstr "Render-WASM"
+
+#: src/app/main/ui/inspect/exports.cljs:283, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:366
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
 
@@ -6189,7 +6209,7 @@ msgstr "Suffix"
 msgid "workspace.options.exporting-complete"
 msgstr "Export complete"
 
-#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:272
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:383
 msgid "workspace.options.exporting-object"
 msgstr "Exporting…"
 
@@ -7544,7 +7564,7 @@ msgstr "Go to main component file"
 msgid "workspace.shape.menu.group"
 msgstr "Group"
 
-#: src/app/main/ui/workspace/context_menu.cljs:476, src/app/main/ui/workspace/sidebar/layer_item.cljs:155
+#: src/app/main/ui/workspace/context_menu.cljs:476, src/app/main/ui/workspace/sidebar/layer_item.cljs:154
 msgid "workspace.shape.menu.hide"
 msgstr "Hide"
 
@@ -7556,7 +7576,7 @@ msgstr "Show / Hide UI"
 msgid "workspace.shape.menu.intersection"
 msgstr "Intersection"
 
-#: src/app/main/ui/workspace/context_menu.cljs:484, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:219
+#: src/app/main/ui/workspace/context_menu.cljs:484, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:219
 msgid "workspace.shape.menu.lock"
 msgstr "Lock"
 
@@ -7616,7 +7636,7 @@ msgstr "Restore variant"
 msgid "workspace.shape.menu.select-layer"
 msgstr "Select layer"
 
-#: src/app/main/ui/workspace/context_menu.cljs:473, src/app/main/ui/workspace/sidebar/layer_item.cljs:154
+#: src/app/main/ui/workspace/context_menu.cljs:473, src/app/main/ui/workspace/sidebar/layer_item.cljs:153
 msgid "workspace.shape.menu.show"
 msgstr "Show"
 
@@ -7649,7 +7669,7 @@ msgstr "Ungroup"
 msgid "workspace.shape.menu.union"
 msgstr "Union"
 
-#: src/app/main/ui/workspace/context_menu.cljs:481, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:225
+#: src/app/main/ui/workspace/context_menu.cljs:481, src/app/main/ui/workspace/sidebar/layer_item.cljs:161, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:225
 msgid "workspace.shape.menu.unlock"
 msgstr "Unlock"
 

@@ -17,6 +17,8 @@
             "~:small": 1
         },
         "~:v2-info-shown": true,
+        "~:onboarding-viewed": true,
+        "~:release-notes-viewed": "develop",
         "~:viewed-tutorial?": false,
         "~:viewed-walkthrough?": false
     }

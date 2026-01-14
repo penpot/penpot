@@ -74,11 +74,18 @@
 
 (defn render
   "Renders an SVG"
-  [{:keys [data styles width result] :as params}]
+  [{:keys [data styles width result quality format encode-quality] :as params}]
   (let [styles  (replace-uris (d/nilv styles ""))
         result  (d/nilv result "blob")
         id      (dm/str (uuid/next))
-        payload #js {:data data :styles styles :width width :result result}
+        payload (d/without-nils
+                 #js {:data data
+                      :styles styles
+                      :width width
+                      :result result
+                      :quality quality
+                      :format format
+                      :encodeQuality encode-quality})
         message #js {:id id
                      :scope "penpot/rasterizer"
                      :payload payload}]

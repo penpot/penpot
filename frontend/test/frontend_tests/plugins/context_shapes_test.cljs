@@ -178,8 +178,38 @@
         (t/is (= (-> (. shape -exports) (aget 0) (aget "suffix")) "test"))
         (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}]))
 
+        (set! (.-exports shape) #js [#js {:type "jpeg"
+                                          :scale 1
+                                          :suffix "jpg"
+                                          :quality 80
+                                          :renderer "render-wasm"
+                                          :skipChildren true}])
+        (t/is (= (-> (. shape -exports) (aget 0) (aget "type")) "jpeg"))
+        (t/is (= (-> (. shape -exports) (aget 0) (aget "quality")) 80))
+        (t/is (= (-> (. shape -exports) (aget 0) (aget "renderer")) "render-wasm"))
+        (t/is (= (-> (. shape -exports) (aget 0) (aget "skipChildren")) true))
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :jpeg
+                                                             :scale 1
+                                                             :suffix "jpg"
+                                                             :quality 80
+                                                             :renderer :render-wasm
+                                                             :skip-children true}]))
+
+        (set! (.-exports shape) #js [#js {:type "jpeg" :scale 1 :suffix "jpg" :quality 200}])
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :jpeg
+                                                             :scale 1
+                                                             :suffix "jpg"
+                                                             :quality 80
+                                                             :renderer :render-wasm
+                                                             :skip-children true}]))
+
         (set! (.-exports shape) #js [#js {:type 10 :scale 2 :suffix "test"}])
-        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}])))
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :jpeg
+                                                             :scale 1
+                                                             :suffix "jpg"
+                                                             :quality 80
+                                                             :renderer :render-wasm
+                                                             :skip-children true}])))
 
       (t/testing " - flipX"
         (set! (.-flipX shape) true)
