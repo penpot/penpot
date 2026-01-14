@@ -455,6 +455,43 @@ ExtraBold Italic
 <p>A <strong>Typography composite token</strong> can be applied to a full text layer to set all typography properties at once. This lets you manage complete text styles using a single token instead of combining multiple individual ones.</p>
 <p>When applying a Typography composite token to a layer, any previously applied <em>Typography composite token</em> or <em>style</em> will be detached. The same happens in reverse. Only one of them can be active at a time.</p>
 
+<h3 id="design-tokens-shadow">Shadow</h3>
+<p>Shadow tokens are composite entities that encapsulate the properties of one or more shadows into a single token definition. This token can contain a single shadow or an array of multiple shadows that can be reordered.</p>
+<p>Shadow tokens support both <strong>Drop Shadow</strong> and <strong>Inner Shadow</strong> types. When creating or editing a shadow token, you can select the type of shadow you want to use. The default selection is Drop Shadow.</p>
+<figure>
+  <img src="/img/design-tokens/37-tokens-shadow-individual.webp" alt="Shadow token creation with individual values" />
+</figure>
+
+<h4 id="design-tokens-shadow-properties">Shadow properties</h4>
+<p>Each shadow within a shadow token contains a set of properties that define how the shadow appears:</p>
+<ul>
+  <li><strong>Color:</strong> The color of the shadow. Accepts the same values as <a href="#design-tokens-color">color tokens</a> (Hex, RGB, RGBA, ARGB, HSL, HSLA), and you can reference existing color tokens. The color picker is available when defining the value.</li>
+  <li><strong>X offset:</strong> The horizontal offset of the shadow. Can be unit or unitless, and accepts negative values. You can use a number or reference a <a href="#design-tokens-number">number</a> or <a href="#design-tokens-dimensions">dimension</a> token.</li>
+  <li><strong>Y offset:</strong> The vertical offset of the shadow. Can be unit or unitless, and accepts negative values. You can use a number or reference a <a href="#design-tokens-number">number</a> or <a href="#design-tokens-dimensions">dimension</a> token.</li>
+  <li><strong>Blur:</strong> The blur radius of the shadow. Can be unit or unitless. You can use a number or reference a <a href="#design-tokens-number">number</a> or <a href="#design-tokens-dimensions">dimension</a> token.</li>
+  <li><strong>Spread:</strong> The spread radius of the shadow. Can be unit or unitless. You can use a number or reference a <a href="#design-tokens-number">number</a> or <a href="#design-tokens-dimensions">dimension</a> token.</li>
+  <li><strong>Type:</strong> Whether the shadow is a drop shadow or an inner shadow. Selected via a dropdown menu, with Drop Shadow as the default.</li>
+</ul>
+<p>Each property within a shadow token can reference existing tokens or be assigned hardcoded values. Shadows can also reference other shadow tokens (the type of shadow must match when using references).</p>
+<p class="advice">Not all properties are mandatory to save a shadow token. Some can be empty (and will be computed as 0). Only the color property is mandatory. In an array of shadows, if any shadow does not have the color set, the form cannot be saved.</p>
+
+<h4 id="design-tokens-shadow-create">Creating shadow tokens</h4>
+<p>To create a shadow token, click on the <strong>+</strong> next to <strong>Shadow</strong> in the Tokens panel. Shadow tokens can be created in two ways:</p>
+<ul>
+  <li><strong>Individual values:</strong> You can create one shadow or multiple shadows with individual property values. Click the <strong>+</strong> button to add more shadows to the array. New shadows are added at the top of the list.</li>
+  <li><strong>Single reference:</strong> You can reference another existing shadow token. When using a single reference, you cannot add more than one shadow. The resolved value will display the shadow or list of shadows that the referenced token contains.</li>
+</ul>
+<figure>
+  <img src="/img/design-tokens/38-tokens-shadow-reference.webp" alt="Shadow token creation with reference" />
+</figure>
+<p>When creating a shadow with individual values, the color value starts empty, but the other inputs have default values (X: 4, Y: 4, Blur: 4, Spread: 0). You can reorder shadows by hovering over a shadow form and using the reorder button to drag it to a different position.</p>
+<p>You can also reference another existing shadow token instead of defining each property manually. When doing so, Penpot resolves all shadow properties from the referenced token.</p>
+
+<h4 id="design-tokens-shadow-apply">Applying shadow tokens</h4>
+<p>Shadow tokens can be applied to any layer type. Clicking on a shadow token will apply it to the selected layer. Right-clicking on a shadow token shows the context menu with the <strong>Shadow</strong> option to apply it.</p>
+<p class="advice">Text elements in CSS do not support inner shadows, but Penpot does, since it uses the filter property internally instead of the box-shadow property.</p>
+<p>When applying a shadow token, any existing shadow on the layer will be overridden (whether it's a raw shadow or an applied token shadow). If the token contains an array of shadows, each shadow will be added in the same order as in the creation form.</p>
+<p class="advice">In Penpot, an element can have multiple shadows, but only one token of the same type can be applied. This means that applying a second shadow token would override the first one, regardless of how many shadows the shape currently has.</p>
 
 
 
