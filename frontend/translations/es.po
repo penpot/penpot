@@ -6125,6 +6125,26 @@ msgstr "Eliminar exportación"
 msgid "workspace.options.export.suffix"
 msgstr "Sufijo"
 
+#: src/app/main/ui/inspect/exports.cljs:204, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:288
+msgid "workspace.options.export.quality"
+msgstr "Calidad"
+
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.renderer"
+msgstr "Renderizador"
+
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.renderer.default"
+msgstr "Predeterminado"
+
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.renderer.rasterizer"
+msgstr "Rasterizador"
+
+#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.renderer.render-wasm"
+msgstr "Render-WASM"
+
 #: src/app/main/ui/exports/assets.cljs:250
 msgid "workspace.options.exporting-complete"
 msgstr "Exportación completa"

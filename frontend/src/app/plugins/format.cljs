@@ -263,14 +263,20 @@
 ;;   type: 'png' | 'jpeg' | 'webp' | 'svg' | 'pdf';
 ;;   scale: number;
 ;;   suffix: string;
+;;   skipChildren?: boolean;
+;;   quality?: number;
+;;   renderer?: 'default' | 'rasterizer' | 'render-wasm';
 ;; }
 (defn format-export
-  [{:keys [type scale suffix] :as export}]
+  [{:keys [type scale suffix skip-children quality renderer] :as export}]
   (when (some? export)
     (obj/without-empty
      #js {:type (format-key type)
           :scale scale
-          :suffix suffix})))
+          :suffix suffix
+          :skipChildren skip-children
+          :quality (when (= :jpeg type) quality)
+          :renderer (when (#{:png :jpeg :webp} type) (format-key renderer))})))
 
 (defn format-exports
   [exports]

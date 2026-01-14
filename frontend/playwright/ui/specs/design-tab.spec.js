@@ -345,6 +345,9 @@ test("BUG 12384 - Export crashing when exporting a board", async ({ page }) => {
     expect(parsedPayload["~:exports"][0]["~:page-id"]).toBe(
       "~ufa6ce865-34dd-80ac-8006-fe0dab5539a8",
     );
+    expect(parsedPayload["~:exports"][0]["~:type"]).toBe("~:jpeg");
+    expect(parsedPayload["~:exports"][0]["~:quality"]).toBe(95);
+    expect(parsedPayload["~:exports"][0]["~:renderer"]).toBe("~:render-wasm");
 
     route.fulfill({
       status: 200,
@@ -359,6 +362,14 @@ test("BUG 12384 - Export crashing when exporting a board", async ({ page }) => {
   });
 
   await workspace.clickLeafLayer("Board");
+
+  await workspace.rightSidebar
+    .getByTestId("export-renderer-button")
+    .first()
+    .click();
+  await workspace.rightSidebar
+    .getByRole("menuitem", { name: "Render-WASM" })
+    .click();
 
   let exportRequest = workspace.page.waitForRequest("**/api/export");
 

@@ -226,12 +226,14 @@
 
 (defn export-exports-data [{:keys [exports]}]
   (mf/html
-   (for [{:keys [scale suffix type]} exports]
-     [:> "penpot:export"
-      #js {:penpot:type   (d/name type)
-           :key (swap! internal-counter inc)
-           :penpot:suffix suffix
-           :penpot:scale  (str scale)}])))
+   (for [{:keys [scale suffix type quality renderer]} exports]
+     (let [attrs (cond-> #js {:penpot:type   (d/name type)
+                              :key (swap! internal-counter inc)
+                              :penpot:suffix suffix
+                              :penpot:scale  (str scale)}
+                   (some? quality) (obj/set! "penpot:quality" (str quality))
+                   (some? renderer) (obj/set! "penpot:renderer" (d/name renderer)))]
+       [:> "penpot:export" attrs]))))
 
 (defn str->style
   [style-str]
@@ -490,4 +492,3 @@
      (export-grid-data             shape)
      (export-layout-container-data shape)
      (export-layout-item-data      shape)]))
-

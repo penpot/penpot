@@ -248,15 +248,23 @@
 ;;   type: 'png' | 'jpeg' | 'webp' | 'svg' | 'pdf';
 ;;   scale: number;
 ;;   suffix: string;
+;;   quality?: number;
+;;   renderer?: 'default' | 'rasterizer' | 'render-wasm';
 ;; }
 (defn parse-export
   [^js export]
   (when (some? export)
-    (d/without-nils
-     {:type (-> (obj/get export "type") parse-keyword)
-      :scale (obj/get export "scale" 1)
-      :suffix (obj/get export "suffix" "")
-      :skip-children (obj/get export "skipChildren" false)})))
+    (let [type (-> (obj/get export "type") parse-keyword)
+          quality (d/parse-integer (obj/get export "quality"))
+          renderer (-> (obj/get export "renderer") parse-keyword)
+          renderer (when (#{:rasterizer :render-wasm} renderer) renderer)]
+      (d/without-nils
+       {:type type
+        :scale (obj/get export "scale" 1)
+        :suffix (obj/get export "suffix" "")
+        :quality (when (= :jpeg type) quality)
+        :renderer (when (#{:png :jpeg :webp} type) renderer)
+        :skip-children (obj/get export "skipChildren" false)}))))
 
 (defn parse-exports
   [^js exports]

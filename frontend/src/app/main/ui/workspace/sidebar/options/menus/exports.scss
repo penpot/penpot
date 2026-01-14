@@ -51,11 +51,48 @@
 .format-select {
   grid-column: span 2;
   padding: 0;
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-4;
 
   .dropdown-upwards {
     bottom: deprecated.$s-36;
     width: deprecated.$s-80;
     top: unset;
+  }
+
+  :global(.custom-select) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.renderer-select {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.renderer-button {
+  height: deprecated.$s-32;
+  padding: 0 deprecated.$s-8;
+  @include deprecated.bodySmallTypography;
+  white-space: nowrap;
+}
+
+.renderer-menu {
+  @extend .dropdown-wrapper;
+  right: 0;
+  left: unset;
+  top: deprecated.$s-36;
+  width: deprecated.$s-140;
+}
+
+.renderer-menu-item {
+  @extend .dropdown-element-base;
+
+  &.renderer-menu-item-selected {
+    color: var(--menu-foreground-color);
+    background-color: var(--menu-background-color-hover);
   }
 }
 
@@ -70,7 +107,17 @@
 }
 
 .suffix-input {
+  grid-column: span 2;
+  @extend .input-element;
+  @include deprecated.bodySmallTypography;
+}
+
+.suffix-input-wide {
   grid-column: span 3;
+}
+
+.quality-input {
+  grid-column: span 1;
   @extend .input-element;
   @include deprecated.bodySmallTypography;
 }

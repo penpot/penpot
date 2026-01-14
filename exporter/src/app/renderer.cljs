@@ -22,6 +22,8 @@
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
+(s/def ::quality (s/and ::us/integer #(<= 0 % 100)))
+(s/def ::renderer ::us/keyword)
 
 (s/def ::object
   (s/keys :req-un [::id ::name ::suffix ::filename]
@@ -31,7 +33,8 @@
   (s/coll-of ::object :min-count 1))
 
 (s/def ::render-params
-  (s/keys :req-un [::file-id ::page-id ::scale ::token ::type ::objects]))
+  (s/keys :req-un [::file-id ::page-id ::scale ::token ::type ::objects]
+          :opt-un [::quality ::renderer]))
 
 (defn render
   [{:keys [type] :as params} on-object]
@@ -43,4 +46,3 @@
     :webp (rb/render params on-object)
     :pdf  (rp/render params on-object)
     :svg  (rs/render params on-object)))
-
