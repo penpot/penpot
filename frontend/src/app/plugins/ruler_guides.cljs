@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.store :as st]
    [app.plugins.format :as format]
@@ -77,7 +77,7 @@
      :set
      (fn [self value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :position "Not valid position")
 
          (not (r/check-permission plugin-id "content:write"))

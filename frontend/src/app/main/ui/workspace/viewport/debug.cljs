@@ -16,6 +16,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.render-wasm.api :as wasm.api]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -275,3 +276,26 @@
                      :y2 (:y end-p)
                      :style {:stroke "red"
                              :stroke-width (/ 1 zoom)}}]))]))))
+
+(mf/defc debug-text-wasm-position-data
+  {::mf/wrap-props false}
+  [props]
+  (let [zoom               (unchecked-get props "zoom")
+        selected-shapes    (unchecked-get props "selected-shapes")
+
+        selected-text
+        (when (and (= (count selected-shapes) 1) (= :text (-> selected-shapes first :type)))
+          (first selected-shapes))
+
+        position-data
+        (when selected-text
+          (wasm.api/calculate-position-data selected-text))]
+
+    (for [{:keys [x y width height]} position-data]
+      [:rect {:x x
+              :y (- y height)
+              :width width
+              :height height
+              :fill "none"
+              :strokeWidth (/ 1 zoom)
+              :stroke "red"}])))

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"PO-Revision-Date: 2026-01-08 17:06+0000\n"
 "Last-Translator: Црнобог <68vuletic@gmail.com>\n"
 "Language-Team: Serbian "
 "<https://hosted.weblate.org/projects/penpot/frontend/sr/>\n"
@@ -10,9 +10,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Већ имате налог?"
 
@@ -40,13 +40,13 @@ msgstr "Креирајте демо налог"
 msgid "auth.create-demo-profile"
 msgstr "Само желите да пробате?"
 
-#: src/app/main/ui/auth/login.cljs:43
+#: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
 msgstr ""
 "Ово је ДЕМО услуга, НЕ КОРИСТИТЕ за прави рад, пројекти ће се повремено "
 "брисати."
 
-#: src/app/main/ui/auth/login.cljs:189, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
 msgstr "Заборављена лозинка?"
 
@@ -54,39 +54,40 @@ msgstr "Заборављена лозинка?"
 msgid "auth.fullname"
 msgstr "Пуно име"
 
-#: src/app/main/ui/auth/login.cljs:282
+#: src/app/main/ui/auth/login.cljs:271
 msgid "auth.login-account-title"
 msgstr "Пријавите се на свој налог"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:156, src/app/main/ui/viewer/login.cljs:101
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Пријавите се овде."
 
 #: src/app/main/ui/auth/login.cljs:195
+#, unused
 msgid "auth.login-submit"
 msgstr "Пријава"
 
-#: src/app/main/ui/auth/login.cljs:285
+#: src/app/main/ui/auth/login.cljs:274
 msgid "auth.login-tagline"
 msgstr "Penpot је бесплатан алат отвореног кода за сарадњу у дизајну и програмирању"
 
-#: src/app/main/ui/auth/login.cljs:222
+#: src/app/main/ui/auth/login.cljs:231
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:228
+#: src/app/main/ui/auth/login.cljs:237
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:216
+#: src/app/main/ui/auth/login.cljs:225
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:201
+#: src/app/main/ui/auth/login.cljs:210
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:234, src/app/main/ui/auth/login.cljs:255
+#: src/app/main/ui/auth/login.cljs:243
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
@@ -110,7 +111,7 @@ msgstr "Линк за опоравак лозинке је послат у Ва�
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Успешно придружење тиму"
 
-#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:174
+#: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Лозинка"
 
@@ -138,7 +139,7 @@ msgstr "Заборавили сте лозинку?"
 msgid "auth.recovery-submit"
 msgstr "Промените своју лозинку"
 
-#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "Још немате налог?"
 
@@ -150,7 +151,7 @@ msgstr "Како желите да Вас ословљавамо на управ
 msgid "auth.register-account-title"
 msgstr "Ваше име"
 
-#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:143, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Креирајте налог"
 
@@ -176,7 +177,7 @@ msgstr "Решење отвореног кода за дизајн и израд
 msgid "auth.terms-and-privacy-agreement"
 msgstr "Слажем се са [условима коришћења](%s) и [политиком приватности](%s)."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Услови коришћења"
 
@@ -190,7 +191,7 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Послали смо потврдно е-писмо на"
 
-#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
 msgid "auth.work-email"
 msgstr "Радна е-пошта"
 
@@ -199,94 +200,94 @@ msgstr "Радна е-пошта"
 msgid "branding-illustrations-marketing-pieces"
 msgstr "...брендирање, илустрације, маркетиншки комади, итд."
 
-#: src/app/main/ui/workspace/libraries.cljs:333
+#: src/app/main/ui/workspace/libraries.cljs:323
 msgid "common.publish"
 msgstr "Објави"
 
-#: src/app/main/ui/viewer/share_link.cljs:306, src/app/main/ui/viewer/share_link.cljs:316
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
 msgstr "Сви Penpot корисници"
 
-#: src/app/main/ui/viewer/share_link.cljs:200
+#: src/app/main/ui/viewer/share_link.cljs:204
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Да ли сте сигурни да желите да уклоните ову везу? Ако то урадите више неће "
 "бити доступно никоме"
 
-#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
 msgstr "(тренутни)"
 
-#: src/app/main/ui/viewer/share_link.cljs:209, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
 msgid "common.share-link.destroy-link"
 msgstr "Уништи везу"
 
-#: src/app/main/ui/viewer/share_link.cljs:223
+#: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
 msgstr "Добиј везу"
 
-#: src/app/main/ui/viewer/share_link.cljs:139
+#: src/app/main/ui/viewer/share_link.cljs:142
 msgid "common.share-link.link-copied-success"
 msgstr "Веза је успешно копирана"
 
-#: src/app/main/ui/viewer/share_link.cljs:233
+#: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
 msgstr "Управљање дозволама"
 
-#: src/app/main/ui/viewer/share_link.cljs:279
+#: src/app/main/ui/viewer/share_link.cljs:277
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "страница подељена"
 msgstr[1] "%s странице подељено"
 msgstr[2] "%s страница подељено"
 
-#: src/app/main/ui/viewer/share_link.cljs:300
+#: src/app/main/ui/viewer/share_link.cljs:298
 msgid "common.share-link.permissions-can-comment"
 msgstr "Може оставити коментар"
 
-#: src/app/main/ui/viewer/share_link.cljs:310
+#: src/app/main/ui/viewer/share_link.cljs:309
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Може да провери кôд"
 
-#: src/app/main/ui/viewer/share_link.cljs:195
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.permissions-hint"
 msgstr "Свако са везом ће имати приступ"
 
-#: src/app/main/ui/viewer/share_link.cljs:243
+#: src/app/main/ui/viewer/share_link.cljs:241
 msgid "common.share-link.permissions-pages"
 msgstr "Страница подељено"
 
-#: src/app/main/ui/viewer/share_link.cljs:185
+#: src/app/main/ui/viewer/share_link.cljs:189
 msgid "common.share-link.placeholder"
 msgstr "Овде ће се појавити веза за дељење"
 
-#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
 msgstr "Само чланови тима"
 
-#: src/app/main/ui/viewer/share_link.cljs:173
+#: src/app/main/ui/viewer/share_link.cljs:176
 msgid "common.share-link.title"
 msgstr "Дели прототипе"
 
-#: src/app/main/ui/viewer/share_link.cljs:271
+#: src/app/main/ui/viewer/share_link.cljs:269
 msgid "common.share-link.view-all"
 msgstr "Изабери све"
 
-#: src/app/main/ui/workspace/libraries.cljs:329
+#: src/app/main/ui/workspace/libraries.cljs:320
 msgid "common.unpublish"
 msgstr "Опозови објављивање"
 
-#: src/app/main/ui/dashboard/projects.cljs:91
+#: src/app/main/ui/dashboard/projects.cljs:93
 msgid "dasboard.team-hero.management"
 msgstr "Управљање тимом"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:92
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot је намењен тимовима. Позовите чланове да заједно раде на пројектима "
 "и датотекама"
 
-#: src/app/main/ui/dashboard/projects.cljs:88
+#: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.title"
 msgstr "Уједините снаге!"
 
@@ -391,7 +392,7 @@ msgstr "Токен ће истећи на %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "Токен нема датум истека"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
+#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "Додај као дељену библиотеку"
 
@@ -399,7 +400,7 @@ msgstr "Додај као дељену библиотеку"
 msgid "dashboard.change-email"
 msgstr "Промените е-пошту"
 
-#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(копија)"
 
@@ -407,7 +408,7 @@ msgstr "(копија)"
 msgid "dashboard.create-new-team"
 msgstr "Направите нови тим"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
 msgstr "Ваш Penpot"
 
@@ -415,31 +416,32 @@ msgstr "Ваш Penpot"
 msgid "dashboard.delete-team"
 msgstr "Избришите тим"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:689, src/app/main/ui/workspace/main_menu.cljs:698
+#: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
 msgstr "Преузмите Penpot датотеку (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:707
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
+#, unused
 msgid "dashboard.download-standard-file"
 msgstr "Преузмите стандардну датотеку (.svg + .json)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Дуплирај"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:242
+#: src/app/main/ui/dashboard/file_menu.cljs:273
 msgid "dashboard.duplicate-multi"
 msgstr "Дуплирај %s датотека"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:257
+#: src/app/main/ui/dashboard/file_menu.cljs:282
 msgid "dashboard.export-binary-multi"
 msgstr "Преузмите % Penpot датотека (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:715
+#: src/app/main/ui/workspace/main_menu.cljs:698
 msgid "dashboard.export-frames"
 msgstr "Извезите табле као PDF"
 
-#: src/app/main/ui/exports/assets.cljs:200
+#: src/app/main/ui/exports/assets.cljs:201
 msgid "dashboard.export-frames.title"
 msgstr "Извези као PDF"
 
@@ -447,81 +449,45 @@ msgstr "Извези као PDF"
 msgid "dashboard.export-multi"
 msgstr "Извези Penpot %s датотека"
 
-#: src/app/main/ui/exports/assets.cljs:107
+#: src/app/main/ui/exports/assets.cljs:108
 msgid "dashboard.export-multiple.selected"
 msgstr "%s од %s елемената изабрано"
 
-#: src/app/main/ui/workspace/main_menu.cljs:677
+#: src/app/main/ui/workspace/main_menu.cljs:679
 msgid "dashboard.export-shapes"
 msgstr "Извези"
 
-#: src/app/main/ui/exports/assets.cljs:178
+#: src/app/main/ui/exports/assets.cljs:179
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "Можете додати подешавања извоза елементима из својстава дизајна (на дну "
 "десне бочне траке)."
 
-#: src/app/main/ui/exports/assets.cljs:182
+#: src/app/main/ui/exports/assets.cljs:183
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "Информације како да подесите извоз у Penpot-у."
 
-#: src/app/main/ui/exports/assets.cljs:177
+#: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.no-elements"
 msgstr "Нема елемената са подешавањима извоза."
 
-#: src/app/main/ui/exports/assets.cljs:188
+#: src/app/main/ui/exports/assets.cljs:189
 msgid "dashboard.export-shapes.title"
 msgstr "Избор извоза"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:262
+#, unused
 msgid "dashboard.export-standard-multi"
 msgstr "Преузмите &s стандардних датотека (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
-msgstr "* Може укључивати компоненте, графику, боје и/или типографије."
-
 #: src/app/main/ui/exports/files.cljs:155
+#, unused
 msgid "dashboard.export.explain"
 msgstr ""
 "Једна или више датотека које желите да извезете користе дељене библиотеке. "
 "Шта желите да урадите са њиховим средстрвима*?"
 
-#: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
-msgstr ""
-"датотеке са дељеним библиотекама ће бити укључене у извоз, одржавајући "
-"њихову повезаност."
-
-#: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
-msgstr "Извези дељене библиотеке"
-
-#: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
-msgstr ""
-"Дељене библиотеке неће бити укључене у извоз, а средства неће бити додата у "
-"библиотеку. "
-
-#: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
-msgstr "Третирајте средства заједничке библиотеке као основне објекте"
-
-#: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
-msgstr ""
-"Ваша датотека ће бити извезена са свим спољним средствима спојеним у "
-"библиотеку датотека."
-
-#: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
-msgstr "Укључите средства дељених библиотека у библиотеке датотека"
-
-#: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Извези датотеке"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Недостаје фонт"
 
@@ -529,7 +495,7 @@ msgstr "Недостаје фонт"
 msgid "dashboard.fonts.dismiss-all"
 msgstr "Одбаци све"
 
-#: src/app/main/ui/dashboard/fonts.cljs:453
+#: src/app/main/ui/dashboard/fonts.cljs:455
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Овде ће се појавити прилагођени фонтови које отпремите."
 
@@ -647,11 +613,11 @@ msgstr "Библиотеке и шаблони"
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Истражите више њих и знајте како да допринесете"
 
-#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:152
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:145
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "Дошло је до проблема при увозу шаблона. Шаблон није увезен."
 
-#: src/app/main/ui/dashboard/libraries.cljs:66
+#: src/app/main/ui/dashboard/libraries.cljs:69
 msgid "dashboard.libraries-title"
 msgstr "Библиотеке"
 
@@ -659,35 +625,35 @@ msgstr "Библиотеке"
 msgid "dashboard.loading-files"
 msgstr "учитавање ваших датотека…"
 
-#: src/app/main/ui/dashboard/fonts.cljs:447
+#: src/app/main/ui/dashboard/fonts.cljs:449
 msgid "dashboard.loading-fonts"
 msgstr "учитавање ваших фонтова…"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Премести у"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:247
+#: src/app/main/ui/dashboard/file_menu.cljs:278
 msgid "dashboard.move-to-multi"
 msgstr "Премести %s датотека у"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:226
+#: src/app/main/ui/dashboard/file_menu.cljs:250
 msgid "dashboard.move-to-other-team"
 msgstr "Премести у други тим"
 
-#: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
+#: src/app/main/ui/dashboard/files.cljs:107, src/app/main/ui/dashboard/projects.cljs:257, src/app/main/ui/dashboard/projects.cljs:258
 msgid "dashboard.new-file"
 msgstr "+ Нова датотека"
 
-#: src/app/main/data/dashboard.cljs:501, src/app/main/data/dashboard.cljs:613
+#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
 msgid "dashboard.new-file-prefix"
 msgstr "Нова датотека"
 
-#: src/app/main/ui/dashboard/projects.cljs:60
+#: src/app/main/ui/dashboard/projects.cljs:62
 msgid "dashboard.new-project"
 msgstr "+ Нови пројекат"
 
-#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:616
+#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
 msgid "dashboard.new-project-prefix"
 msgstr "Нови пројекат"
 
@@ -695,7 +661,7 @@ msgstr "Нови пројекат"
 msgid "dashboard.no-matches-for"
 msgstr "Нема подударања за \"%s\""
 
-#: src/app/main/ui/dashboard/sidebar.cljs:763
+#: src/app/main/ui/dashboard/sidebar.cljs:764
 msgid "dashboard.no-projects-placeholder"
 msgstr "Закачени пројекти ће се појавити овде"
 
@@ -707,7 +673,7 @@ msgstr "Ваша адреса е-поште је успешно ажуриран
 msgid "dashboard.notifications.email-verified-successfully"
 msgstr "Ваша адреса е-поште је успешно верификована"
 
-#: src/app/main/ui/settings/password.cljs:36
+#: src/app/main/ui/settings/password.cljs:38
 msgid "dashboard.notifications.password-saved"
 msgstr "Лозинка је успешно сачувана!"
 
@@ -715,15 +681,15 @@ msgstr "Лозинка је успешно сачувана!"
 msgid "dashboard.num-of-members"
 msgstr "%s чланова"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:277
+#: src/app/main/ui/dashboard/file_menu.cljs:297
 msgid "dashboard.open-in-new-tab"
 msgstr "Отворите датотеку у новој картици"
 
-#: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
+#: src/app/main/ui/dashboard/deleted.cljs:157, src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
 msgid "dashboard.options"
 msgstr "Опције"
 
-#: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
+#: src/app/main/ui/settings/password.cljs:96, src/app/main/ui/settings/password.cljs:109
 msgid "dashboard.password-change"
 msgstr "Промените лозинку"
 
@@ -731,7 +697,7 @@ msgstr "Промените лозинку"
 msgid "dashboard.pin-unpin"
 msgstr "Прикачи/Откачи"
 
-#: src/app/main/ui/dashboard/projects.cljs:55
+#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
 msgid "dashboard.projects-title"
 msgstr "Пројекти"
 
@@ -764,7 +730,7 @@ msgstr "Изаберите језик корисничког интерфејс�
 msgid "dashboard.select-ui-theme"
 msgstr "Изаберите тему"
 
-#: src/app/main/ui/dashboard/projects.cljs:304
+#: src/app/main/ui/dashboard/projects.cljs:309
 msgid "dashboard.show-all-files"
 msgstr "Прикажи све датотеке"
 
@@ -790,7 +756,7 @@ msgstr[2] "Ваше датотеке су успешно дуплиране"
 msgid "dashboard.success-duplicate-project"
 msgstr "Ваш пројекат је успешно дуплиран"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Ваша датотека је успешно премештена"
 
@@ -826,7 +792,7 @@ msgstr "Резултати претраге"
 msgid "dashboard.type-something"
 msgstr "Унесите за резултате претраге"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:640
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:642
 msgid "dashboard.unpublish-shared"
 msgstr "Опозови објављивање библиотеке"
 
@@ -885,7 +851,7 @@ msgstr "Е-пошта"
 msgid "dashboard.your-name"
 msgstr "Ваше име"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Ваш Penpot"
 
@@ -901,11 +867,11 @@ msgstr "Пажња"
 msgid "ds.component-subtitle"
 msgstr "Компоненте за ажурирање:"
 
-#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:333, src/app/main/ui/workspace/plugins.cljs:387
+#: src/app/main/ui/comments.cljs:674, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:273, src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/workspace/plugins.cljs:334, src/app/main/ui/workspace/plugins.cljs:388
 msgid "ds.confirm-cancel"
 msgstr "Откажите"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
 msgid "ds.confirm-ok"
 msgstr "Уреду"
 
@@ -913,15 +879,15 @@ msgstr "Уреду"
 msgid "ds.confirm-title"
 msgstr "Да ли сте сигурни?"
 
-#: src/app/main/data/auth.cljs:314
+#: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "Провајдер ауторизације није дозвољен за овај налог"
 
-#: src/app/main/ui/auth/login.cljs:78
+#: src/app/main/data/auth.cljs:189
 msgid "errors.auth-provider-not-configured"
 msgstr "Провајдер аутентификације није конфигурисан."
 
-#: src/app/main/errors.cljs:112
+#: src/app/main/errors.cljs:119
 msgid "errors.auth.unable-to-login"
 msgstr "Изгледа да нисте аутентификовани или је сесија истекла."
 
@@ -937,7 +903,7 @@ msgstr "Фонтови %s нису могли бити учитани"
 msgid "errors.cannot-upload"
 msgstr "Није могуће отпремити медијску датотеку."
 
-#: src/app/main/data/workspace/clipboard.cljs:279, src/app/main/data/workspace/clipboard.cljs:497
+#: src/app/main/data/workspace/clipboard.cljs:481
 msgid "errors.clipboard-not-implemented"
 msgstr "Ваш претраживач не може да одради ову операцију"
 
@@ -949,11 +915,11 @@ msgstr "Е-пошта је већ коришћена"
 msgid "errors.email-already-validated"
 msgstr "Е-пошта је већ потврђена."
 
-#: src/app/main/ui/auth/register.cljs:105, src/app/main/ui/settings/password.cljs:27
+#: src/app/main/ui/auth/register.cljs:105, src/app/main/ui/settings/password.cljs:29
 msgid "errors.email-as-password"
 msgstr "Не можете да користите своју е-пошту као лозинку"
 
-#: src/app/main/data/auth.cljs:316, src/app/main/ui/auth/register.cljs:95
+#: src/app/main/data/auth.cljs:341, src/app/main/ui/auth/register.cljs:95
 msgid "errors.email-domain-not-allowed"
 msgstr "Домен није дозвољен"
 
@@ -965,24 +931,24 @@ msgstr "Е-пошта «%s» има много сталних извештаја
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "Е-пошта «%s» је пријављеа као непожељана или трајно одбијена."
 
-#: src/app/main/errors.cljs:277
+#: src/app/main/errors.cljs:284
 msgid "errors.feature-mismatch"
 msgstr ""
 "Изгледа да отварате датотеку која има омогућену функцију '%s', али је "
 "тренутна верзија penpot-а не подржава или је онемогућена."
 
-#: src/app/main/errors.cljs:281, src/app/main/errors.cljs:295
+#: src/app/main/errors.cljs:288, src/app/main/errors.cljs:302
 msgid "errors.feature-not-supported"
 msgstr "Функција '%s' није подржана."
 
-#: src/app/main/errors.cljs:273
+#: src/app/main/errors.cljs:280
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Чини се да постоји неусклађеност између омогућених функција и функција "
 "датотеке коју покушавате да отворите. Миграције за \"%s\" морају бити "
 "примењене пре него што се датотека може отворити."
 
-#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
+#: src/app/main/data/auth.cljs:347, src/app/main/ui/auth/login.cljs:104, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:84
 msgid "errors.generic"
 msgstr "Нешто погрешно се десило."
 
@@ -990,19 +956,19 @@ msgstr "Нешто погрешно се десило."
 msgid "errors.invalid-color"
 msgstr "Неважећа боја"
 
-#: src/app/main/ui/static.cljs:70
+#: src/app/main/ui/static.cljs:75
 msgid "errors.invite-invalid"
 msgstr "Позив је неважећи"
 
-#: src/app/main/ui/static.cljs:71
+#: src/app/main/ui/static.cljs:76
 msgid "errors.invite-invalid.info"
 msgstr "Ова позивница је можда отказана или истекла."
 
-#: src/app/main/ui/auth/login.cljs:107
+#: src/app/main/ui/auth/login.cljs:89
 msgid "errors.ldap-disabled"
 msgstr "LDAP аутентификација је онемогућена."
 
-#: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
+#: src/app/main/errors.cljs:296, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
 msgid "errors.max-quota-reached"
 msgstr "Достигли сте квоту од '%s'. Контактирајте подршку."
 
@@ -1034,11 +1000,11 @@ msgstr "Лозинка за потврду мора да се подудара"
 msgid "errors.password-too-short"
 msgstr "Лозинка треба да има најмање 8 знакова"
 
-#: src/app/main/errors.cljs:141
+#: src/app/main/errors.cljs:148
 msgid "errors.paste-data-validation"
 msgstr "Неважећи подаци у међуспремнику"
 
-#: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
+#: src/app/main/data/auth.cljs:337, src/app/main/ui/auth/login.cljs:85, src/app/main/ui/auth/login.cljs:93
 msgid "errors.profile-blocked"
 msgstr "Налог је блокиран"
 
@@ -1048,11 +1014,11 @@ msgstr ""
 "Ваш профил има искључене поруке е-поште (извештаји о нежељеној пошти или "
 "велики број одбијања)."
 
-#: src/app/main/data/auth.cljs:310, src/app/main/ui/auth/register.cljs:92
+#: src/app/main/data/auth.cljs:335, src/app/main/ui/auth/register.cljs:92
 msgid "errors.registration-disabled"
 msgstr "Регистрација је тренутно онемогућена."
 
-#: src/app/main/errors.cljs:268
+#: src/app/main/errors.cljs:275
 msgid "errors.team-feature-mismatch"
 msgstr "Откривена је некомпатибилна функција \"%s\""
 
@@ -1080,7 +1046,7 @@ msgstr "Непознати токен"
 msgid "errors.validation"
 msgstr "Грешка при валидацији"
 
-#: src/app/main/errors.cljs:285
+#: src/app/main/errors.cljs:292
 msgid "errors.version-not-supported"
 msgstr "Датотека има некомпатибилан број верзије"
 
@@ -1112,59 +1078,81 @@ msgstr "Неочекивана грешка при валидацији"
 msgid "errors.webhooks.unexpected-status"
 msgstr "Неочекивани статус %s"
 
-#: src/app/main/ui/auth/login.cljs:115, src/app/main/ui/auth/login.cljs:119
+#: src/app/main/ui/auth/login.cljs:97, src/app/main/ui/auth/login.cljs:101
 msgid "errors.wrong-credentials"
 msgstr "Е-пошта или лозинка су нетачни."
 
-#: src/app/main/ui/settings/password.cljs:24
+#: src/app/main/ui/settings/password.cljs:25
 msgid "errors.wrong-old-password"
 msgstr "Стара лозинка је нетачна"
 
-#: src/app/main/ui/settings/feedback.cljs:74
+#: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
 msgstr "Опис"
 
-#: src/app/main/ui/settings/feedback.cljs:92
-msgid "feedback.discourse-go-to"
-msgstr "Иди на Penpot форум"
-
-#: src/app/main/ui/settings/feedback.cljs:86
+#: src/app/main/ui/settings/feedback.cljs:150
 msgid "feedback.discourse-subtitle1"
 msgstr ""
 "Срећни смо што сте овде. Ако вам је потребна помоћ, претражите пре него што "
 "објавите."
 
-#: src/app/main/ui/settings/feedback.cljs:85
+#: src/app/main/ui/settings/feedback.cljs:149
 msgid "feedback.discourse-title"
 msgstr "Penpot заједница"
 
-#: src/app/main/ui/settings/feedback.cljs:69
+#: src/app/main/ui/settings/feedback.cljs:105
 msgid "feedback.subject"
 msgstr "Предмет"
 
-#: src/app/main/ui/settings/feedback.cljs:66
+#: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.subtitle"
 msgstr ""
 "Молимо опишите разлог ваше е-поште, наводећи да ли постоји проблем, идеја "
 "или сумња. Члан нашег тима ће одговорити у најкраћем могућем року."
 
-#: src/app/main/ui/settings/feedback.cljs:65
-msgid "feedback.title"
-msgstr "Е-пошта"
-
-#: src/app/main/ui/settings/feedback.cljs:102
-msgid "feedback.twitter-go-to"
-msgstr "Иди на X"
-
-#: src/app/main/ui/settings/feedback.cljs:96
+#: src/app/main/ui/settings/feedback.cljs:156
 msgid "feedback.twitter-subtitle1"
 msgstr "Овде смо да помогнемо са вашим техничким питањима."
 
-#: src/app/main/ui/settings/feedback.cljs:95
+#: src/app/main/ui/settings/feedback.cljs:155
 msgid "feedback.twitter-title"
 msgstr "X налог за подршку"
 
-#: src/app/main/ui/settings/password.cljs:29
+#: src/app/main/ui/exports/files.cljs:133
+msgid "files-download-modal.description-2"
+msgstr "* Може укључивати компоненте, графику, боје и/или типографије."
+
+#: src/app/main/ui/exports/files.cljs:141
+msgid "files-download-modal.options.all.message"
+msgstr ""
+"Датотеке са дељеним библиотекама ће бити укључене у извоз, одржавајући "
+"њихову повезаност."
+
+#: src/app/main/ui/exports/files.cljs:142
+msgid "files-download-modal.options.all.title"
+msgstr "Извези дељене библиотеке"
+
+#: src/app/main/ui/exports/files.cljs:143
+msgid "files-download-modal.options.detach.message"
+msgstr ""
+"Дељене библиотеке неће бити укључене у извоз, а средства неће бити додата у "
+"библиотеку. "
+
+#: src/app/main/ui/exports/files.cljs:144
+msgid "files-download-modal.options.detach.title"
+msgstr "Третирајте средства заједничке библиотеке као основне објекте"
+
+#: src/app/main/ui/exports/files.cljs:145
+msgid "files-download-modal.options.merge.message"
+msgstr ""
+"Ваша датотека ће бити извезена са свим спољним средствима спојеним у "
+"библиотеку датотека."
+
+#: src/app/main/ui/exports/files.cljs:146
+msgid "files-download-modal.options.merge.title"
+msgstr "Укључите средства дељених библиотека у библиотеке датотека"
+
+#: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"
 msgstr "Дошло је до грешке"
 
@@ -1172,27 +1160,27 @@ msgstr "Дошло је до грешке"
 msgid "inspect.attributes.blur"
 msgstr "Замућење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:125
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:126
 msgid "inspect.attributes.blur.value"
 msgstr "Вредност"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:91, src/app/main/ui/inspect/right_sidebar.cljs:97
+#: src/app/main/ui/inspect/attributes/common.cljs:93, src/app/main/ui/inspect/right_sidebar.cljs:98
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:93, src/app/main/ui/inspect/right_sidebar.cljs:101
+#: src/app/main/ui/inspect/attributes/common.cljs:95, src/app/main/ui/inspect/right_sidebar.cljs:102
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:92, src/app/main/ui/inspect/right_sidebar.cljs:99
+#: src/app/main/ui/inspect/attributes/common.cljs:94, src/app/main/ui/inspect/right_sidebar.cljs:100
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/inspect/attributes/fill.cljs:53
+#: src/app/main/ui/inspect/attributes/fill.cljs:70
 msgid "inspect.attributes.fill"
 msgstr "Попуњење"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:127
+#: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:126
 msgid "inspect.attributes.image.download"
 msgstr "Преузмите изворну слику"
 
@@ -1245,11 +1233,11 @@ msgstr "Ширина"
 msgid "inspect.attributes.shadow"
 msgstr "Сенка"
 
-#: src/app/main/ui/inspect/attributes/geometry.cljs:46
+#: src/app/main/ui/inspect/attributes/geometry.cljs:46, src/app/main/ui/inspect/styles/style_box.cljs:22
 msgid "inspect.attributes.size"
 msgstr "Величина и положај"
 
-#: src/app/main/ui/inspect/attributes/stroke.cljs:63
+#: src/app/main/ui/inspect/attributes/stroke.cljs:90
 msgid "inspect.attributes.stroke"
 msgstr "Контура"
 
@@ -1286,19 +1274,19 @@ msgstr "Чврсто"
 msgid "inspect.attributes.stroke.width"
 msgstr "Ширина"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:184
+#: src/app/main/ui/inspect/attributes/text.cljs:53, src/app/main/ui/inspect/attributes/text.cljs:159
 msgid "inspect.attributes.typography"
 msgstr "Типографија"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
 msgid "inspect.attributes.typography.font-family"
 msgstr "Породица фонта"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:332
 msgid "inspect.attributes.typography.font-size"
 msgstr "Величина фонта"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:338
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:343
 msgid "inspect.attributes.typography.font-style"
 msgstr "Стил фонта"
 
@@ -1307,11 +1295,11 @@ msgstr "Стил фонта"
 msgid "inspect.attributes.typography.font-weight"
 msgstr "Тежина фонта"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:406
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Размак између слова"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:387
 msgid "inspect.attributes.typography.line-height"
 msgstr "Висина линије"
 
@@ -1320,11 +1308,11 @@ msgstr "Висина линије"
 msgid "inspect.attributes.typography.text-decoration"
 msgstr "Декорација текста"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:136
+#: src/app/main/ui/inspect/attributes/text.cljs:111
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Ништа"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:138
+#: src/app/main/ui/inspect/attributes/text.cljs:113
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Подвачење"
 
@@ -1333,95 +1321,83 @@ msgstr "Подвачење"
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Трансформација текста"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:150, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:435
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Насловно слово"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
+#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:439
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Мала слова"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:149
+#: src/app/main/ui/inspect/attributes/text.cljs:124
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Ништа"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:152
+#: src/app/main/ui/inspect/attributes/text.cljs:127
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Без вредности"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:151, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
+#: src/app/main/ui/inspect/attributes/text.cljs:126, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:431
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Велико слово"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:232
+#: src/app/main/ui/inspect/right_sidebar.cljs:234
 msgid "inspect.empty.help"
 msgstr ""
 "Ако желите да сазнате више о прегледу дизајна, посетите Помоћни центар "
 "Penpot-а"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:235
-msgid "inspect.empty.more-info"
-msgstr "Више информација о прегледу"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:227
+#: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Изаберите облик, таблу или групу да бисте прегледали њихова својства и код"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
-msgid "inspect.tabs.code"
-msgstr "Код"
+#: src/app/main/ui/inspect/right_sidebar.cljs:137
+msgid "inspect.multiple-selected"
+msgstr "%s Изабрано"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:142
+#: src/app/main/ui/inspect/right_sidebar.cljs:143
 msgid "inspect.tabs.code.selected.circle"
 msgstr "Круг"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:143
+#: src/app/main/ui/inspect/right_sidebar.cljs:144
 msgid "inspect.tabs.code.selected.component"
 msgstr "Компонента"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:144
+#: src/app/main/ui/inspect/right_sidebar.cljs:145
 msgid "inspect.tabs.code.selected.curve"
 msgstr "Кривина"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:145
+#: src/app/main/ui/inspect/right_sidebar.cljs:146
 msgid "inspect.tabs.code.selected.frame"
 msgstr "Табла"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:146
+#: src/app/main/ui/inspect/right_sidebar.cljs:147
 msgid "inspect.tabs.code.selected.group"
 msgstr "Група"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:147
+#: src/app/main/ui/inspect/right_sidebar.cljs:148
 msgid "inspect.tabs.code.selected.image"
 msgstr "Слика"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:148
+#: src/app/main/ui/inspect/right_sidebar.cljs:149
 msgid "inspect.tabs.code.selected.mask"
 msgstr "Маска"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:136
-msgid "inspect.tabs.code.selected.multiple"
-msgstr "%s Изабрано"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:149
+#: src/app/main/ui/inspect/right_sidebar.cljs:150
 msgid "inspect.tabs.code.selected.path"
 msgstr "Путања"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:150
+#: src/app/main/ui/inspect/right_sidebar.cljs:151
 msgid "inspect.tabs.code.selected.rect"
 msgstr "Правоугаоник"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:151
+#: src/app/main/ui/inspect/right_sidebar.cljs:152
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:152
+#: src/app/main/ui/inspect/right_sidebar.cljs:153
 msgid "inspect.tabs.code.selected.text"
 msgstr "Текст"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:114
-msgid "inspect.tabs.info"
-msgstr "Инфо"
 
 #: src/app/main/ui/workspace/main_menu.cljs:192
 msgid "label.shortcuts"
@@ -1451,7 +1427,7 @@ msgstr "Админ"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:89, src/app/main/ui/workspace/tokens/management/context_menu.cljs:123, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:86, src/app/main/ui/workspace/tokens/management/context_menu.cljs:120, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
 msgid "labels.all"
 msgstr "Све"
 
@@ -1464,17 +1440,17 @@ msgstr "и"
 msgid "labels.back"
 msgstr "Назад"
 
-#: src/app/main/ui/static.cljs:292
+#: src/app/main/ui/static.cljs:298
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
 "Изгледа да морате да сачекате неколико тренутака и покушате поново; "
 "изводимо мање одржавање наших сервера."
 
-#: src/app/main/ui/static.cljs:291
+#: src/app/main/ui/static.cljs:297
 msgid "labels.bad-gateway.main-message"
 msgstr "Лош Gateway"
 
-#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
 msgid "labels.cancel"
 msgstr "Откажите"
 
@@ -1482,23 +1458,27 @@ msgstr "Откажите"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:246, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:656, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:244, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/create/modals.cljs:91, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:58, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:161, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:441
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/delete_shared.cljs:105, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:179, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:643, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
 msgid "labels.close"
 msgstr "Затвори"
 
-#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:127
+#: src/app/main/ui/inspect/right_sidebar.cljs:112, src/app/main/ui/inspect/right_sidebar.cljs:117
+msgid "labels.code"
+msgstr "Код"
+
+#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:128
 msgid "labels.comments"
 msgstr "Коментари"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:840, src/app/main/ui/workspace/main_menu.cljs:144
+#: src/app/main/ui/dashboard/sidebar.cljs:841, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "Заједница"
 
-#: src/app/main/ui/settings/password.cljs:91
+#: src/app/main/ui/settings/password.cljs:93
 msgid "labels.confirm-password"
 msgstr "Потврди лозинку"
 
-#: src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
 msgid "labels.continue"
 msgstr "Настави"
 
@@ -1514,7 +1494,7 @@ msgstr "Можете наставити са Penpot налогом"
 msgid "labels.copy-invitation-link"
 msgstr "Копирај везу"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:203
 msgid "labels.create"
 msgstr "Створи"
 
@@ -1534,15 +1514,15 @@ msgstr "Прилагођени фонтови"
 msgid "labels.dashboard"
 msgstr "Управљачка табла"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:224, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:626, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
+#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:291, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
 msgid "labels.delete"
 msgstr "Избришите"
 
-#: src/app/main/ui/comments.cljs:1009
+#: src/app/main/ui/comments.cljs:997
 msgid "labels.delete-comment"
 msgstr "Избришите коментар"
 
-#: src/app/main/ui/comments.cljs:931
+#: src/app/main/ui/comments.cljs:919
 msgid "labels.delete-comment-thread"
 msgstr "Избришите дискусију"
 
@@ -1550,7 +1530,7 @@ msgstr "Избришите дискусију"
 msgid "labels.delete-invitation"
 msgstr "Избришите позивницу"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:273
+#: src/app/main/ui/dashboard/file_menu.cljs:293
 msgid "labels.delete-multi-files"
 msgstr "Избришите %s датотека"
 
@@ -1563,15 +1543,15 @@ msgstr "Развој"
 msgid "labels.director"
 msgstr "Директор"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:214
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
 msgid "labels.discard"
 msgstr "Одбаци"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:725
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
 msgid "labels.drafts"
 msgstr "Нацрти"
 
-#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:220, src/app/main/ui/workspace/tokens/themes.cljs:51
+#: src/app/main/ui/comments.cljs:993, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:218, src/app/main/ui/workspace/tokens/themes.cljs:52
 msgid "labels.edit"
 msgstr "Уреди"
 
@@ -1592,15 +1572,15 @@ msgstr "Догађај"
 msgid "labels.expired-invitation"
 msgstr "Истекло"
 
-#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/workspace/tokens/sidebar.cljs:133
+#: src/app/main/ui/exports/assets.cljs:172, src/app/main/ui/workspace/tokens/sidebar.cljs:134
 msgid "labels.export"
 msgstr "Извези"
 
-#: src/app/main/ui/settings/feedback.cljs:48
+#: src/app/main/ui/settings/feedback.cljs:83
 msgid "labels.feedback-disabled"
 msgstr "Повратне информације су онемогућене"
 
-#: src/app/main/ui/settings/feedback.cljs:39
+#: src/app/main/ui/settings/feedback.cljs:74
 msgid "labels.feedback-sent"
 msgstr "Повратне информације су послате"
 
@@ -1608,7 +1588,7 @@ msgstr "Повратне информације су послате"
 msgid "labels.figma"
 msgstr "Figma"
 
-#: src/app/main/ui/dashboard/fonts.cljs:430
+#: src/app/main/ui/dashboard/fonts.cljs:432
 msgid "labels.font-family"
 msgstr "Породица фонта"
 
@@ -1616,11 +1596,11 @@ msgstr "Породица фонта"
 msgid "labels.font-providers"
 msgstr "Добављачи фонтова"
 
-#: src/app/main/ui/dashboard/fonts.cljs:431
+#: src/app/main/ui/dashboard/fonts.cljs:433
 msgid "labels.font-variants"
 msgstr "Стилови"
 
-#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:738
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:739
 msgid "labels.fonts"
 msgstr "Фонтови"
 
@@ -1634,15 +1614,15 @@ msgstr "Извршни директор или оснивач"
 msgid "labels.freelancer"
 msgstr "Фриленсер"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:834, src/app/main/ui/workspace/main_menu.cljs:176
+#: src/app/main/ui/dashboard/sidebar.cljs:835, src/app/main/ui/workspace/main_menu.cljs:176
 msgid "labels.github-repo"
 msgstr "Github репозиторијум"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:809, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:205
+#: src/app/main/ui/dashboard/sidebar.cljs:810, src/app/main/ui/workspace/main_menu.cljs:205
 msgid "labels.give-feedback"
 msgstr "Оставите повратне информације"
 
-#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:170, src/app/main/ui/viewer/login.cljs:111
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:176, src/app/main/ui/viewer/login.cljs:113
 msgid "labels.go-back"
 msgstr "Иди назад"
 
@@ -1650,11 +1630,11 @@ msgstr "Иди назад"
 msgid "labels.graphic-design"
 msgstr "Графички дизајн"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:792, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1085, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1110, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1296
+#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1312, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1528
 msgid "labels.help-center"
 msgstr "Центар за помоћ"
 
-#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:74
+#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:75
 msgid "labels.hide-resolved-comments"
 msgstr "Сакриј решене коментаре"
 
@@ -1662,17 +1642,15 @@ msgstr "Сакриј решене коментаре"
 msgid "labels.inactive"
 msgstr "Неактиван"
 
-#: src/app/main/ui/dashboard/fonts.cljs:428
+#: src/app/main/ui/inspect/right_sidebar.cljs:115
+msgid "labels.info"
+msgstr "Инфо"
+
+#: src/app/main/ui/dashboard/fonts.cljs:430
 msgid "labels.installed-fonts"
 msgstr "Инсталирани фонтови"
 
-#: src/app/main/ui/static.cljs:373
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Десило се нешто лоше. Покушајте поново са операцијом и ако се проблем "
-"настави, контактирајте подршку."
-
-#: src/app/main/ui/static.cljs:372
+#: src/app/main/ui/static.cljs:393
 msgid "labels.internal-error.main-message"
 msgstr "Унутрашња гершка"
 
@@ -1692,11 +1670,11 @@ msgstr "Језик"
 msgid "labels.libraries-and-templates"
 msgstr "Библиотеке и шаблони"
 
-#: src/app/main/ui/viewer/header.cljs:208
+#: src/app/main/ui/viewer/header.cljs:205
 msgid "labels.log-or-sign"
 msgstr "Пријава или регистрација"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1053
+#: src/app/main/ui/dashboard/sidebar.cljs:1054
 msgid "labels.logout"
 msgstr "Одјава"
 
@@ -1712,7 +1690,7 @@ msgstr "Члан"
 msgid "labels.members"
 msgstr "Чланови"
 
-#: src/app/main/ui/settings/password.cljs:84
+#: src/app/main/ui/settings/password.cljs:86
 msgid "labels.new-password"
 msgstr "Нова лозинка"
 
@@ -1733,11 +1711,11 @@ msgstr "Нема позивница на чекању."
 msgid "labels.not-found.desc-message"
 msgstr "Ова страница можда не постоји или немате дозволе да јој приступите."
 
-#: src/app/main/ui/static.cljs:281
+#: src/app/main/ui/static.cljs:287
 msgid "labels.not-found.main-message"
 msgstr "Упс!"
 
-#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1354
+#: src/app/main/ui/dashboard/projects.cljs:240, src/app/main/ui/dashboard/team.cljs:1354
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "датотека"
@@ -1758,7 +1736,7 @@ msgstr[0] "пројекат"
 msgstr[1] "%s пројеката"
 msgstr[2] "%s пројеката"
 
-#: src/app/main/ui/settings/password.cljs:77
+#: src/app/main/ui/settings/password.cljs:79
 msgid "labels.old-password"
 msgstr "Стара лозинка"
 
@@ -1807,7 +1785,7 @@ msgstr "Управљање производима"
 msgid "labels.profile"
 msgstr "Налог"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:718
+#: src/app/main/ui/dashboard/sidebar.cljs:719
 msgid "labels.projects"
 msgstr "Пројекти"
 
@@ -1820,8 +1798,7 @@ msgstr "Напомене о издању"
 msgid "labels.reload-file"
 msgstr "Поново учитај датотеку"
 
-#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
-#, unused
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
 msgid "labels.remove"
 msgstr "Уколни"
 
@@ -1829,7 +1806,7 @@ msgstr "Уколни"
 msgid "labels.remove-member"
 msgstr "Уклони члана"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:453, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:191, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:453, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:192, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Преименуј"
 
@@ -1841,7 +1818,7 @@ msgstr "Преименуј тим"
 msgid "labels.resend-invitation"
 msgstr "Поново пошаљите позивницу"
 
-#: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
+#: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:300, src/app/main/ui/static.cljs:309, src/app/main/ui/static.cljs:410
 msgid "labels.retry"
 msgstr "Покушај поново"
 
@@ -1849,15 +1826,15 @@ msgstr "Покушај поново"
 msgid "labels.role"
 msgstr "Улога"
 
-#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:206, src/app/main/ui/workspace/tokens/management/create/form.cljs:637, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
+#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:302, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
 msgid "labels.save"
 msgstr "Сачувај"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:421, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:730
+#: src/app/main/ui/workspace/sidebar/layers.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
 msgid "labels.search"
 msgstr "Претражи"
 
-#: src/app/main/ui/dashboard/fonts.cljs:433
+#: src/app/main/ui/dashboard/fonts.cljs:435
 msgid "labels.search-font"
 msgstr "Претражи фонт"
 
@@ -1865,19 +1842,19 @@ msgstr "Претражи фонт"
 msgid "labels.select-option"
 msgstr "Изаберите опцију"
 
-#: src/app/main/ui/settings/feedback.cljs:79
+#: src/app/main/ui/settings/feedback.cljs:137
 msgid "labels.send"
 msgstr "Пошаљи"
 
-#: src/app/main/ui/settings/feedback.cljs:79
+#: src/app/main/ui/settings/feedback.cljs:137
 msgid "labels.sending"
 msgstr "Шаље се…"
 
-#: src/app/main/ui/static.cljs:301
+#: src/app/main/ui/static.cljs:307
 msgid "labels.service-unavailable.desc-message"
 msgstr "Тренутно вршимо програмско одржавање наших система."
 
-#: src/app/main/ui/static.cljs:300
+#: src/app/main/ui/static.cljs:306
 msgid "labels.service-unavailable.main-message"
 msgstr "Услуга недоступна"
 
@@ -1885,7 +1862,7 @@ msgstr "Услуга недоступна"
 msgid "labels.settings"
 msgstr "Подешавања"
 
-#: src/app/main/ui/viewer/header.cljs:204
+#: src/app/main/ui/viewer/header.cljs:201
 msgid "labels.share"
 msgstr "Дели"
 
@@ -1893,19 +1870,19 @@ msgstr "Дели"
 msgid "labels.share-prototype"
 msgstr "Дели прототип"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:745
+#: src/app/main/ui/dashboard/sidebar.cljs:746
 msgid "labels.shared-libraries"
 msgstr "Библиотеке"
 
-#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:56, src/app/main/ui/workspace/comments.cljs:138
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
 msgid "labels.show-all-comments"
 msgstr "Прикажи све коментаре"
 
-#: src/app/main/ui/viewer/comments.cljs:116
+#: src/app/main/ui/viewer/comments.cljs:115
 msgid "labels.show-comments-list"
 msgstr "Прикажи листу кометара"
 
-#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:62, src/app/main/ui/workspace/comments.cljs:139
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
 msgid "labels.show-your-comments"
 msgstr "Покажите само своје коментаре"
 
@@ -1939,7 +1916,7 @@ msgstr "Члан тима"
 msgid "labels.tutorials"
 msgstr "Туторијали"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:267
+#: src/app/main/ui/dashboard/file_menu.cljs:287
 msgid "labels.unpublish-multi-files"
 msgstr "Опозови објављивање %s датотека"
 
@@ -1975,7 +1952,7 @@ msgstr "Прегледник"
 msgid "labels.webhooks"
 msgstr "Веб-куке"
 
-#: src/app/main/ui/comments.cljs:850
+#: src/app/main/ui/comments.cljs:838
 msgid "labels.write-new-comment"
 msgstr "Напиши нови коментар"
 
@@ -1983,7 +1960,7 @@ msgstr "Напиши нови коментар"
 msgid "labels.you"
 msgstr "(ти)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1006
+#: src/app/main/ui/dashboard/sidebar.cljs:1007
 msgid "labels.your-account"
 msgstr "Ваш налог"
 
@@ -1992,23 +1969,23 @@ msgstr "Ваш налог"
 msgid "labels.youtube"
 msgstr "YouTube"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:486, src/app/main/ui/workspace/colorpicker.cljs:487, src/app/main/ui/workspace/colorpicker.cljs:489
+#: src/app/main/ui/workspace/colorpicker.cljs:484, src/app/main/ui/workspace/colorpicker.cljs:485, src/app/main/ui/workspace/colorpicker.cljs:487
 msgid "media.choose-image"
 msgstr "Изаберите слику"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:256
+#: src/app/main/ui/workspace/colorpicker.cljs:257
 msgid "media.gradient"
 msgstr "Градијент"
 
-#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:44, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:65, src/app/main/ui/workspace/colorpicker.cljs:258, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:395
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
 msgid "media.image"
 msgstr "Слика"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:55
+#: src/app/main/ui/inspect/attributes/common.cljs:53
 msgid "media.image.short"
 msgstr "img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:479
+#: src/app/main/ui/workspace/colorpicker.cljs:477
 msgid "media.keep-aspect-ratio"
 msgstr "Задржите однос ширине и висине"
 
@@ -2026,28 +2003,28 @@ msgstr "Учитавање слике…"
 msgid "media.radial"
 msgstr "Радијалан"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:254
+#: src/app/main/ui/workspace/colorpicker.cljs:255
 msgid "media.solid"
 msgstr "Чврст"
 
-#: src/app/main/data/common.cljs:128
+#: src/app/main/data/common.cljs:118
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
 "Ваша библиотека је празна. Када се додају као дељена библиотека, средства "
 "која креирате биће доступна за коришћење међу осталим вашим датотекама. Да "
 "ли сте сигурни да желите да га објавите?"
 
-#: src/app/main/data/common.cljs:130
+#: src/app/main/data/common.cljs:120
 msgid "modals.add-shared-confirm.accept"
 msgstr "Додај као дељену библиотеку"
 
-#: src/app/main/data/common.cljs:128
+#: src/app/main/data/common.cljs:118
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Када се дода као дељена библиотека, средства ове библиотеке датотека биће "
 "доступна за коришћење међу осталим вашим датотекама."
 
-#: src/app/main/data/common.cljs:127
+#: src/app/main/data/common.cljs:117
 msgid "modals.add-shared-confirm.message"
 msgstr "Додај \"%s\" као дељену библиотеку"
 
@@ -2145,25 +2122,25 @@ msgstr "Уклањањем налога изгубићете све своје �
 msgid "modals.delete-account.title"
 msgstr "Да ли сте сигурни да желите да избришете свој налог?"
 
-#: src/app/main/ui/comments.cljs:901
+#: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
 msgstr "Избришите разговор"
 
-#: src/app/main/ui/comments.cljs:900
+#: src/app/main/ui/comments.cljs:888
 msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Да ли сте сигурни да желите да обришете овај разговор? Сви коментари у овој "
 "нити биће обрисани."
 
-#: src/app/main/ui/comments.cljs:899
+#: src/app/main/ui/comments.cljs:887
 msgid "modals.delete-comment-thread.title"
 msgstr "Избришите разговор"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156
 msgid "modals.delete-component-annotation.message"
 msgstr "Да ли сте сигурни да желите да избришете ову напомену?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:154
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:155
 msgid "modals.delete-component-annotation.title"
 msgstr "Избришите напомену"
 
@@ -2211,11 +2188,11 @@ msgstr ""
 msgid "modals.delete-font.title"
 msgstr "Брисање фонта"
 
-#: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
+#: src/app/main/ui/workspace/context_menu.cljs:674, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
 msgid "modals.delete-page.body"
 msgstr "Да ли сте сигурни да желите да обришете ову страницу?"
 
-#: src/app/main/ui/workspace/context_menu.cljs:672, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
 msgid "modals.delete-page.title"
 msgstr "Избришите страницу"
 
@@ -2231,35 +2208,35 @@ msgstr "Да ли сте сигурни да желите да обришете 
 msgid "modals.delete-project-confirm.title"
 msgstr "Избришите пројекат"
 
-#: src/app/main/ui/delete_shared.cljs:52
+#: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Избришите датотеку"
 msgstr[1] "Избришите датотеке"
 msgstr[2] "Избришите датотеке"
 
-#: src/app/main/ui/delete_shared.cljs:56
+#: src/app/main/ui/delete_shared.cljs:58
 msgid "modals.delete-shared-confirm.activated.no-files-message"
 msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
 msgstr[0] "Није активиран ни у једној датотеци."
 msgstr[1] "Нису активиране ни у једној датотеци."
 msgstr[2] "Нису активиране ни у једној датотеци."
 
-#: src/app/main/ui/delete_shared.cljs:58
+#: src/app/main/ui/delete_shared.cljs:60
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "Овда библиотека је активиране овде: "
 msgstr[1] "Ове датотеке су активиране овде: "
 msgstr[2] "Ове библиотеке су активиране овде: "
 
-#: src/app/main/ui/delete_shared.cljs:47
+#: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Да си сте сигурни да желите да обришете овај документ?"
 msgstr[1] "Да ли сте сигурни да жели да бришете ове документе?"
 msgstr[2] "Да ли сте сигурни да жели да бришете ове документе?"
 
-#: src/app/main/ui/delete_shared.cljs:42
+#: src/app/main/ui/delete_shared.cljs:44
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Брисање датотеке"
@@ -2292,7 +2269,7 @@ msgstr "Да ли сте сигурни да желите да избришет�
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Избришите члана тима"
 
-#: src/app/main/ui/delete_shared.cljs:60
+#: src/app/main/ui/delete_shared.cljs:62
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
 msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
@@ -2389,21 +2366,21 @@ msgstr "Да ли сте сигурни да желите да напустит�
 msgid "modals.leave-confirm.title"
 msgstr "Напуштање тима"
 
-#: src/app/main/ui/delete_shared.cljs:54
+#: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
 msgstr[0] "Преместите"
 msgstr[1] "Преместите"
 msgstr[2] "Преместите"
 
-#: src/app/main/ui/delete_shared.cljs:49
+#: src/app/main/ui/delete_shared.cljs:51
 msgid "modals.move-shared-confirm.message"
 msgid_plural "modals.move-shared-confirm.message"
 msgstr[0] "Да ли сте сигурни да желите да преместите ову библиотеку?"
 msgstr[1] "Да ли сте сигурни да желите да преместите ове библиотеке?"
 msgstr[2] "Да ли сте сигурни да желите да преместите ове библиотеке?"
 
-#: src/app/main/ui/delete_shared.cljs:44
+#: src/app/main/ui/delete_shared.cljs:46
 msgid "modals.move-shared-confirm.title"
 msgid_plural "modals.move-shared-confirm.title"
 msgstr[0] "Премести библиотеку"
@@ -2434,15 +2411,15 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Нови власник тима"
 
-#: src/app/main/ui/workspace/libraries.cljs:295
+#: src/app/main/ui/workspace/libraries.cljs:286
 msgid "modals.publish-empty-library.accept"
 msgstr "Објавите"
 
-#: src/app/main/ui/workspace/libraries.cljs:294
+#: src/app/main/ui/workspace/libraries.cljs:285
 msgid "modals.publish-empty-library.message"
 msgstr "Ваша библиотека је празна. Да ли сте сигурни да желите да је објавите?"
 
-#: src/app/main/ui/workspace/libraries.cljs:293
+#: src/app/main/ui/workspace/libraries.cljs:284
 msgid "modals.publish-empty-library.title"
 msgstr "Објавите празну библиотеку"
 
@@ -2467,21 +2444,21 @@ msgstr "Уклоните \"%s\" као дељену библиотеку"
 msgid "modals.small-nudge"
 msgstr "Мало гуркање"
 
-#: src/app/main/ui/delete_shared.cljs:53
+#: src/app/main/ui/delete_shared.cljs:55
 msgid "modals.unpublish-shared-confirm.accept"
 msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Опозови објављивање"
 msgstr[1] "Опозови објављивање"
 msgstr[2] "Опозови објављивање"
 
-#: src/app/main/ui/delete_shared.cljs:48
+#: src/app/main/ui/delete_shared.cljs:50
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Да ли сте сигурни да желите да опозовете објављивање ове библиотеке?"
 msgstr[1] "Да ли сте сигурни да желите да опозовете објављивање ових библиотека?"
 msgstr[2] "Да ли сте сигурни да желите да опозовете објављивање ових библиотека?"
 
-#: src/app/main/ui/delete_shared.cljs:43
+#: src/app/main/ui/delete_shared.cljs:45
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Опозови објављивање библиотеке"
@@ -2500,21 +2477,21 @@ msgstr ""
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Ажурирајте компоненте у дељеној библиотеци"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:417
 msgid "modals.update-remote-component.accept"
 msgstr "Ажурирајте"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:416
 msgid "modals.update-remote-component.cancel"
 msgstr "Откажите"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:421
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:415
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Управо ћете ажурирати компоненту у дељеној библиотеци. Ово може утицати на "
 "друге датотеке које га користе."
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:420
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:414
 msgid "modals.update-remote-component.message"
 msgstr "Ажурирајте компоненту у дељеној библиотеци"
 
@@ -2668,7 +2645,7 @@ msgstr "Направите тим"
 msgid "onboarding.choice.team-up.create-team-without-inviting"
 msgstr "Направите тим без позивања"
 
-#: src/app/main/ui/dashboard/projects.cljs:95, src/app/main/ui/onboarding/team_choice.cljs:187
+#: src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/onboarding/team_choice.cljs:187
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Позовите чланове"
 
@@ -2881,15 +2858,15 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Идите на пријаву"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:366
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:378
 msgid "settings.detach"
 msgstr "Одвоји"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:454, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:987, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1216, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:246, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:346, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:361, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:112, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:513, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:524, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:578, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:414, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:214
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
 msgid "settings.multiple"
 msgstr "Мешано"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:428
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:441
 msgid "settings.select-this-color"
 msgstr "Изаберите ставке користећи овај стил"
 
@@ -2927,7 +2904,7 @@ msgstr "Опште"
 msgid "shortcut-subsection.general-viewer"
 msgstr "Опште"
 
-#: src/app/main/ui/workspace/main_menu.cljs:873, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
+#: src/app/main/ui/workspace/main_menu.cljs:857, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
 msgid "shortcut-subsection.main-menu"
 msgstr "Главни мени"
 
@@ -3071,7 +3048,7 @@ msgstr "Направи ново"
 msgid "shortcuts.cut"
 msgstr "Исеци"
 
-#: src/app/main/ui/workspace/right_header.cljs:85, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
+#: src/app/main/ui/viewer/header.cljs:82, src/app/main/ui/workspace/right_header.cljs:82, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
 msgid "shortcuts.decrease-zoom"
 msgstr "Умањи"
 
@@ -3171,7 +3148,7 @@ msgstr "Распореди водоравно"
 msgid "shortcuts.hide-ui"
 msgstr "Прикажи / Сакриј интерфејс"
 
-#: src/app/main/ui/workspace/right_header.cljs:90, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
+#: src/app/main/ui/viewer/header.cljs:88, src/app/main/ui/workspace/right_header.cljs:87, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
 msgid "shortcuts.increase-zoom"
 msgstr "Увећај"
 
@@ -3515,7 +3492,7 @@ msgstr "Увећај увећање"
 msgid "shortcuts.zoom-selected"
 msgstr "Увећај на изабрано"
 
-#: src/app/main/ui/dashboard/files.cljs:180
+#: src/app/main/ui/dashboard/files.cljs:181
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
 
@@ -3527,7 +3504,7 @@ msgstr "Добављачи фонтова - %s - Penpot"
 msgid "title.dashboard.fonts"
 msgstr "Фонтови - %s - Penpot"
 
-#: src/app/main/ui/dashboard/projects.cljs:349
+#: src/app/main/ui/dashboard/projects.cljs:357
 msgid "title.dashboard.projects"
 msgstr "Пројекти - %s - Penpot"
 
@@ -3535,11 +3512,11 @@ msgstr "Пројекти - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "Претражи - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs:57
+#: src/app/main/ui/dashboard/libraries.cljs:58
 msgid "title.dashboard.shared-libraries"
 msgstr "Дељене библиотеке - %s - Penpot"
 
-#: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:35
+#: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot - Слобода дизајнирања за тимове"
 
@@ -3547,7 +3524,7 @@ msgstr "Penpot - Слобода дизајнирања за тимове"
 msgid "title.settings.access-tokens"
 msgstr "Налог - Токени за приступ"
 
-#: src/app/main/ui/settings/feedback.cljs:107
+#: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Оставите повратне информације - Penpot"
 
@@ -3555,7 +3532,7 @@ msgstr "Оставите повратне информације - Penpot"
 msgid "title.settings.options"
 msgstr "Подешавања - Penpot"
 
-#: src/app/main/ui/settings/password.cljs:103
+#: src/app/main/ui/settings/password.cljs:105
 msgid "title.settings.password"
 msgstr "Лозинка - Penpot"
 
@@ -3583,7 +3560,7 @@ msgstr "Веб-куке - %s - Penpot"
 msgid "title.viewer"
 msgstr "%s - Режим прегледа - Penpot"
 
-#: src/app/main/ui/workspace.cljs:232
+#: src/app/main/ui/workspace.cljs:233
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
@@ -3607,7 +3584,7 @@ msgstr "Ниједна табла није пронађена на овој ст
 msgid "viewer.frame-not-found"
 msgstr "Табла није пронађена."
 
-#: src/app/main/ui/viewer/header.cljs:341
+#: src/app/main/ui/viewer/header.cljs:336
 msgid "viewer.header.comments-section"
 msgstr "Коментари (%s)"
 
@@ -3615,11 +3592,11 @@ msgstr "Коментари (%s)"
 msgid "viewer.header.dont-show-interactions"
 msgstr "Не приказуј интеракције"
 
-#: src/app/main/ui/viewer/header.cljs:195
+#: src/app/main/ui/viewer/header.cljs:193
 msgid "viewer.header.fullscreen"
 msgstr "Цели екран"
 
-#: src/app/main/ui/viewer/header.cljs:350
+#: src/app/main/ui/viewer/header.cljs:346
 msgid "viewer.header.inspect-section"
 msgstr "Преглед (%s)"
 
@@ -3627,11 +3604,11 @@ msgstr "Преглед (%s)"
 msgid "viewer.header.interactions"
 msgstr "Интеракције"
 
-#: src/app/main/ui/viewer/header.cljs:332
+#: src/app/main/ui/viewer/header.cljs:327
 msgid "viewer.header.interactions-section"
 msgstr "Интеракције (%s)"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:193
 msgid "viewer.header.share.copy-link"
 msgstr "Копирај везу"
 
@@ -3643,7 +3620,7 @@ msgstr "Прикажи интеракције"
 msgid "viewer.header.show-interactions-on-click"
 msgstr "Прикажи интеракције на клик"
 
-#: src/app/main/ui/viewer/header.cljs:236
+#: src/app/main/ui/viewer/header.cljs:233
 msgid "viewer.header.sitemap"
 msgstr "Мапа сајта"
 
@@ -3651,11 +3628,11 @@ msgstr "Мапа сајта"
 msgid "webhooks.last-delivery.success"
 msgstr "Последња испорука је била успешна."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:56
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:55
 msgid "workspace.align.hcenter"
 msgstr "Поравнај на водоравну средину (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:72
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:69
 msgid "workspace.align.hdistribute"
 msgstr "Распореди водоравни размак (%с)"
 
@@ -3663,23 +3640,23 @@ msgstr "Распореди водоравни размак (%с)"
 msgid "workspace.align.hleft"
 msgstr "Поравнај на лево (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:64
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:62
 msgid "workspace.align.hright"
 msgstr "Поравнај на десно (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:97
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
 msgid "workspace.align.vbottom"
 msgstr "Поравнај по дну (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:89
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
 msgid "workspace.align.vcenter"
 msgstr "Поравнај на усправну средину (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:102
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:98
 msgid "workspace.align.vdistribute"
 msgstr "Распореди усправни размак (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:81
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:77
 msgid "workspace.align.vtop"
 msgstr "Поравнај по врху (%s)"
 
@@ -3692,11 +3669,11 @@ msgstr "Средства"
 msgid "workspace.assets.box-filter-all"
 msgstr "Сва средства"
 
-#: src/app/main/ui/dashboard/grid.cljs:148, src/app/main/ui/dashboard/grid.cljs:180, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
+#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
 msgid "workspace.assets.colors"
 msgstr "Боје"
 
-#: src/app/main/ui/dashboard/grid.cljs:144, src/app/main/ui/dashboard/grid.cljs:159, src/app/main/ui/workspace/sidebar/assets/components.cljs:560, src/app/main/ui/workspace/sidebar/assets.cljs:155
+#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.components"
 msgstr "Компоненте"
 
@@ -3708,19 +3685,19 @@ msgstr "Направите групу"
 msgid "workspace.assets.create-group-hint"
 msgstr "Ваше ставке ће бити аутоматски именоване као \"име групе / име ставке“"
 
-#: src/app/main/ui/workspace/context_menu.cljs:682, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:641, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:443
+#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
 msgid "workspace.assets.delete"
 msgstr "Избирши"
 
-#: src/app/main/ui/workspace/context_menu.cljs:687
+#: src/app/main/ui/workspace/context_menu.cljs:688
 msgid "workspace.assets.duplicate"
 msgstr "Дуплирај"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:620
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:619
 msgid "workspace.assets.duplicate-main"
 msgstr "Дуплирај главно"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:439
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:438
 msgid "workspace.assets.edit"
 msgstr "Уреди"
 
@@ -3733,7 +3710,7 @@ msgstr "Филтер"
 msgid "workspace.assets.graphics"
 msgstr "Графика"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:625, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:448
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
 msgid "workspace.assets.group"
 msgstr "Група"
 
@@ -3741,7 +3718,7 @@ msgstr "Група"
 msgid "workspace.assets.group-name"
 msgstr "Име групе"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:631
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:686
 msgid "workspace.assets.local-library"
 msgstr "локална библиотека"
 
@@ -3753,7 +3730,7 @@ msgstr "Нема пронађених средстава"
 msgid "workspace.assets.open-library"
 msgstr "Отворите датотеку библиотеке"
 
-#: src/app/main/ui/workspace/context_menu.cljs:685, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:616, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:434
+#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
 msgid "workspace.assets.rename"
 msgstr "Преименуј"
 
@@ -3761,7 +3738,7 @@ msgstr "Преименуј"
 msgid "workspace.assets.rename-group"
 msgstr "Преименуј гурпу"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:183
+#: src/app/main/ui/workspace/sidebar/assets.cljs:181
 msgid "workspace.assets.search"
 msgstr "Претражите средства"
 
@@ -3778,18 +3755,18 @@ msgstr[2] "%s изабраних ставки"
 msgid "workspace.assets.shared-library"
 msgstr "Дељена библиотека"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:235
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
 msgid "workspace.assets.sidebar.components"
 msgid_plural "workspace.assets.sidebar.components"
 msgstr[0] "компонента"
 msgstr[1] "%s компоненте"
 msgstr[2] "%s компоненти"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:204
+#: src/app/main/ui/workspace/sidebar/assets.cljs:201
 msgid "workspace.assets.sort"
 msgstr "Сортирај"
 
-#: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:207, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:397, src/app/main/ui/workspace/sidebar/assets.cljs:161
+#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:161
 msgid "workspace.assets.typography"
 msgstr "Тиупографије"
 
@@ -3798,26 +3775,27 @@ msgstr "Тиупографије"
 msgid "workspace.assets.typography.font-id"
 msgstr "Фонт"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
 msgid "workspace.assets.typography.font-size"
 msgstr "Величина"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-style"
 msgstr "Стил фонта"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:544
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Идите на датотеку библиотеке стилова да бисте је уредили"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
 msgid "workspace.assets.typography.letter-spacing"
 msgstr "Размак између слова"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
 msgid "workspace.assets.typography.line-height"
 msgstr "Висина линије"
 
-#: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:480, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:506, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:613, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:633
+#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:485, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:510, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:617, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:637
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -3825,7 +3803,7 @@ msgstr "Ag"
 msgid "workspace.assets.typography.text-styles"
 msgstr "Стилови текста"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
 msgid "workspace.assets.typography.text-transform"
 msgstr "Трансформација текста"
 
@@ -3833,67 +3811,67 @@ msgstr "Трансформација текста"
 msgid "workspace.assets.ungroup"
 msgstr "Разгрупиши"
 
-#: src/app/main/ui/workspace/context_menu.cljs:794
+#: src/app/main/ui/workspace/context_menu.cljs:795
 msgid "workspace.context-menu.grid-cells.area"
 msgstr "Направи област"
 
-#: src/app/main/ui/workspace/context_menu.cljs:797
+#: src/app/main/ui/workspace/context_menu.cljs:798
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Направи таблу"
 
-#: src/app/main/ui/workspace/context_menu.cljs:789
+#: src/app/main/ui/workspace/context_menu.cljs:790
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Споји ћелије"
 
-#: src/app/main/ui/workspace/context_menu.cljs:752
+#: src/app/main/ui/workspace/context_menu.cljs:753
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Додај 1 колону десно"
 
-#: src/app/main/ui/workspace/context_menu.cljs:751
+#: src/app/main/ui/workspace/context_menu.cljs:752
 msgid "workspace.context-menu.grid-track.column.add-before"
 msgstr "Додај 1 колону лево"
 
-#: src/app/main/ui/workspace/context_menu.cljs:753
+#: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.delete"
 msgstr "Избирши колону"
 
-#: src/app/main/ui/workspace/context_menu.cljs:754
+#: src/app/main/ui/workspace/context_menu.cljs:755
 msgid "workspace.context-menu.grid-track.column.delete-shapes"
 msgstr "Избриши колоне и облике"
 
-#: src/app/main/ui/workspace/context_menu.cljs:750
+#: src/app/main/ui/workspace/context_menu.cljs:751
 msgid "workspace.context-menu.grid-track.column.duplicate"
 msgstr "Дуплирај колону"
 
-#: src/app/main/ui/workspace/context_menu.cljs:759
+#: src/app/main/ui/workspace/context_menu.cljs:760
 msgid "workspace.context-menu.grid-track.row.add-after"
 msgstr "Додај 1 ред испод"
 
-#: src/app/main/ui/workspace/context_menu.cljs:758
+#: src/app/main/ui/workspace/context_menu.cljs:759
 msgid "workspace.context-menu.grid-track.row.add-before"
 msgstr "Додај 1 ред изнад"
 
-#: src/app/main/ui/workspace/context_menu.cljs:760
+#: src/app/main/ui/workspace/context_menu.cljs:761
 msgid "workspace.context-menu.grid-track.row.delete"
 msgstr "Избриши ред"
 
-#: src/app/main/ui/workspace/context_menu.cljs:761
+#: src/app/main/ui/workspace/context_menu.cljs:762
 msgid "workspace.context-menu.grid-track.row.delete-shapes"
 msgstr "Избриши редове и облике"
 
-#: src/app/main/ui/workspace/context_menu.cljs:757
+#: src/app/main/ui/workspace/context_menu.cljs:758
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "Дуплирај ред"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:513
+#: src/app/main/ui/workspace/sidebar/layers.cljs:512
 msgid "workspace.focus.focus-mode"
 msgstr "Режим фокуса"
 
-#: src/app/main/ui/workspace/context_menu.cljs:395, src/app/main/ui/workspace/context_menu.cljs:709
+#: src/app/main/ui/workspace/context_menu.cljs:396, src/app/main/ui/workspace/context_menu.cljs:710
 msgid "workspace.focus.focus-off"
 msgstr "Искључи фокус"
 
-#: src/app/main/ui/workspace/context_menu.cljs:394
+#: src/app/main/ui/workspace/context_menu.cljs:395
 msgid "workspace.focus.focus-on"
 msgstr "Укљичи фокус"
 
@@ -3983,23 +3961,23 @@ msgstr "Сакриј лењире"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Сакриј палету фонтова"
 
-#: src/app/main/ui/workspace/main_menu.cljs:900
+#: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Уреди"
 
-#: src/app/main/ui/workspace/main_menu.cljs:889
+#: src/app/main/ui/workspace/main_menu.cljs:873
 msgid "workspace.header.menu.option.file"
 msgstr "Датотека"
 
-#: src/app/main/ui/workspace/main_menu.cljs:946
+#: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Помоћ и информације"
 
-#: src/app/main/ui/workspace/main_menu.cljs:922
+#: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.header.menu.option.preferences"
 msgstr "Поставке"
 
-#: src/app/main/ui/workspace/main_menu.cljs:911
+#: src/app/main/ui/workspace/main_menu.cljs:895
 msgid "workspace.header.menu.option.view"
 msgstr "Поглед"
 
@@ -4047,7 +4025,7 @@ msgstr "Пребаците се на светлу тему"
 msgid "workspace.header.menu.undo"
 msgstr "Опозови"
 
-#: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:95
+#: src/app/main/ui/viewer/header.cljs:93, src/app/main/ui/workspace/right_header.cljs:92
 msgid "workspace.header.reset-zoom"
 msgstr "Почни поново"
 
@@ -4068,60 +4046,60 @@ msgstr "Чување"
 msgid "workspace.header.unsaved"
 msgstr "Несачуване промене"
 
-#: src/app/main/ui/workspace/right_header.cljs:245
+#: src/app/main/ui/workspace/right_header.cljs:237
 msgid "workspace.header.viewer"
 msgstr "Режим прегледа (%s)"
 
-#: src/app/main/ui/viewer/header.cljs:79, src/app/main/ui/workspace/right_header.cljs:78
+#: src/app/main/ui/viewer/header.cljs:74, src/app/main/ui/workspace/right_header.cljs:74
 msgid "workspace.header.zoom"
 msgstr "Увећај"
 
-#: src/app/main/ui/viewer/header.cljs:109
+#: src/app/main/ui/viewer/header.cljs:104
 msgid "workspace.header.zoom-fill"
 msgstr "Попуњавање - Размера за попуњавање"
 
-#: src/app/main/ui/viewer/header.cljs:102
+#: src/app/main/ui/viewer/header.cljs:97
 msgid "workspace.header.zoom-fit"
 msgstr "Прилагоди - Смањи да се уклопи"
 
-#: src/app/main/ui/workspace/right_header.cljs:98
+#: src/app/main/ui/workspace/right_header.cljs:96
 msgid "workspace.header.zoom-fit-all"
 msgstr "Увећај да се све уклопи"
 
-#: src/app/main/ui/viewer/header.cljs:116
+#: src/app/main/ui/viewer/header.cljs:111
 msgid "workspace.header.zoom-full-screen"
 msgstr "Цели екран"
 
-#: src/app/main/ui/workspace/right_header.cljs:105
+#: src/app/main/ui/workspace/right_header.cljs:104
 msgid "workspace.header.zoom-selected"
 msgstr "Увећај на изабрано"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:621
-msgid "workspace.layout_grid.editor.options.edit-grid"
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
+msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Уреди мрежу"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1301
-msgid "workspace.layout_grid.editor.options.exit"
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1534
+msgid "workspace.layout-grid.editor.options.exit"
 msgstr "Изађи"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:490, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:491
-msgid "workspace.layout_grid.editor.padding.expand"
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:674
+msgid "workspace.layout-grid.editor.padding.expand"
 msgstr "Прикажи опције за 4-страни padding"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:60
-msgid "workspace.layout_grid.editor.title"
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
+msgid "workspace.layout-grid.editor.title"
 msgstr "Мрежа за уређивање"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:66
-msgid "workspace.layout_grid.editor.top-bar.done"
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:70
+msgid "workspace.layout-grid.editor.top-bar.done"
 msgstr "Готово"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:63
-msgid "workspace.layout_grid.editor.top-bar.locate"
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:66
+msgid "workspace.layout-grid.editor.top-bar.locate"
 msgstr "Пронађи"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1327
-msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1560
+msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Пронађи распоред мреже"
 
 #: src/app/main/ui/workspace/libraries.cljs
@@ -4155,23 +4133,23 @@ msgstr "Недавне боје"
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "Додатна РГБ боја"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:358
+#: src/app/main/ui/workspace/colorpicker.cljs:355
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:557
+#: src/app/main/ui/workspace/colorpicker.cljs:555
 msgid "workspace.libraries.colors.save-color"
 msgstr "Сачувајте стил боја"
 
-#: src/app/main/ui/workspace/libraries.cljs:322
+#: src/app/main/ui/workspace/libraries.cljs:313
 msgid "workspace.libraries.file-library"
 msgstr "Библиотека датотека"
 
-#: src/app/main/ui/workspace/libraries.cljs:316
+#: src/app/main/ui/workspace/libraries.cljs:307
 msgid "workspace.libraries.in-this-file"
 msgstr "БИБЛИОТЕКЕ У ОВОЈ ДАТОТЕЦИ"
 
-#: src/app/main/ui/workspace/libraries.cljs:642, src/app/main/ui/workspace/libraries.cljs:660
+#: src/app/main/ui/workspace/libraries.cljs:628, src/app/main/ui/workspace/libraries.cljs:648
 msgid "workspace.libraries.libraries"
 msgstr "БИБЛИОТЕКЕ"
 
@@ -4180,71 +4158,71 @@ msgstr "БИБЛИОТЕКЕ"
 msgid "workspace.libraries.library"
 msgstr "БИБЛИОТЕКА"
 
-#: src/app/main/ui/workspace/libraries.cljs:500
+#: src/app/main/ui/workspace/libraries.cljs:487
 msgid "workspace.libraries.library-updates"
 msgstr "АЖУРИРАЊА БИБЛИОТЕКЕ"
 
-#: src/app/main/ui/workspace/libraries.cljs:393
+#: src/app/main/ui/workspace/libraries.cljs:381
 msgid "workspace.libraries.loading"
 msgstr "Учитавање…"
 
-#: src/app/main/ui/workspace/libraries.cljs:498
+#: src/app/main/ui/workspace/libraries.cljs:485
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Нема дељених библиотека које треба ажурирати"
 
-#: src/app/main/ui/workspace/libraries.cljs:411
+#: src/app/main/ui/workspace/libraries.cljs:399
 msgid "workspace.libraries.no-matches-for"
 msgstr "Нема резултата за %s"
 
-#: src/app/main/ui/workspace/libraries.cljs:367
+#: src/app/main/ui/workspace/libraries.cljs:356
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "Претражите заједничке библиотеке"
 
-#: src/app/main/ui/workspace/libraries.cljs:363
+#: src/app/main/ui/workspace/libraries.cljs:352
 msgid "workspace.libraries.shared-libraries"
 msgstr "ДЕЉЕНЕ БИБЛИОТЕКЕ"
 
-#: src/app/main/ui/workspace/libraries.cljs:385
+#: src/app/main/ui/workspace/libraries.cljs:372
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Повежите библиотеку"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:326
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:331
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Више типографија"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:334
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Прекините везу са свим типографијама"
 
-#: src/app/main/ui/workspace/libraries.cljs:354
+#: src/app/main/ui/workspace/libraries.cljs:343
 msgid "workspace.libraries.unlink-library-btn"
 msgstr "Прекините везу са библиотеком"
 
-#: src/app/main/ui/workspace/libraries.cljs:520
+#: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.update"
 msgstr "Ажурирај"
 
-#: src/app/main/ui/workspace/libraries.cljs:596
+#: src/app/main/ui/workspace/libraries.cljs:583
 msgid "workspace.libraries.update.see-all-changes"
 msgstr "види све промене"
 
-#: src/app/main/ui/workspace/libraries.cljs:644
+#: src/app/main/ui/workspace/libraries.cljs:630
 msgid "workspace.libraries.updates"
 msgstr "АЖУРИРАЊА"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "Кликните на + дугме да бисте додали интеракције."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:93, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:111
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title"
 msgstr "Замућење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "Групно замућење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "Замућење избора"
 
@@ -4252,79 +4230,79 @@ msgstr "Замућење избора"
 msgid "workspace.options.canvas-background"
 msgstr "Позадина платна"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:630
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:613
 msgid "workspace.options.clip-content"
 msgstr "Ограничите садржај"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:937, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:943, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1183
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1033, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
 msgid "workspace.options.component"
 msgstr "Компонента"
 
-#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:196
+#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:194
 msgid "workspace.options.component.annotation"
 msgstr "Напомена"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:951
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1041
 msgid "workspace.options.component.copy"
 msgstr "Копирај"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:188
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:187
 msgid "workspace.options.component.create-annotation"
 msgstr "Направи напомену"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:186
 msgid "workspace.options.component.edit-annotation"
 msgstr "Уреди напомену"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1187
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1040, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1286
 msgid "workspace.options.component.main"
 msgstr "Главно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:721
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:781
 msgid "workspace.options.component.swap"
 msgstr "Замени компоненту"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:765
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:820
 msgid "workspace.options.component.swap.empty"
 msgstr "У овој библиотеци још увек нема средстава"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:164
 msgid "workspace.options.constraints"
 msgstr "Ограничења"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
 msgid "workspace.options.constraints.bottom"
 msgstr "Дно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
 msgid "workspace.options.constraints.center"
 msgstr "Центар"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:224
 msgid "workspace.options.constraints.fix-when-scrolling"
 msgstr "Прикачи при скроловању"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
 msgid "workspace.options.constraints.left"
 msgstr "Лево"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141
 msgid "workspace.options.constraints.leftright"
 msgstr "Лево и Десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
 msgid "workspace.options.constraints.right"
 msgstr "Десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:143, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:154
 msgid "workspace.options.constraints.scale"
 msgstr "Размера"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
 msgid "workspace.options.constraints.top"
 msgstr "Врх"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
 msgid "workspace.options.constraints.topbottom"
 msgstr "Врх и Дно"
 
@@ -4341,7 +4319,7 @@ msgstr "Извоз"
 msgid "workspace.options.export-multiple"
 msgstr "Избор извоза"
 
-#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:275
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Извоз 1 елемента"
@@ -4352,40 +4330,39 @@ msgstr[2] "Извоз %s елементата"
 msgid "workspace.options.export.suffix"
 msgstr "Суфикс"
 
-#: src/app/main/ui/exports/assets.cljs:240
+#: src/app/main/ui/exports/assets.cljs:250
 msgid "workspace.options.exporting-complete"
 msgstr "Извоз је завршен"
 
-#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/exports/assets.cljs:241, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:274
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:272
 msgid "workspace.options.exporting-object"
 msgstr "Извоз…"
 
-#: src/app/main/ui/exports/assets.cljs:239
+#: src/app/main/ui/exports/assets.cljs:249
 msgid "workspace.options.exporting-object-error"
 msgstr "Извоз није успео"
 
-#: src/app/main/ui/exports/assets.cljs:242
+#: src/app/main/ui/exports/assets.cljs:252
 msgid "workspace.options.exporting-object-slow"
 msgstr "Извоз је неочекивано спор"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:121, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:261
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
 msgid "workspace.options.fill"
 msgstr "Попуни"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:183
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:704
 msgid "workspace.options.flows.add-flow-start"
 msgstr "Додајте почетак протока"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:179
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:700
 msgid "workspace.options.flows.flow"
 msgstr "Проток"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, unused
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:164
 msgid "workspace.options.flows.flow-start"
 msgstr "Почетак протока"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:672
 msgid "workspace.options.flows.flow-starts"
 msgstr "Проток почиње"
 
@@ -4393,7 +4370,7 @@ msgstr "Проток почиње"
 msgid "workspace.options.grid.auto"
 msgstr "Ауто"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:163
 msgid "workspace.options.grid.column"
 msgstr "колоне"
 
@@ -4402,7 +4379,7 @@ msgstr "колоне"
 msgid "workspace.options.grid.grid-title"
 msgstr "Мрежа"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:201, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:243
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:204, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
 msgid "workspace.options.grid.params.color"
 msgstr "Боја"
 
@@ -4411,15 +4388,15 @@ msgstr "Боја"
 msgid "workspace.options.grid.params.columns"
 msgstr "Колоне"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:266
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
 msgid "workspace.options.grid.params.gutter"
 msgstr "Гутер (Gutter)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:253
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:257
 msgid "workspace.options.grid.params.height"
 msgstr "Висина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:277
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:281
 msgid "workspace.options.grid.params.margin"
 msgstr "Маргина"
 
@@ -4428,7 +4405,7 @@ msgstr "Маргина"
 msgid "workspace.options.grid.params.rows"
 msgstr "Редови"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:297
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
 msgid "workspace.options.grid.params.set-default"
 msgstr "Постави као подразумевано"
 
@@ -4442,47 +4419,47 @@ msgstr "Величина"
 msgid "workspace.options.grid.params.type"
 msgstr "Врста"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:241
 msgid "workspace.options.grid.params.type.bottom"
 msgstr "Дно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:239
 msgid "workspace.options.grid.params.type.center"
 msgstr "Средина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:234
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
 msgid "workspace.options.grid.params.type.left"
 msgstr "Лево"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:242
 msgid "workspace.options.grid.params.type.right"
 msgstr "Десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
 msgid "workspace.options.grid.params.type.stretch"
 msgstr "Прошири"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:233
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
 msgid "workspace.options.grid.params.type.top"
 msgstr "Врх"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:295
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:300
 msgid "workspace.options.grid.params.use-default"
 msgstr "Користи подразумевао"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:254
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:258
 msgid "workspace.options.grid.params.width"
 msgstr "Ширина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:164
 msgid "workspace.options.grid.row"
 msgstr "Редови"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:162
 msgid "workspace.options.grid.square"
 msgstr "Квадрат"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:120
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107
 msgid "workspace.options.group-fill"
 msgstr "Попуни за групу"
 
@@ -4490,11 +4467,11 @@ msgstr "Попуни за групу"
 msgid "workspace.options.group-stroke"
 msgstr "Контура групе"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:329
 msgid "workspace.options.guides.title"
 msgstr "Вођице"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:501, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:520
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:488, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:507
 msgid "workspace.options.height"
 msgstr "Висина"
 
@@ -4502,47 +4479,47 @@ msgstr "Висина"
 msgid "workspace.options.inspect"
 msgstr "Преглед"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:475
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:438
 msgid "workspace.options.interaction-action"
 msgstr "Акција"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:43, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:374
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:43, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:344
 msgid "workspace.options.interaction-after-delay"
 msgstr "После одлагања"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:621
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:578
 msgid "workspace.options.interaction-animation"
 msgstr "Анимација"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:413
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Раствори"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:412
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:382
 msgid "workspace.options.interaction-animation-none"
 msgstr "Ништа"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:419
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:389
 msgid "workspace.options.interaction-animation-push"
 msgstr "Гурни"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:414
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:384
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Клизање"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:398
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:368
 msgid "workspace.options.interaction-auto"
 msgstr "ауто"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:611
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:568
 msgid "workspace.options.interaction-background"
 msgstr "Додај позадински оквир"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:597
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:561
 msgid "workspace.options.interaction-close-outside"
 msgstr "Затвори када се кликне изван"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:379
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:349
 msgid "workspace.options.interaction-close-overlay"
 msgstr "Затвори оквир"
 
@@ -4550,39 +4527,39 @@ msgstr "Затвори оквир"
 msgid "workspace.options.interaction-close-overlay-dest"
 msgstr "Затвори оквир: %s"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:463
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:426
 msgid "workspace.options.interaction-delay"
 msgstr "Кашњење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:485
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:449
 msgid "workspace.options.interaction-destination"
 msgstr "Одредиште"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:668
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:628
 msgid "workspace.options.interaction-duration"
 msgstr "Трајање"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:681
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:641
 msgid "workspace.options.interaction-easing"
 msgstr "Олакшавање"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:423
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:393
 msgid "workspace.options.interaction-easing-ease"
 msgstr "Олакшање"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:424
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:394
 msgid "workspace.options.interaction-easing-ease-in"
 msgstr "Глатки улазак"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:426
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:396
 msgid "workspace.options.interaction-easing-ease-in-out"
 msgstr "Глатко улазак и излазак"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:425
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:395
 msgid "workspace.options.interaction-easing-ease-out"
 msgstr "Глатки излазак"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:422
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:392
 msgid "workspace.options.interaction-easing-linear"
 msgstr "Линијски"
 
@@ -4591,19 +4568,19 @@ msgstr "Линијски"
 msgid "workspace.options.interaction-in"
 msgstr "у"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:371
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:341
 msgid "workspace.options.interaction-mouse-enter"
 msgstr "При уласку миша"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:42, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:372
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:42, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:342
 msgid "workspace.options.interaction-mouse-leave"
 msgstr "При изласку миша"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:465, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:466, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:471, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:670, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:672, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:676
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:632
 msgid "workspace.options.interaction-ms"
 msgstr "мс"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:376
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:346
 msgid "workspace.options.interaction-navigate-to"
 msgstr "Иди на"
 
@@ -4611,19 +4588,19 @@ msgstr "Иди на"
 msgid "workspace.options.interaction-navigate-to-dest"
 msgstr "Иди на: %s"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:387
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:357
 msgid "workspace.options.interaction-none"
 msgstr "(није постављено)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:698
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:654
 msgid "workspace.options.interaction-offset-effect"
 msgstr "Ефекат померања"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:367
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:337
 msgid "workspace.options.interaction-on-click"
 msgstr "На клик"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:377
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:347
 msgid "workspace.options.interaction-open-overlay"
 msgstr "Отвори оквир"
 
@@ -4631,7 +4608,7 @@ msgstr "Отвори оквир"
 msgid "workspace.options.interaction-open-overlay-dest"
 msgstr "Отвори оквир: %s"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:61, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:381
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:61, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:351
 msgid "workspace.options.interaction-open-url"
 msgstr "Отори URL"
 
@@ -4640,59 +4617,59 @@ msgstr "Отори URL"
 msgid "workspace.options.interaction-out"
 msgstr "Излаз"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:410
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:554
 msgid "workspace.options.interaction-pos-bottom-center"
 msgstr "Доња средина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:408
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:378, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:538
 msgid "workspace.options.interaction-pos-bottom-left"
 msgstr "Доле лево"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:409
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:546
 msgid "workspace.options.interaction-pos-bottom-right"
 msgstr "Доле десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:404
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:374, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:506
 msgid "workspace.options.interaction-pos-center"
 msgstr "Средина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:403
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:373
 msgid "workspace.options.interaction-pos-manual"
 msgstr "Ручно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:407
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:530
 msgid "workspace.options.interaction-pos-top-center"
 msgstr "Горња средина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:405
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:375, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:514
 msgid "workspace.options.interaction-pos-top-left"
 msgstr "Горе лево"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:376, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:522
 msgid "workspace.options.interaction-pos-top-right"
 msgstr "Горе десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:531
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:492
 msgid "workspace.options.interaction-position"
 msgstr "Положај"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:501
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:460
 msgid "workspace.options.interaction-preserve-scroll"
 msgstr "Задржи положај скроловања"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:60, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:380
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:60, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:350
 msgid "workspace.options.interaction-prev-screen"
 msgstr "Претходни екран"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:522
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:482
 msgid "workspace.options.interaction-relative-to"
 msgstr "У односу на"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:59, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:386, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:400, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:401
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:59, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:356, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:370, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:371
 msgid "workspace.options.interaction-self"
 msgstr "себе"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:378
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:348
 msgid "workspace.options.interaction-toggle-overlay"
 msgstr "Укључи оквир"
 
@@ -4700,87 +4677,87 @@ msgstr "Укључи оквир"
 msgid "workspace.options.interaction-toggle-overlay-dest"
 msgstr "Укључи оквир: %s"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:452
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:415
 msgid "workspace.options.interaction-trigger"
 msgstr "Окидач"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:510
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:469
 msgid "workspace.options.interaction-url"
 msgstr "URL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:369
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:339
 msgid "workspace.options.interaction-while-hovering"
 msgstr "Током лебдења"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:370
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:340
 msgid "workspace.options.interaction-while-pressing"
 msgstr "Током притиска"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:732
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "Интеракције"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:169
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:168
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "Боја"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
 msgid "workspace.options.layer-options.blend-mode.color-burn"
 msgstr "Изгоревање боје"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:160
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
 msgstr "Избегавање боја"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "Потамни"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:164
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "Разлика"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:166
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:165
 msgid "workspace.options.layer-options.blend-mode.exclusion"
 msgstr "Искључење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:164
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:163
 msgid "workspace.options.layer-options.blend-mode.hard-light"
 msgstr "Тешко светло"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:167
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:166
 msgid "workspace.options.layer-options.blend-mode.hue"
 msgstr "Нијанса"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
 msgid "workspace.options.layer-options.blend-mode.lighten"
 msgstr "Посветли"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:170
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:169
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "Осветљење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
 msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "Помножи"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:154
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "Нормално"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:162
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
 msgid "workspace.options.layer-options.blend-mode.overlay"
 msgstr "Оквир"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:168
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:167
 msgid "workspace.options.layer-options.blend-mode.saturation"
 msgstr "Засићеност"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
 msgid "workspace.options.layer-options.blend-mode.screen"
 msgstr "Екран"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:162
 msgid "workspace.options.layer-options.blend-mode.soft-light"
 msgstr "Меко светло"
 
@@ -4804,19 +4781,19 @@ msgstr "Изабрани слојеви"
 msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Напредна подешавања"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:560
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Макс.Висина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Макс.Ширина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:544
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Мин.Висина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:511
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Мин.Ширина"
 
@@ -4930,15 +4907,15 @@ msgstr "простор између"
 msgid "workspace.options.layout.top"
 msgstr "Врх"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:179
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:241
 msgid "workspace.options.more-colors"
 msgstr "Више боја"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:223
 msgid "workspace.options.more-lib-colors"
 msgstr "Више боја библиотеке"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:192
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191
 msgid "workspace.options.opacity"
 msgstr "Непрозирност"
 
@@ -4971,31 +4948,31 @@ msgstr "Горе лево"
 msgid "workspace.options.radius-top-right"
 msgstr "Горе десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:190
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:191
 msgid "workspace.options.recent-fonts"
 msgstr "Недавно"
 
-#: src/app/main/ui/exports/assets.cljs:284
+#: src/app/main/ui/exports/assets.cljs:298
 msgid "workspace.options.retry"
 msgstr "Покушајте поново"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:600
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:583, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588
 msgid "workspace.options.rotation"
 msgstr "Ротација"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:188
 msgid "workspace.options.search-font"
 msgstr "Претражите фонт"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:750
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr "Изаберите облик, таблу или групу да бисте превукли везу на другу таблу."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:132
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:201
 msgid "workspace.options.selection-color"
 msgstr "Изабране боје"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:106
 msgid "workspace.options.selection-fill"
 msgstr "Попуна избора"
 
@@ -5003,59 +4980,59 @@ msgstr "Попуна избора"
 msgid "workspace.options.selection-stroke"
 msgstr "Избор контуре"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:203, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:205
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:181, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:183
 msgid "workspace.options.shadow-options.blur"
 msgstr "Замућење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:236
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:211
 msgid "workspace.options.shadow-options.color"
 msgstr "Боја сенке"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:142
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:122
 msgid "workspace.options.shadow-options.drop-shadow"
 msgstr "Бацање сенке"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:143
+#: src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:123
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Унутрашња сенка"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:193
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:172
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:225
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:201
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:214, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:216
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:191, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:193
 msgid "workspace.options.shadow-options.spread"
 msgstr "Ширење"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:336
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:139
 msgid "workspace.options.shadow-options.title"
 msgstr "Сенка"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:335
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:138
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Групна сенка"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:334
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:137
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Избор сенки"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:285
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:258
 msgid "workspace.options.show-fill-on-export"
 msgstr "Прикажи у извозу"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:645
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:620
 msgid "workspace.options.show-in-viewer"
 msgstr "Прикажи у режиму приказа"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:168
 msgid "workspace.options.size"
 msgstr "Величина"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:70, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:434
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:420
 msgid "workspace.options.size-presets"
 msgstr "Унапред подешене величине"
 
@@ -5069,7 +5046,7 @@ msgstr "Контура"
 msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Кружни маркер"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:168
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:158
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "Круг"
 
@@ -5078,7 +5055,7 @@ msgstr "Круг"
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Дијамантски маркер"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:169
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:159
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "Дијамант"
 
@@ -5087,19 +5064,19 @@ msgstr "Дијамант"
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Линија са стрелицом"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:155
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "Стрелица"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:153
 msgid "workspace.options.stroke-cap.none"
 msgstr "Ништа"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:171
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:161
 msgid "workspace.options.stroke-cap.round"
 msgstr "Забољено"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:162
 msgid "workspace.options.stroke-cap.square"
 msgstr "Квадратно"
 
@@ -5108,7 +5085,7 @@ msgstr "Квадратно"
 msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Квадратни маркер"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:167
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:157
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "Правоугаоник"
 
@@ -5117,59 +5094,59 @@ msgstr "Правоугаоник"
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Троугласта стрелицa"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:166
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:156
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "Троугао"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:210
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:209
 msgid "workspace.options.stroke-color"
 msgstr "Боја контуре"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:207
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:199
 msgid "workspace.options.stroke-width"
 msgstr "Ширина контуре"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:97
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:100
 msgid "workspace.options.stroke.center"
 msgstr "Средина"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:128
 msgid "workspace.options.stroke.dashed"
 msgstr "Испрекидана"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:127
 msgid "workspace.options.stroke.dotted"
 msgstr "Тачкаста"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:98
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:101
 msgid "workspace.options.stroke.inner"
 msgstr "Унутрашња"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:129
 msgid "workspace.options.stroke.mixed"
 msgstr "Мешана"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:99
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:102
 msgid "workspace.options.stroke.outer"
 msgstr "Спољашња"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:136
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
 msgid "workspace.options.stroke.solid"
 msgstr "Чврста"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:123
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:126
 msgid "workspace.options.text-options.align-bottom"
 msgstr "Поравнај по дну"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:122
 msgid "workspace.options.text-options.align-middle"
 msgstr "Поравнај по средини"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:115
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
 msgid "workspace.options.text-options.align-top"
 msgstr "Поравнај по врху"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:90
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:91
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
 
@@ -5177,23 +5154,23 @@ msgstr "LTR"
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:164
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "Ауто висина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "Ауто ширина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Фиксно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:391
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:398
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "Размак између слова"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:373
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:379
 msgid "workspace.options.text-options.line-height"
 msgstr "Висина линије"
 
@@ -5207,35 +5184,35 @@ msgstr "Мала слова"
 msgid "workspace.options.text-options.none"
 msgstr "Ништа"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:191
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Прелазна линија (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:59
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:60
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Поравнај по средини"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:67
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:68
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Оправдај"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:55
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:56
 msgid "workspace.options.text-options.text-align-left"
 msgstr "Поравнај на лево"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:63
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:64
 msgid "workspace.options.text-options.text-align-right"
 msgstr "Поравнај на десно"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:200
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:204
 msgid "workspace.options.text-options.title"
 msgstr "Текст"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:203
 msgid "workspace.options.text-options.title-group"
 msgstr "Групни текст"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:198
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:202
 msgid "workspace.options.text-options.title-selection"
 msgstr "Текст избора"
 
@@ -5244,7 +5221,7 @@ msgstr "Текст избора"
 msgid "workspace.options.text-options.titlecase"
 msgstr "Насловно слово"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:182
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
 msgid "workspace.options.text-options.underline"
 msgstr "Подвачење (%s)"
 
@@ -5253,97 +5230,97 @@ msgstr "Подвачење (%s)"
 msgid "workspace.options.text-options.uppercase"
 msgstr "Велико слово"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:754
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr ""
 "Користите дугме за репродукцију у заглављу да бисте покренули приказ "
 "прототипа."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:508
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:476, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:495
 msgid "workspace.options.width"
 msgstr "Ширина"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:547, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:564
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:535, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:552
 msgid "workspace.options.x"
 msgstr "X оса"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:557, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:575
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:545, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:563
 msgid "workspace.options.y"
 msgstr "Y оса"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:140
 msgid "workspace.path.actions.add-node"
 msgstr "Додај чвор (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:173
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
 msgid "workspace.path.actions.delete-node"
 msgstr "Избриши чвор (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:151
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:123
 msgid "workspace.path.actions.draw-nodes"
 msgstr "Цртај чворове (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:188
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
 msgid "workspace.path.actions.join-nodes"
 msgstr "Придружи чворове (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:184
 msgid "workspace.path.actions.make-corner"
 msgstr "До угла (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:210
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:192
 msgid "workspace.path.actions.make-curve"
 msgstr "До кривине (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:181
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
 msgid "workspace.path.actions.merge-nodes"
 msgstr "Споји чворове (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:131
 msgid "workspace.path.actions.move-nodes"
 msgstr "Помери чворове (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:195
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:174
 msgid "workspace.path.actions.separate-nodes"
 msgstr "Раздвоји чворове (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:217
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Залепи чворове (%s)"
 
-#: src/app/main/ui/workspace/plugins.cljs:84
+#: src/app/main/ui/workspace/plugins.cljs:85
 msgid "workspace.plugins.button-open"
 msgstr "Отвори"
 
-#: src/app/main/ui/workspace/plugins.cljs:205
+#: src/app/main/ui/workspace/plugins.cljs:206
 msgid "workspace.plugins.empty-plugins"
 msgstr "Још увек нема инсталираних додатака"
 
-#: src/app/main/ui/workspace/plugins.cljs:188
+#: src/app/main/ui/workspace/plugins.cljs:189
 msgid "workspace.plugins.error.url"
 msgstr "Додатак не постоји или URL није исправан."
 
-#: src/app/main/ui/workspace/plugins.cljs:184
+#: src/app/main/ui/workspace/plugins.cljs:185
 msgid "workspace.plugins.install"
 msgstr "Инсталирај"
 
-#: src/app/main/ui/workspace/plugins.cljs:214
+#: src/app/main/ui/workspace/plugins.cljs:215
 msgid "workspace.plugins.installed-plugins"
 msgstr "Инсталирани додаци"
 
-#: src/app/main/ui/workspace/main_menu.cljs:738
+#: src/app/main/ui/workspace/main_menu.cljs:721
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Управљач додатака"
 
-#: src/app/main/ui/workspace/main_menu.cljs:934
+#: src/app/main/ui/workspace/main_menu.cljs:918
 msgid "workspace.plugins.menu.title"
 msgstr "Додаци"
 
-#: src/app/main/ui/workspace/plugins.cljs:210
+#: src/app/main/ui/workspace/plugins.cljs:211
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Листа додатака"
 
-#: src/app/main/ui/workspace/plugins.cljs:179
+#: src/app/main/ui/workspace/plugins.cljs:180
 msgid "workspace.plugins.search-placeholder"
 msgstr "Напишите URL додатка"
 
@@ -5351,103 +5328,103 @@ msgstr "Напишите URL додатка"
 msgid "workspace.plugins.success"
 msgstr "Додатак је исправно учитан."
 
-#: src/app/main/ui/workspace/plugins.cljs:173
+#: src/app/main/ui/workspace/plugins.cljs:174
 msgid "workspace.plugins.title"
 msgstr "Додаци"
 
-#: src/app/main/ui/workspace/context_menu.cljs:557
+#: src/app/main/ui/workspace/context_menu.cljs:558
 msgid "workspace.shape.menu.add-flex"
 msgstr "Додајте флексибилни распоред"
 
-#: src/app/main/ui/workspace/context_menu.cljs:561
+#: src/app/main/ui/workspace/context_menu.cljs:562
 msgid "workspace.shape.menu.add-grid"
 msgstr "Додајте распоред мреже"
 
-#: src/app/main/ui/workspace/context_menu.cljs:281
+#: src/app/main/ui/workspace/context_menu.cljs:282
 msgid "workspace.shape.menu.back"
 msgstr "Пошаљи позади"
 
-#: src/app/main/ui/workspace/context_menu.cljs:278
+#: src/app/main/ui/workspace/context_menu.cljs:279
 msgid "workspace.shape.menu.backward"
 msgstr "Пошаљи назад"
 
-#: src/app/main/ui/workspace/context_menu.cljs:199
+#: src/app/main/ui/workspace/context_menu.cljs:200
 msgid "workspace.shape.menu.copy"
 msgstr "Копирај"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:490
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:484
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Направи напомену"
 
-#: src/app/main/ui/workspace/context_menu.cljs:381
+#: src/app/main/ui/workspace/context_menu.cljs:382
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Избор на табли"
 
-#: src/app/main/ui/workspace/context_menu.cljs:590
+#: src/app/main/ui/workspace/context_menu.cljs:591
 msgid "workspace.shape.menu.create-component"
 msgstr "Направи компоненту"
 
-#: src/app/main/ui/workspace/context_menu.cljs:594
+#: src/app/main/ui/workspace/context_menu.cljs:595
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Направи више компоненти"
 
-#: src/app/main/ui/workspace/context_menu.cljs:205
+#: src/app/main/ui/workspace/context_menu.cljs:206
 msgid "workspace.shape.menu.cut"
 msgstr "Исеци"
 
-#: src/app/main/ui/workspace/context_menu.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:780, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1058
+#: src/app/main/ui/workspace/context_menu.cljs:628, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:996, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1285
 msgid "workspace.shape.menu.delete"
 msgstr "Избриши"
 
-#: src/app/main/ui/workspace/context_menu.cljs:504
+#: src/app/main/ui/workspace/context_menu.cljs:505
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Избриши почетак протока"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:495
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:489
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Раздвоји инстанцу"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:494
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Раздвоји инстанце"
 
-#: src/app/main/ui/workspace/context_menu.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:101
+#: src/app/main/ui/workspace/context_menu.cljs:446, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
 msgid "workspace.shape.menu.difference"
 msgstr "Разлика"
 
-#: src/app/main/ui/workspace/context_menu.cljs:211
+#: src/app/main/ui/workspace/context_menu.cljs:212
 msgid "workspace.shape.menu.duplicate"
 msgstr "Дуплицирај"
 
-#: src/app/main/ui/workspace/context_menu.cljs:431
+#: src/app/main/ui/workspace/context_menu.cljs:432
 msgid "workspace.shape.menu.edit"
 msgstr "Уреди"
 
-#: src/app/main/ui/workspace/context_menu.cljs:451, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:111
+#: src/app/main/ui/workspace/context_menu.cljs:452, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
 msgid "workspace.shape.menu.exclude"
 msgstr "Изузми"
 
-#: src/app/main/ui/workspace/context_menu.cljs:436, src/app/main/ui/workspace/context_menu.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:115
+#: src/app/main/ui/workspace/context_menu.cljs:437, src/app/main/ui/workspace/context_menu.cljs:459, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:104
 msgid "workspace.shape.menu.flatten"
 msgstr "Изравнај"
 
-#: src/app/main/ui/workspace/context_menu.cljs:298
+#: src/app/main/ui/workspace/context_menu.cljs:299
 msgid "workspace.shape.menu.flip-horizontal"
 msgstr "Окрени водоравно"
 
-#: src/app/main/ui/workspace/context_menu.cljs:294
+#: src/app/main/ui/workspace/context_menu.cljs:295
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Окрени усправно"
 
-#: src/app/main/ui/workspace/context_menu.cljs:506
+#: src/app/main/ui/workspace/context_menu.cljs:507
 msgid "workspace.shape.menu.flow-start"
 msgstr "Почетак протока"
 
-#: src/app/main/ui/workspace/context_menu.cljs:272
+#: src/app/main/ui/workspace/context_menu.cljs:273
 msgid "workspace.shape.menu.forward"
 msgstr "Изнесите напред"
 
-#: src/app/main/ui/workspace/context_menu.cljs:275
+#: src/app/main/ui/workspace/context_menu.cljs:276
 msgid "workspace.shape.menu.front"
 msgstr "Изнесите напред"
 
@@ -5456,75 +5433,75 @@ msgstr "Изнесите напред"
 msgid "workspace.shape.menu.go-main"
 msgstr "Идите на датотеку главне компоненте"
 
-#: src/app/main/ui/workspace/context_menu.cljs:367
+#: src/app/main/ui/workspace/context_menu.cljs:368
 msgid "workspace.shape.menu.group"
 msgstr "Групиши"
 
-#: src/app/main/ui/workspace/context_menu.cljs:475, src/app/main/ui/workspace/sidebar/layer_item.cljs:155
+#: src/app/main/ui/workspace/context_menu.cljs:476, src/app/main/ui/workspace/sidebar/layer_item.cljs:155
 msgid "workspace.shape.menu.hide"
 msgstr "Сакриј"
 
-#: src/app/main/ui/workspace/context_menu.cljs:704, src/app/main/ui/workspace/main_menu.cljs:448
+#: src/app/main/ui/workspace/context_menu.cljs:705, src/app/main/ui/workspace/main_menu.cljs:448
 msgid "workspace.shape.menu.hide-ui"
 msgstr "Прикажи / Сакриј интерфејс"
 
-#: src/app/main/ui/workspace/context_menu.cljs:448, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:106
+#: src/app/main/ui/workspace/context_menu.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
 msgid "workspace.shape.menu.intersection"
 msgstr "Раскрсница"
 
-#: src/app/main/ui/workspace/context_menu.cljs:483, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:220
+#: src/app/main/ui/workspace/context_menu.cljs:484, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:219
 msgid "workspace.shape.menu.lock"
 msgstr "Закључај"
 
-#: src/app/main/ui/workspace/context_menu.cljs:372
+#: src/app/main/ui/workspace/context_menu.cljs:373
 msgid "workspace.shape.menu.mask"
 msgstr "Маскирај"
 
-#: src/app/main/ui/workspace/context_menu.cljs:208, src/app/main/ui/workspace/context_menu.cljs:701
+#: src/app/main/ui/workspace/context_menu.cljs:209, src/app/main/ui/workspace/context_menu.cljs:702
 msgid "workspace.shape.menu.paste"
 msgstr "Залепи"
 
-#: src/app/main/ui/workspace/context_menu.cljs:441
+#: src/app/main/ui/workspace/context_menu.cljs:442
 msgid "workspace.shape.menu.path"
 msgstr "Путања"
 
-#: src/app/main/ui/workspace/context_menu.cljs:547
+#: src/app/main/ui/workspace/context_menu.cljs:548
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Уклоните флексибилни распоред"
 
-#: src/app/main/ui/workspace/context_menu.cljs:550
+#: src/app/main/ui/workspace/context_menu.cljs:551
 msgid "workspace.shape.menu.remove-grid"
 msgstr "Уклоните распоред мреже"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:499
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:493
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Врати преиначења на подразумеване вредности"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:505
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:499
 msgid "workspace.shape.menu.restore-main"
 msgstr "Врати главну компоненту"
 
-#: src/app/main/ui/workspace/context_menu.cljs:262
+#: src/app/main/ui/workspace/context_menu.cljs:263
 msgid "workspace.shape.menu.select-layer"
 msgstr "Изабери слој"
 
-#: src/app/main/ui/workspace/context_menu.cljs:472, src/app/main/ui/workspace/sidebar/layer_item.cljs:154
+#: src/app/main/ui/workspace/context_menu.cljs:473, src/app/main/ui/workspace/sidebar/layer_item.cljs:154
 msgid "workspace.shape.menu.show"
 msgstr "Прикажи"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:487, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1111
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1217
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Прикажи на панелу са средствима"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:508, src/app/main/ui/workspace/sidebar/assets/components.cljs:630
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:502, src/app/main/ui/workspace/sidebar/assets/components.cljs:629
 msgid "workspace.shape.menu.show-main"
 msgstr "Прикажи главну компоненту"
 
-#: src/app/main/ui/workspace/context_menu.cljs:313
+#: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Уклони сличицу"
 
-#: src/app/main/ui/workspace/context_menu.cljs:315
+#: src/app/main/ui/workspace/context_menu.cljs:316
 msgid "workspace.shape.menu.thumbnail-set"
 msgstr "Постави као сличицу"
 
@@ -5533,19 +5510,19 @@ msgstr "Постави као сличицу"
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "Претвори у путanju"
 
-#: src/app/main/ui/workspace/context_menu.cljs:363
+#: src/app/main/ui/workspace/context_menu.cljs:364
 msgid "workspace.shape.menu.ungroup"
 msgstr "Разгрупиши"
 
-#: src/app/main/ui/workspace/context_menu.cljs:442, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:96
+#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
 msgid "workspace.shape.menu.union"
 msgstr "Унија"
 
-#: src/app/main/ui/workspace/context_menu.cljs:480, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:226
+#: src/app/main/ui/workspace/context_menu.cljs:481, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:225
 msgid "workspace.shape.menu.unlock"
 msgstr "Откључај"
 
-#: src/app/main/ui/workspace/context_menu.cljs:377
+#: src/app/main/ui/workspace/context_menu.cljs:378
 msgid "workspace.shape.menu.unmask"
 msgstr "Демаскирај"
 
@@ -5554,43 +5531,43 @@ msgstr "Демаскирај"
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "Ажурирај главне компоненте"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:511
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:505
 msgid "workspace.shape.menu.update-main"
 msgstr "Ажурирајте главну компоненту"
 
-#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:58
+#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:57
 msgid "workspace.sidebar.collapse"
 msgstr "Скупи бочну траку"
 
-#: src/app/main/ui/workspace/sidebar/collapsable_button.cljs:25, src/app/main/ui/workspace/sidebar/collapsable_button.cljs:29
+#: src/app/main/ui/workspace/sidebar.cljs:68, src/app/main/ui/workspace/sidebar.cljs:72
 msgid "workspace.sidebar.expand"
 msgstr "Прошири бочну траку"
 
-#: src/app/main/ui/workspace/right_header.cljs:231, src/app/main/ui/workspace/right_header.cljs:232
+#: src/app/main/ui/workspace/right_header.cljs:226
 msgid "workspace.sidebar.history"
 msgstr "Историја"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:510, src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:144
+#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:149, src/app/main/ui/workspace/sidebar.cljs:152, src/app/main/ui/workspace/sidebar.cljs:159
 msgid "workspace.sidebar.layers"
 msgstr "Слојеви"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:375
+#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:374
 msgid "workspace.sidebar.layers.components"
 msgstr "Компоненте"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
 msgid "workspace.sidebar.layers.frames"
 msgstr "Табле"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:351
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:350
 msgid "workspace.sidebar.layers.groups"
 msgstr "Групе"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:399
+#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:398
 msgid "workspace.sidebar.layers.images"
 msgstr "Слике"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:363
+#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:362
 msgid "workspace.sidebar.layers.masks"
 msgstr "Маске"
 
@@ -5598,11 +5575,11 @@ msgstr "Маске"
 msgid "workspace.sidebar.layers.search"
 msgstr "Претражите слојеве"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:317, src/app/main/ui/workspace/sidebar/layers.cljs:411
+#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Облици"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:387
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
 msgid "workspace.sidebar.layers.texts"
 msgstr "Текстови"
 
@@ -5618,43 +5595,43 @@ msgstr "Странице"
 msgid "workspace.sitemap"
 msgstr "Мапа сајта"
 
-#: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
+#: src/app/main/ui/workspace/sidebar.cljs:154, src/app/main/ui/workspace/sidebar.cljs:161
 msgid "workspace.toolbar.assets"
 msgstr "Средства"
 
-#: src/app/main/ui/workspace/palette.cljs:167, src/app/main/ui/workspace/palette.cljs:168
+#: src/app/main/ui/workspace/palette.cljs:184
 msgid "workspace.toolbar.color-palette"
 msgstr "Палета боја (%s)"
 
-#: src/app/main/ui/workspace/right_header.cljs:217, src/app/main/ui/workspace/right_header.cljs:218
+#: src/app/main/ui/workspace/right_header.cljs:217
 msgid "workspace.toolbar.comments"
 msgstr "Коментари (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:188, src/app/main/ui/workspace/top_toolbar.cljs:189
+#: src/app/main/ui/workspace/top_toolbar.cljs:195
 msgid "workspace.toolbar.curve"
 msgstr "Контура (%s0"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:168, src/app/main/ui/workspace/top_toolbar.cljs:169
+#: src/app/main/ui/workspace/top_toolbar.cljs:172
 msgid "workspace.toolbar.ellipse"
 msgstr "Елипса (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:130, src/app/main/ui/workspace/top_toolbar.cljs:151
+#: src/app/main/ui/workspace/top_toolbar.cljs:130
 msgid "workspace.toolbar.frame"
 msgstr "Табла (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:57, src/app/main/ui/workspace/top_toolbar.cljs:58
+#: src/app/main/ui/workspace/top_toolbar.cljs:60
 msgid "workspace.toolbar.image"
 msgstr "Слика (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:140, src/app/main/ui/workspace/top_toolbar.cljs:141
+#: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "Премести (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:197, src/app/main/ui/workspace/top_toolbar.cljs:198
+#: src/app/main/ui/workspace/top_toolbar.cljs:205
 msgid "workspace.toolbar.path"
 msgstr "Путања (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:159, src/app/main/ui/workspace/top_toolbar.cljs:160
+#: src/app/main/ui/workspace/top_toolbar.cljs:162
 msgid "workspace.toolbar.rect"
 msgstr "Правоугаоник (%s)"
 
@@ -5663,164 +5640,164 @@ msgstr "Правоугаоник (%s)"
 msgid "workspace.toolbar.shortcuts"
 msgstr "Пречице (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:177, src/app/main/ui/workspace/top_toolbar.cljs:178
+#: src/app/main/ui/workspace/top_toolbar.cljs:182
 msgid "workspace.toolbar.text"
 msgstr "Текст (%s)"
 
-#: src/app/main/ui/workspace/palette.cljs:175, src/app/main/ui/workspace/palette.cljs:176
+#: src/app/main/ui/workspace/palette.cljs:190
 msgid "workspace.toolbar.text-palette"
 msgstr "Типографије (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:227, src/app/main/ui/workspace/top_toolbar.cljs:228
+#: src/app/main/ui/workspace/top_toolbar.cljs:235, src/app/main/ui/workspace/top_toolbar.cljs:236
 msgid "workspace.toolbar.toggle-toolbar"
 msgstr "Укључите траку са алаткама"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:39
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:41
 msgid "workspace.top-bar.read-only.done"
 msgstr "Готово"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:36
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:37
 #, markdown
 msgid "workspace.top-bar.view-only"
 msgstr "**Прегледање кода** (Само за преглед)"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:331
+#: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "За сада нема промена у историји"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:145
+#: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.delete"
 msgstr "Избрисано %s"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:144
+#: src/app/main/ui/workspace/sidebar/history.cljs:146
 msgid "workspace.undo.entry.modify"
 msgstr "Измењено %s"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:146
+#: src/app/main/ui/workspace/sidebar/history.cljs:148
 msgid "workspace.undo.entry.move"
 msgstr "Премештени објекти"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:109
+#: src/app/main/ui/workspace/sidebar/history.cljs:111
 msgid "workspace.undo.entry.multiple.circle"
 msgstr "кругови"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:110
+#: src/app/main/ui/workspace/sidebar/history.cljs:112
 msgid "workspace.undo.entry.multiple.color"
 msgstr "средства за боје"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:111
+#: src/app/main/ui/workspace/sidebar/history.cljs:113
 msgid "workspace.undo.entry.multiple.component"
 msgstr "компоненте"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:112
+#: src/app/main/ui/workspace/sidebar/history.cljs:114
 msgid "workspace.undo.entry.multiple.curve"
 msgstr "контуре"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:113
+#: src/app/main/ui/workspace/sidebar/history.cljs:115
 msgid "workspace.undo.entry.multiple.frame"
 msgstr "табла"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:114
+#: src/app/main/ui/workspace/sidebar/history.cljs:116
 msgid "workspace.undo.entry.multiple.group"
 msgstr "групе"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:115
+#: src/app/main/ui/workspace/sidebar/history.cljs:117
 msgid "workspace.undo.entry.multiple.media"
 msgstr "графичка средства"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:116
+#: src/app/main/ui/workspace/sidebar/history.cljs:118
 msgid "workspace.undo.entry.multiple.multiple"
 msgstr "објекти"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:117
+#: src/app/main/ui/workspace/sidebar/history.cljs:119
 msgid "workspace.undo.entry.multiple.page"
 msgstr "странице"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:118
+#: src/app/main/ui/workspace/sidebar/history.cljs:120
 msgid "workspace.undo.entry.multiple.path"
 msgstr "путање"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:119
+#: src/app/main/ui/workspace/sidebar/history.cljs:121
 msgid "workspace.undo.entry.multiple.rect"
 msgstr "правоугаоници"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:120
+#: src/app/main/ui/workspace/sidebar/history.cljs:122
 msgid "workspace.undo.entry.multiple.shape"
 msgstr "облици"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:121
+#: src/app/main/ui/workspace/sidebar/history.cljs:123
 msgid "workspace.undo.entry.multiple.text"
 msgstr "текстови"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:122
+#: src/app/main/ui/workspace/sidebar/history.cljs:124
 msgid "workspace.undo.entry.multiple.typography"
 msgstr "типографска средства"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:143
+#: src/app/main/ui/workspace/sidebar/history.cljs:145
 msgid "workspace.undo.entry.new"
 msgstr "Нови %s"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:123
+#: src/app/main/ui/workspace/sidebar/history.cljs:125
 msgid "workspace.undo.entry.single.circle"
 msgstr "круг"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:124
+#: src/app/main/ui/workspace/sidebar/history.cljs:126
 msgid "workspace.undo.entry.single.color"
 msgstr "средство за боју"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:125
+#: src/app/main/ui/workspace/sidebar/history.cljs:127
 msgid "workspace.undo.entry.single.component"
 msgstr "компонента"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:126
+#: src/app/main/ui/workspace/sidebar/history.cljs:128
 msgid "workspace.undo.entry.single.curve"
 msgstr "контура"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:127
+#: src/app/main/ui/workspace/sidebar/history.cljs:129
 msgid "workspace.undo.entry.single.frame"
 msgstr "табла"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:128
+#: src/app/main/ui/workspace/sidebar/history.cljs:130
 msgid "workspace.undo.entry.single.group"
 msgstr "група"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:129
+#: src/app/main/ui/workspace/sidebar/history.cljs:131
 msgid "workspace.undo.entry.single.image"
 msgstr "слика"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:130
+#: src/app/main/ui/workspace/sidebar/history.cljs:132
 msgid "workspace.undo.entry.single.media"
 msgstr "графичко средство"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:131
+#: src/app/main/ui/workspace/sidebar/history.cljs:133
 msgid "workspace.undo.entry.single.multiple"
 msgstr "објекат"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:132
+#: src/app/main/ui/workspace/sidebar/history.cljs:134
 msgid "workspace.undo.entry.single.page"
 msgstr "страница"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:133
+#: src/app/main/ui/workspace/sidebar/history.cljs:135
 msgid "workspace.undo.entry.single.path"
 msgstr "путања"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:134
+#: src/app/main/ui/workspace/sidebar/history.cljs:136
 msgid "workspace.undo.entry.single.rect"
 msgstr "правоугаоник"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:135
+#: src/app/main/ui/workspace/sidebar/history.cljs:137
 msgid "workspace.undo.entry.single.shape"
 msgstr "облик"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:136
+#: src/app/main/ui/workspace/sidebar/history.cljs:138
 msgid "workspace.undo.entry.single.text"
 msgstr "текст"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:137
+#: src/app/main/ui/workspace/sidebar/history.cljs:139
 msgid "workspace.undo.entry.single.typography"
 msgstr "типографско средство"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs:147
+#: src/app/main/ui/workspace/sidebar/history.cljs:149
 msgid "workspace.undo.entry.unknown"
 msgstr "Операција над %s"
 
@@ -5829,19 +5806,19 @@ msgstr "Операција над %s"
 msgid "workspace.undo.title"
 msgstr "Историја"
 
-#: src/app/main/data/workspace/libraries.cljs:1228, src/app/main/ui/workspace/sidebar/versions.cljs:84
+#: src/app/main/data/workspace/libraries.cljs:1233, src/app/main/ui/workspace/sidebar/versions.cljs:85
 msgid "workspace.updates.dismiss"
 msgstr "Одбаци"
 
-#: src/app/main/data/workspace/libraries.cljs:1226
+#: src/app/main/data/workspace/libraries.cljs:1231
 msgid "workspace.updates.more-info"
 msgstr "Више информација"
 
-#: src/app/main/data/workspace/libraries.cljs:1224
+#: src/app/main/data/workspace/libraries.cljs:1229
 msgid "workspace.updates.there-are-updates"
 msgstr "Постоје ажурирања у дељеним библиотекама"
 
-#: src/app/main/data/workspace/libraries.cljs:1230
+#: src/app/main/data/workspace/libraries.cljs:1235
 msgid "workspace.updates.update"
 msgstr "Ажурирај"
 

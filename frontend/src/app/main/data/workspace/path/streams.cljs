@@ -9,7 +9,6 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.path.segment :as path.segm]
-   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.path.state :as pst]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -29,16 +28,13 @@
   (= (ptk/type event) :app.main.data.workspace.common/clear-edition-mode))
 
 (defn to-pixel-snap [position]
-  (let [zoom  (get-in @st/state [:workspace-local :zoom] 1)
-        layout      (get @st/state :workspace-layout)
+  (let [layout      (get @st/state :workspace-layout)
         snap-pixel? (contains? layout :snap-pixel-grid)]
 
     (cond
       (or (not snap-pixel?) (not (gpt/point? position)))
       position
 
-      (>= zoom zoom-half-pixel-precision)
-      (gpt/round-step position 0.5)
 
       :else
       (gpt/round position))))

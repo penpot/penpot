@@ -268,8 +268,8 @@
                    :on-click modal/hide!}
        (tr "labels.cancel")]
       [:> import-type-dropdown*
-       {:options [{:label (tr "workspace.tokens.import-menu-zip-option") :value :zip}
-                  {:label (tr "workspace.tokens.import-menu-json-option") :value :file}
+       {:options [{:label (tr "workspace.tokens.import-menu-json-option") :value :file}
+                  {:label (tr "workspace.tokens.import-menu-zip-option") :value :zip}
                   {:label (tr "workspace.tokens.import-menu-folder-option") :value :folder}]
         :on-click handle-import-action
         :text-render render-button-text

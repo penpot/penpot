@@ -51,25 +51,20 @@ impl TryFrom<&[u8]> for RawSegmentData {
     }
 }
 
+impl From<RawSegmentData> for [u8; RAW_SEGMENT_DATA_SIZE] {
+    fn from(value: RawSegmentData) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
 impl SerializableResult for RawSegmentData {
     type BytesType = [u8; RAW_SEGMENT_DATA_SIZE];
-
-    fn from_bytes(bytes: Self::BytesType) -> Self {
-        unsafe { std::mem::transmute(bytes) }
-    }
-
-    fn as_bytes(&self) -> Self::BytesType {
-        let ptr = self as *const RawSegmentData as *const u8;
-        let bytes: &[u8] = unsafe { std::slice::from_raw_parts(ptr, RAW_SEGMENT_DATA_SIZE) };
-        let mut result = [0; RAW_SEGMENT_DATA_SIZE];
-        result.copy_from_slice(bytes);
-        result
-    }
 
     // The generic trait doesn't know the size of the array. This is why the
     // clone needs to be here even if it could be generic.
     fn clone_to_slice(&self, slice: &mut [u8]) {
-        slice.clone_from_slice(&self.as_bytes());
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
     }
 }
 

@@ -76,7 +76,7 @@
   (map :page-id))
 
 (defn- apply-changes-localy
-  [{:keys [file-id redo-changes] :as commit} pending]
+  [{:keys [file-id redo-changes ignore-wasm?] :as commit} pending]
   (ptk/reify ::apply-changes-localy
     ptk/UpdateEvent
     (update [_ state]
@@ -103,7 +103,7 @@
                     pids (into #{} xf:map-page-id redo-changes)]
                 (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
-        (if (features/active-feature? state "render-wasm/v1")
+        (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
           ;; Update the wasm model
           (let [shape-changes (volatile! {})
 
@@ -122,7 +122,7 @@
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn file-vern undo-group tags stack-undo? source]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -147,7 +147,8 @@
                    :save-undo? save-undo?
                    :undo-group undo-group
                    :tags tags
-                   :stack-undo? stack-undo?}]
+                   :stack-undo? stack-undo?
+                   :ignore-wasm? ignore-wasm?}]
 
     (ptk/reify ::commit
       cljs.core/IDeref

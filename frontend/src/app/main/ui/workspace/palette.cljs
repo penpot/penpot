@@ -18,9 +18,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
    [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
    [app.main.ui.workspace.text-palette :refer [text-palette]]
@@ -33,12 +34,13 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def viewport
+(def ^:private ref:viewport
   (l/derived :vport refs/workspace-local))
 
-(defn calculate-palette-padding [rulers?]
+(defn- calculate-palette-style
+  [rulers?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
-        left-sidebar-size      (-> (dom/get-data left-sidebar "left-sidebar-width")
+        left-sidebar-size      (-> (dom/get-data left-sidebar "width")
                                    (d/parse-integer))
         rulers-width           (if rulers? 22 0)
         min-left-sidebar-width left-sidebar-default-width
@@ -48,36 +50,46 @@
     #js {"paddingLeft" (dm/str calculate-padding-left "px")
          "paddingRight" "322px"}))
 
-(mf/defc palette
-  [{:keys [layout on-change-palette-size]}]
-  (let [color-palette?       (:colorpalette layout)
-        text-palette?        (:textpalette layout)
-        hide-palettes?       (:hide-palettes layout)
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        container            (mf/use-ref nil)
-        state*               (mf/use-state {:show-menu false})
-        state                (deref state*)
-        show-menu?           (:show-menu state)
-        selected             (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
-        selected-text*       (mf/use-state :file)
-        selected-text        (deref selected-text*)
-        on-select            (mf/use-fn #(reset! selected %))
-        rulers?              (mf/deref refs/rulers?)
-        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
-        (r/use-resize-hook :palette 72 54 80 :y true :bottom on-change-palette-size)
+(mf/defc palette*
+  [{:keys [layout on-change-size]}]
+  (let [color-palette? (:colorpalette layout)
+        text-palette?  (:textpalette layout)
+        hide-palettes? (:hide-palettes layout)
 
-        vport (mf/deref viewport)
-        vport-width (:width vport)
+        read-only?     (mf/use-ctx ctx/workspace-read-only?)
+        container      (mf/use-ref nil)
+
+        state*         (mf/use-state #(-> {:show-menu false}))
+        state          (deref state*)
+        show-menu?     (:show-menu state)
+
+        selected       (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
+
+        selected-text* (mf/use-state :file)
+        selected-text  (deref selected-text*)
+
+        on-select      (mf/use-fn #(reset! selected %))
+
+        rulers?        (mf/deref refs/rulers?)
+        vport          (mf/deref ref:viewport)
+        vport-width    (get vport :width)
+
+        {:keys [on-pointer-down
+                on-lost-pointer-capture
+                on-pointer-move
+                parent-ref
+                size]}
+        (r/use-resize-hook :palette 72 54 80 :y true :bottom on-change-size)
 
         on-resize
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (let [dom   (mf/ref-val container)
                  width (obj/get dom "clientWidth")]
              (swap! state* assoc :width width))))
 
         on-close-menu
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (swap! state* assoc :show-menu false)))
 
@@ -100,7 +112,7 @@
              (reset! selected-text* (:id lib)))))
 
         toggle-palettes
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (r/set-resize-type! :top)
            (dom/add-class! (dom/get-element-by-class "color-palette") "fade-out-down")
@@ -131,7 +143,9 @@
                                              (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
              (dom/blur! node))))
 
-        any-palette? (or color-palette? text-palette?)
+        any-palette?
+        (or color-palette? text-palette?)
+
         size-classname
         (cond
           (<= size 64) (stl/css :small-palette)
@@ -142,16 +156,16 @@
       (let [key1 (events/listen js/window "resize" on-resize)]
         #(events/unlistenByKey key1)))
 
-    (mf/use-layout-effect
-     #(let [dom     (mf/ref-val parent-ref)
+    (mf/with-layout-effect []
+      (let [dom     (mf/ref-val parent-ref)
             width (obj/get dom "clientWidth")]
         (swap! state* assoc :width width)))
 
     [:div {:class (stl/css :palette-wrapper)
            :id "palette-wrapper"
-           :style  (calculate-palette-padding rulers?)
+           :style  (calculate-palette-style rulers?)
            :data-testid "palette"}
-     (when-not workspace-read-only?
+     (when-not ^boolean read-only?
        [:div {:ref parent-ref
               :class (dm/str size-classname " " (stl/css-case :palettes true
                                                               :wide any-palette?
@@ -165,27 +179,27 @@
         [:ul {:class (dm/str size-classname " " (stl/css-case :palette-btn-list true
                                                               :hidden-bts hide-palettes?))}
          [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-                    :class (stl/css-case :palette-btn true
-                                         :selected color-palette?)
-                    :on-click on-select-color-palette}
-           deprecated-icon/drop-icon]]
-
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed (some? color-palette?)
+                            :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+                            :on-click on-select-color-palette
+                            :icon i/drop}]]
          [:li {:class (stl/css :palette-item)}
-          [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-                    :class (stl/css-case :palette-btn true
-                                         :selected text-palette?)
-                    :on-click on-select-text-palette}
-           deprecated-icon/text-palette]]]
-
+          [:> icon-button* {:variant "ghost"
+                            :aria-pressed (some? text-palette?)
+                            :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+                            :on-click on-select-text-palette
+                            :icon i/text-palette}]]]
 
         (if any-palette?
           [:*
-           [:button {:class (stl/css :palette-actions)
-                     :on-click #(swap! state* update :show-menu not)}
-            deprecated-icon/menu]
+           [:div {:class (stl/css :menu-btn)}
+            [:> icon-button* {:variant "ghost"
+                              :aria-pressed show-menu?
+                              :aria-label (tr "labels.options")
+                              :on-click #(swap! state* update :show-menu not)
+                              :icon i/menu}]]
+
            [:div {:class (stl/css :palette)
                   :ref container}
             (when text-palette?

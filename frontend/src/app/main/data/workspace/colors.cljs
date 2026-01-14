@@ -14,7 +14,7 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.library :as ctl]
    [app.common.types.shape :as shp]
-   [app.common.types.shape.shadow :refer [check-shadow]]
+   [app.common.types.shape.shadow :as types.shadow]
    [app.common.types.text :as txt]
    [app.main.broadcast :as mbc]
    [app.main.data.helpers :as dsh]
@@ -406,30 +406,30 @@
 
 (defn change-shadow
   [ids attrs index]
-  (ptk/reify ::change-shadow
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dwsh/update-shapes
-              ids
-              (fn [shape]
-                (let [;; If we try to set a gradient to a shadow (for
-                      ;; example using the color selection from
-                      ;; multiple shapes) let's use the first stop
-                      ;; color
-                      attrs  (cond-> attrs
-                               (:gradient attrs)
-                               (dm/get-in [:gradient :stops 0]))
+  (letfn [(update-shadow [shape]
+            (let [;; If we try to set a gradient to a shadow (for
+                  ;; example using the color selection from
+                  ;; multiple shapes) let's use the first stop
+                  ;; color
+                  attrs  (cond-> attrs
+                           (:gradient attrs)
+                           (-> (dm/get-in [:gradient :stops 0])
+                               (select-keys types.shadow/color-attrs)))
 
-                      attrs' (-> (dm/get-in shape [:shadow index :color])
-                                 (merge attrs)
-                                 (d/without-nils))]
-                  (assoc-in shape [:shadow index :color] attrs'))))))))
+                  attrs' (-> (dm/get-in shape [:shadow index :color])
+                             (merge attrs)
+                             (d/without-nils))]
+              (assoc-in shape [:shadow index :color] attrs')))]
+    (ptk/reify ::change-shadow
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/of (dwsh/update-shapes ids update-shadow))))))
 
 (defn add-shadow
   [ids shadow]
 
   (assert
-   (check-shadow shadow)
+   (types.shadow/check-shadow shadow)
    "expected a valid shadow struct")
 
   (assert
@@ -1122,7 +1122,7 @@
         ref-id     (:stroke-color-ref-id stroke)
 
         colors     (-> libraries
-                       (get ref-id)
+                       (get ref-file)
                        (get :data)
                        (ctl/get-colors))
         shared?    (contains? colors ref-id)
@@ -1146,16 +1146,16 @@
 (defn- shadow->color-attr
   "Given a stroke map enriched with :shape-id, :index, and optionally
      :has-token-applied / :token-name, returns a color attribute map.
-  
+
      If :has-token-applied is true, adds token metadata to :attrs:
        {:has-token-applied true
         :token-name <token-name>}
-  
+
      Args:
      - stroke: map with stroke info, including :shape-id and :index
      - file-id: current file UUID
      - libraries: map of shared color libraries
-  
+
      Returns:
      A map like:
      {:attrs {...color data...}
@@ -1167,7 +1167,7 @@
         ref-file (get color :ref-file)
         ref-id   (get color :ref-id)
         colors   (-> libraries
-                     (get ref-id)
+                     (get ref-file)
                      (get :data)
                      (ctl/get-colors))
         shared?  (contains? colors ref-id)
@@ -1180,19 +1180,20 @@
      :index (:index shadow)}))
 
 (defn- text->color-att
-  [fill file-id libraries]
+  [fill file-id libraries & {:keys [has-token-applied token-name]}]
   (let [ref-file (:fill-color-ref-file fill)
         ref-id   (:fill-color-ref-id fill)
         colors   (-> libraries
-                     (get ref-id)
+                     (get ref-file)
                      (get :data)
                      (ctl/get-colors))
-
         shared?  (contains? colors ref-id)
-        attrs    (cond-> (types.fills/fill->color fill)
-                   (not (or shared? (= ref-file file-id)))
-                   (dissoc :ref-file :ref-id))]
-
+        base-attrs (cond-> (types.fills/fill->color fill)
+                     (not (or shared? (= ref-file file-id)))
+                     (dissoc :ref-file :ref-id))
+        attrs (cond-> base-attrs
+                has-token-applied (assoc :has-token-applied true)
+                token-name (assoc :token-name token-name))]
     {:attrs attrs
      :prop :content
      :shape-id (:shape-id fill)
@@ -1200,13 +1201,18 @@
 
 (defn- extract-text-colors
   [text file-id libraries]
-  (let [treat-node
+  (let [applied-fill-token (get-in text [:applied-tokens :fill])
+        treat-node
         (fn [node shape-id]
-          (map-indexed #(assoc %2 :shape-id shape-id :index %1) node))]
+          (map-indexed (fn [idx fill]
+                         (let [args (cond-> []
+                                      (and (= idx 0) applied-fill-token)
+                                      (conj :has-token-applied true :token-name applied-fill-token))]
+                           (apply text->color-att (assoc fill :shape-id shape-id :index idx) file-id libraries args)))
+                       node))]
     (->> (txt/node-seq txt/is-text-node? (:content text))
          (map :fills)
-         (mapcat #(treat-node % (:id text)))
-         (map #(text->color-att % file-id libraries)))))
+         (mapcat #(treat-node % (:id text))))))
 
 (defn- fill->color-att
   "Given a fill map enriched with :shape-id, :index, and optionally
@@ -1232,7 +1238,7 @@
         ref-id     (:fill-color-ref-id fill)
 
         colors     (-> libraries
-                       (get ref-id)
+                       (get ref-file)
                        (get :data)
                        (ctl/get-colors))
         shared?    (contains? colors ref-id)
@@ -1260,12 +1266,12 @@
      will include extra attributes in its :attrs map:
        {:has-token-applied true
         :token-name <token-name>}
-  
+
      Args:
      - shapes: vector of shape maps
      - file-id: current file UUID
      - libraries: map of shared color libraries
-  
+
      Returns:
      A vector of color attribute maps with metadata for each shape."
   [shapes file-id libraries]

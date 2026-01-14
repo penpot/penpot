@@ -25,7 +25,7 @@
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
-   [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as layout-container]
    [app.main.ui.workspace.sidebar.options.page :as page]
    [app.main.ui.workspace.sidebar.options.shapes.bool :as bool]
@@ -54,7 +54,7 @@
         modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
         shape      (gsh/transform-shape shape modifiers)
-        props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id})]
+        props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id :libraries libraries})]
 
     (case shape-type
       :frame   [:> frame/options* props]
@@ -215,7 +215,7 @@
         (case options-mode
           :prototype
           [:div {:class (stl/css :element-options :interaction-options)}
-           [:& interactions-menu {:shape (first shapes)}]]
+           [:> interactions-menu* {:shape (first shapes)}]]
 
           :inspect
           [:div {:class (stl/css :element-options :inspect-options)}

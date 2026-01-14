@@ -7,6 +7,7 @@
 (ns app.main.ui.flex-controls.gap
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -16,6 +17,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -27,10 +30,11 @@
 (mf/defc gap-display
   [{:keys [frame-id zoom gap-type gap on-pointer-enter on-pointer-leave
            rect-data hover? selected? mouse-pos hover-value
-           on-move-selected on-context-menu]}]
+           on-move-selected on-context-menu on-change]}]
   (let [resizing             (mf/use-var nil)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
+        last-pos             (mf/use-var nil)
         negate?              (:resize-negate? rect-data)
         axis                 (:resize-axis rect-data)
 
@@ -43,32 +47,55 @@
            (reset! start (dom/get-client-position event))
            (reset! original-value (:initial-value rect-data))))
 
-        on-lost-pointer-capture
+        calc-modifiers
         (mf/use-fn
          (mf/deps frame-id gap-type gap)
+         (fn [pos]
+           (let [delta
+                 (-> (gpt/to-vec @start pos)
+                     (cond-> negate? gpt/negate)
+                     (get axis))
+                 val
+                 (int (max (+ @original-value (/ delta zoom)) 0))
+
+                 layout-gap (assoc gap gap-type val)]
+             [val
+              (dwm/create-modif-tree
+               [frame-id]
+               (ctm/change-property (ctm/empty) :layout-gap layout-gap))])))
+
+        on-lost-pointer-capture
+        (mf/use-fn
+         (mf/deps calc-modifiers)
          (fn [event]
            (dom/release-pointer event)
+
+           (when (and (features/active-feature? @st/state "render-wasm/v1") (= @resizing gap-type))
+             (let [[_ modifiers]  (calc-modifiers @last-pos)]
+               (st/emit! (dwm/apply-wasm-modifiers modifiers)
+                         (dwt/finish-transform))))
+
            (reset! resizing nil)
            (reset! start nil)
            (reset! original-value 0)
-           (st/emit! (dwm/apply-modifiers))))
+           (when (not (features/active-feature? @st/state "render-wasm/v1"))
+             (st/emit! (dwm/apply-modifiers)))))
 
         on-pointer-move
         (mf/use-fn
-         (mf/deps frame-id gap-type gap)
+         (mf/deps calc-modifiers on-change)
          (fn [event]
            (let [pos (dom/get-client-position event)]
+             (reset! last-pos pos)
              (reset! mouse-pos (point->viewport pos))
              (when (= @resizing gap-type)
-               (let [delta      (-> (gpt/to-vec @start pos)
-                                    (cond-> negate? gpt/negate)
-                                    (get axis))
-                     val            (int (max (+ @original-value (/ delta zoom)) 0))
-                     layout-gap (assoc gap gap-type val)
-                     modifiers  (dwm/create-modif-tree [frame-id] (ctm/change-property (ctm/empty) :layout-gap layout-gap))]
-
+               (let [[val modifiers]  (calc-modifiers pos)]
                  (reset! hover-value val)
-                 (st/emit! (dwm/set-modifiers modifiers)))))))]
+                 (if (features/active-feature? @st/state "render-wasm/v1")
+                   (st/emit! (dwm/set-wasm-modifiers modifiers))
+                   (st/emit! (dwm/set-modifiers modifiers)))
+                 (when on-change
+                   (on-change modifiers)))))))]
 
     [:g.gap-rect
      [:rect.info-area
@@ -120,10 +147,17 @@
         pill-width                 (/ fcc/flex-display-pill-width zoom)
         pill-height                (/ fcc/flex-display-pill-height zoom)
         workspace-modifiers        (mf/deref refs/workspace-modifiers)
+        workspace-wasm-modifiers   (mf/deref refs/workspace-wasm-modifiers)
+
         gap-selected               (mf/deref refs/workspace-gap-selected)
         hover                      (mf/use-state nil)
         hover-value                (mf/use-state 0)
         mouse-pos                  (mf/use-state nil)
+        current-modifiers          (mf/use-state nil)
+
+        frame
+        (ctm/apply-structure-modifiers frame (dm/get-in @current-modifiers [frame-id :modifiers]))
+
         padding                    (:layout-padding frame)
         gap                        (:layout-gap frame)
         {:keys [width height x1 y1]} (:selrect frame)
@@ -132,6 +166,12 @@
                                      (reset! hover-value val))
 
         on-pointer-leave           #(reset! hover nil)
+
+        on-change
+        (mf/use-fn
+         (fn [modifiers]
+           (reset! current-modifiers modifiers)))
+
         negate                     {:column-gap (if flip-x true false)
                                     :row-gap (if flip-y true false)}
 
@@ -143,8 +183,16 @@
                                     (= :column-reverse saved-dir))
                               (drop-last children)
                               (rest children))
-        children-to-display (->> children-to-display
-                                 (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers]))))
+        children-to-display
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          (let [modifiers (into {} workspace-wasm-modifiers)]
+            (->> children-to-display
+                 ;;(map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])))
+                 (map (fn [shape]
+                        (gsh/apply-transform shape (get modifiers (:id shape)))))))
+
+          (->> children-to-display
+               (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])))))
 
         wrap-blocks
         (let [block-children (->> children
@@ -272,20 +320,22 @@
     [:g.gaps {:pointer-events "visible"}
      (for [[index display-item] (d/enumerate (concat display-blocks display-children))]
        (let [gap-type (:gap-type display-item)]
-         [:& gap-display {:key (str frame-id index)
-                          :frame-id frame-id
-                          :zoom zoom
-                          :gap-type gap-type
-                          :gap gap
-                          :on-pointer-enter (partial on-pointer-enter gap-type (get gap gap-type))
-                          :on-pointer-leave on-pointer-leave
-                          :on-move-selected on-move-selected
-                          :on-context-menu on-context-menu
-                          :rect-data display-item
-                          :hover?    (= @hover gap-type)
-                          :selected? (= gap-selected gap-type)
-                          :mouse-pos mouse-pos
-                          :hover-value hover-value}]))
+         [:& gap-display
+          {:key (str frame-id index)
+           :frame-id frame-id
+           :zoom zoom
+           :gap-type gap-type
+           :gap gap
+           :on-pointer-enter (partial on-pointer-enter gap-type (get gap gap-type))
+           :on-pointer-leave on-pointer-leave
+           :on-move-selected on-move-selected
+           :on-context-menu on-context-menu
+           :on-change on-change
+           :rect-data display-item
+           :hover?    (= @hover gap-type)
+           :selected? (= gap-selected gap-type)
+           :mouse-pos mouse-pos
+           :hover-value hover-value}]))
 
      (when @hover
        [:& fcc/flex-display-pill

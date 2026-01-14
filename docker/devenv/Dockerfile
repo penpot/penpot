@@ -25,48 +25,6 @@ RUN set -ex; \
         binutils \
         build-essential autoconf libtool pkg-config
 
-
-################################################################################
-## IMAGE MAGICK
-################################################################################
-
-FROM base AS build-imagemagick
-
-ENV IMAGEMAGICK_VERSION=7.1.1-47 \
-    DEBIAN_FRONTEND=noninteractive
-
-RUN set -ex; \
-    apt-get -qq update; \
-    apt-get -qq upgrade; \
-    apt-get -qqy --no-install-recommends install \
-        libltdl-dev \
-        libpng-dev \
-        libjpeg-dev \
-        libtiff-dev \
-        libwebp-dev \
-        libopenexr-dev \
-        libfftw3-dev \
-        libzip-dev \
-        liblcms2-dev \
-        liblzma-dev \
-        libzstd-dev \
-        libheif-dev \
-        librsvg2-dev \
-    ; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    curl -LfsSo /tmp/magick.tar.gz https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IMAGEMAGICK_VERSION}.tar.gz; \
-    mkdir -p /tmp/magick; \
-    cd /tmp/magick; \
-    tar -xf /tmp/magick.tar.gz --strip-components=1; \
-    ./configure  --prefix=/opt/imagick; \
-    make -j 2; \
-    make install; \
-    rm -rf /opt/imagick/lib/libMagick++*; \
-    rm -rf /opt/imagick/include; \
-    rm -rf /opt/imagick/share;
-
 ################################################################################
 ## NODE SETUP
 ################################################################################
@@ -101,13 +59,45 @@ RUN set -eux; \
     corepack enable; \
     rm -rf /tmp/nodejs.tar.gz;
 
+
+################################################################################
+## CADDYSERVER SETUP
+################################################################################
+
+FROM base AS setup-caddy
+
+ENV CADDY_VERSION=2.10.2
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/caddy.tar.gz ${BINARY_URL}; \
+    mkdir -p /tmp/caddy; \
+    cd /tmp/caddy; \
+    tar -xf /tmp/caddy.tar.gz; \
+    chown -R root /tmp/caddy; \
+    mv /tmp/caddy/caddy /usr/bin/; \
+    rm -rf /tmp/caddy.tar.gz; \
+    rm -rf /tmp/caddy;
+
 ################################################################################
 ## JVM SETUP
 ################################################################################
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.2.1565
+ENV CLOJURE_VERSION=1.12.3.1577
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -385,7 +375,7 @@ ENV LANG='C.UTF-8' \
     RUSTUP_HOME="/opt/rustup" \
     PATH="/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=build-imagemagick /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
@@ -393,6 +383,7 @@ COPY --from=setup-utils /opt/utils /opt/utils
 COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
+COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
@@ -403,6 +394,9 @@ COPY files/vimrc          /root/.vimrc
 COPY files/tmux.conf      /root/.tmux.conf
 COPY files/sudoers        /etc/sudoers
 
+COPY files/Caddyfile           /home/
+COPY files/selfsigned.crt      /home/
+COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh
 COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
 COPY files/entrypoint.sh       /home/entrypoint.sh

@@ -173,7 +173,7 @@
    [:id {:optional true} :string]
    [:offset {:optional true} :int]
    [:delay {:optional true} :int]
-   [:content [:or fn? :string]]
+   [:content [:or fn? :string map?]]
    [:placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 

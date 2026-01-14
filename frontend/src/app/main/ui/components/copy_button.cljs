@@ -10,10 +10,10 @@
    [app.common.data.macros :as dm]
    [app.main.data.event :as-alias ev]
    [app.main.ui.icons :as deprecated-icon]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
-   [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
 
 (mf/defc copy-button*
@@ -34,7 +34,7 @@
              (reset! active* true)
              (tm/schedule 1000 #(reset! active* false))
              (when (fn? on-copied) (on-copied event))
-             (wapi/write-to-clipboard
+             (clipboard/to-clipboard
               (if (fn? data) (data) data)))))]
 
     [:button {:class class

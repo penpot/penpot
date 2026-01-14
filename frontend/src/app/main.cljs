@@ -90,9 +90,12 @@
             (rx/map #(ws/initialize)))))))
 
 (defn ^:export init
-  []
+  [options]
+  (some-> (unchecked-get options "defaultTranslations")
+          (i18n/set-default-translations))
+
   (mw/init!)
-  (i18n/init! cf/translations)
+  (i18n/init)
   (cur/init-styles)
   (thr/init!)
   (init-ui)
@@ -113,12 +116,5 @@
 (defn ^:dev/after-load after-load
   []
   (reinit))
-
-;; Reload the UI when the language changes
-(add-watch
- i18n/locale "locale"
- (fn [_ _ old-value current-value]
-   (when (not= old-value current-value)
-     (reinit))))
 
 (set! (.-stackTraceLimit js/Error) 50)

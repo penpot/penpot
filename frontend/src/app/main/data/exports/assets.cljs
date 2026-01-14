@@ -99,16 +99,18 @@
     (watch [_ state _]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
-            exports  (for [frame  frames]
-                       {:enabled true
-                        :page-id page-id
-                        :file-id file-id
-                        :object-id (:id frame)
-                        :shape frame
-                        :name (:name frame)})]
+            exports  (mapv (fn [frame]
+                             {:enabled true
+                              :page-id page-id
+                              :file-id file-id
+                              :object-id (:id frame)
+                              :shape frame
+                              :name (:name frame)})
+                           frames)]
 
         (rx/of (modal/show :export-frames
-                           {:exports (vec exports) :origin "workspace:menu"}))))))
+                           {:exports exports
+                            :origin "workspace:menu"}))))))
 
 (defn- initialize-export-status
   [exports cmd resource]
@@ -127,7 +129,7 @@
                             :cmd cmd}))))
 
 (defn- update-export-status
-  [{:keys [done status resource-id filename] :as data}]
+  [{:keys [done status resource-uri filename mtype] :as data}]
   (ptk/reify ::update-export-status
     ptk/UpdateEvent
     (update [_ state]
@@ -146,9 +148,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (= status "ended")
-        (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id resource-id})
-             (rx/delay 500)
-             (rx/map #(dom/trigger-download filename %)))))))
+        (dom/trigger-download-uri filename mtype resource-uri)))))
 
 (defn request-simple-export
   [{:keys [export]}]
@@ -174,16 +174,13 @@
               (rx/timeout 400 (rx/empty)))
 
          (->> (rp/cmd! :export params)
-              (rx/mapcat (fn [{:keys [id filename]}]
-                           (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id id})
-                                (rx/map (fn [data]
-                                          (dom/trigger-download filename data)
-                                          (clear-export-state uuid/zero))))))
+              (rx/map (fn [{:keys [filename mtype uri]}]
+                        (dom/trigger-download-uri filename mtype uri)
+                        (clear-export-state uuid/zero)))
               (rx/catch (fn [cause]
                           (rx/concat
                            (rx/of (clear-export-state uuid/zero))
                            (rx/throw cause))))))))))
-
 
 (defn request-multiple-export
   [{:keys [exports cmd]

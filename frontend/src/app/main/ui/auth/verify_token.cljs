@@ -61,9 +61,9 @@
    (rt/nav :auth-login)
    (ntf/warn (tr "errors.unexpected-token"))))
 
-(mf/defc verify-token
-  [{:keys [route] :as props}]
-  (let [token (get-in route [:query-params :token])
+(mf/defc verify-token*
+  [{:keys [route]}]
+  (let [token     (get-in route [:query-params :token])
         bad-token (mf/use-state false)]
 
     (mf/with-effect []
@@ -99,3 +99,8 @@
       [:> static/invalid-token {}]
       [:> loader*  {:title (tr "labels.loading")
                     :overlay true}])))
+
+(mf/defc verify-token-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> verify-token* props])

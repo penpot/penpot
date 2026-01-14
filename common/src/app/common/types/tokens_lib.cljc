@@ -7,10 +7,11 @@
 (ns app.common.types.tokens-lib
   (:require
    #?(:clj [app.common.fressian :as fres])
-   #?(:clj [clojure.data.json :as json])
+   #?(:clj [clojure.data.json :as c.json])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.json :as json]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -198,8 +199,8 @@
      :tokens tokens})
 
   #?@(:clj
-      [json/JSONWriter
-       (-write [this writter options] (json/-write (datafy this) writter options))])
+      [c.json/JSONWriter
+       (-write [this writter options] (c.json/-write (datafy this) writter options))])
 
   INamedItem
   (get-id [_]
@@ -758,7 +759,7 @@
   (theme-active? [_ id] "predicate if token theme is active")
   (activate-theme [_ id] "adds theme from the active-themes")
   (deactivate-theme [_ id] "removes theme from the active-themes")
-  (toggle-theme-active? [_ id] "toggles theme in the active-themes")
+  (toggle-theme-active [_ id] "toggles theme in the active-themes")
   (get-hidden-theme [_] "get the hidden temporary theme"))
 
 (def schema:token-themes
@@ -901,16 +902,19 @@
   (delete-token [_ set-id token-id] "delete a token from a set")
   (toggle-set-in-theme [_ theme-id set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
+  (token-set-active? [_ set-name] "if a set is active in any of the active themes")
   (sets-at-path-all-active? [_ group-path] "compute active state for child sets at `group-path`.
 Will return a value that matches this schema:
 `:none`    None of the nested sets are active
 `:all`     All of the nested sets are active
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
-  (get-all-tokens [_] "all tokens in the lib")
+  (get-all-tokens [_] "all tokens in the lib, as a sequence")
+  (get-all-tokens-map [_] "all tokens in the lib, as a map name -> token")
   (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
 
 (declare parse-multi-set-dtcg-json)
+(declare read-multi-set-dtcg)
 (declare export-dtcg-json)
 
 (deftype TokensLib [sets themes active-themes]
@@ -922,23 +926,23 @@ Will return a value that matches this schema:
      :active-themes active-themes})
 
   #?@(:clj
-      [json/JSONWriter
-       (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
+      [c.json/JSONWriter
+       (-write [this writter options] (c.json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
-  ;  Naming conventions:
-  ;  (TODO: this will disappear after refactoring the internal structure of TokensLib).
-  ;    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
-  ;    Set final name or fname: the last part of the name \"some-set\".
-  ;    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
-  ;    Set path str:            the set path as a string \"some-group/some-subgroup\".
-  ;    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
-  ;    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
-
-  ;    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
-  ;    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
-  ;    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
-  ;    Prefixed set final name or pfname: a final name with prefix \"S-some-set\".
+  ;;  Naming conventions:
+  ;;  (TODO: this will disappear after refactoring the internal structure of TokensLib).
+  ;;    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
+  ;;    Set final name or fname: the last part of the name \"some-set\".
+  ;;    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
+  ;;    Set path str:            the set path as a string \"some-group/some-subgroup\".
+  ;;    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
+  ;;    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
+   ;
+  ;;    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
+  ;;    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
+  ;;    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
+  ;;    Prefixed set final name or pfname: a final name with prefix \"S-some-set\".
   (add-set [_ token-set]
     (assert (token-set? token-set) "expected valid token-set")
     (let [path (get-set-prefixed-path token-set)]
@@ -1206,7 +1210,7 @@ Will return a value that matches this schema:
     (when-let [theme (get-theme this id)]
       (contains? active-themes (get-theme-path theme))))
 
-  (toggle-theme-active? [this id]
+  (toggle-theme-active [this id]
     (if (theme-active? this id)
       (deactivate-theme this id)
       (activate-theme this id)))
@@ -1270,6 +1274,10 @@ Will return a value that matches this schema:
           (mapcat :sets)
           (get-active-themes this)))
 
+  (token-set-active? [this set-name]
+    (let [set-names (get-active-themes-set-names this)]
+      (contains? set-names set-name)))
+
   (sets-at-path-all-active? [this group-path]
     (let [active-set-names (get-active-themes-set-names this)
           prefixed-path-str (set-group-path->set-group-prefixed-path-str group-path)]
@@ -1299,6 +1307,10 @@ Will return a value that matches this schema:
       tokens))
 
   (get-all-tokens [this]
+    (mapcat #(vals (get-tokens- %))
+            (get-sets this)))
+
+  (get-all-tokens-map [this]
     (reduce
      (fn [tokens' set]
        (into tokens' (map (fn [x] [(:name x) x]) (vals (get-tokens- set)))))
@@ -1403,8 +1415,12 @@ Will return a value that matches this schema:
     ;; NOTE: we can't assign statically at eval time the value of a
     ;; function that is declared but not defined; so we need to pass
     ;; an anonymous function and delegate the resolution to runtime
-    {:encode/json #(export-dtcg-json %)
-     :decode/json #(parse-multi-set-dtcg-json %)}}))
+    {:encode/json #(some-> % export-dtcg-json)
+     :decode/json #(some-> % read-multi-set-dtcg)
+     ;; FIXME: add better, more reallistic generator
+     :gen/gen (->> (sg/small-int)
+                   (sg/fmap (fn [_]
+                              (make-tokens-lib))))}}))
 
 (defn duplicate-set
   "Make a new set with a unique name, copying data from the given set in the lib."
@@ -1448,18 +1464,23 @@ Will return a value that matches this schema:
      ["value" :map]
      ["type" :string]]]))
 
+(def ^:private schema:dtcg-node
+  [:schema {:registry
+            {::simple-value
+             [:or :string :int :double]
+             ::value
+             [:or
+              [:ref ::simple-value]
+              [:vector ::simple-value]
+              [:map-of :string [:or
+                                [:ref ::simple-value]
+                                [:vector ::simple-value]]]]}}
+   [:map
+    ["$type" :string]
+    ["$value" [:ref ::value]]]])
+
 (def ^:private dtcg-node?
-  (sm/validator
-   [:or
-    [:map
-     ["$value" :string]
-     ["$type" :string]]
-    [:map
-     ["$value" [:sequential [:map ["$type" :string]]]]
-     ["$type" :string]]
-    [:map
-     ["$value" :map]
-     ["$type" :string]]]))
+  (sm/validator schema:dtcg-node))
 
 (defn- get-json-format
   "Searches through decoded token file and returns:
@@ -1529,7 +1550,7 @@ Will return a value that matches this schema:
   (and (not (contains? decoded-json "$metadata"))
        (not (contains? decoded-json "$themes"))))
 
-(defn- convert-dtcg-font-family
+(defn convert-dtcg-font-family
   "Convert font-family token value from DTCG format to internal format.
    - If value is a string, split it into a collection of font families
    - If value is already an array, keep it as is
@@ -1540,7 +1561,7 @@ Will return a value that matches this schema:
     (sequential? value) value
     :else value))
 
-(defn- convert-dtcg-typography-composite
+(defn convert-dtcg-typography-composite
   "Convert typography token value keys from DTCG format to internal format."
   [value]
   (if (map? value)
@@ -1552,17 +1573,17 @@ Will return a value that matches this schema:
     ;; Reference value
     value))
 
-(defn- convert-dtcg-shadow-composite
+(defn convert-dtcg-shadow-composite
   "Convert shadow token value from DTCG format to internal format."
   [value]
   (let [process-shadow (fn [shadow]
                          (if (map? shadow)
                            (let [legacy-shadow-type (get "type" shadow)]
                              (-> shadow
-                                 (set/rename-keys {"x" :offsetX
-                                                   "offsetX" :offsetX
-                                                   "y" :offsetY
-                                                   "offsetY" :offsetY
+                                 (set/rename-keys {"x" :offset-x
+                                                   "offsetX" :offset-x
+                                                   "y" :offset-y
+                                                   "offsetY" :offset-y
                                                    "blur" :blur
                                                    "spread" :spread
                                                    "color" :color
@@ -1573,7 +1594,7 @@ Will return a value that matches this schema:
                                                    (= "false" %) false
                                                    (= legacy-shadow-type "innerShadow") true
                                                    :else false))
-                                 (select-keys [:offsetX :offsetY :blur :spread :color :inset])))
+                                 (select-keys [:offset-x :offset-y :blur :spread :color :inset])))
                            shadow))]
     (cond
       ;; Reference value - keep as string
@@ -1646,6 +1667,43 @@ Will return a value that matches this schema:
   (assert (= (get-json-format decoded-json-tokens) :json-format/legacy) "expected a legacy format for `decoded-json-tokens`")
   (parse-single-set-dtcg-json set-name (legacy-json->dtcg-json decoded-json-tokens)))
 
+(def ^:private schema:multi-set-dtcg
+  "Schema for penpot multi-set dtcg json decoded data/
+
+  Mainly used for validate the structure of the incoming data before
+  proceed to parse it to our internal data structures."
+  [:schema {:registry
+            {::node
+             [:or
+              [:map-of :string [:ref ::node]]
+              schema:dtcg-node]}}
+   [:map
+    ["$themes" {:optional true}
+     [:vector
+      [:map {:title "Theme"}
+       ["id" {:optional true} :string]
+       ["name" :string]
+       ["description" :string]
+       ["isSource" {:optional true} :boolean]
+       ["selectedTokenSets"
+        [:map-of :string [:enum "enabled" "disabled"]]]]]]
+    ["$metadata" {:optional true}
+     [:map {:title "Metadata"}
+      ["tokenSetOrder" {:optional true} [:vector :string]]
+      ["activeThemes" {:optional true} [:vector :string]]
+      ["activeSets" {:optional true} [:vector :string]]]]
+
+    [:malli.core/default
+     [:map-of :string [:ref ::node]]]]])
+
+(def ^:private check-multi-set-dtcg-data
+  (sm/check-fn schema:multi-set-dtcg))
+
+(def ^:private decode-multi-set-dtcg-data
+  (sm/decoder schema:multi-set-dtcg
+              sm/json-transformer))
+
+;; FIXME: remove `-json` suffix
 (defn parse-multi-set-dtcg-json
   "Parse a decoded json file with multi sets in DTCG format into a TokensLib."
   [decoded-json]
@@ -1685,10 +1743,10 @@ Will return a value that matches this schema:
                              (uuid/next))
                      :name (get theme "name")
                      :group (get theme "group")
-                     :is-source (get theme "is-source")
+                     :is-source (or (get theme "isSource")
+                                    ;; NOTE: backward compatibility
+                                    (get theme "is-source"))
                      :external-id (get theme "id")
-                     :modified-at (some-> (get theme "modified-at")
-                                          (ct/inst))
                      :sets (into #{}
                                  (comp (map key)
                                        xf-normalize-set-name
@@ -1736,6 +1794,25 @@ Will return a value that matches this schema:
 
     library))
 
+(defn read-multi-set-dtcg
+  "Read penpot multi-set dctg tokens. Accepts string or JSON decoded
+  data (without any case transformation). Used as schema decoder and
+  in the SDK."
+  [data]
+  (if (instance? TokensLib data)
+    data
+    (let [data (if (string? data)
+                 (json/decode data :key-fn identity)
+                 data)
+          data #?(:cljs (if (object? data)
+                          (json/->clj data :key-fn identity)
+                          data)
+                  :clj data)
+
+          data (decode-multi-set-dtcg-data data)]
+      (-> (check-multi-set-dtcg-data data)
+          (parse-multi-set-dtcg-json)))))
+
 (defn- parse-multi-set-legacy-json
   "Parse a decoded json file with multi sets in legacy format into a TokensLib."
   [decoded-json]
@@ -1748,6 +1825,7 @@ Will return a value that matches this schema:
     (parse-multi-set-dtcg-json (merge other-data
                                       dtcg-sets-data))))
 
+;; FIXME: remove `-json` suffix
 (defn parse-decoded-json
   "Guess the format and content type of the decoded json file and parse it into a TokensLib.
    The `file-name` is used to determine the set name when the json file contains a single set."
@@ -1787,8 +1865,8 @@ Will return a value that matches this schema:
     (mapv (fn [shadow]
             (if (map? shadow)
               (-> shadow
-                  (set/rename-keys {:offsetX "offsetX"
-                                    :offsetY "offsetY"
+                  (set/rename-keys {:offset-x "offsetX"
+                                    :offset-y "offsetY"
                                     :blur "blur"
                                     :spread "spread"
                                     :color "color"
@@ -1817,15 +1895,15 @@ Will return a value that matches this schema:
          (filter #(and (instance? TokenTheme %)
                        (not (hidden-theme? %))))
          (map (fn [token-theme]
-                (let [theme-map (->> token-theme
-                                     (into {})
-                                     walk/stringify-keys)]
-                  (-> theme-map
-                      (set/rename-keys  {"sets" "selectedTokenSets"
-                                         "external-id" "id"})
-                      (update "selectedTokenSets" (fn [sets]
-                                                    (->> (for [s sets] [s "enabled"])
-                                                         (into {})))))))))
+                ;; NOTE: this probaly can be implemented as type method
+                (d/without-nils
+                 {"id" (:external-id token-theme)
+                  "name" (:name token-theme)
+                  "group" (:group token-theme)
+                  "description" (:description token-theme)
+                  "isSource" (:is-source token-theme)
+                  "selectedTokenSets" (reduce #(assoc %1 %2 "enabled") {} (:sets token-theme))}))))
+
         themes
         (->> (get-theme-tree tokens-lib)
              (tree-seq d/ordered-map? vals)
@@ -1835,29 +1913,34 @@ Will return a value that matches this schema:
         active-themes
         (-> (get-active-theme-paths tokens-lib)
             (disj hidden-theme-path))]
-    {:themes themes
-     :active-themes active-themes}))
+    [themes active-themes]))
 
 (defn export-dtcg-multi-file
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi json files each encoded in DTCG format."
   [tokens-lib]
-  (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
-        sets (->> (get-sets tokens-lib)
-                  (map (fn [token-set]
-                         (let [name   (get-name token-set)
-                               tokens (get-tokens- token-set)]
-                           [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
-                  (into {}))]
+  (let [[themes active-themes]
+        (dtcg-export-themes tokens-lib)
+
+        sets
+        (->> (get-sets tokens-lib)
+             (map (fn [token-set]
+                    (let [name   (get-name token-set)
+                          tokens (get-tokens- token-set)]
+                      [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
+             (into {}))]
+
     (-> sets
         (assoc "$themes.json" themes)
-        (assoc "$metadata.json" {"tokenSetOrder" (get-set-names tokens-lib)
-                                 "activeThemes" active-themes
-                                 "activeSets" (get-active-themes-set-names tokens-lib)}))))
+        (assoc "$metadata.json"
+               {"tokenSetOrder" (get-set-names tokens-lib)
+                "activeThemes" active-themes
+                "activeSets" (get-active-themes-set-names tokens-lib)}))))
 
 (defn export-dtcg-json
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
   [tokens-lib]
-  (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
+  (let [[themes active-themes]
+        (dtcg-export-themes tokens-lib)
 
         name-set-tuples
         (->> (get-set-tree tokens-lib)

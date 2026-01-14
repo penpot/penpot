@@ -162,6 +162,7 @@
 (dm/export gtr/inverse-transform-matrix)
 (dm/export gtr/transform-rect)
 (dm/export gtr/calculate-geometry)
+(dm/export gtr/calculate-selrect)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
 (dm/export gtr/apply-transform)

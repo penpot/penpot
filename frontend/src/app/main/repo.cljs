@@ -77,12 +77,21 @@
    {:query-params [:file-id :revn]
     :form-data? true}
 
+   ::sse/export-binfile
+   {:stream? true}
+
    ::sse/clone-template
    {:stream? true}
 
    ::sse/import-binfile
    {:stream? true
     :form-data? true}
+
+   ::sse/permanently-delete-team-files
+   {:stream? true}
+
+   ::sse/restore-deleted-team-files
+   {:stream? true}
 
    :export-binfile {:response-type :blob}
    :retrieve-list-of-builtin-templates {:query-params :all}})
@@ -171,9 +180,8 @@
   (send! id params nil))
 
 (defmethod cmd! :login-with-oidc
-  [_ {:keys [provider] :as params}]
-  (let [uri    (u/join cf/public-uri "api/auth/oauth/" (d/name provider))
-        params (dissoc params :provider)]
+  [_ params]
+  (let [uri (u/join cf/public-uri "api/auth/oidc")]
     (->> (http/send! {:method :post
                       :uri uri
                       :credentials "include"

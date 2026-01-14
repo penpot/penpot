@@ -61,6 +61,7 @@
         nodes-ref    (mf/use-ref nil)
         options-ref  (mf/use-ref nil)
         listbox-id   (mf/use-id)
+        value-ref    (mf/use-ref nil)
 
         dropdown-options
         (mf/with-memo [options filter-id]
@@ -200,11 +201,10 @@
            (let [value (-> event
                            dom/get-target
                            dom/get-value)]
+             (mf/set-ref-val! value-ref value)
              (reset! selected-id* value)
              (reset! filter-id* value)
-             (reset! focused-id* nil)
-             (when (fn? on-change)
-               (on-change value)))))
+             (reset! focused-id* nil))))
 
         selected-option
         (mf/with-memo [options selected-id]
@@ -222,6 +222,13 @@
      (mf/deps default-selected)
      (fn []
        (reset! selected-id* default-selected)))
+
+    ;; On componnet unmount, save the new value if needed
+    (mf/with-effect [on-change]
+      (fn []
+        (when-let [value (mf/ref-val value-ref)]
+          (mf/set-ref-val! value-ref nil)
+          (on-change value))))
 
     [:div {:ref combobox-ref
            :class (stl/css-case

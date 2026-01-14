@@ -30,6 +30,9 @@
 (def profile
   (l/derived (l/key :profile) st/state))
 
+(def current-page-id
+  (l/derived (l/key :current-page-id) st/state))
+
 (def team
   (l/derived (fn [state]
                (let [team-id (:current-team-id state)
@@ -153,6 +156,9 @@
 (def workspace-tokens
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
+
+(def workspace-selrect
+  (l/derived :workspace-selrect st/state))
 
 ;; WARNING: Don't use directly from components, this is a proxy to
 ;; improve performance of selected-shapes and
@@ -368,6 +374,9 @@
 
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
+
+(def workspace-wasm-modifiers
+  (l/derived :workspace-wasm-modifiers st/state))
 
 (def ^:private workspace-modifiers-with-objects
   (l/derived
@@ -627,3 +636,6 @@
 
 (def persistence-state
   (l/derived (comp :status :persistence) st/state))
+
+(def progress
+  (l/derived :progress st/state))

@@ -42,10 +42,13 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
@@ -58,7 +61,6 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
-
 
 (defn copy-selected
   []
@@ -183,7 +185,7 @@
         (let [text (wapi/get-current-selected-text)]
           (if-not (str/empty? text)
             (try
-              (wapi/write-to-clipboard text)
+              (clipboard/to-clipboard text)
               (catch :default e
                 (on-copy-error e)))
 
@@ -227,7 +229,7 @@
                               (rx/map #(t/encode-str % {:type :json-verbose}))
                               (rx/map #(wapi/create-blob % "text/plain"))
                               (rx/subs! resolve reject))))]
-                  (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
+                  (->> (rx/from (clipboard/to-clipboard-promise "text/plain" resolve-data-promise))
                        (rx/catch on-copy-error)
                        (rx/ignore)))
 
@@ -240,7 +242,7 @@
                      (rx/map (partial sort-selected state))
                      (rx/map (partial advance-copies state selected))
                      (rx/map #(t/encode-str % {:type :json-verbose}))
-                     (rx/map wapi/write-to-clipboard)
+                     (rx/map clipboard/to-clipboard)
                      (rx/catch on-copy-error)
                      (rx/ignore))))))))))
 
@@ -252,49 +254,49 @@
 (declare ^:private paste-svg-text)
 (declare ^:private paste-shapes)
 
+(def ^:private default-options
+  #js {:decodeTransit t/decode-str
+       :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
+
+(defn create-paste-from-blob
+  [in-viewport?]
+  (fn [blob]
+    (let [type (.-type blob)
+          result (cond
+                   (= type "image/svg+xml")
+                   (->> (rx/from (.text blob))
+                        (rx/map paste-svg-text))
+
+                   (some #(= type %) clipboard/image-types)
+                   (rx/of (paste-image blob))
+
+                   (= type "text/html")
+                   (->> (rx/from (.text blob))
+                        (rx/map paste-html-text))
+
+                   (= type "application/transit+json")
+                   (->> (rx/from (.text blob))
+                        (rx/map (fn [text]
+                                  (let [transit-data (t/decode-str text)]
+                                    (assoc transit-data :in-viewport in-viewport?))))
+                        (rx/map paste-transit-shapes))
+
+                   :else
+                   (->> (rx/from (.text blob))
+                        (rx/map paste-text)))]
+      result)))
+
+(def default-paste-from-blob (create-paste-from-blob false))
+
 (defn paste-from-clipboard
   "Perform a `paste` operation using the Clipboard API."
   []
-  (letfn [(decode-entry [entry]
-            (try
-              [:transit (t/decode-str entry)]
-              (catch :default _cause
-                [:text entry])))
-
-          (process-entry [[type data]]
-            (case type
-              :text
-              (cond
-                (str/empty? data)
-                (rx/empty)
-
-                (re-find #"<svg\s" data)
-                (rx/of (paste-svg-text data))
-
-                :else
-                (rx/of (paste-text data)))
-
-              :transit
-              (rx/of (paste-transit-shapes data))))
-
-          (on-error [cause]
-            (let [data (ex-data cause)]
-              (if (:not-implemented data)
-                (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-                (js/console.error "Clipboard error:" cause))
-              (rx/empty)))]
-
-    (ptk/reify ::paste-from-clipboard
-      ptk/WatchEvent
-      (watch [_ _ _]
-        (->> (rx/concat
-              (->> (wapi/read-from-clipboard)
-                   (rx/map decode-entry)
-                   (rx/mapcat process-entry))
-              (->> (wapi/read-image-from-clipboard)
-                   (rx/map paste-image)))
-             (rx/take 1)
-             (rx/catch on-error))))))
+  (ptk/reify ::paste-from-clipboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (clipboard/from-navigator default-options)
+           (rx/mapcat default-paste-from-blob)
+           (rx/take 1)))))
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -310,30 +312,8 @@
         ;; we forbid that scenario so the default behaviour is executed
         (if is-editing?
           (rx/empty)
-          (let [pdata        (wapi/read-from-paste-event event)
-                image-data   (some-> pdata wapi/extract-images)
-                text-data    (some-> pdata wapi/extract-text)
-                html-data    (some-> pdata wapi/extract-html-text)
-                transit-data (ex/ignoring (some-> text-data t/decode-str))]
-            (cond
-              (and (string? text-data) (re-find #"<svg\s" text-data))
-              (rx/of (paste-svg-text text-data))
-
-              (seq image-data)
-              (->> (rx/from image-data)
-                   (rx/map paste-image))
-
-              (coll? transit-data)
-              (rx/of (paste-transit-shapes (assoc transit-data :in-viewport in-viewport?)))
-
-              (and (string? html-data) (d/not-empty? html-data))
-              (rx/of (paste-html-text html-data text-data))
-
-              (and (string? text-data) (d/not-empty? text-data))
-              (rx/of (paste-text text-data))
-
-              :else
-              (rx/empty))))))))
+          (->> (clipboard/from-synthetic-clipboard-event event default-options)
+               (rx/mapcat (create-paste-from-blob in-viewport?))))))))
 
 (defn copy-selected-svg
   []
@@ -352,7 +332,7 @@
 
             shapes          (mapv maybe-translate selected)
             svg-formatted   (svg/generate-formatted-markup objects shapes)]
-        (wapi/write-to-clipboard svg-formatted)))))
+        (clipboard/to-clipboard svg-formatted)))))
 
 (defn copy-selected-css
   []
@@ -362,7 +342,7 @@
       (let [objects (dsh/lookup-page-objects state)
             selected (->> (dsh/lookup-selected state) (mapv (d/getf objects)))
             css (css/generate-style objects selected selected {:with-prelude? false})]
-        (wapi/write-to-clipboard css)))))
+        (clipboard/to-clipboard css)))))
 
 (defn copy-selected-css-nested
   []
@@ -374,7 +354,7 @@
                           (cfh/selected-with-children objects)
                           (mapv (d/getf objects)))
             css (css/generate-style objects selected selected {:with-prelude? false})]
-        (wapi/write-to-clipboard css)))))
+        (clipboard/to-clipboard css)))))
 
 (defn copy-selected-text
   []
@@ -405,7 +385,7 @@
                       (-> shape :content txt/content->text))))
                  (str/join "\n"))]
 
-        (wapi/write-to-clipboard text)))))
+        (clipboard/to-clipboard text)))))
 
 (defn copy-selected-props
   []
@@ -474,7 +454,7 @@
                                   (rx/map #(wapi/create-blob % "text/plain"))
                                   (rx/subs! resolve reject))))]
 
-                      (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
+                      (->> (rx/from (clipboard/to-clipboard-promise "text/plain" resolve-data-promise))
                            (rx/catch on-copy-error)
                            (rx/ignore)))
                     ;; FIXME: this is to support Firefox versions below 116 that don't support
@@ -482,7 +462,7 @@
                     ;; https://caniuse.com/?search=ClipboardItem
                     (->> (rx/of copy-data)
                          (rx/mapcat resolve-images)
-                         (rx/map #(wapi/write-to-clipboard (t/encode-str % {:type :json-verbose})))
+                         (rx/map #(clipboard/to-clipboard (t/encode-str % {:type :json-verbose})))
                          (rx/catch on-copy-error)
                          (rx/ignore))))))))))))
 
@@ -502,7 +482,8 @@
                       (js/console.error "Clipboard error:" cause))
                     (rx/empty)))]
 
-          (->> (wapi/read-from-clipboard)
+          (->> (clipboard/from-navigator default-options)
+               (rx/mapcat #(.text %))
                (rx/map decode-entry)
                (rx/take 1)
                (rx/catch on-error)))))))
@@ -725,53 +706,58 @@
                                         (= 1 (count tree-root)))]
 
               (cond
+                ;; Paste next to selected frame, if selected is itself or of the same size as the copied
+                (and (selected-frame? state)
+                     (or (any-same-frame-from-selected? state (keys pobjects))
+                         (and only-one-root-shape?
+                              (frame-same-size? pobjects (first tree-root)))))
+                (let [selected-frame-obj (get page-objects (first page-selected))
+                      parent-id          (:parent-id base)
+                      paste-x            (+ (:width selected-frame-obj) (:x selected-frame-obj) 50)
+                      paste-y            (:y selected-frame-obj)
+                      delta              (gpt/subtract (gpt/point paste-x paste-y) orig-pos)]
+
+                  [parent-id delta index])
+
+                ;; Paste inside selected frame otherwise
                 (selected-frame? state)
+                (let [selected-frame-obj (get page-objects (first page-selected))
+                      origin-frame-id (:frame-id first-selected-obj)
+                      origin-frame-object (get page-objects origin-frame-id)
 
-                (if (or (any-same-frame-from-selected? state (keys pobjects))
-                        (and only-one-root-shape?
-                             (frame-same-size? pobjects (first tree-root))))
-                  ;; Paste next to selected frame, if selected is itself or of the same size as the copied
-                  (let [selected-frame-obj (get page-objects (first page-selected))
-                        parent-id          (:parent-id base)
-                        paste-x            (+ (:width selected-frame-obj) (:x selected-frame-obj) 50)
-                        paste-y            (:y selected-frame-obj)
-                        delta              (gpt/subtract (gpt/point paste-x paste-y) orig-pos)]
+                      margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
+                                   (min (- (:width frame-object) (:width wrapper))))
 
-                    [parent-id delta index])
+                      margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
+                                    (min (- (:height frame-object) (:height wrapper))))
 
-                  ;; Paste inside selected frame otherwise
-                  (let [selected-frame-obj (get page-objects (first page-selected))
-                        origin-frame-id (:frame-id first-selected-obj)
-                        origin-frame-object (get page-objects origin-frame-id)
+                      ;; Pasted objects mustn't exceed the selected frame x limit
+                      paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
+                                (+ (- (:x frame-object) (:x orig-pos)) (- (:width frame-object) (:width wrapper) margin-x))
+                                (:x frame-object))
 
-                        margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
-                                     (min (- (:width frame-object) (:width wrapper))))
+                      ;; Pasted objects mustn't exceed the selected frame y limit
+                      paste-y (if (> (+ (:height wrapper) (:y1 wrapper)) (:height frame-object))
+                                (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
+                                (:y frame-object))
 
-                        margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
-                                      (min (- (:height frame-object) (:height wrapper))))
+                      delta (if (= origin-frame-id uuid/zero)
+                              ;; When the origin isn't in a frame the result is pasted in the center.
+                              (gpt/subtract (gsh/shape->center frame-object) (grc/rect->center wrapper))
+                              ;; When pasting from one frame to another frame the object
+                              ;; position must be limited to container boundaries. If
+                              ;; the pasted object doesn't fit we try to:
+                              ;;
+                              ;; - Align it to the limits on the x and y axis
+                              ;; - Respect the distance of the object to the right
+                              ;;   and bottom in the original frame
+                              (gpt/point paste-x paste-y))
 
-                        ;; Pasted objects mustn't exceed the selected frame x limit
-                        paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
-                                  (+ (- (:x frame-object) (:x orig-pos)) (- (:width frame-object) (:width wrapper) margin-x))
-                                  (:x frame-object))
-
-                        ;; Pasted objects mustn't exceed the selected frame y limit
-                        paste-y (if (> (+ (:height wrapper) (:y1 wrapper)) (:height frame-object))
-                                  (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
-                                  (:y frame-object))
-
-                        delta (if (= origin-frame-id uuid/zero)
-                                ;; When the origin isn't in a frame the result is pasted in the center.
-                                (gpt/subtract (gsh/shape->center frame-object) (grc/rect->center wrapper))
-                                ;; When pasting from one frame to another frame the object
-                                ;; position must be limited to container boundaries. If
-                                ;; the pasted object doesn't fit we try to:
-                                ;;
-                                ;; - Align it to the limits on the x and y axis
-                                ;; - Respect the distance of the object to the right
-                                ;;   and bottom in the original frame
-                                (gpt/point paste-x paste-y))]
-                    [frame-id delta (dec (count (:shapes selected-frame-obj)))]))
+                      target-index
+                      (if (and (ctl/flex-layout? selected-frame-obj) (ctl/reverse? selected-frame-obj))
+                        (dec 0) ;; Before the first index 0
+                        (count (:shapes selected-frame-obj)))]
+                  [frame-id delta target-index])
 
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects position)
@@ -968,17 +954,18 @@
     (deref ms/mouse-position)))
 
 (defn- paste-html-text
-  [html text]
-  (dm/assert! (string? html))
+  [html]
+  (assert (string? html))
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
       (let [style   (deref refs/workspace-clipboard-style)
-            root    (dwtxt/create-root-from-html html style)
+            root    (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))
+            text    (.-textContent root)
             content (tc/dom->cljs root)]
         (when (types.text/valid-content? content)
           (let [id     (uuid/next)
-                width (max 8 (min (* 7 (count text)) 700))
+                width  (max 8 (min (* 7 (count text)) 700))
                 height 16
                 {:keys [x y]} (calculate-paste-position state)
 
@@ -1051,4 +1038,4 @@
   (ptk/reify ::copy-link-to-clipboard
     ptk/WatchEvent
     (watch [_ _ _]
-      (wapi/write-to-clipboard (rt/get-current-href)))))
+      (clipboard/to-clipboard (rt/get-current-href)))))

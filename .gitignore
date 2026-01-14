@@ -5,6 +5,7 @@
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+.pnpm-store
 *-init.clj
 *.css.json
 *.jar
@@ -80,3 +81,4 @@ node_modules
 /playwright/.cache/
 /render-wasm/target/
 /**/.yarn/*
+/.pnpm-store

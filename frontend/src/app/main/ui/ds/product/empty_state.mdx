@@ -1,0 +1,35 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+  
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as EmptyState from "./empty_state.stories";
+
+<Meta title="Product/EmptyState" />
+
+# EmptyState
+
+An indication to the user that there is no data to display in the current view; often includes instructions on what to do next.
+
+<Canvas of={EmptyState.Default} />
+
+## Technical notes
+
+The icon and the text are mandatory, and a class is optional.
+
+```clj
+[:> empty-state* {:icon i/at
+                  :text "This is an empty state"}]
+```
+
+## Usage guidelines (design)
+
+### Where to use
+
+Use in areas of the app where users can add data or elements, but where there is currently no available information.
+
+### Interaction / Behavior
+
+There is no interaction.

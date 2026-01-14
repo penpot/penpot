@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $0);
+
+set -ex
+
+$SCRIPT_DIR/setup;
+
+yarn run test:e2e -x --workers=2 --reporter=list "$@";

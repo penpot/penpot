@@ -1,5 +1,6 @@
 ---
 title: 1.2 Install with Elestio
+desc: "Step-by-step guide to deploy a self-hosted Penpot on Elestio: 3-minute setup, managed DNS/SMTP/SSL/backups, Docker Compose config, updates & support."
 ---
 
 # Install with Elestio

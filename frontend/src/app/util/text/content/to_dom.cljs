@@ -119,13 +119,6 @@
   [paragraph]
   (some #(not= "" (:text % "")) (:children paragraph)))
 
-(defn should-filter-empty-paragraph?
-  [paragraphs index]
-  (and (not (has-content? (nth paragraphs index)))
-       (< index (count paragraphs))
-       (some has-content? (drop (inc index) paragraphs))
-       (every? #(not (has-content? %)) (take (inc index) paragraphs))))
-
 (defn create-inline
   [inline paragraph]
   (create-element
@@ -150,7 +143,6 @@
         paragraphs (get-in root [:children 0 :children])
         filtered-paragraphs (->> paragraphs
                                  (map-indexed vector)
-                                 (remove (fn [[index _]] (should-filter-empty-paragraph? paragraphs index)))
                                  (mapv second))]
     (create-element
      "div"

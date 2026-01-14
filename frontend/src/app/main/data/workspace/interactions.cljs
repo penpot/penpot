@@ -119,21 +119,6 @@
       (let [page (dsh/lookup-page state)]
         (rx/of (update-flow (:id page) flow-id #(assoc % :name name)))))))
 
-(defn start-rename-flow
-  [id]
-  (dm/assert! (uuid? id))
-  (ptk/reify ::start-rename-flow
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :flow-for-rename] id))))
-
-(defn end-rename-flow
-  []
-  (ptk/reify ::end-rename-flow
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local dissoc :flow-for-rename))))
-
 ;; --- Interactions
 
 (defn- connected-frame?

@@ -137,33 +137,34 @@ RETURNING task.id, task.queue")
                 ::wait)))
 
           (run-batch []
-            (let [rconn (rds/connect cfg)]
-              (try
-                (-> cfg
-                    (assoc ::rds/conn rconn)
-                    (db/tx-run! run-batch'))
+            (try
+              (let [rconn (rds/connect cfg)]
+                (try
+                  (-> cfg
+                      (assoc ::rds/conn rconn)
+                      (db/tx-run! run-batch'))
+                  (finally
+                    (.close ^AutoCloseable rconn))))
 
-                (catch InterruptedException cause
-                  (throw cause))
-                (catch Exception cause
-                  (cond
-                    (rds/exception? cause)
-                    (do
-                      (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
-                      (px/sleep timeout))
+              (catch InterruptedException cause
+                (throw cause))
 
-                    (db/sql-exception? cause)
-                    (do
-                      (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
-                      (px/sleep timeout))
+              (catch Exception cause
+                (cond
+                  (rds/exception? cause)
+                  (do
+                    (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
+                    (px/sleep timeout))
 
-                    :else
-                    (do
-                      (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
-                      (px/sleep timeout))))
+                  (db/sql-exception? cause)
+                  (do
+                    (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
+                    (px/sleep timeout))
 
-                (finally
-                  (.close ^AutoCloseable rconn)))))
+                  :else
+                  (do
+                    (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
+                    (px/sleep timeout))))))
 
           (dispatcher []
             (l/inf :hint "started")
@@ -176,7 +177,7 @@ RETURNING task.id, task.queue")
               (catch InterruptedException _
                 (l/trc :hint "interrupted"))
               (catch Throwable cause
-                (l/err :hint " unexpected exception" :cause cause))
+                (l/err :hint "unexpected exception" :cause cause))
               (finally
                 (l/inf :hint "terminated"))))]
 

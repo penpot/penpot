@@ -18,15 +18,15 @@
 (def ^:private sql:get-profiles
   "SELECT id, photo_id FROM profile
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-profiles!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-profiles deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-profiles timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id]}]
                  (l/trc :obj "profile" :id (str id))
 
@@ -41,15 +41,15 @@
 (def ^:private sql:get-teams
   "SELECT deleted_at, id, photo_id FROM team
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-teams!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-teams deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-teams timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id deleted-at]}]
                  (l/trc :obj "team"
                         :id (str id)
@@ -68,15 +68,15 @@
   "SELECT id, team_id, deleted_at, woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id
      FROM team_font_variant
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-fonts!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-fonts deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-fonts timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
                  (l/trc :obj "font-variant"
                         :id (str id)
@@ -98,15 +98,15 @@
   "SELECT id, deleted_at, team_id
      FROM project
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-projects!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-projects deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-projects timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at]}]
                  (l/trc :obj "project"
                         :id (str id)
@@ -124,15 +124,15 @@
           f.project_id
      FROM file AS f
     WHERE f.deleted_at IS NOT NULL
-      AND f.deleted_at < now() + ?::interval
+      AND f.deleted_at <= ?
     ORDER BY f.deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-files deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-files timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
                  (l/trc :obj "file"
                         :id (str id)
@@ -148,15 +148,15 @@
   "SELECT file_id, revn, media_id, deleted_at
      FROM file_thumbnail
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn delete-file-thumbnails!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-thumbnails deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-thumbnails timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                  (l/trc :obj "file-thumbnail"
                         :file-id (str file-id)
@@ -175,15 +175,15 @@
   "SELECT file_id, object_id, media_id, deleted_at
      FROM file_tagged_object_thumbnail
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn delete-file-object-thumbnails!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-object-thumbnails deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-object-thumbnails timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                  (l/trc :obj "file-object-thumbnail"
                         :file-id (str file-id)
@@ -203,15 +203,15 @@
   "SELECT id, file_id, media_id, thumbnail_id, deleted_at
      FROM file_media_object
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-media-objects!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-media-objects deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-media-objects timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
                  (l/trc :obj "file-media-object"
                         :id (str id)
@@ -231,16 +231,15 @@
   "SELECT file_id, id, type, deleted_at, metadata, backend
      FROM file_data
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-data!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
-
-  (->> (db/plan conn [sql:get-file-data deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-file-data timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id id type deleted-at metadata backend]}]
 
                  (some->> metadata
@@ -266,15 +265,15 @@
   "SELECT id, file_id, deleted_at
      FROM file_change
     WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
+      AND deleted_at <= ?
     ORDER BY deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-changes!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-file-change deletion-threshold chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-file-change timestamp chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
                  (l/trc :obj "file-change"
                         :id (str id)
@@ -322,9 +321,8 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (let [threshold (ct/duration (get props :deletion-threshold 0))
-          cfg       (assoc cfg ::deletion-threshold (db/interval threshold))]
+  (fn [_]
+    (let [cfg (assoc cfg ::timestamp (ct/now))]
       (loop [procs (map deref deletion-proc-vars)
              total 0]
         (if-let [proc-fn (first procs)]

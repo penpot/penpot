@@ -22,8 +22,10 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
-   [app.storage :as-alias sto]
+   [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
 
@@ -101,14 +103,15 @@
 
 (def ^:private sql:mark-delete-in-bulk
   "UPDATE storage_object
-      SET deleted_at = now(),
+      SET deleted_at = ?,
           touched_at = NULL
     WHERE id = ANY(?::uuid[])")
 
 (defn- mark-delete-in-bulk!
-  [conn ids]
-  (let [ids (db/create-array conn "uuid" ids)]
-    (db/exec-one! conn [sql:mark-delete-in-bulk ids])))
+  [conn deletion-delay ids]
+  (let [ids (db/create-array conn "uuid" ids)
+        now (ct/plus (ct/now) deletion-delay)]
+    (db/exec-one! conn [sql:mark-delete-in-bulk now ids])))
 
 ;; NOTE: A getter that retrieves the key which will be used for group
 ;; ids; previously we have no value, then we introduced the
@@ -127,7 +130,7 @@
   [{:keys [metadata]}]
   (or (some-> metadata :bucket)
       (some-> metadata :reference d/name)
-      "file-media-object"))
+      sto/default-bucket))
 
 (defn- process-objects!
   [conn has-refs? bucket objects]
@@ -137,18 +140,20 @@
     (if-let [{:keys [id] :as object} (first objects)]
       (if (has-refs? conn object)
         (do
-          (l/debug :id (str id)
-                   :status "freeze"
-                   :bucket bucket)
+          (l/dbg :id (str id)
+                 :status "freeze"
+                 :bucket bucket)
           (recur (conj to-freeze id) to-delete (rest objects)))
         (do
-          (l/debug :id (str id)
-                   :status "delete"
-                   :bucket bucket)
+          (l/dbg :id (str id)
+                 :status "delete"
+                 :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (do
+      (let [deletion-delay (if (= bucket "tempfile")
+                             (ct/duration {:hours 2})
+                             (cf/get-deletion-delay))]
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
-        (some->> (seq to-delete) (mark-delete-in-bulk! conn))
+        (some->> (seq to-delete) (mark-delete-in-bulk! conn deletion-delay))
         [(count to-freeze) (count to-delete)]))))
 
 (defn- process-bucket!
@@ -160,6 +165,7 @@
     "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? bucket objects)
     "profile"               (process-objects! conn has-profile-refs? bucket objects)
     "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
+    "tempfile"              (process-objects! conn (constantly false) bucket objects)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
@@ -173,27 +179,27 @@
              [0 0]
              (d/group-by lookup-bucket identity #{} chunk)))
 
-(def ^:private
-  sql:get-touched-storage-objects
+(def ^:private sql:get-touched-storage-objects
   "SELECT so.*
      FROM storage_object AS so
     WHERE so.touched_at IS NOT NULL
+      AND so.touched_at <= ?
     ORDER BY touched_at ASC
       FOR UPDATE
      SKIP LOCKED
     LIMIT 10")
 
 (defn get-chunk
-  [conn]
-  (->> (db/exec! conn [sql:get-touched-storage-objects])
+  [conn timestamp]
+  (->> (db/exec! conn [sql:get-touched-storage-objects timestamp])
        (map impl/decode-row)
        (not-empty)))
 
 (defn- process-touched!
-  [{:keys [::db/pool] :as cfg}]
+  [{:keys [::db/pool ::timestamp] :as cfg}]
   (loop [freezed 0
          deleted 0]
-    (if-let [chunk (get-chunk pool)]
+    (if-let [chunk (get-chunk pool timestamp)]
       (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
         (recur (long (+ freezed nfo))
                (long (+ deleted ndo))))
@@ -209,5 +215,6 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [_] (process-touched! cfg)))
+  (fn [_]
+    (process-touched! (assoc cfg ::timestamp (ct/now)))))
 

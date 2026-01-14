@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "ds/_sizes.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .history-toolbox {
@@ -30,23 +31,11 @@
 }
 
 .history-entry-empty {
-  @include deprecated.flexCenter;
+  display: flex;
   flex-direction: column;
-  gap: deprecated.$s-16;
-  padding: deprecated.$s-28 deprecated.$s-16;
-  text-align: center;
-}
-
-.history-entry-empty-icon {
-  @extend .empty-icon;
-  svg {
-    margin-left: calc(-1 * deprecated.$s-2);
-  }
-}
-
-.history-entry-empty-msg {
-  @include deprecated.bodySmallTypography;
-  color: var(--empty-message-foreground-color);
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
 }
 
 .history-entries {

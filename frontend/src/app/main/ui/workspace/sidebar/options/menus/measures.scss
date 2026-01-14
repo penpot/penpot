@@ -144,16 +144,6 @@
   grid-column: 2/-1;
 }
 
-.lock-size-btn {
-  @extend .button-tertiary;
-  border-radius: deprecated.$br-8;
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  &.selected {
-    @extend .button-icon-selected;
-  }
-}
-
 .lock-ratio-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);
@@ -164,28 +154,6 @@
   align-items: flex-start;
   justify-content: flex-start;
   gap: deprecated.$s-4;
-}
-
-.clip-content,
-.show-in-viewer {
-  .clip-content-input {
-    display: none;
-  }
-}
-
-.clip-content-label {
-  @extend .button-tertiary;
-  height: var(--sp-xxxl);
-  width: var(--sp-xxxl);
-  border-radius: deprecated.$br-8;
-}
-
-.selected {
-  @extend .button-icon-selected;
-}
-
-.checkbox-button {
-  @extend .button-icon;
 }
 
 // TODO: Add a proper variable to this sizing

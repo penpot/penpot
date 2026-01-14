@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $0);
+
+set -ex
+
+$SCRIPT_DIR/setup;
+
+yarn run build:storybook
+yarn run test:storybook

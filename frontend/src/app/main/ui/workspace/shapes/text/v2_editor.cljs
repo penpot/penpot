@@ -10,12 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
    [app.common.types.color :as color]
    [app.common.types.text :as txt]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -31,6 +33,7 @@
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn get-contrast-color [background-color]
@@ -81,7 +84,8 @@
           default-font))
 
         options
-        #js {:styleDefaults style-defaults}
+        #js {:styleDefaults style-defaults
+             :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")}
 
         instance
         (dwt/create-editor editor-node canvas-node options)
@@ -226,8 +230,8 @@
                      (stl/css :text-editor-container))
       :ref container-ref
       :data-testid "text-editor-container"
-      :style {:width (:width shape)
-              :height (:height shape)}
+      :style {:width "var(--editor-container-width)"
+              :height "var(--editor-container-height)"}
       ;; We hide the editor when is blurred because otherwise the
       ;; selection won't let us see the underlying text. Use opacity
       ;; because display or visibility won't allow to recover focus
@@ -265,7 +269,12 @@
     "bottom" "flex-end"
     nil))
 
-;;
+(defn- font-family-from-font-id [font-id]
+  (if (str/includes? font-id "gfont-noto-sans")
+    (let [lang (str/replace font-id #"gfont\-noto\-sans\-" "")]
+      (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
+    "Noto Color Emoji"))
+
 ;; Text Editor Wrapper
 ;; This is an SVG element that wraps the HTML editor.
 ;;
@@ -277,6 +286,10 @@
   [{:keys [shape modifiers canvas-ref] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
+
+        fallback-fonts (wasm.api/fonts-from-text-content (:content shape) false)
+        fallback-families (map (fn [font]
+                                 (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 
@@ -303,12 +316,26 @@
                 (some? modifiers)
                 (gsh/transform-shape modifiers))
 
-        [x y width height]
-        (if (features/active-feature? @st/state "render-wasm/v1")
-          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
-                {:keys [x y]} (:selrect shape)]
+        render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 
-            [x y width height])
+        [{:keys [x y width height]} transform]
+        (if render-wasm?
+          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+                selrect-transform (mf/deref refs/workspace-selrect)
+                [selrect transform] (dsh/get-selrect selrect-transform shape)
+                selrect-height (:height selrect)
+                selrect-width (:width selrect)
+                max-width (max width selrect-width)
+                max-height (max height selrect-height)
+                valign (-> shape :content :vertical-align)
+                y (:y selrect)
+                y (if (and valign (> height selrect-height))
+                    (case valign
+                      "bottom" (- y (- height selrect-height))
+                      "center" (- y (/ (- height selrect-height) 2))
+                      y)
+                    y)]
+            [(assoc selrect :y y :width max-width :height max-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -319,12 +346,25 @@
                                 (dm/get-prop shape :width))
                 height (mth/max (dm/get-prop bounds :height)
                                 (dm/get-prop shape :height))]
-            [x y width height]))
+            [(grc/make-rect x y width height) (gsh/transform-matrix shape)]))
 
         style
         (cond-> #js {:pointerEvents "all"}
+          render-wasm?
+          (obj/merge!
+           #js {"--editor-container-width" (dm/str width "px")
+                "--editor-container-height" (dm/str height "px")
+                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")})
 
-          (not (cf/check-browser? :safari))
+          (not render-wasm?)
+          (obj/merge!
+           #js {"--editor-container-width" (dm/str width "px")
+                "--editor-container-height" (dm/str height "px")})
+
+          ;; Transform is necessary when there is a text overflow and the vertical
+          ;; aligment is center or bottom.
+          (and (not render-wasm?)
+               (not (cf/check-browser? :safari)))
           (obj/merge!
            #js {:transform (dm/fmt "translate(%px, %px)" (- (dm/get-prop shape :x) x) (- (dm/get-prop shape :y) y))})
 
@@ -345,7 +385,7 @@
                              (dm/fmt "scale(%)" maybe-zoom))}))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
-                     :transform (dm/str (gsh/transform-matrix shape))}
+                     :transform (dm/str transform)}
      [:defs
       [:clipPath {:id clip-id}
        [:rect {:x x :y y :width width :height height}]]]

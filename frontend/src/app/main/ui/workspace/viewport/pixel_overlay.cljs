@@ -19,12 +19,12 @@
    [app.main.ui.css-cursors :as cur]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
+   [app.util.globals :as ug]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (defn create-offscreen-canvas
   [width height]
@@ -41,17 +41,19 @@
       (vreset! resized true))
     canvas))
 
-(def get-offscreen-canvas ((fn []
-                             (let [internal-state #js {:canvas nil}]
-                               (fn [width height]
-                                 (let [canvas (unchecked-get internal-state "canvas")]
-                                   (if canvas
-                                     (resize-offscreen-canvas canvas width height)
-                                     (let [new-canvas (create-offscreen-canvas width height)]
-                                       (obj/set! internal-state "canvas" new-canvas)
-                                       new-canvas))))))))
+(def get-offscreen-canvas
+  ((fn []
+     (let [internal-state #js {:canvas nil}]
+       (fn [width height]
+         (let [canvas (unchecked-get internal-state "canvas")]
+           (if canvas
+             (resize-offscreen-canvas canvas width height)
+             (let [new-canvas (create-offscreen-canvas width height)]
+               (obj/set! internal-state "canvas" new-canvas)
+               new-canvas))))))))
 
-(defn process-pointer-move [viewport-node canvas canvas-image-data zoom-view-context client-x client-y]
+(defn process-pointer-move
+  [viewport-node canvas canvas-image-data zoom-view-context client-x client-y]
   (when-let [image-data (mf/ref-val canvas-image-data)]
     (when-let [zoom-view-node (dom/get-element "picker-detail")]
       (when-not (mf/ref-val zoom-view-context)
@@ -176,7 +178,7 @@
 
     (mf/use-effect
      (fn []
-       (let [listener (events/listen js/document EventType.KEYDOWN  handle-keydown)]
+       (let [listener (events/listen ug/document "keydown" handle-keydown)]
          #(events/unlistenByKey listener))))
 
     (mf/use-effect
@@ -332,7 +334,7 @@
 
     (mf/use-effect
      (fn []
-       (let [listener (events/listen js/document EventType.KEYDOWN  handle-keydown)]
+       (let [listener (events/listen ug/document "keydown"  handle-keydown)]
          #(events/unlistenByKey listener))))
 
     (mf/use-effect
@@ -342,11 +344,11 @@
                       (rx/subs! handle-draw-picker-canvas))]
          #(rx/dispose! sub))))
 
-    (mf/use-effect
-     (fn []
-       (handle-canvas-changed)
-       (let [_ (js/document.addEventListener "wasm:render" handle-canvas-changed)]
-         #(js/document.removeEventListener "wasm:render" handle-canvas-changed))))
+    (mf/with-effect []
+      (handle-canvas-changed)
+      (.addEventListener ug/document "penpot:wasm:render" handle-canvas-changed)
+      (fn []
+        (.removeEventListener ug/document "penpot:wasm:render" handle-canvas-changed)))
 
     (mf/use-effect
      (mf/deps viewport-node canvas canvas-image-data zoom-view-context)

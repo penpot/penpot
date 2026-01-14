@@ -278,9 +278,9 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "Hello",
     );
-    expect(
-      textEditorMock.root.lastChild.firstChild.firstChild.nodeValue,
-    ).toBe(", World!");
+    expect(textEditorMock.root.lastChild.firstChild.firstChild.nodeValue).toBe(
+      ", World!",
+    );
   });
 
   test("`insertPaste` should insert a paragraph from a pasted fragment (at middle)", () => {
@@ -292,7 +292,12 @@ describe("SelectionController", () => {
       textEditorMock,
       selection,
     );
-    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, "Lorem ".length);
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      "Lorem ".length,
+    );
     const paragraph = createParagraph([createTextSpan(new Text("ipsum "))]);
     const fragment = document.createDocumentFragment();
     fragment.append(paragraph);
@@ -315,9 +320,9 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "Lorem ",
     );
-    expect(textEditorMock.root.children.item(1).firstChild.firstChild.nodeValue).toBe(
-      "ipsum ",
-    );
+    expect(
+      textEditorMock.root.children.item(1).firstChild.firstChild.nodeValue,
+    ).toBe("ipsum ");
     expect(textEditorMock.root.lastChild.firstChild.firstChild.nodeValue).toBe(
       "dolor",
     );
@@ -359,25 +364,21 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "Hello",
     );
-    expect(
-      textEditorMock.root.lastChild.firstChild.firstChild.nodeValue,
-    ).toBe(", World!");
+    expect(textEditorMock.root.lastChild.firstChild.firstChild.nodeValue).toBe(
+      ", World!",
+    );
   });
 
   test("`insertPaste` should insert a text span from a pasted fragment (at start)", () => {
-    const textEditorMock = TextEditorMock.createTextEditorMockWithText(", World!");
+    const textEditorMock =
+      TextEditorMock.createTextEditorMockWithText(", World!");
     const root = textEditorMock.root;
     const selection = document.getSelection();
     const selectionController = new SelectionController(
       textEditorMock,
       selection,
     );
-    focus(
-      selection,
-      textEditorMock,
-      root.firstChild.firstChild.firstChild,
-      0,
-    );
+    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, 0);
     const paragraph = createParagraph([createTextSpan(new Text("Hello"))]);
     paragraph.dataset.textSpan = "force";
     const fragment = document.createDocumentFragment();
@@ -415,7 +416,12 @@ describe("SelectionController", () => {
       textEditorMock,
       selection,
     );
-    focus(selection, textEditorMock, root.firstChild.firstChild.firstChild, "Lorem ".length);
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      "Lorem ".length,
+    );
     const paragraph = createParagraph([createTextSpan(new Text("ipsum "))]);
     paragraph.dataset.textSpan = "force";
     const fragment = document.createDocumentFragment();
@@ -439,9 +445,9 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "Lorem ",
     );
-    expect(textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue).toBe(
-      "ipsum ",
-    );
+    expect(
+      textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue,
+    ).toBe("ipsum ");
     expect(
       textEditorMock.root.firstChild.children.item(2).firstChild.nodeValue,
     ).toBe("dolor");
@@ -461,9 +467,7 @@ describe("SelectionController", () => {
       root.firstChild.firstChild.firstChild,
       "Hello".length,
     );
-    const paragraph = createParagraph([
-      createTextSpan(new Text(", World!"))
-    ]);
+    const paragraph = createParagraph([createTextSpan(new Text(", World!"))]);
     paragraph.dataset.textSpan = "force";
     const fragment = document.createDocumentFragment();
     fragment.append(paragraph);
@@ -486,9 +490,9 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
       "Hello",
     );
-    expect(textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue).toBe(
-      ", World!",
-    );
+    expect(
+      textEditorMock.root.firstChild.children.item(1).firstChild.nodeValue,
+    ).toBe(", World!");
   });
 
   test("`removeBackwardText` should remove text in backward direction (backspace)", () => {

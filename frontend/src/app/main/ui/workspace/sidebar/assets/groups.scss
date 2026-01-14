@@ -15,7 +15,7 @@
     cursor: pointer;
 
     .title-menu {
-      display: block;
+      visibility: visible;
     }
   }
 }
@@ -25,7 +25,7 @@
 }
 
 .title-menu {
-  display: none;
+  visibility: hidden;
 }
 
 .group-title {

@@ -38,7 +38,7 @@ export class ChangeController extends EventTarget {
    * @param {number} [time=500]
    */
   constructor(time = 500) {
-    super()
+    super();
     if (typeof time === "number" && (!Number.isInteger(time) || time <= 0)) {
       throw new TypeError("Invalid time");
     }

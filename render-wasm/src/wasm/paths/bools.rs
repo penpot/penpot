@@ -48,7 +48,7 @@ pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .map(|data| Uuid::try_from(data).unwrap())
         .collect();
 
     mem::free_bytes();

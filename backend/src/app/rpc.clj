@@ -14,6 +14,7 @@
    [app.common.spec :as us]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
@@ -68,32 +69,20 @@
         response (if (fn? result)
                    (result request)
                    (let [result  (rph/unwrap result)
-                         status  (::http/status mdata 200)
+                         status  (or (::http/status mdata)
+                                     (if (nil? result)
+                                       204
+                                       200))
                          headers (cond-> (::http/headers mdata {})
                                    (yres/stream-body? result)
                                    (assoc "content-type" "application/octet-stream"))]
                      {::yres/status  status
                       ::yres/headers headers
                       ::yres/body    result}))]
+
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
-
-(defn get-external-session-id
-  [request]
-  (when-let [session-id (yreq/get-header request "x-external-session-id")]
-    (when-not (or (> (count session-id) 256)
-                  (= session-id "null")
-                  (str/blank? session-id))
-      session-id)))
-
-(defn- get-external-event-origin
-  [request]
-  (when-let [origin (yreq/get-header request "x-event-origin")]
-    (when-not (or (> (count origin) 256)
-                  (= origin "null")
-                  (str/blank? origin))
-      origin)))
 
 (defn- make-rpc-handler
   "Ring handler that dispatches cmd requests and convert between
@@ -104,24 +93,24 @@
       (let [handler-name (:type path-params)
             etag         (yreq/get-header request "if-none-match")
             profile-id   (or (::session/profile-id request)
-                             (::actoken/profile-id request))
+                             (::actoken/profile-id request)
+                             (if (::http/auth-with-shared-key request)
+                               uuid/zero
+                               nil))
 
             ip-addr      (inet/parse-request request)
-            session-id   (get-external-session-id request)
-            event-origin (get-external-event-origin request)
 
             data         (-> params
                              (assoc ::handler-name handler-name)
                              (assoc ::ip-addr ip-addr)
                              (assoc ::request-at (ct/now))
-                             (assoc ::external-session-id session-id)
-                             (assoc ::external-event-origin event-origin)
-                             (assoc ::session/id (::session/id request))
                              (assoc ::cond/key etag)
                              (cond-> (uuid? profile-id)
                                (assoc ::profile-id profile-id)))
 
-            data         (vary-meta data assoc ::http/request request)
+            data         (with-meta data
+                           {::http/request request})
+
             handler-fn   (get methods (keyword handler-name) default-handler)]
 
         (when (and (or (= method :get)
@@ -311,7 +300,8 @@
   [cfg]
   (let [cfg (assoc cfg ::type "management" ::metrics-id :rpc-management-timing)]
     (->> (sv/scan-ns
-          'app.rpc.management.subscription)
+          'app.rpc.management.subscription
+          'app.rpc.management.exporter)
          (map (partial process-method cfg "management" wrap-management))
          (into {}))))
 
@@ -362,15 +352,16 @@
   (assert (valid-methods? (::management-methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::methods ::management-methods] :as cfg}]
+  [_ {:keys [::methods ::management-methods ::setup/props] :as cfg}]
 
-  (let [public-uri (cf/get :public-uri)]
+  (let [public-uri     (cf/get :public-uri)
+        management-key (or (cf/get :management-api-key)
+                           (get props :management-key))]
+
     ["/api"
-
-
      ["/management"
       ["/methods/:type"
-       {:middleware [[mw/shared-key-auth (cf/get :management-api-shared-key)]
+       {:middleware [[mw/shared-key-auth management-key]
                      [session/authz cfg]]
         :handler (make-rpc-handler management-methods)}]
 

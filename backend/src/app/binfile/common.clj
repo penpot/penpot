@@ -331,6 +331,81 @@
                                  (set/difference cfeat/backend-only-features))
                              #{}))))
 
+(defn check-file-exists
+  [cfg id & {:keys [include-deleted?]
+             :or {include-deleted? false}
+             :as options}]
+  (db/get-with-sql cfg [sql:get-minimal-file id]
+                   {:db/remove-deleted (not include-deleted?)}))
+
+(def ^:private sql:file-permissions
+  "select fpr.is_owner,
+          fpr.is_admin,
+          fpr.can_edit
+     from file_profile_rel as fpr
+    inner join file as f on (f.id = fpr.file_id)
+    where fpr.file_id = ?
+      and fpr.profile_id = ?
+   union all
+   select tpr.is_owner,
+          tpr.is_admin,
+          tpr.can_edit
+     from team_profile_rel as tpr
+    inner join project as p on (p.team_id = tpr.team_id)
+    inner join file as f on (p.id = f.project_id)
+    where f.id = ?
+      and tpr.profile_id = ?
+   union all
+   select ppr.is_owner,
+          ppr.is_admin,
+          ppr.can_edit
+     from project_profile_rel as ppr
+    inner join file as f on (f.project_id = ppr.project_id)
+    where f.id = ?
+      and ppr.profile_id = ?")
+
+(defn- get-file-permissions*
+  [conn profile-id file-id]
+  (when (and profile-id file-id)
+    (db/exec! conn [sql:file-permissions
+                    file-id profile-id
+                    file-id profile-id
+                    file-id profile-id])))
+
+(defn get-file-permissions
+  ([conn profile-id file-id]
+   (let [rows     (get-file-permissions* conn profile-id file-id)
+         is-owner (boolean (some :is-owner rows))
+         is-admin (boolean (some :is-admin rows))
+         can-edit (boolean (some :can-edit rows))]
+     (when (seq rows)
+       {:type :membership
+        :is-owner is-owner
+        :is-admin (or is-owner is-admin)
+        :can-edit (or is-owner is-admin can-edit)
+        :can-read true
+        :is-logged (some? profile-id)})))
+
+  ([conn profile-id file-id share-id]
+   (let [perms  (get-file-permissions conn profile-id file-id)
+         ldata  (some-> (db/get* conn :share-link {:id share-id :file-id file-id})
+                        (dissoc :flags)
+                        (update :pages db/decode-pgarray #{}))]
+
+     ;; NOTE: in a future when share-link becomes more powerful and
+     ;; will allow us specify which parts of the app is available, we
+     ;; will probably need to tweak this function in order to expose
+     ;; this flags to the frontend.
+     (cond
+       (some? perms) perms
+       (some? ldata) {:type :share-link
+                      :can-read true
+                      :pages (:pages ldata)
+                      :is-logged (some? profile-id)
+                      :who-comment (:who-comment ldata)
+                      :who-inspect (:who-inspect ldata)}))))
+
+
 (defn get-project
   [cfg project-id]
   (db/get cfg :project {:id project-id}))

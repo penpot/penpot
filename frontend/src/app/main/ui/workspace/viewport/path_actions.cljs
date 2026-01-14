@@ -11,39 +11,10 @@
    [app.main.data.workspace.path :as drp]
    [app.main.data.workspace.path.shortcuts :as sc]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(def ^:private pentool-icon
-  (deprecated-icon/icon-xref :pentool (stl/css :pentool-icon :pathbar-icon)))
-
-(def ^:private move-icon
-  (deprecated-icon/icon-xref :move (stl/css :move-icon :pathbar-icon)))
-
-(def ^:private add-icon
-  (deprecated-icon/icon-xref :add (stl/css :add-icon :pathbar-icon)))
-
-(def ^:private remove-icon
-  (deprecated-icon/icon-xref :remove (stl/css :remove :pathbar-icon)))
-
-(def ^:private merge-nodes-icon
-  (deprecated-icon/icon-xref :merge-nodes (stl/css :merge-nodes-icon :pathbar-icon)))
-
-(def ^:private join-nodes-icon
-  (deprecated-icon/icon-xref :join-nodes (stl/css :join-nodes-icon :pathbar-icon)))
-
-(def ^:private separate-nodes-icon
-  (deprecated-icon/icon-xref :separate-nodes (stl/css :separate-nodes-icon :pathbar-icon)))
-
-(def ^:private to-corner-icon
-  (deprecated-icon/icon-xref :to-corner (stl/css :to-corner-icon :pathbar-icon)))
-
-(def ^:private to-curve-icon
-  (deprecated-icon/icon-xref :to-curve (stl/css :to-curve-icon :pathbar-icon)))
-
-(def ^:private snap-nodes-icon
-  (deprecated-icon/icon-xref :snap-nodes (stl/css :snap-nodes-icon :pathbar-icon)))
 
 (defn check-enabled [content selected-points]
   (when content
@@ -144,76 +115,91 @@
     [:div {:class (stl/css :sub-actions)
            :data-dont-clear-path true}
      [:div {:class (stl/css :sub-actions-group)}
-
       ;; Draw Mode
-      [:button {:class  (stl/css-case :is-toggled (= edit-mode :draw)
-                                      :topbar-btn true)
-                :title (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
-                :on-click on-select-draw-mode}
-       pentool-icon]
-
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/pentool
+                        :aria-pressed (= edit-mode :draw)
+                        :aria-label (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
+                        :tooltip-placement "bottom"
+                        :on-click on-select-draw-mode}]
        ;; Edit mode
-      [:button {:class (stl/css-case :is-toggled (= edit-mode :move)
-                                     :topbar-btn true)
-                :title (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
-                :on-click on-select-edit-mode}
-       move-icon]]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/move
+                        :aria-pressed (= edit-mode :move)
+                        :aria-label (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
+                        :tooltip-placement "bottom"
+                        :on-click on-select-edit-mode}]]
 
      [:div {:class (stl/css :sub-actions-group)}
       ;; Add Node
-      [:button {:disabled (not (:add-node enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
-                :on-click on-add-node}
-       add-icon]
-
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/add
+                        :aria-label (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
+                        :tooltip-placement "bottom"
+                        :on-click on-add-node
+                        :disabled (not (:add-node enabled-buttons))}]
       ;; Remove node
-      [:button {:disabled (not (:remove-node enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
-                :on-click on-remove-node}
-       remove-icon]]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/remove
+                        :aria-label (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
+                        :tooltip-placement "bottom"
+                        :on-click on-remove-node
+                        :disabled (not (:remove-node enabled-buttons))}]]
 
      [:div {:class (stl/css :sub-actions-group)}
       ;; Merge Nodes
-      [:button {:disabled (not (:merge-nodes enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
-                :on-click on-merge-nodes}
-       merge-nodes-icon]
-
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/merge-nodes
+                        :aria-label (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
+                        :tooltip-placement "bottom"
+                        :on-click on-merge-nodes
+                        :disabled (not (:merge-nodes enabled-buttons))}]
       ;; Join Nodes
-      [:button {:disabled (not (:join-nodes enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
-                :on-click on-join-nodes}
-       join-nodes-icon]
-
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/join-nodes
+                        :aria-label (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
+                        :tooltip-placement "bottom"
+                        :on-click on-join-nodes
+                        :disabled (not (:join-nodes enabled-buttons))}]
       ;; Separate Nodes
-      [:button {:disabled (not (:separate-nodes enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
-                :on-click on-separate-nodes}
-       separate-nodes-icon]]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/separate-nodes
+                        :aria-label (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
+                        :tooltip-placement "bottom"
+                        :on-click on-separate-nodes
+                        :disabled (not (:separate-nodes enabled-buttons))}]]
 
      [:div {:class (stl/css :sub-actions-group)}
       ; Make Corner
-      [:button {:disabled (not (:make-corner enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
-                :on-click on-make-corner}
-       to-corner-icon]
-
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/to-corner
+                        :aria-label (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
+                        :tooltip-placement "bottom"
+                        :on-click on-make-corner
+                        :disabled (not (:make-corner enabled-buttons))}]
       ;; Make Curve
-      [:button {:disabled (not (:make-curve enabled-buttons))
-                :class (stl/css :topbar-btn)
-                :title (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
-                :on-click on-make-curve}
-       to-curve-icon]]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/to-curve
+                        :aria-label (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
+                        :tooltip-placement "bottom"
+                        :on-click on-make-curve
+                        :disabled (not (:make-curve enabled-buttons))}]]
+
      [:div {:class (stl/css :sub-actions-group)}
       ;; Toggle snap
-      [:button {:class  (stl/css-case :is-toggled snap-toggled
-                                      :topbar-btn true)
-                :title (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
-                :on-click on-toggle-snap}
-       snap-nodes-icon]]]))
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :topbar-btn)
+                        :icon i/snap-nodes
+                        :aria-pressed snap-toggled
+                        :aria-label (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
+                        :tooltip-placement "bottom"
+                        :on-click on-toggle-snap}]]]))

@@ -1,4 +1,27 @@
 export class BasePage {
+  /**
+   * Mocks multiple RPC calls in a single call.
+   *
+   * @param {Page} page
+   * @param {object<string, string>} paths
+   * @param {*} options
+   * @returns {Promise<void>}
+   */
+  static async mockRPCs(page, paths, options) {
+    for (const [path, jsonFilename] of Object.entries(paths)) {
+      await this.mockRPC(page, path, jsonFilename, options);
+    }
+  }
+
+  /**
+   * Mocks an RPC call using a file.
+   *
+   * @param {Page} page
+   * @param {string} path
+   * @param {string} jsonFilename
+   * @param {*} options
+   * @returns {Promise<void>}
+   */
   static async mockRPC(page, path, jsonFilename, options) {
     if (!page) {
       throw new TypeError("Invalid page argument. Must be a Playwright page.");
@@ -23,11 +46,18 @@ export class BasePage {
     );
   }
 
-  static async mockFileMediaAsset(page, assetId, assetFilename, options) {
+  static async mockFileMediaAsset(
+    page,
+    assetId,
+    assetFilename,
+    assetThumbnailFilename,
+    options,
+  ) {
     const ids = Array.isArray(assetId) ? assetId : [assetId];
 
     for (const id of ids) {
       const url = `**/assets/by-file-media-id/${id}`;
+      const thumbnailUrl = `${url}/thumbnail`;
 
       await page.route(url, (route) =>
         route.fulfill({
@@ -36,6 +66,16 @@ export class BasePage {
           ...options,
         }),
       );
+
+      if (assetThumbnailFilename) {
+        await page.route(thumbnailUrl, (route) =>
+          route.fulfill({
+            path: `playwright/data/${assetThumbnailFilename}`,
+            status: 200,
+            ...options,
+          }),
+        );
+      }
     }
   }
 
@@ -55,24 +95,8 @@ export class BasePage {
     }
   }
 
-  static async mockFileMediaAsset(page, assetId, assetFilename, options) {
-    const ids = Array.isArray(assetId) ? assetId : [assetId];
-
-    for (const id of ids) {
-      const url = `**/assets/by-file-media-id/${id}`;
-
-      await page.route(url, (route) =>
-        route.fulfill({
-          path: `playwright/data/${assetFilename}`,
-          status: 200,
-          ...options,
-        }),
-      );
-    }
-  }
-
   static async mockConfigFlags(page, flags) {
-    const url = "**/js/config.js?ts=*";
+    const url = "**/js/config.js*";
     return await page.route(url, (route) =>
       route.fulfill({
         status: 200,
@@ -92,6 +116,10 @@ export class BasePage {
     return this.#page;
   }
 
+  async mockRPCs(paths, options) {
+    return BasePage.mockRPCs(this.page, paths, options);
+  }
+
   async mockRPC(path, jsonFilename, options) {
     return BasePage.mockRPC(this.page, path, jsonFilename, options);
   }
@@ -100,11 +128,17 @@ export class BasePage {
     return BasePage.mockConfigFlags(this.page, flags);
   }
 
-  async mockFileMediaAsset(assetId, assetFilename, options) {
+  async mockFileMediaAsset(
+    assetId,
+    assetFilename,
+    assetThumbnailFilename,
+    options,
+  ) {
     return BasePage.mockFileMediaAsset(
       this.page,
       assetId,
       assetFilename,
+      assetThumbnailFilename,
       options,
     );
   }

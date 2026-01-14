@@ -194,7 +194,8 @@
                 :generated-by "penpot-library/%version%"
                 :referer (get opts :referer)
                 :files files
-                :relations []}
+                :relations (->> (:relations state)
+                                (mapv vec))}
         params (d/without-nils params)]
 
     ["manifest.json"

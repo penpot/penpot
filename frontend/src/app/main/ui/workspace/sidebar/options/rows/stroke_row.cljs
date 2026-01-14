@@ -63,7 +63,8 @@
            :data {:index index})
           [nil nil])
 
-        stroke-color-token (:stroke-color applied-tokens)
+        stroke-color-token
+        (:stroke-color applied-tokens)
 
         on-color-change-refactor
         (mf/use-fn

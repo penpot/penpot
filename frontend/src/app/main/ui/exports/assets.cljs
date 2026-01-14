@@ -34,7 +34,8 @@
 (def ^:private close-icon
   (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
-(mf/defc export-multiple-dialog
+(mf/defc export-multiple-dialog*
+  {::mf/private true}
   [{:keys [exports title cmd no-selection origin]}]
   (let [lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
@@ -186,7 +187,7 @@
    ::mf/register-as :export-shapes}
   [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-shapes.title")]
-    [:& export-multiple-dialog
+    [:> export-multiple-dialog*
      {:exports exports
       :title title
       :cmd :export-shapes
@@ -198,13 +199,16 @@
    ::mf/register-as :export-frames}
   [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-frames.title")]
-    [:& export-multiple-dialog
+    [:> export-multiple-dialog*
      {:exports exports
       :title title
       :cmd :export-frames
       :origin origin}]))
 
-(mf/defc export-progress-widget
+;; FIXME: deprecated, should be refactored in two components and use
+;; the generic progress reporter
+
+(mf/defc progress-widget*
   {::mf/wrap [mf/memo]}
   []
   (let [state             (mf/deref refs/export)
@@ -216,36 +220,46 @@
         detail-visible?   (:detail-visible state)
         widget-visible?   (:widget-visible state)
         progress          (:progress state)
-        exports           (:exports state)
-        total             (count exports)
+        items             (:exports state)
+        total             (or (:total state) (count items))
         complete?         (= progress total)
         circ              (* 2 Math/PI 12)
-        pct               (- circ (* circ (/ progress total)))
+        pct               (if (zero? total) circ (- circ (* circ (/ progress total))))
 
-        pwidth (if error?
-                 280
-                 (/ (* progress 280) total))
-        color  (cond
-                 error?         clr/new-danger
-                 healthy?       (if is-default-theme?
-                                  clr/new-primary
-                                  clr/new-primary-light)
-                 (not healthy?) clr/new-warning)
+        pwidth
+        (if error?
+          280
+          (/ (* progress 280) total))
 
-        background-clr (if is-default-theme?
-                         clr/background-quaternary
-                         clr/background-quaternary-light)
-        title  (cond
-                 error?          (tr "workspace.options.exporting-object-error")
-                 complete?       (tr "workspace.options.exporting-complete")
-                 healthy?        (tr "workspace.options.exporting-object")
-                 (not healthy?)  (tr "workspace.options.exporting-object-slow"))
+        color
+        (cond
+          error?         clr/new-danger
+          healthy?       (if is-default-theme?
+                           clr/new-primary
+                           clr/new-primary-light)
+          (not healthy?) clr/new-warning)
 
-        retry-last-export
-        (mf/use-fn #(st/emit! (de/retry-last-export)))
+        background-clr
+        (if is-default-theme?
+          clr/background-quaternary
+          clr/background-quaternary-light)
+
+        title
+        (cond
+          error?         (tr "workspace.options.exporting-object-error")
+          complete?      (tr "workspace.options.exporting-complete")
+          healthy?       (tr "workspace.options.exporting-object")
+          (not healthy?) (tr "workspace.options.exporting-object-slow"))
+
+        retry-last-operation
+        (mf/use-fn
+         (fn []
+           (st/emit! (de/retry-last-export))))
 
         toggle-detail-visibility
-        (mf/use-fn #(st/emit! (de/toggle-detail-visibililty)))]
+        (mf/use-fn
+         (fn []
+           (st/emit! (de/toggle-detail-visibililty))))]
 
     [:*
      (when widget-visible?
@@ -276,14 +290,14 @@
           error-icon
           neutral-icon)
 
-        [:p {:class (stl/css :export-progress-title)}
-         title
+        [:div {:class (stl/css :export-progress-title)}
+         [:div {:class (stl/css :title-text)} title]
          (if error?
            [:button {:class (stl/css :retry-btn)
-                     :on-click retry-last-export}
+                     :on-click retry-last-operation}
             (tr "workspace.options.retry")]
 
-           [:p {:class (stl/css :progress)}
+           [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 
         [:button {:class (stl/css :progress-close-button)

@@ -15,7 +15,7 @@
  */
 export function addEventListeners(target, object, options) {
   Object.entries(object).forEach(([type, listener]) =>
-    target.addEventListener(type, listener, options)
+    target.addEventListener(type, listener, options),
   );
 }
 
@@ -27,6 +27,6 @@ export function addEventListeners(target, object, options) {
  */
 export function removeEventListeners(target, object) {
   Object.entries(object).forEach(([type, listener]) =>
-    target.removeEventListener(type, listener)
+    target.removeEventListener(type, listener),
   );
 }

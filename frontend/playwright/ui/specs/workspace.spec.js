@@ -248,14 +248,6 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
-  await workspacePage.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=e179d9df-de35-80bf-8005-2861e849b3f7",
-    "workspace/get-file-fragment-9066-1.json",
-  );
-  await workspacePage.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=e179d9df-de35-80bf-8005-2861e849785e",
-    "workspace/get-file-fragment-9066-2.json",
-  );
 
   await workspacePage.mockRPC(
     "update-file?id=*",
@@ -340,24 +332,33 @@ test("Copy/paste properties", async ({ page, context }) => {
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
-  await page.getByText("Rectangle").first().click({ button: "right" });
-  await page.getByText("Copy/Paste as").hover();
-  await page.getByText("Paste properties").click();
-
-  await page.getByText("Board").nth(2).click({ button: "right" });
+  await page
+    .getByTestId("layer-item")
+    .getByText("Rectangle")
+    .first()
+    .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
   await page
     .getByTestId("layer-item")
-    .locator("div")
-    .filter({ hasText: "Path" })
+    .getByText("Board")
     .nth(1)
     .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 
-  await page.getByText("Ellipse").click({ button: "right" });
+  await page
+    .getByTestId("layer-item")
+    .getByText("Path")
+    .click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page
+    .getByTestId("layer-item")
+    .getByText("Ellipse")
+    .click({ button: "right" });
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 });

@@ -59,9 +59,15 @@
   "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the value is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (if-let [tc (tinycolor/valid-color value)]
-    {:value value :unit (tinycolor/color-format tc)}
-    {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
+  (let [missing-references (seq (cto/find-token-value-references value))]
+    (if-let [tc (tinycolor/valid-color value)]
+      {:value value :unit (tinycolor/color-format tc)}
+      (cond
+        missing-references
+        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+         :references missing-references}
+        :else
+        {:errors [(wte/error-with-value :error.token/invalid-color value)]}))))
 
 (defn- numeric-string? [s]
   (and (string? s)
@@ -120,7 +126,7 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (cto/find-token-value-references value))
+  (let [missing-references? (seq (seq (cto/find-token-value-references value)))
         parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (cto/find-token-value-references value))]
@@ -230,7 +236,7 @@
   Uses `font-size-value` to calculate the relative line-height value.
   Returns an error for an invalid font-size value."
   [line-height-value font-size-value font-size-errors]
-  (let [missing-references (seq (some cto/find-token-value-references line-height-value))
+  (let [missing-references (seq (cto/find-token-value-references line-height-value))
         error
         (cond
           missing-references
@@ -255,14 +261,19 @@
 
 (defn- parse-sd-token-font-family-value
   [value]
-  (let [missing-references (seq (some cto/find-token-value-references value))]
+  (let [value (-> (js->clj value) (flatten))
+        valid-font-family (or (string? value) (every? string? value))
+        missing-references (seq (some cto/find-token-value-references value))]
     (cond
+      (not valid-font-family)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-font-family value)]}
+
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
        :references missing-references}
 
       :else
-      {:value (-> (js->clj value) (flatten))})))
+      {:value value})))
 
 (defn parse-atomic-typography-value [token-type token-value]
   (case token-type
@@ -368,8 +379,8 @@
   (let [add-keyed-errors (fn [shadow-result k errors]
                            (update shadow-result :errors concat
                                    (map #(assoc % :shadow-key k :shadow-index shadow-index) errors)))
-        parsers {:offsetX parse-sd-token-general-value
-                 :offsetY parse-sd-token-general-value
+        parsers {:offset-x parse-sd-token-general-value
+                 :offset-y parse-sd-token-general-value
                  :blur parse-sd-token-shadow-blur
                  :spread parse-sd-token-shadow-spread
                  :color parse-sd-token-color-value
@@ -389,35 +400,42 @@
 (defn- parse-sd-token-shadow-value
   "Parses shadow value and validates it."
   [value]
-  (cond
-    ;; Reference value (string)
-    (string? value) {:value value}
+  (let [missing-references
+        (when (string? value)
+          (seq (cto/find-token-value-references value)))]
+    (cond
+      missing-references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+       :references missing-references}
+
+      (string? value)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-shadow value)]}
 
     ;; Empty value
-    (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
+      (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
 
     ;; Invalid value
-    (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
+      (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
 
     ;; Array of shadows
-    :else
-    (let [converted (js->clj value :keywordize-keys true)
+      :else
+      (let [converted (js->clj value :keywordize-keys true)
           ;; Parse each shadow with its index
-          parsed-shadows (map-indexed
-                          (fn [idx shadow-map]
-                            (parse-single-shadow shadow-map idx))
-                          converted)
+            parsed-shadows (map-indexed
+                            (fn [idx shadow-map]
+                              (parse-single-shadow shadow-map idx))
+                            converted)
 
           ;; Collect all errors from all shadows
-          all-errors (mapcat :errors parsed-shadows)
+            all-errors (mapcat :errors parsed-shadows)
 
           ;; Collect all values from shadows that have values
-          all-values (into [] (keep :value parsed-shadows))]
+            all-values (into [] (keep :value parsed-shadows))]
 
-      (if (seq all-errors)
-        {:errors all-errors
-         :value all-values}
-        {:value all-values}))))
+        (if (seq all-errors)
+          {:errors all-errors
+           :value all-values}
+          {:value all-values})))))
 
 (defn collect-shadow-errors [token shadow-index]
   (group-by :shadow-key

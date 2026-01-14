@@ -28,6 +28,7 @@
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.text :as text]
+   [app.plugins.tokens :as tokens]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -288,10 +289,10 @@
   (assert (uuid? id))
 
   (obj/reify {:name "LibraryTypographyProxy"}
-    :$plugin {:name "" :enumerable false :get (constantly plugin-id)}
-    :$id {:name "" :enumerable false :get (constantly id)}
-    :$file {:name "" :enumerable false :get (constantly file-id)}
-    :id {:name "" :get (fn [_] (dm/str id))}
+    :$plugin {:enumerable false :get (constantly plugin-id)}
+    :$id {:enumerable false :get (constantly id)}
+    :$file {:enumerable false :get (constantly file-id)}
+    :id {:get (fn [] (dm/str id))}
 
     :name
     {:this true
@@ -628,8 +629,8 @@
     :$file {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
 
-    :id {:get (fn [_] (dm/str id))}
-    :libraryId {:get (fn [_] (dm/str file-id))}
+    :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :properties
     {:this true
@@ -705,7 +706,7 @@
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
-    :id {:get (fn [_] (dm/str id))}
+    :id {:get (fn [] (dm/str id))}
 
     :name
     {:this true
@@ -900,10 +901,10 @@
     (fn [pos value]
       (cond
         (not (nat-int? pos))
-        (u/display-not-valid :pos pos)
+        (u/display-not-valid :pos (str pos))
 
-        (not (string? name))
-        (u/display-not-valid :name name)
+        (not (string? value))
+        (u/display-not-valid :name value)
 
         :else
         (st/emit!
@@ -958,6 +959,12 @@
                              (map first)
                              (map #(lib-component-proxy plugin-id file-id %)))]
          (apply array components)))}
+
+    :tokens
+    {:this true
+     :get
+     (fn [_]
+       (tokens/tokens-catalog plugin-id file-id))}
 
     :createColor
     (fn []

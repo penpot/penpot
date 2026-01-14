@@ -100,8 +100,8 @@
   [{:keys [x y stroke action-type arrow-dir zoom] :as props}]
   (let [icon-pdata (case action-type
                      :navigate (case arrow-dir
-                                 :right "M -6.5 0 l 12 0 l -6 -6 m 6 6 l -6 6"
-                                 :left "M 6.5 0 l -12 0 l 6 -6 m -6 6 l 6 6"
+                                 :right "M -6.5 0 L 5.5 0 M 6.715 0.715 L -0.5 -6.5 M 6.715 -0.715 L -0.365 6.635"
+                                 :left "M 6.5 0 l -12 0 m -0.715 0.715 l 6.5 -6.9 m -6 6 l 6 6.35"
                                  nil)
 
                      :open-overlay "M-5 -5 h7 v7 h-7 z M2 -2 h3.5 v7 h-7 v-2.5"

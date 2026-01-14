@@ -60,46 +60,26 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [exchange {:keys [export wait profile-id name skip-children] :as params}]
-  (let [topic       (str profile-id)
-        resource    (rsc/create (:type export) (or name (:name export)))
+  [{:keys [:request/auth-token] :as exchange} {:keys [export name skip-children] :as params}]
+  (let [resource (rsc/create (:type export) (or name (:name export)))
+        export   (assoc export :skip-children skip-children)]
 
-        on-progress (fn [{:keys [path] :as object}]
-                      (p/do
-                        ;; Move the generated path to the resource
-                        ;; path destination.
-                        (sh/move! path (:path resource))
-
-                        (when-not wait
-                          (redis/pub! topic {:type :export-update
-                                             :resource-id (:id resource)
-                                             :status "running"
-                                             :total 1
-                                             :done 1})
-                          (redis/pub! topic {:type :export-update
-                                             :resource-id (:id resource)
-                                             :filename (:filename resource)
-                                             :name (:name resource)
-                                             :status "ended"}))))
-        on-error    (fn [cause]
-                      (l/error :hint "unexpected error on export multiple"
-                               :cause cause)
-                      (if wait
-                        (p/rejected cause)
-                        (redis/pub! topic {:type :export-update
-                                           :resource-id (:id resource)
-                                           :status "error"
-                                           :cause (ex-message cause)})))
-        export      (assoc export :skip-children skip-children)
-        proc        (-> (rd/render export on-progress)
-                        (p/then (constantly resource))
-                        (p/catch on-error))]
-    (if wait
-      (p/then proc #(assoc exchange :response/body (dissoc % :path)))
-      (assoc exchange :response/body (dissoc resource :path)))))
+    (->> (rd/render export
+                    (fn [{:keys [path] :as object}]
+                      (sh/move! path (:path resource))))
+         (p/fmap (constantly resource))
+         (p/mcat (partial rsc/upload-resource auth-token))
+         (p/fmap (fn [resource]
+                   (dissoc resource :path)))
+         (p/fmap (fn [resource]
+                   (assoc exchange :response/body resource)))
+         (p/merr (fn [cause]
+                   (l/error :hint "unexpected error on single export"
+                            :cause cause)
+                   (p/rejected cause))))))
 
 (defn- handle-multiple-export
-  [exchange {:keys [exports wait profile-id name skip-children] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports wait profile-id name] :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
@@ -113,17 +93,8 @@
                                     :done done}]
                           (redis/pub! topic data))))
 
-        on-complete (fn []
-                      (when-not wait
-                        (let [data {:type :export-update
-                                    :name (:name resource)
-                                    :filename (:filename resource)
-                                    :resource-id (:id resource)
-                                    :status "ended"}]
-                          (redis/pub! topic data))))
-
         on-error    (fn [cause]
-                      (l/error :hint "unexpected error on multiple exportation" :cause cause)
+                      (l/error :hint "unexpected error on multiple export" :cause cause)
                       (if wait
                         (p/rejected cause)
                         (redis/pub! topic {:type :export-update
@@ -132,30 +103,35 @@
                                            :cause (ex-message cause)})))
 
         zip         (rsc/create-zip :resource resource
-                                    :on-complete on-complete
                                     :on-error on-error
                                     :on-progress on-progress)
 
-        append      (fn [{:keys [filename path] :as object}]
-                      (rsc/add-to-zip! zip path (str/replace filename sanitize-file-regex "_")))
+        append      (fn [{:keys [filename path] :as resource}]
+                      (rsc/add-to-zip zip path (str/replace filename sanitize-file-regex "_")))
 
-        proc        (-> (p/do
-                          (p/loop [exports (seq exports)]
-                            (when-let [export (some-> (first exports)
-                                                      (assoc :skip-children skip-children))]
-                              (p/do
-                                (rd/render export append)
-                                (p/recur (rest exports)))))
-                          (.finalize zip))
-                        (p/then (constantly resource))
-                        (p/catch on-error))]
+        proc        (->> exports
+                         (map (fn [export] (rd/render export append)))
+                         (p/all)
+                         (p/mcat (fn [_] (rsc/close-zip zip)))
+                         (p/fmap (constantly resource))
+                         (p/mcat (partial rsc/upload-resource auth-token))
+                         (p/fmap (fn [resource]
+                                   (let [data {:type :export-update
+                                               :name (:name resource)
+                                               :filename (:filename resource)
+                                               :resource-id (:id resource)
+                                               :resource-uri (:uri resource)
+                                               :mtype (:mtype resource)
+                                               :status "ended"}]
+                                     (p/do (redis/pub! topic data)
+                                           (assoc exchange :response/body resource)))))
+                         (p/merr on-error))]
     (if wait
       (p/then proc #(assoc exchange :response/body (dissoc % :path)))
       (assoc exchange :response/body (dissoc resource :path)))))
 
-
 (defn- assoc-file-name
-  "A transducer that assocs a candidate filename and avoid duplicates."
+  "A transducer that assocs a candidate filename and avoid duplicates"
   []
   (letfn [(find-candidate [params used]
             (loop [index 0]

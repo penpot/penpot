@@ -255,6 +255,8 @@
 
         (write-entry! output path params)
 
+        (events/tap :progress {:section :storage-object :id id})
+
         (with-open [input (sto/get-object-data storage sobject)]
           (.putNextEntry ^ZipOutputStream output (ZipEntry. (str "objects/" id ext)))
           (io/copy input output :size (:size sobject))
@@ -278,6 +280,8 @@
         pages-index  (:pages-index data)
 
         thumbnails   (bfc/get-file-object-thumbnails cfg file-id)]
+
+    (events/tap :progress {:section :file :id file-id})
 
     (vswap! bfc/*state* update :files assoc file-id
             {:id file-id
@@ -817,9 +821,10 @@
         entries (keep (match-storage-entry-fn) entries)]
 
     (doseq [{:keys [id entry]} entries]
-      (let [object  (->> (read-entry input entry)
-                         (decode-storage-object)
-                         (validate-storage-object))
+      (let [object  (-> (read-entry input entry)
+                        (decode-storage-object)
+                        (update :bucket d/nilv sto/default-bucket)
+                        (validate-storage-object))
 
             ext     (cmedia/mtype->extension (:content-type object))
             path    (str "objects/" id ext)

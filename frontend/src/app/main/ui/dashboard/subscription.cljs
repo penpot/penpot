@@ -10,8 +10,8 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.cta :refer [cta*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -48,7 +48,10 @@
       [:div {:class (stl/css :content)}
        [:span {:class (stl/css :cta-title)} top-title]
        [:span {:class (stl/css :cta-text) :data-testid "subscription-name"} top-description]]
-      (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  deprecated-icon/arrow])]
+      (when has-dropdown
+        [:> icon* {:icon-id (if (and has-dropdown show-data) i/arrow-up i/arrow-down)
+                   :class (stl/css :icon-dropdown)
+                   :size "s"}])]
 
      (when (and has-dropdown show-data)
        [:div {:class (stl/css :cta-bottom-section)}
@@ -148,14 +151,16 @@
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-type]}]
-  [:span {:class (stl/css :subscription-icon)
-          :title (if (= subscription-type "unlimited")
-                   (tr "subscription.dashboard.power-up.unlimited-plan")
-                   (tr "subscription.dashboard.power-up.enterprise-plan"))
-          :data-testid "subscription-icon"}
-   (case subscription-type
-     "unlimited" deprecated-icon/character-u
-     "enterprise" deprecated-icon/character-e)])
+  [:span {:class (stl/css :subscription-icon-wrapper)}
+   [:> icon* {:icon-id (case subscription-type
+                         "unlimited" i/character-u
+                         "enterprise" i/character-e)
+              :class (stl/css :subscription-icon)
+              :size "s"
+              :title (if (= subscription-type "unlimited")
+                       (tr "subscription.dashboard.power-up.unlimited-plan")
+                       (tr "subscription.dashboard.power-up.enterprise-plan"))
+              :data-testid "subscription-icon"}]])
 
 (mf/defc main-menu-power-up*
   [{:keys [close-sub-menu]}]

@@ -9,7 +9,7 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
-   [app.http.auth :as-alias http.auth]
+   [app.http :as-alias http]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]))
@@ -33,25 +33,26 @@
 (defn- get-token-data
   [pool claims]
   (when-not (db/read-only? pool)
-    (when-let [token-id (-> (deref claims) (get :tid))]
+    (when-let [token-id (get claims :tid)]
       (some-> (db/exec-one! pool [sql:get-token-data token-id])
               (update :perms db/decode-pgarray #{})))))
 
 (defn- wrap-authz
   [handler {:keys [::db/pool]}]
-  (fn [{:keys [::http.auth/token-type] :as request}]
-    (if (= :token token-type)
-      (let [{:keys [perms profile-id expires-at]} (some->> (get request ::http.auth/claims)
-                                                           (get-token-data pool))]
-        (handler (cond-> request
-                   (some? perms)
-                   (assoc ::perms perms)
-                   (some? profile-id)
-                   (assoc ::profile-id profile-id)
-                   (some? expires-at)
-                   (assoc ::expires-at expires-at))))
+  (fn [request]
+    (let [{:keys [type claims]} (get request ::http/auth-data)]
+      (if (= :token type)
+        (let [{:keys [perms profile-id expires-at]} (some->> claims (get-token-data pool))]
+          ;; FIXME: revisit this, this data looks unused
+          (handler (cond-> request
+                     (some? perms)
+                     (assoc ::perms perms)
+                     (some? profile-id)
+                     (assoc ::profile-id profile-id)
+                     (some? expires-at)
+                     (assoc ::expires-at expires-at))))
 
-      (handler request))))
+        (handler request)))))
 
 (def authz
   {:name ::authz

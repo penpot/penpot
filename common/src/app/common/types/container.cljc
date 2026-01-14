@@ -269,8 +269,8 @@
   "Remove flex children properties except the fit-content for flex layouts. These are properties
   that we don't have to propagate to copies but will be respected when swapping components"
   [shape]
-  (let [layout-item-h-sizing (when (and (ctl/flex-layout? shape) (ctl/auto-width? shape)) :auto)
-        layout-item-v-sizing (when (and (ctl/flex-layout? shape) (ctl/auto-height? shape)) :auto)]
+  (let [layout-item-h-sizing (when (and (ctl/any-layout? shape) (ctl/auto-width? shape)) :auto)
+        layout-item-v-sizing (when (and (ctl/any-layout? shape) (ctl/auto-height? shape)) :auto)]
     (-> shape
         (d/without-keys ctk/swap-keep-attrs)
         (cond-> (some? layout-item-h-sizing)

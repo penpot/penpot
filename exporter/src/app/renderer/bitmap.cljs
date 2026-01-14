@@ -29,13 +29,13 @@
                  :userAgent bw/default-user-agent})
 
           (render-object [page {:keys [id] :as object}]
-            (p/let [path (sh/tempfile :prefix "penpot.tmp.render.bitmap." :suffix (mime/get-extension type))
+            (p/let [path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix (mime/get-extension type))
                     node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
               (case type
                 :png  (bw/screenshot node {:omit-background? true :type type :path path})
                 :jpeg (bw/screenshot node {:omit-background? false :type type :path path})
-                :webp (p/let [png-path (sh/tempfile :prefix "penpot.tmp.render.bitmap." :suffix ".png")]
+                :webp (p/let [png-path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix ".png")]
                         ;; playwright only supports jpg and png, we need to convert it afterwards
                         (bw/screenshot node {:omit-background? true :type :png :path png-path})
                         (sh/run-cmd! (str "convert " png-path " -quality 100 WEBP:" path))))
@@ -52,6 +52,7 @@
               ;; take the screnshot of requested objects, one by one
               (p/run (partial render-object page) objects)
               nil))]
+
     (p/let [params {:file-id file-id
                     :page-id page-id
                     :share-id share-id

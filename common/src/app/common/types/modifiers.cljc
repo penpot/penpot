@@ -732,89 +732,89 @@
   [shape scale-text-content value]
   (update shape :content scale-text-content value))
 
+(defn scale-text-content
+  [content value]
+  (->> content
+       (txt/transform-nodes txt/is-text-node? (partial transform-text-node value))
+       (txt/transform-nodes txt/is-paragraph-node? (partial transform-paragraph-node value))))
+
+(defn apply-scale-content
+  [shape value]
+  ;; Scale can only be positive
+  (let [value (mth/abs value)]
+    (cond-> shape
+      (cfh/text-shape? shape)
+      (update-text-content scale-text-content value)
+
+      :always
+      (gsc/update-corners-scale value)
+
+      (d/not-empty? (:strokes shape))
+      (gss/update-strokes-width value)
+
+      (d/not-empty? (:shadow shape))
+      (gse/update-shadows-scale value)
+
+      (some? (:blur shape))
+      (gse/update-blur-scale value)
+
+      (ctl/flex-layout? shape)
+      (ctl/update-flex-scale value)
+
+      (ctl/grid-layout? shape)
+      (ctl/update-grid-scale value)
+
+      :always
+      (ctl/update-flex-child value))))
+
+(defn remove-children-set
+  [shapes children-to-remove]
+  (let [remove? (set children-to-remove)]
+    (d/removev remove? shapes)))
+
+(defn apply-modifier
+  [shape operation]
+  (let [type (dm/get-prop operation :type)]
+    (case type
+      :rotation
+      (let [rotation (dm/get-prop operation :value)]
+        (update shape :rotation #(mod (+ (or % 0) rotation) 360)))
+
+      :add-children
+      (let [value (dm/get-prop operation :value)
+            index (dm/get-prop operation :index)
+
+            shape
+            (if (some? index)
+              (update shape :shapes
+                      (fn [shapes]
+                        (if (vector? shapes)
+                          (d/insert-at-index shapes index value)
+                          (d/concat-vec shapes value))))
+              (update shape :shapes d/concat-vec value))]
+
+        ;; Remove duplication
+        (update shape :shapes #(into [] (apply d/ordered-set %))))
+
+      :remove-children
+      (let [value (dm/get-prop operation :value)]
+        (update shape :shapes remove-children-set value))
+
+      :scale-content
+      (let [value (dm/get-prop operation :value)]
+        (apply-scale-content shape value))
+
+      :change-property
+      (let [property (dm/get-prop operation :property)
+            value (dm/get-prop operation :value)]
+        (assoc shape property value))
+
+      ;; :default => no change to shape
+      shape)))
+
 (defn apply-structure-modifiers
   "Apply structure changes to a shape"
   [shape modifiers]
-  (letfn [(scale-text-content
-            [content value]
-            (->> content
-                 (txt/transform-nodes txt/is-text-node? (partial transform-text-node value))
-                 (txt/transform-nodes txt/is-paragraph-node? (partial transform-paragraph-node value))))
-
-          (apply-scale-content
-            [shape value]
-            ;; Scale can only be positive
-            (let [value (mth/abs value)]
-              (cond-> shape
-                (cfh/text-shape? shape)
-                (update-text-content scale-text-content value)
-
-                :always
-                (gsc/update-corners-scale value)
-
-                (d/not-empty? (:strokes shape))
-                (gss/update-strokes-width value)
-
-                (d/not-empty? (:shadow shape))
-                (gse/update-shadows-scale value)
-
-                (some? (:blur shape))
-                (gse/update-blur-scale value)
-
-                (ctl/flex-layout? shape)
-                (ctl/update-flex-scale value)
-
-                (ctl/grid-layout? shape)
-                (ctl/update-grid-scale value)
-
-                :always
-                (ctl/update-flex-child value))))]
-
-    (let [remove-children
-          (fn [shapes children-to-remove]
-            (let [remove? (set children-to-remove)]
-              (d/removev remove? shapes)))
-
-          apply-modifier
-          (fn [shape operation]
-            (let [type (dm/get-prop operation :type)]
-              (case type
-                :rotation
-                (let [rotation (dm/get-prop operation :value)]
-                  (update shape :rotation #(mod (+ (or % 0) rotation) 360)))
-
-                :add-children
-                (let [value (dm/get-prop operation :value)
-                      index (dm/get-prop operation :index)
-
-                      shape
-                      (if (some? index)
-                        (update shape :shapes
-                                (fn [shapes]
-                                  (if (vector? shapes)
-                                    (d/insert-at-index shapes index value)
-                                    (d/concat-vec shapes value))))
-                        (update shape :shapes d/concat-vec value))]
-
-                  ;; Remove duplication
-                  (update shape :shapes #(into [] (apply d/ordered-set %))))
-
-                :remove-children
-                (let [value (dm/get-prop operation :value)]
-                  (update shape :shapes remove-children value))
-
-                :scale-content
-                (let [value (dm/get-prop operation :value)]
-                  (apply-scale-content shape value))
-
-                :change-property
-                (let [property (dm/get-prop operation :property)
-                      value (dm/get-prop operation :value)]
-                  (assoc shape property value))
-
-                ;; :default => no change to shape
-                shape)))]
-
-      (as-> shape $
-        (reduce apply-modifier $ (dm/get-prop modifiers :structure-parent))
-        (reduce apply-modifier $ (dm/get-prop modifiers :structure-child))))))
+  (as-> shape $
+    (reduce apply-modifier $ (dm/get-prop modifiers :structure-parent))
+    (reduce apply-modifier $ (dm/get-prop modifiers :structure-child))))

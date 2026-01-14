@@ -67,8 +67,8 @@
   []
   (let [uagent (new ua/UAParser)]
     (merge
-     {:app-version (:full cf/version)
-      :locale @i18n/locale}
+     {:version (:full cf/version)
+      :locale i18n/*current-locale*}
      (let [browser (.getBrowser uagent)]
        {:browser (obj/get browser "name")
         :browser-version (obj/get browser "version")})
@@ -98,7 +98,7 @@
 (def context
   (atom (d/without-nils (collect-context))))
 
-(add-watch i18n/locale ::events #(swap! context assoc :locale %4))
+(add-watch i18n/locale "events" #(swap! context assoc :locale %4))
 
 ;; --- EVENT TRANSLATION
 

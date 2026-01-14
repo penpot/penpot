@@ -1,0 +1,46 @@
+p {
+  color: var(--foreground-secondary);
+  margin-block-end: var(--spacing-16);
+}
+
+.generation-options {
+  display: flex;
+  gap: var(--spacing-8);
+}
+
+.generation-size {
+  inline-size: 60px;
+}
+
+.generation-type {
+  inline-size: 100%;
+}
+
+.sections-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+section {
+  padding-block-start: var(--spacing-24);
+
+  button {
+    inline-size: 100%;
+  }
+}
+
+.regular-generate {
+  padding-block-end: var(--spacing-24);
+
+  button {
+    margin-block-start: var(--spacing-12);
+  }
+}
+
+.extra-options {
+  margin-block-start: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-20);
+}

@@ -26,14 +26,19 @@
    [:max-length {:optional true} :int]
    [:variant {:optional true} [:maybe [:enum "seamless" "dense" "comfortable"]]]
    [:hint-message {:optional true} [:maybe :string]]
-   [:hint-type {:optional true} [:maybe [:enum "hint" "error" "warning"]]]])
+   [:hint-type {:optional true} [:maybe [:enum "hint" "error" "warning"]]]
+   [:hint-formated {:optional true} :boolean]])
 
 (mf/defc input*
   {::mf/forward-ref true
    ::mf/schema schema:input}
-  [{:keys [id class label is-optional type max-length variant hint-message hint-type] :rest props} ref]
+  [{:keys [id class label is-optional type max-length variant hint-message hint-type hint-formated] :rest props} ref]
   (let [id (or id (mf/use-id))
         variant (d/nilv variant "dense")
+        hint-class (if (and (not= "error" hint-type)
+                            hint-formated)
+                     (stl/css :hint-formated)
+                     "")
         is-optional (d/nilv is-optional false)
         type (d/nilv type "text")
         max-length (d/nilv max-length max-input-length)
@@ -56,6 +61,7 @@
      [:> input-field* props]
      (when has-hint
        [:> hint-message* {:id id
+                          :class hint-class
                           :message hint-message
                           :type hint-type}])]))
 

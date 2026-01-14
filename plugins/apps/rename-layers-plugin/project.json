@@ -1,0 +1,79 @@
+{
+  "name": "rename-layers-plugin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/rename-layers-plugin/src",
+  "tags": ["type:plugin"],
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/rename-layers-plugin",
+        "index": "apps/rename-layers-plugin/src/index.html",
+        "browser": "apps/rename-layers-plugin/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/rename-layers-plugin/tsconfig.app.json",
+        "assets": [
+          "apps/rename-layers-plugin/src/favicon.ico",
+          "apps/rename-layers-plugin/src/assets"
+        ],
+        "styles": [
+          "libs/plugins-styles/src/lib/styles.css",
+          "apps/rename-layers-plugin/src/styles.css"
+        ],
+        "optimization": {
+          "scripts": true,
+          "styles": true,
+          "fonts": false
+        },
+        "scripts": []
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production",
+      "dependsOn": ["buildPlugin"]
+    },
+    "serve": {
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "rename-layers-plugin:build:production"
+        },
+        "development": {
+          "buildTarget": "rename-layers-plugin:build:development",
+          "host": "0.0.0.0",
+          "port": 4307
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "rename-layers-plugin:build"
+      }
+    }
+  }
+}

@@ -19,7 +19,7 @@ set -e
 
 ARCH=$(uname -m)
 
-if [[ "$ARCH" == "x86_64" || "$ARCH" == "i386" || "$ARCH" == "i686" ]]; then
+if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" || "$ARCH" == "i386" || "$ARCH" == "i686" ]]; then
     ARCH="amd64"
 elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
     ARCH="arm64"

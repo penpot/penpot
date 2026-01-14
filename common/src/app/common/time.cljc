@@ -340,7 +340,7 @@
      (dfn-diff t2 t1)))
 
 #?(:cljs
-   (defn set-default-locale!
+   (defn set-default-locale
      [locale]
      (when-let [locale (unchecked-get locales locale)]
        (dfn-set-default-options #js {:locale locale}))))

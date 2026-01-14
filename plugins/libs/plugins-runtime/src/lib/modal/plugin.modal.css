@@ -1,0 +1,102 @@
+:host {
+  --spacing-4: 0.25rem;
+  --spacing-8: calc(var(--spacing-4) * 2);
+  --spacing-12: calc(var(--spacing-4) * 3);
+  --spacing-16: calc(var(--spacing-4) * 4);
+  --spacing-20: calc(var(--spacing-4) * 5);
+  --spacing-24: calc(var(--spacing-4) * 6);
+  --spacing-28: calc(var(--spacing-4) * 7);
+  --spacing-32: calc(var(--spacing-4) * 8);
+  --spacing-36: calc(var(--spacing-4) * 9);
+  --spacing-40: calc(var(--spacing-4) * 10);
+
+  --font-weight-regular: 400;
+  --font-weight-bold: 500;
+  --font-line-height-s: 1.2;
+  --font-line-height-m: 1.4;
+  --font-line-height-l: 1.5;
+  --font-size-s: 12px;
+  --font-size-m: 14px;
+  --font-size-l: 16px;
+}
+
+[data-theme] {
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-secondary);
+}
+
+::-webkit-resizer {
+  display: none;
+}
+
+.wrapper {
+  position: absolute;
+  inset-block-start: var(--modal-block-start);
+  inset-inline-start: var(--modal-inline-start);
+  z-index: 1000;
+  padding: 10px;
+  border-radius: 15px;
+  border: 2px solid var(--color-background-quaternary);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  min-inline-size: 25px;
+  min-block-size: 200px;
+  resize: both;
+  &:after {
+    content: '';
+    cursor: se-resize;
+    inline-size: 1rem;
+    block-size: 1rem;
+    background-image: url('../assets/resize.svg');
+    background-position: center;
+    right: 5px;
+    bottom: 5px;
+    pointer-events: none;
+    position: absolute;
+  }
+}
+
+.inner {
+  padding: 10px;
+  cursor: grab;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  block-size: 100%;
+  & > * {
+    flex: 1;
+  }
+  & > .header {
+    flex: 0;
+  }
+}
+
+.header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  border-block-end: 2px solid var(--color-background-quaternary);
+  padding-block-end: var(--spacing-4);
+}
+
+button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+h1 {
+  font-size: var(--font-size-s);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  margin-inline-end: var(--spacing-4);
+  user-select: none;
+}
+
+iframe {
+  border: none;
+  inline-size: 100%;
+  block-size: 100%;
+}

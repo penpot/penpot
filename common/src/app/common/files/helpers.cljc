@@ -72,9 +72,11 @@
        (= :bool (dm/get-prop shape :type))))
 
 (defn text-shape?
-  [shape]
-  (and (some? shape)
-       (= :text (dm/get-prop shape :type))))
+  ([shape]
+   (and (some? shape)
+        (= :text (dm/get-prop shape :type))))
+  ([objects id]
+   (text-shape? (get objects id))))
 
 (defn rect-shape?
   [shape]

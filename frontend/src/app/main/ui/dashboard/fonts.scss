@@ -126,6 +126,9 @@
     @include twoLineTextEllipsis;
     min-width: $sz-200;
     width: $sz-200;
+    &.is-edition {
+      overflow: visible;
+    }
   }
 
   > .filenames {

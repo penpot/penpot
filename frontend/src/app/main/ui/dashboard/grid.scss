@@ -375,3 +375,7 @@ $thumbnail-default-height: deprecated.$s-168; // Default width
 .grid-loader {
   --icon-width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
 }
+
+.deleted-item {
+  opacity: 0.5;
+}

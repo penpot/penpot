@@ -34,11 +34,11 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.shape-icon :as usi]
    [app.util.timers :as timers]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -181,7 +181,8 @@
         handle-hover-copy-paste
         (mf/use-callback
          (fn []
-           (->> (wapi/read-from-clipboard)
+           (->> (clipboard/from-navigator)
+                (rx/mapcat #(.text %))
                 (rx/take 1)
                 (rx/subs!
                  (fn [data]
@@ -800,7 +801,6 @@
 
 
 ;; FIXME: optimize because it is rendered always
-
 
 (mf/defc context-menu*
   []

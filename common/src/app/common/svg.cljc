@@ -546,9 +546,19 @@
            filter-values)))
 
 (defn extract-ids [val]
-  (when (some? val)
+  ;; Extract referenced ids from string values like "url(#myId)".
+  ;; Non-string values (maps, numbers, nil, etc.) return an empty seq
+  ;; to avoid re-seq type errors when attributes carry nested structures.
+  (cond
+    (string? val)
     (->> (re-seq xml-id-regex val)
-         (mapv second))))
+         (mapv second))
+
+    (sequential? val)
+    (mapcat extract-ids val)
+
+    :else
+    []))
 
 (defn fix-dot-number
   "Fixes decimal numbers starting in dot but without leading 0"

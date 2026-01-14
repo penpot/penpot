@@ -22,8 +22,7 @@ import { isRoot } from "./Root.js";
  */
 export function isTextNode(node) {
   if (!node) throw new TypeError("Invalid text node");
-  return node.nodeType === Node.TEXT_NODE
-      || isLineBreak(node);
+  return node.nodeType === Node.TEXT_NODE || isLineBreak(node);
 }
 
 /**
@@ -33,8 +32,7 @@ export function isTextNode(node) {
  * @returns {boolean}
  */
 export function isEmptyTextNode(node) {
-  return node.nodeType === Node.TEXT_NODE
-      && node.nodeValue === "";
+  return node.nodeType === Node.TEXT_NODE && node.nodeValue === "";
 }
 
 /**

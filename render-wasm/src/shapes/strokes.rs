@@ -277,4 +277,22 @@ impl Stroke {
             _ => false,
         }
     }
+
+    pub fn cap_bounds_margin(&self) -> f32 {
+        cap_margin_for_cap(self.cap_start, self.width)
+            .max(cap_margin_for_cap(self.cap_end, self.width))
+    }
+}
+
+fn cap_margin_for_cap(cap: Option<StrokeCap>, width: f32) -> f32 {
+    match cap {
+        Some(StrokeCap::LineArrow)
+        | Some(StrokeCap::TriangleArrow)
+        | Some(StrokeCap::SquareMarker)
+        | Some(StrokeCap::DiamondMarker) => width * 4.0,
+        Some(StrokeCap::CircleMarker) => width * 2.0,
+        Some(StrokeCap::Square) => width,
+        Some(StrokeCap::Round) => width * 0.5,
+        _ => 0.0,
+    }
 }

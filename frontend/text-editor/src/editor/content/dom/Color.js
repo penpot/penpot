@@ -24,7 +24,7 @@ function getContext() {
   if (!context) {
     context = canvas.getContext("2d");
   }
-  return context
+  return context;
 }
 
 /**

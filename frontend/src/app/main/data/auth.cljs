@@ -8,7 +8,6 @@
   "Auth related data events"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -148,9 +147,7 @@
 (defn login-with-ldap
   [params]
 
-  (dm/assert!
-   "expected valid params"
-   (sm/check schema:login-with-ldap params))
+  (assert (sm/check schema:login-with-ldap params))
 
   (ptk/reify ::login-with-ldap
     ptk/WatchEvent
@@ -166,13 +163,41 @@
                            (logged-in))))
              (rx/catch on-error))))))
 
+(def ^:private schema:login-with-sso
+  [:map {:title "login-with-sso"}
+   [:provider [:or :string ::sm/uuid]]])
+
+(defn login-with-sso
+  "Start the SSO flow"
+  [params]
+  (assert (sm/check schema:login-with-sso params))
+  (ptk/reify ::login-with-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :login-with-oidc params)
+           (rx/map (fn [{:keys [redirect-uri] :as rsp}]
+                     (if redirect-uri
+                       (rt/nav-raw :uri redirect-uri)
+                       (ex/raise :type :internal
+                                 :code :unexpected-response
+                                 :hint "unexpected response from OIDC method"
+                                 :resp (pr-str rsp)))))
+           (rx/catch (fn [cause]
+                       (let [{:keys [type code] :as error} (ex-data cause)]
+                         (if (and (= type :restriction)
+                                  (= code :provider-not-configured))
+                           (rx/of (ntf/error (tr "errors.auth-provider-not-configured")))
+                           (rx/throw cause)))))))))
+
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
   [{:keys [profile] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rx/of (logged-in (with-meta profile {::ev/source "login-with-token"})))
+      (->> (dp/on-fetch-profile-success profile)
+           (rx/map (fn [profile]
+                     (logged-in (with-meta profile {::ev/source "login-with-token"}))))
            ;; NOTE: we need this to be asynchronous because the effect
            ;; should be called before proceed with the login process
            (rx/observe-on :async)))))
@@ -201,7 +226,7 @@
 ;; --- EVENT: logout
 
 (defn logged-out
-  []
+  [{:keys [redirect-uri]}]
   (ptk/reify ::logged-out
     ptk/UpdateEvent
     (update [_ state]
@@ -209,12 +234,16 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       ;; NOTE: We need the `effect` of the current event to be
-       ;; executed before the redirect.
-       (->> (rx/of (rt/nav :auth-login))
-            (rx/observe-on :async))
-       (rx/of (ws/finalize))))
+      (if redirect-uri
+        (->> (rx/of (rt/nav-raw :uri (str redirect-uri)))
+             (rx/observe-on :async))
+
+        (rx/merge
+         ;; NOTE: We need the `effect` of the current event to be
+         ;; executed before the redirect.
+         (->> (rx/of (rt/nav :auth-login))
+              (rx/observe-on :async))
+         (rx/of (ws/finalize)))))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -235,7 +264,7 @@
              (rx/mapcat (fn [_]
                           (->> (rp/cmd! :logout {:profile-id profile-id})
                                (rx/delay-at-least 300)
-                               (rx/catch (constantly (rx/of 1))))))
+                               (rx/catch (constantly (rx/of nil))))))
              (rx/map logged-out))))))
 
 ;; --- Update Profile
@@ -248,9 +277,7 @@
 (defn request-profile-recovery
   [data]
 
-  (dm/assert!
-   "expected valid parameters"
-   (sm/check schema:request-profile-recovery data))
+  (assert (sm/check schema:request-profile-recovery data))
 
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
@@ -273,9 +300,7 @@
 
 (defn recover-profile
   [data]
-  (dm/assert!
-   "expected valid arguments"
-   (sm/check schema:recover-profile data))
+  (assert (sm/check schema:recover-profile data))
 
   (ptk/reify ::recover-profile
     ptk/WatchEvent

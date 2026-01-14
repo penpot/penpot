@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.types.variant :as ctv]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.variants :as dwv]
    [app.main.store :as st]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -69,15 +68,7 @@
                  name           (str/trim (dom/get-value name-input))]
              (on-stop-edit)
              (reset! edition* false)
-             (if variant-name
-               (if (ctv/valid-properties-formula? name)
-                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties (ctv/properties-formula->map name))
-                           (dwv/remove-empty-properties variant-id)
-                           (dwv/update-error component-id))
-                 (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties {})
-                           (dwv/remove-empty-properties variant-id)
-                           (dwv/update-error component-id name)))
-               (st/emit! (dw/end-rename-shape shape-id name))))))
+             (st/emit! (dw/rename-shape-or-variant shape-id name)))))
 
         cancel-edit
         (mf/use-fn

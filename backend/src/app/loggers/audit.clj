@@ -25,7 +25,8 @@
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
    [app.worker :as wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [yetti.request :as yreq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -78,17 +79,32 @@
          (remove #(contains? reserved-props (key %))))
         props))
 
-(defn event-from-rpc-params
-  "Create a base event skeleton with pre-filled some important
-  data that can be extracted from RPC params object"
-  [params]
-  (let [context {:external-session-id (::rpc/external-session-id params)
-                 :external-event-origin (::rpc/external-event-origin params)
-                 :triggered-by (::rpc/handler-name params)}]
-    {::type "action"
-     ::profile-id (::rpc/profile-id params)
-     ::ip-addr (::rpc/ip-addr params)
-     ::context (d/without-nils context)}))
+(defn get-external-session-id
+  [request]
+  (when-let [session-id (yreq/get-header request "x-external-session-id")]
+    (when-not (or (> (count session-id) 256)
+                  (= session-id "null")
+                  (str/blank? session-id))
+      session-id)))
+
+(defn- get-client-event-origin
+  [request]
+  (when-let [origin (yreq/get-header request "x-event-origin")]
+    (when-not (or (= origin "null")
+                  (str/blank? origin))
+      (str/prune origin 200))))
+
+(defn get-client-user-agent
+  [request]
+  (when-let [user-agent (yreq/get-header request "user-agent")]
+    (str/prune user-agent 500)))
+
+(defn- get-client-version
+  [request]
+  (when-let [origin (yreq/get-header request "x-frontend-version")]
+    (when-not (or (= origin "null")
+                  (str/blank? origin))
+      (str/prune origin 100))))
 
 ;; --- SPECS
 
@@ -117,6 +133,33 @@
 (def ^:private check-event
   (sm/check-fn schema:event))
 
+(defn- prepare-context-from-request
+  [request]
+  (let [client-event-origin (get-client-event-origin request)
+        client-version      (get-client-version request)
+        client-user-agent   (get-client-user-agent request)
+        session-id          (get-external-session-id request)
+        token-id       (::actoken/id request)]
+    (d/without-nils
+     {:external-session-id session-id
+      :access-token-id (some-> token-id str)
+      :client-event-origin client-event-origin
+      :client-user-agent client-user-agent
+      :client-version client-version
+      :version (:full cf/version)})))
+
+(defn event-from-rpc-params
+  "Create a base event skeleton with pre-filled some important
+  data that can be extracted from RPC params object"
+  [params]
+  (let [context (some-> params meta ::http/request prepare-context-from-request)
+        event   {::type "action"
+                 ::profile-id (or (::rpc/profile-id params) uuid/zero)
+                 ::ip-addr (::rpc/ip-addr params)}]
+    (cond-> event
+      (some? context)
+      (assoc ::context context))))
+
 (defn prepare-event
   [cfg mdata params result]
   (let [resultm      (meta result)
@@ -126,23 +169,15 @@
                          (::rpc/profile-id params)
                          uuid/zero)
 
-        session-id   (get params ::rpc/external-session-id)
-        event-origin (get params ::rpc/external-event-origin)
         props        (-> (or (::replace-props resultm)
                              (-> params
                                  (merge (::props resultm))
                                  (dissoc :profile-id)
                                  (dissoc :type)))
-
                          (clean-props))
 
-        token-id     (::actoken/id request)
-        context      (-> (::context resultm)
-                         (assoc :external-session-id session-id)
-                         (assoc :external-event-origin event-origin)
-                         (assoc :access-token-id (some-> token-id str))
-                         (d/without-nils))
-
+        context      (merge (::context resultm)
+                            (prepare-context-from-request request))
         ip-addr      (inet/parse-request request)]
 
     {::type (or (::type resultm)

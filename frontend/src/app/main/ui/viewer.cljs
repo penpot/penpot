@@ -624,7 +624,6 @@
 ;; --- Component: Viewer
 
 (mf/defc viewer*
-  {::mf/props :obj}
   [{:keys [file-id share-id page-id] :as props}]
   (mf/with-effect [file-id page-id share-id]
     (let [params {:file-id file-id
@@ -643,3 +642,8 @@
     [:> loader*  {:title (tr "labels.loading")
                   :overlay true}]))
 
+
+(mf/defc viewer-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> viewer* props])

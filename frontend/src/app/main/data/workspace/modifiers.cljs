@@ -24,7 +24,6 @@
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
@@ -212,13 +211,14 @@
         ;; Create a new objects only with the temporary modifications
         objects-changed
         (->> wasm-props
+             (group-by first)
              (reduce
               (fn [objects [id properties]]
                 (let [shape
                       (->> properties
                            (reduce
-                            (fn [shape {:keys [property value]}]
-                              (assoc shape property value))
+                            (fn [shape [_ operation]]
+                              (ctm/apply-modifier shape operation))
                             (get objects id)))]
                   (assoc objects id shape)))
               objects))]
@@ -411,10 +411,7 @@
          (dsh/lookup-page-objects state page-id)
 
          snap-pixel?
-         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
-
-         zoom (dm/get-in state [:workspace-local :zoom])
-         snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)]
+         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
 
      (as-> objects $
        (apply-text-modifiers $ (get state :workspace-text-modifier))
@@ -422,8 +419,7 @@
        (gm/set-objects-modifiers modif-tree $ (merge
                                                params
                                                {:ignore-constraints ignore-constraints
-                                                :snap-pixel? snap-pixel?
-                                                :snap-precision snap-precision}))))))
+                                                :snap-pixel? snap-pixel?}))))))
 
 (defn- calculate-update-modifiers
   [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
@@ -433,9 +429,6 @@
         snap-pixel?
         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-        zoom (dm/get-in state [:workspace-local :zoom])
-
-        snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)
         objects
         (-> objects
             (apply-text-modifiers (get state :workspace-text-modifier)))]
@@ -445,8 +438,7 @@
      modif-tree
      objects
      {:ignore-constraints ignore-constraints
-      :snap-pixel? snap-pixel?
-      :snap-precision snap-precision})))
+      :snap-pixel? snap-pixel?})))
 
 (defn update-modifiers
   ([modif-tree]
@@ -657,7 +649,7 @@
             (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
 
             ids
-            (into [] xf:without-uuid-zero (keys transforms))
+            (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
             update-shape
             (fn [shape]

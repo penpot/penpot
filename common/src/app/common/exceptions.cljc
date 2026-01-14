@@ -10,15 +10,19 @@
   (:refer-clojure :exclude [instance?])
   (:require
    #?(:clj [clojure.stacktrace :as strace])
+   [app.common.data :refer [obfuscate-string]]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [clojure.core :as c]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound])
+   [cuerdas.core :as str])
   #?(:clj
      (:import
       clojure.lang.IPersistentMap)))
+
+(def ^:private sensitive-fields
+  "Keys whose values must be obfuscated in validation explains."
+  #{:password :old-password :token :invitation-token})
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -110,15 +114,26 @@
          (contains? data :explain))
     (explain (:explain data) opts)
 
-    (and (contains? data ::s/problems)
-         (contains? data ::s/value)
-         (contains? data ::s/spec))
-    (binding [s/*explain-out* expound/printer]
-      (with-out-str
-        (s/explain-out (update data ::s/problems #(take (:length opts 10) %)))))
-
     (contains? data ::sm/explain)
-    (sm/humanize-explain (::sm/explain data) opts)))
+    (let [exp (::sm/explain data)
+          sanitize-map (fn sanitize-map [m]
+                         (reduce-kv
+                          (fn [acc k v]
+                            (let [k* (if (string? k) (keyword k) k)]
+                              (cond
+                                (contains? sensitive-fields k*)
+                                (assoc acc k (if (map? v)
+                                               (sanitize-map v)
+                                               (obfuscate-string v true)))
+
+                                (map? v) (assoc acc k (sanitize-map v))
+                                :else (assoc acc k v))))
+                          {}
+                          m))
+          sanitize-explain (fn [exp]
+                             (cond-> exp
+                               (:value exp) (update :value sanitize-map)))]
+      (sm/humanize-explain (sanitize-explain exp) opts))))
 
 #?(:clj
    (defn format-throwable

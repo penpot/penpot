@@ -106,16 +106,16 @@
       (let [content-part      (MimeBodyPart.)
             alternative-mpart (MimeMultipart. "alternative")]
 
+        (when-let [content (get body "text/plain")]
+          (let [text-part (MimeBodyPart.)]
+            (.setText text-part ^String content ^String charset)
+            (.addBodyPart alternative-mpart text-part)))
+
         (when-let [content (get body "text/html")]
           (let [html-part (MimeBodyPart.)]
             (.setContent html-part ^String content
                          (str "text/html; charset=" charset))
             (.addBodyPart alternative-mpart html-part)))
-
-        (when-let [content (get body "text/plain")]
-          (let [text-part (MimeBodyPart.)]
-            (.setText text-part ^String content ^String charset)
-            (.addBodyPart alternative-mpart text-part)))
 
         (.setContent content-part alternative-mpart)
         (.addBodyPart mixed-mpart content-part))

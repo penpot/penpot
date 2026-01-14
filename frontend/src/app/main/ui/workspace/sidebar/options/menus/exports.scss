@@ -22,11 +22,12 @@
 
 .element-set-content {
   @include sidebar.option-grid-structure;
+  gap: var(--sp-xs);
 }
 
 .multiple-exports {
   @include deprecated.flexRow;
-  grid-column: 1 / span 9;
+  grid-column: 1 / span 8;
   .label {
     @extend .mixed-bar;
   }
@@ -75,8 +76,6 @@
 }
 
 .export-btn {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
-  grid-column: 1 / span 9;
-  height: deprecated.$s-32;
+  grid-column: 1 / span 8;
+  justify-content: center;
 }

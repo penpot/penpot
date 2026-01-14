@@ -39,10 +39,7 @@ export class Point {
   }
 
   polar(angle, length = 1.0) {
-    return this.set(
-      Math.cos(angle) * length,
-      Math.sin(angle) * length
-    );
+    return this.set(Math.cos(angle) * length, Math.sin(angle) * length);
   }
 
   add({ x, y }) {
@@ -119,10 +116,7 @@ export class Point {
 
 export class Rect {
   static create(x, y, width, height) {
-    return new Rect(
-      new Point(width, height),
-      new Point(x, y),
-    );
+    return new Rect(new Point(width, height), new Point(x, y));
   }
 
   #size;
@@ -228,10 +222,7 @@ export class Rect {
   }
 
   clone() {
-    return new Rect(
-      this.#size.clone(),
-      this.#position.clone(),
-    );
+    return new Rect(this.#size.clone(), this.#position.clone());
   }
 
   toFixed(fractionDigits = 0) {

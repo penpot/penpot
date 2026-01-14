@@ -1,6 +1,6 @@
 use skia_safe::{self as skia, Paint, RRect};
 
-use super::{RenderState, SurfaceId};
+use super::{filters, RenderState, SurfaceId};
 use crate::render::get_source_rect;
 use crate::shapes::{Fill, Frame, ImageFill, Rect, Shape, Type};
 
@@ -100,34 +100,55 @@ pub fn render(
 ) {
     let mut paint = fill.to_paint(&shape.selrect, antialias);
     if let Some(image_filter) = shape.image_filter(1.) {
-        paint.set_image_filter(image_filter);
+        let bounds = image_filter.compute_fast_bounds(shape.selrect);
+        if filters::render_with_filter_surface(
+            render_state,
+            bounds,
+            surface_id,
+            |state, temp_surface| {
+                let mut filtered_paint = paint.clone();
+                filtered_paint.set_image_filter(image_filter.clone());
+                draw_fill_to_surface(state, shape, fill, antialias, temp_surface, &filtered_paint);
+            },
+        ) {
+            return;
+        } else {
+            paint.set_image_filter(image_filter);
+        }
     }
 
+    draw_fill_to_surface(render_state, shape, fill, antialias, surface_id, &paint);
+}
+
+fn draw_fill_to_surface(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    fill: &Fill,
+    antialias: bool,
+    surface_id: SurfaceId,
+    paint: &Paint,
+) {
     match (fill, &shape.shape_type) {
         (Fill::Image(image_fill), _) => {
             draw_image_fill(
                 render_state,
                 shape,
                 image_fill,
-                &paint,
+                paint,
                 antialias,
                 surface_id,
             );
         }
         (_, Type::Rect(_) | Type::Frame(_)) => {
-            render_state
-                .surfaces
-                .draw_rect_to(surface_id, shape, &paint);
+            render_state.surfaces.draw_rect_to(surface_id, shape, paint);
         }
         (_, Type::Circle) => {
             render_state
                 .surfaces
-                .draw_circle_to(surface_id, shape, &paint);
+                .draw_circle_to(surface_id, shape, paint);
         }
         (_, Type::Path(_)) | (_, Type::Bool(_)) => {
-            render_state
-                .surfaces
-                .draw_path_to(surface_id, shape, &paint);
+            render_state.surfaces.draw_path_to(surface_id, shape, paint);
         }
         (_, Type::Group(_)) => {
             // Groups can have fills but they propagate them to their children

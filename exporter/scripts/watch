@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+TARGET=${1:-app};
+
+set -ex
+
+exec yarn run watch:$TARGET

@@ -101,8 +101,8 @@
               (rx/push! bus message))))
 
         handle-error
-        (fn [error]
-          (on-error worker (.-data error)))]
+        (fn [event]
+          (on-error worker (.-data event)))]
 
     (.addEventListener instance "message" handle-message)
     (.addEventListener instance "error" handle-error)

@@ -6,12 +6,13 @@
 
 (ns app.main.ui.ds
   (:require
-   [app.config :as cf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
@@ -32,6 +33,7 @@
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.product.milestone :refer [milestone*]]
@@ -42,8 +44,6 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]
    [rumext.v2 :as mf]))
-
-(i18n/init! cf/translations)
 
 (def default
   "A export used for storybook"
@@ -58,10 +58,13 @@
     :HintMessage hint-message*
     :InputWithMeta input-with-meta*
     :EmptyPlaceholder empty-placeholder*
+    :EmptyState empty-state*
     :Loader loader*
     :RawSvg raw-svg*
     :Select select*
     :Switch switch*
+    :Checkbox checkbox*
+    :RadioButtons radio-buttons*
     :Combobox combobox*
     :Text text*
     :TabSwitcher tab-switcher*
@@ -78,6 +81,11 @@
     :Milestone milestone*
     :MilestoneGroup milestone-group*
     :Date date*
+
+    :set-default-translations
+    (fn [data]
+      (i18n/set-translations "en" data))
+
     ;; meta / misc
     :meta
     {:icons (clj->js (sort icon-list))

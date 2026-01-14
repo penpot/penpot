@@ -57,7 +57,7 @@
                                   :uid uuid/zero})
         body    (t/encode {:events events})
         headers {"content-type" "application/transit+json"
-                 "origin" (cf/get :public-uri)
+                 "origin" (str (cf/get :public-uri))
                  "cookie" (u/map->query-string {:auth-token token})}
         params  {:uri uri
                  :timeout 12000

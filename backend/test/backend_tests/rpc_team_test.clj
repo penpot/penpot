@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.setup.clock :as clock]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -525,8 +526,9 @@
         (t/is (= :not-found (:type edata)))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 2 (:processed result))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [result (th/run-task! :objects-gc {})]
+        (t/is (= 2 (:processed result)))))
 
     ;; query the list of projects of a after hard deletion
     (let [data {::th/type :get-projects
@@ -581,8 +583,9 @@
       (t/is (= 1 (count rows)))
       (t/is (ct/inst? (:deleted-at (first rows)))))
 
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 7 (:processed result))))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [result (th/run-task! :objects-gc {})]
+        (t/is (= 7 (:processed result)))))))
 
 (t/deftest create-team-access-request
   (with-mocks [mock {:target 'app.email/send! :return nil}]

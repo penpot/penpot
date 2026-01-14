@@ -48,6 +48,9 @@
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
 
+   (when *assert*
+     ["/debug/playground" :debug-playground])
+
    ;; Used for export
    ["/render-sprite/:file-id" :render-sprite]
 
@@ -61,7 +64,8 @@
     ["/fonts"                :dashboard-fonts]
     ["/fonts/providers"      :dashboard-font-providers]
     ["/libraries"            :dashboard-libraries]
-    ["/files"                :dashboard-files]]
+    ["/files"                :dashboard-files]
+    ["/deleted" :dashboard-deleted]]
 
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-legacy-team-members]

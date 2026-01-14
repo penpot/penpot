@@ -73,7 +73,7 @@
                   {:id (:id profile)}))
 
     (-> claims
-        (rph/with-transform (session/create-fn cfg profile-id))
+        (rph/with-transform (session/create-fn cfg profile))
         (rph/with-meta {::audit/name "verify-profile-email"
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))

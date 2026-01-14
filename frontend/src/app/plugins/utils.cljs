@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
    [app.util.object :as obj]))
@@ -51,6 +52,26 @@
   [file-id id]
   (assert (uuid? id) "Component not valid uuid")
   (dm/get-in (locate-file file-id) [:data :components id]))
+
+(defn locate-tokens-lib
+  [file-id]
+  (let [file (locate-file file-id)]
+    (->> file :data :tokens-lib)))
+
+(defn locate-token-theme
+  [file-id id]
+  (let [tokens-lib (locate-tokens-lib file-id)]
+    (ctob/get-theme tokens-lib id)))
+
+(defn locate-token-set
+  [file-id set-id]
+  (let [tokens-lib (locate-tokens-lib file-id)]
+    (ctob/get-set tokens-lib set-id)))
+
+(defn locate-token
+  [file-id set-id token-id]
+  (let [tokens-lib (locate-tokens-lib file-id)]
+    (ctob/get-token tokens-lib set-id token-id)))
 
 (defn locate-presence
   [session-id]

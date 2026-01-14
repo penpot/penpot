@@ -24,6 +24,7 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
     pub shapes: ShapesPool<'a>,
+    pub saved_shapes: Option<ShapesPool<'a>>,
 }
 
 impl<'a> State<'a> {
@@ -34,7 +35,30 @@ impl<'a> State<'a> {
             current_id: None,
             current_browser: 0,
             shapes: ShapesPool::new(),
+            // TODO: Maybe this can be moved to a different object
+            saved_shapes: None,
         }
+    }
+
+    // Creates a new temporary shapes pool.
+    // Will panic if a previous temporary pool exists.
+    pub fn start_temp_objects(mut self) -> Self {
+        if self.saved_shapes.is_some() {
+            panic!("Tried to start a temp objects while the previous have not been restored");
+        }
+        self.saved_shapes = Some(self.shapes);
+        self.shapes = ShapesPool::new();
+        self
+    }
+
+    // Disposes of the temporary shapes pool restoring the normal pool
+    // Will panic if a there is no temporary pool.
+    pub fn end_temp_objects(mut self) -> Self {
+        self.shapes = self
+            .saved_shapes
+            .expect("Tried to end temp objects but not content to be restored is present");
+        self.saved_shapes = None;
+        self
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -63,15 +87,27 @@ impl<'a> State<'a> {
         self.render_state.render_from_cache(&self.shapes);
     }
 
+    pub fn render_sync(&mut self, timestamp: i32) -> Result<(), String> {
+        self.render_state
+            .start_render_loop(None, &self.shapes, timestamp, true)?;
+        Ok(())
+    }
+
+    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<(), String> {
+        self.render_state
+            .start_render_loop(Some(id), &self.shapes, timestamp, true)?;
+        Ok(())
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .start_render_loop(&self.shapes, timestamp)?;
+            .start_render_loop(None, &self.shapes, timestamp, false)?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .process_animation_frame(&self.shapes, timestamp)?;
+            .process_animation_frame(None, &self.shapes, timestamp)?;
         Ok(())
     }
 
@@ -161,8 +197,16 @@ impl<'a> State<'a> {
         self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
+    pub fn clear_tile_index(&mut self) {
+        self.render_state.clear_tile_index();
+    }
+
     pub fn rebuild_tiles(&mut self) {
-        self.render_state.rebuild_tiles(&self.shapes);
+        self.render_state.rebuild_tiles_from(&self.shapes, None);
+    }
+
+    pub fn rebuild_tiles_from(&mut self, base_id: Option<&Uuid>) {
+        self.render_state.rebuild_tiles_from(&self.shapes, base_id);
     }
 
     pub fn rebuild_touched_tiles(&mut self) {

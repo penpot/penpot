@@ -46,6 +46,9 @@ test("Save and restore version", async ({ page }) => {
 
   await page.getByLabel("History").click();
 
+  const saveVersionButton = page.getByRole("button", { name: "Save version" });
+  await saveVersionButton.waitFor();
+
   await workspacePage.mockRPC(
     "create-file-snapshot",
     "workspace/versions-take-snapshot-1.json",
@@ -56,17 +59,20 @@ test("Save and restore version", async ({ page }) => {
     "workspace/versions-snapshot-2.json",
   );
 
-  await page.getByRole("button", { name: "Save version" }).click();
-
   await workspacePage.mockRPC(
     "update-file-snapshot",
     "workspace/versions-update-snapshot-1.json",
   );
 
+  await saveVersionButton.click();
+
   await workspacePage.mockRPC(
     "get-file-snapshots?file-id=*",
     "workspace/versions-snapshot-3.json",
   );
+
+  const textbox = page.getByRole("textbox");
+  await textbox.waitFor();
 
   await page.getByRole("textbox").fill("INIT");
   await page.getByRole("textbox").press("Enter");
@@ -76,14 +82,14 @@ test("Save and restore version", async ({ page }) => {
     .locator("div")
     .nth(3)
     .hover();
-  await page.getByRole("button", { name: "Open version menu" }).click();
-  await page.getByRole("button", { name: "Restore" }).click();
 
   await workspacePage.mockRPC(
     "restore-file-snapshot",
     "workspace/versions-restore-snapshot-1.json",
   );
 
+  await page.getByRole("button", { name: "Open version menu" }).click();
+  await page.getByRole("button", { name: "Restore" }).click();
   await page.getByRole("button", { name: "Restore" }).click();
 
   // check that the history panel is closed after restore

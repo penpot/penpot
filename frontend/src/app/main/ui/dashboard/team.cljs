@@ -19,7 +19,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.subscription :refer [members-cta*
@@ -1315,10 +1315,10 @@
          [:img {:class (stl/css :team-image)
                 :src (cfg/resolve-team-photo-url team)}]
          (when can-edit
-           [:& file-uploader {:accept "image/jpeg,image/png"
-                              :multi false
-                              :ref finput
-                              :on-selected on-file-selected}])]
+           [:> file-uploader* {:accept "image/jpeg,image/png"
+                               :multi false
+                               :ref finput
+                               :on-selected on-file-selected}])]
         [:div {:class (stl/css :block-label)}
          (tr "dashboard.team-info")]
         [:div {:class (stl/css :block-text)}

@@ -55,8 +55,8 @@
         text-direction  (sr/translate-text-direction (get paragraph :text-direction))
         text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
         text-transform  (sr/translate-text-transform (get paragraph :text-transform))
-        line-height     (get paragraph :line-height 1.2)
-        letter-spacing  (get paragraph :letter-spacing)]
+        line-height     (f/serialize-line-height (get paragraph :line-height))
+        letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))]
 
     (-> offset
         (mem/write-u8 dview text-align)
@@ -73,14 +73,18 @@
   [offset dview spans paragraph]
   (let [paragraph-font-size (get paragraph :font-size)
         paragraph-font-weight (-> paragraph :font-weight f/serialize-font-weight)
-        paragraph-line-height (get paragraph :line-height 1.2)]
+        paragraph-line-height (f/serialize-line-height (get paragraph :line-height))]
     (reduce (fn [offset span]
               (let [font-style  (sr/translate-font-style (get span :font-style "normal"))
                     font-size   (get span :font-size paragraph-font-size)
-                    line-height  (get span :line-height paragraph-line-height)
-                    letter-spacing (get span :letter-spacing 0.0)
+                    font-size   (f/serialize-font-size font-size)
+
+                    line-height     (f/serialize-line-height (get span :line-height) paragraph-line-height)
+                    letter-spacing  (f/serialize-letter-spacing (get span :letter-spacing))
+
                     font-weight (get span :font-weight paragraph-font-weight)
                     font-weight (f/serialize-font-weight font-weight)
+
                     font-id     (f/normalize-font-id (get span :font-id "sourcesanspro"))
                     font-family (hash (get span :font-family "sourcesanspro"))
 
@@ -138,7 +142,9 @@
   ;; buffer has the following format:
   ;; [<num-spans> <paragraph_attributes> <spans_attributes> <text>]
   [spans paragraph text]
-  (let [num-spans    (count spans)
+  (let [normalized-paragraph (f/normalize-paragraph-font paragraph)
+        normalized-spans (map #(f/normalize-span-font % normalized-paragraph) spans)
+        num-spans    (count normalized-spans)
         fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
         metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
                          (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
@@ -153,8 +159,8 @@
 
     (-> offset
         (mem/write-u32 dview num-spans)
-        (write-paragraph dview paragraph)
-        (write-spans dview spans paragraph)
+        (write-paragraph dview normalized-paragraph)
+        (write-spans dview normalized-spans normalized-paragraph)
         (mem/write-buffer heapu8 text-buffer))
 
     (h/call wasm/internal-module "_set_shape_text_content")))
@@ -198,20 +204,20 @@
    :coptic      #"[\u2C80-\u2CFF]"
    :ol-chiki    #"[\u1C50-\u1C7F]"
    :vai         #"[\uA500-\uA63F]"
-   :shavian     #"[\u10450-\u1047F]"
-   :osmanya     #"[\u10480-\u104AF]"
+   :shavian     #"\uD801[\uDC50-\uDC7F]"
+   :osmanya     #"\uD801[\uDC80-\uDCAF]"
    :runic       #"[\u16A0-\u16FF]"
-   :old-italic  #"[\u10300-\u1032F]"
-   :brahmi      #"[\u11000-\u1107F]"
-   :modi        #"[\u11600-\u1165F]"
-   :sora-sompeng #"[\u110D0-\u110FF]"
+   :old-italic  #"\uD800[\uDF00-\uDF2F]"
+   :brahmi      #"\uD804[\uDC00-\uDC7F]"
+   :modi        #"\uD805[\uDE00-\uDE5F]"
+   :sora-sompeng #"\uD804[\uDCD0-\uDCFF]"
    :bamum       #"[\uA6A0-\uA6FF]"
-   :meroitic    #"[\u10980-\u1099F]"
+   :meroitic    #"\uD802[\uDD80-\uDD9F]"
    ;; Arrows, Mathematical Operators, Misc Technical, Geometric Shapes, Misc Symbols, Dingbats, Supplemental Arrows, etc.
    :symbols     #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]"
   ;; Additional arrows, math, technical, geometric, and symbol blocks
    :symbols-2     #"[\u2190-\u21FF\u2200-\u22FF\u2300-\u23FF\u25A0-\u25FF\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF]"
-   :music     #"[\u2669-\u267B\u1D100-\u1D1FF]"})
+   :music     #"[\u2669-\u267B]|\uD834[\uDD00-\uDD1F]"})
 
 (defn contains-emoji? [text]
   (let [result (re-find emoji-pattern text)]

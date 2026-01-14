@@ -157,7 +157,8 @@
     [:div {:class (stl/css :attributes-block)}
      [:> inspect-title-bar*
       {:title (tr "inspect.attributes.typography")
-       :class (stl/css :title-spacing-text)}]
+       :class (stl/css :title-wrapper)
+       :title-class (stl/css :text-atrr-title)}]
 
      (for [shape shapes]
        [:& text-block {:shape shape

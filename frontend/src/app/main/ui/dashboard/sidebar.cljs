@@ -27,11 +27,11 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :refer [subscription-sidebar*
+   [app.main.ui.dashboard.subscription :refer [dashboard-cta*
+                                               get-subscription-type
                                                menu-team-icon*
-                                               dashboard-cta*
                                                show-subscription-dashboard-banner?
-                                               get-subscription-type]]
+                                               subscription-sidebar*]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]

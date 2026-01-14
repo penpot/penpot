@@ -23,7 +23,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -113,18 +113,17 @@
            :on-drag-over dom/prevent-default
            :on-drop on-drop}
 
-     [:& typography-entry
-      {:file-id file-id
-       :typography typography
-       :local? local?
-       :selected? (contains? selected typography-id)
-       :on-click on-asset-click
-       :on-change handle-change
-       :on-context-menu on-context-menu
-       :editing? editing?
-       :renaming? renaming?
-       :focus-name? rename?
-       :external-open* open*}]
+     [:> typography-entry* {:file-id file-id
+                            :typography typography
+                            :local? local?
+                            :selected? (contains? selected typography-id)
+                            :on-click on-asset-click
+                            :on-change handle-change
+                            :on-context-menu on-context-menu
+                            :editing? editing?
+                            :renaming? renaming?
+                            :focus-name? rename?
+                            :external-open* open*}]
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 

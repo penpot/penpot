@@ -1,0 +1,498 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`transform colors to tokens 1`] = `
+{
+  "colors": {
+    "blue": {
+      "050": {
+        "$type": "color",
+        "$value": "#ebf8ff",
+      },
+      "100": {
+        "$type": "color",
+        "$value": "#bee3f8",
+      },
+      "650": {
+        "$type": "color",
+        "$value": "#2a4365",
+      },
+      "700": {
+        "$type": "color",
+        "$value": "#2c5282",
+      },
+      "900": {
+        "$type": "color",
+        "$value": "#1a365d",
+      },
+    },
+    "gray": {
+      "100": {
+        "$type": "color",
+        "$value": "#edf2f7",
+      },
+      "200": {
+        "$type": "color",
+        "$value": "#e2e8f0",
+      },
+      "400": {
+        "$type": "color",
+        "$value": "#a0aec0",
+      },
+      "600": {
+        "$type": "color",
+        "$value": "#4a5568",
+      },
+      "700": {
+        "$type": "color",
+        "$value": "#2d3748",
+      },
+      "800": {
+        "$type": "color",
+        "$value": "#1a202c",
+      },
+    },
+    "green": {
+      "050": {
+        "$type": "color",
+        "$value": "#f0fff4",
+      },
+      "100": {
+        "$type": "color",
+        "$value": "#c6f6d5",
+      },
+      "300": {
+        "$type": "color",
+        "$value": "#68d391",
+      },
+      "500": {
+        "$type": "color",
+        "$value": "#38a169",
+      },
+      "600": {
+        "$type": "color",
+        "$value": "#2f855a",
+      },
+      "700": {
+        "$type": "color",
+        "$value": "#276749",
+      },
+      "800": {
+        "$type": "color",
+        "$value": "#22543d",
+      },
+    },
+    "pink": {
+      "100": {
+        "$type": "color",
+        "$value": "#fed7e2",
+      },
+    },
+    "purple": {
+      "100": {
+        "$type": "color",
+        "$value": "#e9d8fd",
+      },
+      "300": {
+        "$type": "color",
+        "$value": "#b794f4",
+      },
+      "500": {
+        "$type": "color",
+        "$value": "#805ad5",
+      },
+    },
+    "red": {
+      "100": {
+        "$type": "color",
+        "$value": "#FED7D7",
+      },
+      "300": {
+        "$type": "color",
+        "$value": "#FC8181",
+      },
+      "500": {
+        "$type": "color",
+        "$value": "#e53e3e",
+      },
+      "600": {
+        "$type": "color",
+        "$value": "#c53030",
+      },
+      "800": {
+        "$type": "color",
+        "$value": "#822727",
+      },
+    },
+    "shadow": {
+      "dark": {
+        "$type": "color",
+        "$value": "rgba(0, 0, 0, 0.69803923)",
+      },
+      "light": {
+        "$type": "color",
+        "$value": "rgba(0, 0, 0, 0.16078432)",
+      },
+      "mid": {
+        "$type": "color",
+        "$value": "rgba(0, 0, 0, 0.6)",
+      },
+    },
+    "white": {
+      "$type": "color",
+      "$value": "#ffffff",
+    },
+    "yellow": {
+      "050": {
+        "$type": "color",
+        "$value": "#fffff0",
+      },
+      "100": {
+        "$type": "color",
+        "$value": "#fefcbf",
+      },
+      "200": {
+        "$type": "color",
+        "$value": "#faf089",
+      },
+      "700": {
+        "$type": "color",
+        "$value": "#975a16",
+      },
+      "800": {
+        "$type": "color",
+        "$value": "#744210",
+      },
+    },
+  },
+  "ui/darkmode": {
+    "dm": {
+      "background": {
+        "blue": {
+          "$type": "color",
+          "$value": "#1a365d",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#1c4532",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#5f370e",
+        },
+      },
+      "button": {
+        "blue": {
+          "$type": "color",
+          "$value": "#2b6cb0",
+        },
+        "default": {
+          "$type": "color",
+          "$value": "#4a5568",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#2f855a",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#975a16",
+        },
+        "yellow[DONTUSE]": {
+          "$type": "color",
+          "$value": "#fefcbf",
+        },
+      },
+      "card": {
+        "background": {
+          "$type": "color",
+          "$value": "#2d3748",
+        },
+      },
+      "chart": {
+        "accent": {
+          "$type": "color",
+          "$value": "#9f7aea",
+          "alt": {
+            "$type": "color",
+            "$value": "#ecc94b",
+          },
+        },
+        "background": {
+          "$type": "color",
+          "$value": "#4a5568",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#38a169",
+        },
+        "red": {
+          "$type": "color",
+          "$value": "#e53e3e",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#ecc94b",
+        },
+      },
+      "dashboard": {
+        "background": {
+          "$type": "color",
+          "$value": "#1a202c",
+        },
+      },
+      "footer": {
+        "$type": "color",
+        "$value": "#1a202c",
+      },
+      "icon": {
+        "default": {
+          "$type": "color",
+          "$value": "#e2e8f0",
+        },
+        "secondary": {
+          "$type": "color",
+          "$value": "#718096",
+        },
+      },
+      "input": {
+        "$type": "color",
+        "$value": "#4a5568",
+      },
+      "label": {
+        "$type": "color",
+        "$value": "#a0aec0",
+      },
+      "sidebar": {
+        "$type": "color",
+        "$value": "#171923",
+      },
+      "text": {
+        "blue": {
+          "$type": "color",
+          "$value": "#63b3ed",
+        },
+        "default": {
+          "$type": "color",
+          "$value": "#a0aec0",
+        },
+        "emphasis": {
+          "$type": "color",
+          "$value": "#edf2f7",
+        },
+        "green": {
+          "default": {
+            "$type": "color",
+            "$value": "#68d391",
+          },
+          "emphasis": {
+            "$type": "color",
+            "$value": "#9ae6b4",
+          },
+        },
+        "red": {
+          "default": {
+            "$type": "color",
+            "$value": "#f56565",
+          },
+          "emphasis": {
+            "$type": "color",
+            "$value": "#FC8181",
+          },
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#faf089",
+        },
+      },
+    },
+  },
+  "ui/lightmode": {
+    "lm": {
+      "axis": {
+        "line": {
+          "$type": "color",
+          "$value": "#a0aec0",
+        },
+      },
+      "background": {
+        "blue": {
+          "$type": "color",
+          "$value": "#ebf8ff",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#f0fff4",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#fffff0",
+        },
+      },
+      "bar": {
+        "line": {
+          "$type": "color",
+          "$value": "rgba(160, 174, 192, 0.4)",
+        },
+      },
+      "button": {
+        "$type": "color",
+        "$value": "#E2E8F0",
+        "active": {
+          "$type": "color",
+          "$value": "#a0aec0",
+        },
+        "blue": {
+          "$type": "color",
+          "$value": "#bee3f8",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#c6f6d5",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#fefcbf",
+        },
+      },
+      "card": {
+        "background": {
+          "$type": "color",
+          "$value": "#ffffff",
+        },
+      },
+      "chart": {
+        "accent": {
+          "$type": "color",
+          "$value": "#b794f4",
+          "alt": {
+            "$type": "color",
+            "$value": "#faf089",
+          },
+        },
+        "background": {
+          "$type": "color",
+          "$value": "#E2E8F0",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#68d391",
+        },
+        "red": {
+          "$type": "color",
+          "$value": "#FC8181",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#faf089",
+        },
+      },
+      "dashboard": {
+        "background": {
+          "$type": "color",
+          "$value": "#EDF2F7",
+        },
+      },
+      "footer": {
+        "$type": "color",
+        "$value": "#e2e8f0",
+      },
+      "icon": {
+        "blue": {
+          "$type": "color",
+          "$value": "#2a4365",
+        },
+        "blue1": {
+          "$type": "color",
+          "$value": "#bee3f8",
+        },
+        "blue2": {
+          "$type": "color",
+          "$value": "#0000ff",
+        },
+        "default": {
+          "$type": "color",
+          "$value": "#A0AEC0",
+        },
+        "green": {
+          "$type": "color",
+          "$value": "#276749",
+        },
+        "red": {
+          "$type": "color",
+          "$value": "#c53030",
+        },
+        "secondary": {
+          "$type": "color",
+          "$value": "#e2e8f0",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#744210",
+        },
+      },
+      "input": {
+        "$type": "color",
+        "$value": "#EDF2F7",
+      },
+      "label": {
+        "$type": "color",
+        "$value": "#4a5568",
+      },
+      "placeholder": {
+        "$type": "color",
+        "$value": "#718096",
+      },
+      "shadow": {
+        "$type": "color",
+        "$value": "rgba(0, 0, 0, 0.2)",
+      },
+      "sidebar": {
+        "$type": "color",
+        "$value": "#1a202c",
+      },
+      "text": {
+        "blue": {
+          "$type": "color",
+          "$value": "#2a4365",
+        },
+        "default": {
+          "$type": "color",
+          "$value": "#2d3748",
+        },
+        "emphasis": {
+          "$type": "color",
+          "$value": "#000000",
+        },
+        "green": {
+          "default": {
+            "$type": "color",
+            "$value": "#22543d",
+          },
+          "emphasis": {
+            "$type": "color",
+            "$value": "#38a169",
+          },
+        },
+        "red": {
+          "default": {
+            "$type": "color",
+            "$value": "#822727",
+          },
+          "emphasis": {
+            "$type": "color",
+            "$value": "#e53e3e",
+          },
+        },
+        "secondary": {
+          "$type": "color",
+          "$value": "#718096",
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": "#744210",
+        },
+      },
+    },
+  },
+}
+`;

@@ -30,7 +30,9 @@
 }
 
 .modal-close-button {
-  @extend .modal-close-btn-base;
+  position: absolute;
+  top: var(--sp-s);
+  right: var(--sp-s);
 }
 
 .modal-content {
@@ -74,18 +76,6 @@
   }
 }
 
-.copy-button {
-  @extend .button-secondary;
-  @include deprecated.flexRow;
-  gap: deprecated.$s-8;
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground-hover);
-  }
-}
-
 .description {
   @include deprecated.bodySmallTypography;
   color: var(--modal-text-foreground-color);
@@ -95,18 +85,6 @@
 .actions {
   @include deprecated.flexRow;
   justify-content: flex-end;
-}
-
-.button-active {
-  @extend .modal-accept-btn;
-}
-
-.button-cancel {
-  @extend .modal-cancel-btn;
-}
-
-.button-danger {
-  @extend .modal-danger-btn;
 }
 
 .permissions-section {

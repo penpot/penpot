@@ -47,6 +47,18 @@
         self-reference? (get token-references token-name)]
     self-reference?))
 
+(defn references-token?
+  "Recursively check if a value references the token name. Handles strings, maps, and sequences."
+  [value token-name]
+  (cond
+    (string? value)
+    (boolean (some #(= % token-name) (find-token-value-references value)))
+    (map? value)
+    (some true? (map #(references-token? % token-name) (vals value)))
+    (sequential? value)
+    (some true? (map #(references-token? % token-name) value))
+    :else false))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -59,6 +71,7 @@
    :dimensions      "dimension"
    :font-family     "fontFamilies"
    :font-size       "fontSizes"
+   :font-weight     "fontWeights"
    :letter-spacing  "letterSpacing"
    :number          "number"
    :opacity         "opacity"
@@ -70,7 +83,6 @@
    :stroke-width    "borderWidth"
    :text-case       "textCase"
    :text-decoration "textDecoration"
-   :font-weight     "fontWeights"
    :typography      "typography"})
 
 (def dtcg-token-type->token-type
@@ -266,10 +278,6 @@
                                 typography-token-keys
                                 #{:line-height}))
 
-;; TODO: Created to extract the font-size feature from the typography feature flag.
-;; Delete this once the typography feature flag is removed.
-(def ff-typography-keys (set/difference typography-keys font-size-keys))
-
 (def ^:private schema:number
   (-> (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
                         schema:rotation])
@@ -309,6 +317,10 @@
    schema:text-case
    schema:text-decoration
    schema:dimensions])
+
+(defn token-attr?
+  [attr]
+  (contains? all-keys attr))
 
 (defn shape-attr->token-attrs
   ([shape-attr] (shape-attr->token-attrs shape-attr nil))
@@ -403,15 +415,15 @@
     :text    text-attributes
     nil))
 
-(defn appliable-attrs
+(defn appliable-attrs-for-shape
   "Returns intersection of shape `attributes` for `shape-type`."
   [attributes shape-type is-layout]
   (set/intersection attributes (shape-type->attributes shape-type is-layout)))
 
-(defn any-appliable-attr?
+(defn any-appliable-attr-for-shape?
   "Checks if `token-type` supports given shape `attributes`."
   [attributes token-type is-layout]
-  (seq (appliable-attrs attributes token-type is-layout)))
+  (d/not-empty? (appliable-attrs-for-shape attributes token-type is-layout)))
 
 ;; Token attrs that are set inside content blocks of text shapes, instead
 ;; at the shape level.
@@ -558,3 +570,18 @@
   "Predicate if a shadow composite token is a reference value - a string pointing to another reference token."
   [token-value]
   (string? token-value))
+
+(defn update-token-value-references
+  "Recursively update token references within a token value, supporting complex token values (maps, sequences, strings)."
+  [value old-name new-name]
+  (cond
+    (string? value)
+    (str/replace value
+                 (re-pattern (str "\\{" (str/replace old-name "." "\\.") "\\}"))
+                 (str "{" new-name "}"))
+    (map? value)
+    (d/update-vals value #(update-token-value-references % old-name new-name))
+    (sequential? value)
+    (mapv #(update-token-value-references % old-name new-name) value)
+    :else
+    value))

@@ -18,16 +18,18 @@
 
 (defn- on-error
   [form error]
-  (case (:code (ex-data error))
-    :old-password-not-match
-    (swap! form assoc-in [:errors :password-old]
-           {:message (tr "errors.wrong-old-password")})
-    :email-as-password
-    (swap! form assoc-in [:errors :password-1]
-           {:message (tr "errors.email-as-password")})
+  (let [data (ex-data error)]
+    (case (:code data)
+      :old-password-not-match
+      (swap! form assoc-in [:extra-errors :password-old]
+             {:message (tr "errors.wrong-old-password")})
 
-    (let [msg (tr "generic.error")]
-      (st/emit! (ntf/error msg)))))
+      :email-as-password
+      (swap! form assoc-in [:extra-errors :password-1]
+             {:message (tr "errors.email-as-password")})
+
+      (let [msg (tr "generic.error")]
+        (st/emit! (ntf/error msg))))))
 
 (defn- on-success
   [form]

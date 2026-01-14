@@ -23,7 +23,7 @@
 
 (extend-type BrowserEvent
   cljs.core/IDeref
-  (-deref [it] (.getBrowserEvent it)))
+  (-deref [it] (.getBrowserEvent ^js it)))
 
 (declare get-window-size)
 
@@ -359,6 +359,10 @@
   [^js el]
   (when (some? el)
     (.-innerText el)))
+
+(defn is-content-editable?
+  [^js el]
+  (.-isContentEditable ^js el))
 
 (defn query
   ([^string selector]

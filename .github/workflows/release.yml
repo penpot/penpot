@@ -68,12 +68,12 @@ jobs:
           for image in "${IMAGES[@]}"; do
             skopeo copy --all \
               docker://$DOCKER_REGISTRY/$image:$TAG \
-              docker://docker.io/$PUB_DOCKER_USERNAME/$image:$TAG
+              docker://docker.io/penpotapp/$image:$TAG
 
             for alias in main latest; do
               skopeo copy --all \
                 docker://$DOCKER_REGISTRY/$image:$TAG \
-                docker://docker.io/$PUB_DOCKER_USERNAME/$image:$alias
+                docker://docker.io/penpotapp/$image:$alias
             done
           done
 

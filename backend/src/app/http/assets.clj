@@ -30,7 +30,7 @@
 
 (defn- get-file-media-object
   [pool id]
-  (db/get pool :file-media-object {:id id}))
+  (db/get pool :file-media-object {:id id} {::db/remove-deleted false}))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage] :as cfg} obj]

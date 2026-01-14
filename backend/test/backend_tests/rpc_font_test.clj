@@ -6,11 +6,13 @@
 
 (ns backend-tests.rpc-font-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -129,7 +131,7 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 6 (:freeze res))))
 
     (let [params {::th/type :delete-font
@@ -141,16 +143,17 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 2 (:processed res))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [res (th/run-task! :objects-gc {})]
+        (t/is (= 2 (:processed res))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 0 (:freeze res)))
-      (t/is (= 6 (:delete res))))))
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 6 (:delete res)))))))
 
 (t/deftest font-deletion-2
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -189,7 +192,7 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 6 (:freeze res))))
 
     (let [params {::th/type :delete-font
@@ -201,16 +204,17 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 1 (:processed res))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [res (th/run-task! :objects-gc {})]
+        (t/is (= 1 (:processed res))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 0 (:freeze res)))
-      (t/is (= 3 (:delete res))))))
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 3 (:delete res)))))))
 
 (t/deftest font-deletion-3
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -248,7 +252,7 @@
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 6 (:freeze res))))
 
     (let [params {::th/type :delete-font-variant
@@ -260,13 +264,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 1 (:processed res))))
+    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (let [res (th/run-task! :objects-gc {})]
+        (t/is (= 1 (:processed res))))
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 0 (:freeze res)))
-      (t/is (= 3 (:delete res))))))
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 3 (:delete res)))))))

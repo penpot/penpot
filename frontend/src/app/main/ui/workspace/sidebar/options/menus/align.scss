@@ -4,12 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .align-options {
   @include sidebar.option-grid-structure;
-  height: deprecated.$s-32;
 }
 .align-group-horizontal,
 .align-group-vertical {
@@ -25,28 +23,4 @@
 
 .align-group-vertical {
   grid-column: 5 / span 4;
-}
-
-.align-button {
-  @extend .button-tertiary;
-  height: deprecated.$s-32;
-  width: deprecated.$s-32;
-  padding: 0;
-  border-radius: deprecated.$br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-  &.disabled {
-    cursor: default;
-    svg {
-      stroke: var(--button-foreground-color-disabled);
-    }
-    &:hover {
-      background-color: var(--panel-background-color);
-      svg {
-        stroke: var(--button-foreground-color-disabled);
-      }
-    }
-  }
 }

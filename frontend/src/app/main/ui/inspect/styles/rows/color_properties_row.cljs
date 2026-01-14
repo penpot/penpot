@@ -6,6 +6,7 @@
 (ns app.main.ui.inspect.styles.rows.color-properties-row
   (:require-macros [app.main.style :as stl])
   (:require
+
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as cc]
@@ -14,10 +15,10 @@
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
+   [app.util.clipboard :as clipboard]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
-   [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -51,15 +52,16 @@
         formatted-color-value (mf/use-memo
                                (mf/deps color format color-opacity)
                                #(cond
-                                  (some? (:color color)) (case format
-                                                           "hex" (dm/str color-value " " color-opacity)
-                                                           "rgba" (let [[r g b a] (cc/hex->rgba color-value color-opacity)
-                                                                        result (cc/format-rgba [r g b a])]
-                                                                    result)
-                                                           "hsla" (let [[h s l a] (cc/hex->hsla color-value color-opacity)
-                                                                        result (cc/format-hsla [h s l a])]
-                                                                    result)
-                                                           color-value)
+                                  (some? (:color color))
+                                  (case format
+                                    "hex" (dm/str color-value " " color-opacity)
+                                    "rgba" (let [[r g b a] (cc/hex->rgba color-value color-opacity)
+                                                 result (cc/format-rgba [r g b a])]
+                                             result)
+                                    "hsla" (let [[h s l a] (cc/hex->hsla color-value color-opacity)
+                                                 result (cc/format-hsla [h s l a])]
+                                             result)
+                                    color-value)
                                   (some? (:gradient color)) (uc/gradient-type->string (:type color-gradient))
                                   (some? (:image color)) (tr "media.image")
                                   :else "none"))
@@ -71,13 +73,11 @@
                      (str/replace #"^-" ""))
 
         copiable-value (mf/use-memo
-                        (mf/deps color formatted-color-value color-opacity color-image-url token)
+                        (mf/deps color token format color-opacity)
                         #(if (some? token)
                            (:name token)
                            (cond
-                             (:color color) (if (= format "hex")
-                                              (dm/str css-term ": " color-value "; opacity: " color-opacity ";")
-                                              (dm/str css-term ": " formatted-color-value ";"))
+                             (:color color) (dm/str css-term ": " (uc/color->format->background color (keyword format)) ";")
                              (:gradient color) (dm/str css-term ": " (uc/color->background color) ";")
                              (:image color) (dm/str css-term ": url(" color-image-url ") no-repeat center center / cover;")
                              :else "none")))
@@ -86,7 +86,7 @@
          (mf/deps copied formatted-color-value)
          (fn []
            (reset! copied* true)
-           (wapi/write-to-clipboard copiable-value)
+           (clipboard/to-clipboard copiable-value)
            (tm/schedule 1000 #(reset! copied* false))))]
     [:*
      [:dl {:class [(stl/css :property-row) class]
@@ -99,7 +99,7 @@
                        :content #(mf/html
                                   [:div {:class (stl/css :tooltip-token)}
                                    [:div {:class (stl/css :tooltip-token-title)}
-                                    (tr "inspect.tabs.styles.token.resolved-value")]
+                                    (tr "inspect.tabs.styles.token-resolved-value")]
                                    [:div {:class (stl/css :tooltip-token-value)}
                                     (:resolved-value token)]])}
           [:> property-detail-copiable* {:color color
@@ -120,6 +120,7 @@
                 :alt (tr "inspect.attributes.image.preview")}]]
         [:> button* {:variant "secondary"
                      :to color-image-url
+                     :type "button"
                      :target "_blank"
                      :download color-image-name}
          (tr "inspect.attributes.image.download")]])]))

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -ex
+corepack enable;
+corepack install;
+yarn install;
+
+yarn run lint:scss;
+yarn run test;

@@ -19,7 +19,9 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.components.progress :refer [progress-notification-widget*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.dashboard.deleted :refer [deleted-section*]]
    [app.main.ui.dashboard.files :refer [files-section*]]
    [app.main.ui.dashboard.fonts :refer [fonts-page* font-providers-page*]]
    [app.main.ui.dashboard.import]
@@ -73,7 +75,13 @@
 
         show-templates?
         (and (contains? cf/flags :dashboard-templates-section)
-             (:can-edit permissions))]
+             (:can-edit permissions))
+
+        show-deleted? (:can-edit permissions)
+
+        section (if (and (not show-deleted?) (= section :dashboard-deleted))
+                  :dashboard-recent
+                  section)]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]
@@ -84,6 +92,9 @@
     [:div {:class (stl/css :dashboard-content)
            :on-click clear-selected-fn
            :ref container}
+
+     [:> progress-notification-widget*]
+
      (case section
        :dashboard-recent
        (when (seq projects)
@@ -139,6 +150,11 @@
 
        :dashboard-settings
        [:> team-settings-page* {:team team :profile profile}]
+
+       :dashboard-deleted
+       [:> deleted-section* {:team team
+                             :projects projects
+                             :profile profile}]
 
        nil)]))
 
@@ -247,7 +263,6 @@
           (swap! storage/session dissoc :template))))))
 
 (mf/defc dashboard*
-  {::mf/props :obj}
   [{:keys [profile project-id team-id search-term plugin-url template section]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
@@ -313,3 +328,8 @@
         :section section
         :search-term search-term
         :team team}]]]))
+
+(mf/defc dashboard-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> dashboard* props])

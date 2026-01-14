@@ -32,7 +32,7 @@
   [{:keys [shapes objects resolved-tokens]}]
   [:div {:class (stl/css :visibility-panel)}
    (for [shape shapes]
-     [:div {:key (:id shape) :class "visibility-shape"}
+     [:div {:key (:id shape) :class (stl/css :visibility-shape)}
       (for [property properties]
         (when-let [value (css/get-css-value objects shape property)]
           (let [property-name (cmm/get-css-rule-humanized property)

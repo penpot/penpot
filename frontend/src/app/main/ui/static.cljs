@@ -21,7 +21,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.auth.login :refer [login-methods]]
+   [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
@@ -75,7 +75,8 @@
    [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
    [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
 
-(mf/defc login-dialog*
+(mf/defc login-modal*
+  {::mf/private true}
   []
   (let [current-section  (mf/use-state :login)
         user-email       (mf/use-state "")
@@ -136,9 +137,9 @@
          [:*
           [:div {:class (stl/css :logo-title)} (tr "labels.login")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.free")]
-          [:& login-methods {:on-recovery-request set-section-recovery
+          [:> login-dialog* {:on-recovery-request set-section-recovery
                              :on-success-callback success-login
-                             :params {:save-login-redirect true}}]
+                             :handle-redirect true}]
           [:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
@@ -559,7 +560,7 @@
           :is-dashboard dashboard?
           :is-viewer view?
           :profile profile}
-         [:> login-dialog* {}]]
+         [:> login-modal* {}]]
         (when (get info :loaded false)
           (if request-access?
             [:> context-wrapper* {:is-workspace workspace?

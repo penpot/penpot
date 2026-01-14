@@ -12,10 +12,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
+   [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -54,21 +57,17 @@
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
-   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
 
-(def workspace-wasm-modifiers
-  (l/derived :workspace-wasm-modifiers st/state))
-
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
   (->> modifiers
-       (filter #(contains? selected (:id %)))
+       (filter #(contains? selected (first %)))
        (reduce
-        (fn [objects {:keys [id transform]}]
+        (fn [objects [id transform]]
           (update objects id gsh/apply-transform transform))
         objects)))
 
@@ -98,7 +97,7 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
-        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
+        wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
@@ -142,9 +141,9 @@
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
 
-        ;; VARS
-        disable-paste     (mf/use-var false)
-        in-viewport?      (mf/use-var false)
+        ;; STATE REFS
+        disable-paste-ref (mf/use-ref false)
+        in-viewport-ref   (mf/use-ref false)
 
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
@@ -159,6 +158,8 @@
                                  (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
+        prev-zoom         (mf/use-ref zoom)
+
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
@@ -202,10 +203,10 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste)
+        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
 
-        on-pointer-enter  (actions/on-pointer-enter in-viewport?)
-        on-pointer-leave  (actions/on-pointer-leave in-viewport?)
+        on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
+        on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
         on-pointer-move   (actions/on-pointer-move move-stream)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected read-only?)
@@ -259,6 +260,16 @@
 
         first-shape (first selected-shapes)
 
+        show-add-variant?        (and single-select?
+                                      (or (ctk/is-variant-container? first-shape)
+                                          (ctk/is-variant? first-shape)))
+
+        add-variant
+        (mf/use-fn
+         (mf/deps first-shape)
+         #(st/emit!
+           (dwv/add-new-variant (:id first-shape))))
+
         show-padding?
         (and (nil? transform)
              single-select?
@@ -295,9 +306,15 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (let [init? (wasm.api/init-canvas-context canvas)]
+                         (let [init? (try
+                                       (wasm.api/init-canvas-context canvas)
+                                       (catch :default e
+                                         (js/console.error "Error initializing canvas context:" e)
+                                         false))]
                            (reset! canvas-init? init?)
-                           (when-not init? (js/alert "WebGL not supported")))))))
+                           (when-not init?
+                             (js/alert "WebGL not supported")
+                             (st/emit! (dcm/go-to-dashboard-recent))))))))
         (fn []
           (wasm.api/clear-canvas))))
 
@@ -323,7 +340,7 @@
 
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
-        (wasm.api/initialize base-objects zoom vbox background)
+        (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
 
     (mf/with-effect [focus]
@@ -334,7 +351,8 @@
 
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-box zoom vbox)))
+        (wasm.api/set-view-box (mf/ref-val prev-zoom) zoom vbox))
+      (mf/set-ref-val! prev-zoom zoom))
 
     (mf/with-effect [background]
       (when (and @canvas-init? initialized?)
@@ -346,7 +364,7 @@
           (wasm.api/show-grid @hover-top-frame-id)
           (wasm.api/clear-grid))))
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
+    (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
@@ -636,6 +654,12 @@
                                     :hover-top-frame-id @hover-top-frame-id
                                     :zoom zoom}])
 
+       (when (dbg/enabled? :text-outline)
+         [:& wvd/debug-text-wasm-position-data
+          {:selected-shapes selected-shapes
+           :objects base-objects
+           :zoom zoom}])
+
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           (when-not text-editing?
@@ -663,6 +687,11 @@
          [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
+
+       (when show-add-variant?
+         [:> widgets/button-add* {:shape first-shape
+                                  :zoom zoom
+                                  :on-click add-variant}])
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when show-grid-editor?

@@ -24,6 +24,8 @@
 (def revn-data (atom {}))
 (def queue-conj (fnil conj #queue []))
 
+(def force-persist? #(= % ::force-persist))
+
 (defn- update-status
   [status]
   (ptk/reify ::update-status

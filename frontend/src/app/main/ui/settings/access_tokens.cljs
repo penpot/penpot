@@ -16,10 +16,10 @@
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as deprecated-icon]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.webapi :as wapi]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -97,7 +97,7 @@
          (mf/deps created)
          (fn [event]
            (dom/prevent-default event)
-           (wapi/write-to-clipboard (:token created))
+           (clipboard/to-clipboard (:token created))
            (st/emit! (ntf/show {:level :info
                                 :type :toast
                                 :content (tr "dashboard.access-tokens.copied-success")

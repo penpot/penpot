@@ -23,10 +23,12 @@
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
@@ -57,13 +59,15 @@
   [:div {:class (stl/css :grid-actions)}
    [:div {:class (stl/css :grid-actions-container)}
     [:div {:class (stl/css :grid-actions-title)}
-     (tr "workspace.layout_grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
-    [:button {:class (stl/css :locate-btn)
-              :on-click #(st/emit! (dwge/locate-board (:id shape)))}
-     (tr "workspace.layout_grid.editor.top-bar.locate")]
-    [:button {:class (stl/css :done-btn)
-              :on-click #(st/emit! (dw/clear-edition-mode))}
-     (tr "workspace.layout_grid.editor.top-bar.done")]]])
+     (tr "workspace.layout-grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
+    [:> button* {:variant "secondary"
+                 :class (stl/css :action-btn)
+                 :on-click #(st/emit! (dwge/locate-board (:id shape)))}
+     (tr "workspace.layout-grid.editor.top-bar.locate")]
+    [:> button* {:variant "primary"
+                 :class (stl/css :action-btn)
+                 :on-click #(st/emit! (dw/clear-edition-mode))}
+     (tr "workspace.layout-grid.editor.top-bar.done")]]])
 
 (mf/defc grid-editor-frame
   {::mf/wrap-props false}
@@ -257,7 +261,8 @@
              (let [modifiers (calculate-drag-modifiers position)
                    modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
                (when on-clear-modifiers (on-clear-modifiers modifiers))
-               (st/emit! (dwm/apply-wasm-modifiers modif-tree)))
+               (st/emit! (dwm/apply-wasm-modifiers modif-tree)
+                         (dwt/finish-transform)))
              (st/emit! (dwm/apply-modifiers)))))
 
         {:keys [handle-pointer-down handle-lost-pointer-capture handle-pointer-move]}
@@ -506,7 +511,8 @@
              (let [modifiers (calculate-modifiers position)
                    modif-tree (dwm/create-modif-tree [(:id shape)] modifiers)]
                (when on-clear-modifiers (on-clear-modifiers))
-               (st/emit! (dwm/apply-wasm-modifiers modif-tree)))
+               (st/emit! (dwm/apply-wasm-modifiers modif-tree)
+                         (dwt/finish-transform)))
              (st/emit! (dwm/apply-modifiers)))
            (reset! start-size-before nil)
            (reset! start-size-after nil)))]

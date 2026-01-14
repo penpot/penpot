@@ -8,15 +8,17 @@
   "Interface to communicate with the web worker"
   (:require
    [app.config :as cf]
-   [app.main.errors :as errors]
    [app.util.worker :as uw]
    [beicon.v2.core :as rx]))
+
+;; Injected from `app.main.errors` to remove circular dependency
+(defonce on-error nil)
 
 (defonce instance nil)
 
 (defn init!
   []
-  (let [worker (uw/init cf/worker-uri errors/on-error)]
+  (let [worker (uw/init cf/worker-uri on-error)]
     (uw/ask! worker {:cmd :configure
                      :config {:public-uri cf/public-uri
                               :build-data cf/build-date

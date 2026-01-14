@@ -8,11 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
+   [app.render-wasm.svg-filters :as svg-filters]
    [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
@@ -128,67 +130,130 @@
 (defn- set-wasm-attr!
   [shape k]
   (when wasm/context-initialized?
-    (let [v  (get shape k)
+    (let [shape (case k
+                  :svg-attrs (svg-filters/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
+                  (:fills :blur :shadow) (svg-filters/apply-svg-derived shape)
+                  shape)
+          v  (get shape k)
           id (get shape :id)]
       (case k
-        :parent-id    (api/set-parent-id v)
-        :type         (do
-                        (api/set-shape-type v)
-                        (when (or (= v :path) (= v :bool))
-                          (api/set-shape-path-content (:content shape))))
-        :bool-type    (api/set-shape-bool-type v)
-        :selrect      (do
-                        (api/set-shape-selrect v)
-                        (when (= (:type shape) :svg-raw)
-                          (api/set-shape-svg-raw-content (api/get-static-markup shape))))
-        :show-content (if (= (:type shape) :frame)
-                        (api/set-shape-clip-content (not v))
-                        (api/set-shape-clip-content false))
-        :rotation     (api/set-shape-rotation v)
-        :transform    (api/set-shape-transform v)
-        :fills        (into [] (api/set-shape-fills id v false))
-        :strokes      (into [] (api/set-shape-strokes id v false))
-        :blend-mode   (api/set-shape-blend-mode v)
-        :opacity      (api/set-shape-opacity v)
-        :hidden       (api/set-shape-hidden v)
-        :shapes       (api/set-shape-children v)
-        :blur         (api/set-shape-blur v)
-        :shadow       (api/set-shape-shadows v)
-        :constraints-h (api/set-constraints-h v)
-        :constraints-v (api/set-constraints-v v)
+        :parent-id
+        (api/set-parent-id v)
+
+        :type
+        (do
+          (api/set-shape-type v)
+          (when (or (= v :path) (= v :bool))
+            (api/set-shape-path-content (:content shape))))
+
+        :bool-type
+        (api/set-shape-bool-type v)
+
+        :selrect
+        (do
+          (api/set-shape-selrect v)
+          (when (cfh/svg-raw-shape? shape)
+            (api/set-shape-svg-raw-content (api/get-static-markup shape))))
+
+        :show-content
+        (if (cfh/frame-shape? shape)
+          (api/set-shape-clip-content (not v))
+          (api/set-shape-clip-content false))
+
+        :rotation
+        (api/set-shape-rotation v)
+
+        :transform
+        (api/set-shape-transform v)
+
+        :fills
+        (api/set-shape-fills id v false)
+
+        :strokes
+        (into [] (api/set-shape-strokes id v false))
+
+        :blend-mode
+        (api/set-shape-blend-mode v)
+
+        :opacity
+        (api/set-shape-opacity v)
+
+        :hidden
+        (api/set-shape-hidden v)
+
+        :shapes
+        (api/set-shape-children v)
+
+        :blur
+        (api/set-shape-blur v)
+
+        :shadow
+        (api/set-shape-shadows v)
+
+        :constraints-h
+        (api/set-constraints-h v)
+
+        :constraints-v
+        (api/set-constraints-v v)
 
         :r1
-        (api/set-shape-corners [v (dm/get-prop shape :r2) (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+        (api/set-shape-corners
+         [v
+          (dm/get-prop shape :r2)
+          (dm/get-prop shape :r3)
+          (dm/get-prop shape :r4)])
 
         :r2
-        (api/set-shape-corners [(dm/get-prop shape :r1) v (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+        (api/set-shape-corners
+         [(dm/get-prop shape :r1)
+          v
+          (dm/get-prop shape :r3)
+          (dm/get-prop shape :r4)])
 
         :r3
-        (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) v (dm/get-prop shape :r4)])
+        (api/set-shape-corners
+         [(dm/get-prop shape :r1)
+          (dm/get-prop shape :r2)
+          v
+          (dm/get-prop shape :r4)])
 
         :r4
-        (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) (dm/get-prop shape :r3) v])
+        (api/set-shape-corners
+         [(dm/get-prop shape :r1)
+          (dm/get-prop shape :r2)
+          (dm/get-prop shape :r3)
+          v])
 
         :svg-attrs
-        (when (= (:type shape) :path)
-          (api/set-shape-path-attrs v))
+        (do
+          (api/set-shape-svg-attrs v)
+          ;; Always update fills/blur/shadow to clear previous state if filters disappear          
+          (api/set-shape-fills id (:fills shape) false)
+          (api/set-shape-blur (:blur shape))
+          (api/set-shape-shadows (:shadow shape)))
 
         :masked-group
-        (when (and (= (:type shape) :group) (:masked-group shape))
-          (api/set-masked (:masked-group shape)))
+        (when (cfh/group-shape? shape)
+          (api/set-masked (boolean (:masked-group shape))))
 
         :content
         (cond
-          (or (= (:type shape) :path)
-              (= (:type shape) :bool))
+          (or (cfh/path-shape? shape)
+              (cfh/bool-shape? shape))
           (api/set-shape-path-content v)
 
-          (= (:type shape) :svg-raw)
+          (cfh/svg-raw-shape? shape)
           (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
-          (= (:type shape) :text)
-          (do (api/set-shape-text-content id v)
-              (api/set-shape-text-images id v)))
+          (cfh/text-shape? shape)
+          (let [pending-thumbnails (into [] (concat (api/set-shape-text-content id v)))
+                pending-full (into [] (concat (api/set-shape-text-images id v)))]
+            ;; FIXME: this is a hack to process the pending tasks
+            ;; asynchronously we should probably modify set-wasm-attr!
+            ;; to return a list of callbacks to be executed in a
+            ;; second pass.
+            (api/process-pending [shape] pending-thumbnails pending-full api/noop-fn)
+            nil))
 
         :grow-type
         (api/set-shape-grow-type v)
@@ -204,7 +269,7 @@
          :layout-item-min-w
          :layout-item-absolute
          :layout-item-z-index)
-        (api/set-layout-child shape)
+        (api/set-layout-data shape)
 
         :layout-grid-rows
         (api/set-grid-layout-rows v)
@@ -215,8 +280,18 @@
         :layout-grid-cells
         (api/set-grid-layout-cells v)
 
-        (:layout
-         :layout-flex-dir
+        :layout
+        (do
+          (api/clear-layout)
+          (cond
+            (ctl/grid-layout? shape)
+            (api/set-grid-layout shape)
+
+            (ctl/flex-layout? shape)
+            (api/set-flex-layout shape))
+          (api/set-layout-data shape))
+
+        (:layout-flex-dir
          :layout-gap-type
          :layout-gap
          :layout-align-items
@@ -226,16 +301,14 @@
          :layout-wrap-type
          :layout-padding-type
          :layout-padding)
-        (do
-          (api/clear-layout)
-          (cond
-            (ctl/grid-layout? shape)
-            (api/set-grid-layout-data shape)
+        (cond
+          (ctl/grid-layout? shape)
+          (api/set-grid-layout-data shape)
 
-            (ctl/flex-layout? shape)
-            (api/set-flex-layout shape)))
+          (ctl/flex-layout? shape)
+          (api/set-flex-layout shape))
 
-      ;; Property not in WASM
+        ;; Property not in WASM
         nil))))
 
 (defn process-shape!
@@ -250,7 +323,11 @@
              (vals)
              (rx/from)
              (rx/mapcat (fn [callback] (callback)))
-             (rx/reduce conj [])))
+             (rx/reduce conj [])
+             (rx/tap
+              (fn []
+                (when (cfh/text-shape? shape)
+                  (api/update-text-rect! (:id shape)))))))
       (rx/empty))))
 
 (defn process-shape-changes!
@@ -260,7 +337,7 @@
        (rx/subs! #(api/request-render "set-wasm-attrs"))))
 
 ;; `conj` empty set initialization
-(def conj* (fnil conj #{}))
+(def conj* (fnil conj (d/ordered-set)))
 
 (defn- impl-assoc
   [self k v]

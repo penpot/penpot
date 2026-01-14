@@ -314,7 +314,7 @@ If you're using the official <code class="language-bash">docker-compose.yml</cod
 
 ## Email configuration
 
-By default, <code class="language-bash">smpt</code> flag is disabled, the email will be
+By default, <code class="language-bash">smtp</code> flag is disabled, the email will be
 printed to the console, which means that the emails will be shown in the stdout.
 
 Note that if you plan to invite members to a team, it is recommended that you enable SMTP

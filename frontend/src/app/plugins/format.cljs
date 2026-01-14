@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.plugins.image-data :refer [create-image-data]]
    [app.util.object :as obj]))
 
 (def shape-proxy nil)
@@ -106,15 +107,9 @@
 ;;   keepAspectRatio?: boolean;
 ;; };
 (defn format-image
-  [{:keys [name width height mtype id keep-aspect-ratio] :as image}]
+  [image]
   (when (some? image)
-    (obj/without-empty
-     #js {:name name
-          :width width
-          :height height
-          :mtype mtype
-          :id (format-id id)
-          :keepAspectRatio keep-aspect-ratio})))
+    (create-image-data image)))
 
 ;; export interface Color {
 ;;   id?: string;
@@ -156,8 +151,8 @@
 ;; export interface Shadow {
 ;;   id?: string;
 ;;   style?: 'drop-shadow' | 'inner-shadow';
-;;   offsetX?: number;
-;;   offsetY?: number;
+;;   offset-x?: number;
+;;   offset-y?: number;
 ;;   blur?: number;
 ;;   spread?: number;
 ;;   hidden?: boolean;
@@ -169,8 +164,8 @@
     (obj/without-empty
      #js {:id (-> id format-id)
           :style (-> style format-key)
-          :offsetX offset-x
-          :offsetY offset-y
+          :offset-x offset-x
+          :offset-y offset-y
           :blur blur
           :spread spread
           :hidden hidden

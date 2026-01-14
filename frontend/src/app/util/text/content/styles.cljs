@@ -37,17 +37,27 @@
          (not= (str/slice v -2) "px"))
     (str v "px")
 
+    (and (= k :font-family) (seq v))
+    ;; pick just first family, avoid quoting twice, and add var(--fallback-families)
+    (str/concat (str/quote (str/unquote (first (str/split v ",")))) ", var(--fallback-families)")
+
     :else
     v))
 
 (defn normalize-attr-value
-  "This function strips units from attr values"
+  "This function strips units from attr values and un-scapes font-family"
   [k v]
   (cond
+    (= v "mixed")
+    :multiple
+
     (and (or (= k :font-size)
              (= k :letter-spacing))
          (= (str/slice v -2) "px"))
     (str/slice v 0 -2)
+
+    (= k :font-family)
+    (str/unquote (str/replace v ", var(--fallback-families)" ""))
 
     :else
     v))
@@ -177,19 +187,23 @@
               style-value (normalize-style-value style-name v)]
           (assoc acc style-name style-value)))) {} style-defaults)))
 
+(def mixed-values #{:mixed :multiple "mixed" "multiple"})
+
 (defn get-styles-from-style-declaration
   "Returns a ClojureScript object compatible with text nodes"
-  [style-declaration]
+  [style-declaration & {:keys [removed-mixed] :or {removed-mixed false}}]
   (reduce
    (fn [acc k]
      (if (contains? mapping k)
        (let [style-name (get-style-name-as-css-variable k)
              [_ style-decode] (get mapping k)
              style-value (.getPropertyValue style-declaration style-name)]
-         (assoc acc k (style-decode style-value)))
+         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (assoc acc k (style-decode style-value))))
        (let [style-name (get-style-name k)
              style-value (normalize-attr-value k (.getPropertyValue style-declaration style-name))]
-         (assoc acc k style-value)))) {} txt/text-style-attrs))
+         (when (or (not removed-mixed) (not (contains? mixed-values style-value)))
+           (assoc acc k style-value))))) {} txt/text-style-attrs))
 
 (defn get-styles-from-event
   "Returns a ClojureScript object compatible with text nodes"

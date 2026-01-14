@@ -30,6 +30,7 @@
 (def current-zoom         (mf/create-context nil))
 
 (def workspace-read-only? (mf/create-context nil))
+(def is-render?           (mf/create-context false))
 (def is-component?        (mf/create-context false))
 
 (def sidebar

@@ -115,9 +115,9 @@ export function createTextSpan(textOrLineBreak, styles, attrs) {
     textOrLineBreak instanceof Text &&
     textOrLineBreak.nodeValue.length === 0
   ) {
-    console.trace("nodeValue", textOrLineBreak.nodeValue);
     throw new TypeError("Invalid text span child, cannot be an empty text");
   }
+
   return createElement(TAG, {
     attributes: { id: createRandomId(), ...attrs },
     data: { itype: TYPE },

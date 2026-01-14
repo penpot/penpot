@@ -17,7 +17,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
-   [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -184,11 +184,11 @@
                  :on-click on-click
                  :tab-index "0"}
         [:span (tr "labels.add-custom-font")]
-        [:& file-uploader {:input-id "font-upload"
-                           :accept accept-font-types
-                           :multi true
-                           :ref input-ref
-                           :on-selected on-selected}]]
+        [:> file-uploader* {:input-id "font-upload"
+                            :accept accept-font-types
+                            :multi true
+                            :ref input-ref
+                            :on-selected on-selected}]]
 
        (when-let [url cf/terms-of-service-uri]
          [:& context-notification {:content (tr "dashboard.fonts.hero-text2" url)
@@ -360,7 +360,9 @@
              (st/emit! (modal/show options)))))]
 
     [:div {:class (stl/css :font-item :table-row)}
-     [:div {:class (stl/css :table-field :family)}
+     [:div {:class (stl/css-case :table-field true
+                                 :family true
+                                 :is-edition edition?)}
       (if ^boolean edition?
         [:input {:type "text"
                  :auto-focus true

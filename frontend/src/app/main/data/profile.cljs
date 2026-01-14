@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.types.profile :refer [schema:profile]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -54,11 +53,16 @@
           (assoc :profile-id id)
           (assoc :profile profile)))
 
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile (:profile state)]
+        (->> (rx/from (i18n/set-locale (:lang profile)))
+             (rx/ignore))))
+
     ptk/EffectEvent
     (effect [_ state _]
       (let [profile (:profile state)]
         (swap! storage/user assoc :profile profile)
-        (i18n/set-locale! (:lang profile))
         (plugins.register/init)))))
 
 (def profile-fetched?
@@ -77,22 +81,25 @@
         (rx/of (rt/nav-raw :href href)))
       (rx/throw cause))))
 
+(defn on-fetch-profile-success
+  [profile]
+  (if (and (contains? cf/flags :subscriptions)
+           (is-authenticated? profile))
+    (->> (rp/cmd! :get-subscription-usage {})
+         (rx/map (fn [{:keys [editors]}]
+                   (update-in profile [:props :subscription] assoc :editors editors)))
+         (rx/catch (fn [cause]
+                     (js/console.error "unexpected error on obtaining subscription usage" cause)
+                     (rx/of profile))))
+    (rx/of profile)))
+
 (defn fetch-profile
   []
   (ptk/reify ::fetch-profile
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :get-profile)
-           (rx/mapcat (fn [profile]
-                        (if (and (contains? cf/flags :subscriptions)
-                                 (is-authenticated? profile))
-                          (->> (rp/cmd! :get-subscription-usage {})
-                               (rx/map (fn [{:keys [editors]}]
-                                         (update-in profile [:props :subscription] assoc :editors editors)))
-                               (rx/catch (fn [cause]
-                                           (js/console.error "unexpected error on obtaining subscription usage" cause)
-                                           (rx/of profile))))
-                          (rx/of profile))))
+           (rx/mapcat on-fetch-profile-success)
            (rx/map (partial ptk/data-event ::profile-fetched))
            (rx/catch on-fetch-profile-exception)))))
 
@@ -481,7 +488,7 @@
 
 (defn delete-access-token
   [{:keys [id] :as params}]
-  (us/assert! ::us/uuid id)
+  (assert (uuid? id))
   (ptk/reify ::delete-access-token
     ptk/WatchEvent
     (watch [_ _ _]

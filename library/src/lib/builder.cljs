@@ -11,6 +11,7 @@
    [app.common.files.builder :as fb]
    [app.common.json :as json]
    [app.common.schema :as sm]
+   [app.common.types.tokens-lib :refer [read-multi-set-dtcg]]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]))
 
@@ -86,7 +87,8 @@
       (try
         (let [params (-> params decode-params fb/decode-file)]
           (-> (swap! state fb/add-file params)
-              (get ::fb/current-file-id)))
+              (get ::fb/current-file-id)
+              (dm/str)))
         (catch :default cause
           (handle-exception cause))))
 
@@ -262,6 +264,25 @@
                        :name (get fmedia :name)
                        :mtype (get fmedia :mtype)}]
             (json/->js (d/without-nils image))))))
+
+    :addTokensLib
+    (fn [data]
+      (try
+        (let [tlib (read-multi-set-dtcg data)]
+          (swap! state fb/add-tokens-lib tlib)
+          nil)
+        (catch :default cause
+          (handle-exception cause))))
+
+    :addRelation
+    (fn [file-id library-id]
+      (let [file-id    (uuid/parse file-id)
+            library-id (uuid/parse library-id)]
+        (if (and file-id library-id)
+          (do
+            (swap! state update :relations assoc file-id library-id)
+            true)
+          false)))
 
     :genId
     (fn []

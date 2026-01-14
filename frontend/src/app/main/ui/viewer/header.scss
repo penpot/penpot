@@ -12,7 +12,7 @@
   grid-column: 1 / span 1;
   grid-row: 1 / span 1;
   display: grid;
-  grid-template-columns: 1fr deprecated.$s-92 1fr;
+  grid-template-columns: 1fr auto 1fr;
   justify-content: space-between;
   align-items: center;
   height: deprecated.$s-48;
@@ -130,23 +130,9 @@
 
 // SECTION BUTTONS
 .mode-zone {
-  @include deprecated.flexRow;
-  height: 100%;
-}
-
-.mode-zone-btn {
-  @extend .button-tertiary;
-  @include deprecated.flexCenter;
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  padding: 0;
-  svg {
-    @extend .button-icon;
-  }
-}
-
-.selected {
-  @extend .button-icon-selected;
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-xs);
 }
 
 // OPTION AREA
@@ -165,33 +151,8 @@
   cursor: pointer;
 }
 
-.fullscreen-btn {
-  @extend .button-tertiary;
-  @include deprecated.flexCenter;
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .share-btn {
-  @extend .button-primary;
-  height: deprecated.$s-32;
-  min-width: deprecated.$s-72;
-  margin-left: deprecated.$s-4;
-}
-
-.edit-btn {
-  @extend .button-tertiary;
-  @include deprecated.flexCenter;
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
+  margin-left: var(--sp-xs);
 }
 
 .go-log-btn {
@@ -245,41 +206,13 @@
   display: flex;
 }
 
-.zoom-btn {
-  @extend .button-tertiary;
-  height: deprecated.$s-28;
-  width: deprecated.$s-28;
-  border-radius: deprecated.$br-8;
-  .zoom-icon {
-    @include deprecated.flexCenter;
-    width: deprecated.$s-24;
-    height: deprecated.$s-32;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
-  }
-  &:hover {
-    .zoom-icon svg {
-      stroke: var(--button-tertiary-foreground-color-hover);
-    }
-  }
-}
-
 .zoom-text {
   @include deprecated.flexCenter;
   height: 100%;
-  min-width: deprecated.$s-64;
+  min-width: deprecated.$s-48;
   padding: 0;
   margin: 0 deprecated.$s-2;
   color: var(--modal-title-foreground-color);
-}
-
-.reset-btn {
-  @extend .button-tertiary;
-  color: var(--button-tertiary-foreground-color-hover);
-  height: deprecated.$s-28;
-  border-radius: deprecated.$br-8;
 }
 
 .zoom-option {

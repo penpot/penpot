@@ -33,13 +33,18 @@ services:
       - 3447:3447
       - 3448:3448
       - 3449:3449
+      - 3449:3449/udp
+      - 3450:3450
       - 6006:6006
       - 6060:6060
       - 6061:6061
       - 6062:6062
       - 6063:6063
       - 6064:6064
+      - 9000:9000
+      - 9001:9001
       - 9090:9090
+      - 9091:9091
 
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
@@ -67,6 +72,11 @@ services:
       - PENPOT_LDAP_ATTRS_FULLNAME=cn
       - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
 
+    networks:
+      default:
+        aliases:
+          - main
+
   minio:
     image: "minio/minio:RELEASE.2025-04-03T14-56-28Z"
     command: minio server /mnt/data --console-address ":9001"
@@ -78,9 +88,10 @@ services:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
 
-    ports:
-      - 9000:9000
-      - 9001:9001
+    networks:
+      default:
+        aliases:
+          - minio
 
   postgres:
     image: postgres:16.8
@@ -110,6 +121,11 @@ services:
     volumes:
       - "valkey_data:/data"
 
+    networks:
+      default:
+        aliases:
+          - redis
+
   mailer:
     image: sj26/mailcatcher:latest
     restart: always
@@ -117,6 +133,12 @@ services:
       - '1025'
     ports:
       - "1080:1080"
+
+    networks:
+      default:
+        aliases:
+          - mailer
+
 
   # https://github.com/rroemhild/docker-test-openldap
   ldap:
@@ -131,3 +153,9 @@ services:
       nofile:
         soft: 1024
         hard: 1024
+
+    networks:
+      default:
+        aliases:
+          - ldap
+

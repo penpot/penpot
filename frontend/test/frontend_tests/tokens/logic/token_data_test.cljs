@@ -36,7 +36,7 @@
     done
     (let [file   (setup-file-with-token-lib)
           store  (ths/setup-store file)
-          events [(dwtl/create-token-set "Set B")]]
+          events [(dwtl/create-token-set (ctob/make-token-set :name "Set B"))]]
 
       (tohs/run-store-async
        store done events

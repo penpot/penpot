@@ -37,34 +37,41 @@
     (.-textContent element)))
 
 (defn get-attrs-from-styles
-  [element attrs]
-  (reduce (fn [acc key]
-            (let [style (.-style element)]
-              (if (contains? styles/mapping key)
-                (let [style-name (styles/get-style-name-as-css-variable key)
-                      [_ style-decode] (get styles/mapping key)
-                      value (style-decode (.getPropertyValue style style-name))]
-                  (assoc acc key value))
-                (let [style-name (styles/get-style-name key)]
-                  (assoc acc key (styles/normalize-attr-value key (.getPropertyValue style style-name))))))) {} attrs))
+  [element attrs defaults]
+  (let [attrs (or attrs [])
+        value-empty? (fn [v]
+                       (or (nil? v)
+                           (and (string? v) (empty? v))
+                           (and (coll? v) (empty? v))))]
+    (reduce (fn [acc key]
+              (let [style (.-style element)
+                    value (if (contains? styles/mapping key)
+                            (let [style-name (styles/get-style-name-as-css-variable key)
+                                  [_ style-decode] (get styles/mapping key)]
+                              (style-decode (.getPropertyValue style style-name)))
+                            (let [style-name (styles/get-style-name key)]
+                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
+                (assoc acc key (if (value-empty? value) (get defaults key) value))))
+            {} attrs)))
 
 (defn get-inline-styles
   [element]
-  (get-attrs-from-styles element txt/text-node-attrs))
+  (get-attrs-from-styles element txt/text-node-attrs (txt/get-default-text-attrs)))
 
 (defn get-paragraph-styles
   [element]
-  (get-attrs-from-styles element (d/concat-set txt/paragraph-attrs txt/text-node-attrs)))
+  (get-attrs-from-styles element (d/concat-set txt/paragraph-attrs txt/text-node-attrs) (d/merge txt/default-paragraph-attrs txt/default-text-attrs)))
 
 (defn get-root-styles
   [element]
-  (get-attrs-from-styles element txt/root-attrs))
+  (get-attrs-from-styles element txt/root-attrs txt/default-root-attrs))
 
 (defn create-inline
   [element]
-  (d/merge {:text (get-inline-text element)
-            :key (.-id element)}
-           (get-inline-styles element)))
+  (let [text (get-inline-text element)]
+    (d/merge {:text text
+              :key (.-id element)}
+             (get-inline-styles element))))
 
 (defn create-paragraph
   [element]
@@ -76,7 +83,7 @@
 (defn create-root
   [element]
   (let [root-styles (get-root-styles element)]
-    (d/merge {:type "root",
+    (d/merge {:type "root"
               :key (.-id element)
               :children [{:type "paragraph-set"
                           :children (mapv create-paragraph (.-children element))}]}

@@ -96,7 +96,7 @@
 ;; loading all pages into memory for find the frame set for thumbnail.
 
 (defn get-file-data-for-thumbnail
-  [{:keys [::db/conn] :as cfg} {:keys [data id] :as file}]
+  [{:keys [::db/conn] :as cfg} {:keys [data id] :as file} strip-frames-with-thumbnails]
   (letfn [;; function responsible on finding the frame marked to be
           ;; used as thumbnail; the returned frame always have
           ;; the :page-id set to the page that it belongs.
@@ -173,7 +173,7 @@
 
         ;; Assoc the available thumbnails and prune not visible shapes
         ;; for avoid transfer unnecessary data.
-        :always
+        strip-frames-with-thumbnails
         (update :objects assoc-thumbnails page-id thumbs)))))
 
 (def ^:private
@@ -186,7 +186,8 @@
   [:map {:title "PartialFile"}
    [:id ::sm/uuid]
    [:revn {:min 0} ::sm/int]
-   [:page [:map-of :keyword ::sm/any]]])
+   [:page [:map-of :keyword ::sm/any]]
+   [:strip-frames-with-thumbnails {:optional true} ::sm/boolean]])
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
@@ -195,24 +196,26 @@
    ::doc/module :files
    ::sm/params schema:get-file-data-for-thumbnail
    ::sm/result schema:partial-file}
-  [cfg {:keys [::rpc/profile-id file-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id strip-frames-with-thumbnails] :as params}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (files/check-read-permissions! conn profile-id file-id)
-
                  (let [team (teams/get-team conn
                                             :profile-id profile-id
                                             :file-id file-id)
-
                        file (bfc/get-file cfg file-id
+                                          :include-deleted? true
                                           :realize? true
-                                          :read-only? true)]
+                                          :read-only? true)
+                       strip-frames-with-thumbnails
+                       (or (nil? strip-frames-with-thumbnails) ;; if not present, default to true
+                           (true? strip-frames-with-thumbnails))]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-file-features! (:features file)))
 
                    {:file-id file-id
                     :revn (:revn file)
-                    :page (get-file-data-for-thumbnail cfg file)}))))
+                    :page (get-file-data-for-thumbnail cfg file strip-frames-with-thumbnails)}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
@@ -328,12 +331,16 @@
 
 ;; --- MUTATION COMMAND: create-file-thumbnail
 
-(defn- create-file-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} {:keys [file-id revn props media] :as params}]
+(defn- create-file-thumbnail
+  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [file-id revn props media] :as params}]
   (media/validate-media-type! media)
   (media/validate-media-size! media)
 
-  (let [props (db/tjson (or props {}))
+  (let [file  (bfc/get-file cfg file-id
+                            :include-deleted? true
+                            :load-data? false)
+
+        props (db/tjson (or props {}))
         path  (:path media)
         mtype (:mtype media)
         hash  (sto/calculate-hash path)
@@ -362,7 +369,7 @@
 
         (db/update! conn :file-thumbnail
                     {:media-id (:id media)
-                     :deleted-at nil
+                     :deleted-at (:deleted-at file)
                      :updated-at tnow
                      :props props}
                     {:file-id file-id
@@ -373,6 +380,7 @@
                    :revn revn
                    :created-at tnow
                    :updated-at tnow
+                   :deleted-at (:deleted-at file)
                    :props props
                    :media-id (:id media)}))
 
@@ -397,6 +405,8 @@
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-file-thumbnail}
 
+  ;; FIXME: do not run the thumbnail upload inside a transaction
+
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     ;; TODO For now we check read permissions instead of write,
@@ -404,6 +414,6 @@
                     ;; review this approach on the future.
                     (files/check-read-permissions! conn profile-id file-id)
                     (when-not (db/read-only? conn)
-                      (let [media (create-file-thumbnail! cfg params)]
+                      (let [media (create-file-thumbnail cfg params)]
                         {:uri (files/resolve-public-uri (:id media))
                          :id (:id media)})))))

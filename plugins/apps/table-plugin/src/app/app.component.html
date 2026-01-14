@@ -1,0 +1,93 @@
+<div [formGroup]="form">
+  <p class="text body-s">Import a data file (CSV)</p>
+  <div class="error" *ngIf="fileError">
+    <img
+      class="close-icon"
+      (click)="clearError()"
+      src="../assets/close.svg"
+      alt="close error"
+    />
+    <span class="message body-s"
+      >Something was wrong. <br />
+      Make sure the formst is .csv</span
+    >
+  </div>
+  <div class="input-container">
+    <input
+      type="file"
+      id="externalFile"
+      name="externalFile"
+      class="inputfile"
+      (change)="onSelectFile($event)"
+    />
+    <label for="externalFile">Import file</label>
+  </div>
+  <hr />
+  <div class="new-table">
+    <p class="text body-s">Or create a new table</p>
+    <span *ngIf="selectedColumn && selectedRow !== 0" class="tag"
+      >{{ selectedRow }} rows x {{ selectedColumn }} cols</span
+    >
+  </div>
+
+  <div class="checkbox-container">
+    <input
+      formControlName="borders"
+      class="checkbox-input"
+      type="checkbox"
+      id="tableBorders"
+      value="table_borders"
+      (click)="clearError()"
+    />
+    <label for="tableBorders" class="body-s">Borders</label>
+  </div>
+  <div class="checkbox-container">
+    <input
+      formControlName="alternateRows"
+      class="checkbox-input"
+      type="checkbox"
+      id="alternateRow"
+      value="alternate_rows"
+    />
+    <label for="alternateRow" class="body-s">Alternating row color</label>
+  </div>
+  <div class="checkbox-container">
+    <input
+      formControlName="filledHeaderRow"
+      class="checkbox-input"
+      type="checkbox"
+      id="filledHeaderRow"
+      value="filled_header_row"
+    />
+    <label for="filledHeaderRow" class="body-s">Filled header row</label>
+  </div>
+  <div class="checkbox-container">
+    <input
+      formControlName="filledHeaderColumn"
+      class="checkbox-input"
+      type="checkbox"
+      id="filledHeaderColumn"
+      value="filled_header_column"
+    />
+    <label for="filledHeaderColumn" class="body-s">Filled header column</label>
+  </div>
+
+  <div class="table-grid">
+    <span
+      class="cell"
+      *ngFor="let cell of cells; index as i"
+      (mouseenter)="setColRow(i)"
+      (mouseleave)="clearColRow()"
+      (click)="createTable(i)"
+    >
+      <span
+        class="square"
+        [class.active]="
+          selectedCell &&
+          selectedCell.column >= getCellColRow(i).column &&
+          selectedCell.row >= getCellColRow(i).row
+        "
+      ></span>
+    </span>
+  </div>
+</div>

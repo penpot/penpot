@@ -8,8 +8,8 @@
   (:require
    [app.common.time :as ct]
    [app.db :as db]
+   [app.http :as-alias http]
    [app.http.access-token]
-   [app.http.auth :as-alias auth]
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.main :as-alias main]
@@ -42,13 +42,14 @@
 
     (handler (->DummyRequest {} {}))
 
-    (t/is (nil? (::auth/token-type @request)))
-    (t/is (nil? (::auth/token @request)))
+    (t/is (nil? (::http/auth-data @request)))
 
     (handler (->DummyRequest {"authorization" "Token aaaa"} {}))
 
-    (t/is (= :token (::auth/token-type @request)))
-    (t/is (= "aaaa" (::auth/token @request)))))
+    (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
+      (t/is (= :token token-type))
+      (t/is (= "aaaa" token))
+      (t/is (nil? claims)))))
 
 (t/deftest auth-middleware-2
   (let [request (volatile! nil)
@@ -57,16 +58,14 @@
                  {})]
 
     (handler (->DummyRequest {} {}))
-
-    (t/is (nil? (::auth/token-type @request)))
-    (t/is (nil? (::auth/token @request)))
-    (t/is (nil? (::auth/claims @request)))
+    (t/is (nil? (::http/auth-data @request)))
 
     (handler (->DummyRequest {"authorization" "Bearer aaaa"} {}))
 
-    (t/is (= :bearer (::auth/token-type @request)))
-    (t/is (= "aaaa" (::auth/token @request)))
-    (t/is (nil? (::auth/claims @request)))))
+    (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
+      (t/is (= :bearer token-type))
+      (t/is (= "aaaa" token))
+      (t/is (nil? claims)))))
 
 (t/deftest auth-middleware-3
   (let [request (volatile! nil)
@@ -75,35 +74,14 @@
                  {})]
 
     (handler (->DummyRequest {} {}))
-
-    (t/is (nil? (::auth/token-type @request)))
-    (t/is (nil? (::auth/token @request)))
-    (t/is (nil? (::auth/claims @request)))
+    (t/is (nil? (::http/auth-data @request)))
 
     (handler (->DummyRequest {} {"auth-token" "foobar"}))
 
-    (t/is (= :cookie (::auth/token-type @request)))
-    (t/is (= "foobar" (::auth/token @request)))
-    (t/is (nil? (::auth/claims @request)))))
-
-(t/deftest auth-middleware-4
-  (let [request (volatile! nil)
-        handler (#'app.http.middleware/wrap-auth
-                 (fn [req] (vreset! request req))
-                 {:cookie (fn [_] "foobaz")})]
-
-    (handler (->DummyRequest {} {}))
-
-    (t/is (nil? (::auth/token-type @request)))
-    (t/is (nil? (::auth/token @request)))
-    (t/is (nil? (::auth/claims @request)))
-
-    (handler (->DummyRequest {} {"auth-token" "foobar"}))
-
-    (t/is (= :cookie (::auth/token-type @request)))
-    (t/is (= "foobar" (::auth/token @request)))
-    (t/is (delay? (::auth/claims @request)))
-    (t/is (= "foobaz" (-> @request ::auth/claims deref)))))
+    (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
+      (t/is (= :cookie token-type))
+      (t/is (= "foobar" token))
+      (t/is (nil? claims)))))
 
 (t/deftest shared-key-auth
   (let [handler (#'app.http.middleware/wrap-shared-key-auth
@@ -122,40 +100,36 @@
 (t/deftest access-token-authz
   (let [profile (th/create-profile* 1)
         token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token (:id profile) "test" nil)
-        request (volatile! {})
+        handler (#'app.http.access-token/wrap-authz identity th/*system*)]
 
-        handler (#'app.http.access-token/wrap-authz
-                 (fn [req] (vreset! request req))
-                 th/*system*)]
+    (let [response (handler nil)]
+      (t/is (nil? response)))
 
-    (handler nil)
-    (t/is (nil? @request))
-
-    (handler {::auth/claims (delay {:tid (:id token)})
-              ::auth/token-type :token})
-
-    (t/is (= #{} (:app.http.access-token/perms @request)))
-    (t/is (= (:id profile) (:app.http.access-token/profile-id @request)))))
+    (let [response (handler {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}})]
+      (t/is (= #{} (:app.http.access-token/perms response)))
+      (t/is (= (:id profile) (:app.http.access-token/profile-id response))))))
 
 (t/deftest session-authz
-  (let [manager (session/inmemory-manager)
-        profile (th/create-profile* 1)
-        handler (-> (fn [req] req)
-                    (#'session/wrap-authz  {::session/manager manager})
-                    (#'mw/wrap-auth {}))]
+  (let [cfg      th/*system*
+        manager  (session/inmemory-manager)
+        profile  (th/create-profile* 1)
+        handler  (-> (fn [req] req)
+                     (#'session/wrap-authz  {::session/manager manager})
+                     (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                      :cookie (partial session/decode-token cfg)}))
 
+        session  (->> (session/create-session manager {:profile-id (:id profile)
+                                                       :user-agent "user agent"})
+                      (#'session/assign-token cfg))
 
-    (let [response (handler (->DummyRequest {} {"auth-token" "foobar"}))]
-      (t/is (= :cookie (::auth/token-type response)))
-      (t/is (= "foobar" (::auth/token response))))
+        response (handler (->DummyRequest {} {"auth-token" (:token session)}))
 
+        {:keys [token claims] token-type :type}
+        (get response ::http/auth-data)]
 
-    (session/write! manager "foobar" {:profile-id (:id profile)
-                                      :user-agent "user agent"
-                                      :created-at (ct/now)})
-
-    (let [response (handler (->DummyRequest {} {"auth-token" "foobar"}))]
-      (t/is (= :cookie (::auth/token-type response)))
-      (t/is (= "foobar" (::auth/token response)))
-      (t/is (= (:id profile) (::session/profile-id response)))
-      (t/is (= "foobar" (::session/id response))))))
+    (t/is (= :cookie token-type))
+    (t/is (= (:token session) token))
+    (t/is (= "authentication" (:iss claims)))
+    (t/is (= "penpot" (:aud claims)))
+    (t/is (= (:id session) (:sid claims)))
+    (t/is (= (:id profile) (:uid claims)))))

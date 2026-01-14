@@ -18,6 +18,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
+   [app.main.ui.debug.playground :refer [playground]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
@@ -30,27 +31,28 @@
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.modules :as mod]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def auth-page
-  (mf/lazy-component app.main.ui.auth/auth))
+  (mf/lazy #(mod/load 'app.main.ui.auth/auth-page*)))
 
-(def verify-token-page
-  (mf/lazy-component app.main.ui.auth.verify-token/verify-token))
+(def verify-token-page*
+  (mf/lazy #(mod/load 'app.main.ui.auth.verify-token/verify-token-page*)))
 
 (def viewer-page*
-  (mf/lazy-component app.main.ui.viewer/viewer*))
+  (mf/lazy #(mod/load 'app.main.ui.viewer/viewer-page*)))
 
 (def dashboard-page*
-  (mf/lazy-component app.main.ui.dashboard/dashboard*))
+  (mf/lazy #(mod/load 'app.main.ui.dashboard/dashboard-page*)))
 
 (def settings-page*
-  (mf/lazy-component app.main.ui.settings/settings*))
+  (mf/lazy #(mod/load 'app.main.ui.settings/settings-page*)))
 
 (def workspace-page*
-  (mf/lazy-component app.main.ui.workspace/workspace*))
+  (mf/lazy #(mod/load 'app.main.ui.workspace/workspace-page*)))
 
 (mf/defc workspace-legacy-redirect*
   {::mf/props :obj
@@ -188,7 +190,7 @@
        [:? [:& auth-page {:route route}]]
 
        :auth-verify-token
-       [:? [:& verify-token-page {:route route}]]
+       [:? [:& verify-token-page* {:route route}]]
 
        (:settings-profile
         :settings-password
@@ -209,6 +211,10 @@
        (when *assert*
          [:& icons-preview])
 
+       :debug-playground
+       (when *assert*
+         [:& playground])
+
        (:dashboard-search
         :dashboard-recent
         :dashboard-files
@@ -218,7 +224,8 @@
         :dashboard-members
         :dashboard-invitations
         :dashboard-webhooks
-        :dashboard-settings)
+        :dashboard-settings
+        :dashboard-deleted)
        (let [params        (get params :query)
              team-id       (some-> params :team-id uuid/parse*)
              project-id    (some-> params :project-id uuid/parse*)

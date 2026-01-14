@@ -36,7 +36,7 @@
    :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
-(mf/defc attributes
+(mf/defc attributes*
   [{:keys [page-id file-id shapes frame from libraries share-id objects color-space]}]
   (let [shapes             (hooks/use-equal-memo shapes)
         first-shape        (first shapes)

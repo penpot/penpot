@@ -14,7 +14,6 @@
    [app.common.path-names :as cpn]
    [app.common.record :as crc]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.svg.path :as svg.path]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
@@ -31,6 +30,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -42,6 +42,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -53,6 +54,7 @@
    [app.plugins.ruler-guides :as rg]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
+   [app.util.http :as http]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
@@ -216,7 +218,7 @@
                   (u/display-not-valid :name value)
 
                   :else
-                  (st/emit! (dw/end-rename-shape id value)))))}
+                  (st/emit! (dw/rename-shape-or-variant file-id page-id id value)))))}
 
            :blocked
            {:this true
@@ -323,7 +325,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (or (not (us/safe-int? value)) (< value 0))
+                  (or (not (sm/valid-safe-int? value)) (< value 0))
                   (u/display-not-valid :borderRadius value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -339,7 +341,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -355,7 +357,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -371,7 +373,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -387,7 +389,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -403,7 +405,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (or (not (us/safe-number? value)) (< value 0) (> value 1))
+                  (or (not (sm/valid-safe-number? value)) (< value 0) (> value 1))
                   (u/display-not-valid :opacity value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -490,7 +492,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-number? value))
+                  (not (sm/valid-safe-number? value))
                   (u/display-not-valid :x value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -508,7 +510,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-number? value))
+                  (not (sm/valid-safe-number? value))
                   (u/display-not-valid :y value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -529,6 +531,19 @@
                        (let [parent-id (:parent-id shape)]
                          (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))))}
 
+           :parentIndex
+           {:this true
+            :get
+            (fn [self]
+              (let [shape (u/proxy->shape self)]
+                (if (cfh/root? shape)
+                  0
+                  (let [file-id (obj/get self "$file")
+                        page-id (obj/get self "$page")
+                        parent (u/locate-shape file-id page-id (:parent-id shape))
+                        index (d/index-of (:shapes parent) id)]
+                    index))))}
+
            :parentX
            {:this true
             :get (fn [self]
@@ -540,7 +555,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :parentX value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -567,7 +582,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :parentY value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -594,7 +609,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :frameX value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -621,7 +636,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :frameY value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -765,6 +780,8 @@
 
 
            ;; Interactions
+
+
            :interactions
            {:this true
             :get
@@ -778,10 +795,10 @@
            :resize
            (fn [width height]
              (cond
-               (or (not (us/safe-number? width)) (<= width 0))
+               (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/display-not-valid :resize width)
 
-               (or (not (us/safe-number? height)) (<= height 0))
+               (or (not (sm/valid-safe-number? height)) (<= height 0))
                (u/display-not-valid :resize height)
 
                (not (r/check-permission plugin-id "content:write"))
@@ -1017,8 +1034,8 @@
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (cfh/path-shape? shape))
-                 (u/display-not-valid :makeMask (:type shape))
+                 (and (not (cfh/path-shape? shape)) (not (cfh/bool-shape? shape)))
+                 (u/display-not-valid :toD (:type shape))
 
                  :else
                  (.toString (:content shape)))))
@@ -1031,10 +1048,10 @@
                  (not (cfh/text-shape? shape))
                  (u/display-not-valid :getRange-shape "shape is not text")
 
-                 (or (not (us/safe-int? start)) (< start 0) (> start end))
+                 (or (not (sm/valid-safe-int? start)) (< start 0) (> start end))
                  (u/display-not-valid :getRange-start start)
 
-                 (not (us/safe-int? end))
+                 (not (sm/valid-safe-int? end))
                  (u/display-not-valid :getRange-end end)
 
                  :else
@@ -1056,6 +1073,35 @@
                  :else
                  (let [typography (u/proxy->library-typography typography)]
                    (st/emit! (dwt/apply-typography #{id} typography file-id))))))
+
+           ;; Change index method
+           :setParentIndex
+           (fn [index]
+             (cond
+               (not (sm/valid-safe-int? index))
+               (u/display-not-valid :setParentIndex index)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/display-not-valid :setParentIndex "Plugin doesn't have 'content:write' permission")
+
+               :else
+               (st/emit! (dw/set-shape-index file-id page-id id index))))
+
+           :bringForward
+           (fn []
+             (st/emit! (dw/vertical-order-selected :up)))
+
+           :sendBackward
+           (fn []
+             (st/emit! (dw/vertical-order-selected :down)))
+
+           :bringToFront
+           (fn []
+             (st/emit! (dw/vertical-order-selected :top)))
+
+           :sendToBack
+           (fn []
+             (st/emit! (dw/vertical-order-selected :bottom)))
 
            ;; COMPONENTS
            :isComponentInstance
@@ -1150,7 +1196,12 @@
                    (js/Promise.
                     (fn [resolve reject]
                       (->> (rp/cmd! :export payload)
-                           (rx/mapcat #(rp/cmd! :export {:cmd :get-resource :wait true :id (:id %) :blob? true}))
+                           (rx/mapcat (fn [{:keys [uri]}]
+                                        (->> (http/send! {:method :get
+                                                          :uri uri
+                                                          :response-type :blob
+                                                          :omit-default-headers true})
+                                             (rx/map :body))))
                            (rx/mapcat #(.arrayBuffer %))
                            (rx/map #(js/Uint8Array. %))
                            (rx/subs! resolve reject))))))))
@@ -1184,7 +1235,7 @@
            (fn [orientation value]
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (us/safe-number? value))
+                 (not (sm/valid-safe-number? value))
                  (u/display-not-valid :addRulerGuide "Value not a safe number")
 
                  (not (contains? #{"vertical" "horizontal"} orientation))
@@ -1223,6 +1274,31 @@
                :else
                (let [guide (u/proxy->ruler-guide value)]
                  (st/emit! (dwgu/remove-guide guide)))))
+
+           :tokens
+           {:this true
+            :get
+            (fn [_]
+              (let [tokens
+                    (-> (u/locate-shape file-id page-id id)
+                        (get :applied-tokens))]
+                (reduce
+                 (fn [acc [prop name]]
+                   (obj/set! acc (d/name prop) name))
+                 #js {}
+                 tokens)))}
+
+           :applyToken
+           (fn [token attrs]
+             (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
+                   kw-attrs (into #{} (map keyword attrs))]
+               (if (some #(not (cto/token-attr? %)) kw-attrs)
+                 (u/display-not-valid :applyToken attrs)
+                 (st/emit!
+                  (dwta/toggle-token {:token token
+                                      :attrs kw-attrs
+                                      :shape-ids [id]
+                                      :expand-with-children false})))))
 
            :isVariantHead
            (fn []
@@ -1265,9 +1341,34 @@
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
-            {:name "children"
+            {:this true
+             :name "children"
              :enumerable false
-             :get #(.getChildren ^js %)}))
+             :get
+             (fn [^js self]
+               (.getChildren self))
+
+             :set
+             (fn [^js self children]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/display-not-valid :children "Plugin doesn't have 'content:write' permission")
+
+                 (not (every? shape-proxy? children))
+                 (u/display-not-valid :children "Every children needs to be shape proxies")
+
+                 :else
+                 (let [shape (u/proxy->shape self)
+                       file-id (obj/get self "$file")
+                       page-id (obj/get self "$page")
+                       ids (->> children (map #(obj/get % "$id")))]
+
+                   (cond
+                     (not= (set ids) (set (:shapes shape)))
+                     (u/display-not-valid :children "Not all children are present in the input")
+
+                     :else
+                     (st/emit! (dw/reorder-children file-id page-id (:id shape) ids))))))}))
 
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!
@@ -1392,13 +1493,37 @@
 
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
-            {:name "content"
+            {:name "commands"
+             :get #(-> % u/proxy->shape :content format/format-path-content)
+             :set
+             (fn [_ value]
+               (let [segments (parser/parse-commands value)]
+                 (cond
+                   (not (r/check-permission plugin-id "content:write"))
+                   (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+
+                   (not (sm/validate path/schema:segments segments))
+                   (u/display-not-valid :content segments)
+
+                   :else
+                   (let [selrect (path/calc-selrect segments)
+                         content (path/from-plain segments)
+                         points  (grc/rect->points selrect)]
+                     (st/emit! (dwsh/update-shapes
+                                [id]
+                                (fn [shape]
+                                  (-> shape
+                                      (assoc :content content)
+                                      (assoc :selrect selrect)
+                                      (assoc :points points)))))))))}
+            {:name "d"
              :get #(-> % u/proxy->shape :content str)
              :set
              (fn [_ value]
-               (let [segments (if (string? value)
-                                (svg.path/parse value)
-                                value)]
+               (let [segments
+                     (if (string? value)
+                       (svg.path/parse value)
+                       value)]
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
                    (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
@@ -1418,4 +1543,7 @@
                                                      (-> shape
                                                          (assoc :content content)
                                                          (assoc :selrect selrect)
-                                                         (assoc :points points)))))))))}))))))
+                                                         (assoc :points points)))))))))}
+            {:name "content"
+             :get #(.-d %)
+             :set (fn [self value] (set! (.-d self) value))}))))))

@@ -1,0 +1,40 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as Checkbox from "./checkbox.stories";
+
+<Meta title="Controls/Checkbox" />
+
+# Checkbox
+
+The `checkbox*` component is a toggle control. It allows users to switch between boolean states (`false` or `true`).
+
+<Canvas of={Checkbox.Default} />
+
+<Canvas of={Checkbox.Checked} />
+
+## Anatomy
+
+The checkbox component consists of three main parts:
+
+- **Label** (optional): the text that describes what the checkbox controls. Clicking on this text also works for toggling.
+- **Box**: the box which shows the current state. Contains a check if the state is `true`.
+- **Native element**: the native HTML element which holds the state. It remains hidden to the user.
+
+## Usage Guidelines
+
+### When to Use
+
+- For boolean settings that take effect immediately.
+- In preference panels and configuration screens.
+
+### When Not to Use
+
+- For actions that require confirmation (use buttons instead).
+- For multiple choice selections (use radio buttons or select).
+- For temporary states that need explicit "Apply" action.
+- For ternary states.

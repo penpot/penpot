@@ -27,9 +27,8 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(mf/defc comments-menu
-  {::mf/props :obj
-   ::mf/memo true}
+(mf/defc comments-menu*
+  {::mf/memo true}
   []
   (let [state           (mf/deref refs/comments-local)
         cmode           (:mode state)

@@ -291,13 +291,12 @@
                             :value current-search
                             :on-clear clear-search-text
                             :placeholder (tr "workspace.sidebar.layers.search")}
-            [:button {:on-click on-toggle-filters-click
-                      :class (stl/css-case
-                              :filter-button true
-                              :opened show-menu?
-                              :active active?)}
-             [:> icon* {:icon-id i/filter}]]]
-
+            [:> icon-button* {:variant "secondary"
+                              :class (stl/css :filter-button)
+                              :aria-pressed show-menu?
+                              :aria-label (tr "workspace.sidebar.layers.filter")
+                              :on-click on-toggle-filters-click
+                              :icon i/filter}]]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search

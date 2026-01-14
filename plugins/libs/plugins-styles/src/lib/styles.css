@@ -1,0 +1,14 @@
+/*core*/
+@import url('core/generic.css');
+@import url('core/swatches.css');
+@import url('core/fonts.css');
+@import url('core/spacing.css');
+
+/*components*/
+@import url('components/button.css');
+@import url('components/checkbox.css');
+@import url('components/radio-button.css');
+@import url('components/icon.css');
+@import url('components/select.css');
+@import url('components/input.css');
+@import url('components/switch.css');

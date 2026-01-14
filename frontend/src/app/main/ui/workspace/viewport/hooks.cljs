@@ -22,6 +22,7 @@
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
    [app.main.data.workspace.text.shortcuts :as tsc]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
@@ -29,6 +30,7 @@
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.worker :as mw]
+   [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -40,11 +42,12 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(defn setup-dom-events [zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?]
+(defn setup-dom-events
+  [zoom disable-paste-ref in-viewport-ref workspace-read-only? drawing-tool drawing-path?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
         on-mouse-wheel    (actions/on-mouse-wheel zoom)
-        on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)
+        on-paste          (actions/on-paste disable-paste-ref in-viewport-ref workspace-read-only?)
         on-pointer-down   (mf/use-fn
                            (mf/deps drawing-tool drawing-path?)
                            (fn [e]
@@ -54,27 +57,27 @@
                                  (st/emit! (dwe/clear-edition-mode))))))
         on-blur           (mf/use-fn #(st/emit! (mse/->BlurEvent)))]
 
-    (mf/use-effect
-     (mf/deps drawing-tool drawing-path?)
-     (fn []
-       (let [keys [(events/listen js/window EventType.POINTERDOWN on-pointer-down)]]
-         (fn []
-           (doseq [key keys]
-             (events/unlistenByKey key))))))
+    (mf/with-effect [drawing-tool drawing-path?]
+      (let [key (events/listen js/window EventType.POINTERDOWN on-pointer-down)]
 
-    (mf/use-layout-effect
-     (mf/deps on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?)
-     (fn []
-       (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
-                   (events/listen js/document EventType.KEYUP on-key-up)
-                   ;; bind with passive=false to allow the event to be cancelled
-                   ;; https://stackoverflow.com/a/57582286/3219895
-                   (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                   (events/listen js/window EventType.PASTE on-paste)
-                   (events/listen js/window EventType.BLUR on-blur)]]
-         (fn []
-           (doseq [key keys]
-             (events/unlistenByKey key))))))))
+        ;; We need to disable workspace paste when we on comments
+        (if (= drawing-tool :comments)
+          (mf/set-ref-val! disable-paste-ref true)
+          (mf/set-ref-val! disable-paste-ref false))
+
+        #(events/unlistenByKey key)))
+
+    (mf/with-layout-effect [on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?]
+      (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
+                  (events/listen js/document EventType.KEYUP on-key-up)
+                  ;; bind with passive=false to allow the event to be cancelled
+                  ;; https://stackoverflow.com/a/57582286/3219895
+                  (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
+                  (events/listen js/window EventType.PASTE on-paste)
+                  (events/listen js/window EventType.BLUR on-blur)]]
+        (fn []
+          (doseq [key keys]
+            (events/unlistenByKey key)))))))
 
 (defn setup-viewport-size [vport viewport-ref]
   (mf/with-effect [vport]
@@ -311,7 +314,10 @@
                              ids)]
                    (filter #(or (root-frame-with-data? %)
                                 (and (cfh/group-shape? objects %)
-                                     (not (contains? child-parent? %)))))))
+                                     (not (contains? child-parent? %)))
+                                (and (features/active-feature? @st/state "render-wasm/v1")
+                                     (cfh/text-shape? objects %)
+                                     (not (wasm.api/intersect-position-in-shape % @last-point-ref)))))))
 
                remove-measure-xf
                (cond

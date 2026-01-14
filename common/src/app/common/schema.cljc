@@ -8,6 +8,8 @@
   (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
+   #?(:clj [malli.dev.pretty :as mdp])
+   #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
@@ -19,8 +21,6 @@
    [clojure.core :as c]
    [cuerdas.core :as str]
    [malli.core :as m]
-   [malli.dev.pretty :as mdp]
-   [malli.dev.virhe :as v]
    [malli.error :as me]
    [malli.generator :as mg]
    [malli.registry :as mr]
@@ -245,27 +245,30 @@
                                      :level (d/nilv level 8)
                                      :length (d/nilv length 12)})))))
 
-(defmethod v/-format ::schemaless-explain
-  [_ explanation printer]
-  {:body [:group
-          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]})
+#?(:clj
+   (defmethod v/-format ::schemaless-explain
+     [_ explanation printer]
+     {:body [:group
+             (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+             (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]}))
 
-(defmethod v/-format ::explain
-  [_ {:keys [schema] :as explanation} printer]
-  {:body [:group
-          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
-          (v/-block "Schema" (v/-visit schema printer) printer)]})
+#?(:clj
+   (defmethod v/-format ::explain
+     [_ {:keys [schema] :as explanation} printer]
+     {:body [:group
+             (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+             (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+             (v/-block "Schema" (v/-visit schema printer) printer)]}))
 
-(defn pretty-explain
-  "A helper that allows print a console-friendly output for the
-  explain; should not be used for other purposes"
-  [explain & {:keys [variant message]
-              :or {variant ::explain
-                   message "Validation Error"}}]
-  (let [explain (fn [] (me/with-error-messages explain))]
-    ((mdp/prettifier variant message explain default-options))))
+#?(:clj
+   (defn pretty-explain
+     "A helper that allows print a console-friendly output for the explain;
+  should not be used for other purposes"
+     [explain & {:keys [variant message]
+                 :or {variant ::explain
+                      message "Validation Error"}}]
+     (let [explain (fn [] (me/with-error-messages explain))]
+       ((mdp/prettifier variant message explain default-options)))))
 
 (defmacro ignoring
   [expr]
@@ -281,7 +284,20 @@
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [s          (schema s)
+  (let [s          #?(:clj
+                      (schema s)
+                      :cljs
+                      (try
+                        (schema s)
+                        (catch :default cause
+                          (let [data (ex-data cause)]
+                            (if (= :malli.core/invalid-schema (:type data))
+                              (throw (ex-info
+                                      (str "Invalid schema\n"
+                                           (pp/pprint-str (:data data)))
+                                      {}))
+                              (throw cause))))))
+
         validator* (delay (m/validator s))
         explainer* (delay (m/explainer s))
         hint       (or ^boolean hint "check error")
@@ -298,6 +314,13 @@
                                   :hint hint
                                   ::explain explain}))))
         value))))
+
+(defn coercer
+  [schema & {:as opts}]
+  (let [decode-fn (lazy-decoder schema json-transformer)
+        check-fn  (check-fn schema opts)]
+    (fn [data]
+      (-> data decode-fn check-fn))))
 
 (defn check
   "A helper intended to be used on assertions for validate/check the
@@ -842,38 +865,6 @@
                                     choices))]
                {:pred pred}))})
 
-;; (register!
-;;  {:type ::inst
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int :min 0 :max 100000)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-
-;;    :decode/string tm/parse-inst
-;;    :encode/string tm/format-inst
-;;    :decode/json tm/parse-inst
-;;    :encode/json tm/format-inst
-;;    ::oapi/type "string"
-;;    ::oapi/format "iso"}})
-
-;; (register!
-;;  {:type ::timestamp
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol, the same as ::inst but encodes to epoch"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-;;    :decode/string tm/parse-inst
-;;    :encode/string inst-ms
-;;    :decode/json tm/parse-inst
-;;    :encode/json inst-ms
-;;    ::oapi/type "string"
-;;    ::oapi/format "number"}})
 
 #?(:clj
    (register!
@@ -951,7 +942,7 @@
   :pred #(and (string? %) (not (str/blank? %)))
   :property-pred
   (fn [{:keys [min max] :as props}]
-    (if (seq props)
+    (if (or min max)
       (fn [value]
         (let [size (count value)]
           (cond
@@ -1024,6 +1015,9 @@
 
 (def valid-safe-number?
   (lazy-validator ::safe-number))
+
+(def valid-safe-int?
+  (lazy-validator ::safe-int))
 
 (def valid-text?
   (validator ::text))

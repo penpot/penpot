@@ -88,6 +88,9 @@
 
 .color-tokens-inputs {
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
 }
 
 // Title bar

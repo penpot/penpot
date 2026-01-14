@@ -49,7 +49,6 @@
   &.wide {
     width: 100%;
   }
-
   .resize-area {
     grid-area: resize;
     height: deprecated.$s-8;
@@ -72,49 +71,22 @@
     &.small-palette {
       display: flex;
     }
-    .palette-item {
-      @include deprecated.flexCenter;
-      border-radius: deprecated.$br-8;
-      opacity: deprecated.$op-10;
-      transition: opacity 1s ease;
-      .palette-btn {
-        @extend .button-tertiary;
-        height: deprecated.$s-32;
-        width: deprecated.$s-32;
-        border-radius: deprecated.$br-8;
-        background-clip: padding-box;
-        padding: 0;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-        &.selected {
-          @extend .button-icon-selected;
-        }
-      }
-    }
-  }
-
-  .palette-actions {
-    @extend .button-tertiary;
-    grid-area: actions;
-    height: calc(var(--height) - deprecated.$s-16);
-    width: deprecated.$s-32;
-    padding: 0;
-    margin-left: deprecated.$s-4;
-    border-radius: deprecated.$br-8;
-    background-color: var(--palette-background-color);
-    z-index: deprecated.$z-index-2;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
   }
   .palette {
     grid-area: palette;
     width: 100%;
     min-width: 0;
   }
+  .palette-item {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.menu-btn {
+  display: flex;
+  align-items: center;
+  margin-left: var(--sp-s);
 }
 
 .handler {

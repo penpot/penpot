@@ -106,6 +106,13 @@ export class DashboardPage extends BaseWebSocketPage {
     );
   }
 
+  async setupDeletedFiles() {
+    await this.mockRPC(
+      "get-team-deleted-files?team-id=*",
+      "dashboard/get-team-deleted-files.json",
+    );
+  }
+
   async setupDrafts() {
     await this.mockRPC(
       "get-project-files?project-id=*",
@@ -160,6 +167,10 @@ export class DashboardPage extends BaseWebSocketPage {
     });
     await this.mockRPC("search-files", "dashboard/search-files.json");
     await this.mockRPC("get-teams", "logged-in-user/get-teams-complete.json");
+    await this.mockRPC(
+      "get-team-deleted-files?team-id=*",
+      "dashboard/get-team-deleted-files.json",
+    );
   }
 
   async setupAccessTokensEmpty() {
@@ -287,6 +298,13 @@ export class DashboardPage extends BaseWebSocketPage {
       `#/dashboard/libraries?team-id=${DashboardPage.anyTeamId}`,
     );
     await expect(this.mainHeading).toHaveText("Libraries");
+  }
+
+  async goToDeleted() {
+    await this.page.goto(
+      `#/dashboard/deleted?team-id=${DashboardPage.anyTeamId}`,
+    );
+    await expect(this.mainHeading).toHaveText("Projects");
   }
 
   async openProfileMenu() {

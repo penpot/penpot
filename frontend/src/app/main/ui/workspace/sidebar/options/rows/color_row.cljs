@@ -68,7 +68,7 @@
 
 (mf/defc color-token-row*
   {::mf/private true}
-  [{:keys [active-tokens color-token color on-swatch-click-token detach-token open-modal-from-token]}]
+  [{:keys [active-tokens applied-token-name color on-swatch-click-token detach-token open-modal-from-token]}]
   (let [;; `active-tokens` may be provided as a `delay` (lazy computation).
         ;; In that case we must deref it (`@active-tokens`) to force evaluation
         ;; and obtain the actual value. If it’s already realized (not a delay),
@@ -77,21 +77,22 @@
                         @active-tokens
                         active-tokens)
 
-        color-tokens (:color active-tokens)
+        active-color-tokens (:color active-tokens)
 
-        token (some #(when (= (:name %) color-token) %) color-tokens)
+        token (some #(when (= (:name %) applied-token-name) %) active-color-tokens)
 
         on-detach-token
         (mf/use-fn
-         (mf/deps detach-token token color-token)
+         (mf/deps detach-token token applied-token-name)
          (fn []
-           (let [token (or token color-token)]
+           (let [token (or token applied-token-name)]
              (detach-token token))))
 
         has-errors (some? (:errors token))
         token-name (:name token)
         resolved (:resolved-value token)
-        not-active (and (some? active-tokens) (nil? token))
+        not-active (and (empty? active-tokens)
+                        (nil? token))
         id (dm/str (:id token) "-name")
         swatch-tooltip-content (cond
                                  not-active
@@ -109,7 +110,7 @@
                                #(mf/html
                                  [:div
                                   [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
-                                  [:span {:class (stl/css :token-name-tooltip)} color-token]]))]
+                                  [:span {:class (stl/css :token-name-tooltip)} applied-token-name]]))]
 
     [:div {:class (stl/css :color-info)}
      [:div {:class (stl/css-case :token-color-wrapper true
@@ -128,7 +129,7 @@
                     :class (stl/css :token-tooltip)}
        [:div {:class (stl/css :token-name)
               :aria-labelledby id}
-        (or token-name color-token)]]
+        (or token-name applied-token-name)]]
       [:div {:class (stl/css :token-actions)}
        [:> icon-button*
         {:variant "action"
@@ -177,7 +178,6 @@
                                 (-> (deref active-tokens*)
                                     (select-keys (get tk/tokens-by-input origin))
                                     (not-empty)))))
-
         on-focus'
         (mf/use-fn
          (mf/deps on-focus)
@@ -239,7 +239,7 @@
 
         open-modal
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index)
+         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index applied-token)
          (fn [color pos tab]
            (let [color (cond
                          ^boolean has-multiple-colors
@@ -263,6 +263,7 @@
                                     (when on-close
                                       (on-close value opacity id file-id)))
                         :active-tokens tokens
+                        :applied-token applied-token
                         :color-origin origin
                         :tab tab
                         :origin :sidebar
@@ -351,7 +352,7 @@
      (cond
        (and token-color applied-token)
        [:> color-token-row* {:active-tokens tokens
-                             :color-token applied-token
+                             :applied-token-name applied-token
                              :color (dissoc color :ref-id :ref-file)
                              :on-swatch-click-token  on-swatch-click-token
                              :detach-token detach-token

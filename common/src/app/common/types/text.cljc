@@ -90,6 +90,10 @@
   [{:fill-color clr/black
     :fill-opacity 1}])
 
+(def default-paragraph-attrs
+  {:text-align "left"
+   :text-direction "ltr"})
+
 (def default-text-attrs
   {:font-id "sourcesanspro"
    :font-family "sourcesanspro"

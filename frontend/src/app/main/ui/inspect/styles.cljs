@@ -90,7 +90,7 @@
     :multiple))
 
 (mf/defc styles-tab*
-  [{:keys [color-space shapes libraries objects file-id]}]
+  [{:keys [color-space shapes libraries objects file-id from]}]
   (let [data               (dm/get-in libraries [file-id :data])
         first-shape        (first shapes)
         first-component    (ctkl/get-component data (:component-id first-shape))
@@ -131,9 +131,10 @@
          (mf/deps shorthands*)
          (fn [shorthand]
            (swap! shorthands* assoc (:panel shorthand) (:property shorthand))))]
-    [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
+    [:ol {:class (stl/css-case :styles-tab true
+                               :styles-tab-workspace (= from :workspace)) :aria-label (tr "labels.styles")}
      ;;  TOKENS PANEL
-     (when (or active-themes active-sets)
+     (when (or (seq active-themes) (seq active-sets))
        [:li
         [:> style-box* {:panel :token}
          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
@@ -257,19 +258,3 @@
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
-
-
-;; WIP
-;; Panel list as stylebox children
-#_(case option
-    :geometry         [:> geometry-panel {}]
-    :layout           [:> layout-panel {}]
-    :layout-element   [:> layout-element-panel {}]
-    :fill             [:> fill-panel {:color-space color-space}]
-    :stroke           [:> stroke-panel {:color-space color-space}]
-    :text             [:> text-panel {:color-space color-space}]
-    :shadow           [:> shadow-panel {}]
-    :blur             [:> blur-panel {}]
-    :svg              [:> svg-panel {}]
-    :variant          [:> variant-panel* {}]
-    :visibility       [:> visibility-panel* {}])

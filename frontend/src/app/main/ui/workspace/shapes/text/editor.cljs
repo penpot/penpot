@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
-   ["draft-js" :as draft]
+   ["@penpot/draft-js" :as draft]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]

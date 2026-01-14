@@ -1,0 +1,86 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.checkbox {
+  --input-checkbox-border-color: var(--color-foreground-secondary);
+  --input-checkbox-border-color-focus: var(--color-accent-primary);
+  --input-checkbox-border-color-hover: var(--color-accent-primary-muted);
+  --input-checkbox-foreground-color: var(--color-foreground-primary);
+  --input-checkbox-background-color: var(--color-background-quaternary);
+
+  --input-checkbox-border-color-checked: var(--color-background-quaternary);
+  --input-checkbox-foreground-color-checked: var(--color-background-primary);
+  --input-checkbox-background-color-checked: var(--color-accent-primary);
+
+  --input-checkbox-foreground-color-disabled: var(--color-background-primary);
+  --input-checkbox-background-color-disabled: var(--color-foreground-secondary);
+
+  --input-checkbox-text-color: var(--color-foreground-secondary);
+}
+
+.checkbox-label {
+  display: grid;
+  grid-template-columns: var(--sp-l) 1fr 0;
+  align-items: center;
+
+  &:hover {
+    .checkbox-box {
+      border-color: var(--input-checkbox-border-color-hover);
+    }
+  }
+
+  &:focus,
+  &:focus-within {
+    .checkbox-box {
+      border-color: var(--input-checkbox-border-color-focus);
+    }
+  }
+}
+
+.checkbox-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-16;
+  block-size: $sz-16;
+  border-radius: $br-4;
+  border: $b-1 solid var(--input-checkbox-border-color);
+  color: var(--input-checkbox-foreground-color);
+  background-color: var(--input-checkbox-background-color);
+
+  &.disabled {
+    border: 0;
+  }
+
+  &.checked {
+    --input-checkbox-border-color: var(--input-checkbox-border-color-checked);
+    --input-checkbox-foreground-color: var(--input-checkbox-foreground-color-checked);
+    --input-checkbox-background-color: var(--input-checkbox-background-color-checked);
+
+    &.disabled {
+      --input-checkbox-foreground-color: var(--input-checkbox-foreground-color-disabled);
+      --input-checkbox-background-color: var(--input-checkbox-background-color-disabled);
+    }
+  }
+}
+
+.checkbox-text {
+  @include use-typography("body-small");
+  padding-inline-start: var(--sp-s);
+  color: var(--input-checkbox-text-color);
+}
+
+.checkbox-input {
+  &:focus {
+    outline: 0;
+    inline-size: 0;
+    block-size: 0;
+  }
+}

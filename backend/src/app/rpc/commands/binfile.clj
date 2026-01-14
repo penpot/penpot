@@ -11,9 +11,9 @@
    [app.binfile.v1 :as bf.v1]
    [app.binfile.v3 :as bf.v3]
    [app.common.features :as cfeat]
-   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
@@ -25,10 +25,12 @@
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.helpers :as rph]
+   [app.storage :as sto]
+   [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.services :as sv]
-   [app.worker :as-alias wrk]))
+   [app.worker :as-alias wrk]
+   [datoteka.fs :as fs]))
 
 (set! *warn-on-reflection* true)
 
@@ -38,52 +40,42 @@
   schema:export-binfile
   [:map {:title "export-binfile"}
    [:file-id ::sm/uuid]
-   [:version {:optional true} ::sm/int]
    [:include-libraries ::sm/boolean]
    [:embed-assets ::sm/boolean]])
 
-(defn stream-export-v1
-  [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (rph/stream
-   (fn [_ output-stream]
-     (try
-       (-> cfg
-           (assoc ::bfc/ids #{file-id})
-           (assoc ::bfc/embed-assets embed-assets)
-           (assoc ::bfc/include-libraries include-libraries)
-           (bf.v1/export-files! output-stream))
-       (catch Throwable cause
-         (l/err :hint "exception on exporting file"
-                :file-id (str file-id)
-                :cause cause))))))
+(defn- export-binfile
+  [{:keys [::sto/storage] :as cfg} {:keys [file-id include-libraries embed-assets]}]
+  (let [output  (tmp/tempfile*)]
+    (try
+      (-> cfg
+          (assoc ::bfc/ids #{file-id})
+          (assoc ::bfc/embed-assets embed-assets)
+          (assoc ::bfc/include-libraries include-libraries)
+          (bf.v3/export-files! output))
 
-(defn stream-export-v3
-  [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (rph/stream
-   (fn [_ output-stream]
-     (try
-       (-> cfg
-           (assoc ::bfc/ids #{file-id})
-           (assoc ::bfc/embed-assets embed-assets)
-           (assoc ::bfc/include-libraries include-libraries)
-           (bf.v3/export-files! output-stream))
-       (catch Throwable cause
-         (l/err :hint "exception on exporting file"
-                :file-id (str file-id)
-                :cause cause))))))
+      (let [data   (sto/content output)
+            object (sto/put-object! storage
+                                    {::sto/content data
+                                     ::sto/touched-at (ct/in-future {:minutes 60})
+                                     :content-type "application/zip"
+                                     :bucket "tempfile"})]
+
+        (-> (cf/get :public-uri)
+            (u/join "/assets/by-id/")
+            (u/join (str (:id object)))))
+
+      (finally
+        (fs/delete output)))))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
+   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]]
    ::webhooks/event? true
    ::sm/params schema:export-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id version file-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
-  (let [version (or version 1)]
-    (case (int version)
-      1 (stream-export-v1 cfg params)
-      2 (throw (ex-info "not-implemented" {}))
-      3 (stream-export-v3 cfg params))))
+  (sse/response (partial export-binfile cfg params)))
 
 ;; --- Command: import-binfile
 

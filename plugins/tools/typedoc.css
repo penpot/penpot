@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css?family=Work+Sans:wght@400+500&display=swap');
+
+:root {
+  /* Light */
+  --light-color-background: #ffffff;
+  --light-color-background-secondary: #e8eaee;
+  --light-color-warning-text: #000000;
+  --light-color-background-warning: #fff4ed;
+  --light-color-icon-background: var(--light-color-background);
+  --light-color-accent: #e1d2f5;
+  --light-color-active-menu-item: var(--light-color-accent);
+  --light-color-text: var(--light-color-warning-text);
+  --light-color-text-aside: #495e74;
+  --light-color-link: #1345aa;
+
+  /* highlight.css */
+  --light-code-background: #f3f4f6;
+
+  /* Dark */
+  --dark-color-background: #18181a;
+  --dark-color-background-secondary: #000000;
+  --dark-color-background-warning: #fff4ed;
+  --dark-color-warning-text: #ffffff;
+  --dark-color-icon-background: var(--dark-color-background-secondary);
+  --dark-color-accent: #426158;
+  --dark-color-active-menu-item: #2e3434;
+  --dark-color-text: var(--dark-color-warning-text);
+  --dark-color-text-aside: #8f9da3;
+  --dark-color-link: #7efff5;
+
+  /* highlight.css */
+  --dark-code-background: #212426;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --code-background: var(--light-code-background);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --code-background: var(--dark-code-background);
+  }
+}
+
+html,
+body,
+p {
+  font-family: 'Work Sans', sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}

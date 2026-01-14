@@ -259,14 +259,17 @@
    ::oidc.providers/generic
    {::http.client/client (ig/ref ::http.client/client)}
 
+   ::oidc/providers
+   [(ig/ref ::oidc.providers/google)
+    (ig/ref ::oidc.providers/github)
+    (ig/ref ::oidc.providers/gitlab)
+    (ig/ref ::oidc.providers/generic)]
+
    ::oidc/routes
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::setup/props        (ig/ref ::setup/props)
-    ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
-                          :github (ig/ref ::oidc.providers/github)
-                          :gitlab (ig/ref ::oidc.providers/gitlab)
-                          :oidc   (ig/ref ::oidc.providers/generic)}
+    ::oidc/providers     (ig/ref ::oidc/providers)
     ::session/manager    (ig/ref ::session/manager)
     ::email/blacklist    (ig/ref ::email/blacklist)
     ::email/whitelist    (ig/ref ::email/whitelist)}
@@ -298,6 +301,7 @@
    {::db/pool         (ig/ref ::db/pool)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::mbus/msgbus     (ig/ref ::mbus/msgbus)
+    ::setup/props     (ig/ref ::setup/props)
     ::session/manager (ig/ref ::session/manager)}
 
    :app.http.assets/routes

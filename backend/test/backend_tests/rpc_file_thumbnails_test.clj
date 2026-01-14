@@ -8,12 +8,14 @@
   (:require
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cauth]
+   [app.setup.clock :as clock]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
@@ -83,7 +85,8 @@
       (t/is (map? (:result out))))
 
     ;; run the task again
-    (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
+    (let [res (binding [ct/*clock* (clock/fixed (ct/in-future {:minutes 31}))]
+                (th/run-task! "storage-gc-touched" {}))]
       (t/is (= 2 (:freeze res))))
 
     (let [[row1 row2 :as rows] (th/db-query :file-tagged-object-thumbnail
@@ -114,9 +117,9 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})
+      (th/run-task! :file-gc {:file-id (:id file)})
 
-      (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (let [result (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed result))))
 
       ;; check if row2 related thumbnail row still exists
@@ -133,7 +136,8 @@
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
       ;; run the task again
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (binding [ct/*clock* (clock/fixed (ct/in-future {:minutes 31}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:delete res)))
         (t/is (= 0 (:freeze res))))
 
@@ -143,8 +147,9 @@
 
       ;; Run the storage gc deleted task, it should permanently delete
       ;; all storage objects related to the deleted thumbnails
-      (let [result (th/run-task! :storage-gc-deleted {:min-age 0})]
-        (t/is (= 1 (:deleted result))))
+      (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+        (let [res (th/run-task! :storage-gc-deleted {})]
+          (t/is (= 1 (:deleted res)))))
 
       (t/is (nil? (sto/get-object storage (:media-id row1))))
       (t/is (some? (sto/get-object storage (:media-id row2))))
@@ -216,9 +221,9 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (let [result (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed result))))
 
       ;; check if row1 related thumbnail row still exists
@@ -230,7 +235,7 @@
         (t/is (= (:object-id data1) (:object-id row)))
         (t/is (uuid? (:media-id row1))))
 
-      (let [result (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [result (th/run-task! :storage-gc-touched {})]
         (t/is (= 1 (:delete result))))
 
       ;; Check if storage objects still exists after file-gc
@@ -242,8 +247,9 @@
 
       ;; Run the storage gc deleted task, it should permanently delete
       ;; all storage objects related to the deleted thumbnails
-      (let [result (th/run-task! :storage-gc-deleted {:min-age 0})]
-        (t/is (= 1 (:deleted result))))
+      (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+        (let [result (th/run-task! :storage-gc-deleted {})]
+          (t/is (= 1 (:deleted result)))))
 
       (t/is (some? (sto/get-object storage (:media-id row2)))))))
 

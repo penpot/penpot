@@ -19,15 +19,18 @@
    [app.main.store :as st]
    [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.components.copy-button :refer [copy-button*]]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
+   [app.util.clipboard :as clipboard]
    [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -96,7 +99,7 @@
                      embed-images? (replace-map images-data))]
     (str/format page-template style-code markup-code)))
 
-(mf/defc code
+(mf/defc code*
   [{:keys [shapes frame on-expand from]}]
   (let [style-type*    (mf/use-state "css")
         markup-type*   (mf/use-state "html")
@@ -202,7 +205,7 @@
         (mf/use-fn
          (mf/deps style-code markup-code images-data)
          (fn []
-           (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))
+           (clipboard/to-clipboard (gen-all-code style-code markup-code images-data))
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
@@ -260,8 +263,9 @@
     [:div {:class (stl/css-case :element-options true
                                 :viewer-code-block (= :viewer from))}
      [:div {:class (stl/css :attributes-block)}
-      [:button {:class (stl/css :download-button)
-                :on-click handle-copy-all-code}
+      [:> button* {:variant "secondary"
+                   :class (stl/css :download-button)
+                   :on-click handle-copy-all-code}
        "Copy all code"]]
 
      #_[:div.attributes-block
@@ -288,10 +292,10 @@
        ;;              :options [{:label "CSS" :value "css"}]}]
 
        [:div {:class (stl/css :action-btns)}
-        [:button {:class (stl/css :expand-button)
-                  :on-click on-expand}
-         deprecated-icon/code]
-
+        [:> icon-button* {:variant "ghost"
+                          :aria-label "Expand"
+                          :on-click on-expand
+                          :icon i/code}]
         [:> copy-button* {:data copy-css-fn
                           :class (stl/css :css-copy-btn)
                           :on-copied on-style-copied}]]]
@@ -318,21 +322,21 @@
                         :rotated collapsed-markup?)}
          deprecated-icon/arrow]]
 
-       [:& radio-buttons {:selected markup-type
-                          :on-change set-markup
-                          :class (stl/css :code-lang-options)
-                          :wide true
-                          :name "listing-style"}
-        [:& radio-button {:value "html"
-                          :id :html}]
-        [:& radio-button {:value "svg"
-                          :id :svg}]]
+       [:> radio-buttons* {:selected markup-type
+                           :on-change set-markup
+                           :name "listing-style"
+                           :options [{:id "html"
+                                      :label "HTML"
+                                      :value "html"}
+                                     {:id "svg"
+                                      :label "SVG"
+                                      :value "svg"}]}]
 
        [:div {:class (stl/css :action-btns)}
-        [:button {:class (stl/css :expand-button)
-                  :on-click on-expand}
-         deprecated-icon/code]
-
+        [:> icon-button* {:variant "ghost"
+                          :aria-label "Expand"
+                          :on-click on-expand
+                          :icon i/code}]
         [:> copy-button* {:data copy-html-fn
                           :class (stl/css :html-copy-btn)
                           :on-copied on-markup-copied}]]]

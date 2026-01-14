@@ -12,13 +12,15 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.common :as gco]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.path-names :as cpn]
-   [app.common.spec :as us]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -26,6 +28,7 @@
    [app.common.types.library :as ctl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.path.segment :as segment]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
@@ -35,8 +38,7 @@
    [app.common.types.typography :as cty]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
-   [clojure.set :as set]
-   [clojure.spec.alpha :as s]))
+   [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -473,10 +475,10 @@
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
   [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (s/assert #{:colors :components :typographies} asset-type)
-  (s/assert (s/nilable ::us/uuid) asset-id)
-  (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid library-id)
+  (assert (contains? #{:colors :components :typographies} asset-type))
+  (assert (or (nil? asset-id) (uuid? asset-id)))
+  (assert (uuid? file-id))
+  (assert (uuid? library-id))
 
   (container-log :info asset-id
                  :msg "Sync file with library"
@@ -510,10 +512,10 @@
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
   [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (s/assert #{:colors :components :typographies} asset-type)
-  (s/assert (s/nilable ::us/uuid) asset-id)
-  (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid library-id)
+  (assert (contains? #{:colors :components :typographies} asset-type))
+  (assert (or (nil? asset-id) (uuid? asset-id)))
+  (assert (uuid? file-id))
+  (assert (uuid? library-id))
 
   (container-log :info asset-id
                  :msg "Sync local components with library"
@@ -1512,7 +1514,7 @@
                                                   :shapes [(:id shape)]
                                                   :index index-after
                                                   :ignore-touched true
-                                                  :syncing true}))
+                                                  :allow-altering-copies true}))
                      (update :undo-changes conj (make-change
                                                  container
                                                  {:type :mov-objects
@@ -1520,7 +1522,7 @@
                                                   :shapes [(:id shape)]
                                                   :index index-before
                                                   :ignore-touched true
-                                                  :syncing true})))]
+                                                  :allow-altering-copies true})))]
 
     (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
@@ -1876,6 +1878,44 @@
                    roperations'
                    uoperations')))))))
 
+(defn- set-path-new-values
+  [current-shape prev-shape transform]
+  (let [new-content   (segment/transform-content
+                       (:content current-shape)
+                       (gmt/transform-in (gpt/point 0 0) transform))
+        new-points    (-> (segment/content->selrect new-content)
+                          (grc/rect->points))
+        points-center (gco/points->center new-points)
+        new-selrect   (gsh/calculate-selrect new-points points-center)
+        shape         (assoc current-shape
+                             :content new-content
+                             :points new-points
+                             :selrect new-selrect)
+
+        prev-center   (segment/content-center (:content prev-shape))
+        delta         (gpt/subtract points-center (first new-points))
+        new-pos       (gpt/subtract prev-center delta)]
+    (gsh/absolute-move shape new-pos)))
+
+(defn- switch-path-change-value
+  [prev-shape           ;; The shape before the switch
+   current-shape        ;; The shape after the switch (a clean copy)
+   ref-shape            ;; The referenced shape on the main component
+                        ;; before the switch
+   attr]
+  (let [old-width (-> ref-shape :selrect :width)
+        new-width (-> prev-shape :selrect :width)
+
+        old-height (-> ref-shape :selrect :height)
+        new-height (-> prev-shape :selrect :height)
+
+        transform (-> (gpt/point (/ new-width old-width)
+                                 (/ new-height old-height))
+                      (gmt/scale-matrix))
+
+        shape     (set-path-new-values current-shape prev-shape transform)]
+    (get shape attr)))
+
 
 (defn- switch-text-change-value
   [prev-content         ;; The :content of the text before the switch
@@ -2027,6 +2067,10 @@
                (= :content attr)
                (touched attr-group))
 
+              path-change?
+              (and (= :path (:type current-shape))
+                   (contains? #{:points :selrect :content} attr))
+
               ;; position-data is a special case because can be affected by :geometry-group and :content-group
               ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
               ;; so it's calculated again
@@ -2054,6 +2098,12 @@
                                             (:content current-shape)
                                             (:content origin-ref-shape)
                                             touched)
+
+                  path-change?
+                  (switch-path-change-value previous-shape
+                                            current-shape
+                                            origin-ref-shape
+                                            attr)
 
                   :else
                   (get previous-shape attr)))
@@ -2441,11 +2491,13 @@
                (ctk/get-swap-slot))
           (constantly false))
 
+        ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
+        ;; mask property as part of the sanitization check on generate-delete-shapes, passing "ignore-mask" to prevent this
         [all-parents changes]
         (-> changes
             (cls/generate-delete-shapes
              file page objects (d/ordered-set (:id shape))
-             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn}))
+             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn :ignore-mask true}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
@@ -2815,13 +2867,15 @@
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
 
-        ;; If there is an alt-duplication of a variant, change its parent to root
-        ;; so the copy is made as a child of root
+        ;; If there is an alt-duplication we change to root
+        ;; For variants so the copy is made as a child of root
         ;; This is because inside a variant-container can't be a copy
+        ;; For other shape this way the layout won't be changed when duplicated
+        ;; and if you move outside the layout will not change
         shapes  (map (fn [shape]
-                       (if (and alt-duplication? (ctk/is-variant? shape))
-                         (assoc shape :parent-id uuid/zero :frame-id nil)
-                         shape))
+                       (cond-> shape
+                         alt-duplication?
+                         (assoc :parent-id uuid/zero :frame-id uuid/zero)))
                      shapes)
 
 

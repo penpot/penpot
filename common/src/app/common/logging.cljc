@@ -43,8 +43,6 @@
   "
   #?(:cljs (:require-macros [app.common.logging :as l]))
   (:require
-   #?(:clj  [clojure.edn :as edn]
-      :cljs [cljs.reader :as edn])
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]

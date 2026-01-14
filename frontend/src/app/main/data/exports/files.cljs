@@ -12,6 +12,7 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
+   [app.util.sse :as sse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -32,25 +33,18 @@
 (def check-export-files
   (sm/check-fn schema:export-files))
 
-(defn export-files
-  [files format]
-  (assert (contains? valid-formats format)
-          "expected valid export format")
-
+(defn open-export-dialog
+  [files]
   (let [files (check-export-files files)]
-
     (ptk/reify ::export-files
       ptk/WatchEvent
       (watch [_ state _]
-        (let [team-id  (get state :current-team-id)
-              evname   (if (= format :legacy-zip)
-                         "export-standard-files"
-                         "export-binary-files")]
+        (let [team-id (get state :current-team-id)]
           (rx/merge
-           (rx/of (ptk/event ::ev/event {::ev/name evname
-                                         ::ev/origin "dashboard"
-                                         :format format
-                                         :num-files (count files)}))
+           (rx/of (ev/event {::ev/name "export-binary-files"
+                             ::ev/origin "dashboard"
+                             :format "binfile-v3"
+                             :num-files (count files)}))
            (->> (rx/from files)
                 (rx/mapcat
                  (fn [file]
@@ -58,11 +52,29 @@
                         (rx/map #(assoc file :has-libraries %)))))
                 (rx/reduce conj [])
                 (rx/map (fn [files]
-                          (modal/show
-                           {:type ::export-files
-                            :team-id team-id
-                            :files files
-                            :format format}))))))))))
+                          (modal/show {:type ::export-files
+                                       :team-id team-id
+                                       :files files}))))))))))
+
+(defn export-files
+  [& {:keys [type files]}]
+  (->> (rx/from files)
+       (rx/mapcat
+        (fn [file]
+          (->> (rp/cmd! ::sse/export-binfile {:file-id (:id file)
+                                              :version 3
+                                              :include-libraries (= type :all)
+                                              :embed-assets (= type :merge)})
+               (rx/filter sse/end-of-stream?)
+               (rx/map sse/get-payload)
+               (rx/map (fn [uri]
+                         {:file-id (:id file)
+                          :uri uri
+                          :filename (:name file)}))
+               (rx/catch (fn [cause]
+                           (let [error (ex-data cause)]
+                             (rx/of {:file-id (:id file)
+                                     :error error})))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Team Request

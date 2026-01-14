@@ -1,14 +1,8 @@
 # CHANGELOG
 
-## 2.12.0 (Unreleased)
+## 2.14.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
-
-- The backend RPC API URLS are changed from `/api/rpc/command/<name>`
-  to `/api/main/methods/<name>` (the previou PATH is preserved for
-  backward compatibility; however, if you are a user of this API, it
-  is strongly recommended that you adapt your code to use the new
-  PATH.
 
 ### :rocket: Epics and highlights
 
@@ -16,8 +10,125 @@
 
 ### :sparkles: New features & Enhancements
 
-- Select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
-- Toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
+- Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
+- Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
+- Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
+
+### :bug: Bugs fixed
+
+### :bug: Bugs fixed
+
+## 2.13.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+### :rocket: Epics and highlights
+
+### :heart: Community contributions (Thank you!)
+
+- Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)
+
+### :sparkles: New features & Enhancements
+
+- Add new Box Shadow Tokens [Taiga #10201](https://tree.taiga.io/project/penpot/us/10201)
+- Make i18n translation files load on-demand [Taiga #11474](https://tree.taiga.io/project/penpot/us/11474)
+- Add deleted files to dashboard [Taiga #8149](https://tree.taiga.io/project/penpot/us/8149)
+
+### :bug: Bugs fixed
+
+- Fix problem when drag+duplicate a full grid [Taiga #12565](https://tree.taiga.io/project/penpot/issue/12565)
+- Fix problem when pasting elements in reverse flex layout [Taiga #12460](https://tree.taiga.io/project/penpot/issue/12460)
+- Fix wrong board size presets in Android [Taiga #12339](https://tree.taiga.io/project/penpot/issue/12339)
+- Fix problem with grid layout components and auto sizing [Github #7797](https://github.com/penpot/penpot/issues/7797)
+- Fix some alignments on inspect tab [Taiga #12915](https://tree.taiga.io/project/penpot/issue/12915)
+- Fix problem with text editor maintaining previous styles [Taiga #12835](https://tree.taiga.io/project/penpot/issue/12835)
+- Fix color assets from shared libraries not appearing as assets in Selected colors panel [Taiga #12957](https://tree.taiga.io/project/penpot/issue/12957)
+- Fix CSS generated box-shadow property [Taiga #12997](https://tree.taiga.io/project/penpot/issue/12997)
+- Fix inner shadow selector on shadow token [Taiga #12951](https://tree.taiga.io/project/penpot/issue/12951)
+- Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
+- Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
+- Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
+
+## 2.12.1
+
+### :bug: Bugs fixed
+
+- Fix setting a portion of text as bold or underline messes things up [Github #7980](https://github.com/penpot/penpot/issues/7980)
+- Fix problem with style in fonts input [Taiga #12935](https://tree.taiga.io/project/penpot/issue/12935)
+- Fix problem with path editor and right click [Github #7917](https://github.com/penpot/penpot/issues/7917)
+
+## 2.12.0
+
+### :boom: Breaking changes & Deprecations
+
+#### Backend RPC API changes
+
+The backend RPC API URLS are changed from `/api/rpc/command/<name>` to
+`/api/main/methods/<name>`. The previous PATH is preserved for backward
+compatibility; however, if you are a user of this API, it is strongly
+recommended that you adapt your code to use the new PATH.
+
+#### Updated SSO Callback URL
+
+The OAuth / Single Sign-On (SSO) callback endpoint has changed to
+align with the new OpenID Connect (OIDC) implementation.
+
+Old callback URL:
+
+```
+https://<your_domain>/api/auth/oauth/<oauth_provider>/callback
+```
+
+New callback URL:
+
+```
+https://<your_domain>/api/auth/oidc/callback
+```
+
+**Action required:**
+
+If you have SSO/Social-Auth configured on your on-premise instance,
+the following actions are required before update:
+
+Update your OAuth or SSO provider configuration (e.g., Okta, Google,
+Azure AD, etc.) to use the new callback URL. Failure to update may
+result in authentication failures after upgrading.
+
+**Reason for change:**
+
+This update standardizes all authentication flows under the single URL
+and makis it more modular, enabling the ability to configure SSO auth
+provider dinamically.
+
+#### Changes on default docker compose
+
+We have updated the `docker/images/docker-compose.yaml` with a small
+change related to the `PENPOT_SECRET_KEY`. Since this version, this
+environment variable is also required on exporter. So if you are using
+penpot on-premise you will need to apply the same changes on your own
+`docker-compose.yaml` file.
+
+We have removed the Minio server from the `docker/images/docker-compose.yml`
+example. It's still usable as before, we just removed the example.
+
+### :rocket: Epics and highlights
+
+### :heart: Community contributions (Thank you!)
+
+- Ensure consistent snap behavior across all zoom levels [Github #7774](https://github.com/penpot/penpot/pull/7774) by [@Tokytome](https://github.com/Tokytome)
+- Fix crash in token grid view due to tooltip validation (by @dfelinto) [Github #7887](https://github.com/penpot/penpot/pull/7887)
+- Enable Hindi translations on the application
+
+### :sparkles: New features & Enhancements
+
+- Add the ability to select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
+- Add toggle for switching boolean property values [Taiga #12341](https://tree.taiga.io/project/penpot/us/12341)
+- Make the file export process more reliable [Taiga #12555](https://tree.taiga.io/project/penpot/us/12555)
+- Add auth flow changes [Taiga #12333](https://tree.taiga.io/project/penpot/us/12333)
+- Add new shape validation mechanism for shapes [Github #7696](https://github.com/penpot/penpot/pull/7696)
+- Apply color tokens from sidebar [Taiga #11353](https://tree.taiga.io/project/penpot/us/11353)
+- Display tokens in the inspect tab [Taiga #9313](https://tree.taiga.io/project/penpot/us/9313)
+- Refactor clipboard behavior to assess some minor inconsistencies and make pasting binary data faster. [Taiga #12571](https://tree.taiga.io/project/penpot/task/12571)
 
 ### :bug: Bugs fixed
 
@@ -32,6 +143,19 @@
 - Fix shortcut conflict in text editor (increase/decrease font size vs word selection)
 - Fix problem with plugins generating code for pages different than current one [Taiga #12312](https://tree.taiga.io/project/penpot/issue/12312)
 - Fix input confirmation behavior is not uniform [Taiga #12294](https://tree.taiga.io/project/penpot/issue/12294)
+- Fix copy/pasting application/transit+json [Taiga #12721](https://tree.taiga.io/project/penpot/issue/12721)
+- Fix problem with plugins content attribute [Plugins #209](https://github.com/penpot/penpot-plugins/issues/209)
+- Fix U and E icon displayed in project list [Taiga #12806](https://tree.taiga.io/project/penpot/issue/12806)
+- Fix unpublish library modal not scrolling a long file list [Taiga #12285](https://tree.taiga.io/project/penpot/issue/12285)
+- Fix incorrect interaction betwen hower and scroll on assets sidebar [Taiga #12389](https://tree.taiga.io/project/penpot/issue/12389)
+- Fix switch variants with paths [Taiga #12841](https://tree.taiga.io/project/penpot/issue/12841)
+- Fix referencing typography tokens on font-family tokens [Taiga #12492](https://tree.taiga.io/project/penpot/issue/12492)
+- Fix horizontal scroll on layer panel [Taiga #12843](https://tree.taiga.io/project/penpot/issue/12843)
+- Fix unicode handling on email template abbreviation filter [Github #7966](https://github.com/penpot/penpot/pull/7966)
+
+## 2.11.1
+
+- Fix WEBP shape export on docker images [Taiga #3838](https://tree.taiga.io/project/penpot/issue/3838)
 
 ## 2.11.0
 
