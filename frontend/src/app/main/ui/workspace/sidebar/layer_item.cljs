@@ -33,9 +33,24 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+;; Coalesce sidebar hover highlights to 1 frame to avoid long tasks
+(defonce ^:private sidebar-hover-queue (atom {:enter #{} :leave #{}}))
+(defonce ^:private sidebar-hover-pending? (atom false))
+
+(defn- schedule-sidebar-hover-flush []
+  (when (compare-and-set! sidebar-hover-pending? false true)
+    (ts/raf
+     (fn []
+       (let [{:keys [enter leave]} (swap! sidebar-hover-queue (constantly {:enter #{} :leave #{}}))]
+         (reset! sidebar-hover-pending? false)
+         (when (seq leave)
+           (apply st/emit! (map dw/dehighlight-shape leave)))
+         (when (seq enter)
+           (apply st/emit! (map dw/highlight-shape enter))))))))
+
 (mf/defc layer-item-inner
   {::mf/wrap-props false}
-  [{:keys [item depth parent-size name-ref children ref
+  [{:keys [item depth parent-size name-ref children ref style
            ;; Flags
            read-only? highlighted? selected? component-tree?
            filtered? expanded? dnd-over? dnd-over-top? dnd-over-bot? hide-toggle?
@@ -82,7 +97,8 @@
                     :dnd-over dnd-over?
                     :dnd-over-top dnd-over-top?
                     :dnd-over-bot dnd-over-bot?
-                    :root-board parent-board?)}
+                    :root-board parent-board?)
+            :style style}
       [:span {:class (stl/css-case
                       :tab-indentation true
                       :filtered filtered?)
@@ -166,10 +182,12 @@
 
      children]))
 
+;; Memoized for performance
 (mf/defc layer-item
   {::mf/props :obj
-   ::mf/memo true}
-  [{:keys [index item selected objects sortable? filtered? depth parent-size component-child? highlighted]}]
+   ::mf/wrap [mf/memo]}
+  [{:keys [index item selected objects sortable? filtered? depth parent-size component-child? highlighted style render-children?]
+    :or {render-children? true}}]
   (let [id                (:id item)
         blocked?          (:blocked item)
         hidden?           (:hidden item)
@@ -246,13 +264,21 @@
         (mf/use-fn
          (mf/deps id)
          (fn [_]
-           (st/emit! (dw/highlight-shape id))))
+           (swap! sidebar-hover-queue (fn [{:keys [enter leave] :as q}]
+                                        (-> q
+                                            (assoc :enter (conj enter id))
+                                            (assoc :leave (disj leave id)))))
+           (schedule-sidebar-hover-flush)))
 
         on-pointer-leave
         (mf/use-fn
          (mf/deps id)
          (fn [_]
-           (st/emit! (dw/dehighlight-shape id))))
+           (swap! sidebar-hover-queue (fn [{:keys [enter leave] :as q}]
+                                        (-> q
+                                            (assoc :enter (disj enter id))
+                                            (assoc :leave (conj leave id)))))
+           (schedule-sidebar-hover-flush)))
 
         on-context-menu
         (mf/use-fn
@@ -338,14 +364,18 @@
         component-tree? (or component-child? (ctk/instance-root? item) (ctk/instance-head? item))
 
         enable-drag      (mf/use-fn #(reset! drag-disabled* false))
-        disable-drag     (mf/use-fn #(reset! drag-disabled* true))]
+        disable-drag     (mf/use-fn #(reset! drag-disabled* true))
+
+        ;; Lazy loading of child elements via IntersectionObserver
+        children-count*  (mf/use-state 0)
+        children-count   (deref children-count*)
+        lazy-ref         (mf/use-ref nil)
+        observer-var     (mf/use-var nil)
+        chunk-size       50]
 
     (mf/with-effect [selected? selected]
       (let [single? (= (count selected) 1)
             node (mf/ref-val ref)
-            ;; NOTE: Neither get-parent-at nor get-parent-with-selector
-            ;; work if the component template changes, so we need to
-            ;; seek for an alternate solution. Maybe use-context?
             scroll-node (dom/get-parent-with-data node "scroll-container")
             parent-node (dom/get-parent-at node 2)
             first-child-node (dom/get-first-child parent-node)
@@ -362,6 +392,61 @@
 
         #(when (some? subid)
            (rx/dispose! subid))))
+
+    ;; Setup scroll-driven lazy loading when expanded
+    ;; and ensures selected children are loaded immediately
+    (mf/with-effect [expanded? (:shapes item) selected]
+      (let [shapes-vec (:shapes item)
+            total (count shapes-vec)]
+        (if expanded?
+          (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
+                ;; Find if any selected id is a direct child and get its render index
+                selected-child-render-idx
+                (when (and (> total chunk-size) (seq selected))
+                  (let [shapes-reversed (vec (reverse shapes-vec))]
+                    (some (fn [sel-id]
+                            (let [idx (.indexOf shapes-reversed sel-id)]
+                              (when (>= idx 0) idx)))
+                          selected)))
+                ;; Load at least enough to include the selected child plus extra
+                ;; for context (so it can be centered in the scroll view)
+                min-count (if selected-child-render-idx
+                            (+ selected-child-render-idx chunk-size)
+                            chunk-size)
+                current @children-count*
+                new-count (min total (max current chunk-size min-count))]
+            (reset! children-count* new-count))
+          (reset! children-count* 0)))
+      (fn []
+        (when-let [obs ^js @observer-var]
+          (.disconnect obs)
+          (reset! observer-var nil))))
+
+    ;; Re-observe sentinel whenever children-count changes (sentinel moves)
+    (mf/with-effect [children-count expanded?]
+      (let [total (count (:shapes item))
+            node (mf/ref-val ref)
+            scroll-node (dom/get-parent-with-data node "scroll-container")
+            lazy-node (mf/ref-val lazy-ref)]
+        ;; Disconnect previous observer
+        (when-let [obs ^js @observer-var]
+          (.disconnect obs)
+          (reset! observer-var nil))
+        ;; Setup new observer if there are more children to load
+        (when (and expanded?
+                   (< children-count total)
+                   scroll-node
+                   lazy-node)
+          (let [cb (fn [entries]
+                     (when (and (seq entries)
+                                (.-isIntersecting (first entries)))
+                       ;; Load next chunk when sentinel intersects
+                       (let [current @children-count*
+                             next-count (min total (+ current chunk-size))]
+                         (reset! children-count* next-count))))
+                observer (js/IntersectionObserver. cb #js {:root scroll-node})]
+            (.observe observer lazy-node)
+            (reset! observer-var observer)))))
 
     [:& layer-item-inner
      {:ref dref
@@ -387,24 +472,32 @@
       :on-enable-drag enable-drag
       :on-disable-drag disable-drag
       :on-toggle-visibility toggle-visibility
-      :on-toggle-blocking toggle-blocking}
+      :on-toggle-blocking toggle-blocking
+      :style style}
 
-     (when (and (:shapes item) expanded?)
+     (when (and render-children?
+                (:shapes item)
+                expanded?)
        [:div {:class (stl/css-case
                       :element-children true
                       :parent-selected selected?
                       :sticky-children parent-board?)
               :data-testid (dm/str "children-" id)}
-        (for [[index id] (reverse (d/enumerate (:shapes item)))]
-          (when-let [item (get objects id)]
-            [:& layer-item
-             {:item item
-              :highlighted highlighted
-              :selected selected
-              :index index
-              :objects objects
-              :key (dm/str id)
-              :sortable? sortable?
-              :depth depth
-              :parent-size parent-size
-              :component-child? component-tree?}]))])]))
+        (let [all-children (reverse (d/enumerate (:shapes item)))
+              visible      (take children-count all-children)]
+          (for [[index id] visible]
+            (when-let [item (get objects id)]
+              [:& layer-item
+               {:item item
+                :highlighted highlighted
+                :selected selected
+                :index index
+                :objects objects
+                :key (dm/str id)
+                :sortable? sortable?
+                :depth depth
+                :parent-size parent-size
+                :component-child? component-tree?}])))
+        (when (< children-count (count (:shapes item)))
+          [:div {:ref lazy-ref
+                 :style {:min-height 1}}])])]))
