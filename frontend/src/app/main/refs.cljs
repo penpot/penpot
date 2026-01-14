@@ -305,7 +305,7 @@
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
 (def workspace-page-objects
-  (l/derived dsh/lookup-page-objects st/state))
+  (l/derived dsh/lookup-page-objects st/state identical?))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
