@@ -6,6 +6,7 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/_utils.scss" as *;
 
 .element-set {
   display: grid;
@@ -156,7 +157,6 @@
   gap: deprecated.$s-4;
 }
 
-// TODO: Add a proper variable to this sizing
 .numeric-input-measures {
   --dropdown-width: var(--7-columns-dropdown-width);
 }

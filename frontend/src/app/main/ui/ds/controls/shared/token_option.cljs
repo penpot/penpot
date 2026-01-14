@@ -18,7 +18,7 @@
   [:map
    [:id {:optiona true} :string]
    [:ref some?]
-   [:resolved {:optional true} [:or :int :string]]
+   [:resolved {:optional true} [:or :int :string :float]]
    [:name {:optional true} :string]
    [:on-click {:optional true} fn?]
    [:selected {:optional true} :boolean]

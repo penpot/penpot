@@ -223,7 +223,6 @@
             (cond
               (= existing ::not-found) (assoc acc t-attr new-val)
               (= existing new-val)     acc
-              (nil? new-val)           acc
               :else                    (assoc acc t-attr :multiple))))
 
         merge-shape-attr
@@ -237,10 +236,8 @@
         (fn [acc shape-attrs applied-tokens]
           "Merges token values across all shape attributes.
            For each shape attribute, its corresponding token attributes are merged
-           into the accumulator. If applied tokens are empty, the accumulator is returned unchanged."
-          (if (seq applied-tokens)
-            (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs)
-            acc))
+           into the accumulator."
+          (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]

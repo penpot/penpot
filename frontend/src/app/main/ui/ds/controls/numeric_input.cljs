@@ -183,6 +183,7 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
+   [:inner-class {:optional true} :string]
    [:value {:optional true} [:maybe [:or
                                      :int
                                      :float
@@ -209,7 +210,8 @@
 
 (mf/defc numeric-input*
   {::mf/schema schema:numeric-input}
-  [{:keys [id class value default placeholder icon disabled
+  [{:keys [id class value default placeholder
+           icon disabled inner-class
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
@@ -624,6 +626,7 @@
         (mf/spread-props props {:ref ref
                                 :type "text"
                                 :id id
+                                :class inner-class
                                 :placeholder (if is-multiple?
                                                (tr "labels.mixed-values")
                                                placeholder)
@@ -644,7 +647,7 @@
                                                                    :class (stl/css :icon)}]]))
                                 :slot-end (when-not disabled
                                             (when (some? tokens)
-                                              (mf/html [:> icon-button* {:variant "action"
+                                              (mf/html [:> icon-button* {:variant "ghost"
                                                                          :icon i/tokens
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
@@ -669,6 +672,7 @@
                               :on-token-key-down on-token-key-down
                               :disabled disabled
                               :on-blur on-blur
+                              :class inner-class
                               :slot-start (when icon
                                             (mf/html [:> tooltip*
                                                       {:content property

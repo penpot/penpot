@@ -33,12 +33,17 @@
 }
 
 .invisible-button {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   opacity: var(--opacity-button);
-
+  background-color: var(--color-background-quaternary);
   &:hover {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
   &:focus {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
 }

@@ -78,7 +78,7 @@
                                                       (nil? (get values name)))
                                                 (tr "settings.multiple")
                                                 "--")
-                                 :class (stl/css :numeric-input-measures)
+                                 :class (stl/css :numeric-input-layout)
                                  :applied-token (get applied-tokens name)
                                  :tokens tokens
                                  :align align

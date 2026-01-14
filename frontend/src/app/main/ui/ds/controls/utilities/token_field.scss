@@ -8,6 +8,7 @@
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
 @use "ds/colors.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .token-field {
   --token-field-bg-color: var(--color-background-tertiary);
@@ -16,9 +17,7 @@
   --token-field-outline-color: none;
   --token-field-height: var(--sp-xxxl);
   --token-field-margin: unset;
-
   display: grid;
-  grid-template-columns: 1fr auto;
   column-gap: var(--sp-xs);
   align-items: center;
   position: relative;
@@ -27,6 +26,7 @@
   border-radius: $br-8;
   padding: var(--sp-xs);
   outline: $b-1 solid var(--token-field-outline-color);
+  position: relative;
 
   &:hover {
     --token-field-bg-color: var(--color-background-quaternary);
@@ -39,7 +39,7 @@
 }
 
 .with-icon {
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
 }
 
 .token-field-disabled {
@@ -57,14 +57,17 @@
   --pill-bg-color: var(--color-background-tertiary);
   --pill-fg-color: var(--color-token-foreground);
   @include t.use-typography("code-font");
-  height: var(--sp-xxl);
-  width: fit-content;
+  @include textEllipsis;
+  display: block;
+  block-size: var(--sp-xxl);
+  inline-size: fit-content;
   background: var(--pill-bg-color);
   cursor: pointer;
   border: $b-1 solid var(--pill-border-color);
   color: var(--pill-fg-color);
   border-radius: $br-6;
   padding-inline: $sz-6;
+  max-inline-size: 100%;
   &:hover {
     --pill-bg-color: var(--color-token-background);
     --pill-fg-color: var(--color-foreground-primary);
@@ -103,24 +106,29 @@
 }
 
 .pill-dot {
-  width: $sz-6;
-  height: $sz-6;
+  inline-size: $sz-6;
+  block-size: $sz-6;
   outline: var(--sp-xxs) solid var(--color-background-primary);
   border-radius: 50%;
   background-color: var(--color-foreground-error);
-  margin-left: var(--sp-xs);
+  margin-inline-start: var(--sp-xs);
   position: absolute;
-  right: 0;
-  top: 0;
+  inset-inline-end: 0;
+  inset-block-start: 0;
 }
 
 .invisible-button {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   opacity: var(--opacity-button);
-
+  background-color: var(--color-background-quaternary);
   &:hover {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
   &:focus {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
 }

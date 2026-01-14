@@ -600,10 +600,7 @@
           [:> border-radius-menu* {:class (stl/css :border-radius)
                                    :ids ids
                                    :values values
-                                   :applied-tokens applied-tokens
-                                   :shapes shapes
-                                   :shape shape}])])
-
+                                   :applied-tokens applied-tokens}])])
      (when (or (options :clip-content)
                (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
