@@ -284,6 +284,10 @@ pub extern "C" fn set_view_end() {
             performance::end_measure!("set_view_end::clear_tile_index");
             performance::end_timed_log!("clear_tile_index", _clear_start);
         }
+        // Sync cached_viewbox with current viewbox to ensure accurate
+        // comparison in subsequent calls, especially during rapid zoom+pan
+        // interactions where multiple set_view calls occur before set_view_end.
+        state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
         performance::end_timed_log!("set_view_end", _end_start);
         #[cfg(feature = "profile-macros")]

@@ -2228,6 +2228,13 @@ impl RenderState {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
     }
 
+    /// Updates the cached viewbox to match the current viewbox.
+    /// This should be called at the end of view interactions to ensure
+    /// that cached_viewbox reflects the most recent state for the next comparison.
+    pub fn sync_cached_viewbox(&mut self) {
+        self.cached_viewbox = self.viewbox;
+    }
+
     pub fn mark_touched(&mut self, uuid: Uuid) {
         self.touched_ids.insert(uuid);
     }
