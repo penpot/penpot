@@ -347,6 +347,12 @@
                                  (with-meta {:team-id team-id
                                              :file-id file-id}))))))
 
+              ;; Install dev perf observers once the workspace is ready
+              (->> stream
+                   (rx/filter (ptk/type? ::workspace-initialized))
+                   (rx/take 1)
+                   (rx/map (fn [_] (ev/init!))))
+
               (->> stream
                    (rx/filter (ptk/type? ::dps/persistence-notification))
                    (rx/take 1)
