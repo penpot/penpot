@@ -17,6 +17,7 @@
 ### :bug: Bugs fixed
 
 - Fix prototype connections lost when switching between variants [Taiga #12812](https://tree.taiga.io/project/penpot/issue/12812)
+- Fix wrong image in the onboarding invitation block [Taiga #13040](https://tree.taiga.io/project/penpot/issue/13040)
 
 ## 2.13.0 (Unreleased)
 
