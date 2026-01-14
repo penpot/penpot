@@ -2497,7 +2497,7 @@
         (-> changes
             (cls/generate-delete-shapes
              file page objects (d/ordered-set (:id shape))
-             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn :ignore-mask true}))
+             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn :ignore-mask true :ignore-flows-for #{(:id shape)}}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
