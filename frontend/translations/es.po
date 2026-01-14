@@ -4428,6 +4428,10 @@ msgstr "Actualizar referencias de token"
 msgid "workspace.tokens.renaming-token-from-to"
 msgstr "Renombrando el token de '%s' a '%s'"
 
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+msgid "workspace.tokens.warning-name-change"
+msgstr "Cambiar el nombre de este token romperá cualquier referencia a su nombre anterior."
+
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs
 msgid "workspace.tokens.references-found"
 msgstr "%s referencias encontradas en tu diseño"
