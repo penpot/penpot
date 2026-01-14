@@ -16,7 +16,7 @@
 
 ### :bug: Bugs fixed
 
-### :bug: Bugs fixed
+- Fix prototype connections lost when switching between variants [Taiga #12812](https://tree.taiga.io/project/penpot/issue/12812)
 
 ## 2.13.0 (Unreleased)
 

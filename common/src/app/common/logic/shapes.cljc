@@ -124,9 +124,11 @@
                         ;; on the deletion process. It should receive a shape and
                         ;; return a boolean
                         ignore-children-fn
-                        ignore-mask]
+                        ignore-mask
+                        ignore-flows-for]
                  :or {ignore-children-fn (constantly false)
-                      ignore-mask false}}]
+                      ignore-mask false
+                      ignore-flows-for #{}}}]
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
@@ -194,7 +196,8 @@
          (->> (:flows page)
               (reduce
                (fn [changes [id flow]]
-                 (if (id-to-delete? (:starting-frame flow))
+                 (if (and (id-to-delete? (:starting-frame flow))
+                          (not (contains? ignore-flows-for (:starting-frame flow))))
                    (-> changes
                        (pcb/with-page page)
                        (pcb/set-flow id nil))
