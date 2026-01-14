@@ -1212,7 +1212,12 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
+    pub fn render_shape_exit(
+        &mut self,
+        element: &Shape,
+        visited_mask: bool,
+        clip_bounds: Option<ClipStack>,
+    ) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -1268,7 +1273,7 @@ impl RenderState {
             element_strokes.to_mut().clip_content = false;
             self.render_shape(
                 &element_strokes,
-                None,
+                clip_bounds,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
                 SurfaceId::InnerShadows,
@@ -1528,7 +1533,7 @@ impl RenderState {
             if visited_children {
                 // Skip render_shape_exit for flattened containers
                 if !element.can_flatten() {
-                    self.render_shape_exit(element, visited_mask);
+                    self.render_shape_exit(element, visited_mask, clip_bounds);
                 }
                 continue;
             }
