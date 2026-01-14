@@ -18,6 +18,8 @@
 
 - Fix prototype connections lost when switching between variants [Taiga #12812](https://tree.taiga.io/project/penpot/issue/12812)
 - Fix wrong image in the onboarding invitation block [Taiga #13040](https://tree.taiga.io/project/penpot/issue/13040)
+- Fix wrong register image [Taiga #12955](https://tree.taiga.io/project/penpot/task/12955)
+
 
 ## 2.13.0 (Unreleased)
 
