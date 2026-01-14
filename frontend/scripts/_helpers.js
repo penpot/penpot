@@ -257,6 +257,9 @@ const markedOptions = {
 marked.use(markedOptions);
 
 export async function compileTranslations() {
+  const outputDir = "resources/public/js/";
+  await fs.mkdir(outputDir, { recursive: true });
+
   const langs = [
     "ar",
     "ca",
@@ -338,9 +341,34 @@ export async function compileTranslations() {
     }
 
     const esm = `export default ${JSON.stringify(result, null, 0)};\n`;
-    const outputDir = "resources/public/js/";
     const outputFile = ph.join(outputDir, "translation." + lang + ".js");
     await fs.writeFile(outputFile, esm);
+  }
+}
+
+export async function ensureConfig() {
+  const outputDir = "resources/public/js/";
+  const outputFile = ph.join(outputDir, "config.js");
+
+  await fs.mkdir(outputDir, { recursive: true });
+
+  try {
+    await fs.access(outputFile);
+  } catch {
+    await fs.writeFile(outputFile, 'var penpotFlags = "";\n');
+  }
+}
+
+export async function ensureWorkerRender() {
+  const outputDir = "resources/public/js/worker/";
+  const outputFile = ph.join(outputDir, "render.js");
+
+  await fs.mkdir(outputDir, { recursive: true });
+
+  try {
+    await fs.access(outputFile);
+  } catch {
+    await fs.writeFile(outputFile, "");
   }
 }
 

@@ -303,7 +303,7 @@
     ;;       harder to follow through.
     (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
-        (->> wasm.api/module
+        (->> @wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
                          (let [init? (try
