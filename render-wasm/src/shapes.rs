@@ -1512,6 +1512,8 @@ impl Shape {
         !self.shadows.is_empty()
             || self.blur.is_some()
             || !self.strokes.is_empty()
+            || !self.transform.is_identity()
+            || !math::is_close_to(self.rotation, 0.0)
             || matches!(self.shape_type, Type::Group(_) | Type::Frame(_))
     }
 
