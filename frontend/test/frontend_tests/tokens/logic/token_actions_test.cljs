@@ -260,7 +260,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "dimensions.sm")
-                                       :on-update-shape dwta/update-shape-dimensions})]]
+                                       :on-update-shape dwta/apply-dimensions-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -333,7 +333,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape dwta/update-shape-dimensions})]]
+                                       :on-update-shape dwta/apply-dimensions-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]

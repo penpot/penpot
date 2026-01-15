@@ -54,7 +54,7 @@
   {ctt/border-radius-keys dwta/update-shape-radius-for-corners
    ctt/color-keys dwta/update-fill-stroke
    ctt/stroke-width-keys dwta/update-stroke-width
-   ctt/sizing-keys dwta/update-shape-dimensions
+   ctt/sizing-keys dwta/apply-dimensions-token
    ctt/opacity-keys dwta/update-opacity
    ctt/rotation-keys dwta/update-rotation
 
@@ -73,8 +73,8 @@
    #{:x :y} dwta/update-shape-position
    #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
    #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
-   #{:column-gap :row-gap} dwta/update-layout-spacing
-   #{:width :height} dwta/update-shape-dimensions
+   #{:column-gap :row-gap} dwta/update-layout-gap
+   #{:width :height} dwta/apply-dimensions-token
    #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits})
 
 (def ^:private attribute-actions-map
