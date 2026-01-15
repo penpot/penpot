@@ -13,11 +13,79 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [clojure.set :as set]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [malli.core :as m]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Token value
+
+(defn- token-value-empty-fn
+  [{:keys [value]}]
+  (when (or (str/empty? value)
+            (str/blank? value))
+    (tr "workspace.tokens.empty-input")))
+
+(def schema:token-value-generic
+  [::sm/text {:error/fn token-value-empty-fn}])
+
+(def schema:token-value-composite-ref
+  [::sm/text {:error/fn token-value-empty-fn}])
+
+(def schema:token-value-font-family
+  [:vector :string])
+
+(def schema:token-value-typography-map
+  [:map
+   [:font-family {:optional true} schema:token-value-font-family]
+   [:font-weight {:optional true} schema:token-value-generic]
+   [:font-size {:optional true} schema:token-value-generic]
+   [:line-height {:optional true} schema:token-value-generic]
+   [:letter-spacing {:optional true} schema:token-value-generic]
+   [:paragraph-spacing {:optional true} schema:token-value-generic]
+   [:text-decoration {:optional true} schema:token-value-generic]
+   [:text-case {:optional true} schema:token-value-generic]])
+
+(def schema:token-value-typography
+  [:or
+   schema:token-value-typography-map
+   schema:token-value-composite-ref])
+
+(def schema:token-value-shadow-vector
+  [:vector
+   [:map
+    [:offset-x :string]
+    [:offset-y :string]
+    [:blur
+     [:and
+      :string
+      [:fn {:error/fn #(tr "workspace.tokens.shadow-token-blur-value-error")}
+       (fn [blur]
+         (let [n (d/parse-double blur)]
+           (or (nil? n) (not (< n 0)))))]]]
+    [:spread
+     [:and
+      :string
+      [:fn {:error/fn #(tr "workspace.tokens.shadow-token-spread-value-error")}
+       (fn [spread]
+         (let [n (d/parse-double spread)]
+           (or (nil? n) (not (< n 0)))))]]]
+    [:color :string]
+    [:inset {:optional true} :boolean]]])
+
+(def schema:token-value-shadow
+  [:or
+   schema:token-value-shadow-vector
+   schema:token-value-composite-ref])
+
+(def schema:token-value
+  [:or
+   schema:token-value-font-family
+   schema:token-value-typography
+   schema:token-value-shadow
+   schema:token-value-generic])
 
 ;; Token
 
@@ -40,11 +108,54 @@
 
 (defn make-token-schema
   [tokens-tree]
-  (sm/merge
-   cto/schema:token-attrs
-   [:map
-    [:name (make-token-name-schema tokens-tree)]
-    [:description {:optional true} schema:token-description]]))
+  [:and
+   (sm/merge
+    cto/schema:token-attrs
+    [:map
+     [:name (make-token-name-schema tokens-tree)]
+     [:value schema:token-value]
+     [:description {:optional true} schema:token-description]])
+   [:fn {:error/field :value
+         :error/fn #(tr "workspace.tokens.self-reference")}
+    (fn [{:keys [name value]}]
+      (when (and name value)
+        (not (cto/token-value-self-reference? name value))))]])
+
+(defn convert-dtcg-token
+  "Convert token attributes as they come from a decoded json, with DTCG types, to internal types.
+   Eg. From this:
+
+     {'name' 'body-text'
+      'type' 'typography'
+      'value' {
+        'fontFamilies' ['Arial' 'Helvetica' 'sans-serif']
+        'fontSize' '16px'
+        'fontWeights' 'normal'}}
+
+   to this
+     {:name 'body-text'
+      :type :typography
+      :value {
+        :font-family ['Arial' 'Helvetica' 'sans-serif']
+        :font-size '16px'
+        :font-weight 'normal'}}"
+  [token-attrs]
+  (let [name        (get token-attrs "name")
+        type        (get token-attrs "type")
+        value       (get token-attrs "value")
+        description (get token-attrs "description")
+
+        type  (cto/dtcg-token-type->token-type type)
+        value (case type
+                :font-family (ctob/convert-dtcg-font-family value)
+                :typography  (ctob/convert-dtcg-typography-composite value)
+                :shadow      (ctob/convert-dtcg-shadow-composite value)
+                value)]
+
+    (d/without-nils {:name name
+                     :type type
+                     :value value
+                     :description description})))
 
 ;; Token set
 

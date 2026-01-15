@@ -152,7 +152,6 @@
         color-resolved
         (get-in @form [:data :color-result] "")
 
-
         valid-color (or (tinycolor/valid-color value)
                         (tinycolor/valid-color color-resolved))
 
