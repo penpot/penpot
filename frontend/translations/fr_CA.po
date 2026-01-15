@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-13 14:01+0000\n"
+"PO-Revision-Date: 2026-01-15 03:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.15.2-dev\n"
+"X-Generator: Weblate 5.15.2\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1599,3 +1599,115 @@ msgid "errors.member-is-muted"
 msgstr ""
 "Le profil invité a tu ses courriels (selon les rapports de pourriels ou un "
 "haut taux de rebond)."
+
+#: src/app/main/errors.cljs:270
+msgid "errors.migration-in-progress"
+msgstr "Migration en cours"
+
+#: src/app/main/errors.cljs:167
+msgid "errors.only-creator-can-lock"
+msgstr "Seul le créateur de la version peut la vérouiller"
+
+#: src/app/main/errors.cljs:175
+msgid "errors.only-creator-can-unlock"
+msgstr "Seul le créateur de la version peut la déverrouiller"
+
+#: src/app/main/ui/settings/password.cljs
+#, unused
+msgid "errors.password-invalid-confirmation"
+msgstr "La confirmation du mot de passe doit correspondre"
+
+#: src/app/main/ui/settings/password.cljs
+#, unused
+msgid "errors.password-too-short"
+msgstr "Le mot de passe doit contenir au moins 8 caractères"
+
+#: src/app/main/errors.cljs:148
+msgid "errors.paste-data-validation"
+msgstr "Données invalide dans le presse-papiers"
+
+#: src/app/main/data/auth.cljs:337, src/app/main/ui/auth/login.cljs:85, src/app/main/ui/auth/login.cljs:93
+msgid "errors.profile-blocked"
+msgstr "Le profil est blocké"
+
+#: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:182, src/app/main/ui/dashboard/team.cljs:618, src/app/main/ui/dashboard/team.cljs:844, src/app/main/ui/onboarding/team_choice.cljs:97, src/app/main/ui/settings/change_email.cljs:33
+msgid "errors.profile-is-muted"
+msgstr ""
+"Ton profil a éteint les courriels (rapports de pourriel ou haut taux de "
+"rebond)."
+
+#: src/app/main/data/auth.cljs:335, src/app/main/ui/auth/register.cljs:92
+msgid "errors.registration-disabled"
+msgstr "L'enregistrement est actuellement désactivé."
+
+#: src/app/main/errors.cljs:229
+msgid "errors.svg-parser.invalid-svg"
+msgstr "Le SVG est invalide ou malformé"
+
+#: src/app/main/errors.cljs:275
+msgid "errors.team-feature-mismatch"
+msgstr "Fonctionnalité incompatible détectée « %s »"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:355, src/app/main/ui/dashboard/team.cljs:393
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Il n'y a pas assez de membres pour quitter l'équipe. Tu veux probablement la "
+"supprimer."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:358, src/app/main/ui/dashboard/team.cljs:396
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Le membre que tu tentes d'assigner n'existe pas."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:361, src/app/main/ui/dashboard/team.cljs:399
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"Le propriétaire ne peut pas quitter l'équipe. Tu dois assigner le rôle de "
+"propriétaire à quelqu'un d'autre."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:164, src/app/main/data/workspace/tokens/library_edit.cljs:194
+msgid "errors.token-set-already-exists"
+msgstr "Une collection du même nom existe déjà"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Impossible de dupliquer une collection inexistante"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:306
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Impossible de déplacer la collection. Une collection du même nom existe déjà "
+"à cet emplacement."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:79, src/app/main/data/workspace/tokens/library_edit.cljs:98
+msgid "errors.token-theme-already-exists"
+msgstr "Un thème du même nom existe déjà"
+
+#: src/app/main/data/media.cljs:73
+msgid "errors.unexpected-error"
+msgstr "Une erreur inattendue s'est produite."
+
+#: src/app/main/ui/auth/verify_token.cljs:62
+msgid "errors.unexpected-token"
+msgstr "Token inconnu"
+
+#, unused
+msgid "errors.validation"
+msgstr "Erreur de validation"
+
+#: src/app/main/errors.cljs:183
+msgid "errors.version-already-locked"
+msgstr "Cette version est verrouillée"
+
+#: src/app/main/errors.cljs:159
+msgid "errors.version-locked"
+msgstr ""
+"Cette version est verrouillée et ne peut pas être supprimée par d'autres"
+
+#: src/app/main/errors.cljs:292
+msgid "errors.version-not-supported"
+msgstr "Le fichier est d'une version incompatible"
+
+#: src/app/main/ui/dashboard/team.cljs:1051
+msgid "errors.webhooks.connection"
+msgstr "Erreur de connexion, l'URL n'est pas atteignable"
