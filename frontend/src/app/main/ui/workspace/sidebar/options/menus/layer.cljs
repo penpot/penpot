@@ -72,10 +72,9 @@
                        (select-keys (get tk/tokens-by-input name))
                        (not-empty))))
 
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
+        on-detach-attr (mf/use-fn
+                        (mf/deps on-detach name)
+                        #(on-detach % name))
 
         applied-token (get applied-tokens name)
         opacity-value (or (get values name) 1)
@@ -238,8 +237,9 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    [:div {:class (stl/css-case :element-set-content true
-                                :hidden hidden?)}
+    [:section {:class (stl/css-case :element-set-content true
+                                    :hidden hidden?)
+               :aria-label "layer-menu-section"}
      [:div {:class (stl/css :select)}
       [:& select
        {:default-value selected-blend-mode
