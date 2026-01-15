@@ -659,6 +659,76 @@ impl RenderState {
 
         let antialias = shape.should_use_antialias(self.get_scale());
         let fast_mode = self.options.is_fast_mode();
+        let has_nested_fills = self
+            .nested_fills
+            .last()
+            .is_some_and(|fills| !fills.is_empty());
+        let has_inherited_blur = !self.ignore_nested_blurs
+            && self.nested_blurs.iter().flatten().any(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            });
+        let can_render_directly = apply_to_current_surface
+            && clip_bounds.is_none()
+            && offset.is_none()
+            && parent_shadows.is_none()
+            && !shape.needs_layer()
+            && shape.blur.is_none()
+            && !has_inherited_blur
+            && shape.shadows.is_empty()
+            && shape.transform.is_identity()
+            && matches!(
+                shape.shape_type,
+                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
+            )
+            && !(shape.fills.is_empty() && has_nested_fills)
+            && !shape
+                .svg_attrs
+                .as_ref()
+                .is_some_and(|attrs| attrs.fill_none);
+
+        if can_render_directly {
+            let scale = self.get_scale();
+            let translation = self
+                .surfaces
+                .get_render_context_translation(self.render_area, scale);
+            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+                let canvas = s.canvas();
+                canvas.save();
+                canvas.scale((scale, scale));
+                canvas.translate(translation);
+            });
+
+            for fill in shape.fills().rev() {
+                fills::render(self, shape, fill, antialias, SurfaceId::Current);
+            }
+
+            for stroke in shape.visible_strokes().rev() {
+                strokes::render(
+                    self,
+                    shape,
+                    stroke,
+                    Some(SurfaceId::Current),
+                    None,
+                    antialias,
+                );
+            }
+
+            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+                s.canvas().restore();
+            });
+
+            if self.options.is_debug_visible() {
+                let shape_selrect_bounds = self.get_shape_selrect_bounds(shape);
+                debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
+            }
+
+            if needs_save {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().restore();
+                });
+            }
+            return;
+        }
 
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
