@@ -41,9 +41,4 @@ tmux select-window -t penpot:3
 tmux send-keys -t penpot 'cd penpot/backend' enter C-l
 tmux send-keys -t penpot './scripts/start-dev' enter
 
-tmux new-window -t penpot:5 -n 'nitrate'
-tmux select-window -t penpot:5
-tmux send-keys -t penpot 'cd penpot/penpot-nitrate' enter C-l
-tmux send-keys -t penpot 'pnpm dev --host' enter
-
 tmux -2 attach-session -t penpot
