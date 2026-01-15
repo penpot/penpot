@@ -10,8 +10,9 @@
    [app.common.data :as d]
    [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
-   [app.common.types.token :as cto]
+   #_[app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
@@ -36,7 +37,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn- token-value-error-fn
+#_(defn- token-value-error-fn
   [{:keys [value]}]
   (when (or (str/empty? value)
             (str/blank? value))
@@ -58,7 +59,7 @@
 
     value))
 
-(defn- default-make-schema
+#_(defn- default-make-schema
   [tokens-tree _]
   (sm/schema
    [:and
@@ -96,7 +97,8 @@
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema     (or make-schema default-make-schema)
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema %)
+                                             (sm/dissoc-key :id)))  ;; TODO this does not work because the schema is no longer a :map but a :multi
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
 
@@ -132,10 +134,13 @@
 
         initial
         (mf/with-memo [token]
-          (or initial
-              {:name (:name token "")
+          (-> (or initial
+              {:id (uuid/next)    ;; TODO it should not be necessary if the sm/dissoc-key :id worked correctly
+               :type token-type
+               :name (:name token "")
                :value (:value token "")
-               :description (:description token "")}))
+               :description (:description token "")})
+              (d/tap-r #(prn "initial" %))))
 
         form
         (fm/use-form :schema schema

@@ -93,14 +93,28 @@
   (apply mu/merge (map schema items)))
 
 (defn assoc-key
-  "Add a key & value to a schema"
-  [s k v]
-  (mu/assoc (schema s) k v))
+  "Add a key & value to a schema of type [:map]. If the first level node of the schema
+   is not a map, will do a depth search to find the first map node and add the key there."
+  ([s k v]
+   (assoc-key s k {} v))
+  ([s k opts v]  ;; change order of opts and v to match static schema defintions (e.g. [:something {:optional true} ::sm/integer])
+   (let [s (schema s)]
+     (if (= (m/type s) :map)
+       (mu/assoc s k v opts)
+       (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
+         (mu/assoc-in s (conj path k) v opts)
+         s)))))
 
 (defn dissoc-key
-  "Remove a key from a schema"
+  "Remove a key from a schema of type [:map]. If the first level node of the schema
+   is not a map, will do a depth search to find the first map node and remove the key there."
   [s k]
-  (mu/dissoc (schema s) k))
+  (let [s (schema s)]
+    (if (= (m/type s) :map)
+      (mu/dissoc s k)
+      (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
+        (mu/update-in s path mu/dissoc k)
+        s))))
 
 (defn ref?
   [s]

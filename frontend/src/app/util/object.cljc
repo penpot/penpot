@@ -168,14 +168,14 @@
            bindings
            (->> properties
                 (mapcat (fn [params]
-                          (let [pname    (c/get params :name)
-                                get-expr (c/get params :get)
-                                set-expr (c/get params :set)
-                                fn-expr  (c/get params :fn)
-                                schema-n (c/get params :schema)
-                                wrap     (c/get params :wrap)
-                                schema-1 (c/get params :schema-1)
-                                this?    (c/get params :this false)
+                          (let [pname         (c/get params :name)
+                                get-expr      (c/get params :get)
+                                set-expr      (c/get params :set)
+                                fn-expr       (c/get params :fn)
+                                schema-n      (c/get params :schema)
+                                wrap          (c/get params :wrap)
+                                schema-1      (c/get params :schema-1)
+                                this?         (c/get params :this false)
 
                                 decode-expr
                                 (c/get params :decode/fn)

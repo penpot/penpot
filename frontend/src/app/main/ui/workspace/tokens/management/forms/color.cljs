@@ -6,22 +6,23 @@
 
 (ns app.main.ui.workspace.tokens.management.forms.color
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
-   [app.common.types.token :as cto]
-   [app.common.types.tokens-lib :as ctob]
+   #_[app.common.types.token :as cto]
+   #_[app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
-   [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
+   #_[app.util.i18n :refer [tr]]
+   #_[cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn- token-value-error-fn
+#_(defn- token-value-error-fn
   [{:keys [value]}]
   (when (or (str/empty? value)
             (str/blank? value))
     (tr "workspace.tokens.empty-input")))
 
-(defn- make-schema
+#_(defn- make-schema
   [tokens-tree _]
   (sm/schema
    [:and
@@ -48,6 +49,10 @@
 
 (mf/defc form*
   [props]
-  (let [props (mf/spread-props props {:make-schema make-schema
+  (let [props (mf/spread-props props {:make-schema #(-> (sm/merge (cfo/make-token-schema %1)
+                                                                  [:map [:color-result {:optional true} ::sm/any]])
+                                                        (sm/dissoc-key :id)
+                                                        ;;(sm/assoc-key :color-result {:optional true} ::sm/any)  ;; TODO WTF does this not work?
+                                                        )
                                       :input-component token.controls/color-input*})]
     [:> generic/form* props]))

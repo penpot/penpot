@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.management.forms.form-container
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.management.forms.color :as color]

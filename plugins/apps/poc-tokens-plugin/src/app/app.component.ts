@@ -103,7 +103,7 @@ export class AppComponent {
     let tokenValue;
     switch (tokenType) {
       case 'borderRadius':
-        tokenValue = 25;
+        tokenValue = '25';
         break;
       case 'shadow':
         tokenValue = [
@@ -121,37 +121,37 @@ export class AppComponent {
         tokenValue = '#fabada';
         break;
       case 'dimension':
-        tokenValue = 100;
+        tokenValue = '100';
         break;
       case 'fontFamilies':
         tokenValue = ['Source Sans Pro', 'Sans serif'];
         break;
       case 'fontSizes':
-        tokenValue = 24;
+        tokenValue = '24';
         break;
       case 'fontWeights':
         tokenValue = 'bold';
         break;
       case 'letterSpacing':
-        tokenValue = 0.5;
+        tokenValue = '0.5';
         break;
       case 'number':
-        tokenValue = 33;
+        tokenValue = '33';
         break;
       case 'opacity':
-        tokenValue = 0.6;
+        tokenValue = '0.6';
         break;
       case 'rotation':
-        tokenValue = 45;
+        tokenValue = '45';
         break;
       case 'sizing':
-        tokenValue = 200;
+        tokenValue = '200';
         break;
       case 'spacing':
-        tokenValue = 16;
+        tokenValue = '16';
         break;
       case 'borderWidth':
-        tokenValue = 3;
+        tokenValue = '3';
         break;
       case 'textCase':
         tokenValue = 'lowercase';

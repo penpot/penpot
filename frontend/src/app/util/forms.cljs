@@ -19,6 +19,7 @@
 
 (defn- translate-code
   [code]
+  (prn "code" code)
   (if (vector? code)
     (tr (nth code 0) (i18n/c (nth code 1)))
     (tr code)))
@@ -27,6 +28,7 @@
   [props problem]
   (let [v-fn   (:error/fn props)
         result (v-fn problem)]
+    (prn "result" result)
     (if (string? result)
       {:message result}
       {:message (or (some-> (get result :code)
@@ -36,6 +38,7 @@
 
 (defn- handle-error-message
   [props]
+  (prn "message" (get props :error/message))
   {:message (get props :error/message)})
 
 (defn- handle-error-code
@@ -53,6 +56,7 @@
                  field
                  [field])]
 
+    (prn "problem" problem)
     (if (and (= 1 (count field))
              (contains? acc (first field)))
       acc
