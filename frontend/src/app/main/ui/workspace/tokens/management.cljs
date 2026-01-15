@@ -44,7 +44,7 @@
   {::mf/private true}
   [{:keys [tokens-lib selected-token-set-id]}]
   (let [selected-token-set
-        (mf/with-memo [tokens-lib]
+        (mf/with-memo [tokens-lib selected-token-set-id]
           (when selected-token-set-id
             (some-> tokens-lib (ctob/get-set selected-token-set-id))))
 
@@ -135,7 +135,7 @@
     [:*
      [:& token-context-menu]
 
-     [:& selected-set-info* {:tokens-lib tokens-lib
+     [:> selected-set-info* {:tokens-lib tokens-lib
                              :selected-token-set-id selected-token-set-id}]
 
      (for [type filled-group]
