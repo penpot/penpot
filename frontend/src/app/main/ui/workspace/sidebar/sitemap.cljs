@@ -23,6 +23,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -54,12 +55,7 @@
              refs/workspace-data
              =))
 
-(defn- apply-canvas-blur
-  "Apply blur filter to the viewport canvas element immediately.
-  This is used to provide visual feedback during page navigation."
-  []
-  (when-let [canvas (dom/get-element "render")]
-    (dom/set-style! canvas "filter" "blur(8px)")))
+
 
 ;; --- Page Item
 
@@ -79,8 +75,9 @@
            ;; when using the wasm renderer, apply a blur effect to the viewport canvas
            (if (features/active-feature? @st/state "render-wasm/v1")
              (do
-               (apply-canvas-blur)
-               ;; NOTE: it seems we need double RAF so the blur is actually applied and visible
+               (wasm.api/capture-canvas-pixels)
+               (wasm.api/apply-canvas-blur)
+               ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
                ;;       in the canvas :(
                (timers/raf
                 (fn []
