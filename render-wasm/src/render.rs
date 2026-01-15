@@ -294,10 +294,6 @@ pub(crate) struct RenderState {
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
     pub ignore_nested_blurs: bool,
-    /// Cached root_ids and root_ids_map to avoid recalculating them every frame
-    /// These are invalidated when the tree structure changes
-    cached_root_ids: Option<Vec<Uuid>>,
-    cached_root_ids_map: Option<std::collections::HashMap<Uuid, usize>>,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -370,8 +366,6 @@ impl RenderState {
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
-            cached_root_ids: None,
-            cached_root_ids_map: None,
         }
     }
 
@@ -1631,6 +1625,8 @@ impl RenderState {
                 "Error: Element with root_id {} not found in the tree.",
                 node_render_state.id
             ))?;
+            let scale = self.get_scale();
+            let mut extrect: Option<Rect> = None;
 
             // If the shape is not in the tile set, then we add them.
             if self.tiles.get_tiles_of(node_id).is_none() {
@@ -1661,29 +1657,21 @@ impl RenderState {
                     crate::shapes::Type::Frame(_) | crate::shapes::Type::Group(_)
                 );
 
-                let scale = self.get_scale();
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
 
-                let is_visible = if is_container {
-                    // Containers (frames/groups) must always use extrect to include nested content
-                    let extrect = transformed_element.extrect(tree, scale);
-                    extrect.intersects(self.render_area)
-                        && !transformed_element.visually_insignificant(scale, tree)
-                } else if !has_effects {
-                    // Simple shape: selrect check is sufficient, skip expensive extrect
-                    let selrect = transformed_element.selrect();
-                    selrect.intersects(self.render_area)
+                let is_visible = if is_container || has_effects {
+                    let element_extrect =
+                        extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
+                    element_extrect.intersects(self.render_area)
                         && !transformed_element.visually_insignificant(scale, tree)
                 } else {
-                    // Shape with effects: need extrect for accurate bounds
-                    let extrect = transformed_element.extrect(tree, scale);
-                    extrect.intersects(self.render_area)
+                    let selrect = transformed_element.selrect();
+                    selrect.intersects(self.render_area)
                         && !transformed_element.visually_insignificant(scale, tree)
                 };
 
                 if self.options.is_debug_visible() {
-                    let shape_extrect_bounds =
-                        self.get_shape_extrect_bounds(&transformed_element, tree);
+                    let shape_extrect_bounds = self.get_shape_extrect_bounds(element, tree);
                     debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
@@ -1700,7 +1688,6 @@ impl RenderState {
             }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                let scale: f32 = self.get_scale();
                 let translation = self
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
@@ -1731,8 +1718,6 @@ impl RenderState {
                         _ => None,
                     };
 
-                    let element_extrect = element.extrect(tree, scale);
-
                     for shadow in element.drop_shadows_visible() {
                         let paint = skia::Paint::default();
                         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -1742,9 +1727,11 @@ impl RenderState {
                             .save_layer(&layer_rec);
 
                         // First pass: Render shadow in black to establish alpha mask
+                        let element_extrect =
+                            extrect.get_or_insert_with(|| element.extrect(tree, scale));
                         self.render_drop_black_shadow(
                             element,
-                            &element_extrect,
+                            element_extrect,
                             shadow,
                             clip_bounds.clone(),
                             scale,
@@ -1759,15 +1746,13 @@ impl RenderState {
                                 if shadow_shape.hidden {
                                     continue;
                                 }
-
                                 let clip_bounds = node_render_state
                                     .get_nested_shadow_clip_bounds(element, shadow);
 
                                 if !matches!(shadow_shape.shape_type, Type::Text(_)) {
-                                    let shadow_extrect = shadow_shape.extrect(tree, scale);
                                     self.render_drop_black_shadow(
                                         shadow_shape,
-                                        &shadow_extrect,
+                                        &shadow_shape.extrect(tree, scale),
                                         shadow,
                                         clip_bounds,
                                         scale,
@@ -1981,6 +1966,16 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
+        let root_ids = {
+            if let Some(shape_id) = base_object {
+                vec![*shape_id]
+            } else {
+                let Some(root) = tree.get(&Uuid::nil()) else {
+                    return Err(String::from("Root shape not found"));
+                };
+                root.children_ids(false)
+            }
+        };
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
@@ -2037,42 +2032,6 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            // Get or compute root_ids and root_ids_map (cached to avoid recalculation every frame)
-            let root_ids_map = {
-                let root_ids = if let Some(shape_id) = base_object {
-                    vec![*shape_id]
-                } else {
-                    let Some(root) = tree.get(&Uuid::nil()) else {
-                        return Err(String::from("Root shape not found"));
-                    };
-                    root.children_ids(false)
-                };
-
-                // Check if cache is valid (same root_ids)
-                let cache_valid = self
-                    .cached_root_ids
-                    .as_ref()
-                    .map(|cached| cached.as_slice() == root_ids.as_slice())
-                    .unwrap_or(false);
-
-                if cache_valid {
-                    // Use cached map
-                    self.cached_root_ids_map.as_ref().unwrap().clone()
-                } else {
-                    // Recompute and cache
-                    let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
-                        .iter()
-                        .enumerate()
-                        .map(|(i, id)| (*id, i))
-                        .collect();
-
-                    self.cached_root_ids = Some(root_ids.clone());
-                    self.cached_root_ids_map = Some(root_ids_map.clone());
-
-                    root_ids_map
-                }
-            };
-
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
@@ -2080,15 +2039,13 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        // We only need first level shapes
-                        let mut valid_ids: Vec<Uuid> = ids
-                            .iter()
-                            .filter(|id| root_ids_map.contains_key(id))
-                            .copied()
-                            .collect();
-
-                        // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
+                        // We only need first level shapes, in the same order as the parent node
+                        let mut valid_ids = Vec::with_capacity(ids.len());
+                        for root_id in root_ids.iter() {
+                            if ids.contains(root_id) {
+                                valid_ids.push(*root_id);
+                            }
+                        }
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
