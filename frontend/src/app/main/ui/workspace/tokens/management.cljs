@@ -60,18 +60,20 @@
     [:div {:class (stl/css :sets-header-container)}
      [:> text* {:as "span"
                 :typography "headline-small"
-                :class (stl/css :sets-header)}
+                :class (stl/css :sets-header)
+                :data-testid "active-token-set-title"}
       (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
-     [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
+     (when (and (some? selected-token-set-id)
+                (not (token-set-active? (ctob/get-name selected-token-set))))
+       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
         ;; NOTE: when no set in tokens-lib, the selected-token-set-id
         ;; will be `nil`, so for properly hide the inactive message we
         ;; check that at least `selected-token-set-id` has a value
-      (when (and (some? selected-token-set-id)
-                 (not (token-set-active? (ctob/get-name selected-token-set))))
+
         [:*
          [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
-          (tr "workspace.tokens.inactive-set")]])]]))
+          (tr "workspace.tokens.inactive-set")]]])]))
 
 (mf/defc tokens-section*
   {::mf/private true}
