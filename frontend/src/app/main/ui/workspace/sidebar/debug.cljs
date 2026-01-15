@@ -11,12 +11,11 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc debug-panel*
@@ -35,12 +34,9 @@
            (st/emit! (dw/remove-layout-flag :debug-panel))))]
 
     [:div {:class (dm/str class " " (stl/css :debug-panel))}
-     [:div {:class (stl/css :panel-title)}
-      [:span "Debugging tools"]
-      [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "labels.close")
-                        :on-click handle-close
-                        :icon i/close}]]
+     [:> panel-title* {:class (stl/css :debug-panel-title)
+                       :text (tr "workspace.debug.title")
+                       :on-close handle-close}]
 
      [:div {:class (stl/css :debug-panel-inner)}
       (for [option (sort-by d/name dbg/options)]

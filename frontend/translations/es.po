@@ -5452,6 +5452,10 @@ msgstr "Borrar fila con el contenido"
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "Duplicar fila"
 
+#: src/app/main/ui/workspace/sidebar/debug.cljs:37
+msgid "workspace.debug.title"
+msgstr "Herramientas de depuración"
+
 #: src/app/main/ui/workspace/sidebar/layers.cljs:512
 msgid "workspace.focus.focus-mode"
 msgstr "Modo foco"
@@ -8272,6 +8276,10 @@ msgstr "Comentarios (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:195
 msgid "workspace.toolbar.curve"
 msgstr "Curva (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Herramientas de depuración"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:172
 msgid "workspace.toolbar.ellipse"
