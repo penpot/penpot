@@ -26,6 +26,7 @@
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.nitrate-form]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
@@ -295,8 +296,10 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           ;; TODO update when org creation route is ready
-           (dom/open-new-window "localhost:3000/org/create")))]
+           (if (:nitrate-licence profile)
+             ;; TODO update when org creation route is ready
+             (dom/open-new-window "/control-center/org/create")
+             (st/emit! (modal/show :nitrate-form {})))))]
 
     [:> dropdown-menu* props
 

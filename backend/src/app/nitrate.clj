@@ -100,10 +100,19 @@
    [:id ::sm/text]
    [:name ::sm/text]])
 
+(def ^:private schema:user
+  [:map
+   [:valid ::sm/boolean]])
 
 (defn- get-team-org
   [cfg {:keys [team-id] :as params}]
   (request-to-nitrate cfg :get (str baseuri "/api/teams/" (str team-id)) schema:organization params))
+
+(defn- is-valid-user
+  [cfg {:keys [profile-id] :as params}]
+  (request-to-nitrate cfg :get (str baseuri "/api/users/" (str profile-id)) schema:user params))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
@@ -115,7 +124,8 @@
     (let [management-key (or (cf/get :management-api-key)
                              (get props :management-key))
           cfg (assoc cfg ::management-key management-key)]
-      {:get-team-org (partial get-team-org cfg)})
+      {:get-team-org (partial get-team-org cfg)
+       :is-valid-user (partial is-valid-user cfg)})
     {}))
 
 (defmethod ig/halt-key! ::client

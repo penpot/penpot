@@ -21,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
@@ -88,6 +89,17 @@
 
 ;; --- QUERY: Get profile (own)
 
+(defn- add-nitrate-licence-to-profile
+  [cfg profile]
+  (try
+    (let [nitrate-licence (nitrate/call cfg :is-valid-user {:profile-id (:id profile)})]
+      (assoc profile :nitrate-licence (:valid nitrate-licence)))
+    (catch Throwable cause
+      (prn :hint "failed to get nitrate licence"
+           :profile-id (:id profile)
+           :cause cause)
+      profile)))
+
 (sv/defmethod ::get-profile
   {::rpc/auth false
    ::doc/added "1.18"
@@ -98,9 +110,13 @@
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
   (try
-    (-> (get-profile pool profile-id)
-        (strip-private-attrs)
-        (update :props filter-props))
+    (let [profile (-> (get-profile pool profile-id)
+                      (strip-private-attrs)
+                      (update :props filter-props))]
+      (if (contains? cf/flags :nitrate)
+        (add-nitrate-licence-to-profile cfg profile)
+        profile))
+
     (catch Throwable _
       {:id uuid/zero :fullname "Anonymous User"})))
 
