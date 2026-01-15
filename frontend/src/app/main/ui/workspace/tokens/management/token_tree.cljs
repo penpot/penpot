@@ -14,7 +14,6 @@
    [app.main.store :as st]
    [app.main.ui.ds.layers.layer-button :refer [layer-button*]]
    [app.main.ui.workspace.tokens.management.token-pill :refer [token-pill*]]
-   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:folder-node

@@ -8,9 +8,7 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
-   [app.main.refs :as refs]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
-   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:layer-button

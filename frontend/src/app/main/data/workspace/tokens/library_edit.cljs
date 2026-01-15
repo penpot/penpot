@@ -438,9 +438,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
-        (rx/of
-
-         (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (defn bulk-delete-tokens
   [set-id token-ids]
