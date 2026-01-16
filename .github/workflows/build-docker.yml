@@ -19,7 +19,7 @@ on:
 jobs:
   build-and-push:
     name: Build and Push Penpot Docker Images
-    runs-on: ubuntu-24.04-arm
+    runs-on: penpot-runner-02
 
     steps:
       - name: Checkout code
