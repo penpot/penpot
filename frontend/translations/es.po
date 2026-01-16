@@ -4575,6 +4575,10 @@ msgstr "Mostrar/ocultar recursos"
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Mostrar/ocultar paleta de colores"
 
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+msgid "workspace.tokens.warning-name-change"
+msgstr "Cambiar el nombre de este token romperá cualquier referencia a su nombre anterior."
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Mostrar/ocultar focus mode"

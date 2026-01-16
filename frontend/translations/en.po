@@ -7797,6 +7797,10 @@ msgstr "Line Height depends on Font Size. Add a Font Size to get the resolved va
 msgid "workspace.tokens.create-new-theme"
 msgstr "Create your first theme now."
 
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+msgid "workspace.tokens.warning-name-change"
+msgstr "Renaming this token will break any reference to its old name"
+
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:96, src/app/main/ui/workspace/tokens/themes.cljs:44
 msgid "workspace.tokens.create-one"
 msgstr "Create one."
