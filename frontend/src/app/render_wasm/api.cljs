@@ -1246,6 +1246,9 @@
         context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
         context (.getContext ^js canvas context-id default-context-options)
         context-init? (not (nil? context))
+        current-page-id (:current-page-id @st/state)
+        page-changed? (and (some? wasm/last-page-id)
+                           (not= wasm/last-page-id current-page-id))
         browser (get-browser)
         browser (sr/translate-browser browser)]
     (when-not (nil? context)
@@ -1259,7 +1262,7 @@
           (do
             ;; Dispose previous context only when switching canvases to avoid
             ;; accumulating contexts across page changes, but keep hot reloads safe.
-            (when (and wasm/gl-context-handle (not same-canvas?))
+            (when (and wasm/gl-context-handle (not same-canvas?) page-changed?)
               (when-let [ctx wasm/gl-context]
                 (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
                   (.loseContext ^js lose-ext)))
@@ -1276,6 +1279,7 @@
 
         ;; Clear stale context-loss state after a successful init.
         (reset! wasm/context-lost? false)
+        (set! wasm/last-page-id current-page-id)
 
         ;; Initialize Wasm Render Engine
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))

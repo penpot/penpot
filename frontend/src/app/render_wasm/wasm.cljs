@@ -22,6 +22,7 @@
 
 (defonce context-initialized? false)
 (defonce context-lost? (atom false))
+(defonce last-page-id nil)
 
 (defonce serializers
   #js {:blur-type shared/RawBlurType
