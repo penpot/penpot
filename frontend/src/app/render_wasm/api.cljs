@@ -1253,12 +1253,16 @@
                                 wasm/gl-context-handle
                                 (identical? wasm/gl-context context))
             same-canvas? (identical? wasm/canvas canvas)]
+        (println "reuse-context?" reuse-context?)
         (if reuse-context?
           (.makeContextCurrent ^js gl wasm/gl-context-handle)
           (do
             ;; Dispose previous context only when switching canvases to avoid
             ;; accumulating contexts across page changes, but keep hot reloads safe.
             (when (and wasm/gl-context-handle (not same-canvas?))
+              (when-let [ctx wasm/gl-context]
+                (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
+                  (.loseContext ^js lose-ext)))
               (.deleteContext ^js gl wasm/gl-context-handle))
             (set! wasm/gl-context-handle nil)
             (set! wasm/gl-context nil)
