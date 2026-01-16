@@ -18,6 +18,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -224,7 +225,12 @@
                                                 :description description}))
                           (dwtl/toggle-token-path path)
                           (dwtp/propagate-workspace-tokens)
-                          (modal/hide!))))))))))]
+                          (modal/hide!)))))
+                   ;; Error handler: display validation errors in the form instead of crashing
+                   (fn [{:keys [errors]}]
+                     (let [error-messages (wte/humanize-errors errors)
+                           error-message (first error-messages)]
+                       (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))))]
 
     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form
