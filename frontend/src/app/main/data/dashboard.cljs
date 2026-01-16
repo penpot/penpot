@@ -15,6 +15,7 @@
    [app.common.time :as ct]
    [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.constants :as mconst]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -688,7 +689,8 @@
   (ptk/reify ::handle-change-team-org
     ptk/UpdateEvent
     (update [_ state]
-      (if (contains? (:teams state) team-id)
+      (if (and (contains? cf/flags :nitrate)
+               (contains? (:teams state) team-id))
         (-> state
             (assoc-in [:teams team-id :organization-id] organization-id)
             (assoc-in [:teams team-id :organization-name] organization-name))
