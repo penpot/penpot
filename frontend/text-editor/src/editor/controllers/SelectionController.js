@@ -274,36 +274,15 @@ export class SelectionController extends EventTarget {
    * @param {HTMLSpanElement} endNode
    */
   #updateCurrentStyleFrom(startNode, endNode) {
-    console.log("A");
     this.#applyDefaultStylesToCurrentStyle();
     const root = startNode.parentElement.parentElement.parentElement;
     this.#applyStylesFromElementToCurrentStyle(root);
-<<<<<<< Updated upstream
-    // FIXME: I don't like this approximation. Having to iterate nodes twice
-    // is bad for performance. I think we need another way of "computing"
-    // the cascade.
-    for (const textNode of this.#textNodeIterator.iterateFrom(
-      startNode,
-      endNode,
-    )) {
-      const paragraph = textNode.parentElement.parentElement;
-      this.#applyStylesFromElementToCurrentStyle(paragraph);
-    }
-    for (const textNode of this.#textNodeIterator.iterateFrom(
-      startNode,
-      endNode,
-    )) {
-      const textSpan = textNode.parentElement;
-      this.#mergeStylesFromElementToCurrentStyle(textSpan);
-=======
     if (startNode === endNode) {
-      console.log("A1");
       const paragraph = startNode.parentElement.parentElement;
       this.#applyStylesFromElementToCurrentStyle(paragraph);
       const textSpan = startNode.parentElement;
       this.#applyStylesFromElementToCurrentStyle(textSpan);
     } else {
-      console.log("A2");
       // FIXME: I don't like this approximation. Having to iterate nodes twice
       // is bad for performance. I think we need another way of "computing"
       // the cascade.
@@ -321,7 +300,6 @@ export class SelectionController extends EventTarget {
         const textSpan = textNode.parentElement;
         this.#mergeStylesFromElementToCurrentStyle(textSpan);
       }
->>>>>>> Stashed changes
     }
     return this;
   }
@@ -333,7 +311,6 @@ export class SelectionController extends EventTarget {
    * @returns {SelectionController}
    */
   #updateCurrentStyle(textSpan) {
-    console.log("B");
     this.#applyDefaultStylesToCurrentStyle();
     const root = textSpan.parentElement.parentElement;
     this.#applyStylesFromElementToCurrentStyle(root);
@@ -1722,7 +1699,8 @@ export class SelectionController extends EventTarget {
    * @param {RemoveSelectedOptions} [options]
    */
   removeSelected(options) {
-    if (this.isCollapsed) return;
+    if (this.isCollapsed)
+      return;
 
     const affectedTextSpans = new Set();
     const affectedParagraphs = new Set();
@@ -1731,7 +1709,6 @@ export class SelectionController extends EventTarget {
     let nextNode = null;
 
     let { startNode, endNode, startOffset, endOffset } = this.getRanges();
-
     if (this.shouldHandleCompleteDeletion(startNode, endNode)) {
       return this.handleCompleteContentDeletion();
     }
@@ -1790,6 +1767,8 @@ export class SelectionController extends EventTarget {
       affectedParagraphs.add(paragraph);
 
       let shouldRemoveNodeCompletely = false;
+      const isEndNode = currentNode === endNode;
+
       if (currentNode === startNode) {
         if (startOffset === 0) {
           // We should remove this node completely.
@@ -1798,11 +1777,11 @@ export class SelectionController extends EventTarget {
           // We should remove this node partially.
           currentNode.nodeValue = currentNode.nodeValue.slice(0, startOffset);
         }
-      } else if (currentNode === endNode) {
+      } else if (isEndNode) {
         if (
           isLineBreak(endNode) ||
           (isTextNode(endNode) &&
-            endOffset === (endNode.nodeValue?.length || 0))
+            endOffset >= (endNode.nodeValue?.length || 0))
         ) {
           // We should remove this node completely.
           shouldRemoveNodeCompletely = true;
@@ -1815,8 +1794,7 @@ export class SelectionController extends EventTarget {
         shouldRemoveNodeCompletely = true;
       }
 
-      this.#textNodeIterator.nextNode();
-
+      console.log("shouldRemoveNodeCompletely", shouldRemoveNodeCompletely);
       // Realizamos el borrado del nodo actual.
       if (shouldRemoveNodeCompletely) {
         currentNode.remove();
@@ -1828,14 +1806,18 @@ export class SelectionController extends EventTarget {
           textSpan.remove();
         }
 
-        if (paragraph !== startParagraph && paragraph.children.length === 0) {
+        if (paragraph !== startParagraph
+         && paragraph.children.length === 0) {
           paragraph.remove();
         }
       }
 
-      if (currentNode === endNode) {
+      // Break immediately after processing endNode, before advancing iterator
+      if (isEndNode) {
         break;
       }
+
+      this.#textNodeIterator.nextNode();
     } while (this.#textNodeIterator.currentNode);
 
     if (startParagraph !== endParagraph) {
@@ -1847,6 +1829,7 @@ export class SelectionController extends EventTarget {
       }
     }
 
+    console.log("textSpans", startTextSpan, endTextSpan);
     if (
       startTextSpan.childNodes.length === 0 &&
       endTextSpan.childNodes.length > 0
@@ -1884,16 +1867,28 @@ export class SelectionController extends EventTarget {
     return this.collapse(startNode, startOffset);
   }
 
+  /**
+   * Returns an object with ranges.
+   *
+   * @returns {}
+   */
   getRanges() {
     let startNode = getClosestTextNode(this.#range.startContainer);
     let endNode = getClosestTextNode(this.#range.endContainer);
 
     let startOffset = this.#range.startOffset;
-    let endOffset = this.#range.startOffset + this.#range.toString().length;
+    let endOffset = this.#range.endOffset;
 
     return { startNode, endNode, startOffset, endOffset };
   }
 
+  /**
+   * Returns true if we should remove the complete root.
+   *
+   * @param {*} startNode
+   * @param {*} endNode
+   * @returns {boolean}
+   */
   shouldHandleCompleteDeletion(startNode, endNode) {
     const root = this.#textEditor.root;
     return (

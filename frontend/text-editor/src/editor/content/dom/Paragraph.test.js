@@ -88,14 +88,23 @@ describe("Paragraph", () => {
 
   test("isParagraphEnd should return true on an empty paragraph", () => {
     const paragraph = createEmptyParagraph();
-    expect(isParagraphEnd(paragraph.firstChild.firstChild, 0)).toBe(true);
+    expect(isParagraphEnd(paragraph.firstElementChild.firstChild, 0)).toBe(true);
   });
 
   test("isParagraphEnd should return true on a paragraph", () => {
     const paragraph = createParagraph([
       createTextSpan(new Text("Hello, World!")),
     ]);
-    expect(isParagraphEnd(paragraph.firstChild.firstChild, 13)).toBe(true);
+    expect(isParagraphEnd(paragraph.firstElementChild.firstChild, 13)).toBe(true);
+  });
+
+  test("isParagraphEnd should return false on a paragrah where the focus offset is inside", () => {
+    const paragraph = createParagraph([
+      createTextSpan(new Text("Lorem ipsum sit")),
+      createTextSpan(new Text("amet")),
+    ]);
+    console.log(paragraph.innerHTML)
+    expect(isParagraphEnd(paragraph.firstElementChild.firstChild, 15)).toBe(false);
   });
 
   test("splitParagraph should split a paragraph", () => {

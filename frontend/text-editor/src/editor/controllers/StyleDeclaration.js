@@ -48,7 +48,7 @@ export class StyleDeclaration {
   }
 
   item(index) {
-    return Array.from(this.#items).at(index).name;
+    return Array.from(this.#items.keys()).at(index);
   }
 
   removeProperty(name) {
@@ -76,22 +76,17 @@ export class StyleDeclaration {
   mergeProperty(name, value) {
     const currentValue = this.getPropertyValue(name);
     if (this.#isQuotedValue(currentValue, value)) {
-      console.log("a");
       return this.setProperty(name, value);
     } else if (
       currentValue === "" &&
       value === StyleDeclaration.Property.NULL
     ) {
-      console.log("b");
       return this.setProperty(name, value);
     } else if (currentValue === "" && ["initial", "none"].includes(value)) {
-      console.log("c");
       return this.setProperty(name, value);
     } else if (currentValue !== value && name === "--fills") {
-      console.log("d");
       return this.setProperty(name, value);
     } else if (currentValue !== value) {
-      console.log("e");
       return this.setProperty(name, "mixed");
     }
   }

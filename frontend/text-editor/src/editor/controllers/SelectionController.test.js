@@ -34,7 +34,17 @@ function focus(
   document.dispatchEvent(new Event("selectionchange"));
 }
 
-describe.skip("SelectionController", () => {
+describe("SelectionController", () => {
+  test("`options` should return the Options object kept by the SelectionController", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithText("");
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection
+    );
+    expect(selectionController.options).toBe({});
+  });
+
   test("`selection` should return the Selection object kept by the SelectionController", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithText("");
     const selection = document.getSelection();
@@ -1067,27 +1077,27 @@ describe.skip("SelectionController", () => {
     );
     selectionController.removeSelected();
     expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.children).toHaveLength(2);
+    expect(textEditorMock.root.children).toHaveLength(1);
     expect(textEditorMock.root.dataset.itype).toBe("root");
     expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.firstChild.children).toHaveLength(1);
+    expect(textEditorMock.root.firstChild.children).toHaveLength(2);
     expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
     expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
       HTMLSpanElement,
     );
     expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe("span");
-    expect(textEditorMock.root.textContent).toBe("Lorem amet");
+    expect(textEditorMock.root.textContent).toBe("Lorem  amet");
     expect(textEditorMock.root.firstChild.firstChild.firstChild).toBeInstanceOf(
       Text,
     );
     expect(textEditorMock.root.firstChild.firstChild.firstChild.nodeValue).toBe(
-      "Hello, ",
+      "Lorem ",
     );
-    expect(textEditorMock.root.lastChild.firstChild.firstChild).toBeInstanceOf(
+    expect(textEditorMock.root.firstChild.lastChild.firstChild).toBeInstanceOf(
       Text,
     );
-    expect(textEditorMock.root.lastChild.firstChild.firstChild.nodeValue).toBe(
-      "World!",
+    expect(textEditorMock.root.firstChild.lastChild.firstChild.nodeValue).toBe(
+      " amet",
     );
   });
 
