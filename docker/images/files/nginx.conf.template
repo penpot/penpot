@@ -144,7 +144,7 @@ http {
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
-            location ~* \.(js|css|jpg|png|svg|ttf|woff|woff2|wasm)$ {
+            location ~* \.(js|css|wasm|jpg|png|map|svg|ttf|woff|woff2|)$ {
                 add_header Cache-Control "public, max-age=604800" always; # 7 days
             }
 
@@ -152,8 +152,10 @@ http {
                 return 301 " /404";
             }
 
+            add_header X-Frame-Options SAMEORIGIN always;
             add_header Cache-Control "no-store, no-cache, max-age=0" always;
             try_files $uri /index.html$is_args$args /index.html =404;
+
         }
     }
 }
