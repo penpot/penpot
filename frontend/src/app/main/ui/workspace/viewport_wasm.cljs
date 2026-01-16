@@ -60,6 +60,31 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
+(defonce ^:private shared-canvas (atom nil))
+(defonce ^:private canvas-stash (atom nil))
+
+(defn- ensure-canvas-stash!
+  []
+  (or @canvas-stash
+      (when (exists? js/document)
+        (let [stash (.createElement js/document "div")]
+          (set! (.. stash -style -display) "none")
+          (.setAttribute stash "data-testid" "canvas-wasm-stash")
+          (.appendChild (.-body js/document) stash)
+          (reset! canvas-stash stash)
+          stash))))
+
+(defn- get-shared-canvas!
+  []
+  (or @shared-canvas
+      (when (exists? js/document)
+        (let [existing (.getElementById js/document "render")
+              canvas (or existing (.createElement js/document "canvas"))]
+          (.setAttribute canvas "id" "render")
+          (.setAttribute canvas "data-testid" "canvas-wasm-shapes")
+          (reset! shared-canvas canvas)
+          canvas))))
+
 ;; --- Viewport
 
 (defn apply-modifiers-to-selected
@@ -139,6 +164,7 @@
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
+        canvas-host-ref   (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
 
         ;; STATE REFS
@@ -297,6 +323,26 @@
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))]
 
+    (mf/with-effect []
+      (when-let [host (mf/ref-val canvas-host-ref)]
+        (when-let [canvas (get-shared-canvas!)]
+          (when-not (identical? (.-parentNode canvas) host)
+            (.appendChild host canvas))
+          (mf/set-ref-val! canvas-ref canvas)
+          (set! (.-className canvas) (stl/css :render-shapes))))
+      (fn []
+        (when-let [canvas (mf/ref-val canvas-ref)]
+          (when-let [stash (ensure-canvas-stash!)]
+            (when-not (identical? (.-parentNode canvas) stash)
+              (.appendChild stash canvas))))))
+
+    (mf/with-effect [vport background]
+      (when-let [canvas (mf/ref-val canvas-ref)]
+        (set! (.-width canvas) (* wasm.api/dpr (:width vport 0)))
+        (set! (.-height canvas) (* wasm.api/dpr (:height vport 0)))
+        (set! (.. canvas -style -backgroundColor) background)
+        (set! (.. canvas -style -pointerEvents) "none")))
+
     ;; NOTE: We need this page-id dependency to react to it and reset the
     ;;       canvas, even though we are not using `page-id` inside the hook.
     ;;       We think moving this out to a handler will make the render code
@@ -403,15 +449,7 @@
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
                                                :canvas-ref canvas-ref}])]
 
-     [:canvas {:id "render"
-               :data-testid "canvas-wasm-shapes"
-               :ref canvas-ref
-               :class (stl/css :render-shapes)
-               :key (dm/str "render" page-id)
-               :width (* wasm.api/dpr (:width vport 0))
-               :height (* wasm.api/dpr (:height vport 0))
-               :style {:background-color background
-                       :pointer-events "none"}}]
+     [:div {:ref canvas-host-ref}]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
