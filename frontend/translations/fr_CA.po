@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-15 03:01+0000\n"
+"PO-Revision-Date: 2026-01-17 14:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -1711,3 +1711,19 @@ msgstr "Le fichier est d'une version incompatible"
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
 msgstr "Erreur de connexion, l'URL n'est pas atteignable"
+
+#: src/app/main/ui/dashboard/team.cljs:1045
+msgid "errors.webhooks.invalid-uri"
+msgstr "Erreur de validation de l'URL."
+
+#: src/app/main/ui/dashboard/team.cljs:1204
+msgid "errors.webhooks.last-delivery"
+msgstr "Erreur lors du dernier envoi."
+
+#: src/app/main/ui/dashboard/team.cljs:1047, src/app/main/ui/dashboard/team.cljs:1207
+msgid "errors.webhooks.ssl-validation"
+msgstr "Erreur de validation SSL."
+
+#: src/app/main/ui/dashboard/team.cljs:1049
+msgid "errors.webhooks.timeout"
+msgstr "Délai d'attente dépassé"
