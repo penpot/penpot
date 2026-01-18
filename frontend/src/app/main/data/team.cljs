@@ -173,7 +173,8 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-members team-id)
+                          (rx/of (dp/refresh-profile)
+                                 (fetch-members team-id)
                                  (fetch-teams)
                                  (ptk/data-event ::ev/event
                                                  {::ev/name "delete-team-member"
