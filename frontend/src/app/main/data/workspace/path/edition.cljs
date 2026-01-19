@@ -298,8 +298,8 @@
             edit-path (dm/get-in state [:workspace-local :edit-path id])
             content   (st/get-path state :content)
             state     (cond-> state
-                        (cfh/path-shape? objects id)
-                        (st/set-content (path/close-subpaths content)))]
+                        #_(cfh/path-shape? objects id)
+                        #_(st/set-content (path/close-subpaths content)))]
 
         (cond-> state
           (or (not edit-path)

@@ -56,32 +56,32 @@
                                    (path/update-geometry))))
           (pcb/resize-parents [shape-id])))))
 
-(defn save-path-content
-  ([]
-   (save-path-content {}))
-  ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
-   (ptk/reify ::save-path-content
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [content (st/get-path state :content)
-             content (if (and (not preserve-move-to)
-                              (= (-> content last :command) :move-to))
-                       (into [] (take (dec (count content)) content))
-                       content)]
-         (-> state
-             (st/set-content content))))
+;; (defn save-path-content
+;;   ([]
+;;    (save-path-content {}))
+;;   ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
+;;    (ptk/reify ::save-path-content
+;;      ptk/UpdateEvent
+;;      (update [_ state]
+;;        (let [content (st/get-path state :content)
+;;              content (if (and (not preserve-move-to)
+;;                               (= (-> content last :command) :move-to))
+;;                        (into [] (take (dec (count content)) content))
+;;                        content)]
+;;          (-> state
+;;              (st/set-content content))))
 
-     ptk/WatchEvent
-     (watch [it state _]
-       (let [page-id     (:current-page-id state)
-             objects     (dsh/lookup-page-objects state page-id)
-             id          (dm/get-in state [:workspace-local :edition])
-             old-content (dm/get-in state [:workspace-local :edit-path id :old-content])
-             shape       (st/get-path state)]
+;;      ptk/WatchEvent
+;;      (watch [it state _]
+;;        (let [page-id     (:current-page-id state)
+;;              objects     (dsh/lookup-page-objects state page-id)
+;;              id          (dm/get-in state [:workspace-local :edition])
+;;              old-content (dm/get-in state [:workspace-local :edit-path id :old-content])
+;;              shape       (st/get-path state)]
 
-         (if (and (some? old-content) (some? (:id shape)))
-           (let [changes (generate-path-changes it objects page-id id old-content (:content shape))]
-             (rx/of (dch/commit-changes changes)))
-           (rx/empty)))))))
+;;          (if (and (some? old-content) (some? (:id shape)))
+;;            (let [changes (generate-path-changes it objects page-id id old-content (:content shape))]
+;;              (rx/of (dch/commit-changes changes)))
+;;            (rx/empty)))))))
 
 

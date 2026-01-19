@@ -121,13 +121,15 @@
   (ptk/reify ::finish-drag
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
+      (let [id        (st/get-path-id state)
 
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            content (-> (st/get-path state :content)
-                        (path/apply-content-modifiers modifiers))
+            content   (-> (st/get-path state :content)
+                          (path/apply-content-modifiers modifiers))
 
-            handler (get-in state [:workspace-local :edit-path id :drag-handler])]
+            handler   (get-in state [:workspace-local :edit-path id :drag-handler])]
+
+        (prn "finish-drag")
         (-> state
             (st/set-content content)
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
@@ -424,6 +426,8 @@
             old-content    (get local :old-content)
             edit-mode      (get local :edit-mode)]
 
+        (prn "check-changed-content" old-content)
+        (prn "check-changed-content" content)
         (cond
           (and (not= content old-content) (not empty-content?))
           (let [page-id (:current-page-id state)

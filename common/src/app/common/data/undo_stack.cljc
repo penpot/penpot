@@ -25,7 +25,8 @@
 (defn append
   [{index :index items :items :as stack} value]
 
-  (if (and (some? stack) (not= value (peek stack)))
+  (if (and (some? stack)
+           (not= value (peek stack)))
     (let [items (cond-> items
                   (> index 0)
                   (subvec 0 (inc index))
@@ -35,7 +36,6 @@
 
                   :always
                   (conj value))
-
           index (min (dec MAX-UNDO-SIZE) (inc index))]
       {:index index
        :items items})

@@ -10,7 +10,9 @@
    [app.common.data.undo-stack :as u]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace.edition :as-alias dwe]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
@@ -57,44 +59,63 @@
   (ptk/reify ::undo-path
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
-            undo-stack (-> (get-in state [:workspace-local :edit-path id :undo-stack])
-                           (u/undo))
-            entry (u/peek undo-stack)]
-        (cond-> state
-          (some? entry)
-          (-> (load-entry entry)
-              (d/assoc-in-when
-               [:workspace-local :edit-path id :undo-stack]
-               undo-stack)))))
+      (let [id (st/get-path-id state)]
+        (update-in state [:workspace-local :edit-path id :undo-stack] u/undo)))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [id (st/get-path-id state)
-            undo-stack (get-in state [:workspace-local :edit-path id :undo-stack])]
-        (if (> (:index undo-stack) 0)
-          (rx/of (changes/save-path-content {:preserve-move-to true}))
-          (rx/of (changes/save-path-content {:preserve-move-to true})
-                 (common/finish-path)
-                 (dwc/show-toolbar)))))))
+    (watch [it state _]
+      (let [id          (st/get-path-id state)
+            shape       (st/get-path state)
+
+            page-id     (:current-page-id state)
+            objects     (dsh/lookup-page-objects state page-id)
+
+            edition?    (= (get-in state [:workspace-local :edition]) id)
+
+            ustack      (get-in state [:workspace-local :edit-path id :undo-stack])
+            entry       (u/peek ustack)
+
+            old-content (get shape :content)
+            new-content (get entry :content)
+            changes     (changes/generate-path-changes it objects page-id id old-content new-content)]
+
+        (rx/concat
+         (rx/of #(load-entry % entry))
+         (if edition?
+           (rx/of (dch/commit-changes changes))
+           (rx/empty))
+         (if (zero? (:index ustack))
+           (rx/of (common/finish-path)
+                  (dwc/show-toolbar))
+           (rx/empty)))))))
 
 (defn redo-path []
   (ptk/reify ::redo-path
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
-            undo-stack (-> (get-in state [:workspace-local :edit-path id :undo-stack])
-                           (u/redo))
-            entry (u/peek undo-stack)]
+      (let [id     (st/get-path-id state)
+            ustack (-> (get-in state [:workspace-local :edit-path id :undo-stack])
+                       (u/redo))
+            entry  (u/peek ustack)]
         (-> state
-            (load-entry entry)
-            (d/assoc-in-when
-             [:workspace-local :edit-path id :undo-stack]
-             undo-stack))))
+            (d/assoc-in-when [:workspace-local :edit-path id :undo-stack] ustack))))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (changes/save-path-content)))))
+    (watch [it state _]
+
+      (let [id          (st/get-path-id state)
+            shape       (st/get-path state)
+
+            page-id     (:current-page-id state)
+            objects     (dsh/lookup-page-objects state page-id)
+
+            ustack      (get-in state [:workspace-local :edit-path id :undo-stack])
+            entry       (u/peek ustack)
+            old-content (get shape :content)
+            new-content (get entry :content)
+            changes     (changes/generate-path-changes it objects page-id id old-content new-content)]
+
+        (rx/of (dch/commit-changes changes))))))
 
 (defn merge-head
   "Joins the head with the previous undo in one. This is done so when the user changes a
@@ -149,6 +170,7 @@
     (ptk/reify ::start-path-undo
       ptk/UpdateEvent
       (update [_ state]
+
         (let [undo-lock (get-in state [:workspace-local :edit-path (st/get-path-id state) :undo-lock])]
           (cond-> state
             (not undo-lock)
