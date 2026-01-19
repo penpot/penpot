@@ -1983,6 +1983,16 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
+        let root_ids = {
+            if let Some(shape_id) = base_object {
+                vec![*shape_id]
+            } else {
+                let Some(root) = tree.get(&Uuid::nil()) else {
+                    return Err(String::from("Root shape not found"));
+                };
+                root.children_ids(false)
+            }
+        };
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
@@ -1995,7 +2005,6 @@ impl RenderState {
                         self.background_color,
                     );
                     performance::end_measure!("render_shape_tree::cached");
-
                     if self.options.is_debug_visible() {
                         debug::render_workspace_current_tile(
                             self,
@@ -2008,13 +2017,11 @@ impl RenderState {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) =
                         self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop)?;
-
                     if early_return {
                         return Ok(());
                     }
                     performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds();
-
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
 
@@ -2035,45 +2042,24 @@ impl RenderState {
                     }
                 }
             }
-
             self.surfaces
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
-
-            let root_ids = {
-                if let Some(shape_id) = base_object {
-                    vec![*shape_id]
-                } else {
-                    let Some(root) = tree.get(&Uuid::nil()) else {
-                        return Err(String::from("Root shape not found"));
-                    };
-                    root.children_ids(false)
-                }
-            };
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
 
-                let is_cached = self.surfaces.has_cached_tile_surface(next_tile);
-                if !is_cached {
+                if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
-                            .iter()
-                            .enumerate()
-                            .map(|(i, id)| (*id, i))
-                            .collect();
-
-                        // We only need first level shapes
-                        let mut valid_ids: Vec<Uuid> = ids
-                            .iter()
-                            .filter(|id| root_ids_map.contains_key(id))
-                            .copied()
-                            .collect();
-
-                        // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
+                        // We only need first level shapes, in the same order as the parent node
+                        let mut valid_ids = Vec::with_capacity(ids.len());
+                        for root_id in root_ids.iter() {
+                            if ids.contains(root_id) {
+                                valid_ids.push(*root_id);
+                            }
+                        }
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -2090,22 +2076,18 @@ impl RenderState {
                 should_stop = true;
             }
         }
+
         self.render_in_progress = false;
 
         self.surfaces.gc();
-
         // Cache target surface in a texture
         self.cached_viewbox = self.viewbox;
-
         self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
-
         if self.options.is_debug_visible() {
             debug::render(self);
         }
-
         ui::render(self, tree);
         debug::render_wasm_label(self);
-
         Ok(())
     }
 

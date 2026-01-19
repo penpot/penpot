@@ -200,21 +200,16 @@ const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
 // ones that are going to be rendered.
 pub struct PendingTiles {
     pub list: Vec<Tile>,
-    // Generation counter to detect when tiles are replaced during a render
-    generation: u64,
 }
 
 impl PendingTiles {
     pub fn new_empty() -> Self {
         Self {
             list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
-            generation: 0,
         }
     }
 
     pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces) {
-        // Increment generation to mark that tiles were replaced
-        self.generation += 1;
         self.list.clear();
 
         let columns = tile_viewbox.interest_rect.width();
