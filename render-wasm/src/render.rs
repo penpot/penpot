@@ -10,7 +10,6 @@ mod shadows;
 mod strokes;
 mod surfaces;
 pub mod text;
-
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
@@ -51,6 +50,25 @@ pub struct NodeRenderState {
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
     mask: bool,
+}
+
+/// Get simplified children of a container, flattening nested flattened containers
+fn get_simplified_children<'a>(tree: ShapesPoolRef<'a>, shape: &'a Shape) -> Vec<Uuid> {
+    let mut result = Vec::new();
+
+    for child_id in shape.children_ids_iter(false) {
+        if let Some(child) = tree.get(child_id) {
+            if child.can_flatten() {
+                // Child is flattened: recursively get its simplified children
+                result.extend(get_simplified_children(tree, child));
+            } else {
+                // Child is not flattened: add it directly
+                result.push(*child_id);
+            }
+        }
+    }
+
+    result
 }
 
 impl NodeRenderState {
@@ -398,12 +416,7 @@ impl RenderState {
     }
 
     fn frame_clip_layer_blur(shape: &Shape) -> Option<Blur> {
-        match shape.shape_type {
-            Type::Frame(_) if shape.clip() => shape.blur.filter(|blur| {
-                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.
-            }),
-            _ => None,
-        }
+        shape.frame_clip_layer_blur()
     }
 
     /// Runs `f` with `ignore_nested_blurs` temporarily forced to `true`.
@@ -521,38 +534,59 @@ impl RenderState {
 
         let paint = skia::Paint::default();
 
-        self.surfaces
-            .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        // Only draw surfaces that have content (dirty flag optimization)
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            self.surfaces
+                .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+        }
 
-        self.surfaces
-            .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            self.surfaces
+                .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+        }
 
         let mut render_overlay_below_strokes = false;
         if let Some(shape) = shape {
             render_overlay_below_strokes = shape.has_fills();
         }
 
-        if render_overlay_below_strokes {
+        if render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        self.surfaces
-            .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            self.surfaces
+                .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+        }
 
-        if !render_overlay_below_strokes {
+        if !render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::InnerShadows as u32
-            | SurfaceId::TextDropShadows as u32;
+        // Build mask of dirty surfaces that need clearing
+        let mut dirty_surfaces_to_clear = 0u32;
+        if self.surfaces.is_dirty(SurfaceId::Strokes) {
+            dirty_surfaces_to_clear |= SurfaceId::Strokes as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::Fills) {
+            dirty_surfaces_to_clear |= SurfaceId::Fills as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::InnerShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::InnerShadows as u32;
+        }
+        if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
+            dirty_surfaces_to_clear |= SurfaceId::TextDropShadows as u32;
+        }
 
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().clear(skia::Color::TRANSPARENT);
-        });
+        if dirty_surfaces_to_clear != 0 {
+            self.surfaces.apply_mut(dirty_surfaces_to_clear, |s| {
+                s.canvas().clear(skia::Color::TRANSPARENT);
+            });
+            // Clear dirty flags for surfaces we just cleared
+            self.surfaces.clear_dirty(dirty_surfaces_to_clear);
+        }
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -605,11 +639,90 @@ impl RenderState {
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().save();
-        });
+
+        // Only save canvas state if we have clipping or transforms
+        // For simple shapes without clipping, skip expensive save/restore
+        let needs_save =
+            clip_bounds.is_some() || offset.is_some() || !shape.transform.is_identity();
+
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().save();
+            });
+        }
 
         let antialias = shape.should_use_antialias(self.get_scale());
+        let fast_mode = self.options.is_fast_mode();
+        let has_nested_fills = self
+            .nested_fills
+            .last()
+            .is_some_and(|fills| !fills.is_empty());
+        let has_inherited_blur = !self.ignore_nested_blurs
+            && self.nested_blurs.iter().flatten().any(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            });
+        let can_render_directly = apply_to_current_surface
+            && clip_bounds.is_none()
+            && offset.is_none()
+            && parent_shadows.is_none()
+            && !shape.needs_layer()
+            && shape.blur.is_none()
+            && !has_inherited_blur
+            && shape.shadows.is_empty()
+            && shape.transform.is_identity()
+            && matches!(
+                shape.shape_type,
+                Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
+            )
+            && !(shape.fills.is_empty() && has_nested_fills)
+            && !shape
+                .svg_attrs
+                .as_ref()
+                .is_some_and(|attrs| attrs.fill_none);
+
+        if can_render_directly {
+            let scale = self.get_scale();
+            let translation = self
+                .surfaces
+                .get_render_context_translation(self.render_area, scale);
+            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+                let canvas = s.canvas();
+                canvas.save();
+                canvas.scale((scale, scale));
+                canvas.translate(translation);
+            });
+
+            for fill in shape.fills().rev() {
+                fills::render(self, shape, fill, antialias, SurfaceId::Current);
+            }
+
+            for stroke in shape.visible_strokes().rev() {
+                strokes::render(
+                    self,
+                    shape,
+                    stroke,
+                    Some(SurfaceId::Current),
+                    None,
+                    antialias,
+                );
+            }
+
+            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+                s.canvas().restore();
+            });
+
+            if self.options.is_debug_visible() {
+                let shape_selrect_bounds = self.get_shape_selrect_bounds(shape);
+                debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
+            }
+
+            if needs_save {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().restore();
+                });
+            }
+            return;
+        }
 
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
@@ -666,6 +779,9 @@ impl RenderState {
         } else if shape_has_blur {
             shape.to_mut().set_blur(None);
         }
+        if fast_mode {
+            shape.to_mut().set_blur(None);
+        }
 
         let center = shape.center();
         let mut matrix = shape.transform;
@@ -683,16 +799,18 @@ impl RenderState {
                     matrix.pre_concat(&svg_transform);
                 }
 
-                self.surfaces.canvas(fills_surface_id).concat(&matrix);
+                self.surfaces
+                    .canvas_and_mark_dirty(fills_surface_id)
+                    .concat(&matrix);
 
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.surfaces.canvas(fills_surface_id))
+                    svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
                     let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
                     match dom_result {
                         Ok(dom) => {
-                            dom.render(self.surfaces.canvas(fills_surface_id));
+                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                             shape.to_mut().set_svg(dom);
                         }
                         Err(e) => {
@@ -708,18 +826,8 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut drop_shadows = shape.drop_shadow_paints();
-
-                if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
-                    drop_shadows.extend(inherited_shadows);
-                }
-
-                let inner_shadows = shape.inner_shadow_paints();
-                let blur_filter = shape.image_filter(1.);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-                let mut paragraphs_with_shadows =
-                    text_content.paragraph_builder_group_from_text(Some(true));
                 let mut stroke_paragraphs_list = shape
                     .visible_strokes()
                     .rev()
@@ -733,62 +841,8 @@ impl RenderState {
                         )
                     })
                     .collect::<Vec<_>>();
-
-                let mut stroke_paragraphs_with_shadows_list = shape
-                    .visible_strokes()
-                    .rev()
-                    .map(|stroke| {
-                        text::stroke_paragraph_builder_group_from_text(
-                            &text_content,
-                            stroke,
-                            &shape.selrect(),
-                            count_inner_strokes,
-                            Some(true),
-                        )
-                    })
-                    .collect::<Vec<_>>();
-
-                if let Some(parent_shadows) = parent_shadows {
-                    if !shape.has_visible_strokes() {
-                        for shadow in parent_shadows {
-                            text::render(
-                                Some(self),
-                                None,
-                                &shape,
-                                &mut paragraphs_with_shadows,
-                                text_drop_shadows_surface_id.into(),
-                                Some(&shadow),
-                                blur_filter.as_ref(),
-                            );
-                        }
-                    } else {
-                        shadows::render_text_shadows(
-                            self,
-                            &shape,
-                            &mut paragraphs_with_shadows,
-                            &mut stroke_paragraphs_with_shadows_list,
-                            text_drop_shadows_surface_id.into(),
-                            &parent_shadows,
-                            &blur_filter,
-                        );
-                    }
-                } else {
-                    // 1. Text drop shadows
-                    if !shape.has_visible_strokes() {
-                        for shadow in &drop_shadows {
-                            text::render(
-                                Some(self),
-                                None,
-                                &shape,
-                                &mut paragraphs_with_shadows,
-                                text_drop_shadows_surface_id.into(),
-                                Some(shadow),
-                                blur_filter.as_ref(),
-                            );
-                        }
-                    }
-
-                    // 2. Text fills
+                if fast_mode {
+                    // Fast path: render fills and strokes only (skip shadows/blur).
                     text::render(
                         Some(self),
                         None,
@@ -796,21 +850,9 @@ impl RenderState {
                         &mut paragraph_builders,
                         Some(fills_surface_id),
                         None,
-                        blur_filter.as_ref(),
+                        None,
                     );
 
-                    // 3. Stroke drop shadows
-                    shadows::render_text_shadows(
-                        self,
-                        &shape,
-                        &mut paragraphs_with_shadows,
-                        &mut stroke_paragraphs_with_shadows_list,
-                        text_drop_shadows_surface_id.into(),
-                        &drop_shadows,
-                        &blur_filter,
-                    );
-
-                    // 4. Stroke fills
                     for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
                         text::render(
                             Some(self),
@@ -819,33 +861,133 @@ impl RenderState {
                             stroke_paragraphs,
                             Some(strokes_surface_id),
                             None,
-                            blur_filter.as_ref(),
+                            None,
                         );
                     }
+                } else {
+                    let mut drop_shadows = shape.drop_shadow_paints();
 
-                    // 5. Stroke inner shadows
-                    shadows::render_text_shadows(
-                        self,
-                        &shape,
-                        &mut paragraphs_with_shadows,
-                        &mut stroke_paragraphs_with_shadows_list,
-                        Some(innershadows_surface_id),
-                        &inner_shadows,
-                        &blur_filter,
-                    );
+                    if let Some(inherited_shadows) = self.get_inherited_drop_shadows() {
+                        drop_shadows.extend(inherited_shadows);
+                    }
 
-                    // 6. Fill Inner shadows
-                    if !shape.has_visible_strokes() {
-                        for shadow in &inner_shadows {
+                    let inner_shadows = shape.inner_shadow_paints();
+                    let blur_filter = shape.image_filter(1.);
+                    let mut paragraphs_with_shadows =
+                        text_content.paragraph_builder_group_from_text(Some(true));
+                    let mut stroke_paragraphs_with_shadows_list = shape
+                        .visible_strokes()
+                        .rev()
+                        .map(|stroke| {
+                            text::stroke_paragraph_builder_group_from_text(
+                                &text_content,
+                                stroke,
+                                &shape.selrect(),
+                                count_inner_strokes,
+                                Some(true),
+                            )
+                        })
+                        .collect::<Vec<_>>();
+
+                    if let Some(parent_shadows) = parent_shadows {
+                        if !shape.has_visible_strokes() {
+                            for shadow in parent_shadows {
+                                text::render(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut paragraphs_with_shadows,
+                                    text_drop_shadows_surface_id.into(),
+                                    Some(&shadow),
+                                    blur_filter.as_ref(),
+                                );
+                            }
+                        } else {
+                            shadows::render_text_shadows(
+                                self,
+                                &shape,
+                                &mut paragraphs_with_shadows,
+                                &mut stroke_paragraphs_with_shadows_list,
+                                text_drop_shadows_surface_id.into(),
+                                &parent_shadows,
+                                &blur_filter,
+                            );
+                        }
+                    } else {
+                        // 1. Text drop shadows
+                        if !shape.has_visible_strokes() {
+                            for shadow in &drop_shadows {
+                                text::render(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut paragraphs_with_shadows,
+                                    text_drop_shadows_surface_id.into(),
+                                    Some(shadow),
+                                    blur_filter.as_ref(),
+                                );
+                            }
+                        }
+
+                        // 2. Text fills
+                        text::render(
+                            Some(self),
+                            None,
+                            &shape,
+                            &mut paragraph_builders,
+                            Some(fills_surface_id),
+                            None,
+                            blur_filter.as_ref(),
+                        );
+
+                        // 3. Stroke drop shadows
+                        shadows::render_text_shadows(
+                            self,
+                            &shape,
+                            &mut paragraphs_with_shadows,
+                            &mut stroke_paragraphs_with_shadows_list,
+                            text_drop_shadows_surface_id.into(),
+                            &drop_shadows,
+                            &blur_filter,
+                        );
+
+                        // 4. Stroke fills
+                        for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
                             text::render(
                                 Some(self),
                                 None,
                                 &shape,
-                                &mut paragraphs_with_shadows,
-                                Some(innershadows_surface_id),
-                                Some(shadow),
+                                stroke_paragraphs,
+                                Some(strokes_surface_id),
+                                None,
                                 blur_filter.as_ref(),
                             );
+                        }
+
+                        // 5. Stroke inner shadows
+                        shadows::render_text_shadows(
+                            self,
+                            &shape,
+                            &mut paragraphs_with_shadows,
+                            &mut stroke_paragraphs_with_shadows_list,
+                            Some(innershadows_surface_id),
+                            &inner_shadows,
+                            &blur_filter,
+                        );
+
+                        // 6. Fill Inner shadows
+                        if !shape.has_visible_strokes() {
+                            for shadow in &inner_shadows {
+                                text::render(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    &mut paragraphs_with_shadows,
+                                    Some(innershadows_surface_id),
+                                    Some(shadow),
+                                    blur_filter.as_ref(),
+                                );
+                            }
                         }
                     }
                 }
@@ -886,16 +1028,25 @@ impl RenderState {
                         None,
                         antialias,
                     );
-                    shadows::render_stroke_inner_shadows(
+                    if !fast_mode {
+                        shadows::render_stroke_inner_shadows(
+                            self,
+                            shape,
+                            stroke,
+                            antialias,
+                            innershadows_surface_id,
+                        );
+                    }
+                }
+
+                if !fast_mode {
+                    shadows::render_fill_inner_shadows(
                         self,
                         shape,
-                        stroke,
                         antialias,
                         innershadows_surface_id,
                     );
                 }
-
-                shadows::render_fill_inner_shadows(self, shape, antialias, innershadows_surface_id);
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
@@ -908,9 +1059,13 @@ impl RenderState {
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().restore();
-        });
+
+        // Only restore if we saved (optimization for simple shapes)
+        if needs_save {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().restore();
+            });
+        }
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
@@ -1031,6 +1186,7 @@ impl RenderState {
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
+
         self.apply_drawing_to_render_canvas(None);
 
         if sync_render {
@@ -1117,18 +1273,6 @@ impl RenderState {
             self.nested_fills.push(Vec::new());
         }
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-
-        if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
-            let scale = self.get_scale();
-            let sigma = frame_blur.value * scale;
-            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                paint.set_image_filter(filter);
-            }
-        }
-
         // When we're rendering the mask shape we need to set a special blend mode
         // called 'destination-in' that keeps the drawn content within the mask.
         // @see https://skia.org/docs/user/api/skblendmode_overview/
@@ -1141,16 +1285,40 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        self.surfaces
-            .canvas(SurfaceId::Current)
-            .save_layer(&layer_rec);
+        // Only create save_layer if actually needed
+        // For simple shapes with default opacity and blend mode, skip expensive save_layer
+        // Groups with masks need a layer to properly handle the mask rendering
+        let needs_layer = element.needs_layer();
+
+        if needs_layer {
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+
+            if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+                let scale = self.get_scale();
+                let sigma = frame_blur.value * scale;
+                if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+                    paint.set_image_filter(filter);
+                }
+            }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            self.surfaces
+                .canvas(SurfaceId::Current)
+                .save_layer(&layer_rec);
+        }
 
         self.focus_mode.enter(&element.id);
     }
 
     #[inline]
-    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
+    pub fn render_shape_exit(
+        &mut self,
+        element: &Shape,
+        visited_mask: bool,
+        clip_bounds: Option<ClipStack>,
+    ) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -1206,7 +1374,7 @@ impl RenderState {
             element_strokes.to_mut().clip_content = false;
             self.render_shape(
                 &element_strokes,
-                None,
+                clip_bounds,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
                 SurfaceId::InnerShadows,
@@ -1217,7 +1385,14 @@ impl RenderState {
             );
         }
 
-        self.surfaces.canvas(SurfaceId::Current).restore();
+        // Only restore if we created a layer (optimization for simple shapes)
+        // Groups with masks need restore to properly handle the mask rendering
+        let needs_layer = element.needs_layer();
+
+        if needs_layer {
+            self.surfaces.canvas(SurfaceId::Current).restore();
+        }
+
         self.focus_mode.exit(&element.id);
     }
 
@@ -1450,6 +1625,8 @@ impl RenderState {
                 "Error: Element with root_id {} not found in the tree.",
                 node_render_state.id
             ))?;
+            let scale = self.get_scale();
+            let mut extrect: Option<Rect> = None;
 
             // If the shape is not in the tile set, then we add them.
             if self.tiles.get_tiles_of(node_id).is_none() {
@@ -1457,22 +1634,44 @@ impl RenderState {
             }
 
             if visited_children {
-                self.render_shape_exit(element, visited_mask);
+                // Skip render_shape_exit for flattened containers
+                if !element.can_flatten() {
+                    self.render_shape_exit(element, visited_mask, clip_bounds);
+                }
                 continue;
             }
 
             if !node_render_state.is_root() {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
-                let scale = self.get_scale();
-                let extrect = transformed_element.extrect(tree, scale);
 
-                let is_visible = extrect.intersects(self.render_area)
-                    && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(scale, tree);
+                // Aggressive early exit: check hidden first (fastest check)
+                if transformed_element.hidden {
+                    continue;
+                }
+
+                // For frames and groups, we must use extrect because they can have nested content
+                // that extends beyond their selrect. Using selrect for early exit would incorrectly
+                // skip frames/groups that have nested content in the current tile.
+                let is_container = matches!(
+                    transformed_element.shape_type,
+                    crate::shapes::Type::Frame(_) | crate::shapes::Type::Group(_)
+                );
+
+                let has_effects = transformed_element.has_effects_that_extend_bounds();
+
+                let is_visible = if is_container || has_effects {
+                    let element_extrect =
+                        extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
+                    element_extrect.intersects(self.render_area)
+                        && !transformed_element.visually_insignificant(scale, tree)
+                } else {
+                    let selrect = transformed_element.selrect();
+                    selrect.intersects(self.render_area)
+                        && !transformed_element.visually_insignificant(scale, tree)
+                };
 
                 if self.options.is_debug_visible() {
-                    let shape_extrect_bounds =
-                        self.get_shape_extrect_bounds(&transformed_element, tree);
+                    let shape_extrect_bounds = self.get_shape_extrect_bounds(element, tree);
                     debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
@@ -1481,10 +1680,14 @@ impl RenderState {
                 }
             }
 
-            self.render_shape_enter(element, mask);
+            // Skip render_shape_enter/exit for flattened containers
+            // If a container was flattened, it doesn't affect children visually, so we skip
+            // the expensive enter/exit operations and process children directly
+            if !element.can_flatten() {
+                self.render_shape_enter(element, mask);
+            }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                let scale: f32 = self.get_scale();
                 let translation = self
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
@@ -1524,9 +1727,11 @@ impl RenderState {
                             .save_layer(&layer_rec);
 
                         // First pass: Render shadow in black to establish alpha mask
+                        let element_extrect =
+                            extrect.get_or_insert_with(|| element.extrect(tree, scale));
                         self.render_drop_black_shadow(
                             element,
-                            &element.extrect(tree, scale),
+                            element_extrect,
                             shadow,
                             clip_bounds.clone(),
                             scale,
@@ -1541,7 +1746,6 @@ impl RenderState {
                                 if shadow_shape.hidden {
                                     continue;
                                 }
-
                                 let clip_bounds = node_render_state
                                     .get_nested_shadow_clip_bounds(element, shadow);
 
@@ -1682,14 +1886,18 @@ impl RenderState {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
 
-            match element.shape_type {
-                Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
-                    self.nested_blurs.push(None);
+            // Skip nested state updates for flattened containers
+            // Flattened containers don't affect children, so we don't need to track their state
+            if !element.can_flatten() {
+                match element.shape_type {
+                    Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                        self.nested_blurs.push(None);
+                    }
+                    Type::Frame(_) | Type::Group(_) => {
+                        self.nested_blurs.push(element.blur);
+                    }
+                    _ => {}
                 }
-                Type::Frame(_) | Type::Group(_) => {
-                    self.nested_blurs.push(element.blur);
-                }
-                _ => {}
             }
 
             // Set the node as visited_children before processing children
@@ -1704,24 +1912,35 @@ impl RenderState {
             if element.is_recursive() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
-                let mut children_ids: Vec<_> = element.children_ids_iter(false).collect();
+
+                let children_ids: Vec<_> = if element.can_flatten() {
+                    // Container was flattened: get simplified children (which skip this level)
+                    get_simplified_children(tree, element)
+                } else {
+                    // Container not flattened: use original children
+                    element.children_ids_iter(false).copied().collect()
+                };
 
                 // Z-index ordering on Layouts
-                if element.has_layout() {
+                let children_ids = if element.has_layout() {
+                    let mut ids = children_ids;
                     if element.is_flex() && !element.is_flex_reverse() {
-                        children_ids.reverse();
+                        ids.reverse();
                     }
 
-                    children_ids.sort_by(|id1, id2| {
+                    ids.sort_by(|id1, id2| {
                         let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
                         let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
                         z2.cmp(&z1)
                     });
-                }
+                    ids
+                } else {
+                    children_ids
+                };
 
                 for child_id in children_ids.iter() {
                     self.pending_nodes.push(NodeRenderState {
-                        id: **child_id,
+                        id: *child_id,
                         visited_children: false,
                         clip_bounds: children_clip_bounds.clone(),
                         visited_mask: false,
@@ -1747,6 +1966,16 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
+        let root_ids = {
+            if let Some(shape_id) = base_object {
+                vec![*shape_id]
+            } else {
+                let Some(root) = tree.get(&Uuid::nil()) else {
+                    return Err(String::from("Root shape not found"));
+                };
+                root.children_ids(false)
+            }
+        };
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
@@ -1803,17 +2032,6 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
-            let root_ids = {
-                if let Some(shape_id) = base_object {
-                    vec![*shape_id]
-                } else {
-                    let Some(root) = tree.get(&Uuid::nil()) else {
-                        return Err(String::from("Root shape not found"));
-                    };
-                    root.children_ids(false)
-                }
-            };
-
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
@@ -1821,21 +2039,13 @@ impl RenderState {
 
                 if !self.surfaces.has_cached_tile_surface(next_tile) {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
-                            .iter()
-                            .enumerate()
-                            .map(|(i, id)| (*id, i))
-                            .collect();
-
-                        // We only need first level shapes
-                        let mut valid_ids: Vec<Uuid> = ids
-                            .iter()
-                            .filter(|id| root_ids_map.contains_key(id))
-                            .copied()
-                            .collect();
-
-                        // These shapes for the tile should be ordered as they are in the parent node
-                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
+                        // We only need first level shapes, in the same order as the parent node
+                        let mut valid_ids = Vec::with_capacity(ids.len());
+                        for root_id in root_ids.iter() {
+                            if ids.contains(root_id) {
+                                valid_ids.push(*root_id);
+                            }
+                        }
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {

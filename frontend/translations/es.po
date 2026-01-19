@@ -2658,7 +2658,12 @@ msgstr "Notas de versión"
 msgid "labels.reload-file"
 msgstr "Recargar archivo"
 
+msgid "labels.reload-page"
+msgstr "Recargar página"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+#, unused
 msgid "labels.remove"
 msgstr "Quitar"
 
@@ -8576,3 +8581,9 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.webgl-context-lost.main-message"
+msgstr "Ups! Se ha perdido el contexto del canvas"
+
+msgid "labels.webgl-context-lost.desc-message"
+msgstr "WebGL ha dejado de funcionar. Por favor, recarga la página para restaurarlo"

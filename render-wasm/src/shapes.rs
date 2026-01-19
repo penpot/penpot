@@ -920,8 +920,13 @@ impl Shape {
             }
 
             Type::Group(_) | Type::Frame(_) if !self.clip_content => {
+                // For frames and groups, we must always calculate extrect for all children
+                // to ensure accurate bounds that include nested content across all tiles.
+                // Using selrect for children can cause frames to be incorrectly omitted from
+                // tiles where they have nested content.
                 for child_id in self.children_ids_iter(false) {
                     if let Some(child_shape) = shapes_pool.get(child_id) {
+                        // Always calculate full extrect for children to ensure accurate bounds
                         let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
                         rect.join(child_extrect);
                     }
@@ -1417,6 +1422,99 @@ impl Shape {
 
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
+    }
+
+    /// Determines if this frame or group can be flattened (doesn't affect children visually)
+    /// A container can be flattened if it has no visual effects that affect its children
+    /// and doesn't render its own content (no fills/strokes)
+    pub fn can_flatten(&self) -> bool {
+        // Only frames and groups can be flattened
+        if !matches!(self.shape_type, Type::Frame(_) | Type::Group(_)) {
+            return false;
+        }
+
+        // Cannot flatten if it has visual effects that affect children:
+
+        if self.clip_content {
+            return false;
+        }
+
+        if !self.transform.is_identity() {
+            return false;
+        }
+
+        if self.opacity != 1.0 {
+            return false;
+        }
+
+        if self.blend_mode() != BlendMode::default() {
+            return false;
+        }
+
+        if self.blur.is_some() {
+            return false;
+        }
+
+        if !self.shadows.is_empty() {
+            return false;
+        }
+
+        if let Type::Group(group) = &self.shape_type {
+            if group.masked {
+                return false;
+            }
+        }
+
+        if self.hidden {
+            return false;
+        }
+
+        // If the container itself has fills/strokes, it renders something visible
+        // We cannot flatten containers that render their own background/border
+        // because they need to be rendered even if they don't affect children
+        if self.has_fills() || self.has_visible_strokes() {
+            return false;
+        }
+
+        true
+    }
+
+    /// Checks if this shape needs a layer for rendering due to visual effects
+    /// (opacity < 1.0, non-default blend mode, or frame clip layer blur)
+    pub fn needs_layer(&self) -> bool {
+        self.opacity() < 1.0
+            || self.blend_mode().0 != skia::BlendMode::SrcOver
+            || self.has_frame_clip_layer_blur()
+            || (matches!(self.shape_type, Type::Group(g) if g.masked))
+    }
+
+    /// Checks if this frame has clip layer blur (affects children)
+    /// A frame has clip layer blur if it clips content and has layer blur
+    pub fn has_frame_clip_layer_blur(&self) -> bool {
+        self.frame_clip_layer_blur().is_some()
+    }
+
+    /// Returns the frame clip layer blur if this frame has one
+    /// A frame has clip layer blur if it clips content and has layer blur
+    pub fn frame_clip_layer_blur(&self) -> Option<Blur> {
+        use crate::shapes::BlurType;
+        match self.shape_type {
+            Type::Frame(_) if self.clip_content => self.blur.filter(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            }),
+            _ => None,
+        }
+    }
+
+    /// Checks if this shape has visual effects that might extend its bounds beyond selrect
+    /// Shapes with these effects require expensive extrect calculation for accurate visibility checks
+    pub fn has_effects_that_extend_bounds(&self) -> bool {
+        !self.shadows.is_empty()
+            || self.blur.is_some()
+            || !self.strokes.is_empty()
+            || !self.transform.is_identity()
+            || !math::is_close_to(self.rotation, 0.0)
+            || matches!(self.shape_type, Type::Group(_) | Type::Frame(_))
     }
 
     pub fn count_visible_inner_strokes(&self) -> usize {
