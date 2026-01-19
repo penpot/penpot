@@ -4943,6 +4943,15 @@ export interface TokenTypography extends TokenBase {
 }
 
 /**
+ * Any possible type of value field in a token.
+ */
+export type TokenValueString =
+  | TokenShadowValueString
+  | TokenTypographyValueString
+  | string
+  | string[];
+
+/**
  * The supported Design Tokens in Penpot.
  */
 export type Token =
@@ -5068,9 +5077,10 @@ export interface TokenSet {
    * @param type Thetype of token.
    * @param name The name of the token (required). It may contain
    * a group path, separated by `.`.
+   * @param value The value of the token (required), in the string form.
    * @return Returns the created Token.
    */
-  addToken(type: TokenType, name: string, value: unknown): Token;
+  addToken(type: TokenType, name: string, value: TokenValueString): Token;
 
   /**
    * Adds to the catalog a new TokenSet equal to this one but with a new id.
