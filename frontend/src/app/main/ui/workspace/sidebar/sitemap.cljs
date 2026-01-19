@@ -13,6 +13,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -22,9 +23,11 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.timers :as timers]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -52,6 +55,8 @@
              refs/workspace-data
              =))
 
+
+
 ;; --- Page Item
 
 (mf/defc page-item
@@ -62,6 +67,22 @@
         delete-fn    (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
         navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dcm/go-to-workspace :page-id id)))
         read-only?   (mf/use-ctx ctx/workspace-read-only?)
+
+        on-click
+        (mf/use-fn
+         (mf/deps id)
+         (fn []
+           ;; when using the wasm renderer, apply a blur effect to the viewport canvas
+           (if (features/active-feature? @st/state "render-wasm/v1")
+             (do
+               (wasm.api/capture-canvas-pixels)
+               (wasm.api/apply-canvas-blur)
+               ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
+               ;;       in the canvas :(
+               (timers/raf
+                (fn []
+                  (timers/raf navigate-fn))))
+             (navigate-fn))))
 
         on-delete
         (mf/use-fn
@@ -155,7 +176,7 @@
                     :selected selected?)
             :data-testid (dm/str "page-" id)
             :tab-index "0"
-            :on-click navigate-fn
+            :on-click on-click
             :on-double-click on-double-click
             :on-context-menu on-context-menu}
       [:div {:class (stl/css :page-icon)}
