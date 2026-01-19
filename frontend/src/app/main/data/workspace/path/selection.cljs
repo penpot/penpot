@@ -149,12 +149,11 @@
            (rx/of (clear-area-selection))))))))
 
 (defn update-selection
-  [point-change]
+  [id point-change]
   (ptk/reify ::update-selection
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
-            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
+      (let [selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected-points (into #{} (map point-change) selected-points)]
         (-> state
             (assoc-in [:workspace-local :edit-path id :selected-points] selected-points))))))

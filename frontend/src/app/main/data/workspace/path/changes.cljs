@@ -17,14 +17,12 @@
 
 (defn generate-path-changes
   "Generates changes to update the new content of the shape"
-  [it objects page-id shape old-content new-content]
+  [it objects page-id shape-id old-content new-content]
 
   (assert (path/content? old-content))
   (assert (path/content? new-content))
 
-  (let [shape-id (:id shape)
-
-        ;; We set the old values so the update-shapes works
+  (let [;; We set the old values so the update-shapes works
         objects
         (update objects shape-id
                 (fn [shape]
@@ -62,6 +60,7 @@
   ([]
    (save-path-content {}))
   ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
+
    (ptk/reify ::save-path-content
      ptk/UpdateEvent
      (update [_ state]

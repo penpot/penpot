@@ -34,6 +34,15 @@
       shape
       (get-in shape ks))))
 
+
+(defn get-path*
+  "Retrieves the location of the path object and additionally can pass
+  the arguments. This location can be used in get-in, assoc-in... functions"
+  [state id]
+  (let [page-id  (:current-page-id state)
+        file-id  (:current-file-id state)]
+    (get-in state [:files file-id :data :pages-index page-id :objects id])))
+
 (defn set-content
   [state content]
   (let [path-loc (get-path-location state :content)]

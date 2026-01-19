@@ -72,6 +72,8 @@
     (watch [_ state _]
       (let [id (st/get-path-id state)
             undo-stack (get-in state [:workspace-local :edit-path id :undo-stack])]
+
+        (app.common.pprint/pprint undo-stack)
         (if (> (:index undo-stack) 0)
           (rx/of (changes/save-path-content {:preserve-move-to true}))
           (rx/of (changes/save-path-content {:preserve-move-to true})

@@ -82,6 +82,7 @@
 (defn move-points-stream
   [start-point selected-points points]
 
+  ;; FIXME: provide zoom on params and avoid derefing state
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ranges (snap/create-ranges points selected-points)
         d-pos (/ snap/snap-path-accuracy zoom)
