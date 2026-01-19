@@ -44,7 +44,7 @@
 
   @include t.use-typography("body-small");
   appearance: none;
-  background-color: var(--context-menu-item-bg-color);
+  background: var(--context-menu-item-bg-color);
   border: $b-1 solid var(--context-menu-item-border-color);
   color: var(--context-menu-item-fg-color);
   border-radius: $br-8;

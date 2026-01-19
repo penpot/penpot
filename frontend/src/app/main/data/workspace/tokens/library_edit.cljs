@@ -21,7 +21,6 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.propagation :as dwtp]
-   [app.main.data.workspace.undo :as dwu]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -447,10 +446,8 @@
   (ptk/reify ::bulk-delete-tokens
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-        (apply rx/of
-               (dwu/start-undo-transaction undo-id)
-               (map #(delete-token set-id %) token-ids))))))
+      (apply rx/of
+             (map #(delete-token set-id %) token-ids)))))
 
 (defn duplicate-token
   [token-id]

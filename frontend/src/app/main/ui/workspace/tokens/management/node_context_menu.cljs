@@ -50,9 +50,7 @@
         (mf/set-ref-val! dropdown-direction-change* 0)))
 
     (mf/with-effect [is-open? dropdown-ref dropdown-action]
-      (let [dropdown-element (mf/ref-val dropdown-ref)
-            dropdown-action (mf/ref-val dropdown-action)]
-        (dom/focus! dropdown-action)
+      (let [dropdown-element (mf/ref-val dropdown-ref)]
         (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
           (let [is-outside? (dom/is-element-outside? dropdown-element)]
             (reset! dropdown-direction* (if is-outside? "up" "down"))
@@ -79,7 +77,7 @@
             [:ul {:class (stl/css :token-node-context-menu-list)}
              [:li {:class (stl/css :token-node-context-menu-listitem)}
               [:button {:class (stl/css :token-node-context-menu-action)
-                        :ref dropdown-action
+                        :type "button"
                         :on-click delete-node}
                (tr "labels.delete")]]])]])
        (dom/get-body)))))
