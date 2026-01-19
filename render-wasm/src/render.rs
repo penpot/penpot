@@ -2157,20 +2157,12 @@ impl RenderState {
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
 
-        // IMPORTANT:
-        // `TileHashMap` can accumulate non-root (deep) shape ids over time because we lazily call
-        // `add_shape_tiles()` while rendering. A "shallow rebuild" is supposed to rebuild the index
-        // only for first-level shapes, so we must start from a clean index to avoid mixing deep ids
-        // (which will not match `root_ids`) and causing tiles to be incorrectly considered empty.
-        self.tiles.invalidate();
-
         let mut all_tiles = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    // Since we invalidated the tile index, we only need to add the shape tiles.
-                    all_tiles.extend(self.add_shape_tiles(shape, tree));
+                    all_tiles.extend(self.update_shape_tiles(shape, tree));
                 } else {
                     // We only need to rebuild tiles from the first level.
                     for child_id in shape.children_ids_iter(false) {
@@ -2179,13 +2171,11 @@ impl RenderState {
                 }
             }
         }
-
         // Update the changed tiles
         self.surfaces.remove_cached_tiles(self.background_color);
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
-
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
