@@ -1552,6 +1552,12 @@ msgstr "El email o la contraseña son incorrectos."
 msgid "errors.wrong-old-password"
 msgstr "La contraseña anterior no es correcta"
 
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Ups! Se ha perdido el contexto del canvas"
+
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL ha dejado de funcionar. Por favor, recarga la página para restaurarlo"
+
 #: src/app/main/ui/settings/feedback.cljs:120
 msgid "feedback.description"
 msgstr "Descripción"
@@ -8330,12 +8336,6 @@ msgstr "Recientes"
 
 msgid "labels.deleted"
 msgstr "Eliminados"
-
-msgid "labels.webgl-context-lost.main-message"
-msgstr "Ups! Se ha perdido el contexto del canvas"
-
-msgid "labels.webgl-context-lost.desc-message"
-msgstr "WebGL ha dejado de funcionar. Por favor, recarga la página para restaurarlo"
 
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restaurar todo"

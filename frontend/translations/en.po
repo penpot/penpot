@@ -1559,6 +1559,12 @@ msgstr "Old password is incorrect"
 msgid "feedback.description"
 msgstr "Description"
 
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Oops! The canvas context was lost"
+
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL has stopped working. Please reload the page to reset it"
+
 #: src/app/main/ui/settings/feedback.cljs:122
 msgid "feedback.description-placeholder"
 msgstr "Please describe the reason of your feedback"
@@ -8477,12 +8483,6 @@ msgstr "Recent"
 
 msgid "labels.deleted"
 msgstr "Deleted"
-
-msgid "labels.webgl-context-lost.main-message"
-msgstr "Oops! The canvas context was lost"
-
-msgid "labels.webgl-context-lost.desc-message"
-msgstr "WebGL has stopped working. Please reload the page to reset it"
 
 msgid "dashboard.restore-all-deleted-button"
 msgstr "Restore All"
