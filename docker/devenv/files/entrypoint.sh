@@ -4,7 +4,9 @@ set -e
 
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh;
 
-usermod -u ${EXTERNAL_UID:-1000} penpot;
+if [ "${EXTERNAL_UID:-1000}" -ne 0 ]; then
+  usermod -u ${EXTERNAL_UID:-1000} penpot;
+fi
 
 cp /root/.bashrc /home/penpot/.bashrc
 cp /root/.vimrc /home/penpot/.vimrc
