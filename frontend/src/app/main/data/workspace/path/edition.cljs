@@ -65,13 +65,44 @@
                 point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
             (when (and (some? new-content) (some? shape))
-              (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+              (let [changes (changes/generate-path-changes it objects page-id id (:content shape) new-content)]
                 (if (empty? new-content)
                   (rx/of (dch/commit-changes changes)
                          (dwe/clear-edition-mode))
                   (rx/of (dch/commit-changes changes)
-                         (selection/update-selection point-change)
+                         (selection/update-selection id point-change)
                          (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))))
+
+
+
+(defn apply-content-modifiers2
+  [shape-id old-content]
+  (ptk/reify ::apply-content-modifiers2
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [ ;; FIXME: hide under getter function under state
+            content-modifiers
+            (dm/get-in state [:workspace-local :edit-path shape-id :content-modifiers])]
+
+        (if (nil? content-modifiers)
+          (rx/of (dwe/clear-edition-mode))
+          (let [page-id      (get state :current-page-id)
+                objects      (dsh/lookup-page-objects state page-id)
+                new-content  (path/apply-content-modifiers old-content content-modifiers)
+                point-change (->> (map hash-map
+                                       (path.segment/get-points old-content)
+                                       (path.segment/get-points new-content))
+                                  (reduce merge))
+                changes      (changes/generate-path-changes it objects page-id shape-id old-content new-content)]
+
+            (if (empty? new-content)
+              (rx/of (dch/commit-changes changes)
+                     (dwe/clear-edition-mode))
+              (rx/of (dch/commit-changes changes)
+                     (selection/update-selection shape-id point-change)
+                     (fn [state]
+                       (update-in state [:workspace-local :edit-path shape-id]
+                                  dissoc :content-modifiers :moving-nodes :moving-handler))))))))))
 
 (defn modify-content-point
   [content {dx :x dy :y} modifiers point]
@@ -335,22 +366,21 @@
     (watch [_ _ _]
       (rx/of (ptk/data-event :layout/update {:ids [id]})))))
 
-(defn split-segments
-  [{:keys [from-p to-p t]}]
+(defn- split-segments
+  [shape-id {:keys [from-p to-p t]}]
   (ptk/reify ::split-segments
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (st/get-path-id state)
-            content (st/get-path state :content)]
-        (-> state
-            (assoc-in [:workspace-local :edit-path id :old-content] content)
-            (st/set-content (-> content
-                                (path.segment/split-segments #{from-p to-p} t)
-                                (path/content))))))
-
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (changes/save-path-content {:preserve-move-to true})))))
+    (watch [it state _]
+      (let [page-id      (get state :current-page-id)
+            objects      (dsh/lookup-page-objects state page-id)
+            shape        (get objects shape-id)
+            old-content  (get shape :content)
+            new-content  (-> old-content
+                             (path.segment/split-segments #{from-p to-p} t)
+                             (path/content))
+            changes     (changes/generate-path-changes it objects page-id shape-id old-content new-content)]
+
+        (rx/of (dch/commit-changes changes))))))
 
 (defn create-node-at-position
   [event]
@@ -359,4 +389,4 @@
     (watch [_ state _]
       (let [id (st/get-path-id state)]
         (rx/of (dwsh/update-shapes [id] path/convert-to-path)
-               (split-segments event))))))
+               (split-segments id event))))))

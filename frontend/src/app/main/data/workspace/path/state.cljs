@@ -10,7 +10,7 @@
    [app.common.types.path.shape-to-path :as stp]))
 
 (defn get-path-id
-  "Retrieves the currently editing path id"
+  "Retrieves the currently editing shape path id"
   [state]
   (or (dm/get-in state [:workspace-local :edition])
       (dm/get-in state [:workspace-drawing :object :id])))

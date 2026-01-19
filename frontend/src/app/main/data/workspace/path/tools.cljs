@@ -44,7 +44,7 @@
                      (path/close-subpaths))
 
                  changes
-                 (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+                 (changes/generate-path-changes it objects page-id (:id shape) (:content shape) new-content)]
 
              (rx/concat
               (rx/of (dwsh/update-shapes [id] path/convert-to-path)
