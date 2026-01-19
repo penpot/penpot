@@ -15,6 +15,8 @@
 
 (declare clear-edition-mode)
 
+;; FIXME: rename to `enter-edition-mode`
+
 (defn start-edition-mode
   "Mark a shape in edition mode"
   [id]
@@ -41,6 +43,8 @@
 ;; IMPORTANT: If this event is moved from this namespace to other,
 ;; update namespace reference in the
 ;; app/main/data/workspace/path/undo.cljs file.
+
+;; FIXME: rename to `exit-edition-mode`
 
 (defn clear-edition-mode
   []

@@ -17,14 +17,12 @@
 
 (defn generate-path-changes
   "Generates changes to update the new content of the shape"
-  [it objects page-id shape old-content new-content]
+  [it objects page-id shape-id old-content new-content]
 
   (assert (path/content? old-content))
   (assert (path/content? new-content))
 
-  (let [shape-id (:id shape)
-
-        ;; We set the old values so the update-shapes works
+  (let [;; We set the old values so the update-shapes works
         objects
         (update objects shape-id
                 (fn [shape]
@@ -82,7 +80,7 @@
              shape       (st/get-path state)]
 
          (if (and (some? old-content) (some? (:id shape)))
-           (let [changes (generate-path-changes it objects page-id shape old-content (:content shape))]
+           (let [changes (generate-path-changes it objects page-id id old-content (:content shape))]
              (rx/of (dch/commit-changes changes)))
            (rx/empty)))))))
 

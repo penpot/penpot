@@ -65,7 +65,7 @@
                 point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
             (when (and (some? new-content) (some? shape))
-              (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+              (let [changes (changes/generate-path-changes it objects page-id (:id shape) (:content shape) new-content)]
                 (if (empty? new-content)
                   (rx/of (dch/commit-changes changes)
                          (dwe/clear-edition-mode))
@@ -338,19 +338,25 @@
 (defn split-segments
   [{:keys [from-p to-p t]}]
   (ptk/reify ::split-segments
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (st/get-path-id state)
-            content (st/get-path state :content)]
-        (-> state
-            (assoc-in [:workspace-local :edit-path id :old-content] content)
-            (st/set-content (-> content
-                                (path.segment/split-segments #{from-p to-p} t)
-                                (path/content))))))
-
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (changes/save-path-content {:preserve-move-to true})))))
+    (watch [it state _]
+      (let [page-id      (get state :current-page-id)
+            objects      (dsh/lookup-page-objects state page-id)
+
+            shape        (st/get-path state)
+            shape-id     (get shape :id)
+            old-content  (get shape :content)
+
+            new-content  (-> old-content
+                             (path.segment/split-segments #{from-p to-p} t)
+                             (path/content))
+            changes     (changes/generate-path-changes it objects page-id shape-id old-content new-content)]
+
+
+        (prn "split-segments" old-content)
+        (prn "split-segments" new-content)
+
+        (rx/of (dch/commit-changes changes))))))
 
 (defn create-node-at-position
   [event]

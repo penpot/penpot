@@ -17,6 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
@@ -225,7 +226,7 @@
        (rx/of (finish-drag)))))))
 
 (defn- start-edition
-  [_id]
+  [id]
   (ptk/reify ::start-edition
     ptk/UpdateEvent
     (update [_ state]
@@ -351,6 +352,8 @@
       (let [id      (dm/get-in state [:workspace-local :edition])
             objects (dsh/lookup-page-objects state)
             content (dm/get-in objects [id :content])]
+        (prn "start-draw-mode" id)
+
         (if content
           (update-in state [:workspace-local :edit-path id] assoc :old-content content)
           state)))
@@ -359,14 +362,15 @@
     (watch [_ _ _]
       (rx/of (start-draw-mode*)))))
 
-(defn start-draw-mode*
-  []
+(defn- start-draw-mode*
+  [id]
   (ptk/reify ::start-draw-mode*
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (get state :workspace-local)
             id    (get local :edition)
             mode  (dm/get-in local [:edit-path id :edit-mode])]
+        (prn "start-draw-mode*" id)
 
         (if (= :draw mode)
           (rx/concat
@@ -376,7 +380,7 @@
                 (rx/filter (ptk/type? ::end-edition))
                 (rx/take 1)
                 (rx/mapcat (fn [_]
-                             (rx/of (check-changed-content)
+                             (rx/of (check-changed-content id)
                                     (start-draw-mode*))))))
           (rx/empty))))))
 
@@ -386,7 +390,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (if-let [id (dm/get-in state [:workspace-local :edition])]
-        (d/update-in-when state [:workspace-local :edit-path id] assoc :edit-mode mode)
+        (update-in state [:workspace-local :edit-path id] assoc :edit-mode mode)
         state))
 
     ptk/WatchEvent
@@ -407,21 +411,27 @@
         (assoc-in state [:workspace-local :edit-path id :prev-handler] nil)))))
 
 (defn check-changed-content
-  []
+  [id]
   (ptk/reify ::check-changed-content
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [id (st/get-path-id state)
-            content (st/get-path state :content)
-            old-content (get-in state [:workspace-local :edit-path id :old-content])
-            mode (get-in state [:workspace-local :edit-path id :edit-mode])
-            empty-content? (empty? content)]
+    (watch [it state _]
+      (let [
+            ;; id             (st/get-path-id state)
+            content        (st/get-path state :content)
+            empty-content? (empty? content)
+
+            local          (get-in state [:workspace-local :edit-path id])
+            old-content    (get local :old-content)
+            edit-mode      (get local :edit-mode)]
 
         (cond
           (and (not= content old-content) (not empty-content?))
-          (rx/of (changes/save-path-content))
+          (let [page-id (:current-page-id state)
+                objects (dsh/lookup-page-objects state page-id)
+                changes (changes/generate-path-changes it objects page-id id old-content content)]
+            (rx/of (dch/commit-changes changes)))
 
-          (= mode :draw)
+          (= :draw edit-mode)
           (rx/of :interrupt)
 
           :else
