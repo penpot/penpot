@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-12 08:33+0000\n"
+"PO-Revision-Date: 2026-01-19 19:01+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 5.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -2101,9 +2101,8 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Temi attivi"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
-msgstr "Copia l'abbreviazione CSS negli appunti"
+msgstr "Copia abbreviazione CSS negli appunti"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:51
 msgid "inspect.tabs.styles.copy-to-clipboard"
@@ -6414,7 +6413,7 @@ msgstr "Animazione"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
 msgid "workspace.options.interaction-animation-direction-down"
-msgstr ""
+msgstr "Verso il basso"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
@@ -8724,3 +8723,69 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Il tuo cestino è vuoto. I file e i progetti eliminati appariranno qui."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "In entrata"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "Verso sinistra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "In uscita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "Verso destra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "Verso l'alto"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:457
+msgid "workspace.options.orientation.horizontal"
+msgstr "Orizzontale"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:453
+msgid "workspace.options.orientation.vertical"
+msgstr "Verticale"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:297
+msgid "workspace.sidebar.layers.filter"
+msgstr "Filtro"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:117
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Valore non valido: deve fare riferimento a un token ombra composito."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:87
+msgid "workspace.tokens.no-references-found"
+msgstr "Nessun riferimento trovato"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr ""
+"Questo token al momento non è utilizzato nel tuo progetto, quindi non è "
+"necessario alcun rimappaggio."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.references-found"
+msgstr "%s riferimenti trovati nel tuo progetto"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
+msgid "workspace.tokens.remap-and-rename"
+msgstr "Rimappa e rinomina"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.remap-explanation"
+msgstr ""
+"Tutti i riferimenti a questo token verranno automaticamente aggiornati e "
+"useranno il nuovo nome."
