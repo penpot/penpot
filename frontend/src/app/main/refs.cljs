@@ -483,6 +483,9 @@
 (def workspace-active-theme-paths
   (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
 
+(def workspace-all-tokens-map
+  (l/derived (d/nilf ctob/get-all-tokens-map) tokens-lib))
+
 (defn token-sets-at-path-all-active
   [group-path]
   (l/derived

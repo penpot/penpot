@@ -16,9 +16,9 @@
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
-   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -89,14 +89,13 @@
            action
            is-create
            selected-token-set-id
-           tokens-tree-in-selected-set
+           all-token-tree
            token-type
            make-schema
            input-component
            initial
            type
            value-subfield
-           tokens-in-selected-set
            input-value-placeholder] :as props}]
 
   (let [make-schema           (or make-schema default-make-schema)
@@ -125,6 +124,9 @@
         tokens
         (mf/deref refs/workspace-active-theme-sets-tokens)
 
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
         tokens
         (mf/with-memo [tokens tokens-in-selected-set token]
           ;; Ensure that the resolved value uses the currently editing token
@@ -135,8 +137,8 @@
             (assoc (:name token) token)))
 
         schema
-        (mf/with-memo [tokens-tree-in-selected-set active-tab]
-          (make-schema tokens-tree-in-selected-set active-tab))
+        (mf/with-memo [all-token-tree active-tab]
+          (make-schema all-token-tree active-tab))
 
         initial
         (mf/with-memo [token]
@@ -226,7 +228,7 @@
                           (dwtl/toggle-token-path path)
                           (dwtp/propagate-workspace-tokens)
                           (modal/hide!)))))
-                   ;; Error handler: display validation errors in the form instead of crashing
+                   ;; WORKAROUND:  display validation errors in the form instead of crashing
                    (fn [{:keys [errors]}]
                      (let [error-messages (wte/humanize-errors errors)
                            error-message (first error-messages)]
