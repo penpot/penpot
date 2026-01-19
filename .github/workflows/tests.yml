@@ -216,7 +216,7 @@ jobs:
 
 
   test-integration-1:
-    name: "Integration Tests 1/4"
+    name: "Integration Tests 1/6"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -234,7 +234,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="1/4";
+          ./scripts/test-e2e --shard="1/6";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
@@ -246,7 +246,7 @@ jobs:
           retention-days: 3
 
   test-integration-2:
-    name: "Integration Tests 2/4"
+    name: "Integration Tests 2/6"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -264,7 +264,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="2/4";
+          ./scripts/test-e2e --shard="2/6";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
@@ -276,7 +276,7 @@ jobs:
           retention-days: 3
 
   test-integration-3:
-    name: "Integration Tests 3/4"
+    name: "Integration Tests 3/6"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -294,7 +294,7 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="3/4";
+          ./scripts/test-e2e --shard="3/6";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
@@ -306,7 +306,7 @@ jobs:
           retention-days: 3
 
   test-integration-4:
-    name: "Integration Tests 4/4"
+    name: "Integration Tests 4/6"
     runs-on: penpot-runner-02
     container: penpotapp/devenv:latest
     needs: build-integration
@@ -324,13 +324,73 @@ jobs:
       - name: Run Tests
         working-directory: ./frontend
         run: |
-          ./scripts/test-e2e --shard="4/4";
+          ./scripts/test-e2e --shard="4/6";
 
       - name: Upload test result
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-tests-result-4
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-5:
+    name: "Integration Tests 5/6"
+    runs-on: penpot-runner-02
+    container: penpotapp/devenv:latest
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e --shard="5/6";
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result-5
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3
+
+  test-integration-6:
+    name: "Integration Tests 6/6"
+    runs-on: penpot-runner-02
+    container: penpotapp/devenv:latest
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e --shard="6/6";
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-result-6
           path: frontend/test-results/
           overwrite: true
           retention-days: 3
