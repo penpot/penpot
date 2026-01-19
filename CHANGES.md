@@ -14,6 +14,7 @@
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 - Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
+- Change the default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
 
 ### :bug: Bugs fixed
 
