@@ -1360,8 +1360,9 @@
         all-children
         (->> ids
              (mapcat #(cfh/get-children-with-self objects %)))]
+
     (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-    (run! (partial set-object objects) all-children)
+    (run! set-object all-children)
 
     (let [content (-> (calculate-bool* bool-type ids)
                       (path.impl/path-data))]
