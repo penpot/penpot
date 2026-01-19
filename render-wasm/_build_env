@@ -9,7 +9,7 @@ else
 fi
 
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
-export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
+export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm64-unknown-emscripten"};
 export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
 
 # 256 MB of initial heap to perform less
@@ -38,6 +38,7 @@ export EMCC_CFLAGS="--no-entry \
     -sMEMORY_GROWTH_GEOMETRIC_STEP=$EM_MEMORY_GROWTH_GEOMETRIC_STEP \
     -sERROR_ON_UNDEFINED_SYMBOLS=0 \
     -sMAX_WEBGL_VERSION=2 \
+    -sMEMORY64=2 \
     -sEXPORT_NAME=createRustSkiaModule \
     -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8,HEAPU8,HEAP32,HEAPU32,HEAPF32 \
     -sENVIRONMENT=web \
