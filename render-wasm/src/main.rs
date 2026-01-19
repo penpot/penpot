@@ -258,10 +258,12 @@ pub extern "C" fn set_view_end() {
     with_state_mut!(state, {
         let _end_start = performance::begin_timed_log!("set_view_end");
         performance::begin_measure!("set_view_end");
+
         state.render_state.options.set_fast_mode(false);
         state.render_state.cancel_animation_frame();
 
         let zoom_changed = state.render_state.zoom_changed();
+
         // Only rebuild tile indices when zoom has changed.
         // During pan-only operations, shapes stay in the same tiles
         // because tile_size = 1/scale * TILE_SIZE (depends only on zoom).
@@ -284,6 +286,10 @@ pub extern "C" fn set_view_end() {
             performance::end_measure!("set_view_end::clear_tile_index");
             performance::end_timed_log!("clear_tile_index", _clear_start);
         }
+        // Sync cached_viewbox with current viewbox to ensure accurate
+        // comparison in subsequent calls, especially during rapid zoom+pan
+        // interactions where multiple set_view calls occur before set_view_end.
+        state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
         performance::end_timed_log!("set_view_end", _end_start);
         #[cfg(feature = "profile-macros")]

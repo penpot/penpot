@@ -1136,6 +1136,23 @@ impl RenderState {
     ) -> Result<(), String> {
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
+        let zoom_changed = self.zoom_changed();
+        // CRITICAL FIX: If zoom changed, we MUST rebuild the tile index before using it.
+        // Otherwise, the index will have tiles from the old zoom level, causing visible
+        // tiles to appear empty. This can happen if start_render_loop() is called before
+        // set_view_end() finishes rebuilding the index, or if set_view_end() hasn't been
+        // called yet. We have access to tree here, so we can rebuild the index ourselves.
+        //
+        // IMPORTANT: If there's a render in progress, we must cancel it first because
+        // rebuild_tiles_shallow() will invalidate the tile index, causing tiles already
+        // in pending_tiles to lose their shapes.
+        if zoom_changed {
+            if self.render_in_progress {
+                self.cancel_animation_frame();
+            }
+            self.rebuild_tiles_shallow(tree);
+        }
+
         self.tile_viewbox.update(self.viewbox, scale);
 
         self.focus_mode.reset();
@@ -1966,16 +1983,6 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<(), String> {
         let mut should_stop = false;
-        let root_ids = {
-            if let Some(shape_id) = base_object {
-                vec![*shape_id]
-            } else {
-                let Some(root) = tree.get(&Uuid::nil()) else {
-                    return Err(String::from("Root shape not found"));
-                };
-                root.children_ids(false)
-            }
-        };
 
         while !should_stop {
             if let Some(current_tile) = self.current_tile {
@@ -2007,6 +2014,7 @@ impl RenderState {
                     }
                     performance::end_measure!("render_shape_tree::uncached");
                     let tile_rect = self.get_current_tile_bounds();
+
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
 
@@ -2032,20 +2040,40 @@ impl RenderState {
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
 
+            let root_ids = {
+                if let Some(shape_id) = base_object {
+                    vec![*shape_id]
+                } else {
+                    let Some(root) = tree.get(&Uuid::nil()) else {
+                        return Err(String::from("Root shape not found"));
+                    };
+                    root.children_ids(false)
+                }
+            };
+
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
             if let Some(next_tile) = self.pending_tiles.pop() {
                 self.update_render_context(next_tile);
 
-                if !self.surfaces.has_cached_tile_surface(next_tile) {
+                let is_cached = self.surfaces.has_cached_tile_surface(next_tile);
+                if !is_cached {
                     if let Some(ids) = self.tiles.get_shapes_at(next_tile) {
-                        // We only need first level shapes, in the same order as the parent node
-                        let mut valid_ids = Vec::with_capacity(ids.len());
-                        for root_id in root_ids.iter() {
-                            if ids.contains(root_id) {
-                                valid_ids.push(*root_id);
-                            }
-                        }
+                        let root_ids_map: std::collections::HashMap<Uuid, usize> = root_ids
+                            .iter()
+                            .enumerate()
+                            .map(|(i, id)| (*id, i))
+                            .collect();
+
+                        // We only need first level shapes
+                        let mut valid_ids: Vec<Uuid> = ids
+                            .iter()
+                            .filter(|id| root_ids_map.contains_key(id))
+                            .copied()
+                            .collect();
+
+                        // These shapes for the tile should be ordered as they are in the parent node
+                        valid_ids.sort_by_key(|id| root_ids_map.get(id).unwrap_or(&usize::MAX));
 
                         self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
                             NodeRenderState {
@@ -2062,7 +2090,6 @@ impl RenderState {
                 should_stop = true;
             }
         }
-
         self.render_in_progress = false;
 
         self.surfaces.gc();
@@ -2148,12 +2175,20 @@ impl RenderState {
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
 
+        // IMPORTANT:
+        // `TileHashMap` can accumulate non-root (deep) shape ids over time because we lazily call
+        // `add_shape_tiles()` while rendering. A "shallow rebuild" is supposed to rebuild the index
+        // only for first-level shapes, so we must start from a clean index to avoid mixing deep ids
+        // (which will not match `root_ids`) and causing tiles to be incorrectly considered empty.
+        self.tiles.invalidate();
+
         let mut all_tiles = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                    // Since we invalidated the tile index, we only need to add the shape tiles.
+                    all_tiles.extend(self.add_shape_tiles(shape, tree));
                 } else {
                     // We only need to rebuild tiles from the first level.
                     for child_id in shape.children_ids_iter(false) {
@@ -2290,6 +2325,13 @@ impl RenderState {
 
     pub fn zoom_changed(&self) -> bool {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
+    }
+
+    /// Updates the cached viewbox to match the current viewbox.
+    /// This should be called at the end of view interactions to ensure
+    /// that cached_viewbox reflects the most recent state for the next comparison.
+    pub fn sync_cached_viewbox(&mut self) {
+        self.cached_viewbox = self.viewbox;
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {
