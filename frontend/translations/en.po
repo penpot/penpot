@@ -5476,6 +5476,10 @@ msgstr "Delete row and shapes"
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "Duplicate row"
 
+#: src/app/main/ui/workspace/sidebar/debug.cljs:37
+msgid "workspace.debug.title"
+msgstr "Debugging tools"
+
 #: src/app/main/ui/workspace/sidebar/layers.cljs:512
 msgid "workspace.focus.focus-mode"
 msgstr "Focus mode"
@@ -8420,6 +8424,10 @@ msgstr "Comments (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:195
 msgid "workspace.toolbar.curve"
 msgstr "Curve (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Debugging tools"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:172
 msgid "workspace.toolbar.ellipse"
