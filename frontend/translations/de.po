@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-16 06:01+0000\n"
-"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"PO-Revision-Date: 2026-01-21 01:01+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.15.2\n"
+"X-Generator: Weblate 5.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -2825,7 +2825,7 @@ msgstr "Erhalten Sie CSS- und SVG-Code direkt aus Ihren Designs."
 
 #: src/app/main/ui/ds/product/loader.cljs:26
 msgid "loader.tips.04.title"
-msgstr ""
+msgstr "Als Code exportieren"
 
 #: src/app/main/ui/ds/product/loader.cljs:28
 msgid "loader.tips.05.title"
@@ -7598,7 +7598,6 @@ msgstr ""
 "50 % oder 0,5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Ursprünglicher Wert: %s"
 
@@ -7624,7 +7623,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Referenzfehler: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Aufgelöster Wert: %s"
 
@@ -7742,7 +7740,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Liste der Themes"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:277
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beschreibung"
 
@@ -8283,3 +8280,96 @@ msgid "dashboard.trash-info-text-part4"
 msgstr ""
 "Wenn Sie Ihre Meinung ändern, können Sie die Dateien über das Menü der "
 "jeweiligen Datei wiederherstellen oder dauerhaft löschen."
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s wurde erfolgreich gelöscht."
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr ""
+"Ihr Papierkorb ist leer. Gelöschte Dateien und Projekte werden hier "
+"angezeigt."
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "Beim Löschen der Datei %s ist ein Fehler aufgetreten."
+
+#: src/app/main/data/dashboard.cljs:767
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Beim Löschen der Dateien ist ein Fehler aufgetreten."
+
+#: src/app/main/ui/exports/files.cljs:124
+msgid "files-download-modal.title"
+msgstr "Dateien herunterladen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:238
+msgid "inspect.empty.more"
+msgstr "Mehr Info"
+
+#: src/app/main/ui/dashboard/deleted.cljs:215
+msgid "labels.deleted"
+msgstr "Gelöscht"
+
+#: src/app/main/ui/dashboard/deleted.cljs:208
+msgid "labels.recent"
+msgstr "Aktuell"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr ""
+"Sorgen Sie dafür, dass Ihre Designs projektübergreifend einheitlich und "
+"leicht zu aktualisieren sind."
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr ""
+"Arbeiten Sie live mit Ihrem Team zusammen und geben Sie sofort Feedback."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+msgid "workspace.tokens.theme.enable"
+msgstr "Aktivieren"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+msgid "workspace.tokens.theme.disable"
+msgstr "Deaktivieren"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:174, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
+msgid "workspace.tokens.shadow-spread"
+msgstr "Streuung"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
+msgid "workspace.tokens.rename-only"
+msgstr "Umbenennen"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:284, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
+msgid "workspace.tokens.color"
+msgstr "Farbe"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:89
+msgid "workspace.tokens.base-font-size"
+msgstr "Standard-Schriftgröße"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:315
+msgid "workspace.tokens.axis"
+msgstr "Achse"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:147
+msgid "workspace.tokens.add-token"
+msgstr "Token hinzufügen: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:453
+msgid "workspace.options.orientation.vertical"
+msgstr "Vertikal"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:457
+msgid "workspace.options.orientation.horizontal"
+msgstr "Horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:234
+msgid "workspace.layout-item.fix-width"
+msgstr "Feste Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:260
+msgid "workspace.layout-item.fix-height"
+msgstr "Feste Höhe"
