@@ -52,7 +52,8 @@
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))
-                               (seq (:external-errors @form))))
+                               (seq (:async-errors @form))
+                               (seq (:extra-errors @form))))
                       (true? disabled))
         handle-key-down-save
         (mf/use-fn
