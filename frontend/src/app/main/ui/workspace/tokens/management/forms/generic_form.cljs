@@ -14,6 +14,7 @@
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.refs :as refs]
@@ -85,7 +86,7 @@
            action
            is-create
            selected-token-set-id
-           tokens-tree-in-selected-set
+           all-token-tree
            token-type
            make-schema
            input-component
@@ -123,8 +124,8 @@
             (assoc (:name token) token)))
 
         schema
-        (mf/with-memo [tokens-tree-in-selected-set active-tab]
-          (make-schema tokens-tree-in-selected-set active-tab))
+        (mf/with-memo [all-token-tree active-tab]
+          (make-schema all-token-tree active-tab))
 
         initial
         (mf/with-memo [token]
@@ -207,7 +208,11 @@
                                             :value (:value valid-token)
                                             :description description}))
                       (dwtp/propagate-workspace-tokens)
-                      (modal/hide))))))))]
+                      (modal/hide)))))
+             (fn [{:keys [errors]}]
+               (let [error-messages (wte/humanize-errors errors)
+                     error-message (first error-messages)]
+                 (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))]
 
     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form

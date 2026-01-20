@@ -29,7 +29,7 @@
 - Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
 - Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
 - Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
-
+- Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
 
 ## 2.12.1
 
