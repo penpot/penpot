@@ -488,6 +488,7 @@
    :sided-margins #{:spacing :dimensions}
    :line-height #{:line-height :number}
    :opacity #{:opacity}
+   :stroke-width #{:stroke-width}
    :font-size #{:font-size}
    :letter-spacing #{:letter-spacing}
    :fill #{:color}
