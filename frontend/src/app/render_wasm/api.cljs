@@ -955,6 +955,7 @@
       (set-shape-grow-type grow-type))
 
     (set-shape-layout shape)
+    (set-layout-data shape)
     (set-shape-selrect selrect)
 
     (let [pending_thumbnails (into [] (concat
