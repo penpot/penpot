@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-19 19:01+0000\n"
+"PO-Revision-Date: 2026-01-21 01:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -1971,3 +1971,77 @@ msgstr "Interlettrage"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:387
 msgid "inspect.attributes.typography.line-height"
 msgstr "Hauteur de ligne"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:150
+msgid "inspect.tabs.code.selected.path"
+msgstr "Tracé"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:151
+msgid "inspect.tabs.code.selected.rect"
+msgstr "Rectangle"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:152
+msgid "inspect.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:153
+msgid "inspect.tabs.code.selected.text"
+msgstr "Texte"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.active-sets"
+msgstr "Collections actives"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.active-themes"
+msgstr "Thèmes actifs"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "Copier le CSS abrégé au presse-papiers"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:51
+msgid "inspect.tabs.styles.copy-to-clipboard"
+msgstr "Copier au presse-papiers"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+#, unused
+msgid "inspect.tabs.styles.geometry-panel"
+msgstr "Taille et position"
+
+#: src/app/main/ui/dashboard/team.cljs:1223
+msgid "labels.active"
+msgstr "Actif"
+
+#: src/app/main/ui/workspace/libraries.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1035
+msgid "labels.add"
+msgstr "Ajouter"
+
+#: src/app/main/ui/dashboard/fonts.cljs:186
+msgid "labels.add-custom-font"
+msgstr "Ajouter police de caractères"
+
+#: src/app/main/ui/workspace/libraries.cljs:169
+msgid "labels.adding"
+msgstr "Ajout en cours..."
+
+#: src/app/main/ui/dashboard/team.cljs:134, src/app/main/ui/dashboard/team.cljs:320, src/app/main/ui/dashboard/team.cljs:565, src/app/main/ui/dashboard/team.cljs:595, src/app/main/ui/onboarding/team_choice.cljs:58
+msgid "labels.admin"
+msgstr "Admin"
+
+#: src/app/main/ui/onboarding/questions.cljs:160
+msgid "labels.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:86, src/app/main/ui/workspace/tokens/management/context_menu.cljs:120, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
+msgid "labels.all"
+msgstr "Tous"
+
+#: src/app/main/ui/auth/register.cljs:257
+msgid "labels.and"
+msgstr "et"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:186
+#, unused
+msgid "labels.back"
+msgstr "Retour"
