@@ -152,9 +152,9 @@ services:
 
       # AWS_ACCESS_KEY_ID: <KEY_ID>
       # AWS_SECRET_ACCESS_KEY: <ACCESS_KEY>
-      # PENPOT_ASSETS_STORAGE_BACKEND: assets-s3
-      # PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <ENDPOINT>
-      # PENPOT_STORAGE_ASSETS_S3_BUCKET: <BUKET_NAME>
+      # PENPOT_OBJECTS_STORAGE_BACKEND: s3
+      # PENPOT_OBJECTS_STORAGE_S3_ENDPOINT: <ENDPOINT>
+      # PENPOT_OBJECTS_STORAGE_S3_BUCKET: <BUKET_NAME>
 
       ## Telemetry. When enabled, a periodical process will send anonymous data about this
       ## instance. Telemetry data will enable us to learn how the application is used,
