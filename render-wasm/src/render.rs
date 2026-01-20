@@ -1136,6 +1136,7 @@ impl RenderState {
     ) -> Result<(), String> {
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
+
         self.tile_viewbox.update(self.viewbox, scale);
 
         self.focus_mode.reset();
@@ -2290,6 +2291,10 @@ impl RenderState {
 
     pub fn zoom_changed(&self) -> bool {
         (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
+    }
+
+    pub fn sync_cached_viewbox(&mut self) {
+        self.cached_viewbox = self.viewbox;
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {
