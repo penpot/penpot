@@ -8582,8 +8582,8 @@ msgstr "Los autoguardados duran %s días."
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
-msgid "labels.webgl-context-lost.main-message"
+msgid "errors.webgl-context-lost.main-message"
 msgstr "Ups! Se ha perdido el contexto del canvas"
 
-msgid "labels.webgl-context-lost.desc-message"
+msgid "errors.webgl-context-lost.desc-message"
 msgstr "WebGL ha dejado de funcionar. Por favor, recarga la página para restaurarlo"

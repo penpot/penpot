@@ -312,6 +312,11 @@
                                          (js/console.error "Error initializing canvas context:" e)
                                          false))]
                            (reset! canvas-init? init?)
+                           (when init?
+                             ;; Restore previous canvas pixels immediately after context initialization
+                             ;; This happens before initialize-viewport is called
+                             (wasm.api/apply-canvas-blur)
+                             (wasm.api/restore-previous-canvas-pixels))
                            (when-not init?
                              (js/alert "WebGL not supported")
                              (st/emit! (dcm/go-to-dashboard-recent))))))))
@@ -340,6 +345,7 @@
 
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
+        (wasm.api/clear-canvas-pixels)
         (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
 

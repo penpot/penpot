@@ -29,6 +29,7 @@
    [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.texts :as t]
+   [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
@@ -37,7 +38,6 @@
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
-   ;; FIXME: rename; confunsing name
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -279,30 +279,6 @@
   [string]
   (+ (count string) 1))
 
-(defn- create-webgl-texture-from-image
-  "Creates a WebGL texture from an HTMLImageElement or ImageBitmap and returns the texture object"
-  [gl image-element]
-  (let [texture (.createTexture ^js gl)]
-    (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) texture)
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_WRAP_S ^js gl) (.-CLAMP_TO_EDGE ^js gl))
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_WRAP_T ^js gl) (.-CLAMP_TO_EDGE ^js gl))
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_MIN_FILTER ^js gl) (.-LINEAR ^js gl))
-    (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_MAG_FILTER ^js gl) (.-LINEAR ^js gl))
-    (.texImage2D ^js gl (.-TEXTURE_2D ^js gl) 0 (.-RGBA ^js gl) (.-RGBA ^js gl) (.-UNSIGNED_BYTE ^js gl) image-element)
-    (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil)
-    texture))
-
-(defn- get-webgl-context
-  "Gets the WebGL context from the WASM module"
-  []
-  (when wasm/context-initialized?
-    (let [gl-obj (unchecked-get wasm/internal-module "GL")]
-      (when gl-obj
-        ;; Get the current WebGL context from Emscripten
-        ;; The GL object has a currentContext property that contains the context handle
-        (let [current-ctx (.-currentContext ^js gl-obj)]
-          (when current-ctx
-            (.-GLctx ^js current-ctx)))))))
 
 (defn- get-texture-id-for-gl-object
   "Registers a WebGL texture with Emscripten's GL object system and returns its ID"
@@ -332,8 +308,8 @@
        (->> (retrieve-image url)
             (rx/map
              (fn [img]
-               (when-let [gl (get-webgl-context)]
-                 (let [texture (create-webgl-texture-from-image gl img)
+               (when-let [gl (webgl/get-webgl-context)]
+                 (let [texture (webgl/create-webgl-texture-from-image gl img)
                        texture-id (get-texture-id-for-gl-object texture)
                        width  (.-width ^js img)
                        height (.-height ^js img)
@@ -979,6 +955,7 @@
       (set-shape-grow-type grow-type))
 
     (set-shape-layout shape)
+    (set-layout-data shape)
     (set-shape-selrect selrect)
 
     (let [pending_thumbnails (into [] (concat
@@ -1055,8 +1032,9 @@
      (perf/end-measure "set-objects")
      (process-pending shapes thumbnails full noop-fn
                       (fn []
-                        (when render-callback (render-callback))
-                        (render-finish)
+                        (if render-callback
+                          (render-callback)
+                          (render-finish))
                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
 
 (defn clear-focus-mode
@@ -1384,8 +1362,9 @@
         all-children
         (->> ids
              (mapcat #(cfh/get-children-with-self objects %)))]
+
     (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-    (run! (partial set-object objects) all-children)
+    (run! set-object all-children)
 
     (let [content (-> (calculate-bool* bool-type ids)
                       (path.impl/path-data))]
@@ -1448,6 +1427,12 @@
 
       result)))
 
+(defn apply-canvas-blur
+  []
+  (when wasm/canvas
+    (dom/set-style! wasm/canvas "filter" "blur(4px)")))
+
+
 (defn init-wasm-module
   [module]
   (let [default-fn (unchecked-get module "default")
@@ -1469,3 +1454,8 @@
                 (js/console.error cause)
                 (p/resolved false)))))
       (p/resolved false))))
+
+;; Re-export public WebGL functions
+(def capture-canvas-pixels webgl/capture-canvas-pixels)
+(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
+(def clear-canvas-pixels webgl/clear-canvas-pixels)

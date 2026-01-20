@@ -90,6 +90,18 @@ impl Type {
         }
     }
 
+    pub fn clear_corners(&mut self) {
+        match self {
+            Type::Rect(data) => {
+                data.corners = None;
+            }
+            Type::Frame(data) => {
+                data.corners = None;
+            }
+            _ => {}
+        }
+    }
+
     pub fn path(&self) -> Option<&Path> {
         match self {
             Type::Path(path) => Some(path),
@@ -694,9 +706,11 @@ impl Shape {
     pub fn set_corners(&mut self, raw_corners: (f32, f32, f32, f32)) {
         if let Some(corners) = make_corners(raw_corners) {
             self.shape_type.set_corners(corners);
-            self.invalidate_bounds();
-            self.invalidate_extrect();
+        } else {
+            self.shape_type.clear_corners();
         }
+        self.invalidate_bounds();
+        self.invalidate_extrect();
     }
 
     pub fn set_svg(&mut self, svg: skia::svg::Dom) {
@@ -1587,6 +1601,13 @@ mod tests {
                     Point { x: 40.0, y: 40.0 }
                 ])
             );
+        } else {
+            unreachable!();
+        }
+
+        shape.set_corners((0.0, 0.0, 0.0, 0.0));
+        if let Type::Rect(Rect { corners, .. }) = shape.shape_type {
+            assert_eq!(corners, None);
         } else {
             unreachable!();
         }

@@ -312,8 +312,8 @@
   []
   (let [on-reload (mf/use-fn #(js/location.reload))]
     [:> error-container* {}
-     [:div {:class (stl/css :main-message)} (tr "labels.webgl-context-lost.main-message")]
-     [:div {:class (stl/css :desc-message)} (tr "labels.webgl-context-lost.desc-message")]
+     [:div {:class (stl/css :main-message)} (tr "errors.webgl-context-lost.main-message")]
+     [:div {:class (stl/css :desc-message)} (tr "errors.webgl-context-lost.desc-message")]
      [:div {:class (stl/css :buttons-container)}
       [:> button* {:variant "primary" :on-click on-reload}
        (tr "labels.reload-page")]]]))

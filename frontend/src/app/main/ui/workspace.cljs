@@ -276,7 +276,11 @@
               :wglobal wglobal
               :layout layout}])
           (when (or (not (and file-loaded? page-id))
-                    (and wasm-renderer-enabled? (not @first-frame-rendered?)))
+                    ;; in wasm renderer, extend the pixel loader until the first frame is rendered
+                    ;; but do not apply it when switching pages
+                    (and wasm-renderer-enabled?
+                         (not file-loaded?)
+                         (not @first-frame-rendered?)))
             [:> workspace-loader*])]]]]]]))
 
 (mf/defc workspace-page*
