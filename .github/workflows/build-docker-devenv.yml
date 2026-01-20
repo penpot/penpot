@@ -10,6 +10,11 @@ jobs:
     runs-on: penpot-runner-02
 
     steps:
+      - name: Set common environment variables
+        run: |
+          # Each job execution will use its own docker configuration.
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4
 
