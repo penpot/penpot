@@ -22,7 +22,7 @@
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.exports.assets :refer [export-progress-widget]]
+   [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.presence :refer [active-sessions]]
@@ -200,7 +200,7 @@
      [:div {:class (stl/css :users-section)}
       [:& active-sessions]]
 
-     [:& export-progress-widget]
+     [:& progress-widget]
 
      [:div {:class (stl/css :separator)}]
 

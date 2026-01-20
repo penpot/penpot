@@ -199,7 +199,7 @@
       :string-or-size-array (format-string-or-size-array value)
       :keyword (format-keyword value)
       :tracks (format-tracks value)
-      :shadow (format-shadow value options)
+      :shadows (format-shadow value options)
       :blur (format-blur value)
       :matrix (format-matrix value)
       (if (keyword? value) (d/name value) value))))

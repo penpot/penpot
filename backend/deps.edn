@@ -97,8 +97,8 @@
 
   :jmx-remote
   {:jvm-opts ["-Dcom.sun.management.jmxremote"
-              "-Dcom.sun.management.jmxremote.port=9090"
-              "-Dcom.sun.management.jmxremote.rmi.port=9090"
+              "-Dcom.sun.management.jmxremote.port=9000"
+              "-Dcom.sun.management.jmxremote.rmi.port=9000"
               "-Dcom.sun.management.jmxremote.local.only=false"
               "-Dcom.sun.management.jmxremote.authenticate=false"
               "-Dcom.sun.management.jmxremote.ssl=false"

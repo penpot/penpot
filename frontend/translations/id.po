@@ -562,7 +562,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Unduh %s berkas standar (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Dapat mencakup komponen, grafik, warna dan/atau tipografi."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -572,31 +572,31 @@ msgstr ""
 "Apa yang ingin Anda lakukan dengan asetnya*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr "Berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Ekspor pustaka bersama"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Pustaka bersama tidak akan dimasukkan dalam hasil ekspor dan tidak ada aset "
 "yang akan ditambahkan ke pustaka. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Perlakukan aset pustaka terbagi sebagai objek dasar"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Berkas Anda akan diekspor dengan semua aset eksternal tergabung dalam "
 "pustaka berkas."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Termasuk aset pustaka terbagi dalam pustaka berkas"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1652,10 +1652,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Jika Anda ingin mengetahui lebih lanjut tentang inspeksi desain kunjungi "
 "pusat bantuan Penpot"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Lebih banyak info tentang inspeksi"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -6858,10 +6854,6 @@ msgstr "Peralatan"
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.value-not-valid"
 msgstr "Nilai tidak valid"
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Mengubah nama token ini akan merusak referensi nama lamanya."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"

@@ -564,48 +564,48 @@ msgid "dashboard.export-standard-multi"
 msgstr "Download %s standard files (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Might include components, graphics, colors and/or typographies."
 
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
 msgstr ""
-"One or more files that you want to export are using shared libraries. What "
+"One or more files that you want to download are using shared libraries. What "
 "do you want to do with their assets*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Files with shared libraries will be included in the export, maintaining "
 "their linkage."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Export shared libraries"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Shared libraries will not be included in the export and no assets will be "
 "added to the library. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Treat shared library assets as basic objects"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Your file will be exported with all external assets merged into the file "
 "library."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Include shared library assets in file libraries"
 
 #: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Export files"
+msgid "files-download-modal.title"
+msgstr "Download files"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"
@@ -1844,8 +1844,8 @@ msgid "inspect.empty.help"
 msgstr "If you want to know more about design inspect visit Penpot's help center"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "More info about inspect"
+msgid "inspect.empty.more"
+msgstr "More info"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -7543,6 +7543,46 @@ msgstr "Color"
 msgid "workspace.tokens.composite-line-height-needs-font-size"
 msgstr "Line Height depends on Font Size. Add a Font Size to get the resolved value."
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-token-references"
+msgstr "Remap Token References"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.renaming-token-from-to"
+msgstr "Renaming token from '%s' to '%s'"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+msgid "workspace.tokens.warning-name-change"
+msgstr "Renaming this token will break any reference to its old name"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.references-found"
+msgstr "%s references found in your design"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-explanation"
+msgstr "All references to this token will be automatically updated to use the new name."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-references-found"
+msgstr "No references found"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-remap-needed"
+msgstr "This token is not currently used in your design, so no remapping is needed."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Remapping token references..."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-and-rename"
+msgstr "Remap & Rename"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.rename-only"
+msgstr "Rename"
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:78
 msgid "workspace.tokens.create-new-theme"
 msgstr "Create your first theme now."
@@ -7757,6 +7797,10 @@ msgstr "Invalid token value: only none, underline and strike-through are accepte
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Invalid value: must reference a composite typography token."
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Invalid value: must reference a composite shadow token."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Invalid token value: %s"
@@ -7873,6 +7917,10 @@ msgstr "Reference is not valid or is not in any active set"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
 msgid "workspace.tokens.reference-composite"
 msgstr "Enter a token typography alias"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Enter a token shadow alias"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
@@ -8024,6 +8072,14 @@ msgstr "Name"
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "A token already exists at the path: %s"
 
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "Blur value cannot be negative"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "Spread value cannot be negative"
+
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Name should be at least 1 character"
@@ -8068,7 +8124,7 @@ msgstr "Type '%s' is not supported (%s)\n"
 msgid "workspace.tokens.use-reference"
 msgstr "Use a reference"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:133
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
@@ -8079,10 +8135,6 @@ msgstr "Invalid value: % is not allowed."
 #: src/app/main/data/workspace/tokens/errors.cljs:65
 msgid "workspace.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Renaming this token will break any reference to its old name."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
@@ -8413,3 +8465,121 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Will be deleted %s"
+
+msgid "labels.recent"
+msgstr "Recent"
+
+msgid "labels.deleted"
+msgstr "Deleted"
+
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Restore All"
+
+msgid "dashboard.clear-trash-button"
+msgstr "Clear trash"
+
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restore file"
+msgstr[1] "Restore files"
+
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Delete file"
+msgstr[1] "Delete files"
+
+msgid "dashboard.restore-project-button"
+msgstr "Restore project"
+
+msgid "dashboard.delete-project-button"
+msgstr "Delete project"
+
+msgid "dashboard.trash-info-text-part1"
+msgstr "Deleted files will remain in the trash for"
+
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s days. "
+
+msgid "dashboard.trash-info-text-part3"
+msgstr "After that, they will be permanently deleted."
+
+msgid "dashboard.trash-info-text-part4"
+msgstr "If you change your mind, you can restore them or delete them permanently from each file's menu."
+
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Restore all projects and files"
+
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "You're going to restore all your projects and files. This may take a while."
+
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Restore file"
+
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "You're going to restore %s."
+
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Restore Project"
+
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "You're going to restore %s project and all the files contained in it."
+
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Delete forever"
+
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever all your deleted projects and files? This is a non reversible action."
+
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever %s? This is a non reversible action."
+
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr "Are you sure you want to delete forever %s project? You're going to delete it forever an all of the files contained in it. This is a non reversible action."
+
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s files have been successfully restored."
+
+msgid "dashboard.restore-success-notification"
+msgstr "%s has been successfully restored."
+
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s files have been successfully deleted."
+
+msgid "dashboard.delete-success-notification"
+msgstr "%s has been successfully deleted."
+
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "There was an error while restoring the files."
+
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "There was an error while restoring the file %s."
+
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "There was an error while restoring the project %s and its files."
+
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "There was an error while deleting the file %s."
+
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "There was an error while deleting the files."
+
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "There was an error while deleting the project %s."
+
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Restoring files…"
+
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Deleting files…"
+
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restore unexpectedly slow"
+
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Deletion unexpectedly slow"
+
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Your trash is empty. Deleted files and projects will appear here."

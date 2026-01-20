@@ -51,7 +51,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title "Visibility"
-         :class (stl/css :title-spacing-visibility)}
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :visibility-attr-title)}
 
         (when (= (count shapes) 1)
           [:> copy-button* {:data (css/get-shape-properties-css objects (first shapes) properties)

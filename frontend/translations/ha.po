@@ -421,7 +421,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Sauke %s cikakken kundi (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "*akwai sassan,hotuna,launuka,da/kozane-zane."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -429,29 +429,29 @@ msgid "dashboard.export.explain"
 msgstr "za ka iya fitar da kundi daya ko fiye ta hanyar tura taska. \"me \"*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr "Manhajar tura kundi ta kunshi fitarwa, tattali mahaxarsu."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "fitar da manhajar tura kundi"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr "manhajar tura kundi ba ta shiga cikin fitarwa, wani amfaniqarawa a taska. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "lura da bayanan da ke cikin manhajar tura kundi"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "za ka iya fitar da kundi tare da haxe muhimman abubuwa, na waje a "
 "kunditaskira."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "tura taska ya qunshi bayanan da ke cikin kundin taskoki"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1243,10 +1243,6 @@ msgstr "manyan baqaqe"
 #: src/app/main/ui/inspect/right_sidebar.cljs:237
 msgid "inspect.empty.help"
 msgstr "domin neman qarin bayani game da fenfot a tuntubi sashen agaji"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "qarin bayani a fagen lura"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

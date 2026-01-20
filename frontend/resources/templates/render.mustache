@@ -4,23 +4,29 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>Penpot - Render</title>
-    <link rel="icon" href="images/favicon.png" />
+
+    <link rel="icon" href="images/favicon.png?version={{& version_tag }}" />
 
     <script>
-      window.penpotVersion = "%version%";
+      globalThis.penpotVersion = "{{& version}}";
+      globalThis.penpotVersionTag = "{{& version_tag}}";
+      globalThis.penpotBuildDate = "{{& build_date}}";
     </script>
 
     {{# manifest}}
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
+    <script type="importmap">{{& importmap }}</script>
     {{/manifest}}
   </head>
   <body>
     <div id="app"></div>
     {{# manifest}}
-    <script src="js/libs.js?ts={{& ts}}"></script>
-    <script src="{{& shared}}"></script>
-    <script src="{{& render}}"></script>
+    <script type="module" src="{{& libs}}"></script>
+    <script type="module">
+      import { init } from "{{& render_main}}";
+      init();
+    </script>
     {{/manifest}}
   </body>
 </html>

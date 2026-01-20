@@ -358,7 +358,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Deskargatu %s fitxategi estandar (.svn + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Osagaiak, grafikoak, koloreak edo/eta tipografiak izan ditzakete."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -368,31 +368,31 @@ msgstr ""
 "darabiltzate. Zer egin nahi duzu baliabideekin*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Partekatutako liburutegiak dituzten fitxategiak esportazio paketean sartuko "
 "dira eta loturak mantenduko dituzte."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Esportatu partekatutako liburutegiak"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Partekatutako liburutegiak ez dira esportazioan sartuko eta baliabide bat "
 "ere ez da liburutegian sartuko. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Erabili baliabideak oinarrizko objektu bezala"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr "Zure fitxategia baliabide guztiak bere baitan dituela esportatuko da."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Sartu partekatutako liburutegiak fitxategiaren liburutegietan"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1187,10 +1187,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Diseinua ikuskatzeari buruz gehiago jakin nahi baduzu zoaz Penpoten "
 "laguntza zentrora"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Informazio gehiago ikuskatzeari buruz"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

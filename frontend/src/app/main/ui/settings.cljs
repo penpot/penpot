@@ -78,3 +78,9 @@
 
           :settings-notifications
           [:& notifications-page* {:profile profile}])]]]]))
+
+(mf/defc settings-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> settings* props])
+

@@ -7,7 +7,7 @@
 (ns app.plugins.flex
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
@@ -133,7 +133,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -148,7 +148,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -163,7 +163,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -178,7 +178,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -194,7 +194,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -209,7 +209,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -224,7 +224,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -239,7 +239,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
+         (not (sm/valid-safe-int? value))
          (u/display-not-valid :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -296,7 +296,7 @@
      :set
      (fn [_ value]
        (cond
-         (us/safe-int? value)
+         (sm/valid-safe-int? value)
          (u/display-not-valid :zIndex value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -359,7 +359,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :verticalMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -374,7 +374,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :horizontalMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -389,7 +389,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :topMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -404,7 +404,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :rightMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -419,7 +419,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :bottomMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -434,7 +434,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :leftMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -449,7 +449,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :maxWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -464,7 +464,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :minWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -479,7 +479,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :maxHeight value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -494,7 +494,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
+         (not (sm/valid-safe-number? value))
          (u/display-not-valid :minHeight value)
 
          (not (r/check-permission plugin-id "content:write"))

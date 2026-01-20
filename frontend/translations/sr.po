@@ -479,7 +479,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Преузмите &s стандардних датотека (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Може укључивати компоненте, графику, боје и/или типографије."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -489,33 +489,33 @@ msgstr ""
 "Шта желите да урадите са њиховим средстрвима*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Датотеке са дељеним библиотекама ће бити укључене у извоз, одржавајући "
 "њихову повезаност."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Извези дељене библиотеке"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Дељене библиотеке неће бити укључене у извоз, а средства неће бити додата у "
 "библиотеку. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Третирајте средства заједничке библиотеке као основне објекте"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Ваша датотека ће бити извезена са свим спољним средствима спојеним у "
 "библиотеку датотека."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Укључите средства дељених библиотека у библиотеке датотека"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1347,10 +1347,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Ако желите да сазнате више о прегледу дизајна, посетите Помоћни центар "
 "Penpot-а"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Више информација о прегледу"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

@@ -59,6 +59,7 @@
    :dimensions      "dimension"
    :font-family     "fontFamilies"
    :font-size       "fontSizes"
+   :font-weight     "fontWeights"
    :letter-spacing  "letterSpacing"
    :number          "number"
    :opacity         "opacity"
@@ -70,7 +71,6 @@
    :stroke-width    "borderWidth"
    :text-case       "textCase"
    :text-decoration "textDecoration"
-   :font-weight     "fontWeights"
    :typography      "typography"})
 
 (def dtcg-token-type->token-type

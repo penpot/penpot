@@ -12,14 +12,17 @@
   flex-direction: column;
   gap: var(--sp-l);
   width: 100%;
-  height: calc(100vh - px2rem(128)); // TODO: Fix this hardcoded value
+  max-height: calc(100vh - px2rem(128)); // TODO: Fix this hardcoded value
   padding-top: var(--sp-s);
+  padding-inline: var(--sp-m);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
+  background-color: var(--low-emphasis-background);
 }
 
 .workspace-element-options {
-  height: calc(100vh - px2rem(200)); // TODO: Fix this hardcoded value
+  max-height: calc(100vh - px2rem(180)); // TODO: Fix this hardcoded value
   padding-inline: var(--sp-m);
+  background-color: var(--low-emphasis-background);
 }

@@ -20,7 +20,7 @@ goog.provide("app.util.globals");
 goog.scope(function () {
   var self = app.util.globals;
 
-  self.global = goog.global;
+  self.global = globalThis;
 
   function createMockedEventEmitter(k) {
     /* Allow mocked objects to be event emitters, so other modules

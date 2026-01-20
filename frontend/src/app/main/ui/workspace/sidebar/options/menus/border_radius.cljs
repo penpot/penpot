@@ -102,7 +102,7 @@
         [:> deprecated-input/numeric-input*
          {:placeholder (cond
                          (not all-equal?)
-                         "Mixed"
+                         (tr "settings.multiple")
                          (= :multiple (:r1 values))
                          (tr "settings.multiple")
                          :else

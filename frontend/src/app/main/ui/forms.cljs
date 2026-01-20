@@ -34,10 +34,9 @@
            (let [value (-> event dom/get-target dom/get-input-value)]
              (fm/on-input-change form input-name value true))))
 
-
         props
         (mf/spread-props props {:on-change on-change
-                                :default-value value})
+                                :value value})
 
         props
         (if (and error touched?)
@@ -53,7 +52,8 @@
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))
-                               (seq (:external-errors @form))))
+                               (seq (:async-errors @form))
+                               (seq (:extra-errors @form))))
                       (true? disabled))
         handle-key-down-save
         (mf/use-fn

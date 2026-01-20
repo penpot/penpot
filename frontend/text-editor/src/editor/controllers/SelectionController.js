@@ -54,6 +54,7 @@ import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
 import { sanitizeFontFamily } from "../content/dom/Style.js";
+import StyleDeclaration from "./StyleDeclaration.js";
 
 /**
  * Supported options for the SelectionController.
@@ -64,39 +65,7 @@ import { sanitizeFontFamily } from "../content/dom/Style.js";
 
 /**
  * SelectionController uses the same concepts used by the Selection API but extending it to support
- * our own internal model based on paragraphs (in drafconst textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
-      createParagraph([createTextSpan(new Text("Hello, "))]),
-      createEmptyParagraph(),
-      createParagraph([createTextSpan(new Text("World!"))]),
-    ]);
-    const root = textEditorMock.root;
-    const selection = document.getSelection();
-    const selectionController = new SelectionController(
-      textEditorMock,
-      selection
-    );
-    focus(
-      selection,
-      textEditorMock,
-      root.childNodes.item(2).firstChild.firstChild,
-      0
-    );
-    selectionController.mergeBackwardParagraph();
-    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.children.length).toBe(2);
-    expect(textEditorMock.root.dataset.itype).toBe("root");
-    expect(textEditorMock.root.firstChild).toBeInstanceOf(HTMLDivElement);
-    expect(textEditorMock.root.firstChild.dataset.itype).toBe("paragraph");
-    expect(textEditorMock.root.firstChild.firstChild).toBeInstanceOf(
-      HTMLSpanElement
-    );
-    expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
-      "span"
-    );
-    expect(textEditorMock.root.textContent).toBe("Hello, World!");
-    expect(textEditorMock.root.firstChild.textContent).toBe("Hello, ");
-    expect(textEditorMock.root.lastChild.textContent).toBe("World!");
-  t.js they were called blocks) and text spans.
+ * our own internal model based on paragraphs (in draft.js they were called blocks) and text spans.
  */
 export class SelectionController extends EventTarget {
   /**
@@ -164,21 +133,12 @@ export class SelectionController extends EventTarget {
   #textNodeIterator = null;
 
   /**
-   * CSSStyleDeclaration that we can mutate
+   * StyleDeclaration that we can mutate
    * to handle style changes.
    *
-   * @type {CSSStyleDeclaration}
+   * @type {StyleDeclaration}
    */
-  #currentStyle = null;
-
-  /**
-   * Element used to have a custom CSSStyleDeclaration
-   * that we can modify to handle style changes when the
-   * selection is changed.
-   *
-   * @type {HTMLDivElement}
-   */
-  #inertElement = null;
+  #currentStyle = new StyleDeclaration();
 
   /**
    * @type {SelectionControllerDebug}
@@ -275,17 +235,66 @@ export class SelectionController extends EventTarget {
    *
    * @param {HTMLElement} element
    */
-  #applyStylesToCurrentStyle(element) {
+  #applyStylesFromElementToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
+      if (styleName === "--fills") {
+        continue;
+      }
+      let styleValue = element.style.getPropertyValue(styleName);
 
+      if (styleName === "font-family") {
+        styleValue = sanitizeFontFamily(styleValue);
+      }
+      this.#currentStyle.setProperty(styleName, styleValue);
+    }
+  }
+
+  /**
+   * Applies some styles to the currentStyle
+   * CSSStyleDeclaration
+   *
+   * @param {HTMLElement} element
+   */
+  #mergeStylesFromElementToCurrentStyle(element) {
+    for (let index = 0; index < element.style.length; index++) {
+      const styleName = element.style.item(index);
       let styleValue = element.style.getPropertyValue(styleName);
       if (styleName === "font-family") {
         styleValue = sanitizeFontFamily(styleValue);
       }
-
-      this.#currentStyle.setProperty(styleName, styleValue);
+      this.#currentStyle.mergeProperty(styleName, styleValue);
     }
+  }
+
+  /**
+   * Updates current styles based on the currently selected text spans.
+   *
+   * @param {HTMLSpanElement} startNode
+   * @param {HTMLSpanElement} endNode
+   */
+  #updateCurrentStyleFrom(startNode, endNode) {
+    this.#applyDefaultStylesToCurrentStyle();
+    const root = startNode.parentElement.parentElement.parentElement;
+    this.#applyStylesFromElementToCurrentStyle(root);
+    // FIXME: I don't like this approximation. Having to iterate nodes twice
+    // is bad for performance. I think we need another way of "computing"
+    // the cascade.
+    for (const textNode of this.#textNodeIterator.iterateFrom(
+      startNode,
+      endNode,
+    )) {
+      const paragraph = textNode.parentElement.parentElement;
+      this.#applyStylesFromElementToCurrentStyle(paragraph);
+    }
+    for (const textNode of this.#textNodeIterator.iterateFrom(
+      startNode,
+      endNode,
+    )) {
+      const textSpan = textNode.parentElement;
+      this.#mergeStylesFromElementToCurrentStyle(textSpan);
+    }
+    return this;
   }
 
   /**
@@ -297,20 +306,14 @@ export class SelectionController extends EventTarget {
   #updateCurrentStyle(textSpan) {
     this.#applyDefaultStylesToCurrentStyle();
     const root = textSpan.parentElement.parentElement;
-    this.#applyStylesToCurrentStyle(root);
+    this.#applyStylesFromElementToCurrentStyle(root);
     const paragraph = textSpan.parentElement;
-    this.#applyStylesToCurrentStyle(paragraph);
-    this.#applyStylesToCurrentStyle(textSpan);
+    this.#applyStylesFromElementToCurrentStyle(paragraph);
+    this.#applyStylesFromElementToCurrentStyle(textSpan);
     return this;
   }
 
-  /**
-   * This is called on every `selectionchange` because it is dispatched
-   * only by the `document` object.
-   *
-   * @param {Event} e
-   */
-  #onSelectionChange = (e) => {
+  #updateState() {
     // If we're outside the contenteditable element, then
     // we return.
     if (!this.hasFocus) {
@@ -320,17 +323,23 @@ export class SelectionController extends EventTarget {
     let focusNodeChanges = false;
     let anchorNodeChanges = false;
 
-    if (this.#focusNode !== this.#selection.focusNode) {
+    if (
+      this.#focusNode !== this.#selection.focusNode ||
+      this.#focusOffset !== this.#selection.focusOffset
+    ) {
       this.#focusNode = this.#selection.focusNode;
+      this.#focusOffset = this.#selection.focusOffset;
       focusNodeChanges = true;
     }
-    this.#focusOffset = this.#selection.focusOffset;
 
-    if (this.#anchorNode !== this.#selection.anchorNode) {
+    if (
+      this.#anchorNode !== this.#selection.anchorNode ||
+      this.#anchorOffset !== this.#selection.anchorOffset
+    ) {
       this.#anchorNode = this.#selection.anchorNode;
+      this.#anchorOffset = this.#selection.anchorOffset;
       anchorNodeChanges = true;
     }
-    this.#anchorOffset = this.#selection.anchorOffset;
 
     // We need to handle multi selection from firefox
     // and remove all the old ranges and just keep the
@@ -359,7 +368,7 @@ export class SelectionController extends EventTarget {
     // If focus node changed, we need to retrieve all the
     // styles of the current text span and dispatch an event
     // to notify that the styles have changed.
-    if (focusNodeChanges) {
+    if (focusNodeChanges || anchorNodeChanges) {
       this.#notifyStyleChange();
     }
 
@@ -372,43 +381,42 @@ export class SelectionController extends EventTarget {
     if (this.#debug) {
       this.#debug.update(this);
     }
-  };
+  }
+
+  /**
+   * This is called on every `selectionchange` because it is dispatched
+   * only by the `document` object.
+   *
+   * @param {Event} e
+   */
+  #onSelectionChange = (_) => this.#updateState();
 
   /**
    * Notifies that the styles have changed.
    */
   #notifyStyleChange() {
-    const textSpan = this.focusTextSpan;
-    if (textSpan) {
-      this.#updateCurrentStyle(textSpan);
-      this.dispatchEvent(
-        new CustomEvent("stylechange", {
-          detail: this.#currentStyle,
-        }),
-      );
-    } else {
-      const firstTextSpan =
+    if (this.#selection.isCollapsed) {
+      // CARET
+      const textSpan =
+        this.focusTextSpan ??
         this.#textEditor.root?.firstElementChild?.firstElementChild;
-      if (firstTextSpan) {
-        this.#updateCurrentStyle(firstTextSpan);
-        this.dispatchEvent(
-          new CustomEvent("stylechange", {
-            detail: this.#currentStyle,
-          }),
-        );
-      }
+
+      this.#updateCurrentStyle(textSpan);
+    } else {
+      // SELECTION.
+      this.#updateCurrentStyleFrom(this.#anchorNode, this.#focusNode);
     }
+    this.dispatchEvent(
+      new CustomEvent("stylechange", {
+        detail: this.#currentStyle,
+      }),
+    );
   }
 
   /**
    * Setups
    */
   #setup() {
-    // This element is not attached to the DOM
-    // so it doesn't trigger style or layout calculations.
-    // That's why it's called "inertElement".
-    this.#inertElement = document.createElement("div");
-    this.#currentStyle = this.#inertElement.style;
     this.#applyDefaultStylesToCurrentStyle();
 
     if (this.#selection.rangeCount > 0) {
@@ -426,6 +434,22 @@ export class SelectionController extends EventTarget {
       }
     }
     document.addEventListener("selectionchange", this.#onSelectionChange);
+  }
+
+  /**
+   * Disposes the current resources.
+   */
+  dispose() {
+    document.removeEventListener("selectionchange", this.#onSelectionChange);
+    this.#textEditor = null;
+    this.#ranges.clear();
+    this.#ranges = null;
+    this.#range = null;
+    this.#selection = null;
+    this.#focusNode = null;
+    this.#anchorNode = null;
+    this.#mutations.dispose();
+    this.#mutations = null;
   }
 
   /**
@@ -480,19 +504,12 @@ export class SelectionController extends EventTarget {
     if (!this.#savedSelection) return false;
 
     if (this.#savedSelection.anchorNode && this.#savedSelection.focusNode) {
-      if (this.#savedSelection.anchorNode === this.#savedSelection.focusNode) {
-        this.#selection.setPosition(
-          this.#savedSelection.focusNode,
-          this.#savedSelection.focusOffset,
-        );
-      } else {
-        this.#selection.setBaseAndExtent(
-          this.#savedSelection.anchorNode,
-          this.#savedSelection.anchorOffset,
-          this.#savedSelection.focusNode,
-          this.#savedSelection.focusOffset,
-        );
-      }
+      this.#selection.setBaseAndExtent(
+        this.#savedSelection.anchorNode,
+        this.#savedSelection.anchorOffset,
+        this.#savedSelection.focusNode,
+        this.#savedSelection.focusOffset,
+      );
     }
     this.#savedSelection = null;
     return true;
@@ -502,6 +519,8 @@ export class SelectionController extends EventTarget {
    * Marks the start of a mutation.
    *
    * Clears all the mutations kept in CommandMutations.
+   *
+   * @returns {boolean}
    */
   startMutation() {
     this.#mutations.clear();
@@ -512,7 +531,7 @@ export class SelectionController extends EventTarget {
   /**
    * Marks the end of a mutation.
    *
-   * @returns
+   * @returns {CommandMutations}
    */
   endMutation() {
     return this.#mutations;
@@ -520,6 +539,8 @@ export class SelectionController extends EventTarget {
 
   /**
    * Selects all content.
+   *
+   * @returns {SelectionController}
    */
   selectAll() {
     if (this.#textEditor.isEmpty) {
@@ -558,23 +579,15 @@ export class SelectionController extends EventTarget {
     this.#selection.removeAllRanges();
     this.#selection.addRange(range);
 
-    // Ensure internal state is synchronized
-    this.#focusNode = this.#selection.focusNode;
-    this.#focusOffset = this.#selection.focusOffset;
-    this.#anchorNode = this.#selection.anchorNode;
-    this.#anchorOffset = this.#selection.anchorOffset;
-    this.#range = range;
-    this.#ranges.clear();
-    this.#ranges.add(range);
-
-    // Notify style changes
-    this.#notifyStyleChange();
+    this.#updateState();
 
     return this;
   }
 
   /**
    * Moves cursor to end.
+   *
+   * @returns {SelectionController}
    */
   cursorToEnd() {
     const range = document.createRange(); //Create a range (a range is a like the selection but invisible)
@@ -660,22 +673,6 @@ export class SelectionController extends EventTarget {
         );
       }
     }
-  }
-
-  /**
-   * Disposes the current resources.
-   */
-  dispose() {
-    document.removeEventListener("selectionchange", this.#onSelectionChange);
-    this.#textEditor = null;
-    this.#ranges.clear();
-    this.#ranges = null;
-    this.#range = null;
-    this.#selection = null;
-    this.#focusNode = null;
-    this.#anchorNode = null;
-    this.#mutations.dispose();
-    this.#mutations = null;
   }
 
   /**
@@ -1114,8 +1111,8 @@ export class SelectionController extends EventTarget {
     return isParagraphEnd(this.focusNode, this.focusOffset);
   }
 
-  #getFragmentInlineTextNode(fragment) {
-    if (isInline(fragment.firstElementChild.lastChild)) {
+  #getFragmentTextSpanTextNode(fragment) {
+    if (isTextSpan(fragment.firstElementChild.lastChild)) {
       return fragment.firstElementChild.firstElementChild.lastChild;
     }
     return fragment.firstElementChild.lastChild;
@@ -1131,11 +1128,12 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   insertPaste(fragment) {
-    if (
-      fragment.children.length === 1 &&
-      fragment.firstElementChild?.dataset?.textSpan === "force"
-    ) {
-      const collapseNode = fragment.firstElementChild.firstChild;
+    const hasOnlyOneParagraph = fragment.children.length === 1;
+    const forceTextSpan =
+      fragment.firstElementChild?.dataset?.textSpan === "force";
+    if (hasOnlyOneParagraph && forceTextSpan) {
+      // first text span
+      const collapseNode = fragment.firstElementChild.firstElementChild;
       if (this.isTextSpanStart) {
         this.focusTextSpan.before(...fragment.firstElementChild.children);
       } else if (this.isTextSpanEnd) {
@@ -1147,7 +1145,9 @@ export class SelectionController extends EventTarget {
           newTextSpan,
         );
       }
-      return this.collapse(collapseNode, collapseNode.nodeValue?.length || 0);
+      // collapseNode could be a <br>, that's why we need to
+      // make `nodeValue` as optional.
+      return this.collapse(collapseNode, collapseNode?.nodeValue?.length || 0);
     }
     const collapseNode = this.#getFragmentParagraphTextNode(fragment);
     if (this.isParagraphStart) {
@@ -1393,9 +1393,16 @@ export class SelectionController extends EventTarget {
         this.focusOffset,
         newText,
       );
+      this.collapse(this.focusNode, this.focusOffset + newText.length);
     } else if (this.isLineBreakFocus) {
       const textNode = new Text(newText);
-      this.focusNode.replaceWith(textNode);
+      // the focus node is a <span>.
+      if (isTextSpan(this.focusNode)) {
+        this.focusNode.firstElementChild.replaceWith(textNode);
+        // the focus node is a <br>.
+      } else {
+        this.focusNode.replaceWith(textNode);
+      }
       this.collapse(textNode, newText.length);
     } else {
       throw new Error("Unknown node type");
@@ -1932,11 +1939,21 @@ export class SelectionController extends EventTarget {
         const textSpan = this.startTextSpan;
         const midText = startNode.splitText(startOffset);
         const endText = midText.splitText(endOffset - startOffset);
-        const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
-        textSpan.after(midTextSpan);
-        if (endText.length > 0) {
-          const endTextSpan = createTextSpan(endText, textSpan.style);
-          midTextSpan.after(endTextSpan);
+
+        // Only create text span if midText is not empty
+        if (midText.nodeValue && midText.nodeValue.length > 0) {
+          const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
+          textSpan.after(midTextSpan);
+          if (endText.length > 0) {
+            const endTextSpan = createTextSpan(endText, textSpan.style);
+            midTextSpan.after(endTextSpan);
+          }
+        } else {
+          // If midText is empty, just create endTextSpan if needed
+          if (endText.length > 0) {
+            const endTextSpan = createTextSpan(endText, textSpan.style);
+            textSpan.after(endTextSpan);
+          }
         }
 
         // NOTE: This is necessary because sometimes
@@ -1953,7 +1970,7 @@ export class SelectionController extends EventTarget {
       // the styles are applied to the current caret
       else if (
         this.startOffset === this.endOffset &&
-        this.endOffset === endNode.nodeValue.length
+        this.endOffset === endNode.nodeValue?.length
       ) {
         const newTextSpan = createVoidTextSpan(newStyles);
         this.endTextSpan.after(newTextSpan);
@@ -1963,6 +1980,10 @@ export class SelectionController extends EventTarget {
       else {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
+        // Apply styles to child text spans.
+        for (const textSpan of paragraph.children) {
+          setTextSpanStyles(textSpan, newStyles);
+        }
       }
       return this.#notifyStyleChange();
 
@@ -1984,7 +2005,8 @@ export class SelectionController extends EventTarget {
         // new text span.
         if (
           this.#textNodeIterator.currentNode === startNode &&
-          startOffset > 0
+          startOffset > 0 &&
+          startOffset < (startNode.nodeValue?.length || 0)
         ) {
           const newTextSpan = splitTextSpan(textSpan, startOffset);
           setTextSpanStyles(newTextSpan, newStyles);
@@ -1999,14 +2021,15 @@ export class SelectionController extends EventTarget {
           (this.#textNodeIterator.currentNode !== startNode &&
             this.#textNodeIterator.currentNode !== endNode) ||
           (this.#textNodeIterator.currentNode === endNode &&
-            endOffset === endNode.nodeValue.length)
+            endOffset === endNode.nodeValue?.length)
         ) {
           setTextSpanStyles(textSpan, newStyles);
 
           // If we're at end node
         } else if (
           this.#textNodeIterator.currentNode === endNode &&
-          endOffset < endNode.nodeValue.length
+          endOffset < endNode.nodeValue?.length &&
+          endOffset > 0
         ) {
           const newTextSpan = splitTextSpan(textSpan, endOffset);
           setTextSpanStyles(textSpan, newStyles);

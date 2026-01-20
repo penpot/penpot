@@ -16,6 +16,7 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -78,22 +79,22 @@
                            :class (stl/css :boolean-radio-btn)
                            :on-change on-change
                            :name "bool-options"}
-         [:& radio-button {:icon deprecated-icon/boolean-union
+         [:& radio-button {:icon i/boolean-union
                            :value "union"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
                            :id "bool-opt-union"}]
-         [:& radio-button {:icon deprecated-icon/boolean-difference
+         [:& radio-button {:icon i/boolean-difference
                            :value "difference"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
                            :id "bool-opt-differente"}]
-         [:& radio-button {:icon deprecated-icon/boolean-intersection
+         [:& radio-button {:icon i/boolean-intersection
                            :value "intersection"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
                            :id "bool-opt-intersection"}]
-         [:& radio-button {:icon deprecated-icon/boolean-exclude
+         [:& radio-button {:icon i/boolean-exclude
                            :value "exclude"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")

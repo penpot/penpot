@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-22 10:51+0000\n"
-"Last-Translator: Keunes <keunes@mailbox.org>\n"
-"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
-">\n"
+"PO-Revision-Date: 2025-12-23 17:00+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.15-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -570,7 +570,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s standaardbestanden downloaden (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Kan componenten, afbeeldingen, kleuren en/of typografie bevatten."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -580,33 +580,33 @@ msgstr ""
 "bibliotheken. Wat wil je doen met hun assets*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
-"Bestanden met gedeelde bibliotheken worden opgenomen in de export en hun "
-"koppelingen worden behouden."
+"Bestanden met gedeelde bibliotheken worden meegenomen in de export, incl. "
+"behoud van hun koppelingen."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Gedeelde bibliotheken exporteren"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Gedeelde bibliotheken worden niet opgenomen in de export en er worden geen "
 "assets aan de bibliotheek toegevoegd. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Gedeelde bibliotheek-assets als basisobjecten behandelen"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Je bestand wordt geëxporteerd met alle externe assets samengevoegd in de "
 "bestandsbibliotheek."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Inclusief gedeelde bibliotheek-assets in bestandsbibliotheken"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1824,10 +1824,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Als je meer wilt weten over ontwerpinspectie, ga dan naar het helpcentrum "
 "van Penpot"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Meer info over inspecteren"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -7970,12 +7966,6 @@ msgstr "Ongeldige waarde: % is niet toegestaan."
 msgid "workspace.tokens.value-with-units"
 msgstr "Ongeldige waarde: Eenheden zijn niet toegestaan."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr ""
-"Met het wijzigen van de naam van dit token, worden alle verwijzingen naar "
-"de oude naam verbroken."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
@@ -8384,7 +8374,7 @@ msgstr "Schakelaar"
 
 #: src/app/main/ui/dashboard/subscription.cljs:84
 msgid "subscription.dashboard.power-up.professional.bottom-button"
-msgstr "Inschakelen!"
+msgstr "Gas geven!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:83
 #, markdown
@@ -8474,3 +8464,35 @@ msgstr "Naam moet minimaal 1 teken zijn"
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS-code kopiëren naar klembord"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Help ons groeien en maak je proefperiode eenvoudiger"
+
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Voeg nu je betalingsgegevens toe om je abonnement na de proefperiode soepel "
+"te laten verlopen en ons open-sourceproject te blijven ondersteunen. Er "
+"worden nog geen kosten in rekening gebracht."
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Nu overslaan en proefperiode starten"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Betalingsgegevens toevoegen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "Meer info"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Ongeldige tokenwaarde: je kunt alleen verwijzen naar een font-family-token"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Ongeldige waarde: moet verwijzen naar een samengesteld schaduwtoken."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Voer een alias voor een schaduwtoken in"

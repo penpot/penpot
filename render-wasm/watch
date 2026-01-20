@@ -6,7 +6,6 @@ pushd $_SCRIPT_DIR;
 . ./_build_env
 
 set -x
-
 build;
 copy_artifacts "../frontend/resources/public/js";
 copy_shared_artifact;

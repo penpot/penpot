@@ -5947,8 +5947,8 @@
                                 "~:spread": "10",
                                 "~:color": "rgb(160, 73, 73)",
                                 "~:inset": true,
-                                "~:offsetX": "10",
-                                "~:offsetY": "10"
+                                "~:offset-x": "10",
+                                "~:offset-y": "10"
                               }
                             ],
                             "~:description": "",

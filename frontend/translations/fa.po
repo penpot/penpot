@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-10 07:51+0000\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.15-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -491,7 +491,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "دانلود %s عدد فایل های استاندارد (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* ممکن است شامل کامپوننت‌ها، گرافیک، رنگ‌ها و/یا تایپوگرافی باشد."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -501,33 +501,34 @@ msgstr ""
 "می‌کنند. با دارایی‌های آن‌ها چه می‌خواهید بکنید*؟"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+#, fuzzy
+msgid "files-download-modal.options.all.message"
 msgstr ""
-"فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را "
-"حفظ می‌کنند."
+"فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را حفظ "
+"می‌کنند."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "اکسپورت کتابخانه‌های مشترک"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "کتابخانه‌های مشترک در صادرات گنجانده نخواهند شد و هیچ دارایی به کتابخانه "
 "اضافه نخواهد شد. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "دارایی‌های کتابخانه مشترک را به عنوان اشیاء اساسی در نظر بگیرید"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "فایل شما با تمام دارایی‌های خارجی که در کتابخانه فایل ادغام شده‌اند اکسپورت "
 "می‌شود."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "دارایی‌های کتابخانه مشترک را در کتابخانه‌های فایل قرار دهید"
 
 #: src/app/main/ui/exports/files.cljs:147

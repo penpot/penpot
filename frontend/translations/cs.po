@@ -530,7 +530,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Stáhnout %s soubory (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Může obsahovat komponenty, grafiku, barvy a/nebo typografii."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -540,33 +540,33 @@ msgstr ""
 "Co chcete dělat s jejich položkami*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Soubory se sdílenými knihovnami budou zahrnuty do exportu, čímž se zachová "
 "jejich propojení."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportovat sdílené knihovny"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Sdílené knihovny nebudou zahrnuty do exportu a do knihovny nebudou přidány "
 "žádné položky. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Zacházet s položkami sdílené knihovny jako se základními objekty"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Váš soubor bude exportován se všemi externími položkami sloučenými do "
 "knihovny souborů."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Zahrnout sdílené položky knihovny do knihoven souborů"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1574,10 +1574,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Pokud se chcete dozvědět více o inspektorovi designu, navštivte centrum "
 "nápovědy společnosti Penpot"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Více informací o inspektorovi"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -6459,10 +6455,6 @@ msgstr "Nástroje"
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.value-not-valid"
 msgstr "Hodnota není platná"
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Přejmenováním tohoto tokenu se přeruší jakýkoli odkaz na jeho starý název."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"

@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR=$(dirname $0);
+
 set -ex
-corepack enable;
-corepack install;
-yarn install;
 
-yarn run playwright install chromium --with-deps;
+$SCRIPT_DIR/setup;
+
 yarn run build:storybook
-
-exec npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-    "npx http-server storybook-static --port 6006 --silent" \
-    "npx wait-on tcp:6006 && yarn test:storybook"
+yarn run test:storybook

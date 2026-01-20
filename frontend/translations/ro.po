@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-17 11:07+0000\n"
-"Last-Translator: AlexTECPlayz <alextecplayz@vantainteractive.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -578,7 +578,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descarcă %s fișiere standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Poate include componente, elemente grafice, culori și/sau tipografii."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -588,33 +588,33 @@ msgstr ""
 "biblioteci partajate. Ce vrei să faci cu obiectele lor*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Fișierele cu biblioteci partajate vor fi incluse în export, menținându-le "
 "legătura."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportă biblioteci partajate"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Bibliotecile partajate nu vor fi incluse în export și nu vor fi adăugate "
 "elemente în bibliotecă. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Tratează obiectele bibliotecii partajate ca obiecte de bază"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Fișierul dvs. va fi exportat cu toate activele externe îmbinate în "
 "biblioteca de fișiere."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Include obiectele bibliotecii partajate în bibliotecile de fișiere"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1821,10 +1821,6 @@ msgstr ""
 "Dacă dorești să afli mai multe despre inspectorul de design, vizitează "
 "centrul de ajutor Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Mai multe informații despre inspector"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""
@@ -1832,6 +1828,7 @@ msgstr ""
 "și codul"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Informație strat"
 
@@ -7982,10 +7979,6 @@ msgstr "Valoare invalidă: % nu este permis."
 #: src/app/main/data/workspace/tokens/errors.cljs:65
 msgid "workspace.tokens.value-with-units"
 msgstr "Valoare invalidă: Unitățile nu sunt permise."
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Redenumirea acestui token va distruge orice referință la numele său vechi."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"

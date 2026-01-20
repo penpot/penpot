@@ -277,7 +277,6 @@ fn propagate_reflow(
     };
 
     let shapes = &state.shapes;
-    let mut reflow_parent = false;
 
     if reflown.contains(id) {
         return;
@@ -290,17 +289,12 @@ fn propagate_reflow(
             let mut skip_reflow = false;
             if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
                 if let Some(parent_id) = shape.parent_id {
-                    if !reflown.contains(&parent_id) {
+                    if parent_id != Uuid::nil() && !reflown.contains(&parent_id) {
                         // If this is a fill layout but the parent has not been reflown yet
                         // we wait for the next iteration for reflow
                         skip_reflow = true;
-                        reflow_parent = true;
                     }
                 }
-            }
-
-            if shape.is_layout_vertical_auto() || shape.is_layout_horizontal_auto() {
-                reflow_parent = true;
             }
 
             if !skip_reflow {
@@ -312,32 +306,26 @@ fn propagate_reflow(
             if let Some(child) = shapes.get(&children_ids[0]) {
                 let child_bounds = bounds.find(child);
                 bounds.insert(shape.id, child_bounds);
-                reflow_parent = true;
             }
             reflown.insert(*id);
         }
         Type::Group(_) => {
             if let Some(shape_bounds) = calculate_group_bounds(shape, shapes, bounds) {
                 bounds.insert(shape.id, shape_bounds);
-                reflow_parent = true;
             }
             reflown.insert(*id);
         }
         Type::Bool(_) => {
             if let Some(shape_bounds) = calculate_bool_bounds(shape, shapes, bounds, modifiers) {
                 bounds.insert(shape.id, shape_bounds);
-                reflow_parent = true;
             }
             reflown.insert(*id);
         }
-        _ => {
-            // Other shapes don't have to be reflown
-            reflow_parent = true;
-        }
+        _ => {}
     }
 
     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
-        if reflow_parent && (parent.has_layout() || parent.is_group_like()) {
+        if parent.has_layout() || parent.is_group_like() {
             entries.push_back(Modifier::reflow(parent.id));
         }
     }
@@ -384,7 +372,7 @@ pub fn propagate_modifiers(
             if math::identitish(&entry.transform) {
                 Modifier::Reflow(entry.id)
             } else {
-                Modifier::Transform(entry.clone())
+                Modifier::Transform(*entry)
             }
         })
         .collect();

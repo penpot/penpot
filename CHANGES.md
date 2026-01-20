@@ -1,10 +1,44 @@
 # CHANGELOG
 
+## 2.13.0 (Unreleased)
+
+### :boom: Breaking changes & Deprecations
+
+### :rocket: Epics and highlights
+
+### :heart: Community contributions (Thank you!)
+
+- Fix mask issues with component swap (by @dfelinto) [Github #7675](https://github.com/penpot/penpot/issues/7675)
+
+### :sparkles: New features & Enhancements
+
+- Add new Box Shadow Tokens [Taiga #10201](https://tree.taiga.io/project/penpot/us/10201)
+- Make i18n translation files load on-demand [Taiga #11474](https://tree.taiga.io/project/penpot/us/11474)
+- Add deleted files to dashboard [Taiga #8149](https://tree.taiga.io/project/penpot/us/8149)
+
+### :bug: Bugs fixed
+
+- Fix problem when drag+duplicate a full grid [Taiga #12565](https://tree.taiga.io/project/penpot/issue/12565)
+- Fix problem when pasting elements in reverse flex layout [Taiga #12460](https://tree.taiga.io/project/penpot/issue/12460)
+- Fix wrong board size presets in Android [Taiga #12339](https://tree.taiga.io/project/penpot/issue/12339)
+- Fix problem with grid layout components and auto sizing [Github #7797](https://github.com/penpot/penpot/issues/7797)
+- Fix some alignments on inspect tab [Taiga #12915](https://tree.taiga.io/project/penpot/issue/12915)
+- Fix color assets from shared libraries not appearing as assets in Selected colors panel [Taiga #12957](https://tree.taiga.io/project/penpot/issue/12957)
+- Fix CSS generated box-shadow property [Taiga #12997](https://tree.taiga.io/project/penpot/issue/12997)
+- Fix inner shadow selector on shadow token [Taiga #12951](https://tree.taiga.io/project/penpot/issue/12951)
+- Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
+- Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
+- Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
+
+
 ## 2.12.1
 
 ### :bug: Bugs fixed
 
 - Fix setting a portion of text as bold or underline messes things up [Github #7980](https://github.com/penpot/penpot/issues/7980)
+- Fix problem with style in fonts input [Taiga #12935](https://tree.taiga.io/project/penpot/issue/12935)
+- Fix problem with path editor and right click [Github #7917](https://github.com/penpot/penpot/issues/7917)
+
 
 ## 2.12.0
 

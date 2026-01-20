@@ -8,8 +8,8 @@ use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SI
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::{HashMap, HashSet};
 
-const TEXTURES_CACHE_CAPACITY: usize = 512;
-const TEXTURES_BATCH_DELETE: usize = 32;
+const TEXTURES_CACHE_CAPACITY: usize = 1024;
+const TEXTURES_BATCH_DELETE: usize = 256;
 // This is the amount of extra space we're going to give to all the surfaces to render shapes.
 // If it's too big it could affect performance.
 const TILE_SIZE_MULTIPLIER: i32 = 2;
@@ -106,6 +106,10 @@ impl Surfaces {
             sampling_options,
             margins,
         }
+    }
+
+    pub fn clear_tiles(&mut self) {
+        self.tiles.clear();
     }
 
     pub fn resize(&mut self, gpu_state: &mut GpuState, new_width: i32, new_height: i32) {
@@ -248,13 +252,8 @@ impl Surfaces {
         // The rest are tile size surfaces
     }
 
-    pub fn resize_cache(
-        &mut self,
-        gpu_state: &mut GpuState,
-        cache_dims: skia::ISize,
-        interest_area_threshold: i32,
-    ) {
-        self.cache = gpu_state.create_surface_with_isize("cache".to_string(), cache_dims);
+    pub fn resize_cache(&mut self, cache_dims: skia::ISize, interest_area_threshold: i32) {
+        self.cache = self.target.new_surface_with_dimensions(cache_dims).unwrap();
         self.cache.canvas().reset_matrix();
         self.cache.canvas().translate((
             (interest_area_threshold as f32 * TILE_SIZE),

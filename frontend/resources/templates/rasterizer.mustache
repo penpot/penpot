@@ -3,25 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <title>Penpot - Rasterizer</title>
-    <link rel="icon" href="images/favicon.png" />
+    <link rel="icon" href="images/favicon.png?version={{& version_tag }}" />
 
     <script>
-      window.penpotVersion = "%version%";
-      window.penpotBuildDate = "%buildDate%";
+      globalThis.penpotVersion = "{{& version}}";
+      globalThis.penpotVersionTag = "{{& version_tag}}";
+      globalThis.penpotBuildDate = "{{& build_date}}";
+      globalThis.penpotWorkerURI = "{{& manifest.worker_main}}";
     </script>
 
     {{# manifest}}
-    <script>window.penpotWorkerURI="{{& worker_main}}"</script>
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
+    <script type="importmap">{{& importmap }}</script>
     {{/manifest}}
-
   </head>
   <body>
     {{# manifest}}
-    <script src="js/libs.js?ts={{& ts}}"></script>
-    <script src="{{& shared}}"></script>
-    <script src="{{& rasterizer}}"></script>
+    <script type="module" src="{{& libs}}"></script>
+    <script type="module">
+      import { init } from "{{& rasterizer_main}}";
+      init();
+    </script>
     {{/manifest}}
   </body>
 </html>

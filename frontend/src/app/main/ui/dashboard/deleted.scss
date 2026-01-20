@@ -1,0 +1,139 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "common/refactor/common-dashboard";
+@use "../ds/typography.scss" as t;
+@use "../ds/_borders.scss" as *;
+@use "../ds/spacing.scss" as *;
+@use "../ds/_sizes.scss" as *;
+@use "../ds/z-index.scss" as *;
+
+.dashboard-container {
+  flex: 1 0 0;
+  width: 100%;
+  margin-inline-end: var(--sp-l);
+  border-top: $b-1 solid var(--panel-border-color);
+  overflow-y: auto;
+  padding-block-end: var(--sp-xxxl);
+}
+
+.deleted-info-content {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-s) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
+}
+
+.deleted-info {
+  display: block;
+  height: fit-content;
+  color: var(--color-foreground-secondary);
+  @include t.use-typography("body-large");
+  line-height: 0.8;
+  height: var(--sp-xl);
+}
+
+.info-text-highlight {
+  color: var(--color-accent-primary);
+}
+
+.deleted-options {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.nav {
+  background: var(--color-background-default);
+  padding: var(--sp-xxl) var(--sp-xxl) var(--sp-s) var(--sp-xxl);
+  position: sticky;
+  top: 0;
+
+  // We need to use the the deprecated z-index so it won't clash with the dashboard
+  // onboarding modals
+  z-index: deprecated.$z-index-3;
+}
+
+.nav-inside {
+  border-bottom: $b-1 solid var(--panel-border-color);
+  display: flex;
+  gap: var(--sp-l);
+  justify-content: space-between;
+}
+
+.nav-option {
+  color: var(--color-foreground-secondary);
+  padding: 0.5rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: $b-1 solid transparent;
+  cursor: pointer;
+}
+
+.selected {
+  color: var(--color-foreground-primary);
+  border-bottom: $b-1 solid var(--color-foreground-primary);
+}
+
+.project {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  width: 99%;
+  max-height: $sz-40;
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l);
+  margin-block-start: var(--sp-l);
+  border-radius: $br-4;
+}
+
+.project-name-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: var(--sp-xxxl);
+  margin-inline-start: var(--sp-s);
+}
+
+.project-name {
+  @include t.use-typography("body-large");
+  width: fit-content;
+  margin-inline-end: var(--sp-m);
+  line-height: 0.8;
+  color: var(--title-foreground-color-hover);
+  height: var(--sp-l);
+}
+
+.project-actions {
+  display: flex;
+  opacity: var(--actions-opacity);
+  margin-inline-start: var(--sp-xxxl);
+}
+
+.add-file-btn,
+.options-btn {
+  @extend .button-tertiary;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+  margin: 0 var(--sp-s);
+  padding: var(--sp-s);
+}
+
+.info-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.add-icon,
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}

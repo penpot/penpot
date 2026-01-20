@@ -51,6 +51,51 @@ jobs:
         run: |
           ./scripts/test
 
+  test-plugins:
+    name: Plugins Runtime Linter & Tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        id: setup-node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install deps
+        working-directory: ./plugins
+        shell: bash
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+
+      - name: Run Lint
+        working-directory: ./plugins
+        run: pnpm run lint
+
+      - name: Run Format Check
+        working-directory: ./plugins
+        run: pnpm run format:check
+
+      - name: Run Test
+        working-directory: ./plugins
+        run: pnpm run test
+
+      - name: Build runtime
+        working-directory: ./plugins
+        run: pnpm run build
+
+      - name: Build plugins
+        working-directory: ./plugins
+        run: pnpm run build:plugins
+
+      - name: Build styles
+        working-directory: ./plugins
+        run: pnpm run build:styles-example
+
   test-frontend:
     name: "Frontend Tests"
     runs-on: ubuntu-24.04
@@ -67,6 +112,8 @@ jobs:
 
       - name: Component Tests
         working-directory: ./frontend
+        env:
+          VITEST_BROWSER_TIMEOUT: 120000
         run: |
           ./scripts/test-components
 
@@ -159,23 +206,14 @@ jobs:
       - name: Build Bundle
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
-          yarn install
-          yarn run build:app:assets
-          yarn run build:app
-          yarn run build:app:libs
-
-      - name: Build WASM
-        working-directory: "./render-wasm"
-        run: |
-          ./build release
+          ./scripts/build 0.0.0
 
       - name: Store Bundle Cache
         uses: actions/cache@v4
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
+
 
   test-integration-1:
     name: "Integration Tests 1/4"

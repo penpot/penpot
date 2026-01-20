@@ -2,17 +2,15 @@
 # NOTE: this script should be called from the parent directory to
 # properly work.
 
-export CURRENT_VERSION=$1;
+set -ex
+
+export BUILD_TS=$(date +%s);
 export BUILD_DATE=$(date -R);
-export CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
-export TS=$(date +%s);
+
+export VERSION=${1:-develop};
+export VERSION_TAG="${VERSION}-${BUILD_TS}";
 
 export NODE_ENV=production;
-
-echo "Current path:"
-echo $PATH
-
-set -ex
 
 corepack enable;
 corepack install || exit 1;

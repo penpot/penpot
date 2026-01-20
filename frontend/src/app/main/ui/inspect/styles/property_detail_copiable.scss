@@ -60,6 +60,7 @@
 }
 
 .property-detail-text {
+  @include use-typography("body-small");
   color: var(--detail-color);
 }
 

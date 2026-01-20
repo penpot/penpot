@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"PO-Revision-Date: 2025-12-27 05:00+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
 "hi/>\n"
@@ -559,7 +559,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "%s मानक फ़ाइलें डाउनलोड करें (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* इसमें कॉम्पोनेंट्स, ग्राफिक्स, रंग और/या टाइपोग्राफ़ी शामिल हो सकते हैं।"
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -569,34 +569,33 @@ msgstr ""
 "लाइब्रेरीज़ का उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"
 
 #: src/app/main/ui/exports/files.cljs:164
-#, fuzzy
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "साझा की गई लाइब्रेरीज़ वाली फ़ाइलें निर्यात में शामिल की जाएँगी, और उनका लिंक बनाए रखा "
 "जाएगा।"
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "साझा लाइब्रेरीज़ निर्यात करें"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "साझा की गई लाइब्रेरीज़ निर्यात में शामिल नहीं की जाएँगी और लाइब्रेरी में "
 "कोई एसेट्स नहीं जोड़े जाएँगे। "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "साझा की गई लाइब्रेरी के एसेट्स को बुनियादी ऑब्जेक्ट्स के रूप में मानें"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "आपकी फ़ाइल निर्यात की जाएगी और सभी बाहरी एसेट्स(assets) फ़ाइल लाइब्रेरी में "
 "विलय कर दिए जाएँगे।"
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "साझा की गई लाइब्रेरी के एसेट्स को फ़ाइल लाइब्रेरी में शामिल करें"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -7300,10 +7299,6 @@ msgstr "मान मान्य नहीं है"
 msgid "workspace.tokens.value-with-units"
 msgstr "अमान्य मान: इकाइयाँ अनुमति नहीं हैं।"
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "इस टोकन का नाम बदलने से इसके पुराने नाम के किसी भी संदर्भ टूट जाएंगे।"
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "एसेट्स"
@@ -7752,9 +7747,8 @@ msgid "inspect.color-space-label"
 msgstr "रंग स्थान चुनें"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
-#, fuzzy
 msgid "inspect.layer-info"
-msgstr "निरीक्षण टैब चुनें"
+msgstr "परत जानकारी"
 
 #: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
 msgid "inspect.tabs.styles.active-sets"
@@ -8444,3 +8438,19 @@ msgstr "यह संस्करण आपके द्वारा लॉक �
 #, unused
 msgid "workspace.versions.tooltip.locked-version"
 msgstr "लॉक किया गया संस्करण - केवल निर्माता ही इसे संशोधित कर सकता है"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "और जानकारी"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr "Invalid token value: आप केवल फ़ॉन्ट-परिवार token का संदर्भ ले सकते हैं"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "अमान्य मूल्य: एक समग्र छाया टोकन का संदर्भ देना चाहिए।।"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:775
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "एक token छाया आलिया दर्ज करें"

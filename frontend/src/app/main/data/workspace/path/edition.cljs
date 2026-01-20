@@ -47,32 +47,31 @@
   (ptk/reify ::apply-content-modifiers
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (get state :current-page-id state)
-            objects (dsh/lookup-page-objects state)
-
-            id (st/get-path-id state)
-
-            shape
-            (st/get-path state)
+      (let [id    (st/get-path-id state)
+            shape (st/get-path state)
 
             content-modifiers
-            (dm/get-in state [:workspace-local :edit-path id :content-modifiers])
+            (dm/get-in state [:workspace-local :edit-path id :content-modifiers])]
+        (if (or (nil? shape) (nil? content-modifiers))
+          (rx/of (dwe/clear-edition-mode))
+          (let [page-id      (get state :current-page-id state)
+                objects      (dsh/lookup-page-objects state)
 
-            content      (get shape :content)
-            new-content  (path/apply-content-modifiers content content-modifiers)
+                content      (get shape :content)
+                new-content  (path/apply-content-modifiers content content-modifiers)
 
-            old-points   (path.segment/get-points content)
-            new-points   (path.segment/get-points new-content)
-            point-change (->> (map hash-map old-points new-points) (reduce merge))]
+                old-points   (path.segment/get-points content)
+                new-points   (path.segment/get-points new-content)
+                point-change (->> (map hash-map old-points new-points) (reduce merge))]
 
-        (when (and (some? new-content) (some? shape))
-          (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
-            (if (empty? new-content)
-              (rx/of (dch/commit-changes changes)
-                     (dwe/clear-edition-mode))
-              (rx/of (dch/commit-changes changes)
-                     (selection/update-selection point-change)
-                     (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))
+            (when (and (some? new-content) (some? shape))
+              (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
+                (if (empty? new-content)
+                  (rx/of (dch/commit-changes changes)
+                         (dwe/clear-edition-mode))
+                  (rx/of (dch/commit-changes changes)
+                         (selection/update-selection point-change)
+                         (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))))
 
 (defn modify-content-point
   [content {dx :x dy :y} modifiers point]

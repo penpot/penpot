@@ -12,10 +12,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
+   [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -54,14 +57,10 @@
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
-   [okulary.core :as l]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
-
-(def workspace-wasm-modifiers
-  (l/derived :workspace-wasm-modifiers st/state))
 
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
@@ -98,7 +97,7 @@
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
-        wasm-modifiers    (mf/deref workspace-wasm-modifiers)
+        wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
@@ -261,6 +260,16 @@
 
         first-shape (first selected-shapes)
 
+        show-add-variant?        (and single-select?
+                                      (or (ctk/is-variant-container? first-shape)
+                                          (ctk/is-variant? first-shape)))
+
+        add-variant
+        (mf/use-fn
+         (mf/deps first-shape)
+         #(st/emit!
+           (dwv/add-new-variant (:id first-shape))))
+
         show-padding?
         (and (nil? transform)
              single-select?
@@ -297,9 +306,15 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (let [init? (wasm.api/init-canvas-context canvas)]
+                         (let [init? (try
+                                       (wasm.api/init-canvas-context canvas)
+                                       (catch :default e
+                                         (js/console.error "Error initializing canvas context:" e)
+                                         false))]
                            (reset! canvas-init? init?)
-                           (when-not init? (js/alert "WebGL not supported")))))))
+                           (when-not init?
+                             (js/alert "WebGL not supported")
+                             (st/emit! (dcm/go-to-dashboard-recent))))))))
         (fn []
           (wasm.api/clear-canvas))))
 
@@ -639,6 +654,12 @@
                                     :hover-top-frame-id @hover-top-frame-id
                                     :zoom zoom}])
 
+       (when (dbg/enabled? :text-outline)
+         [:& wvd/debug-text-wasm-position-data
+          {:selected-shapes selected-shapes
+           :objects base-objects
+           :zoom zoom}])
+
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           (when-not text-editing?
@@ -666,6 +687,11 @@
          [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
+
+       (when show-add-variant?
+         [:> widgets/button-add* {:shape first-shape
+                                  :zoom zoom
+                                  :on-click add-variant}])
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
         (when show-grid-editor?

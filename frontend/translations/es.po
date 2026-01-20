@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Deleted User <noreply+94857@weblate.org>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -573,48 +573,48 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s archivos estándar (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Pueden incluir components, gráficos, colores y/o tipografias."
 
 #: src/app/main/ui/exports/files.cljs:155
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o mas ficheros que quieres exportar usan librerias compartidas. ¿Qué "
+"Uno o mas ficheros que quieres descargar usan librerias compartidas. ¿Qué "
 "quieres hacer con los recursos*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Ficheros con librerias compartidas se inclurán en el paquete de exportación "
 "y mantendrán los enlaces."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportar librerias compartidas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Las biblioteca compartidas no se incluirán en la exportación y ningún "
 "recurso será incluido en la biblioteca. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Usar los recursos como objetos básicos"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Tu fichero será exportado con todos los recursos dentro de la libreria del "
 "propio fichero."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Incluir librerias compartidas dentro de las librerias del fichero"
 
 #: src/app/main/ui/exports/files.cljs:147
-msgid "dashboard.export.title"
-msgstr "Exportar ficheros"
+msgid "files-download-modal.title"
+msgstr "Descargar ficheros"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "dashboard.fonts.deleted-placeholder"
@@ -1835,14 +1835,15 @@ msgstr ""
 "de Penpot"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Más información sobre la inspección"
+msgid "inspect.empty.more"
+msgstr "Más información"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr "Elige una forma, tablero o grupo para inspeccionar sus propiedades y código"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Info. de capa"
 
@@ -4418,6 +4419,46 @@ msgstr "Mostrar/ocultar recursos"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Mostrar/ocultar paleta de colores"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-token-references"
+msgstr "Actualizar referencias de token"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.renaming-token-from-to"
+msgstr "Renombrando el token de '%s' a '%s'"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+msgid "workspace.tokens.warning-name-change"
+msgstr "Cambiar el nombre de este token romperá cualquier referencia a su nombre anterior."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.references-found"
+msgstr "%s referencias encontradas en tu diseño"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-explanation"
+msgstr "Todas las referencias a este token se actualizarán automáticamente para usar el nuevo nombre."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-references-found"
+msgstr "No se encontraron referencias"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.no-remap-needed"
+msgstr "Este token no se utiliza actualmente en tu diseño, por lo que no es necesario actualizar referencias."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Actualizando referencias de token..."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.remap-and-rename"
+msgstr "Actualizar referencias y renombrar"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+msgid "workspace.tokens.rename-only"
+msgstr "Renombrar"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
 msgid "shortcuts.toggle-focus-mode"
@@ -7682,6 +7723,10 @@ msgstr "Valor de token no válido: solo none, underline y strike-through son ace
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Valor no válido: debe hacer referencia a un token tipográfico compuesto."
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Valor no válido: debe hacer referencia a un token de sombra compuesto."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Valor de token no válido: %s"
@@ -7903,6 +7948,14 @@ msgstr "Nombre"
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "Ya existe un token en la ruta: %s"
 
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "El valor de blur no puede ser negativo"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "El valor de spread no puede ser negativo"
+
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "El nombre debería ser de al menos 1 caracter"
@@ -7952,10 +8005,6 @@ msgstr "El valor no es válido"
 #: src/app/main/data/workspace/tokens/errors.cljs:65
 msgid "workspace.tokens.value-with-units"
 msgstr "Valor no válido: No se permiten unidades."
-
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
@@ -8272,3 +8321,112 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.recent"
+msgstr "Recientes"
+
+msgid "labels.deleted"
+msgstr "Eliminados"
+
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Restaurar todo"
+
+msgid "dashboard.clear-trash-button"
+msgstr "Vaciar papelera"
+
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Restaurar archivo"
+msgstr[1] "Restaurar archivos"
+
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Eliminar archivo"
+msgstr[1] "Eliminar archivos"
+
+msgid "dashboard.restore-project-button"
+msgstr "Restaurar proyecto"
+
+msgid "dashboard.delete-project-button"
+msgstr "Eliminar proyecto"
+
+msgid "dashboard.trash-info-text-part1"
+msgstr "Los archivos eliminados permanecerán en la papelera durante"
+
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s días. "
+
+msgid "dashboard.trash-info-text-part3"
+msgstr "Después de eso, serán eliminados permanentemente."
+
+msgid "dashboard.trash-info-text-part4"
+msgstr "Si cambias de opinión, puedes restaurarlos o eliminarlos permanentemente desde el menú de cada archivo."
+
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Restaurar todos los proyectos y archivos"
+
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "Vas a restaurar todos tus proyectos y archivos. Esto puede tardar un poco."
+
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Restaurar archivo"
+
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "Vas a restaurar %s."
+
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Restaurar proyecto"
+
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "Vas a restaurar el proyecto %s y todos los archivos que contiene."
+
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Eliminar para siempre"
+
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre todos tus proyectos y archivos eliminados? Esta es una acción irreversible."
+
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre %s? Esta es una acción irreversible."
+
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr "¿Estás seguro de que quieres eliminar para siempre el proyecto %s? Vas a eliminarlo para siempre junto con todos los archivos que contiene. Esta es una acción irreversible."
+
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s ficheros han sido restaurado correctamente."
+
+msgid "dashboard.restore-success-notification"
+msgstr "%s ha sido restaurado correctamente."
+
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s ficheros han sido eliminados correctamente."
+
+msgid "dashboard.delete-success-notification"
+msgstr "%s ha sido eliminado correctamente."
+
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "Hubo un error al restaurar los archivos."
+
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "Hubo un error al restaurar el archivo %s."
+
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Hubo un error al eliminar archivos."
+
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Hubo un error al eliminar el proyecto %s"
+
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Restaurando archivos…"
+
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Eliminando archivos…"
+
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Restauración inesperadamente lenta"
+
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Eliminación inesperadamente lenta"
+
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Tu papelera está vacía. Los archivos y proyectos eliminados aparecerán aquí."

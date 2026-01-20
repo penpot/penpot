@@ -667,6 +667,9 @@
 }
 
 // UI ELEMENTS
+
+// FIXME: This is used multiple times accross the app. We should design this in
+// the DS and create a proper component for it.
 .asset-element {
   @include bodySmallTypography;
   display: flex;
@@ -743,20 +746,6 @@
   &:hover,
   &:active {
     border-color: var(--colorpicker-details-color-selected);
-  }
-}
-
-.empty-icon {
-  @include flexCenter;
-  height: $s-48;
-  width: $s-48;
-  border-radius: $br-circle;
-  background-color: var(--empty-message-background-color);
-  svg {
-    @extend .button-icon;
-    height: $s-28;
-    width: $s-28;
-    stroke: var(--empty-message-foreground-color);
   }
 }
 

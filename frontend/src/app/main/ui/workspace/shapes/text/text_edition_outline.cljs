@@ -12,18 +12,20 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (mf/defc text-edition-outline
   [{:keys [shape zoom modifiers]}]
   (if (features/active-feature? @st/state "render-wasm/v1")
-    (let [selrect-transform (mf/deref refs/workspace-selrect)
-          [{:keys [x y width height]} transform] (dsh/get-selrect selrect-transform shape)]
+    (let [{:keys [width height]} (wasm.api/get-text-dimensions (:id shape))
+          selrect-transform (mf/deref refs/workspace-selrect)
+          [selrect transform] (dsh/get-selrect selrect-transform shape)]
       [:rect.main.viewport-selrect
-       {:x x
-        :y y
-        :width width
-        :height height
+       {:x (:x selrect)
+        :y (:y selrect)
+        :width (max width (:width selrect))
+        :height (max height (:height selrect))
         :transform transform
         :style {:stroke "var(--color-accent-tertiary)"
                 :stroke-width (/ 1 zoom)

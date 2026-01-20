@@ -18,6 +18,10 @@ const setupFile = async (workspacePage) => {
     fileId: "7b2da435-6186-815a-8007-0daa95d2f26d",
     pageId: "ce79274b-11ab-8088-8007-0487ad43f789",
   });
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
 };
 
 const shapeToLayerName = {
@@ -301,7 +305,7 @@ test.describe("Inspect tab - Styles", () => {
       );
       await openInspectTab(workspacePage);
 
-      const panel = await getPanelByTitle(workspacePage, "Size & position");
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
       await expect(panel).toBeVisible();
 
       const propertyRow = panel.getByTestId("property-row");
@@ -331,7 +335,7 @@ test.describe("Inspect tab - Styles", () => {
       );
       await openInspectTab(workspacePage);
 
-      const panel = await getPanelByTitle(workspacePage, "Size & position");
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
       await expect(panel).toBeVisible();
 
       const propertyRow = panel.getByTestId("property-row");
@@ -371,7 +375,7 @@ test.describe("Inspect tab - Styles", () => {
       );
       await openInspectTab(workspacePage);
 
-      const panel = await getPanelByTitle(workspacePage, "Size & position");
+      const panel = await getPanelByTitle(workspacePage, "Size and position");
       await expect(panel).toBeVisible();
 
       const propertyRow = panel.getByTestId("property-row");

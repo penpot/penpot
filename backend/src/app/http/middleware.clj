@@ -309,7 +309,7 @@
       (fn [request]
         (let [key (yreq/get-header request "x-shared-key")]
           (if (= key shared-key)
-            (handler request)
+            (handler (assoc request ::http/auth-with-shared-key true))
             {::yres/status 403}))))
     (fn [_ _]
       {::yres/status 403})))

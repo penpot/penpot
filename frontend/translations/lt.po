@@ -334,7 +334,7 @@ msgid "dashboard.export-shapes.title"
 msgstr "Eksportuoti pažymėtą sritį"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Gali apimti komponentus, grafiką, spalvas ir (arba) tipografiją."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -344,35 +344,35 @@ msgstr ""
 "bendros bibliotekos. Ką norite daryti su jų komponentais*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
 "susiejimą."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Eksportuoti bendrai naudojamas bibliotekas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Bendrai naudojamos bibliotekos nebus įtrauktos į eksportą ir į biblioteką "
 "nebus pridėta jokių išteklių. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr ""
 "Bendrai naudojamus bibliotekos komponentus traktuokite kaip pagrindinius "
 "objektus"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Jūsų failas bus eksportuotas su visais išoriniais komponentais, sujungtais "
 "į failų biblioteką."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Įtraukti bendrai naudojamus bibliotekos komponentus į failų bibliotekas"
 
 #: src/app/main/ui/exports/files.cljs:147

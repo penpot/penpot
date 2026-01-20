@@ -14,7 +14,6 @@
    [app.common.path-names :as cpn]
    [app.common.record :as crc]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.svg.path :as svg.path]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
@@ -326,7 +325,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (or (not (us/safe-int? value)) (< value 0))
+                  (or (not (sm/valid-safe-int? value)) (< value 0))
                   (u/display-not-valid :borderRadius value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -342,7 +341,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -358,7 +357,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -374,7 +373,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -390,7 +389,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-int? value))
+                  (not (sm/valid-safe-int? value))
                   (u/display-not-valid :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -406,7 +405,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (or (not (us/safe-number? value)) (< value 0) (> value 1))
+                  (or (not (sm/valid-safe-number? value)) (< value 0) (> value 1))
                   (u/display-not-valid :opacity value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -493,7 +492,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-number? value))
+                  (not (sm/valid-safe-number? value))
                   (u/display-not-valid :x value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -511,7 +510,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (us/safe-number? value))
+                  (not (sm/valid-safe-number? value))
                   (u/display-not-valid :y value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -556,7 +555,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :parentX value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -583,7 +582,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :parentY value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -610,7 +609,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :frameX value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -637,7 +636,7 @@
             :set
             (fn [self value]
               (cond
-                (not (us/safe-number? value))
+                (not (sm/valid-safe-number? value))
                 (u/display-not-valid :frameY value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -796,10 +795,10 @@
            :resize
            (fn [width height]
              (cond
-               (or (not (us/safe-number? width)) (<= width 0))
+               (or (not (sm/valid-safe-number? width)) (<= width 0))
                (u/display-not-valid :resize width)
 
-               (or (not (us/safe-number? height)) (<= height 0))
+               (or (not (sm/valid-safe-number? height)) (<= height 0))
                (u/display-not-valid :resize height)
 
                (not (r/check-permission plugin-id "content:write"))
@@ -1049,10 +1048,10 @@
                  (not (cfh/text-shape? shape))
                  (u/display-not-valid :getRange-shape "shape is not text")
 
-                 (or (not (us/safe-int? start)) (< start 0) (> start end))
+                 (or (not (sm/valid-safe-int? start)) (< start 0) (> start end))
                  (u/display-not-valid :getRange-start start)
 
-                 (not (us/safe-int? end))
+                 (not (sm/valid-safe-int? end))
                  (u/display-not-valid :getRange-end end)
 
                  :else
@@ -1079,7 +1078,7 @@
            :setParentIndex
            (fn [index]
              (cond
-               (not (us/safe-int? index))
+               (not (sm/valid-safe-int? index))
                (u/display-not-valid :setParentIndex index)
 
                (not (r/check-permission plugin-id "content:write"))
@@ -1186,7 +1185,6 @@
                        {:cmd :export-shapes
                         :profile-id (:profile-id @st/state)
                         :wait true
-                        :skip-children (:skip-children value false)
                         :exports [{:file-id   file-id
                                    :page-id   page-id
                                    :object-id id
@@ -1236,7 +1234,7 @@
            (fn [orientation value]
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (us/safe-number? value))
+                 (not (sm/valid-safe-number? value))
                  (u/display-not-valid :addRulerGuide "Value not a safe number")
 
                  (not (contains? #{"vertical" "horizontal"} orientation))

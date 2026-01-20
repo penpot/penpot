@@ -14,6 +14,7 @@
    [app.common.spec :as us]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
@@ -92,7 +93,11 @@
       (let [handler-name (:type path-params)
             etag         (yreq/get-header request "if-none-match")
             profile-id   (or (::session/profile-id request)
-                             (::actoken/profile-id request))
+                             (::actoken/profile-id request)
+                             (if (::http/auth-with-shared-key request)
+                               uuid/zero
+                               nil))
+
             ip-addr      (inet/parse-request request)
 
             data         (-> params

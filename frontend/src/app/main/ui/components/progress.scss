@@ -1,0 +1,101 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+// PROGRESS WIDGET
+.progress-widget {
+  @include deprecated.flexCenter;
+  width: deprecated.$s-28;
+  height: deprecated.$s-28;
+}
+
+// PROGRESS MODAL
+.progress-modal {
+  --export-modal-bg-color: var(--alert-background-color-default);
+  --export-modal-fg-color: var(--alert-text-foreground-color-default);
+  --export-modal-icon-color: var(--alert-icon-foreground-color-default);
+  --export-modal-border-color: var(--alert-border-color-default);
+  position: absolute;
+  right: deprecated.$s-16;
+  top: deprecated.$s-48;
+  display: grid;
+  grid-template-columns: deprecated.$s-24 1fr deprecated.$s-24;
+  grid-template-areas:
+    "icon text close"
+    "bar bar bar";
+  gap: deprecated.$s-4 deprecated.$s-8;
+  padding-block-start: deprecated.$s-8;
+  background-color: var(--export-modal-bg-color);
+  border: deprecated.$s-1 solid var(--export-modal-border-color);
+  border-radius: deprecated.$br-8;
+  z-index: deprecated.$z-index-modal;
+  overflow: hidden;
+}
+
+.has-error {
+  --export-modal-bg-color: var(--alert-background-color-error);
+  --export-modal-fg-color: var(--alert-text-foreground-color-error);
+  --export-modal-icon-color: var(--alert-icon-foreground-color-error);
+  --export-modal-border-color: var(--alert-border-color-error);
+  grid-template-areas: "icon text close";
+  gap: deprecated.$s-8;
+  padding-block: deprecated.$s-8;
+}
+
+.icon {
+  @extend .button-icon;
+  grid-area: icon;
+  align-self: center;
+  margin-inline-start: deprecated.$s-8;
+  stroke: var(--export-modal-icon-color);
+}
+
+.title {
+  @include deprecated.bodyMediumTypography;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: deprecated.$s-8;
+  grid-area: text;
+  align-self: center;
+  padding: 0;
+  margin: 0;
+  color: var(--export-modal-fg-color);
+}
+
+.progress {
+  @include deprecated.bodyMediumTypography;
+  padding-left: deprecated.$s-8;
+  margin: 0;
+  align-self: center;
+  color: var(--modal-text-foreground-color);
+}
+
+.retry-btn {
+  @include deprecated.buttonStyle;
+  @include deprecated.bodySmallTypography;
+  display: inline;
+  text-align: left;
+  color: var(--modal-link-foreground-color);
+  margin: 0;
+  padding: 0;
+}
+
+.progress-close-button {
+  @include deprecated.buttonStyle;
+  padding: 0;
+  margin-inline-end: deprecated.$s-8;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--export-modal-icon-color);
+}
+
+.progress-bar {
+  margin-top: 0;
+  grid-area: bar;
+}

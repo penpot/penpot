@@ -63,10 +63,50 @@ fn make_corner(
     Segment::CurveTo((h1, h2, to))
 }
 
+// Calculates the minimum of five f32 values
+fn min_5(a: f32, b: f32, c: f32, d: f32, e: f32) -> f32 {
+    f32::min(a, f32::min(b, f32::min(c, f32::min(d, e))))
+}
+
+/*
+https://www.w3.org/TR/css-backgrounds-3/#corner-overlap
+
+> Corner curves must not overlap: When the sum of any two adjacent border radii exceeds the size of the border box,
+> UAs must proportionally reduce the used values of all border radii until none of them overlap.
+
+> The algorithm for reducing radii is as follows: Let f = min(Li/Si), where i ∈ {top, right, bottom, left}, Si is
+> the sum of the two corresponding radii of the corners on side i, and Ltop = Lbottom = the width of the box, and
+> Lleft = Lright = the height of the box. If f < 1, then all corner radii are reduced by multiplying them by f.
+*/
+fn fix_radius(
+    r1: math::Point,
+    r2: math::Point,
+    r3: math::Point,
+    r4: math::Point,
+    width: f32,
+    height: f32,
+) -> (math::Point, math::Point, math::Point, math::Point) {
+    let f = min_5(
+        1.0,
+        width / (r1.x + r2.x),
+        height / (r2.y + r3.y),
+        width / (r3.x + r4.x),
+        height / (r4.y + r1.y),
+    );
+
+    if f < 1.0 {
+        (r1 * f, r2 * f, r3 * f, r4 * f)
+    } else {
+        (r1, r2, r3, r4)
+    }
+}
+
 pub fn rect_segments(shape: &Shape, corners: Option<Corners>) -> Vec<Segment> {
     let sr = shape.selrect;
 
     let segments = if let Some([r1, r2, r3, r4]) = corners {
+        let (r1, r2, r3, r4) = fix_radius(r1, r2, r3, r4, sr.width(), sr.height());
+
         let p1 = (sr.x(), sr.y() + r1.y);
         let p2 = (sr.x() + r1.x, sr.y());
         let p3 = (sr.x() + sr.width() - r2.x, sr.y());

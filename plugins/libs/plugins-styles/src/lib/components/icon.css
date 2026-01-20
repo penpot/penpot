@@ -1,0 +1,11 @@
+.icon {
+  display: flex;
+  align-items: center;
+  block-size: var(--spacing-16);
+  cursor: default;
+  font-family: var(--font-size-m);
+  font-size: var(--font-size-m);
+  inline-size: var(--spacing-16);
+  justify-content: center;
+  user-select: none;
+}

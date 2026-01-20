@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-27 12:02+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2025-12-22 15:34+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.14.1-dev\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -573,7 +573,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standard (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr ""
 "* Peut inclure les composants, les éléments graphiques, les couleurs et/ou "
 "les polices de caractère."
@@ -585,35 +585,36 @@ msgstr ""
 "bibliothèques partagées. Que voulez-vous faire avec leurs ressources ?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+#, fuzzy
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Les fichiers avec des bibliothèques partagées seront inclus dans "
 "l'exportation, en maintenant leur liaison."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exporter les bibliothèques partagées"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Les bibliothèques partagées ne seront pas incluses dans l'exportation et "
 "aucune ressource ne sera ajoutée à la bibliothèque. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr ""
 "Considérer les ressources des bibliothèques partagées comme des objets "
 "basiques"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Votre fichier sera exporté avec toutes les ressources externes fusionnées "
 "dans la bibliothèque de fichiers."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr ""
 "Inclure les ressources des bibliothèques partagées dans les bibliothèques "
 "de fichiers"
@@ -1840,10 +1841,6 @@ msgstr "Propriétés des variantes"
 msgid "inspect.empty.help"
 msgstr "Pour en savoir plus sur l'inspection, visitez le centre d'aide de Penpot"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Plus d'informations sur l'inspection"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
 msgstr ""
@@ -1851,6 +1848,7 @@ msgstr ""
 "leurs propriétés et le code"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:166
+#, fuzzy
 msgid "inspect.layer-info"
 msgstr "Info sur la couche"
 
@@ -7895,10 +7893,6 @@ msgstr "Valeur non valide : % n'est pas autorisé."
 msgid "workspace.tokens.value-with-units"
 msgstr "Valeur non valide : les unités ne sont pas autorisées."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr "Si vous renommez ce token, toute référence à son ancien nom sera incorrecte."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Ressources"
@@ -8228,3 +8222,86 @@ msgstr "Les versions auto-enregistrées seront gardées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/settings/feedback.cljs:122
+msgid "feedback.description-placeholder"
+msgstr "Décrivez la raison de votre commentaire"
+
+#: src/app/main/ui/settings/feedback.cljs:143
+msgid "feedback.other-ways-contact"
+msgstr "Autres méthodes de contact"
+
+#: src/app/main/ui/settings/feedback.cljs:126
+msgid "feedback.penpot.link"
+msgstr ""
+"Si le commentaire concerne un fichier ou un projet, ajoutez le lien penpot "
+"ici :"
+
+#: src/app/main/ui/settings/feedback.cljs:110, src/app/main/ui/settings/feedback.cljs:111
+#, fuzzy
+msgid "feedback.type"
+msgstr "Type"
+
+#: src/app/main/ui/settings/feedback.cljs:113
+msgid "feedback.type.idea"
+msgstr "Idée"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:120
+msgid "inspect.attributes.image.preview"
+msgstr "Aperçu de l'image de remplissage de la forme"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "Kaleidos © depuis 2019"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "Télécharger %s"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1020
+msgid "labels.help-learning"
+msgstr "Aide et formation"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Un incident est survenu."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr ""
+"Vous pouvez réessayer d'effectuer l'opération ou contacter l'assistance "
+"technique pour signaler l'erreur."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:799
+msgid "labels.learning-center"
+msgstr "Centre de formation"
+
+#: src/app/main/ui/settings/feedback.cljs:101
+msgid "feedback.title-contact-us"
+msgstr "Contact"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Sélectionner un espace de couleur"
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Contacter l'assistance technique"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Contact"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Bénéficiez de stockage supplémentaire, de la récupération de fichiers et de "
+"bien plus encore pour vos équipes."
+
+#: src/app/main/ui/dashboard/subscription.cljs:101
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Bénéficiez d'un stockage illimité, de la récupération de fichier étendue et "
+"d'un nombre illimité d'éditeurs pour toutes vos équipes à un tarif fixe. "
+"[Consultez le forfait Entreprise.|target:self](%s)"

@@ -86,7 +86,6 @@
 (def default-theme  "default")
 (def default-language "en")
 
-(def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 
 (def build-date           (parse-build-date global))
@@ -96,6 +95,7 @@
 (def browser              (parse-browser))
 (def platform             (parse-platform))
 
+(def version-tag          (obj/get global "penpotVersionTag"))
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
@@ -191,9 +191,8 @@
 
 (defn resolve-href
   [resource]
-  (let [version (get version :full)
-        href    (-> public-uri
-                    (u/ensure-path-slash)
-                    (u/join resource)
-                    (get :path))]
-    (str href "?version=" version)))
+  (let [href (-> public-uri
+                 (u/ensure-path-slash)
+                 (u/join resource)
+                 (get :path))]
+    (str href "?version=" version-tag)))

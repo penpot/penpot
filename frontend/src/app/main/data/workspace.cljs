@@ -32,7 +32,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.persistence :as-alias dps]
+   [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.project :as dpj]
@@ -67,6 +67,7 @@
    [app.main.errors]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm :as wasm]
@@ -269,8 +270,12 @@
   (ptk/reify ::process-wasm-object
     ptk/EffectEvent
     (effect [_ state _]
-      (let [objects (dsh/lookup-page-objects state)]
-        (wasm.api/process-object (get objects id))))))
+      (let [objects (dsh/lookup-page-objects state)
+            shape (get objects id)]
+        ;; Only process objects that exist in the current page
+        ;; This prevents errors when processing changes from other pages
+        (when shape
+          (wasm.api/process-object shape))))))
 
 (defn initialize-workspace
   [team-id file-id]
@@ -378,6 +383,61 @@
                                          (map :id))]
                           (->> (rx/from added)
                                (rx/map process-wasm-object)))))))
+
+              (when render-wasm?
+                (let [local-commits-s
+                      (->> stream
+                           (rx/filter dch/commit?)
+                           (rx/map deref)
+                           (rx/filter #(and (= :local (:source %))
+                                            (not (contains? (:tags %) :position-data))))
+                           (rx/filter (complement empty?)))
+
+                      notifier-s
+                      (rx/merge
+                       (->> local-commits-s (rx/debounce 1000))
+                       (->> stream (rx/filter dps/force-persist?)))
+
+                      objects-s
+                      (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+
+                      current-page-id-s
+                      (rx/from-atom refs/current-page-id {:emit-current-value? true})]
+
+                  (->> local-commits-s
+                       (rx/buffer-until notifier-s)
+                       (rx/with-latest-from objects-s)
+                       (rx/map
+                        (fn [[commits objects]]
+                          (->> commits
+                               (mapcat :redo-changes)
+                               (filter #(contains? #{:mod-obj :add-obj} (:type %)))
+                               (filter #(cfh/text-shape? objects (:id %)))
+                               (map #(vector
+                                      (:id %)
+                                      (wasm.api/calculate-position-data (get objects (:id %))))))))
+
+                       (rx/with-latest-from current-page-id-s)
+                       (rx/map
+                        (fn [[text-position-data page-id]]
+                          (let [changes
+                                (->> text-position-data
+                                     (mapv (fn [[id position-data]]
+                                             {:type :mod-obj
+                                              :id id
+                                              :page-id page-id
+                                              :operations
+                                              [{:type :set
+                                                :attr :position-data
+                                                :val position-data
+                                                :ignore-touched true
+                                                :ignore-geometry true}]})))]
+                            (when (d/not-empty? changes)
+                              (dch/commit-changes
+                               {:redo-changes changes :undo-changes []
+                                :save-undo? false
+                                :tags #{:position-data}})))))
+                       (rx/take-until stoper-s))))
 
               (->> stream
                    (rx/filter dch/commit?)

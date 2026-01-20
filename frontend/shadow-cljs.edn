@@ -6,13 +6,12 @@
 
  :builds
  {:main
-  {:target :browser
+  {:target :esm
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :devtools {:watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
-   :module-loader true
    :modules
    {:shared
     {:entries []}
@@ -20,42 +19,42 @@
     :main
     {:entries [app.main app.plugins.api]
      :depends-on #{:shared}
-     :init-fn app.main/init}
+     :exports {init app.main/init}}
 
     :util-highlight
     {:entries [app.util.code-highlight]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-auth
     {:entries [app.main.ui.auth
                app.main.ui.auth.verify-token]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-viewer
     {:entries [app.main.ui.viewer]
-     :depends-on #{:main :main-auth}}
+     :depends-on #{:shared :main-auth}}
 
     :main-workspace
     {:entries [app.main.ui.workspace]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-dashboard
     {:entries [app.main.ui.dashboard]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :main-settings
     {:entries [app.main.ui.settings]
-     :depends-on #{:main}}
+     :depends-on #{:shared}}
 
     :render
     {:entries [app.render]
      :depends-on #{:shared}
-     :init-fn app.render/init}
+     :exports {init app.render/init}}
 
     :rasterizer
     {:entries [app.rasterizer]
      :depends-on #{:shared}
-     :init-fn app.rasterizer/init}}
+     :exports {init app.rasterizer/init}}}
 
    :js-options
    {:entry-keys ["module" "browser" "main"]
@@ -75,11 +74,11 @@
     :compiler-options
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
-     :output-wrapper true
-     :rename-prefix-namespace "PENPOT"
      :source-map true
+     :pseudo-names true
      :elide-asserts true
      :anon-fn-naming-policy :off
+     :cross-chunk-method-motion false
      :source-map-detail-level :all}}}
 
   :worker
@@ -123,24 +122,22 @@
   :storybook
   {:target :esm
    :output-dir "target/storybook/"
-   :devtools {:enabled false}
+   :devtools {:enabled false
+              :console-support false}
    :js-options
    {:js-provider :import
     :entry-keys ["module" "browser" "main"]
     :export-conditions ["module" "import", "browser" "require" "default"]}
 
    :modules
-   {:base
-    {:entries []}
-
-    :components
+   {:components
     {:exports {default app.main.ui.ds/default
                helpers app.main.ui.ds.helpers/default}
      :prepend-js ";(globalThis.goog.provide = globalThis.goog.constructNamespace_);(globalThis.goog.require = globalThis.goog.module.get);"
-     :depends-on #{:base}}}
+     :depends-on #{}}}
 
    :compiler-options
-   {:output-feature-set :es2020
+   {:output-feature-set :es-next
     :output-wrapper false
     :warnings {:fn-deprecated false}}}
 

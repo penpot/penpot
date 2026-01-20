@@ -1,3 +1,4 @@
+use crate::render::text::calculate_decoration_metrics;
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -185,6 +186,17 @@ impl TextContentLayout {
     }
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct TextDecorationSegment {
+    pub kind: skia::textlayout::TextDecoration,
+    pub text_style: skia::textlayout::TextStyle,
+    pub y: f32,
+    pub thickness: f32,
+    pub left: f32,
+    pub width: f32,
+}
+
 /*
  * Check if the current x,y (in paragraph relative coordinates) is inside
  * the paragraph
@@ -202,6 +214,48 @@ fn intersects(paragraph: &skia_safe::textlayout::Paragraph, x: f32, y: f32) -> b
         paragraph.get_rects_for_range(0..idx + 1, RectHeightStyle::Tight, RectWidthStyle::Tight);
 
     rects.iter().any(|r| r.rect.contains(&Point::new(x, y)))
+}
+
+// Performs a text auto layout without width limits.
+// This should be the same as text_auto_layout.
+pub fn build_paragraphs_from_paragraph_builders(
+    paragraph_builders: &mut [ParagraphBuilderGroup],
+    width: f32,
+) -> Vec<Vec<skia::textlayout::Paragraph>> {
+    let paragraphs = paragraph_builders
+        .iter_mut()
+        .map(|builders| {
+            builders
+                .iter_mut()
+                .map(|builder| {
+                    let mut paragraph = builder.build();
+                    // For auto-width, always layout with infinite width first to get intrinsic width
+                    paragraph.layout(width);
+                    paragraph
+                })
+                .collect()
+        })
+        .collect();
+    paragraphs
+}
+
+/// Calculate the normalized line height from paragraph builders
+pub fn calculate_normalized_line_height(
+    paragraph_builders: &mut [ParagraphBuilderGroup],
+    width: f32,
+) -> f32 {
+    let mut normalized_line_height = 0.0;
+    for paragraph_builder_group in paragraph_builders.iter_mut() {
+        for paragraph_builder in paragraph_builder_group.iter_mut() {
+            let mut paragraph = paragraph_builder.build();
+            paragraph.layout(width);
+            let baseline = paragraph.ideographic_baseline();
+            if baseline > normalized_line_height {
+                normalized_line_height = baseline;
+            }
+        }
+    }
+    normalized_line_height
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -440,59 +494,15 @@ impl TextContent {
         paragraph_group
     }
 
-    /// Performs a text auto layout without width limits.
-    /// This should be the same as text_auto_layout.
-    fn build_paragraphs_from_paragraph_builders(
-        &self,
-        paragraph_builders: &mut [ParagraphBuilderGroup],
-        width: f32,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        let paragraphs = paragraph_builders
-            .iter_mut()
-            .map(|builders| {
-                builders
-                    .iter_mut()
-                    .map(|builder| {
-                        let mut paragraph = builder.build();
-                        // For auto-width, always layout with infinite width first to get intrinsic width
-                        paragraph.layout(width);
-                        paragraph
-                    })
-                    .collect()
-            })
-            .collect();
-        paragraphs
-    }
-
-    /// Calculate the normalized line height from paragraph builders
-    fn calculate_normalized_line_height(
-        &self,
-        paragraph_builders: &mut [ParagraphBuilderGroup],
-        width: f32,
-    ) -> f32 {
-        let mut normalized_line_height = 0.0;
-        for paragraph_builder_group in paragraph_builders.iter_mut() {
-            for paragraph_builder in paragraph_builder_group.iter_mut() {
-                let mut paragraph = paragraph_builder.build();
-                paragraph.layout(width);
-                let baseline = paragraph.ideographic_baseline();
-                if baseline > normalized_line_height {
-                    normalized_line_height = baseline;
-                }
-            }
-        }
-        normalized_line_height
-    }
-
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
 
         let normalized_line_height =
-            self.calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
+            calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
 
         let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+            build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
 
         let (width, height) =
             paragraphs
@@ -521,10 +531,9 @@ impl TextContent {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
 
         let normalized_line_height =
-            self.calculate_normalized_line_height(&mut paragraph_builders, width);
+            calculate_normalized_line_height(&mut paragraph_builders, width);
 
-        let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let height = paragraphs
             .iter()
             .flatten()
@@ -546,10 +555,9 @@ impl TextContent {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
 
         let normalized_line_height =
-            self.calculate_normalized_line_height(&mut paragraph_builders, width);
+            calculate_normalized_line_height(&mut paragraph_builders, width);
 
-        let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let paragraph_height = paragraphs
             .iter()
             .flatten()
@@ -576,8 +584,7 @@ impl TextContent {
 
     pub fn get_height(&self, width: f32) -> f32 {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let paragraph_height = paragraphs
             .iter()
             .flatten()
@@ -733,8 +740,7 @@ impl TextContent {
 
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
-        let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
 
         paragraphs
             .iter()
@@ -863,17 +869,17 @@ impl Paragraph {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TextSpan {
-    text: String,
-    font_family: FontFamily,
-    font_size: f32,
-    line_height: f32,
-    letter_spacing: f32,
-    font_weight: i32,
-    font_variant_id: Uuid,
-    text_decoration: Option<TextDecoration>,
-    text_transform: Option<TextTransform>,
-    text_direction: TextDirection,
-    fills: Vec<shapes::Fill>,
+    pub text: String,
+    pub font_family: FontFamily,
+    pub font_size: f32,
+    pub line_height: f32,
+    pub letter_spacing: f32,
+    pub font_weight: i32,
+    pub font_variant_id: Uuid,
+    pub text_decoration: Option<TextDecoration>,
+    pub text_transform: Option<TextTransform>,
+    pub text_direction: TextDirection,
+    pub fills: Vec<shapes::Fill>,
 }
 
 impl TextSpan {
@@ -1044,4 +1050,252 @@ impl TextSpan {
             _ => false,
         })
     }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Copy, Clone)]
+pub struct PositionData {
+    pub paragraph: u32,
+    pub span: u32,
+    pub start_pos: u32,
+    pub end_pos: u32,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub direction: u32,
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct ParagraphLayout {
+    pub paragraph: skia::textlayout::Paragraph,
+    pub x: f32,
+    pub y: f32,
+    pub spans: Vec<crate::shapes::TextSpan>,
+    pub decorations: Vec<TextDecorationSegment>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct TextLayoutData {
+    pub position_data: Vec<PositionData>,
+    pub content_rect: Rect,
+    pub paragraphs: Vec<ParagraphLayout>,
+}
+
+fn direction_to_int(direction: TextDirection) -> u32 {
+    match direction {
+        TextDirection::RTL => 0,
+        TextDirection::LTR => 1,
+    }
+}
+
+pub fn calculate_text_layout_data(
+    shape: &Shape,
+    text_content: &TextContent,
+    paragraph_builder_groups: &mut [ParagraphBuilderGroup],
+    skip_position_data: bool,
+) -> TextLayoutData {
+    let selrect_width = shape.selrect().width();
+    let text_width = text_content.get_width(selrect_width);
+    let selrect_height = shape.selrect().height();
+    let x = shape.selrect.x();
+    let base_y = shape.selrect.y();
+    let mut position_data: Vec<PositionData> = Vec::new();
+    let mut previous_line_height = text_content.normalized_line_height();
+    let text_paragraphs = text_content.paragraphs();
+
+    // 1. Calculate paragraph heights
+    let mut paragraph_heights: Vec<f32> = Vec::new();
+    for paragraph_builder_group in paragraph_builder_groups.iter_mut() {
+        let group_len = paragraph_builder_group.len();
+        let mut paragraph_offset_y = previous_line_height;
+        for (builder_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
+            let mut skia_paragraph = paragraph_builder.build();
+            skia_paragraph.layout(text_width);
+            if builder_index == group_len - 1 {
+                if skia_paragraph.get_line_metrics().is_empty() {
+                    paragraph_offset_y = skia_paragraph.ideographic_baseline();
+                } else {
+                    paragraph_offset_y = skia_paragraph.height();
+                }
+            }
+            if builder_index == 0 {
+                paragraph_heights.push(skia_paragraph.height());
+            }
+        }
+        previous_line_height = paragraph_offset_y;
+    }
+
+    // 2. Calculate vertical offset and build paragraphs with positions
+    let total_text_height: f32 = paragraph_heights.iter().sum();
+    let vertical_offset = match shape.vertical_align() {
+        VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
+        VerticalAlign::Bottom => selrect_height - total_text_height,
+        _ => 0.0,
+    };
+    let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
+    let mut y_accum = base_y + vertical_offset;
+    for (i, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
+        // For each paragraph in the group (e.g., fill, stroke, etc.)
+        for paragraph_builder in paragraph_builder_group.iter_mut() {
+            let mut skia_paragraph = paragraph_builder.build();
+            skia_paragraph.layout(text_width);
+
+            let spans = if let Some(text_para) = text_paragraphs.get(i) {
+                text_para.children().to_vec()
+            } else {
+                Vec::new()
+            };
+
+            // Calculate text decorations for this paragraph
+            let mut decorations = Vec::new();
+            let line_metrics = skia_paragraph.get_line_metrics();
+            for line in &line_metrics {
+                let style_metrics: Vec<_> = line
+                    .get_style_metrics(line.start_index..line.end_index)
+                    .into_iter()
+                    .collect();
+                let line_baseline = y_accum + line.baseline as f32;
+                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+                    calculate_decoration_metrics(&style_metrics, line_baseline);
+                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
+                    let text_style = &style_metric.text_style;
+                    let style_end = style_metrics
+                        .get(i + 1)
+                        .map(|(next_i, _)| *next_i)
+                        .unwrap_or(line.end_index);
+                    let seg_start = (*style_start).max(line.start_index);
+                    let seg_end = style_end.min(line.end_index);
+                    if seg_start >= seg_end {
+                        continue;
+                    }
+                    let rects = skia_paragraph.get_rects_for_range(
+                        seg_start..seg_end,
+                        skia::textlayout::RectHeightStyle::Tight,
+                        skia::textlayout::RectWidthStyle::Tight,
+                    );
+                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
+                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                        let skia_x_offset = rects
+                            .first()
+                            .map(|r| r.rect.left - line.left as f32)
+                            .unwrap_or(0.0);
+                        (total_width, skia_x_offset)
+                    } else {
+                        (0.0, 0.0)
+                    };
+                    let text_left = x + line.left as f32 + actual_x_offset;
+                    let text_width = segment_width;
+                    use skia::textlayout::TextDecoration;
+                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
+                        decorations.push(TextDecorationSegment {
+                            kind: TextDecoration::UNDERLINE,
+                            text_style: (*text_style).clone(),
+                            y: underline_y.unwrap_or(line_baseline),
+                            thickness: max_underline_thickness,
+                            left: text_left,
+                            width: text_width,
+                        });
+                    }
+                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
+                        decorations.push(TextDecorationSegment {
+                            kind: TextDecoration::LINE_THROUGH,
+                            text_style: (*text_style).clone(),
+                            y: strike_y.unwrap_or(line_baseline),
+                            thickness: max_strike_thickness,
+                            left: text_left,
+                            width: text_width,
+                        });
+                    }
+                }
+            }
+            paragraph_layouts.push(ParagraphLayout {
+                paragraph: skia_paragraph,
+                x,
+                y: y_accum,
+                spans: spans.clone(),
+                decorations,
+            });
+        }
+        y_accum += paragraph_heights[i];
+    }
+
+    // Calculate position data from paragraph_layouts
+    if !skip_position_data {
+        for (paragraph_index, para_layout) in paragraph_layouts.iter().enumerate() {
+            let current_y = para_layout.y;
+            let text_paragraph = text_paragraphs.get(paragraph_index);
+            if let Some(text_para) = text_paragraph {
+                let mut span_ranges: Vec<(usize, usize, usize)> = vec![];
+                let mut cur = 0;
+                for (span_index, span) in text_para.children().iter().enumerate() {
+                    let text: String = span.apply_text_transform();
+                    span_ranges.push((cur, cur + text.len(), span_index));
+                    cur += text.len();
+                }
+                for (start, end, span_index) in span_ranges {
+                    let rects = para_layout.paragraph.get_rects_for_range(
+                        start..end,
+                        RectHeightStyle::Tight,
+                        RectWidthStyle::Tight,
+                    );
+                    for textbox in rects {
+                        let direction = textbox.direct;
+                        let mut rect = textbox.rect;
+                        let cy = rect.top + rect.height() / 2.0;
+                        let start_pos = para_layout
+                            .paragraph
+                            .get_glyph_position_at_coordinate((rect.left + 0.1, cy))
+                            .position as usize;
+                        let end_pos = para_layout
+                            .paragraph
+                            .get_glyph_position_at_coordinate((rect.right - 0.1, cy))
+                            .position as usize;
+                        let start_pos = start_pos.saturating_sub(start);
+                        let end_pos = end_pos.saturating_sub(start);
+                        rect.offset((x, current_y));
+                        position_data.push(PositionData {
+                            paragraph: paragraph_index as u32,
+                            span: span_index as u32,
+                            start_pos: start_pos as u32,
+                            end_pos: end_pos as u32,
+                            x: rect.x(),
+                            y: rect.y(),
+                            width: rect.width(),
+                            height: rect.height(),
+                            direction: direction_to_int(direction),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    let content_rect = Rect::from_xywh(x, base_y + vertical_offset, text_width, total_text_height);
+    TextLayoutData {
+        position_data,
+        content_rect,
+        paragraphs: paragraph_layouts,
+    }
+}
+
+pub fn calculate_position_data(
+    shape: &Shape,
+    text_content: &TextContent,
+    skip_position_data: bool,
+) -> Vec<PositionData> {
+    let mut text_content = text_content.clone();
+    text_content.update_layout(shape.selrect);
+
+    let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+    let layout_info = calculate_text_layout_data(
+        shape,
+        &text_content,
+        &mut paragraph_builders,
+        skip_position_data,
+    );
+
+    layout_info.position_data
 }

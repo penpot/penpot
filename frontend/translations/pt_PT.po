@@ -543,7 +543,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Descarregar %s ficheiros standard (svg + json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Pode incluir componentes, gráficos, cores e/ou tipografia."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -553,33 +553,33 @@ msgstr ""
 "partilhadas. O que queres fazer com os recursos*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Ficheiros com bibliotecas partilhadas serão incluídos na exportação, "
 "mantendo as ligações."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Exportar bibliotecas partilhadas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Bibliotecas partilhadas não serão incluídas na exportação e nenhum recurso "
 "será adicionado à biblioteca. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Trata os recursos da biblioteca partilhada como objetos básicos"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Os teus ficheiros serão exportados com todos os recursos externos "
 "incorporados na biblioteca de ficheiros."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Incluir recursos da biblioteca partilhada em bibliotecas de ficheiros"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1575,10 +1575,6 @@ msgstr "Maiúsculas"
 #: src/app/main/ui/inspect/right_sidebar.cljs:237
 msgid "inspect.empty.help"
 msgstr "Se quiseres saber mais sobre a inspeção, visita o centro de ajuda do Penpot"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Mais informações sobre a inspeção"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

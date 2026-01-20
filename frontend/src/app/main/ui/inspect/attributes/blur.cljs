@@ -24,7 +24,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "inspect.attributes.blur")
-         :class (stl/css :title-spacing-blur)}
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :blur-attr-title)}
         (when (= (count shapes) 1)
           [:> copy-button* {:data  (css/get-css-property objects (first shapes) :filter)
                             :class (stl/css :copy-btn-title)}])]

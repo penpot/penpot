@@ -1,0 +1,33 @@
+.icons-plugin {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+
+  .icons-search,
+  .icons-list {
+    width: 100%;
+  }
+
+  .icons-search {
+    padding-top: var(--spacing-20);
+    padding-bottom: var(--spacing-16);
+  }
+
+  .icons-list {
+    flex-grow: 1;
+    overflow: auto;
+    display: grid;
+    padding: 3px 3px 0;
+    background-color: var(--app-white);
+    border-radius: var(--spacing-8);
+    justify-content: start;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: max-content;
+    justify-items: center;
+  }
+
+  .no-icons-found {
+    font-size: var(--font-size-s);
+  }
+}

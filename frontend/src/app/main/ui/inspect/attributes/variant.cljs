@@ -42,7 +42,8 @@
     [:div {:class (stl/css :attributes-block)}
      [:> inspect-title-bar*
       {:title (if is-container? (tr "inspect.attributes.variants") (tr "inspect.attributes.variant"))
-       :class (stl/css :title-spacing-variant)}]
+       :class (stl/css :title-wrapper)
+       :title-class (stl/css :variant-attr-title)}]
 
      (for [[pos property] (map-indexed vector properties)]
        [:> variant-block* {:key (dm/str "variant-property-" pos) :name (:name property) :value (:value property)}])]))

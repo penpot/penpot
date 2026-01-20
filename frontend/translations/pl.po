@@ -360,7 +360,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Pobierz %s plików standardowych (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* Może zawierać komponenty, grafikę, kolory i/lub typografię."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -370,33 +370,33 @@ msgstr ""
 "udostępnionych. Co chcesz zrobić z ich zasobami*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Pliki z bibliotekami współdzielonymi zostaną uwzględnione w eksporcie, z "
 "zachowaniem ich powiązania."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Eksportuj biblioteki udostępnione"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Biblioteki udostępnione nie zostaną uwzględnione w eksporcie i żadne zasoby "
 "nie zostaną dodane do biblioteki. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Traktuj zasoby biblioteki współdzielonej jako podstawowe obiekty"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Twój plik zostanie wyeksportowany ze wszystkimi zasobami zewnętrznymi "
 "połączonymi z biblioteką plików."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Uwzględnij zasoby bibliotek współdzielonych w bibliotekach plików"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1169,10 +1169,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Jeśli chcesz dowiedzieć się więcej o inspekcji projektu, odwiedź centrum "
 "pomocy Penpot"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Więcej informacji o inspekcji"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"

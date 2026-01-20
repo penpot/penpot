@@ -381,7 +381,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Heinta %s standarafílur (.svg + .json)"
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Útflyt deild søvn"
 
 #: src/app/main/ui/exports/files.cljs:147

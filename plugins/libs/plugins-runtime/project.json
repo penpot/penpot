@@ -1,0 +1,14 @@
+{
+  "name": "plugins-runtime",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "plugins-runtime/src",
+  "projectType": "library",
+  "targets": {
+    "preview": {
+      "command": "vite preview",
+      "options": { "cwd": "libs/plugins-runtime" },
+      "_": "Delete this targets:preview when https://github.com/nrwl/nx/issues/26800 is fixed"
+    }
+  },
+  "tags": ["type:feature"]
+}

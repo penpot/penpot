@@ -31,9 +31,9 @@ const rebuildNotify = {
 const config = {
   entryPoints: ["target/index.js"],
   bundle: true,
-  format: "iife",
+  format: "esm",
   banner: {
-    js: '"use strict"; var global = globalThis;',
+    js: '"use strict";\nvar global = globalThis;',
   },
   outfile: "resources/public/js/libs.js",
   plugins: [fixReactVirtualized, rebuildNotify],

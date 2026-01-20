@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-11-23 12:51+0000\n"
+"PO-Revision-Date: 2025-12-29 14:34+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -8,10 +8,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural="
-"(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : "
-"((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.15-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.15.1\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -572,7 +571,7 @@ msgid "dashboard.export-standard-multi"
 msgstr "Lejupielādēt %s standarta datnes (. svg +. json)"
 
 #: src/app/main/ui/exports/files.cljs:156
-msgid "dashboard.export.detail"
+msgid "files-download-modal.description-2"
 msgstr "* var ietvert sastāvdaļas, attēlus, krāsas un/vai burtu stilus un veidus."
 
 #: src/app/main/ui/exports/files.cljs:155
@@ -582,33 +581,33 @@ msgstr ""
 "iesākt ar to līdzekļiem*?"
 
 #: src/app/main/ui/exports/files.cljs:164
-msgid "dashboard.export.options.all.message"
+msgid "files-download-modal.options.all.message"
 msgstr ""
 "Izguvē tiks iekļautas datnes ar koplietojamām bibliotēkām, saglabājot to "
 "sasaisti."
 
 #: src/app/main/ui/exports/files.cljs:165
-msgid "dashboard.export.options.all.title"
+msgid "files-download-modal.options.all.title"
 msgstr "Izgūt koplietojamās bibliotēkas"
 
 #: src/app/main/ui/exports/files.cljs:166
-msgid "dashboard.export.options.detach.message"
+msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Koplietojamās bibliotēkas netiks iekļautas izguvē, un bibliotēkai netiks "
 "pievienoti līdzekļi. "
 
 #: src/app/main/ui/exports/files.cljs:167
-msgid "dashboard.export.options.detach.title"
+msgid "files-download-modal.options.detach.title"
 msgstr "Attiekties pret koplietojamo bibliotēku līdzekļiem kā pret pamatobjektiem"
 
 #: src/app/main/ui/exports/files.cljs:168
-msgid "dashboard.export.options.merge.message"
+msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Datne tiks izgūta ar visiem ārējiem līdzekļiem, kas tiks apvienoti datnes "
 "bibliotēkā."
 
 #: src/app/main/ui/exports/files.cljs:169
-msgid "dashboard.export.options.merge.title"
+msgid "files-download-modal.options.merge.title"
 msgstr "Iekļaut koplietojamos bibliotēkas līdzekļus datņu bibliotēkās"
 
 #: src/app/main/ui/exports/files.cljs:147
@@ -1808,10 +1807,6 @@ msgid "inspect.empty.help"
 msgstr ""
 "Ja ir vēlme uzzināt vairāk par dizaina apskati, jāapmeklē Penpot palīdzības "
 "centrs"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:240
-msgid "inspect.empty.more-info"
-msgstr "Vairāk informācijas par apskatīšanu"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.select"
@@ -7586,12 +7581,6 @@ msgstr "Vērtība nav derīga"
 msgid "workspace.tokens.value-with-units"
 msgstr "Nederīga vērtība: mērvienības nav atļautas."
 
-#: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:181, src/app/main/ui/workspace/tokens/management/create/form.cljs:602
-msgid "workspace.tokens.warning-name-change"
-msgstr ""
-"Šīs tekstvienības pārdēvēšana salauzīs visas atsauces uz tās iepriekšējo "
-"nosaukumu."
-
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Līdzekļi"
@@ -7966,3 +7955,16 @@ msgstr "Ierosinājums"
 #: src/app/main/ui/settings/feedback.cljs:114
 msgid "feedback.type.issue"
 msgstr "Sarežģījums"
+
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Palīdzi mums attīstīties un padarīt Tavu izmēģinājumu vienkāršāku"
+
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Pagaidām izlaist un uzsākt izmēģinājumu"
+
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Pievienot maksājumu informāciju"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:240
+msgid "inspect.empty.more"
+msgstr "Vairāk informācijas"

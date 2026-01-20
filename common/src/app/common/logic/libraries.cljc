@@ -21,7 +21,6 @@
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.path-names :as cpn]
-   [app.common.spec :as us]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -39,8 +38,7 @@
    [app.common.types.typography :as cty]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
-   [clojure.set :as set]
-   [clojure.spec.alpha :as s]))
+   [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -477,10 +475,10 @@
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
   [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (s/assert #{:colors :components :typographies} asset-type)
-  (s/assert (s/nilable ::us/uuid) asset-id)
-  (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid library-id)
+  (assert (contains? #{:colors :components :typographies} asset-type))
+  (assert (or (nil? asset-id) (uuid? asset-id)))
+  (assert (uuid? file-id))
+  (assert (uuid? library-id))
 
   (container-log :info asset-id
                  :msg "Sync file with library"
@@ -514,10 +512,10 @@
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
   [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (s/assert #{:colors :components :typographies} asset-type)
-  (s/assert (s/nilable ::us/uuid) asset-id)
-  (s/assert ::us/uuid file-id)
-  (s/assert ::us/uuid library-id)
+  (assert (contains? #{:colors :components :typographies} asset-type))
+  (assert (or (nil? asset-id) (uuid? asset-id)))
+  (assert (uuid? file-id))
+  (assert (uuid? library-id))
 
   (container-log :info asset-id
                  :msg "Sync local components with library"
@@ -2493,11 +2491,13 @@
                (ctk/get-swap-slot))
           (constantly false))
 
+        ;; In the cases where the swapped shape was the first element of the masked group it would make the group to loose the
+        ;; mask property as part of the sanitization check on generate-delete-shapes, passing "ignore-mask" to prevent this
         [all-parents changes]
         (-> changes
             (cls/generate-delete-shapes
              file page objects (d/ordered-set (:id shape))
-             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn}))
+             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn :ignore-mask true}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
@@ -2867,13 +2867,15 @@
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
 
-        ;; If there is an alt-duplication of a variant, change its parent to root
-        ;; so the copy is made as a child of root
+        ;; If there is an alt-duplication we change to root
+        ;; For variants so the copy is made as a child of root
         ;; This is because inside a variant-container can't be a copy
+        ;; For other shape this way the layout won't be changed when duplicated
+        ;; and if you move outside the layout will not change
         shapes  (map (fn [shape]
-                       (if (and alt-duplication? (ctk/is-variant? shape))
-                         (assoc shape :parent-id uuid/zero :frame-id nil)
-                         shape))
+                       (cond-> shape
+                         alt-duplication?
+                         (assoc :parent-id uuid/zero :frame-id uuid/zero)))
                      shapes)
 
 

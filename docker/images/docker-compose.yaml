@@ -130,12 +130,6 @@ services:
     environment:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key]
 
-      ## The PREPL host. Mainly used for external programatic access to penpot backend
-      ## (example: admin). By default it will listen on `localhost` but if you are going to use
-      ## the `admin`, you will need to uncomment this and set the host to `0.0.0.0`.
-
-      # PENPOT_PREPL_HOST: 0.0.0.0
-
       ## Database connection parameters. Don't touch them unless you are using custom
       ## postgresql connection parameters.
 
@@ -151,16 +145,16 @@ services:
       ## Default configuration for assets storage: using filesystem based with all files
       ## stored in a docker volume.
 
-      PENPOT_ASSETS_STORAGE_BACKEND: assets-fs
-      PENPOT_STORAGE_ASSETS_FS_DIRECTORY: /opt/data/assets
+      PENPOT_OBJECTS_STORAGE_BACKEND: fs
+      PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
 
       ## Also can be configured to to use a S3 compatible storage.
 
       # AWS_ACCESS_KEY_ID: <KEY_ID>
       # AWS_SECRET_ACCESS_KEY: <ACCESS_KEY>
-      # PENPOT_ASSETS_STORAGE_BACKEND: assets-s3
-      # PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <ENDPOINT>
-      # PENPOT_STORAGE_ASSETS_S3_BUCKET: <BUKET_NAME>
+      # PENPOT_OBJECTS_STORAGE_BACKEND: s3
+      # PENPOT_OBJECTS_STORAGE_S3_ENDPOINT: <ENDPOINT>
+      # PENPOT_OBJECTS_STORAGE_S3_BUCKET: <BUKET_NAME>
 
       ## Telemetry. When enabled, a periodical process will send anonymous data about this
       ## instance. Telemetry data will enable us to learn how the application is used,

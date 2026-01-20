@@ -80,7 +80,7 @@
                     font-size   (f/serialize-font-size font-size)
 
                     line-height     (f/serialize-line-height (get span :line-height) paragraph-line-height)
-                    letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))
+                    letter-spacing  (f/serialize-letter-spacing (get span :letter-spacing))
 
                     font-weight (get span :font-weight paragraph-font-weight)
                     font-weight (f/serialize-font-weight font-weight)
@@ -142,7 +142,9 @@
   ;; buffer has the following format:
   ;; [<num-spans> <paragraph_attributes> <spans_attributes> <text>]
   [spans paragraph text]
-  (let [num-spans    (count spans)
+  (let [normalized-paragraph (f/normalize-paragraph-font paragraph)
+        normalized-spans (map #(f/normalize-span-font % normalized-paragraph) spans)
+        num-spans    (count normalized-spans)
         fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
         metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
                          (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
@@ -157,8 +159,8 @@
 
     (-> offset
         (mem/write-u32 dview num-spans)
-        (write-paragraph dview paragraph)
-        (write-spans dview spans paragraph)
+        (write-paragraph dview normalized-paragraph)
+        (write-spans dview normalized-spans normalized-paragraph)
         (mem/write-buffer heapu8 text-buffer))
 
     (h/call wasm/internal-module "_set_shape_text_content")))

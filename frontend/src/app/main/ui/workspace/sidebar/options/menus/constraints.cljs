@@ -206,7 +206,7 @@
                       :data-value "bottom"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]]
-          [:div {:class (stl/css :contraints-selects)}
+          [:div {:class (stl/css :constraints-selects)}
            [:div {:class (stl/css :horizontal-select) :data-testid "constraint-h-select"}
             [:& select
              {:default-value (if (not= constraints-h :multiple) (d/nilv (d/name constraints-h) "scale") "")
