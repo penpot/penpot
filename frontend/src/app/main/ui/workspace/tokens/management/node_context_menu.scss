@@ -1,0 +1,70 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.token-node-context-menu {
+  --menu-inline-size: #{px2rem(240)};
+
+  position: absolute;
+  z-index: var(--z-index-dropdown);
+}
+
+.token-node-context-menu[data-direction="up"] {
+  bottom: var(--bottom);
+}
+
+.token-node-context-menu[data-direction="down"] {
+  top: var(--top);
+}
+
+.token-node-context-menu-list {
+  inline-size: var(--menu-inline-size);
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  max-block-size: 100vh;
+  overflow-y: auto;
+  box-shadow: 0px 0px $sz-12 0px var(--menu-shadow-color);
+}
+
+.token-node-context-menu-action {
+  --context-menu-item-bg-color: none;
+  --context-menu-item-fg-color: var(--color-foreground-primary);
+  --context-menu-item-border-color: none;
+
+  @include t.use-typography("body-small");
+  appearance: none;
+  background: var(--context-menu-item-bg-color);
+  border: $b-1 solid var(--context-menu-item-border-color);
+  color: var(--context-menu-item-fg-color);
+  border-radius: $br-8;
+  cursor: pointer;
+  block-size: px2rem(32);
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  padding: var(--sp-xs);
+
+  &:hover {
+    --context-menu-item-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus {
+    --context-menu-item-bg-color: var(--menu-background-color-focus);
+    --context-menu-item-border-color: var(--color-background-tertiary);
+  }
+
+  &[aria-selected="true"] {
+    --context-menu-item-bg-color: var(--color-background-quaternary);
+  }
+}

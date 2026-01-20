@@ -14,8 +14,10 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
+   [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn- get-sorted-token-groups
@@ -120,7 +122,27 @@
 
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
-          (get-sorted-token-groups tokens-by-type))]
+          (get-sorted-token-groups tokens-by-type))
+
+        ;; Filter tokens by their path and return their ids
+        filter-tokens-by-path-ids
+        (mf/use-fn
+         (mf/deps tokens)
+         (fn [type path]
+           (->> tokens
+                (filter (fn [token]
+                          (let [[_ token-value] token]
+                            (and (= (:type token-value) type) (str/starts-with? (:name token-value) path)))))
+                (mapv (fn [token]
+                        (let [[_ token-value] token]
+                          (:id token-value)))))))
+
+        delete-node
+        (mf/with-memo [tokens selected-token-set-id]
+          (fn [node type]
+            (let [path (:path node)
+                  tokens-in-path-ids (filter-tokens-by-path-ids type path)]
+              (st/emit! (dwtl/bulk-delete-tokens selected-token-set-id tokens-in-path-ids)))))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -134,6 +156,7 @@
 
     [:*
      [:& token-context-menu]
+     [:> token-node-context-menu* {:on-delete-node delete-node}]
 
      [:& selected-set-info* {:tokens-lib tokens-lib
                              :selected-token-set-id selected-token-set-id}]

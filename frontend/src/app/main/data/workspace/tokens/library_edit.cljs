@@ -433,10 +433,21 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
         (rx/of (dch/commit-changes changes))))))
+
+(defn bulk-delete-tokens
+  [set-id token-ids]
+  (dm/assert! (uuid? set-id))
+  (dm/assert! (every? uuid? token-ids))
+  (ptk/reify ::bulk-delete-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (apply rx/of
+             (map #(delete-token set-id %) token-ids)))))
 
 (defn duplicate-token
   [token-id]
@@ -504,6 +515,19 @@
       (if params
         (update state :workspace-tokens assoc :token-context-menu params)
         (update state :workspace-tokens dissoc :token-context-menu)))))
+
+(defn assign-token-node-context-menu
+  [{:keys [position] :as params}]
+
+  (when params
+    (assert (gpt/point? position) "expected a point instance for `position` param"))
+
+  (ptk/reify ::show-token-node-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (if params
+        (update state :workspace-tokens assoc :token-node-context-menu params)
+        (update state :workspace-tokens dissoc :token-node-context-menu)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN-SET UI OPS

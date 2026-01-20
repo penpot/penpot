@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
-test.describe("Tokens - CRUD", () => {
+test.describe("Tokens - creation", () => {
   test("User creates border radius token", async ({ page }) => {
     await testTokenCreationFlow(page, {
       tokenLabel: "Border Radius",
@@ -1256,6 +1256,91 @@ test.describe("Tokens - CRUD", () => {
     ).toBeEnabled();
   });
 
+  test("User creates grouped color token", async ({ page }) => {
+    const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
+      await setupEmptyTokensFile(page);
+
+    await tokensSidebar
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
+
+    // Create grouped color token with mouse
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
+
+    await nameField.click();
+    await nameField.fill("dark.primary");
+
+    await valueField.click();
+    await valueField.fill("red");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenTree(tokensSidebar, "color", "dark.primary");
+
+    await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
+  });
+
+  test("User cant create regular token with value missing", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFile(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // Initially submit button should be disabled
+    await expect(submitButton).toBeDisabled();
+
+    // Fill in name but leave value empty
+    await nameField.click();
+    await nameField.fill("primary");
+
+    // Submit button should remain disabled when value is empty
+    await expect(submitButton).toBeDisabled();
+  });
+
+  test("User duplicate color token", async ({ page }) => {
+    const { tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+
+    const colorToken = tokensSidebar.getByRole("button", {
+      name: "100",
+    });
+
+    await colorToken.click({ button: "right" });
+    await expect(tokenContextMenuForToken).toBeVisible();
+
+    await tokenContextMenuForToken.getByText("Duplicate token").click();
+    await expect(tokenContextMenuForToken).not.toBeVisible();
+
+    await expect(
+      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Tokens tab - edition", () => {
   test("User edits typography token and all fields are valid", async ({
     page,
   }) => {
@@ -1388,67 +1473,7 @@ test.describe("Tokens - CRUD", () => {
     await expect(colorTokenChanged).toBeVisible();
   });
 
-  test("User creates grouped color token", async ({ page }) => {
-    const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
-      await setupEmptyTokensFile(page);
-
-    await tokensSidebar
-      .getByRole("button", { name: "Add Token: Color" })
-      .click();
-
-    // Create grouped color token with mouse
-
-    await expect(tokensUpdateCreateModal).toBeVisible();
-
-    const nameField = tokensUpdateCreateModal.getByLabel("Name");
-    const valueField = tokensUpdateCreateModal.getByLabel("Value");
-
-    await nameField.click();
-    await nameField.fill("dark.primary");
-
-    await valueField.click();
-    await valueField.fill("red");
-
-    const submitButton = tokensUpdateCreateModal.getByRole("button", {
-      name: "Save",
-    });
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
-
-    await unfoldTokenTree(tokensSidebar, "color", "dark.primary");
-
-    await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
-  });
-
-  test("User cant create regular token with value missing", async ({
-    page,
-  }) => {
-    const { tokensUpdateCreateModal } = await setupEmptyTokensFile(page);
-
-    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-    await tokensTabPanel
-      .getByRole("button", { name: "Add Token: Color" })
-      .click();
-
-    await expect(tokensUpdateCreateModal).toBeVisible();
-
-    const nameField = tokensUpdateCreateModal.getByLabel("Name");
-    const submitButton = tokensUpdateCreateModal.getByRole("button", {
-      name: "Save",
-    });
-
-    // Initially submit button should be disabled
-    await expect(submitButton).toBeDisabled();
-
-    // Fill in name but leave value empty
-    await nameField.click();
-    await nameField.fill("primary");
-
-    // Submit button should remain disabled when value is empty
-    await expect(submitButton).toBeDisabled();
-  });
-
-  test("User changes color token color while keeping custom color space", async ({
+  test("User edits color token color while keeping custom color space", async ({
     page,
   }) => {
     const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
@@ -1502,30 +1527,9 @@ test.describe("Tokens - CRUD", () => {
     await valueSaturationSelector.click({ position: { x: 0, y: 0 } });
     await expect(valueField).toHaveValue(/^rgba(.*)$/);
   });
+});
 
-  test("User duplicate color token", async ({ page }) => {
-    const { tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
-
-    await expect(tokensSidebar).toBeVisible();
-
-    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
-
-    const colorToken = tokensSidebar.getByRole("button", {
-      name: "100",
-    });
-
-    await colorToken.click({ button: "right" });
-    await expect(tokenContextMenuForToken).toBeVisible();
-
-    await tokenContextMenuForToken.getByText("Duplicate token").click();
-    await expect(tokenContextMenuForToken).not.toBeVisible();
-
-    await expect(
-      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
-    ).toBeVisible();
-  });
-
+test.describe("Tokens tab - delete", () => {
   test("User delete color token", async ({ page }) => {
     const { tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFile(page);
@@ -1545,5 +1549,41 @@ test.describe("Tokens - CRUD", () => {
 
     await expect(tokenContextMenuForToken).not.toBeVisible();
     await expect(colorToken).not.toBeVisible();
+  });
+
+  test("User removes node and all child tokens", async ({ page }) => {
+    const { tokensSidebar, workspacePage } = await setupTokensFile(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    // Expand color tokens
+    unfoldTokenTree(tokensSidebar, "color", "colors.blue.100");
+
+    // Verify that the node and child token are visible before deletion
+    const colorNode = tokensSidebar.getByRole("button", {
+      name: "blue",
+      exact: true,
+    });
+    const colorNodeToken = tokensSidebar.getByRole("button", {
+      name: "100",
+    });
+
+    // Select a node and right click on it to open context menu
+    await expect(colorNode).toBeVisible();
+    await expect(colorNodeToken).toBeVisible();
+    await colorNode.click({ button: "right" });
+
+    // select "Delete" from the context menu
+    const deleteNodeButton = page.getByRole("button", {
+      name: "Delete",
+      exact: true,
+    });
+    await expect(deleteNodeButton).toBeVisible();
+    await deleteNodeButton.click();
+
+    // Verify that the node is removed
+    await expect(colorNode).not.toBeVisible();
+    // Verify that child token is also removed
+    await expect(colorNodeToken).not.toBeVisible();
   });
 });
