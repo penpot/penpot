@@ -100,6 +100,16 @@ impl<'a> State<'a> {
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
+        // If zoom changed, we MUST rebuild the tile index before using it.
+        // Otherwise, the index will have tiles from the old zoom level, causing visible
+        // tiles to appear empty. This can happen if start_render_loop() is called before
+        // set_view_end() finishes rebuilding the index, or if set_view_end() hasn't been
+        // called yet.
+        let zoom_changed = self.render_state.zoom_changed();
+        if zoom_changed {
+            self.rebuild_tiles_shallow();
+        }
+
         self.render_state
             .start_render_loop(None, &self.shapes, timestamp, false)?;
         Ok(())

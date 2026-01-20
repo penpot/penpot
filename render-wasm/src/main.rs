@@ -284,6 +284,7 @@ pub extern "C" fn set_view_end() {
             performance::end_measure!("set_view_end::clear_tile_index");
             performance::end_timed_log!("clear_tile_index", _clear_start);
         }
+        state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
         performance::end_timed_log!("set_view_end", _end_start);
         #[cfg(feature = "profile-macros")]
