@@ -32,6 +32,7 @@
 - Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
 - Fix allow negative spread values on shadow token creation [Taiga #13167](https://tree.taiga.io/project/penpot/issue/13167)
 - Fix spanish translations on import export token modal [Taiga #13171](https://tree.taiga.io/project/penpot/issue/13171)
+- Remove whitespaces from asset export filename [Github #8133](https://github.com/penpot/penpot/pull/8133)
 
 ## 2.12.1
 
