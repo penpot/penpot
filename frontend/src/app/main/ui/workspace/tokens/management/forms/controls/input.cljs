@@ -332,6 +332,7 @@
                                  message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
+                             (swap! form update :async-errors dissoc :reference)
                              (if (= input-value (str resolved-value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
