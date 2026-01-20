@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export CURRENT_VERSION=${CURRENT_VERSION:-develop};
+export VERSION_TAG=${VERSION:-develop};
 
 if [ "$NODE_ENV" = "production" ];  then
     export BUILD_MODE="release";
@@ -81,7 +81,7 @@ function copy_artifacts {
     cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js $DEST/$BUILD_NAME.js;
     cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm $DEST/$BUILD_NAME.wasm;
 
-    sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$CURRENT_VERSION/g" $DEST/$BUILD_NAME.js;
+    sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$VERSION_TAG/g" $DEST/$BUILD_NAME.js;
 
     yarn esbuild target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js \
         --log-level=error \
