@@ -27,8 +27,10 @@
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
@@ -300,11 +302,20 @@
         update-fn (fn [node _]
                     (-> node
                         (d/txt-merge txt-attrs)
-                        (cty/remove-typography-from-node)))]
-    (dwsh/update-shapes shape-ids
-                        #(txt/update-text-content % update-node? update-fn nil)
-                        {:ignore-touched true
-                         :page-id page-id})))
+                        (cty/remove-typography-from-node)))
+        ;; Check if any attribute affects text layout (requires resize)
+        affects-layout? (some #(contains? txt-attrs %) [:font-size :font-family :font-weight :letter-spacing :line-height])]
+    (ptk/reify ::generate-text-shape-update
+      ptk/WatchEvent
+      (watch [_ state _]
+        (cond-> (rx/of (dwsh/update-shapes shape-ids
+                                           #(txt/update-text-content % update-node? update-fn nil)
+                                           {:ignore-touched true
+                                            :page-id page-id}))
+          (and affects-layout?
+               (features/active-feature? state "render-wasm/v1"))
+          (rx/merge
+           (rx/of (dwt/resize-wasm-text-all shape-ids))))))))
 
 (defn update-line-height
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
@@ -353,11 +364,17 @@
                       (-> node
                           (d/txt-merge txt-attrs)
                           (cty/remove-typography-from-node))))]
-    (dwsh/update-shapes shape-ids
-                        (fn [shape]
-                          (txt/update-text-content shape update-node? #(update-fn %1 (ctst/font-weight-applied? shape)) nil))
-                        {:ignore-touched true
-                         :page-id page-id})))
+    (ptk/reify ::generate-font-family-text-shape-update
+      ptk/WatchEvent
+      (watch [_ state _]
+        (cond-> (rx/of (dwsh/update-shapes shape-ids
+                                           (fn [shape]
+                                             (txt/update-text-content shape update-node? #(update-fn %1 (ctst/font-weight-applied? shape)) nil))
+                                           {:ignore-touched true
+                                            :page-id page-id}))
+          (features/active-feature? state "render-wasm/v1")
+          (rx/merge
+           (rx/of (dwt/resize-wasm-text-all shape-ids))))))))
 
 (defn- create-font-family-text-attrs
   [value]
@@ -425,10 +442,16 @@
                       (-> node
                           (d/txt-merge txt-attrs)
                           (cty/remove-typography-from-node))))]
-    (dwsh/update-shapes shape-ids
-                        #(txt/update-text-content % update-node? update-fn nil)
-                        {:ignore-touched true
-                         :page-id page-id})))
+    (ptk/reify ::generate-font-weight-text-shape-update
+      ptk/WatchEvent
+      (watch [_ state _]
+        (cond-> (rx/of (dwsh/update-shapes shape-ids
+                                           #(txt/update-text-content % update-node? update-fn nil)
+                                           {:ignore-touched true
+                                            :page-id page-id}))
+          (features/active-feature? state "render-wasm/v1")
+          (rx/merge
+           (rx/of (dwt/resize-wasm-text-all shape-ids))))))))
 
 (defn update-font-weight
   ([value shape-ids attributes] (update-font-weight value shape-ids attributes nil))

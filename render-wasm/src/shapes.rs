@@ -1529,6 +1529,7 @@ impl Shape {
             || !self.transform.is_identity()
             || !math::is_close_to(self.rotation, 0.0)
             || matches!(self.shape_type, Type::Group(_) | Type::Frame(_))
+            || matches!(self.shape_type, Type::Text(_))
     }
 
     pub fn count_visible_inner_strokes(&self) -> usize {
