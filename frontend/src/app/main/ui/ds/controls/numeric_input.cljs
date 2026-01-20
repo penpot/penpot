@@ -216,7 +216,7 @@
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
            on-change on-blur on-focus on-detach
-           property align ref]
+           property align ref name]
     :rest props}]
 
   (let [;; NOTE: we use mfu/bean here for transparently handle
@@ -662,7 +662,10 @@
                 label       (get token :name)
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
-                                    (fmt/format-number value)))]
+                                    (fmt/format-number value)))
+                token-value (if (= name :opacity)
+                              (* 100 token-value)
+                              token-value)]
             (mf/spread-props props
                              {:id id
                               :label label

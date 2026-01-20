@@ -487,6 +487,7 @@
    :vertical-margin #{:spacing :dimensions}
    :sided-margins #{:spacing :dimensions}
    :line-height #{:line-height :number}
+   :opacity #{:opacity}
    :font-size #{:font-size}
    :letter-spacing #{:letter-spacing}
    :fill #{:color}

@@ -125,6 +125,7 @@
     [:*
      [:> layer-menu* {:ids ids
                       :type type
+                      :applied-tokens applied-tokens
                       :values layer-values}]
      [:> measures-menu*
       {:ids ids

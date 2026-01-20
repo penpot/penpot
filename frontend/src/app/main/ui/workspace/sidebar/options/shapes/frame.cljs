@@ -100,6 +100,7 @@
     [:*
      [:> layer-menu* {:ids ids
                       :type shape-type
+                      :applied-tokens applied-tokens
                       :values layer-values}]
      [:> measures-menu* {:ids ids
                          :applied-tokens applied-tokens
