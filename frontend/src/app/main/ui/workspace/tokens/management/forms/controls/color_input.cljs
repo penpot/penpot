@@ -140,6 +140,9 @@
         error
         (get-in @form [:errors input-name])
 
+        extra-error
+        (get-in @form [:extra-errors input-name])
+
         value
         (get-in @form [:data input-name] "")
 
@@ -247,9 +250,14 @@
                                   :hint-type (:type hint)})
 
         props
-        (if (and error touched?)
+        (cond
+          (and error touched?)
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message error)})
+          (and extra-error touched?)
+          (mf/spread-props props {:hint-type "error"
+                                  :hint-message (:message extra-error)})
+          :else
           props)]
 
     (mf/with-effect [resolve-stream tokens token input-name]
