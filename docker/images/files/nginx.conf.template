@@ -144,7 +144,7 @@ http {
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
-            location ~* \.(js|css|jpg|png|svg|ttf|woff|woff2|wasm)$ {
+            location ~* \.(js|css|jpg|png|svg|gif|ttf|woff|woff2|wasm)$ {
                 add_header Cache-Control "public, max-age=604800" always; # 7 days
             }
 

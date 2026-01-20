@@ -273,4 +273,4 @@
                   {:label (tr "workspace.tokens.import-menu-folder-option") :value :folder}]
         :on-click handle-import-action
         :text-render render-button-text
-        :default :zip}]]]))
+        :default :file}]]]))
