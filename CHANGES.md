@@ -14,6 +14,8 @@
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 - Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
+- Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
+- Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
 
 ### :bug: Bugs fixed
 
@@ -22,7 +24,6 @@
 - Fix wrong register image [Taiga #12955](https://tree.taiga.io/project/penpot/task/12955)
 - Fix error message on components doesn't close automatically [Taiga #12012](https://tree.taiga.io/project/penpot/issue/12012)
 - Fix incorrect default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
-
 
 ## 2.13.0 (Unreleased)
 
@@ -170,7 +171,6 @@ example. It's still usable as before, we just removed the example.
 
 - Deprecated configuration variables with the prefix `PENPOT_ASSETS_*`, and will be
   removed in future versions:
-
   - The `PENPOT_ASSETS_STORAGE_BACKEND` becomes `PENPOT_OBJECTS_STORAGE_BACKEND` and its
     values passes from (`assets-fs` or `assets-s3`) to (`fs` or `s3`)
   - The `PENPOT_STORAGE_ASSETS_FS_DIRECTORY` becomes `PENPOT_OBJECTS_STORAGE_FS_DIRECTORY`
