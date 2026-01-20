@@ -14,7 +14,6 @@
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 - Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
-- Change the default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
 
 ### :bug: Bugs fixed
 
@@ -22,6 +21,8 @@
 - Fix wrong image in the onboarding invitation block [Taiga #13040](https://tree.taiga.io/project/penpot/issue/13040)
 - Fix wrong register image [Taiga #12955](https://tree.taiga.io/project/penpot/task/12955)
 - Fix error message on components doesn't close automatically [Taiga #12012](https://tree.taiga.io/project/penpot/issue/12012)
+- Fix incorrect default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
+
 
 ## 2.13.0 (Unreleased)
 
