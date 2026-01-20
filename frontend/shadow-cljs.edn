@@ -75,6 +75,7 @@
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
      :source-map true
+     :pseudo-names true
      :elide-asserts true
      :anon-fn-naming-policy :off
      :cross-chunk-method-motion false
