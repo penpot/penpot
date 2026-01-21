@@ -480,6 +480,9 @@
 (def workspace-token-sets-tree
   (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
 
+(def workspace-all-tokens-map
+  (l/derived (d/nilf ctob/get-all-tokens) tokens-lib))
+
 (def workspace-active-theme-paths
   (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
 
