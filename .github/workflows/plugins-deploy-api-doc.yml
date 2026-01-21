@@ -1,0 +1,73 @@
+name: Plugins/api-doc deployer
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+    paths:
+      - "plugins/**"
+      - ".github/workflows/deploy-plugin-docs.yml"
+      - "wrangle-penpot-plugins-api-doc.toml"
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins
+    steps:
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.vars.outputs.gh_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs
+        run: pnpm run build:doc
+
+      - name: Select Worker name
+        run: |
+          REF="${{ steps.vars.outputs.gh_ref }}"
+          case "$REF" in
+            main) echo "WORKER_NAME=penpot-plugins-api-doc-pro" >> $GITHUB_ENV ;;
+            staging) echo "WORKER_NAME=penpot-plugins-api-doc-pre" >> $GITHUB_ENV ;;
+            develop) echo "WORKER_NAME=penpot-plugins-api-doc-hourly" >> $GITHUB_ENV ;;
+            *) echo "Unsupported branch ${REF}" && exit 1 ;;
+          esac
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangle-penpot-plugins-api-doc.toml --name ${{ env.WORKER_NAME }}
