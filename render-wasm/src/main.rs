@@ -23,7 +23,7 @@ use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
-pub(crate) static mut STATE: Option<Box<State<'static>>> = None;
+pub(crate) static mut STATE: Option<Box<State>> = None;
 
 #[macro_export]
 macro_rules! with_state_mut {
