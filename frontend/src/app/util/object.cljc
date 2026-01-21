@@ -172,6 +172,22 @@
                                 schema-1 (c/get params :schema-1)
                                 this?    (c/get params :this false)
 
+                                decode-expr
+                                (c/get params :decode/fn)
+
+                                decode-options
+                                (c/get params :decode/options)
+
+                                decode-options
+                                (if (and decode-expr decode-options)
+                                  (do
+                                    (println "WARN: decode/fn and decode/options are excluding, ignoring decode/options")
+                                    nil)
+                                  decode-options)
+
+                                decode-expr
+                                (or decode-expr 'app.common.json/->clj)
+
                                 fn-sym
                                 (-> (gensym (str "internal-fn-" (str/slug pname) "-"))
                                     (with-meta {:tag 'function}))
@@ -180,9 +196,20 @@
                                 (-> (gensym (str "coercer-fn-" (str/slug pname) "-"))
                                     (with-meta {:tag 'function}))
 
+                                decode-sym
+                                (-> (gensym (str "decode-fn-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
+                                schema-sym
+                                (-> (gensym (str "schema-" (str/slug pname) "-"))
+                                    (with-meta {:tag 'function}))
+
                                 wrap-sym
                                 (-> (gensym (str "wrap-fn-" (str/slug pname) "-"))
-                                    (with-meta {:tag 'function}))]
+                                    (with-meta {:tag 'function}))
+
+                                val-sym
+                                (gensym (str "val-" (str/slug pname) "-"))]
 
                             (concat
                              (when wrap
@@ -198,20 +225,66 @@
                                   get-expr)])
 
                              (when set-expr
-                               [(make-sym pname "set-fn")
-                                (if this?
-                                  `(fn [v#]
-                                     (let [~this-sym (~'js* "this")
-                                           ~fn-sym ~set-expr]
-                                       (.call ~fn-sym ~this-sym ~this-sym v#)))
-                                  set-expr)])
+                               (concat
+                                (when (and schema-n (not (list? schema-n)))
+                                  [coercer-sym `(sm/coercer ~schema-n)])
+
+                                (when (and schema-n (list? schema-n))
+                                  [schema-sym schema-n])
+
+                                [decode-sym decode-expr]
+
+                                [(make-sym pname "set-fn")
+                                 (if this?
+                                   `(fn [~val-sym]
+                                      (let [~@(if (and schema-n (list? schema-n))
+                                                [schema-sym  `(~schema-sym ~val-sym)
+                                                 coercer-sym `(sm/coercer ~schema-sym)]
+                                                [])
+                                            ~this-sym (~'js* "this")
+                                            ~fn-sym   ~set-expr
+                                            ~val-sym  ~(if schema-n
+                                                         (if decode-expr
+                                                           `(~decode-sym ~val-sym)
+                                                           `(~decode-sym ~val-sym ~decode-options))
+                                                         val-sym)
+                                            ~val-sym  ~(if schema-n
+                                                         `(~coercer-sym ~val-sym)
+                                                         val-sym)]
+                                        (.call ~fn-sym ~this-sym ~this-sym ~val-sym)))
+                                   `(fn [~val-sym]
+                                      (let [~@(if (and schema-n (list? schema-n))
+                                                [schema-sym  `(~schema-sym ~val-sym)
+                                                 coercer-sym `(sm/coercer ~schema-sym)]
+                                                [])
+                                            ~this-sym (~'js* "this")
+                                            ~fn-sym   ~set-expr
+                                            ~val-sym  ~(if schema-n
+                                                         (if decode-expr
+                                                           `(~decode-sym ~val-sym)
+                                                           `(~decode-sym ~val-sym ~decode-options))
+                                                         val-sym)
+                                            ~val-sym  ~(if schema-n
+                                                         `(~coercer-sym ~val-sym)
+                                                         val-sym)]
+                                        (.call ~fn-sym ~this-sym ~val-sym))))]))
 
                              (when fn-expr
                                (concat
-                                (when schema-1
-                                  [coercer-sym `(sm/coercer ~schema-1)])
-                                (when schema-n
-                                  [coercer-sym `(sm/coercer ~schema-n)])
+                                (cond
+                                  (and schema-n (not (list? schema-n)))
+                                  [coercer-sym `(sm/coercer ~schema-n)]
+
+                                  (and schema-n (list? schema-n))
+                                  [schema-sym schema-n]
+
+                                  (and schema-1 (not (list? schema-1)))
+                                  [coercer-sym `(sm/coercer ~schema-1)]
+
+                                  (and schema-1 (list? schema-1))
+                                  [schema-sym schema-1])
+
+                                [decode-sym decode-expr]
 
                                 [(make-sym pname "get-fn")
                                  `(fn []
@@ -222,17 +295,42 @@
                                                        `(.bind ~fn-sym ~this-sym))
 
                                           ~@(if schema-1
-                                              [fn-sym `(fn* [param#]
-                                                            (let [param# (json/->clj param#)
-                                                                  param# (~coercer-sym param#)]
-                                                              (~fn-sym param#)))]
+                                              [fn-sym `(fn* [~val-sym]
+                                                            (let [~val-sym
+                                                                  ~(if decode-expr
+                                                                     `(~decode-sym ~val-sym)
+                                                                     `(~decode-sym ~val-sym ~decode-options))
+
+                                                                  ~@(if (or (and schema-n (list? schema-n))
+                                                                            (and schema-1 (list? schema-1)))
+                                                                      [schema-sym  `(~schema-sym ~val-sym)
+                                                                       coercer-sym `(sm/coercer ~schema-sym)]
+                                                                      [])
+
+                                                                  ~val-sym
+                                                                  (~coercer-sym ~val-sym)]
+
+                                                              (~fn-sym ~val-sym)))]
                                               [])
                                           ~@(if schema-n
                                               [fn-sym `(fn* []
-                                                            (let [params# (into-array (cljs.core/js-arguments))
-                                                                  params# (mfu/bean params#)
-                                                                  params# (~coercer-sym params#)]
-                                                              (apply ~fn-sym params#)))]
+                                                            (let [~val-sym
+                                                                  (into-array (cljs.core/js-arguments))
+
+                                                                  ~val-sym
+                                                                  ~(if decode-expr
+                                                                     `(~decode-sym ~val-sym)
+                                                                     `(~decode-sym ~val-sym ~decode-options))
+
+                                                                  ~@(if (or (and schema-n (list? schema-n))
+                                                                            (and schema-1 (list? schema-1)))
+                                                                      [schema-sym  `(~schema-sym ~val-sym)
+                                                                       coercer-sym `(sm/coercer ~schema-sym)]
+                                                                      [])
+
+                                                                  ~val-sym
+                                                                  (~coercer-sym ~val-sym)]
+                                                              (apply ~fn-sym ~val-sym)))]
                                               [])
                                           ~@(if wrap
                                               [fn-sym `(~wrap-sym ~fn-sym)]
