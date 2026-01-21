@@ -23,6 +23,7 @@
 
         touched?   (and (contains? (:data @form) input-name)
                         (get-in @form [:touched input-name]))
+
         error      (get-in @form [:errors input-name])
 
         value      (get-in @form [:data input-name] "")
@@ -52,7 +53,8 @@
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))
-                               (seq (:external-errors @form))))
+                               (seq (:async-errors @form))
+                               (seq (:extra-errors @form))))
                       (true? disabled))
         handle-key-down-save
         (mf/use-fn

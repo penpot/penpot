@@ -114,14 +114,7 @@ configuration.
 The callback has the following format:
 
 ```html
-https://<your_domain>/api/auth/oauth/<oauth_provider>/callback
-```
-
-You will need to change <your_domain> and <oauth_provider> according to your setup.
-This is how it looks with Gitlab provider:
-
-```html
-https://<your_domain>/api/auth/oauth/gitlab/callback
+https://<your_domain>/api/auth/oidc/callback
 ```
 
 #### Google

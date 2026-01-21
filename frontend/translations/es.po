@@ -7766,7 +7766,7 @@ msgstr "Line height (multiplicador, px o %) o {alias}"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
 msgid "workspace.tokens.missing-references"
-msgstr "Referéncias de tokens no encontradas:"
+msgstr "Referencias de tokens no encontradas: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
 msgid "workspace.tokens.more-options"

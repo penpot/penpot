@@ -2,26 +2,26 @@
 # NOTE: this script should be called from the parent directory to
 # properly work.
 
+set -ex
+
 export INCLUDE_STORYBOOK=${BUILD_STORYBOOK:-no};
 export INCLUDE_WASM=${BUILD_WASM:-yes};
-export CURRENT_VERSION=$1;
-export BUILD_DATE=$(date -R);
-export CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
 export EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
-export TS=$(date +%s);
+
+export BUILD_DATE=$(date -R);
+export BUILD_TS=$(date +%s);
+
+export VERSION=${1:-develop};
+export VERSION_TAG="${VERSION}-${BUILD_TS}";
 
 # Some cljs reacts on this environment variable for define more
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
 
-echo "Current path:"
-echo $PATH
-
-set -ex
 
 corepack enable;
 corepack install;
-yarn install || exit 1;
+yarn install;
 
 rm -rf target/dist;
 rm -rf resources/public;
@@ -37,7 +37,7 @@ yarn run build:app:main $EXTRA_PARAMS;
 yarn run build:app:libs;
 yarn run build:app:assets;
 
-sed -i "s/\.\/render.js/.\/render.js?version=$CURRENT_VERSION/g" resources/public/js/worker/main*.js
+sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js/worker/main*.js
 
 rsync -avr resources/public/ target/dist/
 

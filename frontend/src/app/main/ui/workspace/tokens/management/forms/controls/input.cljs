@@ -236,12 +236,14 @@
    (on-composite-input-change form field value false))
   ([form field value trim?]
    (letfn [(clean-errors [errors]
-             (-> errors
-                 (dissoc field)
-                 (not-empty)))]
+             (some-> errors
+                     (update :value #(when (map? %) (dissoc % field)))
+                     (update :value #(when (seq %) %))
+                     (not-empty)))]
      (swap! form (fn [state]
                    (-> state
                        (assoc-in [:data :value field] (if trim? (str/trim value) value))
+                       (assoc-in [:touched :value field] true)
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
@@ -256,6 +258,9 @@
 
         value
         (get-in @form [:data :value input-name] "")
+
+        touched?
+        (get-in @form [:touched :value input-name])
 
         resolve-stream
         (mf/with-memo [token]
@@ -284,7 +289,7 @@
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
         props
-        (if error
+        (if (and touched? error)
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message error)})
           props)
@@ -332,6 +337,7 @@
                                  message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
+                             (swap! form update :async-errors dissoc :reference)
                              (if (= input-value (str resolved-value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
