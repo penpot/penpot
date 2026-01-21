@@ -152,7 +152,9 @@
     :redis-cache
 
     ;; Activates the nitrate module
-    :nitrate})
+    :nitrate
+
+    :mcp})
 
 (def all-flags
   (set/union email login varia))

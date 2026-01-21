@@ -15,10 +15,9 @@
 
 .modal-container {
   @extend .modal-container-base;
-}
-
-.modal-header {
-  margin-bottom: deprecated.$s-24;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
 }
 
 .modal-title {
@@ -27,12 +26,13 @@
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  position: absolute;
+  top: var(--sp-m);
+  right: var(--sp-m);
 }
 
 .modal-content {
   @include deprecated.bodyLargeTypography;
-  margin-bottom: deprecated.$s-24;
 }
 
 .modal-item-element {
@@ -41,30 +41,16 @@
 
 .modal-component-icon {
   @include deprecated.flexCenter;
-  height: deprecated.$s-16;
-  width: deprecated.$s-16;
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--color);
-  }
+  color: var(--color-foreground-secondary);
 }
+
 .modal-component-name {
   @include deprecated.bodyLargeTypography;
+  color: var(--color-foreground-secondary);
 }
 
 .action-buttons {
   @extend .modal-action-btns;
-}
-
-.cancel-button {
-  @extend .modal-cancel-btn;
-}
-
-.accept-btn {
-  @extend .modal-accept-btn;
-  &.danger {
-    @extend .modal-danger-btn;
-  }
 }
 
 .modal-scd-msg,

@@ -102,7 +102,7 @@
 
 (t/deftest access-token-authz
   (let [profile (th/create-profile* 1)
-        token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token (:id profile) "test" nil)
+        token   (db/tx-run! th/*system* app.rpc.commands.access-token/create-access-token (:id profile) "test" nil nil)
         handler (#'app.http.access-token/wrap-authz identity th/*system*)]
 
     (let [response (handler nil)]
