@@ -1185,7 +1185,6 @@
                        {:cmd :export-shapes
                         :profile-id (:profile-id @st/state)
                         :wait true
-                        :skip-children (:skip-children value false)
                         :exports [{:file-id   file-id
                                    :page-id   page-id
                                    :object-id id

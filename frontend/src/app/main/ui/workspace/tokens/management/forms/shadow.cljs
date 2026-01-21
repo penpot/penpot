@@ -291,6 +291,7 @@
           [:color {:optional true} [:maybe :string]]
           [:color-result {:optional true} ::sm/any]
           [:inset {:optional true} [:maybe :boolean]]]]]
+
        (if (= active-tab :reference)
          [:reference {:optional false} ::sm/text]
          [:reference {:optional true} [:maybe :string]])]]

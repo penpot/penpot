@@ -105,13 +105,6 @@
         active-tab* (mf/use-state #(if (cft/is-reference? token) :reference :composite))
         active-tab (deref active-tab*)
 
-        on-toggle-tab
-        (mf/use-fn
-         (mf/deps)
-         (fn [new-tab]
-           (let [new-tab (keyword new-tab)]
-             (reset! active-tab* new-tab))))
-
         token
         (mf/with-memo [token]
           (or token {:type token-type}))
@@ -150,6 +143,17 @@
         form
         (fm/use-form :schema schema
                      :initial initial)
+
+        on-toggle-tab
+        (mf/use-fn
+         (mf/deps form)
+         (fn [new-tab]
+           (let [new-tab (keyword new-tab)]
+             (if (= new-tab :reference)
+               (swap! form assoc-in [:async-errors :reference]
+                      {:message "Need valid reference"})
+               (swap! form update :async-errors dissoc :reference))
+             (reset! active-tab* new-tab))))
 
         on-cancel
         (mf/use-fn
