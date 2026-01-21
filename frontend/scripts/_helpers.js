@@ -174,6 +174,7 @@ export async function watch(baseDir, predicate, callback) {
   const watcher = new Watcher(baseDir, {
     persistent: true,
     recursive: true,
+    debounce: 500
   });
 
   watcher.on("change", (path) => {
@@ -181,7 +182,18 @@ export async function watch(baseDir, predicate, callback) {
       callback(path);
     }
   });
+
+
+  watcher.on("error", (cause) => {
+    console.log("WATCHER ERROR", cause);
+  });
 }
+
+export async function ensureDirectories() {
+  await fs.mkdir("./resources/public/js/worker/", { recursive: true });
+  await fs.mkdir("./resources/public/css/", { recursive: true });
+}
+
 
 async function readManifestFile(resource) {
   const manifestPath = "resources/public/" + resource;
@@ -260,6 +272,9 @@ const markedOptions = {
 marked.use(markedOptions);
 
 export async function compileTranslations() {
+  const outputDir = "resources/public/js/";
+  await fs.mkdir(outputDir, { recursive: true });
+
   const langs = [
     "ar",
     "ca",
@@ -341,7 +356,6 @@ export async function compileTranslations() {
     }
 
     const esm = `export default ${JSON.stringify(result, null, 0)};\n`;
-    const outputDir = "resources/public/js/";
     const outputFile = ph.join(outputDir, "translation." + lang + ".js");
     await fs.writeFile(outputFile, esm);
   }
@@ -499,17 +513,43 @@ export async function compileStyles() {
 export async function compileSvgSprites() {
   const start = process.hrtime();
   log.info("init: compile svgsprite");
-  await generateSvgSprites();
+  let error = false;
+
+  try {
+    await generateSvgSprites();
+  } catch (cause) {
+    error = cause;
+  }
+
   const end = process.hrtime(start);
-  log.info("done: compile svgsprite", `(${ppt(end)})`);
+
+  if (error) {
+    log.error("error: compile svgsprite", `(${ppt(end)})`);
+    console.error(error);
+  } else {
+    log.info("done: compile svgsprite", `(${ppt(end)})`);
+  }
 }
 
 export async function compileTemplates() {
   const start = process.hrtime();
+  let error = false;
   log.info("init: compile templates");
-  await generateTemplates();
+
+  try {
+    await generateTemplates();
+  } catch (cause) {
+    error = cause;
+  }
+
   const end = process.hrtime(start);
-  log.info("done: compile templates", `(${ppt(end)})`);
+
+  if (error) {
+    log.error("error: compile templates", `(${ppt(end)})`);
+    console.error(error);
+  } else {
+    log.info("done: compile templates", `(${ppt(end)})`);
+  }
 }
 
 export async function compilePolyfills() {
