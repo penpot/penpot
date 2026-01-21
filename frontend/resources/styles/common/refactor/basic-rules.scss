@@ -700,19 +700,6 @@
   background-color: var(--menu-shortcut-background-color);
 }
 
-.user-icon {
-  @include flexCenter;
-  @include bodySmallTypography;
-  height: $s-24;
-  width: $s-24;
-  border-radius: $br-circle;
-  margin-left: calc(-1 * $s-4);
-  img {
-    border-radius: $br-circle;
-    border: $s-2 solid var(--user-count-foreground-color);
-  }
-}
-
 .mixed-bar {
   @include bodySmallTypography;
   display: flex;
