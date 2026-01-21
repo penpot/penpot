@@ -48,7 +48,7 @@
     "watch:app:main": "clojure -M:dev:shadow-cljs watch main worker storybook",
     "clear:shadow-cache": "rm -rf .shadow-cljs",
     "watch": "exit 0",
-    "watch:app": "yarn run clear:shadow-cache && concurrently --kill-others-on-fail \"yarn run watch:app:assets\" \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
+    "watch:app": "yarn run clear:shadow-cache && yarn run build:wasm && concurrently --kill-others-on-fail \"yarn run watch:app:assets\" \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
     "watch:storybook": "yarn run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\""
   },
   "devDependencies": {
