@@ -2168,9 +2168,7 @@ impl RenderState {
     }
 
     pub fn remove_cached_tile(&mut self, tile: tiles::Tile) {
-        let rect = self.get_aligned_tile_bounds(tile);
-        self.surfaces
-            .remove_cached_tile_surface(tile, rect, self.background_color);
+        self.surfaces.remove_cached_tile_surface(tile);
     }
 
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
@@ -2191,8 +2189,8 @@ impl RenderState {
             }
         }
 
-        // Update the changed tiles
-        self.surfaces.remove_cached_tiles(self.background_color);
+        // Invalidate changed tiles - old content stays visible until new tiles render
+        self.surfaces.remove_cached_tiles();
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
@@ -2238,8 +2236,8 @@ impl RenderState {
             }
         }
 
-        // Update the changed tiles
-        self.surfaces.remove_cached_tiles(self.background_color);
+        // Invalidate changed tiles - old content stays visible until new tiles render
+        self.surfaces.remove_cached_tiles();
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
