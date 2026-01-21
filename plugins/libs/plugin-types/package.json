@@ -1,6 +1,6 @@
 {
   "name": "@penpot/plugin-types",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "typings": "./index.d.ts",
   "type": "module"
 }

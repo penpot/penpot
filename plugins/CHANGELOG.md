@@ -1,3 +1,7 @@
+## 1.4.2 (2026-01-21)
+
+- **plugin-types:** fix atob/btoa functions
+
 ## 1.4.0 (2026-01-21)
 
 ### 🚀 Features
