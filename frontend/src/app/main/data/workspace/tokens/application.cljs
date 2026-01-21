@@ -534,10 +534,10 @@
               (set (filter attributes #{:r1 :r2 :r3 :r4}))
               page-id)))
 
-    (some attributes #{:strole-width})
+    (some attributes #{:stroke-width})
     (conj #(update-stroke-width
             value shape-ids
-            #{:strole-width}
+            #{:stroke-width}
             page-id))
     (some attributes #{:max-width :max-height})
     (conj #(update-layout-sizing-limits

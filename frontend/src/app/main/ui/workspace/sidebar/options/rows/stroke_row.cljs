@@ -216,7 +216,8 @@
     [:div {:class (stl/css-case
                    :stroke-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))}
+                   :dnd-over-bot (= (:over dprops) :bot))
+           :aria-label (str "stroke-row-" index)}
 
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
