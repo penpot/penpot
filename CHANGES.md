@@ -26,6 +26,7 @@
 - Fix incorrect default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
 - Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
 - Fix displaying a hidden user avatar when there is only one more [Taiga #13058](https://tree.taiga.io/project/penpot/issue/13058)
+- Fix unhandled exception on open-new-window helper [Github #7787](https://github.com/penpot/penpot/issues/7787)
 
 ## 2.13.0 (Unreleased)
 
