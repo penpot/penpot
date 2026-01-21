@@ -95,23 +95,19 @@
    Returns nil."
   [shape]
   (when wasm/context-initialized?
-    (let [;; Extract all properties from shape
-          id           (dm/get-prop shape :id)
+    (let [id           (dm/get-prop shape :id)
           parent-id    (get shape :parent-id)
           shape-type   (dm/get-prop shape :type)
 
-          ;; Boolean flags
           clip-content (if (= shape-type :frame)
                          (not (get shape :show-content))
                          false)
           hidden       (get shape :hidden false)
 
-          ;; Compute flags byte
           flags        (cond-> 0
                          clip-content (bit-or FLAG-CLIP-CONTENT)
                          hidden       (bit-or FLAG-HIDDEN))
 
-          ;; Enum values
           blend-mode   (sr/translate-blend-mode (get shape :blend-mode))
           constraint-h (let [c (get shape :constraints-h)]
                          (if (some? c)
@@ -122,7 +118,6 @@
                            (sr/translate-constraint-v c)
                            CONSTRAINT-NONE))
 
-          ;; Float values
           opacity      (d/nilv (get shape :opacity) 1.0)
           rotation     (d/nilv (get shape :rotation) 0.0)
 
@@ -193,7 +188,6 @@
       (.setFloat32 dview (+ offset 96) r3 true)
       (.setFloat32 dview (+ offset 100) r4 true)
 
-      ;; Call WASM function
       (h/call wasm/internal-module "_set_shape_base_props")
 
       nil)))

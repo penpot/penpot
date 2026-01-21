@@ -228,7 +228,7 @@ impl State {
     }
 
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
-        // No longer need unsafe lifetime extension - index-based storage is safe
+        // Index-based storage is safe
         self.render_state
             .rebuild_modifier_tiles(&mut self.shapes, ids);
     }

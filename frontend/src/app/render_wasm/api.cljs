@@ -69,12 +69,8 @@
 (def ^:const DEBOUNCE_DELAY_MS 100)
 (def ^:const THROTTLE_DELAY_MS 10)
 
-;; Async chunked processing constants
-;; SHAPES_CHUNK_SIZE: Number of shapes to process before yielding to browser
-;; Lower values = more responsive UI but slower total processing
-;; Higher values = faster total processing but may cause UI jank
+;; Number of shapes to process before yielding to browser
 (def ^:const SHAPES_CHUNK_SIZE 100)
-
 ;; Threshold below which we use synchronous processing (no chunking overhead)
 (def ^:const ASYNC_THRESHOLD 100)
 
@@ -188,20 +184,6 @@
     ;; This ensures shapes are displayed even if no deferred render was requested
     (when was-loading
       (request-render "set-objects:flush"))))
-
-(defn- request-progressive-render!
-  ([reason]
-   (let [was-loading? @shapes-loading?]
-     (if was-loading?
-       (do
-         (reset! shapes-loading? false)
-         (try
-           (request-render reason)
-           (finally
-             (reset! shapes-loading? was-loading?))))
-       (request-render reason))))
-  ([]
-   (request-progressive-render! "set-objects:chunk")))
 
 (declare get-text-dimensions)
 
@@ -982,9 +964,6 @@
         svg-attrs    (get shape :svg-attrs)
         shadows      (get shape :shadow)]
 
-    ;; Batched call: sets id, parent_id, type, clip_content, hidden, blend_mode,
-    ;; constraints, opacity, rotation, transform, selrect, and corners in one WASM call.
-    ;; This replaces 12+ individual WASM calls with a single batched operation.
     (shapes/set-shape-base-props shape)
 
     ;; Remaining properties that need separate calls (variable-length or conditional)
@@ -1090,12 +1069,11 @@
    then does a full tile-based render at the end."
   [shapes render-callback]
   (let [total-shapes (count shapes)
-        ;; Calculate how many chunks we'll process
-        total-chunks (js/Math.ceil (/ total-shapes SHAPES_CHUNK_SIZE))
+        total-chunks (mth/ceil (/ total-shapes SHAPES_CHUNK_SIZE))
         ;; Render at 25%, 50%, 75% of loading
-        render-at-chunks (set [(js/Math.floor (* total-chunks 0.25))
-                               (js/Math.floor (* total-chunks 0.5))
-                               (js/Math.floor (* total-chunks 0.75))])]
+        render-at-chunks (set [(mth/floor (* total-chunks 0.25))
+                               (mth/floor (* total-chunks 0.5))
+                               (mth/floor (* total-chunks 0.75))])]
     (p/create
      (fn [resolve _reject]
        (letfn [(process-next-chunk [index thumbnails-acc full-acc chunk-count]
@@ -1124,7 +1102,6 @@
                                           (render-finish))
                                         (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
                                         (resolve nil))))))]
-         ;; Start processing
          (process-next-chunk 0 [] [] 0))))))
 
 (defn- set-objects-sync
@@ -1154,7 +1131,6 @@
    maintaining proper shape reference consistency in WASM."
   [objects]
   ;; Get IDs in tree order starting from root (uuid/zero)
-  ;; cfh/get-children-ids-with-self returns [root-id, child1-id, grandchild1-id, ...]
   (let [ordered-ids (cfh/get-children-ids-with-self objects uuid/zero)]
     (into []
           (keep #(get objects %))
@@ -1163,11 +1139,8 @@
 (defn set-objects
   "Set all shape objects for rendering.
 
-   IMPORTANT: Shapes are processed in tree order (parents before children)
-   to maintain proper shape reference consistency in WASM.
-
-   NOTE: Async processing uses render gating to avoid race conditions with
-   requestAnimationFrame renders during loading."
+   Shapes are processed in tree order (parents before children)
+   to maintain proper shape reference consistency in WASM."
   ([objects]
    (set-objects objects nil))
   ([objects render-callback]

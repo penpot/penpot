@@ -27,7 +27,6 @@ use super::RawShapeType;
 /// | 88     | 16   | corners      | 4 × f32 LE (r1,r2,r3,r4)          |
 /// |--------|------|--------------|-----------------------------------|
 /// | Total  | 104  |              |                                   |
-
 pub const BASE_PROPS_SIZE: usize = 104;
 
 const FLAG_CLIP_CONTENT: u8 = 0b0000_0001;
@@ -67,12 +66,6 @@ fn read_uuid(bytes: &[u8], offset: usize) -> Uuid {
     )
 }
 
-/// Sets base shape properties from a pre-allocated buffer in a single WASM call.
-///
-/// This replaces multiple individual WASM calls (use_shape, set_parent, set_shape_type,
-/// set_shape_clip_content, set_shape_rotation, set_shape_transform, set_shape_blend_mode,
-/// set_shape_opacity, set_shape_hidden, set_shape_selrect, set_shape_corners,
-/// set_shape_constraints) with a single batched call.
 #[no_mangle]
 pub extern "C" fn set_shape_base_props() {
     let bytes = mem::bytes();
