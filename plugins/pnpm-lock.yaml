@@ -230,7 +230,7 @@ importers:
   libs/plugins-runtime:
     dependencies:
       '@penpot/plugin-types':
-        specifier: ^1.4.0
+        specifier: ^1.4.2
         version: link:../plugin-types
       ses:
         specifier: ^1.1.0

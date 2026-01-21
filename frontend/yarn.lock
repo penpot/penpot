@@ -1191,21 +1191,21 @@ __metadata:
   languageName: node
   linkType: soft
 
-"@penpot/plugin-types@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "@penpot/plugin-types@npm:1.4.0"
-  checksum: 10c0/bd97a17e7083efa307260dcaec841596012ae65964a947738a6ef5d6114b161616f3cf83fa21ed7ede322334c25f1c3cd4027a5409ce336f40455681a4ea192d
+"@penpot/plugin-types@npm:^1.4.2":
+  version: 1.4.2
+  resolution: "@penpot/plugin-types@npm:1.4.2"
+  checksum: 10c0/b0972fe75c97e697eb1044c89db660393886b3c30676f8436ff4ab56c5bf0397b2c675697ae1b9c5fe40bc95a803aecf6d7ac356dbf6d3535bf8baec5d05eab1
   languageName: node
   linkType: hard
 
-"@penpot/plugins-runtime@npm:1.4.0":
-  version: 1.4.0
-  resolution: "@penpot/plugins-runtime@npm:1.4.0"
+"@penpot/plugins-runtime@npm:1.4.2":
+  version: 1.4.2
+  resolution: "@penpot/plugins-runtime@npm:1.4.2"
   dependencies:
-    "@penpot/plugin-types": "npm:^1.4.0"
+    "@penpot/plugin-types": "npm:^1.4.2"
     ses: "npm:^1.1.0"
     zod: "npm:^3.22.4"
-  checksum: 10c0/497c36c8e0edb7bc8e5ca60ab89fbc0f63e96adab6733bd7244df53921395e31743f37f9a28e57139009d1c65bee181f972f23bc821d2c1e0f05ce610b473ac1
+  checksum: 10c0/af084d906cce9a6dea956fe5420111d7ea37c7620737a1e3d4f12958cb302a8f697c1229c237107c28fbb3b9f37eee308e6d16262b04ad56ae6f76c7a12f12e5
   languageName: node
   linkType: hard
 
@@ -4176,7 +4176,7 @@ __metadata:
   dependencies:
     "@penpot/draft-js": "portal:./packages/draft-js"
     "@penpot/mousetrap": "portal:./packages/mousetrap"
-    "@penpot/plugins-runtime": "npm:1.4.0"
+    "@penpot/plugins-runtime": "npm:1.4.2"
     "@penpot/svgo": "penpot/svgo#v3.2"
     "@penpot/text-editor": "portal:./text-editor"
     "@playwright/test": "npm:1.57.0"

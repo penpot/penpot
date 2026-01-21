@@ -1,8 +1,8 @@
 {
   "name": "@penpot/plugins-runtime",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "dependencies": {
-    "@penpot/plugin-types": "^1.4.0",
+    "@penpot/plugin-types": "^1.4.2",
     "ses": "^1.1.0",
     "zod": "^3.22.4"
   },
