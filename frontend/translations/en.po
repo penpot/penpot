@@ -344,7 +344,7 @@ msgstr "Copied token"
 
 #: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
-msgstr "Generate new token"
+msgstr "Create new access token"
 
 #: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
@@ -352,7 +352,7 @@ msgstr "Access token created successfully."
 
 #: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Press the button \"Generate new token\" to generate one."
+msgstr "Press the button \"Create new access token\" to generate one."
 
 #: src/app/main/ui/settings/access_tokens.cljs:285
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -2474,6 +2474,10 @@ msgstr "Info"
 msgid "labels.installed-fonts"
 msgstr "Installed fonts"
 
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.integrations"
+msgstr "Integrations"
+
 #: src/app/main/ui/static.cljs:396
 msgid "labels.internal-error.desc-message-first"
 msgstr "Something bad happened."
@@ -3150,13 +3154,13 @@ msgstr "Name"
 msgid "modals.create-access-token.name.placeholder"
 msgstr "The name can help to know what's the token for"
 
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Create token"
-
 #: src/app/main/ui/settings/access_tokens.cljs:111
 msgid "modals.create-access-token.title"
-msgstr "Generate access token"
+msgstr "Create access token"
+
+#: src/app/main/ui/settings/access_tokens.cljs:111
+msgid "modals.create-access-token.title.created"
+msgstr "Access token created"
 
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
@@ -5079,13 +5083,13 @@ msgstr "Shared Libraries - %s - Penpot"
 msgid "title.default"
 msgstr "Penpot - Design Freedom for Teams"
 
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Profile - Access tokens"
-
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Give feedback - Penpot"
+
+#: src/app/main/ui/settings/access_tokens.cljs:278
+msgid "title.settings.integrations"
+msgstr "Integrations - Penpot"
 
 #: src/app/main/ui/settings/notifications.cljs:45
 msgid "title.settings.notifications"
