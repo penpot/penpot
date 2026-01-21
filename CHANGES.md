@@ -35,6 +35,8 @@
 - Remove whitespaces from asset export filename [Github #8133](https://github.com/penpot/penpot/pull/8133)
 - Fix exception on uploading large fonts [Github #8135](https://github.com/penpot/penpot/pull/8135)
 - Fix unhandled exception on open-new-window helper [Github #7787](https://github.com/penpot/penpot/issues/7787)
+- Fix incorrect handling of input values on layout gap and padding inputs [Github #8113](https://github.com/penpot/penpot/issues/8113)
+
 
 ## 2.12.1
 
