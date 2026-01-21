@@ -28,6 +28,7 @@
    [app.main.ui.shapes.text]
    [app.main.worker :as mw]
    [app.render-wasm.api.fonts :as f]
+   [app.render-wasm.api.shapes :as shapes]
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
@@ -895,24 +896,12 @@
         id           (dm/get-prop shape :id)
         type         (dm/get-prop shape :type)
 
-        parent-id    (get shape :parent-id)
         masked       (get shape :masked-group)
-        selrect      (get shape :selrect)
-        constraint-h (get shape :constraints-h)
-        constraint-v (get shape :constraints-v)
-        clip-content (if (= type :frame)
-                       (not (get shape :show-content))
-                       false)
-        rotation     (get shape :rotation)
-        transform    (get shape :transform)
 
         fills        (get shape :fills)
         strokes      (if (= type :group)
                        [] (get shape :strokes))
         children     (get shape :shapes)
-        blend-mode   (get shape :blend-mode)
-        opacity      (get shape :opacity)
-        hidden       (get shape :hidden)
         content      (let [content (get shape :content)]
                        (if (= type :text)
                          (ensure-text-content content)
@@ -921,22 +910,15 @@
         grow-type    (get shape :grow-type)
         blur         (get shape :blur)
         svg-attrs    (get shape :svg-attrs)
-        shadows      (get shape :shadow)
-        corners      (map #(get shape %) [:r1 :r2 :r3 :r4])]
+        shadows      (get shape :shadow)]
 
-    (use-shape id)
-    (set-parent-id parent-id)
-    (set-shape-type type)
-    (set-shape-clip-content clip-content)
-    (set-shape-constraints constraint-h constraint-v)
+    ;; Batched call: sets id, parent_id, type, clip_content, hidden, blend_mode,
+    ;; constraints, opacity, rotation, transform, selrect, and corners in one WASM call.
+    ;; This replaces 12+ individual WASM calls with a single batched operation.
+    (shapes/set-shape-base-props shape)
 
-    (set-shape-rotation rotation)
-    (set-shape-transform transform)
-    (set-shape-blend-mode blend-mode)
-    (set-shape-opacity opacity)
-    (set-shape-hidden hidden)
+    ;; Remaining properties that need separate calls (variable-length or conditional)
     (set-shape-children children)
-    (set-shape-corners corners)
     (set-shape-blur blur)
     (when (= type :group)
       (set-masked (boolean masked)))
@@ -956,7 +938,6 @@
 
     (set-shape-layout shape)
     (set-layout-data shape)
-    (set-shape-selrect selrect)
 
     (let [pending_thumbnails (into [] (concat
                                        (set-shape-text-content id content)
