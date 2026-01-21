@@ -193,11 +193,11 @@
         restore-fn
         (fn [_]
           (st/emit! (dd/restore-files-immediately
-                     (with-meta {:team-id (:id current-team)
+                     (with-meta {:team-id current-team-id
                                  :ids (into #{} d/xf:map-id files)}
                        {:on-success #(st/emit! (ntf/success (tr "dashboard.restore-success-notification" (:name file)))
-                                               (dd/fetch-projects (:id current-team))
-                                               (dd/fetch-deleted-files (:id current-team)))
+                                               (dd/fetch-projects current-team-id)
+                                               (dd/fetch-deleted-files current-team-id))
                         :on-error #(st/emit! (ntf/error (tr "dashboard.errors.error-on-restore-file" (:name file))))}))))
 
         on-restore-immediately
@@ -214,7 +214,7 @@
         on-delete-immediately
         (fn []
           (let [accept-fn #(st/emit! (dd/delete-files-immediately
-                                      {:team-id (:id current-team)
+                                      {:team-id current-team-id
                                        :ids (into #{} d/xf:map-id files)}))]
             (st/emit!
              (modal/show {:type :confirm
@@ -244,8 +244,7 @@
            (for [project current-projects]
              {:name (get-project-name project)
               :id (get-project-id project)
-              :handler (on-move (:id current-team)
-                                (:id project))})
+              :handler (on-move current-team-id (:id project))})
            (when (seq other-teams)
              [{:name (tr "dashboard.move-to-other-team")
                :id "move-to-other-team"
