@@ -230,8 +230,8 @@ importers:
   libs/plugins-runtime:
     dependencies:
       '@penpot/plugin-types':
-        specifier: ^1.3.2
-        version: 1.3.2
+        specifier: ^1.4.0
+        version: link:../plugin-types
       ses:
         specifier: ^1.1.0
         version: 1.14.0
@@ -4199,12 +4199,6 @@ packages:
         integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==,
       }
     engines: { node: '>= 10.0.0' }
-
-  '@penpot/plugin-types@1.3.2':
-    resolution:
-      {
-        integrity: sha512-f0kmmZaFNs9sGtSmqmSJQYCs5Qt+KYgTD8RneUjL+Dv+zfNQnd5e4L+iHSYFJ4HWvcDvTiK7F/gya7PwMTu7WA==,
-      }
 
   '@phenomnomnominal/tsquery@5.0.1':
     resolution:
@@ -13194,6 +13188,7 @@ packages:
         integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==,
       }
     engines: { node: '>=10' }
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   tar@7.5.2:
     resolution:
@@ -13201,6 +13196,7 @@ packages:
         integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==,
       }
     engines: { node: '>=18' }
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   terser-webpack-plugin@5.3.16:
     resolution:
@@ -18202,8 +18198,6 @@ snapshots:
       '@parcel/watcher-win32-ia32': 2.5.1
       '@parcel/watcher-win32-x64': 2.5.1
     optional: true
-
-  '@penpot/plugin-types@1.3.2': {}
 
   '@phenomnomnominal/tsquery@5.0.1(typescript@5.6.3)':
     dependencies:
