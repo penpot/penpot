@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
-import { presenceFixture } from "../../data/workspace/ws-notifications";
+import { presenceFixture, joinFixture2, joinFixture3 } from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
@@ -38,6 +38,28 @@ test("User receives presence notifications updates in the workspace", async ({
   await expect(
     page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
   ).toHaveCount(2);
+});
+
+test("BUG 13058 - Presence list shows up to 3 user avatars", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.sendPresenceMessage(presenceFixture);
+  await workspacePage.sendPresenceMessage(joinFixture2);
+
+  await expect(
+    page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
+  ).toHaveCount(3);
+
+  await workspacePage.sendPresenceMessage(joinFixture3);
+  await expect(
+    page.getByTestId("active-users-list").getByAltText("Princesa Leia"),
+  ).toHaveCount(2);
+
+  await expect(page.getByTestId("active-users-list").getByText("+2")).toBeVisible();
 });
 
 test("User draws a rect", async ({ page }) => {

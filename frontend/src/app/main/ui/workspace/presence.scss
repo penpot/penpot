@@ -16,6 +16,7 @@
   margin: 0;
   padding: 0 deprecated.$s-4;
   border-radius: deprecated.$br-8;
+
   .active-users-list {
     display: flex;
     flex-direction: row-reverse;
@@ -26,9 +27,10 @@
       @extend .user-icon;
       background-color: var(--user-count-background-color);
       color: var(--user-count-foreground-color);
-      z-index: deprecated.$z-index-2;
+      z-index: deprecated.$z-index-3;
       border: deprecated.$s-2 solid var(--user-count-foreground-color);
     }
+
     .session-icon {
       @extend .user-icon;
     }
@@ -43,8 +45,10 @@
   margin: calc(-1 * deprecated.$s-2) calc(-1 * deprecated.$s-4) 0 0;
   background-color: var(--menu-background-color);
   z-index: deprecated.$z-index-4;
+
   .active-users-list {
     gap: deprecated.$s-4;
+
     .users-num,
     .session-icon {
       margin-left: 0;
