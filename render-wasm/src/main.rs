@@ -192,6 +192,20 @@ pub extern "C" fn render_from_cache(_: i32) {
 }
 
 #[no_mangle]
+pub extern "C" fn set_preview_mode(enabled: bool) {
+    with_state_mut!(state, {
+        state.render_state.set_preview_mode(enabled);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn render_preview() {
+    with_state_mut!(state, {
+        state.render_preview(performance::get_time());
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn process_animation_frame(timestamp: i32) {
     let result = std::panic::catch_unwind(|| {
         with_state_mut!(state, {

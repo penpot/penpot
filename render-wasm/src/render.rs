@@ -294,6 +294,8 @@ pub(crate) struct RenderState {
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
     /// `with_nested_blurs_suppressed` to ensure it's always restored.
     pub ignore_nested_blurs: bool,
+    /// Preview render mode - when true, uses simplified rendering for progressive loading
+    pub preview_mode: bool,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -366,6 +368,7 @@ impl RenderState {
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
+            preview_mode: false,
         }
     }
 
@@ -484,6 +487,10 @@ impl RenderState {
 
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.background_color = color;
+    }
+
+    pub fn set_preview_mode(&mut self, enabled: bool) {
+        self.preview_mode = enabled;
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -1127,6 +1134,25 @@ impl RenderState {
         performance::end_timed_log!("render_from_cache", _start);
     }
 
+    /// Render a preview of the shapes during loading.
+    /// This rebuilds tiles for touched shapes and renders synchronously.
+    pub fn render_preview(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<(), String> {
+        let _start = performance::begin_timed_log!("render_preview");
+        performance::begin_measure!("render_preview");
+
+        // Skip tile rebuilding during preview - we'll do it at the end
+        // Just rebuild tiles for touched shapes and render synchronously
+        self.rebuild_touched_tiles(tree);
+
+        // Use the sync render path
+        self.start_render_loop(None, tree, timestamp, true)?;
+
+        performance::end_measure!("render_preview");
+        performance::end_timed_log!("render_preview", _start);
+
+        Ok(())
+    }
+
     pub fn start_render_loop(
         &mut self,
         base_object: Option<&Uuid>,
@@ -1622,10 +1648,11 @@ impl RenderState {
 
             is_empty = false;
 
-            let element = tree.get(&node_id).ok_or(format!(
-                "Error: Element with root_id {} not found in the tree.",
-                node_render_state.id
-            ))?;
+            let Some(element) = tree.get(&node_id) else {
+                // The shape isn't available yet (likely still streaming in from WASM).
+                // Skip it for this pass; a subsequent render will pick it up once present.
+                continue;
+            };
             let scale = self.get_scale();
             let mut extrect: Option<Rect> = None;
 

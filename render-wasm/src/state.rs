@@ -223,6 +223,10 @@ impl State {
         self.render_state.rebuild_touched_tiles(&self.shapes);
     }
 
+    pub fn render_preview(&mut self, timestamp: i32) {
+        let _ = self.render_state.render_preview(&self.shapes, timestamp);
+    }
+
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
         // No longer need unsafe lifetime extension - index-based storage is safe
         self.render_state
