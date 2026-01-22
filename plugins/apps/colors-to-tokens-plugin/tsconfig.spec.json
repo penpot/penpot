@@ -8,7 +8,9 @@
       "vite/client",
       "node",
       "vitest"
-    ]
+    ],
+    "moduleResolution": "bundler",
+    "isolatedModules": true
   },
   "include": [
     "vite.config.ts",
