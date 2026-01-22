@@ -421,10 +421,9 @@ impl Surfaces {
             .draw_image_rect(&image, None, rect, &skia::Paint::default());
     }
 
-    pub fn remove_cached_tiles(&mut self) {
-        // New tiles will overwrite old content atomically when rendered,
-        // preventing flickering during bulk invalidation.
+    pub fn remove_cached_tiles(&mut self, color: skia::Color) {
         self.tiles.clear();
+        self.cache.canvas().clear(color);
     }
 
     pub fn gc(&mut self) {

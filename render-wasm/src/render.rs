@@ -1770,7 +1770,9 @@ impl RenderState {
                         if !matches!(element.shape_type, Type::Bool(_)) {
                             // Nested shapes shadowing - apply black shadow to child shapes too
                             for shadow_shape_id in element.children.iter() {
-                                let shadow_shape = tree.get(shadow_shape_id).unwrap();
+                                let Some(shadow_shape) = tree.get(shadow_shape_id) else {
+                                    continue;
+                                };
                                 if shadow_shape.hidden {
                                     continue;
                                 }
@@ -2190,7 +2192,7 @@ impl RenderState {
         }
 
         // Invalidate changed tiles - old content stays visible until new tiles render
-        self.surfaces.remove_cached_tiles();
+        self.surfaces.remove_cached_tiles(self.background_color);
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
@@ -2237,7 +2239,7 @@ impl RenderState {
         }
 
         // Invalidate changed tiles - old content stays visible until new tiles render
-        self.surfaces.remove_cached_tiles();
+        self.surfaces.remove_cached_tiles(self.background_color);
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
