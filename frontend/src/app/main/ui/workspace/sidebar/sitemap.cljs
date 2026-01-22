@@ -61,7 +61,7 @@
 
 (mf/defc page-item
   {::mf/wrap-props false}
-  [{:keys [page index deletable? selected? editing? hovering?]}]
+  [{:keys [page index deletable? selected? editing? hovering? current-page-id]}]
   (let [input-ref    (mf/use-ref)
         id           (:id page)
         delete-fn    (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
@@ -72,8 +72,10 @@
         (mf/use-fn
          (mf/deps id)
          (fn []
-           ;; when using the wasm renderer, apply a blur effect to the viewport canvas
-           (if (features/active-feature? @st/state "render-wasm/v1")
+           ;; For the wasm renderer, apply a blur effect to the viewport canvas
+           ;; when we navigate to a different page.
+           (if (and (features/active-feature? @st/state "render-wasm/v1")
+                    (not= id current-page-id))
              (do
                (wasm.api/capture-canvas-pixels)
                (wasm.api/apply-canvas-blur)
@@ -203,12 +205,13 @@
 
 (mf/defc page-item-wrapper
   {::mf/wrap-props false}
-  [{:keys [page-id index deletable? selected? editing?]}]
+  [{:keys [page-id index deletable? selected? editing? current-page-id]}]
   (let [page-ref (mf/with-memo [page-id]
                    (make-page-ref page-id))
         page     (mf/deref page-ref)]
     [:& page-item {:page page
                    :index index
+                   :current-page-id current-page-id
                    :deletable? deletable?
                    :selected? selected?
                    :editing? editing?}]))
@@ -231,6 +234,7 @@
           :deletable? deletable?
           :editing? (= page-id editing-page-id)
           :selected? (= page-id current-page-id)
+          :current-page-id current-page-id
           :key page-id}])]]))
 
 ;; --- Sitemap Toolbox
