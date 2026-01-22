@@ -1131,10 +1131,28 @@
    maintaining proper shape reference consistency in WASM."
   [objects]
   ;; Get IDs in tree order starting from root (uuid/zero)
-  (let [ordered-ids (cfh/get-children-ids-with-self objects uuid/zero)]
-    (into []
-          (keep #(get objects %))
-          ordered-ids)))
+  ;; If root doesn't exist (e.g., filtered thumbnail data), fall back to
+  ;; finding top-level shapes (those without a parent in objects) and
+  ;; traversing from there.
+  (if (contains? objects uuid/zero)
+    ;; Normal case: traverse from root
+    (let [ordered-ids (cfh/get-children-ids-with-self objects uuid/zero)]
+      (into []
+            (keep #(get objects %))
+            ordered-ids))
+    ;; Fallback for filtered data (thumbnails): find top-level shapes and traverse
+    (let [;; Find shapes whose parent is not in the objects map (top-level in this subset)
+          top-level-ids (->> (vals objects)
+                             (filter (fn [shape]
+                                       (not (contains? objects (:parent-id shape)))))
+                             (map :id))
+          ;; Get all children in order for each top-level shape
+          all-ordered-ids (into []
+                                (mapcat #(cfh/get-children-ids-with-self objects %))
+                                top-level-ids)]
+      (into []
+            (keep #(get objects %))
+            all-ordered-ids))))
 
 (defn set-objects
   "Set all shape objects for rendering.
