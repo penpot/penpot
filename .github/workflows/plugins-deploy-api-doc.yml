@@ -7,16 +7,22 @@ on:
       - staging
       - main
     paths:
-      - "plugins/**"
-      - ".github/workflows/deploy-plugin-docs.yml"
-      - "wrangle-penpot-plugins-api-doc.toml"
+      - "plugins/libs/plugin-types/index.d.ts"
+      - "plugins/libs/plugin-types/REAME.md"
+      - "plugins/tools/typedoc.css"
+      - "plugins/CHANGELOG.md"
+      - "plugins/wrangle-penpot-plugins-api-doc.toml"
   workflow_dispatch:
     inputs:
       gh_ref:
-        description: 'Name of the branch or ref'
-        type: string
+        description: 'Name of the branch'
+        type: choice
         required: true
         default: 'develop'
+        options:
+          - develop
+          - staging
+          - main
 
 permissions:
   contents: read
@@ -24,9 +30,6 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: plugins
     steps:
       - name: Extract some useful variables
         id: vars
@@ -39,20 +42,44 @@ jobs:
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
+      # START: Setup Node and PNPM enabling cache
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          cache: "pnpm"
+          node-version-file: .nvmrc
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Enable PNPM
+        working-directory: ./plugins
+        shell: bash
+        run: |
+          corepack enable;
+          corepack install;
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        working-directory: ./plugins
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
         with:
-          run_install: false
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      # END: Setup Node and PNPM enabling cache
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install deps
+        working-directory: ./plugins
+        shell: bash
+        run: |
+          pnpm install --no-frozen-lockfile;
+          pnpm add -D -w wrangler@latest;
 
       - name: Build docs
+        working-directory: plugins
+        shell: bash
         run: pnpm run build:doc
 
       - name: Select Worker name
@@ -68,6 +95,7 @@ jobs:
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
+          workingDirectory: plugins
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --config wrangle-penpot-plugins-api-doc.toml --name ${{ env.WORKER_NAME }}
