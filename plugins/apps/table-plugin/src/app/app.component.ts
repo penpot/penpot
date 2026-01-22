@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+
 import type {
   Cell,
   PluginMessageEvent,
@@ -12,7 +12,7 @@ import { filter, fromEvent, map, merge, take } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, FormGroup } from '@angular/forms';
 
 @Component({
-  imports: [RouterModule, CommonModule, ReactiveFormsModule],
+  imports: [RouterModule, ReactiveFormsModule],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',

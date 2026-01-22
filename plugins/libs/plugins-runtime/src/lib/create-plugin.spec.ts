@@ -16,7 +16,7 @@ vi.mock('./create-sandbox.js', () => ({
 describe('createPlugin', () => {
   let mockContext: Context;
   let manifest: Manifest;
-  let onCloseCallback: ReturnType<typeof vi.fn>;
+  let onCloseCallback: () => void;
   let mockPluginManager: Awaited<ReturnType<typeof createPluginManager>>;
   let mockSandbox: ReturnType<typeof createSandbox>;
 

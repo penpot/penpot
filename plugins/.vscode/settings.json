@@ -1,3 +1,5 @@
 {
-  "prettier.singleQuote": true
+  "prettier.singleQuote": true,
+  "editor.defaultFormatter": "prettier.prettier-vscode",
+  "editor.formatOnSave": true
 }

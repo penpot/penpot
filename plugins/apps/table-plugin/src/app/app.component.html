@@ -1,17 +1,19 @@
 <div [formGroup]="form">
   <p class="text body-s">Import a data file (CSV)</p>
-  <div class="error" *ngIf="fileError">
-    <img
-      class="close-icon"
-      (click)="clearError()"
-      src="../assets/close.svg"
-      alt="close error"
-    />
-    <span class="message body-s"
-      >Something was wrong. <br />
-      Make sure the formst is .csv</span
-    >
-  </div>
+  @if (fileError) {
+    <div class="error">
+      <img
+        class="close-icon"
+        (click)="clearError()"
+        src="../assets/close.svg"
+        alt="close error"
+      />
+      <span class="message body-s"
+        >Something was wrong. <br />
+        Make sure the formst is .csv</span
+      >
+    </div>
+  }
   <div class="input-container">
     <input
       type="file"
@@ -25,9 +27,11 @@
   <hr />
   <div class="new-table">
     <p class="text body-s">Or create a new table</p>
-    <span *ngIf="selectedColumn && selectedRow !== 0" class="tag"
-      >{{ selectedRow }} rows x {{ selectedColumn }} cols</span
-    >
+    @if (selectedColumn && selectedRow !== 0) {
+      <span class="tag"
+        >{{ selectedRow }} rows x {{ selectedColumn }} cols</span
+      >
+    }
   </div>
 
   <div class="checkbox-container">
@@ -73,21 +77,22 @@
   </div>
 
   <div class="table-grid">
-    <span
-      class="cell"
-      *ngFor="let cell of cells; index as i"
-      (mouseenter)="setColRow(i)"
-      (mouseleave)="clearColRow()"
-      (click)="createTable(i)"
-    >
+    @for (cell of cells; track cell; let i = $index) {
       <span
-        class="square"
-        [class.active]="
-          selectedCell &&
-          selectedCell.column >= getCellColRow(i).column &&
-          selectedCell.row >= getCellColRow(i).row
-        "
-      ></span>
-    </span>
+        class="cell"
+        (mouseenter)="setColRow(i)"
+        (mouseleave)="clearColRow()"
+        (click)="createTable(i)"
+      >
+        <span
+          class="square"
+          [class.active]="
+            selectedCell &&
+            selectedCell.column >= getCellColRow(i).column &&
+            selectedCell.row >= getCellColRow(i).row
+          "
+        ></span>
+      </span>
+    }
   </div>
 </div>
