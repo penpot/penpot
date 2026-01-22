@@ -90,7 +90,8 @@
         instance
         (dwt/create-editor editor-node canvas-node options)
 
-        update-name? (nil? content)
+        ;; Store original content to compare name later
+        original-content content
 
         on-key-up
         (fn [event]
@@ -101,10 +102,22 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content
-                                                        :update-name? update-name?
-                                                        :name (gen-name instance)
-                                                        :finalize? true)))
+            (let [state @st/state
+                  objects (dsh/lookup-page-objects state)
+                  shape (get objects shape-id)
+                  current-name (:name shape)
+                  generated-name (gen-name instance)
+                  ;; Update name if: (1) it's a new shape (nil original content), or
+                  ;; (2) the current name matches the generated name from original content
+                  ;; (meaning it was never manually renamed)
+                  update-name? (or (nil? original-content)
+                                   (and (some? current-name)
+                                        (some? original-content)
+                                        (= current-name (txt/generate-shape-name (txt/content->text original-content)))))]
+              (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                          :update-name? update-name?
+                                                          :name generated-name
+                                                          :finalize? true))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))
