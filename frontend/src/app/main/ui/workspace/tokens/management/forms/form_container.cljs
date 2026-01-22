@@ -23,19 +23,20 @@
   (let [token-type
         (or (:type token) token-type)
 
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
         token-path
         (mf/with-memo [token]
           (cft/token-name->path (:name token)))
 
-        all-tokens (mf/deref refs/workspace-all-tokens-map)
-
-        all-tokens
-        (mf/with-memo [token-path all-tokens]
-          (-> (ctob/tokens-tree all-tokens)
+        tokens-tree-in-selected-set
+        (mf/with-memo [token-path tokens-in-selected-set]
+          (-> (ctob/tokens-tree tokens-in-selected-set)
               (d/dissoc-in token-path)))
         props
         (mf/spread-props props {:token-type token-type
-                                :all-token-tree all-tokens
+                                :tokens-tree-in-selected-set tokens-tree-in-selected-set
                                 :token token})
         text-case-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
         text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})

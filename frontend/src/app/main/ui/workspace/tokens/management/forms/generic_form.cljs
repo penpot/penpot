@@ -86,7 +86,7 @@
            action
            is-create
            selected-token-set-id
-           all-token-tree
+           tokens-tree-in-selected-set
            token-type
            make-schema
            input-component
@@ -111,8 +111,7 @@
 
         token-title (str/lower (:title token-properties))
 
-        tokens
-        (mf/deref refs/workspace-active-theme-sets-tokens)
+        tokens (mf/deref refs/workspace-all-tokens-map)
 
         tokens
         (mf/with-memo [tokens token]
@@ -124,8 +123,8 @@
             (assoc (:name token) token)))
 
         schema
-        (mf/with-memo [all-token-tree active-tab]
-          (make-schema all-token-tree active-tab))
+        (mf/with-memo [tokens-tree-in-selected-set active-tab]
+          (make-schema tokens-tree-in-selected-set active-tab))
 
         initial
         (mf/with-memo [token]
@@ -208,11 +207,11 @@
                                             :value (:value valid-token)
                                             :description description}))
                       (dwtp/propagate-workspace-tokens)
-                      (modal/hide)))))
-             (fn [{:keys [errors]}]
-               (let [error-messages (wte/humanize-errors errors)
-                     error-message (first error-messages)]
-                 (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))]
+                      (modal/hide)))
+                   (fn [{:keys [errors]}]
+                     (let [error-messages (wte/humanize-errors errors)
+                           error-message (first error-messages)]
+                       (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))))]
 
     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form
