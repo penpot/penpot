@@ -151,6 +151,8 @@ void main() {
       (.clear ^js context (.-DEPTH_BUFFER_BIT ^js context))
       (.clear ^js context (.-STENCIL_BUFFER_BIT ^js context)))
     (dom/set-style! wasm/canvas "filter" "none")
+    (let [controls-to-unblur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
+      (run! #(dom/set-style! % "filter" "none") controls-to-unblur))
     (set! wasm/canvas-pixels nil)))
 
 (defn capture-canvas-pixels

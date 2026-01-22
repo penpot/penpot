@@ -252,7 +252,7 @@
         edition        (mf/deref refs/selected-edition)
         grid-edition?  (ctl/grid-layout? objects edition)]
 
-    [:g.frame-titles
+    [:g.frame-titles.blurrable
      (for [{:keys [id parent-id] :as shape} shapes]
        (when (and
               (not= id uuid/zero)
