@@ -17,7 +17,8 @@
     "paths": {
       "@penpot/plugin-types": ["libs/plugin-types/index.d.ts"],
       "plugins-runtime": ["libs/plugins-runtime/src/index.ts"],
-      "plugins-styles/*": ["libs/plugins-styles/src/*"]
+      "plugins-styles/*": ["libs/plugins-styles/src/*"],
+      "ui": ["libs/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
