@@ -21,7 +21,7 @@
   (let [on-click
         (mf/use-fn
          (fn []
-           (dom/open-new-window "/control-center/licences/start")))]
+           (dom/open-new-window "/control-center/licenses/start")))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
