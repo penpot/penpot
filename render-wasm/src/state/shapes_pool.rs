@@ -98,7 +98,9 @@ impl ShapesPoolImpl {
         if self.counter >= self.shapes.len() {
             // We need more space
             let current_capacity = self.shapes.capacity();
-            let additional = (self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
+            // Ensure we add at least 1 shape when the pool is empty
+            let additional =
+                ((self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize).max(1);
             let needed_capacity = self.shapes.len() + additional;
 
             if needed_capacity > current_capacity {
