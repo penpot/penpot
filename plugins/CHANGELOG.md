@@ -1,3 +1,38 @@
+## 1.4.2 (2026-01-21)
+
+- **plugin-types:** fix atob/btoa functions
+
+## 1.4.0 (2026-01-21)
+
+### 🚀 Features
+
+- switch component ([7d68450](https://github.com/penpot/penpot-plugins/commit/7d68450))
+- Add variants to plugins API ([04f3c26](https://github.com/penpot/penpot-plugins/commit/04f3c26))
+- format ci job ([17b5834](https://github.com/penpot/penpot-plugins/commit/17b5834))
+- fix problem with ci ([4b3c50f](https://github.com/penpot/penpot-plugins/commit/4b3c50f))
+- change in workflow ([3a69f51](https://github.com/penpot/penpot-plugins/commit/3a69f51))
+- **plugin-types:** add methods to modify the index for shapes ([4ad50af](https://github.com/penpot/penpot-plugins/commit/4ad50af))
+- **plugin-types:** change content type and added new attributes ([dbb68a5](https://github.com/penpot/penpot-plugins/commit/dbb68a5))
+- **plugins-runtime:** add data method to image data ([f077481](https://github.com/penpot/penpot-plugins/commit/f077481))
+- **plugins-runtime:** fix problem with linter ([30f4984](https://github.com/penpot/penpot-plugins/commit/30f4984))
+- **plugins-runtime:** allow openPage() to toggle opening on a new window or not ([da8288b](https://github.com/penpot/penpot-plugins/commit/da8288b))
+
+### 🩹 Fixes
+
+- package-lock.json ([d1d940a](https://github.com/penpot/penpot-plugins/commit/d1d940a))
+- fonts gdpr & switch provider ([d63231e](https://github.com/penpot/penpot-plugins/commit/d63231e))
+- missing changes ([b8fc936](https://github.com/penpot/penpot-plugins/commit/b8fc936))
+- format ci ([e0fab2e](https://github.com/penpot/penpot-plugins/commit/e0fab2e))
+- fetch main only in pr ([e48c5d4](https://github.com/penpot/penpot-plugins/commit/e48c5d4))
+
+### ❤️ Thank You
+
+- alonso.torres
+- Juanfran @juanfran
+- Michał Korczak
+- Miguel de Benito Delgado
+- Pablo Alba
+
 ## 1.3.2 (2025-07-04)
 
 ### 🩹 Fixes
