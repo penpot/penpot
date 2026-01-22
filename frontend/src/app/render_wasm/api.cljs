@@ -1429,8 +1429,9 @@
 
 (defn apply-canvas-blur
   []
-  (when wasm/canvas
-    (dom/set-style! wasm/canvas "filter" "blur(4px)")))
+  (when wasm/canvas (dom/set-style! wasm/canvas "filter" "blur(4px)"))
+  (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
+    (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
 
 
 (defn init-wasm-module
