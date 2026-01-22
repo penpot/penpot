@@ -108,6 +108,9 @@ importers:
       '@nx/angular':
         specifier: 22.4.0
         version: 22.4.0(ad56d73a34ba75ed3a2af79b06ee3143)
+      '@nx/devkit':
+        specifier: ^22.4.0
+        version: 22.4.0(nx@22.4.0(@swc-node/register@1.11.1(@swc/core@1.15.10(@swc/helpers@0.5.18))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.10(@swc/helpers@0.5.18)))
       '@nx/esbuild':
         specifier: 22.4.0
         version: 22.4.0(@babel/traverse@7.28.6)(@swc-node/register@1.11.1(@swc/core@1.15.10(@swc/helpers@0.5.18))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.10(@swc/helpers@0.5.18))(esbuild@0.27.2)(nx@22.4.0(@swc-node/register@1.11.1(@swc/core@1.15.10(@swc/helpers@0.5.18))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.10(@swc/helpers@0.5.18)))

@@ -46,6 +46,7 @@
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "9.39.2",
     "@nx/angular": "22.4.0",
+    "@nx/devkit": "^22.4.0",
     "@nx/esbuild": "22.4.0",
     "@nx/eslint": "22.4.0",
     "@nx/eslint-plugin": "22.4.0",
