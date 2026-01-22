@@ -32,6 +32,14 @@
   min-width: var(--sp-l);
 }
 
+.text-icon {
+  color: var(--color-foreground-secondary);
+  @include t.use-typography("code-font");
+  width: fit-content;
+  // TODO: Review
+  min-width: 40px;
+}
+
 .invisible-button {
   position: absolute;
   inset-inline-end: 0;

@@ -409,7 +409,7 @@
         [layout-container-ids layout-container-values layout-container-tokens]
         (get-attrs shapes objects :layout-container)
 
-        [layout-item-ids layout-item-values {}]
+        [layout-item-ids layout-item-values layout-item-tokens]
         (get-attrs shapes objects :layout-item)
 
         components
@@ -471,6 +471,7 @@
          :is-layout-container? all-flex-layout-container?
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
+         :applied-tokens layout-item-tokens
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)

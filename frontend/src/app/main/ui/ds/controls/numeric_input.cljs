@@ -189,6 +189,7 @@
                                      :float
                                      :string
                                      [:= :multiple]]]]
+   [:text-icon {:optional true} :string]
    [:default {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:icon {:optional true} [:maybe schema:icon]]
@@ -216,7 +217,8 @@
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
            on-change on-blur on-focus on-detach
-           property align ref name]
+           property align ref name
+           text-icon]
     :rest props}]
 
   (let [;; NOTE: we use mfu/bean here for transparently handle
@@ -637,14 +639,23 @@
                                 :on-change store-raw-value
                                 :variant "comfortable"
                                 :disabled disabled
-                                :slot-start (when icon
-                                              (mf/html [:> tooltip*
-                                                        {:content property
-                                                         :id property}
-                                                        [:> icon* {:icon-id icon
-                                                                   :size "s"
-                                                                   :aria-labelledby property
-                                                                   :class (stl/css :icon)}]]))
+                                :slot-start (when (or icon text-icon)
+                                              (mf/html
+                                               [:> tooltip*
+                                                {:content property
+                                                 :id property}
+                                                (cond
+                                                  icon
+                                                  [:> icon*
+                                                   {:icon-id icon
+                                                    :size "s"
+                                                    :aria-labelledby property
+                                                    :class (stl/css :icon)}]
+
+                                                  text-icon
+                                                  [:div {:class (stl/css :text-icon)
+                                                         :aria-labelledby property}
+                                                   text-icon])]))
                                 :slot-end (when-not disabled
                                             (when (some? tokens)
                                               (mf/html [:> icon-button* {:variant "ghost"
@@ -676,14 +687,23 @@
                               :disabled disabled
                               :on-blur on-blur
                               :class inner-class
-                              :slot-start (when icon
-                                            (mf/html [:> tooltip*
-                                                      {:content property
-                                                       :id property}
-                                                      [:> icon* {:icon-id icon
-                                                                 :size "s"
-                                                                 :aria-labelledby property
-                                                                 :class (stl/css :icon)}]]))
+                              :slot-start (when (or icon text-icon)
+                                            (mf/html
+                                             [:> tooltip*
+                                              {:content property
+                                               :id property}
+                                              (cond
+                                                icon
+                                                [:> icon*
+                                                 {:icon-id icon
+                                                  :size "s"
+                                                  :aria-labelledby property
+                                                  :class (stl/css :icon)}]
+
+                                                text-icon
+                                                [:div {:class (stl/css :text-icon)
+                                                       :aria-labelledby property}
+                                                 text-icon])]))
                               :token-wrapper-ref token-wrapper-ref
                               :token-detach-btn-ref token-detach-btn-ref
                               :detach-token detach-token})))]
@@ -718,21 +738,41 @@
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
 
-    [:div {:class (dm/str class " " (stl/css :input-wrapper))
-           :ref wrapper-ref}
+    (if (some? icon)
+      [:div {:class (dm/str class " " (stl/css :input-wrapper))
+             :ref wrapper-ref}
 
-     (if (and (some? token-applied)
-              (not= :multiple token-applied))
-       [:> token-field* token-props]
-       [:> input-field* input-props])
+       (if (and (some? token-applied)
+                (not= :multiple token-applied))
+         [:> token-field* token-props]
+         [:> input-field* input-props])
 
-     (when ^boolean is-open
-       (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
-         [:> options-dropdown* {:on-click on-option-click
-                                :id listbox-id
-                                :options options
-                                :selected selected-id
-                                :focused focused-id
-                                :align align
-                                :empty-to-end empty-to-end
-                                :ref set-option-ref}]))]))
+       (when ^boolean is-open
+         (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+           [:> options-dropdown* {:on-click on-option-click
+                                  :id listbox-id
+                                  :options options
+                                  :selected selected-id
+                                  :focused focused-id
+                                  :align align
+                                  :empty-to-end empty-to-end
+                                  :ref set-option-ref}]))]
+      [:div {:class (dm/str class " " (stl/css :input-wrapper))
+             :aria-labelledby property
+             :ref wrapper-ref}
+
+       (if (and (some? token-applied)
+                (not= :multiple token-applied))
+         [:> token-field* token-props]
+         [:> input-field* input-props])
+
+       (when ^boolean is-open
+         (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+           [:> options-dropdown* {:on-click on-option-click
+                                  :id listbox-id
+                                  :options options
+                                  :selected selected-id
+                                  :focused focused-id
+                                  :align align
+                                  :empty-to-end empty-to-end
+                                  :ref set-option-ref}]))])))

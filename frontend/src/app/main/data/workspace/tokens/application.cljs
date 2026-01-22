@@ -539,10 +539,11 @@
             value shape-ids
             #{:stroke-width}
             page-id))
-    (some attributes #{:max-width :max-height})
+
+    (some attributes #{:max-width :max-height :layout-item-max-h :layout-item-max-w :layout-item-min-h :layout-item-min-w})
     (conj #(update-layout-sizing-limits
             value shape-ids
-            (set (filter attributes #{:max-width :max-height}))
+            (set (filter attributes #{:max-width :max-height :layout-item-max-h :layout-item-max-w :layout-item-min-h :layout-item-min-w}))
             page-id))))
 
 (defn apply-dimensions-token
