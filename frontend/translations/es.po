@@ -8040,36 +8040,29 @@ msgstr "La referencia no es válida o no se encuentra en ningún set activo."
 msgid "workspace.tokens.reference-error"
 msgstr "Errores en referencias: "
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
-msgid "workspace.tokens.references-found"
-msgstr "%s referencias encontradas en tu diseño"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
-msgid "workspace.tokens.remap-and-rename"
-msgstr "Actualizar referencias y renombrar"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
-#, unused
-msgid "workspace.tokens.remap-explanation"
-msgstr ""
-"Todas las referencias a este token se actualizarán automáticamente para "
-"usar el nuevo nombre."
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "¿Actualizar todas las referencias de `{old-token-name}` a `{new-token-name}`?"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
-msgid "workspace.tokens.remap-token-references"
-msgstr "Actualizar referencias de token"
+msgid "workspace.tokens.remap-warning-effects"
+msgstr "Esta acción actualizará todas las capas y referencias que usen el token antiguo"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-warning-time"
+msgstr "Este proceso puede durar un poco"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
 msgid "workspace.tokens.remapping-in-progress"
 msgstr "Actualizando referencias de token..."
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
-msgid "workspace.tokens.rename-only"
-msgstr "Renombrar"
+msgid "workspace.tokens.not-remap"
+msgstr "No actualizar"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:83
-msgid "workspace.tokens.renaming-token-from-to"
-msgstr "Renombrando el token de '%s' a '%s'"
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
+msgid "workspace.tokens.remap"
+msgstr "Actualizar tokens"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 #, fuzzy

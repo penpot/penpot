@@ -11,7 +11,9 @@
     [app.main.data.modal :as modal]
     [app.main.store :as st]
     [app.main.ui.ds.buttons.button :refer [button*]]
+    [app.main.ui.ds.foundations.typography :as t]
     [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
+    [app.main.ui.ds.foundations.typography.text :refer [text*]]
     [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
     [app.util.dom :as dom]
     [app.util.i18n :refer [tr]]
@@ -58,6 +60,17 @@
            (when (fn? on-confirm)
              (on-confirm))))
 
+        ;; Close modal on Escape key if not in progress
+        on-key-down
+        (mf/use-fn
+         (mf/deps on-cancel remapping-in-progress?)
+         (fn [e]
+           (when (and (= e.key "Escape")
+                      (not remapping-in-progress?))
+             (modal/hide!)
+             (when (fn? on-cancel)
+               (on-cancel)))))
+
         on-cancel-remap
         (mf/use-fn
          (mf/deps on-cancel)
@@ -68,23 +81,23 @@
            (when (fn? on-cancel)
              (on-cancel))))]
 
-    [:div {:class (stl/css :modal-overlay)}
+    [:div {:class (stl/css :modal-overlay)
+           :on-key-down on-key-down
+           :role "alertdialog"
+           :aria-modal "true"
+           :aria-labelledby "modal-title"}
+
      [:div {:class (stl/css :modal-dialog)
             :data-testid "token-remapping-modal"}
       [:div {:class (stl/css :modal-header)}
        [:> heading* {:level 2
-                     :typography "headline-medium"
+                     :id "modal-title"
+                     :typography "headline-large"
                      :class (stl/css :modal-title)}
-        (tr "workspace.tokens.remap-token-references")]]
+        (tr "workspace.tokens.remap-token-references-title" old-token-name new-token-name)]]
       [:div {:class (stl/css :modal-content)}
-       [:> heading* {:level 3
-                     :typography "title-medium"
-                     :class (stl/css :modal-msg)}
-        (tr "workspace.tokens.renaming-token-from-to" old-token-name new-token-name)]
-       [:div {:class (stl/css :modal-scd-msg)}
-        (if (> references-count 0)
-          (tr "workspace.tokens.references-found" references-count)
-          (tr "workspace.tokens.no-references-found"))]
+       [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-warning-effects")]
+       [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-warning-time")]
        (when remapping-in-progress?
          [:> context-notification*
           {:level :info
@@ -96,11 +109,9 @@
                      :type "button"
                      :variant "secondary"
                      :disabled remapping-in-progress?}
-         (tr "labels.cancel")]
+         (tr "workspace.tokens.not-remap")]
         [:> button* {:on-click on-confirm-remap
                      :type "button"
                      :variant "primary"
                      :disabled remapping-in-progress?}
-         (if (> references-count 0)
-           (tr "workspace.tokens.remap-and-rename")
-           (tr "workspace.tokens.rename-only"))]]]]]))
+         (tr "workspace.tokens.remap")]]]]]))
