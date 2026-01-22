@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-21 01:01+0000\n"
-"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
+"PO-Revision-Date: 2026-01-23 10:01+0000\n"
+"Last-Translator: Louis Chance <contact@louischance.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -416,7 +416,7 @@ msgstr "Ajouter un fichier"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
-msgstr "Ajouter une bibliothèque partagée"
+msgstr "Ajouter comme bibliothèque partagée"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
@@ -8441,3 +8441,61 @@ msgstr "Vous allez restaurer le projet %s et tous les fichiers qu'il contient."
 #: src/app/main/ui/dashboard/deleted.cljs:40
 msgid "dashboard.restore-project-confirmation.title"
 msgstr "Restaurer le projet"
+
+#: src/app/main/data/dashboard.cljs:861, src/app/main/data/dashboard.cljs:888, src/app/main/data/dashboard.cljs:925, src/app/main/ui/dashboard/file_menu.cljs:198
+msgid "dashboard.restore-success-notification"
+msgstr "%s a été restauré avec succès."
+
+#: src/app/main/ui/dashboard/deleted.cljs:298
+msgid "dashboard.trash-info-text-part1"
+msgstr "Les fichiers supprimés resteront dans la corbeille pendant"
+
+#: src/app/main/ui/dashboard/deleted.cljs:300
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s jours. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:301
+msgid "dashboard.trash-info-text-part3"
+msgstr "Après cette durée, ils seront définitivement supprimés."
+
+#: src/app/main/ui/dashboard/deleted.cljs:303
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"Si vous changez d'avis, vous pouvez les restaurer ou les éliminer "
+"définitivement via le menu de chaque fichier."
+
+#: src/app/main/ui/settings/feedback.cljs:115
+msgid "feedback.type.doubt"
+msgstr "Doute"
+
+#: src/app/main/ui/settings/feedback.cljs:114
+msgid "feedback.type.issue"
+msgstr "Problème"
+
+#: src/app/main/ui/exports/files.cljs:124
+msgid "files-download-modal.title"
+msgstr "Télécharger les fichiers"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:238
+msgid "inspect.empty.more"
+msgstr "En savoir plus"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:68
+msgid "inspect.tabs.styles.copy-shorthand"
+msgstr "Copier le code CSS dans le presse-papiers"
+
+#: src/app/main/ui/dashboard/deleted.cljs:215
+msgid "labels.deleted"
+msgstr "Supprimés"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:879
+msgid "labels.penpot-changelog"
+msgstr "Journal des modifications de Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:805
+msgid "labels.penpot-hub"
+msgstr "Penpot hub"
+
+#: src/app/main/ui/dashboard/deleted.cljs:208
+msgid "labels.recent"
+msgstr "Récents"
