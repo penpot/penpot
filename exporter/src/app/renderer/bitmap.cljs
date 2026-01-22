@@ -58,7 +58,8 @@
                     :share-id share-id
                     :object-id (mapv :id objects)
                     :route "objects"
-                    :skip-children skip-children}
+                    :skip-children skip-children
+                    :wasm "true"}
             uri    (-> (cf/get :public-uri)
                        (assoc :path "/render.html")
                        (assoc :query (u/map->query-string params)))]

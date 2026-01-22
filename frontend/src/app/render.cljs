@@ -63,7 +63,7 @@
 
 (mf/defc object-svg
   {::mf/wrap-props false}
-  [{:keys [object-id embed skip-children]}]
+  [{:keys [object-id embed skip-children wasm]}]
   (let [objects (mf/deref ref:objects)]
 
     ;; Set the globa CSS to assign the page size, needed for PDF
@@ -77,26 +77,41 @@
                    (mth/ceil height) "px")}))))
 
     (when objects
-      [:& (mf/provider ctx/is-render?) {:value true}
-       [:& render/object-svg
-        {:objects objects
-         :object-id object-id
-         :embed embed
-         :skip-children skip-children}]])))
+      (if wasm
+        [:& render/object-wasm
+         {:objects objects
+          :object-id object-id
+          :embed embed
+          :skip-children skip-children}]
 
-(mf/defc objects-svg
-  {::mf/wrap-props false}
-  [{:keys [object-ids embed skip-children]}]
-  (when-let [objects (mf/deref ref:objects)]
-    (for [object-id object-ids]
-      (let [objects (render/adapt-objects-for-shape objects object-id)]
         [:& (mf/provider ctx/is-render?) {:value true}
          [:& render/object-svg
           {:objects objects
-           :key (str object-id)
            :object-id object-id
            :embed embed
            :skip-children skip-children}]]))))
+
+(mf/defc objects-svg
+  {::mf/wrap-props false}
+  [{:keys [object-ids embed skip-children wasm]}]
+  (when-let [objects (mf/deref ref:objects)]
+    (for [object-id object-ids]
+      (let [objects (render/adapt-objects-for-shape objects object-id)]
+        (if wasm
+          [:& render/object-wasm
+           {:objects objects
+            :key (str object-id)
+            :object-id object-id
+            :embed embed
+            :skip-children skip-children}]
+
+          [:& (mf/provider ctx/is-render?) {:value true}
+           [:& render/object-svg
+            {:objects objects
+             :key (str object-id)
+             :object-id object-id
+             :embed embed
+             :skip-children skip-children}]])))))
 
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]
@@ -136,7 +151,7 @@
 (defn- render-objects
   [params]
   (try
-    (let [{:keys [file-id page-id embed share-id object-id skip-children] :as params}
+    (let [{:keys [file-id page-id embed share-id object-id skip-children wasm] :as params}
           (coerce-render-objects-params params)]
       (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
       (if (uuid? object-id)
@@ -147,7 +162,8 @@
            :share-id share-id
            :object-id object-id
            :embed embed
-           :skip-children skip-children}])
+           :skip-children skip-children
+           :wasm wasm}])
 
         (mf/html
          [:& objects-svg
@@ -156,7 +172,8 @@
            :share-id share-id
            :object-ids (into #{} object-id)
            :embed embed
-           :skip-children skip-children}])))
+           :skip-children skip-children
+           :wasm wasm}])))
     (catch :default cause
       (when-let [explain (-> cause ex-data ::sm/explain)]
         (js/console.log "Unexpected error")
@@ -307,6 +324,3 @@
 (defn ^:dev/after-load after-load
   []
   (reinit))
-
-
-

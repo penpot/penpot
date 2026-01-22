@@ -104,4 +104,38 @@ impl GpuState {
         )
         .unwrap()
     }
+
+    #[allow(dead_code)]
+    pub fn create_surface_from_texture(
+        &mut self,
+        width: i32,
+        height: i32,
+        texture_id: u32
+    ) -> skia::Surface {
+        let texture_info = TextureInfo {
+            target: gl::TEXTURE_2D,
+            id: texture_id,
+            format: gl::RGBA8,
+            protected: skia::gpu::Protected::No,
+        };
+
+        let backend_texture = unsafe{
+            gpu::backend_textures::make_gl(
+                (width, height),
+                gpu::Mipmapped::No,
+                texture_info,
+                String::from("export_texture"))
+        };
+
+        gpu::surfaces::wrap_backend_texture(
+            &mut self.context,
+            &backend_texture,
+            gpu::SurfaceOrigin::BottomLeft,
+            None,
+            skia::ColorType::RGBA8888,
+            None,
+            None,
+        ).unwrap()
+    }
+
 }

@@ -528,7 +528,7 @@
 (defn init!
   "Install perf observers in dev builds. Safe to call multiple times."
   []
-  (when ^boolean js/goog.DEBUG
+  (when (and ^boolean js/goog.DEBUG *assert* false)
     (install-long-task-observer!)
     (start-event-loop-stall-logger! 50 100)
     ;; Expose simple API on window for manual control in devtools

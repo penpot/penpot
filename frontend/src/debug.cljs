@@ -6,6 +6,8 @@
 
 (ns debug
   (:require
+   [app.render-wasm.wasm :as wasm]
+   [app.render-wasm.api :as wasm.api]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.repair :as cfr]
@@ -456,3 +458,21 @@
 (defn ^:export network-averages
   []
   (.log js/console (clj->js @http/network-averages)))
+
+(defn ^:export export-image
+  []
+
+  (let [objects (dsh/lookup-page-objects @st/state)
+        shape-id  (->> (get-selected @st/state) first)
+        bytes (wasm.api/render-shape-pixels shape-id 3.0)
+
+        blob (js/Blob. #js [bytes] #js {:type "image/png"})
+        url (.createObjectURL js/URL blob)
+
+        a (.createElement js/document "a")]
+    (set! (.-href a) url)
+    (set! (.-download a) "export.png")
+    (.click a)
+    (.revokeObjectURL js/URL url)
+    
+    nil))

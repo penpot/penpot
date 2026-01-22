@@ -17,6 +17,7 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 
 use gpu_state::GpuState;
+
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
@@ -40,6 +41,7 @@ const NODE_BATCH_THRESHOLD: i32 = 3;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+#[derive(Debug)]
 pub struct NodeRenderState {
     pub id: Uuid,
     // We use this bool to keep that we've traversed all the children inside this node.
@@ -529,7 +531,7 @@ impl RenderState {
         );
     }
 
-    pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
+    pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>, target: SurfaceId) {
         performance::begin_measure!("apply_drawing_to_render_canvas");
 
         let paint = skia::Paint::default();
@@ -537,12 +539,12 @@ impl RenderState {
         // Only draw surfaces that have content (dirty flag optimization)
         if self.surfaces.is_dirty(SurfaceId::TextDropShadows) {
             self.surfaces
-                .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+                .draw_into(SurfaceId::TextDropShadows, target, Some(&paint));
         }
 
         if self.surfaces.is_dirty(SurfaceId::Fills) {
             self.surfaces
-                .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
+                .draw_into(SurfaceId::Fills, target, Some(&paint));
         }
 
         let mut render_overlay_below_strokes = false;
@@ -552,17 +554,17 @@ impl RenderState {
 
         if render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
-                .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
+                .draw_into(SurfaceId::InnerShadows, target, Some(&paint));
         }
 
         if self.surfaces.is_dirty(SurfaceId::Strokes) {
             self.surfaces
-                .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
+                .draw_into(SurfaceId::Strokes, target, Some(&paint));
         }
 
         if !render_overlay_below_strokes && self.surfaces.is_dirty(SurfaceId::InnerShadows) {
             self.surfaces
-                .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
+                .draw_into(SurfaceId::InnerShadows, target, Some(&paint));
         }
 
         // Build mask of dirty surfaces that need clearing
@@ -634,6 +636,7 @@ impl RenderState {
         apply_to_current_surface: bool,
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
+        target_surface: SurfaceId,
     ) {
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
@@ -685,7 +688,7 @@ impl RenderState {
             let translation = self
                 .surfaces
                 .get_render_context_translation(self.render_area, scale);
-            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+            self.surfaces.apply_mut(target_surface as u32, |s| {
                 let canvas = s.canvas();
                 canvas.save();
                 canvas.scale((scale, scale));
@@ -693,7 +696,7 @@ impl RenderState {
             });
 
             for fill in shape.fills().rev() {
-                fills::render(self, shape, fill, antialias, SurfaceId::Current);
+                fills::render(self, shape, fill, antialias, target_surface);
             }
 
             for stroke in shape.visible_strokes().rev() {
@@ -701,13 +704,13 @@ impl RenderState {
                     self,
                     shape,
                     stroke,
-                    Some(SurfaceId::Current),
+                    Some(target_surface),
                     None,
                     antialias,
                 );
             }
 
-            self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
+            self.surfaces.apply_mut(target_surface as u32, |s| {
                 s.canvas().restore();
             });
 
@@ -1057,7 +1060,7 @@ impl RenderState {
         }
 
         if apply_to_current_surface {
-            self.apply_drawing_to_render_canvas(Some(&shape));
+            self.apply_drawing_to_render_canvas(Some(&shape), target_surface);
         }
 
         // Only restore if we saved (optimization for simple shapes)
@@ -1188,7 +1191,7 @@ impl RenderState {
         self.current_tile = None;
         self.render_in_progress = true;
 
-        self.apply_drawing_to_render_canvas(None);
+        self.apply_drawing_to_render_canvas(None, SurfaceId::Current);
 
         if sync_render {
             self.render_shape_tree_sync(base_object, tree, timestamp)?;
@@ -1243,6 +1246,51 @@ impl RenderState {
         Ok(())
     }
 
+    pub fn render_shape_pixels(
+        &mut self,
+        id: &Uuid,
+        tree: ShapesPoolRef,
+        scale: f32,
+        timestamp: i32,
+    ) -> Result<(Vec<u8>, i32, i32), String> {
+        let target_surface = SurfaceId::Export;
+
+        self.surfaces
+            .canvas(target_surface)
+            .clear(skia::Color::TRANSPARENT);
+
+        if tree.len() != 0 {
+            let shape = tree.get(id).unwrap();
+            let mut extrect = shape.extrect(tree, scale);
+            let margins = self.surfaces.margins;
+            extrect.offset((margins.width as f32 / scale, margins.height as f32 / scale));
+
+            self.surfaces.resize_export_surface(scale, extrect);
+            self.surfaces.update_render_context(extrect, scale);
+
+            self.pending_nodes.push(NodeRenderState {
+                id: *id,
+                visited_children: false,
+                clip_bounds: None,
+                visited_mask: false,
+                mask: false,
+            });
+            self.render_shape_tree_partial_uncached(tree, timestamp, false, true)?;
+        }
+
+        self.surfaces.flush_and_submit(&mut self.gpu_state, target_surface);
+
+        let image = self.surfaces.snapshot(target_surface);
+        let data = image.encode(
+            &mut self.gpu_state.context,
+            skia::EncodedImageFormat::PNG,
+            100
+        ).expect("PNG encode failed");
+        let skia::ISize { width, height } = image.dimensions();
+
+        Ok((data.as_bytes().to_vec(), width, height))
+    }
+
     #[inline]
     pub fn should_stop_rendering(&self, iteration: i32, timestamp: i32) -> bool {
         iteration % NODE_BATCH_THRESHOLD == 0
@@ -1250,7 +1298,7 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_enter(&mut self, element: &Shape, mask: bool) {
+    pub fn render_shape_enter(&mut self, element: &Shape, mask: bool, target_surface: SurfaceId) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
@@ -1265,7 +1313,7 @@ impl RenderState {
                 let paint = skia::Paint::default();
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
                 self.surfaces
-                    .canvas(SurfaceId::Current)
+                    .canvas(target_surface)
                     .save_layer(&layer_rec);
             }
         }
@@ -1282,7 +1330,7 @@ impl RenderState {
             mask_paint.set_blend_mode(skia::BlendMode::DstIn);
             let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
             self.surfaces
-                .canvas(SurfaceId::Current)
+                .canvas(target_surface)
                 .save_layer(&mask_rec);
         }
 
@@ -1306,7 +1354,7 @@ impl RenderState {
 
             let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
             self.surfaces
-                .canvas(SurfaceId::Current)
+                .canvas(target_surface)
                 .save_layer(&layer_rec);
         }
 
@@ -1319,6 +1367,7 @@ impl RenderState {
         element: &Shape,
         visited_mask: bool,
         clip_bounds: Option<ClipStack>,
+        target_surface: SurfaceId
     ) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
@@ -1326,7 +1375,7 @@ impl RenderState {
             // extra restore.
             if let Type::Group(group) = element.shape_type {
                 if group.masked {
-                    self.surfaces.canvas(SurfaceId::Current).restore();
+                    self.surfaces.canvas(target_surface).restore();
                 }
             }
         } else {
@@ -1383,6 +1432,7 @@ impl RenderState {
                 true,
                 None,
                 None,
+                target_surface
             );
         }
 
@@ -1391,7 +1441,7 @@ impl RenderState {
         let needs_layer = element.needs_layer();
 
         if needs_layer {
-            self.surfaces.canvas(SurfaceId::Current).restore();
+            self.surfaces.canvas(target_surface).restore();
         }
 
         self.focus_mode.exit(&element.id);
@@ -1473,6 +1523,7 @@ impl RenderState {
         scale: f32,
         translation: (f32, f32),
         extra_layer_blur: Option<Blur>,
+        target_surface: SurfaceId
     ) {
         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
         transformed_shadow.to_mut().offset = (0.0, 0.0);
@@ -1552,6 +1603,7 @@ impl RenderState {
                         false,
                         Some(shadow.offset),
                         None,
+                        target_surface
                     );
                 });
 
@@ -1609,9 +1661,15 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
         allow_stop: bool,
+        export: bool,
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
+
+        let mut target_surface = SurfaceId::Current;
+        if export {
+            target_surface = SurfaceId::Export;
+        }
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
@@ -1637,7 +1695,7 @@ impl RenderState {
             if visited_children {
                 // Skip render_shape_exit for flattened containers
                 if !element.can_flatten() {
-                    self.render_shape_exit(element, visited_mask, clip_bounds);
+                    self.render_shape_exit(element, visited_mask, clip_bounds, target_surface);
                 }
                 continue;
             }
@@ -1660,11 +1718,14 @@ impl RenderState {
 
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
 
-                let is_visible = if is_container || has_effects {
+                let is_visible = export || if is_container || has_effects {
                     let element_extrect =
                         extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
                     element_extrect.intersects(self.render_area)
-                        && !transformed_element.visually_insignificant(scale, tree)
+                } else if !has_effects {
+                    // Simple shape: selrect check is sufficient, skip expensive extrect
+                    let selrect = transformed_element.selrect();
+                    selrect.intersects(self.render_area)
                 } else {
                     let selrect = transformed_element.selrect();
                     selrect.intersects(self.render_area)
@@ -1685,7 +1746,7 @@ impl RenderState {
             // If a container was flattened, it doesn't affect children visually, so we skip
             // the expensive enter/exit operations and process children directly
             if !element.can_flatten() {
-                self.render_shape_enter(element, mask);
+                self.render_shape_enter(element, mask, target_surface);
             }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
@@ -1738,6 +1799,7 @@ impl RenderState {
                             scale,
                             translation,
                             None,
+                            target_surface
                         );
 
                         if !matches!(element.shape_type, Type::Bool(_)) {
@@ -1759,6 +1821,7 @@ impl RenderState {
                                         scale,
                                         translation,
                                         inherited_layer_blur,
+                                        target_surface
                                     );
                                 } else {
                                     let paint = skia::Paint::default();
@@ -1800,6 +1863,7 @@ impl RenderState {
                                             true,
                                             None,
                                             Some(vec![new_shadow_paint.clone()]),
+                                            target_surface
                                         );
                                     });
                                     self.surfaces.canvas(SurfaceId::DropShadows).restore();
@@ -1824,7 +1888,7 @@ impl RenderState {
                 if let Some(clips) = clip_bounds.as_ref() {
                     let antialias = element.should_use_antialias(scale);
 
-                    self.surfaces.canvas(SurfaceId::Current).save();
+                    self.surfaces.canvas(target_surface).save();
                     for (bounds, corners, transform) in clips.iter() {
                         let mut total_matrix = Matrix::new_identity();
                         total_matrix.pre_scale((scale, scale), None);
@@ -1832,18 +1896,18 @@ impl RenderState {
                         total_matrix.pre_concat(transform);
 
                         self.surfaces
-                            .canvas(SurfaceId::Current)
+                            .canvas(target_surface)
                             .concat(&total_matrix);
 
                         if let Some(corners) = corners {
                             let rrect = RRect::new_rect_radii(*bounds, corners);
-                            self.surfaces.canvas(SurfaceId::Current).clip_rrect(
+                            self.surfaces.canvas(target_surface).clip_rrect(
                                 rrect,
                                 skia::ClipOp::Intersect,
                                 antialias,
                             );
                         } else {
-                            self.surfaces.canvas(SurfaceId::Current).clip_rect(
+                            self.surfaces.canvas(target_surface).clip_rect(
                                 *bounds,
                                 skia::ClipOp::Intersect,
                                 antialias,
@@ -1851,17 +1915,17 @@ impl RenderState {
                         }
 
                         self.surfaces
-                            .canvas(SurfaceId::Current)
+                            .canvas(target_surface)
                             .concat(&total_matrix.invert().unwrap_or_default());
                     }
 
                     self.surfaces
-                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+                        .draw_into(SurfaceId::DropShadows, target_surface, None);
 
-                    self.surfaces.canvas(SurfaceId::Current).restore();
+                    self.surfaces.canvas(target_surface).restore();
                 } else {
                     self.surfaces
-                        .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+                        .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
                 self.surfaces
@@ -1878,13 +1942,14 @@ impl RenderState {
                     true,
                     None,
                     None,
+                    target_surface
                 );
 
                 self.surfaces
                     .canvas(SurfaceId::DropShadows)
                     .clear(skia::Color::TRANSPARENT);
             } else if visited_children {
-                self.apply_drawing_to_render_canvas(Some(element));
+                self.apply_drawing_to_render_canvas(Some(element), target_surface);
             }
 
             // Skip nested state updates for flattened containers
@@ -2001,7 +2066,7 @@ impl RenderState {
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) =
-                        self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop)?;
+                        self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
 
                     if early_return {
                         return Ok(());

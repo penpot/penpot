@@ -739,6 +739,25 @@ pub extern "C" fn end_temp_objects() {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn render_shape_pixels(a: u32, b: u32, c: u32, d: u32, scale: f32) -> *mut u8 {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state_mut!(state, {
+        let (data, width, height) = state.render_shape_pixels(&id, scale, performance::get_time())
+            .expect("Cannot render into texture");
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&width.to_le_bytes());
+        buf.extend_from_slice(&height.to_le_bytes());
+        buf.extend_from_slice(&data);
+        mem::write_bytes(buf)
+    })
+}
+
+
 fn main() {
     #[cfg(target_arch = "wasm32")]
     init_gl!();

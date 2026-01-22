@@ -99,6 +99,11 @@ impl<'a> State<'a> {
         Ok(())
     }
 
+    pub fn render_shape_pixels(&mut self, id: &Uuid, scale: f32, timestamp: i32) -> Result<(Vec<u8>, i32, i32), String> {
+        self.render_state
+            .render_shape_pixels(id, &self.shapes, scale, timestamp)
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         // If zoom changed, we MUST rebuild the tile index before using it.
         // Otherwise, the index will have tiles from the old zoom level, causing visible

@@ -45,6 +45,12 @@
      :center (gpt/point cx cy)
      :transform (gmt/matrix a b c d e f)}))
 
+(defn read-image-bytes
+  [heap offset length]
+
+  (.slice ^js heap offset (+ offset length))
+  )
+
 (defn read-position-data-entry
   [heapu32 heapf32 offset]
   (let [paragraph (aget heapu32 (+ offset 0))
