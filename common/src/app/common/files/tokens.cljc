@@ -80,12 +80,14 @@
    schema:token-value-shadow-vector
    schema:token-value-composite-ref])
 
-(def schema:token-value
-  [:or
-   schema:token-value-font-family
-   schema:token-value-typography
-   schema:token-value-shadow
-   schema:token-value-generic])
+(defn make-schema-token-value
+  [token-type]
+  [:multi {:dispatch (constantly token-type)
+           :title "Token Value"}
+   [:font-family schema:token-value-font-family]
+   [:typography schema:token-value-typography]
+   [:shadow schema:token-value-shadow]
+   [::m/default schema:token-value-generic]])
 
 ;; Token
 
@@ -107,13 +109,13 @@
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
 (defn make-token-schema
-  [tokens-tree]
+  [tokens-tree token-type]
   [:and
    (sm/merge
     cto/schema:token-attrs
     [:map
      [:name (make-token-name-schema tokens-tree)]
-     [:value schema:token-value]
+     [:value (make-schema-token-value token-type)]
      [:description {:optional true} schema:token-description]])
    [:fn {:error/field :value
          :error/fn #(tr "workspace.tokens.self-reference")}
