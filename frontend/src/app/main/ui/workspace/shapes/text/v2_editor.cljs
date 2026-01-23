@@ -138,7 +138,6 @@
             (st/emit! (dw/set-clipboard-style style))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
-    (.addEventListener ^js instance "blur" on-blur)
     (.addEventListener ^js instance "focus" on-focus)
     (.addEventListener ^js instance "needslayout" on-needs-layout)
     (.addEventListener ^js instance "stylechange" on-style-change)
@@ -153,8 +152,12 @@
 
     ;; This function is called when the component is unmounted
     (fn []
+      ;; Explicitly call on-blur here instead of relying on browser blur events,
+      ;; because in Firefox blur is not reliably fired when leaving the text editor
+      ;; by clicking elsewhere. The component does unmount when the shape is
+      ;; deselected, so we can safely call the blur handler here to finalize the editor.
+      (on-blur)
       (.removeEventListener ^js global/document "keyup" on-key-up)
-      (.removeEventListener ^js instance "blur" on-blur)
       (.removeEventListener ^js instance "focus" on-focus)
       (.removeEventListener ^js instance "needslayout" on-needs-layout)
       (.removeEventListener ^js instance "stylechange" on-style-change)
