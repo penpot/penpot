@@ -18,20 +18,9 @@
    [integrant.core :as ig]))
 
 
-(def baseuri (cf/get :nitrate-backend-uri))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- coercer
-  [schema & {:as opts}]
-  (let [decode-fn (sm/decoder schema sm/json-transformer)
-        check-fn  (sm/check-fn schema opts)]
-    (fn [data]
-      (-> data decode-fn check-fn))))
-
 
 (defn- request-builder
   [cfg method uri management-key profile-id]
@@ -65,9 +54,9 @@
 
 (defn- with-validate [handler uri schema]
   (fn []
-    (let [coercer-http   (coercer schema
-                                  :type :validation
-                                  :hint (str "invalid data received calling " uri))]
+    (let [coercer-http   (sm/coercer schema
+                                     :type :validation
+                                     :hint (str "invalid data received calling " uri))]
       (try
         (coercer-http (-> (handler) :body json/decode))
         (catch Exception e
@@ -106,11 +95,13 @@
 
 (defn- get-team-org
   [cfg {:keys [team-id] :as params}]
-  (request-to-nitrate cfg :get (str baseuri "/api/teams/" (str team-id)) schema:organization params))
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get (str baseuri "/api/teams/" (str team-id)) schema:organization params)))
 
 (defn- is-valid-user
   [cfg {:keys [profile-id] :as params}]
-  (request-to-nitrate cfg :get (str baseuri "/api/users/" (str profile-id)) schema:user params))
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get (str baseuri "/api/users/" (str profile-id)) schema:user params)))
 
 
 

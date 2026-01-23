@@ -9,6 +9,7 @@
    [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.plugins :refer [schema:plugin-registry]]
@@ -95,9 +96,9 @@
     (let [nitrate-licence (nitrate/call cfg :is-valid-user {:profile-id (:id profile)})]
       (assoc profile :nitrate-licence (:valid nitrate-licence)))
     (catch Throwable cause
-      (prn :hint "failed to get nitrate licence"
-           :profile-id (:id profile)
-           :cause cause)
+      (l/error :hint "failed to get nitrate licence"
+               :profile-id (:id profile)
+               :cause cause)
       profile)))
 
 (sv/defmethod ::get-profile

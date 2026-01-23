@@ -14,7 +14,7 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc nitrate-form-modal
+(mf/defc nitrate-form-modal*
   {::mf/register modal/components
    ::mf/register-as :nitrate-form}
   []

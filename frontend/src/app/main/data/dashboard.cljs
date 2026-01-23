@@ -685,16 +685,17 @@
              (modal/hide)))))
 
 (defn handle-change-team-org
-  [{:keys [team-id organization-id organization-name] :as message}]
+  [{:keys [team-id organization-id organization-name]}]
   (ptk/reify ::handle-change-team-org
     ptk/UpdateEvent
     (update [_ state]
-      (if (and (contains? cf/flags :nitrate)
-               (contains? (:teams state) team-id))
-        (-> state
-            (assoc-in [:teams team-id :organization-id] organization-id)
-            (assoc-in [:teams team-id :organization-name] organization-name))
+      (if (contains? cf/flags :nitrate)
+        (d/update-when-in state [:teams team-id]
+                          #(-> %
+                               (assoc :organization-id organization-id)
+                               (assoc :organization-name organization-name)))
         state))))
+
 
 (defn- process-message
   [{:keys [type] :as msg}]
