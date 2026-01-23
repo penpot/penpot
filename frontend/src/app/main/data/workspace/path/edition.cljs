@@ -335,13 +335,12 @@
     (watch [_ _ _]
       (rx/of (ptk/data-event :layout/update {:ids [id]})))))
 
-(defn split-segments
-  [{:keys [from-p to-p t]}]
+(defn- split-segments
+  [id {:keys [from-p to-p t]}]
   (ptk/reify ::split-segments
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
-            content (st/get-path state :content)]
+      (let [content (st/get-path state :content)]
         (-> state
             (assoc-in [:workspace-local :edit-path id :old-content] content)
             (st/set-content (-> content
@@ -353,10 +352,10 @@
       (rx/of (changes/save-path-content {:preserve-move-to true})))))
 
 (defn create-node-at-position
-  [event]
+  [params]
   (ptk/reify ::create-node-at-position
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (st/get-path-id state)]
         (rx/of (dwsh/update-shapes [id] path/convert-to-path)
-               (split-segments event))))))
+               (split-segments id params))))))
