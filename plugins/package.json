@@ -59,7 +59,6 @@
     "@swc/helpers": "0.5.18",
     "@types/feather-icons": "^4.29.4",
     "@types/node": "25.0.10",
-    "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "8.53.1",
     "@typescript-eslint/parser": "8.53.1",
     "@typescript-eslint/utils": "^8.53.1",
