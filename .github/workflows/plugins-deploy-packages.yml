@@ -1,0 +1,11 @@
+name: Plugins/packages deployer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  print_text_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Hello World
+        run: echo "Hello, World!"

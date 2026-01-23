@@ -1,0 +1,4 @@
+name = "color-to-tokens-plugin"
+compatibility_date = "2025-01-01"
+
+assets = { directory = "../../dist/apps/color-to-tokens-plugin/browser" }
