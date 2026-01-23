@@ -1947,13 +1947,17 @@ impl RenderState {
                     element.children_ids_iter(false).copied().collect()
                 };
 
-                // Z-index ordering on Layouts
+                // Z-index ordering
+                // For reverse flex layouts with custom z-indexes, we reverse the base order
+                // so that visual stacking matches visual position
                 let children_ids = if element.has_layout() {
                     let mut ids = children_ids;
-                    if element.is_flex() && !element.is_flex_reverse() {
+                    let has_z_index = ids
+                        .iter()
+                        .any(|id| tree.get(id).map(|s| s.has_z_index()).unwrap_or(false));
+                    if element.is_flex_reverse() && has_z_index {
                         ids.reverse();
                     }
-
                     ids.sort_by(|id1, id2| {
                         let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
                         let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);

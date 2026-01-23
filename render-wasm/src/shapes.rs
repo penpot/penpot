@@ -342,6 +342,7 @@ impl Shape {
         )
     }
 
+    #[allow(dead_code)]
     pub fn is_flex(&self) -> bool {
         matches!(
             self.shape_type,
@@ -456,7 +457,7 @@ impl Shape {
         min_w: Option<f32>,
         align_self: Option<AlignSelf>,
         is_absolute: bool,
-        z_index: i32,
+        z_index: Option<i32>,
     ) {
         self.layout_item = Some(LayoutItem {
             margin_top,
@@ -1401,9 +1402,21 @@ impl Shape {
 
     pub fn z_index(&self) -> i32 {
         match &self.layout_item {
-            Some(LayoutItem { z_index, .. }) => *z_index,
+            Some(LayoutItem {
+                z_index: Some(z), ..
+            }) => *z,
             _ => 0,
         }
+    }
+
+    pub fn has_z_index(&self) -> bool {
+        matches!(
+            &self.layout_item,
+            Some(LayoutItem {
+                z_index: Some(_),
+                ..
+            })
+        )
     }
 
     pub fn is_layout_vertical_auto(&self) -> bool {

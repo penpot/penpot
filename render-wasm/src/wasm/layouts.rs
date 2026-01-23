@@ -57,6 +57,7 @@ pub extern "C" fn set_layout_data(
     min_w: f32,
     align_self: u8,
     is_absolute: bool,
+    has_z_index: bool,
     z_index: i32,
 ) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
@@ -67,6 +68,7 @@ pub extern "C" fn set_layout_data(
         let min_h = if has_min_h { Some(min_h) } else { None };
         let max_w = if has_max_w { Some(max_w) } else { None };
         let min_w = if has_min_w { Some(min_w) } else { None };
+        let z_index = if has_z_index { Some(z_index) } else { None };
 
         let raw_align_self = align::RawAlignSelf::from(align_self);
 
