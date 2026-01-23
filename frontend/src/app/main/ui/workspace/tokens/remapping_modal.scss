@@ -25,6 +25,12 @@
   background-color: var(--overlay-color);
 }
 
+.close-btn {
+  position: absolute;
+  inset-block-start: $sz-6;
+  inset-inline-end: $sz-6;
+}
+
 .modal-dialog {
   @extend .modal-container-base;
   width: 100%;

@@ -28,7 +28,6 @@
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
-   [app.main.ui.workspace.tokens.remapping-modal :as remapping-modal]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -183,6 +182,30 @@
            (when (or (k/enter? e) (k/space? e))
              (on-cancel e))))
 
+        on-remap-token
+        (mf/use-fn
+         (mf/deps token)
+         (fn [valid-token name old-name description]
+           (st/emit!
+            (dwtl/update-token (:id token)
+                               {:name name
+                                :value (:value valid-token)
+                                :description description})
+            (remap/remap-tokens old-name name)
+            (dwtp/propagate-workspace-tokens)
+            (modal/hide!))))
+
+        on-rename-token
+        (mf/use-fn
+         (mf/deps token)
+         (fn [valid-token name description]
+           (st/emit!
+            (dwtl/update-token (:id token)
+                               {:name name
+                                :value (:value valid-token)
+                                :description description})
+            (modal/hide!))))
+
         on-submit
         (mf/use-fn
          (mf/deps validate-token token tokens token-type value-subfield type active-tab)
@@ -203,22 +226,15 @@
                            file-data (dh/lookup-file-data state)
                            old-name (:name token)
                            is-rename (and (= action "edit") (not= name old-name))
-                           references-count (remap/count-token-references file-data old-name)]
+                           references-count (remap/count-token-references file-data old-name)
+                           on-remap #(on-remap-token valid-token name old-name description)
+                           on-rename #(on-rename-token valid-token name description)]
                        (if (and is-rename (> references-count 0))
-                         (remapping-modal/show-remapping-modal
-                          {:old-token-name old-name
-                           :new-token-name name
-                           :references-count references-count
-                           :on-confirm (fn []
-                                         (st/emit!
-                                          (dwtl/update-token (:id token)
-                                                             {:name name
-                                                              :value (:value valid-token)
-                                                              :description description})
-                                          (remap/remap-tokens old-name name)
-                                          (dwtp/propagate-workspace-tokens)
-                                          (modal/hide!)))
-                           :on-cancel #(modal/hide!)})
+                         (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name old-name
+                                                                               :new-token-name name
+                                                                               :references-count references-count
+                                                                               :on-remap on-remap
+                                                                               :on-rename on-rename}))
                          (st/emit!
                           (if is-create
                             (dwtl/create-token (ctob/make-token {:name name
