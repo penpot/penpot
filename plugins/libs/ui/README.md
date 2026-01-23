@@ -1,10 +1,11 @@
-# ui
+# UI
 
-This library was generated with [Nx](https://nx.dev).
+A React component library with TypeScript for the Penpot ecosystem.
 
-## Running unit tests
+## Commands
 
-Run `nx test ui` to execute the unit tests via [Vitest](https://vitest.dev/).
+Run from workspace root:
 
-- pnpm nx test ui
-- pnpm nx storybook ui
+- **`pnpm storybook:ui`** - Start Storybook for component development
+- **`pnpm build:ui`** - Build the library for production
+- **`pnpm start:ui`** - Build in watch mode for development
