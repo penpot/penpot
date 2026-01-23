@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-21 01:01+0000\n"
+"PO-Revision-Date: 2026-01-23 10:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -2045,3 +2045,135 @@ msgstr "et"
 #, unused
 msgid "labels.back"
 msgstr "Retour"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:140
+#, unused
+msgid "inspect.attributes.typography.text-decoration"
+msgstr "Décoration de texte"
+
+#, unused
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Barré"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:111
+msgid "inspect.attributes.typography.text-decoration.none"
+msgstr "Aucune"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:113
+msgid "inspect.attributes.typography.text-decoration.underline"
+msgstr "Souligné"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:153
+#, unused
+msgid "inspect.attributes.typography.text-transform"
+msgstr "Transformation du texte"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:435
+msgid "inspect.attributes.typography.text-transform.capitalize"
+msgstr "Première lettre en majuscule"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:439
+msgid "inspect.attributes.typography.text-transform.lowercase"
+msgstr "Minuscules"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:124
+msgid "inspect.attributes.typography.text-transform.none"
+msgstr "Aucune"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:127
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Aucune"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:126, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:431
+msgid "inspect.attributes.typography.text-transform.uppercase"
+msgstr "Majuscules"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "Propriétés de la variante"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "Propriétés de la variante"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:170
+msgid "inspect.color-space-label"
+msgstr "Sélectionner l'espace colorimétrique"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:234
+msgid "inspect.empty.help"
+msgstr "Pour en savoir plus sur l'inspection, visite le centre d'aide de Penpot"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:238
+msgid "inspect.empty.more"
+msgstr "En savoir plus"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:232
+msgid "inspect.empty.select"
+msgstr ""
+"Sélectionne une forme, un tableau ou un groupe pour inspecter ses propriétés "
+"et son code"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:166
+msgid "inspect.layer-info"
+msgstr "Info de calque"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:137
+msgid "inspect.multiple-selected"
+msgstr "%s sélectionnés"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:68
+msgid "inspect.subtitle.copy"
+msgstr "Copier"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:64
+msgid "inspect.subtitle.main"
+msgstr "Composant principal"
+
+#: src/app/main/ui/onboarding/questions.cljs:162
+msgid "labels.canva"
+msgstr "Canva"
+
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/delete_shared.cljs:105, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:179, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:643, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
+msgid "labels.close"
+msgstr "Fermer"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:112, src/app/main/ui/inspect/right_sidebar.cljs:117
+msgid "labels.code"
+msgstr "Code"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:181
+msgid "labels.collapse"
+msgstr "Réduire"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:424
+msgid "labels.color"
+msgstr "Couleur"
+
+#: src/app/main/ui/comments.cljs:901
+msgid "labels.comment"
+msgstr "Commentaire"
+
+#: src/app/main/ui/comments.cljs:905
+msgid "labels.comment.mark-as-solved"
+msgstr "Marquer comme résolu"
+
+#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:128
+msgid "labels.comments"
+msgstr "Commentaires"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:841, src/app/main/ui/workspace/main_menu.cljs:144
+msgid "labels.community"
+msgstr "Communauté"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1031
+msgid "labels.community-contributions"
+msgstr "Communauté et contributions"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:110
+msgid "labels.computed"
+msgstr "Calculé"
+
+#: src/app/main/ui/settings/password.cljs:93
+msgid "labels.confirm-password"
+msgstr "Confirmer le mot de passe"
