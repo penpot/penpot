@@ -126,7 +126,7 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (seq (cto/find-token-value-references value)))
+  (let [missing-references? (seq (cto/find-token-value-references value))
         parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (cto/find-token-value-references value))]
@@ -152,15 +152,14 @@
   [value]
   (let [missing-references? (seq (cto/find-token-value-references value))
         parsed-value (cft/parse-token-value value)
-        out-of-scope (< (:value parsed-value) 0)
-        references (seq (cto/find-token-value-references value))]
+        out-of-scope (< (:value parsed-value) 0)]
     (cond
       (and parsed-value (not out-of-scope))
       parsed-value
 
-      references
-      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
-       :references references}
+      missing-references?
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references?)]
+       :references missing-references?}
 
       (and (not missing-references?) out-of-scope)
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value)]}
@@ -365,7 +364,7 @@
   "Parses shadow spread value (non-negative number)."
   [value]
   (let [parsed (parse-sd-token-general-value value)
-        valid? (and (:value parsed) (>= (:value parsed) 0))]
+        valid? (:value parsed)]
     (cond
       valid?
       parsed

@@ -282,12 +282,7 @@
                (let [n (d/parse-double blur)]
                  (or (nil? n) (not (< n 0)))))]]]
           [:spread {:optional true}
-           [:and
-            [:maybe :string]
-            [:fn {:error/fn #(tr "workspace.tokens.shadow-token-spread-value-error")}
-             (fn [spread]
-               (let [n (d/parse-double spread)]
-                 (or (nil? n) (not (< n 0)))))]]]
+           [:maybe :string]]
           [:color {:optional true} [:maybe :string]]
           [:color-result {:optional true} ::sm/any]
           [:inset {:optional true} [:maybe :boolean]]]]]

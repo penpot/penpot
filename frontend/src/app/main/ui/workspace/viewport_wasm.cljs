@@ -424,6 +424,7 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
        :key (str "viewport" page-id)
+       :id "viewport-controls"
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
@@ -473,7 +474,7 @@
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
-              [:g.ghost-outline
+              [:g.ghost-outline.blurrable
                [:& outline/shape-outlines
                 {:objects base-objects
                  :selected selected

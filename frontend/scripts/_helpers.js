@@ -28,7 +28,7 @@ export function startWorker() {
 }
 
 export const IS_DEBUG = process.env.NODE_ENV !== "production";
-export const BUILD_DATE = process.env.BUILD_DATE || (new Date().toString()) ;
+export const BUILD_DATE = process.env.BUILD_DATE || new Date().toString();
 export const BUILD_TS = process.env.BUILD_TS || Date.now();
 export const VERSION = process.env.VERSION || "develop";
 export const VERSION_TAG = process.env.VERSION_TAG || VERSION;
@@ -51,7 +51,8 @@ async function findFiles(basePath, predicate, options = {}) {
 function syncDirs(originPath, destPath) {
   const command = `rsync -ar --delete ${originPath} ${destPath}`;
 
-  return new Promise((resolve, reject) => {proc.exec(command, (cause, stdout) => {
+  return new Promise((resolve, reject) => {
+    proc.exec(command, (cause, stdout) => {
       if (cause) {
         reject(cause);
       } else {
@@ -174,7 +175,7 @@ export async function watch(baseDir, predicate, callback) {
   const watcher = new Watcher(baseDir, {
     persistent: true,
     recursive: true,
-    debounce: 500
+    debounce: 500,
   });
 
   watcher.on("change", (path) => {
@@ -182,7 +183,6 @@ export async function watch(baseDir, predicate, callback) {
       callback(path);
     }
   });
-
 
   watcher.on("error", (cause) => {
     console.log("WATCHER ERROR", cause);
@@ -193,7 +193,6 @@ export async function ensureDirectories() {
   await fs.mkdir("./resources/public/js/worker/", { recursive: true });
   await fs.mkdir("./resources/public/css/", { recursive: true });
 }
-
 
 async function readManifestFile(resource) {
   const manifestPath = "resources/public/" + resource;
@@ -214,20 +213,23 @@ async function generateManifest() {
     default_translations: "./js/translation.en.js?version=" + VERSION_TAG,
 
     importmap: JSON.stringify({
-      "imports": {
+      imports: {
         "./js/shared.js": "./js/shared.js?version=" + VERSION_TAG,
         "./js/main.js": "./js/main.js?version=" + VERSION_TAG,
         "./js/render.js": "./js/render.js?version=" + VERSION_TAG,
         "./js/render-wasm.js": "./js/render-wasm.js?version=" + VERSION_TAG,
         "./js/rasterizer.js": "./js/rasterizer.js?version=" + VERSION_TAG,
-        "./js/main-dashboard.js": "./js/main-dashboard.js?version=" + VERSION_TAG,
+        "./js/main-dashboard.js":
+          "./js/main-dashboard.js?version=" + VERSION_TAG,
         "./js/main-auth.js": "./js/main-auth.js?version=" + VERSION_TAG,
         "./js/main-viewer.js": "./js/main-viewer.js?version=" + VERSION_TAG,
         "./js/main-settings.js": "./js/main-settings.js?version=" + VERSION_TAG,
-        "./js/main-workspace.js": "./js/main-workspace.js?version=" + VERSION_TAG,
-        "./js/util-highlight.js": "./js/util-highlight.js?version=" + VERSION_TAG
-      }
-    })
+        "./js/main-workspace.js":
+          "./js/main-workspace.js?version=" + VERSION_TAG,
+        "./js/util-highlight.js":
+          "./js/util-highlight.js?version=" + VERSION_TAG,
+      },
+    }),
   };
 
   return index;
@@ -431,7 +433,7 @@ async function generateTemplates() {
   };
 
   const context = {
-    manifest: manifest
+    manifest: manifest,
   };
 
   content = await renderTemplate(
@@ -463,11 +465,17 @@ async function generateTemplates() {
   );
   await fs.writeFile("./.storybook/preview-head.html", content);
 
-  content = await renderTemplate("resources/templates/render.mustache", context);
+  content = await renderTemplate(
+    "resources/templates/render.mustache",
+    context,
+  );
 
   await fs.writeFile("./resources/public/render.html", content);
 
-  content = await renderTemplate("resources/templates/rasterizer.mustache", context);
+  content = await renderTemplate(
+    "resources/templates/rasterizer.mustache",
+    context,
+  );
 
   await fs.writeFile("./resources/public/rasterizer.html", content);
 }

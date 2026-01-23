@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import * as h from "./_helpers.js";
 
-await fs.mkdir("resources/public/js", {recursive: true});
+await fs.mkdir("resources/public/js", { recursive: true });
 
 await h.compileStorybookStyles();
 await h.copyAssets();
