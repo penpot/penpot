@@ -7594,6 +7594,10 @@ msgstr "Error al importar: No se pudo procesar el JSON."
 msgid "workspace.tokens.export"
 msgstr "Exportar"
 
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:125
+msgid "workspace.tokens.export-tokens"
+msgstr "Exportar tokens"
+
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:118
 msgid "workspace.tokens.export.multiple-files"
 msgstr "Múltiples ficheros"
@@ -7638,9 +7642,25 @@ msgstr "Nombre del grupo"
 msgid "workspace.tokens.grouping-set-alert"
 msgstr "La agrupación de sets aun no está soportada."
 
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Importar %s"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
 msgid "workspace.tokens.import-error"
 msgstr "Error al importar:"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Carpeta"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Archivo JSON único"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "Archivo ZIP"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:241
 msgid "workspace.tokens.import-multiple-files"
@@ -7656,7 +7676,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:237
 msgid "workspace.tokens.import-tokens"
-msgstr "Import tokens"
+msgstr "Importar tokens"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
 #, unused

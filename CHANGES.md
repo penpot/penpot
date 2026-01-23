@@ -31,6 +31,7 @@
 - Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
 - Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
 - Fix allow negative spread values on shadow token creation [Taiga #13167](https://tree.taiga.io/project/penpot/issue/13167)
+- Fix spanish translations on import export token modal [Taiga #13171](https://tree.taiga.io/project/penpot/issue/13171)
 
 ## 2.12.1
 
