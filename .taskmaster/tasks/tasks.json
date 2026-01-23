@@ -1,0 +1,295 @@
+{
+  "plan-websocket-reliability-20260123": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add connection state management and constants",
+        "description": "Create connection state enum and constants for reconnection logic in main.ts, including max attempts, backoff delays, and ping intervals.",
+        "details": "Add the following constants and state management to main.ts:\n\n```typescript\n// Connection state enum\ntype ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';\n\n// Constants\nconst MAX_RECONNECT_ATTEMPTS = 10;\nconst PING_INTERVAL_MS = 20000; // 20 seconds\nconst PONG_TIMEOUT_MS = 5000; // 5 seconds\nconst BASE_RECONNECT_DELAY_MS = 1000; // 1 second\nconst MAX_RECONNECT_DELAY_MS = 16000; // 16 seconds\n\n// State variables\nlet connectionState: ConnectionState = 'disconnected';\nlet reconnectAttempt = 0;\nlet reconnectTimeoutId: number | null = null;\nlet pingIntervalId: number | null = null;\nlet pongTimeoutId: number | null = null;\n```\n\nAdd helper function for exponential backoff calculation:\n```typescript\nfunction calculateReconnectDelay(attempt: number): number {\n    const delay = BASE_RECONNECT_DELAY_MS * Math.pow(2, attempt);\n    return Math.min(delay, MAX_RECONNECT_DELAY_MS);\n}\n```",
+        "testStrategy": "1. Verify constants are exported/accessible\n2. Unit test calculateReconnectDelay() returns correct values: attempt 0 = 1000ms, attempt 1 = 2000ms, attempt 2 = 4000ms, attempt 3 = 8000ms, attempt 4+ = 16000ms (capped)",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed - this is a straightforward task of adding TypeScript type definitions, constants, and a single pure function to main.ts",
+        "updatedAt": "2026-01-23T19:46:33.855Z"
+      },
+      {
+        "id": "2",
+        "title": "Update connection status UI with reconnection states",
+        "description": "Enhance updateConnectionStatus() function to display reconnection attempt count and color-code connection states (green/yellow/red).",
+        "details": "Modify the updateConnectionStatus function to handle all connection states:\n\n```typescript\nfunction updateConnectionStatus(state: ConnectionState, message?: string): void {\n    if (!statusElement) return;\n    \n    let displayText: string;\n    let color: string;\n    \n    switch (state) {\n        case 'connected':\n            displayText = 'Connected to MCP server';\n            color = 'var(--accent-primary)'; // green\n            break;\n        case 'connecting':\n            displayText = 'Connecting...';\n            color = 'var(--warning-500, #f59e0b)'; // yellow\n            break;\n        case 'reconnecting':\n            displayText = `Reconnecting (attempt ${reconnectAttempt}/${MAX_RECONNECT_ATTEMPTS})...`;\n            color = 'var(--warning-500, #f59e0b)'; // yellow\n            break;\n        case 'disconnected':\n            displayText = message || 'Disconnected';\n            color = 'var(--error-700)'; // red\n            break;\n    }\n    \n    if (message && state !== 'disconnected') {\n        displayText += `: ${message}`;\n    }\n    \n    statusElement.textContent = displayText;\n    statusElement.style.color = color;\n}\n```\n\nUpdate index.html button to show appropriate text based on state (Connect vs Reconnect).",
+        "testStrategy": "1. Visual inspection: verify green color when connected, yellow when connecting/reconnecting, red when disconnected\n2. Verify reconnection attempt counter is displayed correctly as 'Reconnecting (attempt X/10)...'\n3. Test that status text updates in real-time during reconnection sequence",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed - this is a self-contained refactor of the existing updateConnectionStatus function with color mappings",
+        "updatedAt": "2026-01-23T19:51:50.700Z"
+      },
+      {
+        "id": "3",
+        "title": "Implement automatic reconnection with exponential backoff",
+        "description": "Add scheduleReconnect() function and modify ws.onclose handler to trigger automatic reconnection attempts using exponential backoff.",
+        "details": "Implement reconnection logic in main.ts:\n\n```typescript\nfunction scheduleReconnect(): void {\n    // Don't schedule if already at max attempts\n    if (reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {\n        connectionState = 'disconnected';\n        updateConnectionStatus('disconnected', 'Max reconnection attempts reached. Click to reconnect.');\n        return;\n    }\n    \n    // Clear any existing reconnect timeout\n    if (reconnectTimeoutId !== null) {\n        clearTimeout(reconnectTimeoutId);\n    }\n    \n    const delay = calculateReconnectDelay(reconnectAttempt);\n    console.log(`Scheduling reconnect attempt ${reconnectAttempt + 1} in ${delay}ms`);\n    \n    reconnectTimeoutId = window.setTimeout(() => {\n        reconnectAttempt++;\n        connectionState = 'reconnecting';\n        updateConnectionStatus('reconnecting');\n        connectToMcpServer();\n    }, delay);\n}\n```\n\nModify ws.onclose handler:\n```typescript\nws.onclose = (event: CloseEvent) => {\n    console.log('Disconnected from MCP server', event.code, event.reason);\n    stopPingInterval();\n    ws = null;\n    \n    // Only auto-reconnect on unexpected closures (code !== 1000)\n    if (event.code !== 1000 && connectionState !== 'disconnected') {\n        scheduleReconnect();\n    } else {\n        connectionState = 'disconnected';\n        const message = event.reason || undefined;\n        updateConnectionStatus('disconnected', message);\n    }\n};\n```",
+        "testStrategy": "1. Disconnect WebSocket server and verify plugin attempts reconnection\n2. Verify exponential backoff timing: 1s, 2s, 4s, 8s, 16s delays\n3. Verify reconnection stops after 10 attempts with appropriate error message\n4. Test that clean disconnect (code 1000) does NOT trigger reconnection",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement scheduleReconnect() function with timer management",
+            "description": "Create the scheduleReconnect() function that manages reconnection scheduling with exponential backoff timing, including proper timeout handling and state management.",
+            "dependencies": [],
+            "details": "Implement scheduleReconnect() in main.ts that: 1) Checks if reconnectAttempt >= MAX_RECONNECT_ATTEMPTS and updates state to 'disconnected' with appropriate message if so, 2) Clears any existing reconnectTimeoutId using clearTimeout before scheduling new one, 3) Calculates delay using calculateReconnectDelay(reconnectAttempt) from Task 1, 4) Uses window.setTimeout to schedule reconnection, incrementing reconnectAttempt, setting connectionState to 'reconnecting', calling updateConnectionStatus(), and invoking connectToMcpServer(). Store the timeout ID in reconnectTimeoutId for later cleanup.",
+            "status": "done",
+            "testStrategy": "1. Call scheduleReconnect() and verify timeout is scheduled with correct delay from calculateReconnectDelay(). 2. Call scheduleReconnect() twice rapidly and verify only one timeout exists (previous cleared). 3. Set reconnectAttempt to MAX_RECONNECT_ATTEMPTS and verify function returns early with proper state update.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T19:54:11.824Z"
+          },
+          {
+            "id": 2,
+            "title": "Modify ws.onclose handler to trigger reconnection on unexpected closures",
+            "description": "Update the WebSocket onclose event handler to differentiate between clean disconnects (code 1000) and unexpected closures, triggering automatic reconnection only for unexpected ones.",
+            "dependencies": [
+              1
+            ],
+            "details": "Modify ws.onclose in connectToMcpServer() to: 1) Log disconnect with event.code and event.reason, 2) Call stopPingInterval() if implemented (add stub if not), 3) Set ws = null, 4) Check if event.code !== 1000 AND connectionState !== 'disconnected' to determine if reconnection should occur, 5) If conditions met, call scheduleReconnect(), 6) Otherwise set connectionState to 'disconnected' and call updateConnectionStatus('disconnected', event.reason || undefined). Code 1000 indicates normal closure initiated by client or clean server shutdown.",
+            "status": "done",
+            "testStrategy": "1. Simulate WebSocket close with code 1006 (abnormal) and verify scheduleReconnect() is called. 2. Simulate close with code 1000 (normal) and verify no reconnection attempt. 3. Set connectionState to 'disconnected' before close and verify no reconnection even with non-1000 code.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T19:54:28.769Z"
+          },
+          {
+            "id": 3,
+            "title": "Add proper cleanup of reconnection timers on connection success or manual disconnect",
+            "description": "Implement timer cleanup logic to clear pending reconnection timeouts when a connection succeeds or when the user manually disconnects.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Add cleanup in two locations: 1) In ws.onopen handler (preparing for Task 4): clear reconnectTimeoutId if not null using clearTimeout and set to null, 2) Create or update a disconnect/cleanup function that clears reconnectTimeoutId when user manually disconnects (sets connectionState to 'disconnected' before close), 3) Ensure no race conditions by checking reconnectTimeoutId !== null before clearing, 4) Add cleanup in window unload/beforeunload event if applicable to prevent orphaned timers. This ensures manual Connect button and successful reconnection both prevent duplicate connection attempts.",
+            "status": "done",
+            "testStrategy": "1. Schedule reconnect, then simulate successful connection, verify timeout is cleared and no delayed reconnection occurs. 2. Schedule reconnect, trigger manual disconnect, verify timeout is cleared. 3. Rapid connect/disconnect cycles to verify no timer leaks or race conditions.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T19:54:41.045Z"
+          }
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down into: 1) Implement scheduleReconnect() function with timer management, 2) Modify ws.onclose handler to trigger reconnection on unexpected closures, 3) Add proper cleanup of reconnection timers when connection succeeds or user disconnects manually",
+        "updatedAt": "2026-01-23T19:54:41.045Z"
+      },
+      {
+        "id": "4",
+        "title": "Reset reconnection state on successful connection",
+        "description": "Modify ws.onopen handler to reset reconnection attempt counter and update connection state when connection succeeds.",
+        "details": "Update the ws.onopen handler in connectToMcpServer():\n\n```typescript\nws.onopen = () => {\n    console.log('Connected to MCP server');\n    \n    // Reset reconnection state on successful connection\n    reconnectAttempt = 0;\n    if (reconnectTimeoutId !== null) {\n        clearTimeout(reconnectTimeoutId);\n        reconnectTimeoutId = null;\n    }\n    \n    connectionState = 'connected';\n    updateConnectionStatus('connected');\n    \n    // Start keepalive ping after successful connection\n    startPingInterval();\n};\n```\n\nAlso update connectToMcpServer() to set state to 'connecting':\n```typescript\nfunction connectToMcpServer(): void {\n    if (ws?.readyState === WebSocket.OPEN) {\n        updateConnectionStatus('connected');\n        return;\n    }\n    \n    try {\n        connectionState = 'connecting';\n        updateConnectionStatus('connecting');\n        // ... rest of existing connection code\n    }\n}\n```",
+        "testStrategy": "1. Verify reconnectAttempt resets to 0 after successful reconnection\n2. Verify connection state changes from 'reconnecting' to 'connected' on success\n3. Test multiple reconnect-connect cycles to ensure counter resets each time",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 2,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed - simple modifications to ws.onopen handler and connectToMcpServer function entry point",
+        "updatedAt": "2026-01-23T19:56:55.970Z"
+      },
+      {
+        "id": "5",
+        "title": "Implement manual reconnect override",
+        "description": "Update Connect button click handler to reset backoff timer and allow manual reconnection during any connection state.",
+        "details": "Update the connect button click handler:\n\n```typescript\ndocument.querySelector(\"[data-handler='connect-mcp']\")?.addEventListener(\"click\", () => {\n    // Clear any scheduled reconnection\n    if (reconnectTimeoutId !== null) {\n        clearTimeout(reconnectTimeoutId);\n        reconnectTimeoutId = null;\n    }\n    \n    // Reset attempt counter when user manually initiates connection\n    reconnectAttempt = 0;\n    \n    // If already connected, disconnect first\n    if (ws?.readyState === WebSocket.OPEN) {\n        ws.close(1000, 'User initiated reconnection');\n    }\n    \n    connectToMcpServer();\n});\n```\n\nOptionally update index.html to dynamically show button text:\n```html\n<button type=\"button\" data-appearance=\"secondary\" data-handler=\"connect-mcp\" id=\"connect-button\">\n    Connect to MCP server\n</button>\n```\n\nAnd add logic to update button text based on state:\n```typescript\nfunction updateButtonText(): void {\n    const button = document.getElementById('connect-button');\n    if (!button) return;\n    \n    if (reconnectAttempt >= MAX_RECONNECT_ATTEMPTS && connectionState === 'disconnected') {\n        button.textContent = 'Reconnect';\n    } else {\n        button.textContent = 'Connect to MCP server';\n    }\n}\n```",
+        "testStrategy": "1. Click Connect during active reconnection - verify it resets timer and reconnects immediately\n2. After max retries exhausted, verify button changes to 'Reconnect'\n3. Verify clicking Reconnect resets attempt counter and starts fresh",
+        "priority": "medium",
+        "dependencies": [
+          "3",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 3,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "No expansion needed - straightforward enhancement of existing click handler with state reset and optional button text update",
+        "updatedAt": "2026-01-23T19:59:26.057Z"
+      },
+      {
+        "id": "6",
+        "title": "Implement keepalive ping mechanism (client-side)",
+        "description": "Add ping interval that sends periodic ping messages and monitors for pong responses to detect stale connections.",
+        "details": "Add ping/pong handling in main.ts:\n\n```typescript\nfunction startPingInterval(): void {\n    stopPingInterval(); // Clear any existing interval\n    \n    pingIntervalId = window.setInterval(() => {\n        if (ws?.readyState === WebSocket.OPEN) {\n            const pingMessage = { type: 'ping', timestamp: Date.now() };\n            ws.send(JSON.stringify(pingMessage));\n            console.log('Sent ping');\n            \n            // Set timeout for pong response\n            pongTimeoutId = window.setTimeout(() => {\n                console.warn('Pong timeout - connection may be dead');\n                // Force close and trigger reconnection\n                if (ws) {\n                    ws.close(4000, 'Pong timeout');\n                }\n            }, PONG_TIMEOUT_MS);\n        }\n    }, PING_INTERVAL_MS);\n}\n\nfunction stopPingInterval(): void {\n    if (pingIntervalId !== null) {\n        clearInterval(pingIntervalId);\n        pingIntervalId = null;\n    }\n    if (pongTimeoutId !== null) {\n        clearTimeout(pongTimeoutId);\n        pongTimeoutId = null;\n    }\n}\n```\n\nUpdate ws.onmessage to handle pong responses:\n```typescript\nws.onmessage = (event) => {\n    console.log('Received from MCP server:', event.data);\n    try {\n        const message = JSON.parse(event.data);\n        \n        // Handle pong response\n        if (message.type === 'pong') {\n            console.log('Received pong');\n            if (pongTimeoutId !== null) {\n                clearTimeout(pongTimeoutId);\n                pongTimeoutId = null;\n            }\n            return;\n        }\n        \n        // Forward task requests to plugin\n        parent.postMessage(message, '*');\n    } catch (error) {\n        console.error('Failed to parse WebSocket message:', error);\n    }\n};\n```",
+        "testStrategy": "1. Verify ping messages sent every 20 seconds when connected\n2. Verify pong timeout (5s) triggers connection close if no response\n3. Verify pong response clears the timeout timer\n4. Test that ping interval stops on disconnect",
+        "priority": "high",
+        "dependencies": [
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement startPingInterval() and stopPingInterval() timer management functions",
+            "description": "Create the core ping/pong timer functions that manage the ping interval and pong timeout timers with proper cleanup to prevent memory leaks.",
+            "dependencies": [],
+            "details": "Add module-level timer ID variables (pingIntervalId, pongTimeoutId) at the top of main.ts near the existing ws variable. Implement startPingInterval() that: 1) Calls stopPingInterval() first to clear any existing timers, 2) Uses window.setInterval() with PING_INTERVAL_MS to periodically send JSON ping messages {type: 'ping', timestamp: Date.now()}, 3) Only sends if ws?.readyState === WebSocket.OPEN, 4) After sending each ping, sets a pong timeout using window.setTimeout() with PONG_TIMEOUT_MS that will call ws.close(4000, 'Pong timeout') if no pong received. Implement stopPingInterval() that clears both timers using clearInterval/clearTimeout and sets IDs back to null. Both functions must handle null timer IDs gracefully.",
+            "status": "done",
+            "testStrategy": "1. Unit test that startPingInterval() sends ping messages at PING_INTERVAL_MS intervals when connected. 2. Verify stopPingInterval() clears both timers and can be called safely when timers are null. 3. Test that calling startPingInterval() twice doesn't create duplicate intervals (first call to stopPingInterval() clears existing). 4. Verify pong timeout triggers ws.close() with code 4000 after PONG_TIMEOUT_MS.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:01:25.306Z"
+          },
+          {
+            "id": 2,
+            "title": "Add pong message handling in ws.onmessage to clear timeout and acknowledge keepalive",
+            "description": "Modify the existing ws.onmessage handler to detect and handle pong response messages, clearing the pong timeout to prevent false connection-dead detection.",
+            "dependencies": [
+              1
+            ],
+            "details": "Update the ws.onmessage handler (currently at line 68-77) to: 1) Parse the incoming JSON message, 2) Check if message.type === 'pong' before forwarding to parent, 3) If pong received: log acknowledgment, clear the pongTimeoutId using clearTimeout(), set pongTimeoutId to null, and return early without forwarding to plugin, 4) For all other messages, continue with existing behavior (forward task requests to parent via postMessage). The pong handler must be checked BEFORE the parent.postMessage() call to avoid forwarding keepalive messages as task requests. Consider logging the round-trip time using message.timestamp if desired for debugging.",
+            "status": "done",
+            "testStrategy": "1. Send a mock pong message and verify timeout is cleared (pongTimeoutId becomes null). 2. Verify pong messages are NOT forwarded to parent.postMessage(). 3. Verify non-pong messages still get forwarded to plugin correctly. 4. Test that receiving pong after timeout already fired doesn't cause errors (graceful handling of null pongTimeoutId).",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:01:45.868Z"
+          },
+          {
+            "id": 3,
+            "title": "Integrate ping/pong lifecycle with WebSocket connection open/close events",
+            "description": "Wire up the ping interval to start when connection opens and stop when connection closes, ensuring proper cleanup and no orphaned timers.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Modify ws.onopen handler (line 63-66) to call startPingInterval() after successful connection, ensuring keepalive begins immediately when connected. Modify ws.onclose handler (line 79-84) to call stopPingInterval() before setting ws = null, ensuring timers are cleaned up on any disconnection. Also call stopPingInterval() in ws.onerror (line 86-90) as a safety measure. Add stopPingInterval() call at the start of connectToMcpServer() to handle edge cases where previous connection's timers weren't cleaned up. This ensures the ping/pong lifecycle is fully synchronized with the WebSocket connection state.",
+            "status": "done",
+            "testStrategy": "1. Connect to server and verify ping interval starts automatically. 2. Disconnect (clean or unclean) and verify ping interval stops. 3. Verify no orphaned timers after multiple connect/disconnect cycles. 4. Test that error event also stops ping interval. 5. Verify reconnection starts fresh ping interval without duplicate timers from previous connection.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:02:08.477Z"
+          }
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down into: 1) Implement startPingInterval() and stopPingInterval() functions with proper timer management, 2) Add pong message handling in ws.onmessage to clear timeout and acknowledge keepalive, 3) Integrate ping/pong lifecycle with connection open/close events",
+        "updatedAt": "2026-01-23T20:02:08.477Z"
+      },
+      {
+        "id": "7",
+        "title": "Implement server-side ping/pong handler",
+        "description": "Add ping message handling in PluginBridge.ts to respond with pong messages and clean up pending tasks on client disconnect.",
+        "details": "Update PluginBridge.ts message handler to process ping messages:\n\n```typescript\nws.on(\"message\", (data: Buffer) => {\n    this.logger.debug(\"Received WebSocket message: %s\", data.toString());\n    try {\n        const message = JSON.parse(data.toString());\n        \n        // Handle ping messages\n        if (message.type === 'ping') {\n            const pongMessage = { type: 'pong', timestamp: message.timestamp };\n            ws.send(JSON.stringify(pongMessage));\n            this.logger.debug('Sent pong response');\n            return;\n        }\n        \n        // Handle task responses\n        const response: PluginTaskResponse<any> = message;\n        this.handlePluginTaskResponse(response);\n    } catch (error) {\n        this.logger.error(error, \"Failure while processing WebSocket message\");\n    }\n});\n```\n\nAdd pending task cleanup on disconnect:\n```typescript\nws.on(\"close\", () => {\n    this.logger.info(\"WebSocket connection closed\");\n    const connection = this.connectedClients.get(ws);\n    this.connectedClients.delete(ws);\n    if (connection?.userToken) {\n        this.clientsByToken.delete(connection.userToken);\n    }\n    \n    // Reject pending tasks for this connection with connection error\n    this.rejectPendingTasksForConnection(ws);\n});\n\nprivate rejectPendingTasksForConnection(ws: WebSocket): void {\n    for (const [taskId, task] of this.pendingTasks.entries()) {\n        // Note: In single-user mode, reject all pending tasks\n        // In multi-user mode, would need to track which tasks belong to which connection\n        const timeoutHandle = this.taskTimeouts.get(taskId);\n        if (timeoutHandle) {\n            clearTimeout(timeoutHandle);\n            this.taskTimeouts.delete(taskId);\n        }\n        this.pendingTasks.delete(taskId);\n        task.rejectWithError(new Error('Connection lost - plugin disconnected'));\n    }\n}\n```",
+        "testStrategy": "1. Send ping from client, verify server responds with pong\n2. Disconnect client while task is pending, verify task is rejected with 'Connection lost' error\n3. Verify proper cleanup of task timeouts on disconnect",
+        "priority": "medium",
+        "dependencies": [
+          "6"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 4,
+        "recommendedSubtasks": 2,
+        "expansionPrompt": "Break down into: 1) Add ping message detection and pong response in ws.on('message') handler, 2) Implement rejectPendingTasksForConnection() method and integrate with ws.on('close') handler",
+        "updatedAt": "2026-01-23T20:05:31.304Z"
+      },
+      {
+        "id": "8",
+        "title": "Add integration tests and cross-browser validation",
+        "description": "Create integration tests for the reconnection logic and validate behavior across Chrome, Firefox, and Safari browsers.",
+        "details": "Create a test file or manual test plan covering:\n\n1. **Reconnection scenarios**:\n   - Server restart: Start plugin connected, restart server, verify auto-reconnect\n   - Network blip: Simulate network interruption, verify recovery within 30s\n   - Server unavailable: Start plugin with server down, verify retry behavior\n\n2. **Browser-specific tests**:\n   - Chrome: Test iframe WebSocket throttling behavior with background tab\n   - Firefox: Verify reconnection in iframe context\n   - Safari: Test WebSocket restrictions in iframes\n\n3. **Edge cases**:\n   - Rapid connect/disconnect cycles\n   - Multiple manual reconnect clicks during reconnection\n   - Connection during active keepalive ping\n\n4. **Logging verification**:\n   - Add console.log statements for all state transitions\n   - Verify logs show: connection state changes, reconnect attempts, ping/pong exchanges\n\nConsider adding E2E test using existing plugins/apps/e2e framework:\n```typescript\ndescribe('WebSocket Reconnection', () => {\n    it('reconnects automatically after server disconnect', async () => {\n        // Connect plugin\n        // Stop server\n        // Verify reconnection attempts\n        // Start server\n        // Verify successful reconnection\n    });\n});\n```",
+        "testStrategy": "1. Run manual test plan across Chrome, Firefox, Safari\n2. Document any browser-specific issues or limitations\n3. Verify success metrics: >99% uptime, <30s recovery, zero manual reconnection for idle timeouts\n4. If E2E tests added, integrate into CI workflow",
+        "priority": "low",
+        "dependencies": [
+          "3",
+          "5",
+          "6",
+          "7"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create test infrastructure for WebSocket reconnection scenarios",
+            "description": "Set up the test harness and utilities needed to simulate WebSocket connection states, server restarts, and network interruptions for testing reconnection logic.",
+            "dependencies": [],
+            "details": "Create test infrastructure in plugins/apps/e2e or a new test directory:\n\n1. **Mock WebSocket server setup**:\n   - Create a controllable test server that can be started/stopped programmatically\n   - Add methods: start(), stop(), simulateDisconnect(), getConnectionCount()\n\n2. **Test utilities**:\n   - Helper to wait for connection state changes\n   - Helper to capture and verify console.log output for state transitions\n   - Timing utilities for verifying backoff delays\n\n3. **Test fixture setup**:\n   ```typescript\n   // test-utils/websocket-test-server.ts\n   export class TestWebSocketServer {\n     private server: WebSocketServer | null = null;\n     \n     async start(port: number): Promise<void>\n     async stop(): Promise<void>\n     async restart(): Promise<void>\n     simulateLatency(ms: number): void\n   }\n   ```\n\n4. **Integration with existing e2e Agent pattern** if applicable",
+            "status": "done",
+            "testStrategy": "Verify test server can be started/stopped reliably, connections are tracked correctly, and restart simulation works within expected timing bounds.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:10:28.755Z"
+          },
+          {
+            "id": 2,
+            "title": "Write integration tests for server restart and network blip scenarios",
+            "description": "Implement integration tests covering automatic reconnection after server restart, network interruption recovery within 30 seconds, and retry behavior when server is unavailable.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create integration tests using the test infrastructure:\n\n1. **Server restart test**:\n   ```typescript\n   describe('WebSocket Reconnection', () => {\n     it('reconnects automatically after server disconnect', async () => {\n       // Connect plugin\n       await connectPlugin();\n       expect(connectionState).toBe('connected');\n       \n       // Stop server\n       await testServer.stop();\n       await waitForState('reconnecting');\n       \n       // Verify reconnection attempts\n       expect(reconnectAttempt).toBeGreaterThan(0);\n       \n       // Start server\n       await testServer.start();\n       \n       // Verify successful reconnection within 30s\n       await waitForState('connected', { timeout: 30000 });\n     });\n   });\n   ```\n\n2. **Network blip test**: Simulate brief disconnection (<5s), verify recovery\n\n3. **Server unavailable test**: Start plugin with server down, verify retry with exponential backoff (1s, 2s, 4s, 8s, 16s cap)\n\n4. **Verify logging**: Assert console output shows state transitions and attempt counts",
+            "status": "done",
+            "testStrategy": "Run tests with timing assertions: recovery under 30s, correct backoff intervals observed, state transitions logged properly. Test should pass reliably without flakiness.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:10:39.828Z"
+          },
+          {
+            "id": 3,
+            "title": "Write edge case tests for rapid connect/disconnect and concurrent operations",
+            "description": "Create tests for edge cases including rapid connect/disconnect cycles, multiple manual reconnect clicks during reconnection, and connection attempts during active keepalive pings.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement edge case tests:\n\n1. **Rapid connect/disconnect cycles**:\n   ```typescript\n   it('handles rapid connect/disconnect cycles without state corruption', async () => {\n     for (let i = 0; i < 10; i++) {\n       await clickConnect();\n       await waitForState('connecting');\n       await testServer.simulateDisconnect();\n     }\n     // Verify final state is consistent\n     expect(['disconnected', 'reconnecting']).toContain(connectionState);\n     expect(reconnectAttempt).toBeLessThanOrEqual(MAX_RECONNECT_ATTEMPTS);\n   });\n   ```\n\n2. **Multiple manual reconnect clicks**:\n   - Click Connect multiple times while reconnecting\n   - Verify no duplicate connections created\n   - Verify reconnect timer is properly cleared/reset\n\n3. **Connection during keepalive ping**:\n   - Trigger disconnect exactly during ping/pong exchange\n   - Verify ping interval is cleared and reconnection starts cleanly\n\n4. **Max retries exhaustion**:\n   - Verify behavior after 10 failed attempts\n   - Verify manual reconnect resets counter",
+            "status": "done",
+            "testStrategy": "Run each edge case test multiple times to verify consistency. Check for memory leaks (unclosed connections, orphaned timers). Verify no duplicate WebSocket instances are created.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:11:04.348Z"
+          },
+          {
+            "id": 4,
+            "title": "Create cross-browser test plan document and manual testing checklist",
+            "description": "Document a comprehensive manual testing checklist for validating WebSocket reconnection behavior across Chrome, Firefox, and Safari browsers.",
+            "dependencies": [],
+            "details": "Create test plan document at `.claude/docs/websocket-cross-browser-test-plan.md`:\n\n1. **Test environment setup**:\n   - Browser versions to test (latest stable of each)\n   - Penpot plugin installation steps\n   - How to access browser dev console for logging\n\n2. **Manual test checklist** (for each browser):\n   - [ ] Basic connection: Plugin connects on load\n   - [ ] Server restart: Stop MCP server, verify reconnection UI shows attempts, restart server, verify auto-reconnect\n   - [ ] Network blip: Disconnect network briefly, verify recovery\n   - [ ] Max retries: Keep server down, verify stops after 10 attempts\n   - [ ] Manual override: Click Connect during reconnection, verify immediate retry\n\n3. **Success criteria**:\n   - >99% uptime measurement methodology\n   - <30s recovery time verification\n   - Zero manual reconnection needed for idle timeouts\n\n4. **Issue reporting template**: Browser, version, steps, expected vs actual, console logs",
+            "status": "done",
+            "testStrategy": "Have test plan reviewed by team. Execute manual tests on at least one browser to validate checklist completeness before cross-browser execution.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:10:07.757Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement and document browser-specific WebSocket behaviors",
+            "description": "Test and document browser-specific WebSocket behaviors including Chrome iframe throttling with background tabs, Firefox iframe reconnection, and Safari WebSocket restrictions.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create documentation and any necessary workarounds:\n\n1. **Chrome background tab throttling**:\n   - Test: Open plugin in iframe, switch to another tab, observe WebSocket behavior\n   - Document: Timer throttling to 1/second in background tabs\n   - Verify: Keepalive ping (20s interval) works despite throttling\n   - Add to test plan: Specific steps to reproduce and verify\n\n2. **Firefox iframe context**:\n   - Test: WebSocket reconnection within Penpot plugin iframe\n   - Document any permission or security considerations\n   - Verify: Same reconnection behavior as top-level context\n\n3. **Safari restrictions**:\n   - Test: WebSocket behavior in Safari iframes\n   - Document: Any ITP (Intelligent Tracking Prevention) impacts\n   - Document: Third-party iframe WebSocket limitations\n   - Add workarounds if needed (e.g., first-party subdomains)\n\n4. **Update CLAUDE.md or README**: Add browser compatibility notes section",
+            "status": "done",
+            "testStrategy": "Execute manual tests in each browser following test plan. Document findings with screenshots and console output. Create issues for any browser-specific bugs discovered.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-23T20:11:29.771Z"
+          }
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down into: 1) Create test infrastructure for WebSocket reconnection scenarios, 2) Write integration tests for server restart/network blip scenarios, 3) Write edge case tests for rapid connect/disconnect and concurrent operations, 4) Create cross-browser test plan document and manual testing checklist, 5) Implement or document browser-specific WebSocket behaviors (Chrome iframe throttling, Safari restrictions)",
+        "updatedAt": "2026-01-23T20:11:29.771Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-01-23T20:11:29.771Z",
+      "taskCount": 8,
+      "completedCount": 8,
+      "tags": [
+        "plan-websocket-reliability-20260123"
+      ]
+    }
+  }
+}

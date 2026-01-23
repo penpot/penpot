@@ -1,0 +1,77 @@
+{
+	"meta": {
+		"generatedAt": "2026-01-23T19:41:03.673Z",
+		"tasksAnalyzed": 8,
+		"totalTasks": 8,
+		"analysisCount": 8,
+		"thresholdScore": 5,
+		"projectName": "feature-20260123-203624",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Add connection state management and constants",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed - this is a straightforward task of adding TypeScript type definitions, constants, and a single pure function to main.ts",
+			"reasoning": "The existing main.ts is compact (111 lines) with clear structure. Task requires adding ~20 lines of type/constant definitions and a simple exponential backoff function. No architectural decisions needed - the implementation details are fully specified in the task. The calculateReconnectDelay() function is a pure function with predictable behavior. Low risk of breaking existing code since these are additive changes."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Update connection status UI with reconnection states",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed - this is a self-contained refactor of the existing updateConnectionStatus function with color mappings",
+			"reasoning": "The current updateConnectionStatus() function (lines 22-28) already handles status updates with color coding. The refactor changes the function signature from (status, isConnectedState, message?) to (state, message?) and adds a switch statement for 4 states. The HTML already has the connect button and status div - minimal changes needed. CSS variables (--accent-primary, --error-700) already exist. Only requires understanding the existing color scheme and mapping states to colors."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement automatic reconnection with exponential backoff",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down into: 1) Implement scheduleReconnect() function with timer management, 2) Modify ws.onclose handler to trigger reconnection on unexpected closures, 3) Add proper cleanup of reconnection timers when connection succeeds or user disconnects manually",
+			"reasoning": "This task involves more complex state management - coordinating between multiple timers (reconnectTimeout), understanding WebSocket close codes, and handling edge cases (max attempts reached, clean disconnect vs unexpected). The ws.onclose handler currently has minimal logic (lines 79-84). Need to ensure no race conditions between scheduled reconnects and manual connects. The exponential backoff logic depends on Task 1. Testing timing-based behavior is inherently more complex."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Reset reconnection state on successful connection",
+			"complexityScore": 2,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed - simple modifications to ws.onopen handler and connectToMcpServer function entry point",
+			"reasoning": "The ws.onopen handler (lines 63-66) is already defined and just needs augmentation to reset state variables and clear timers. The connectToMcpServer function entry (lines 47-61) needs minor modification to set 'connecting' state. These are small, localized changes with clear requirements. The task is well-defined and depends on state variables from Task 1."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Implement manual reconnect override",
+			"complexityScore": 3,
+			"recommendedSubtasks": 0,
+			"expansionPrompt": "No expansion needed - straightforward enhancement of existing click handler with state reset and optional button text update",
+			"reasoning": "The connect button handler exists (lines 98-100) and needs enhancement to clear timers and reset attempt counter. The optional button text update (Connect vs Reconnect) adds minor complexity but is well-specified. The HTML already has an id on the button (data-handler='connect-mcp'). The task involves straightforward timer/state management with no complex edge cases beyond what's covered in Task 3."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Implement keepalive ping mechanism (client-side)",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down into: 1) Implement startPingInterval() and stopPingInterval() functions with proper timer management, 2) Add pong message handling in ws.onmessage to clear timeout and acknowledge keepalive, 3) Integrate ping/pong lifecycle with connection open/close events",
+			"reasoning": "Ping/pong involves coordinating two timers (pingInterval for sending pings, pongTimeout for detecting failures). The ws.onmessage handler (lines 68-77) needs modification to detect and handle pong responses separately from task requests. Must ensure timers are properly cleaned up on disconnect and don't accumulate. The timeout that triggers ws.close(4000) creates a reconnection cascade that needs careful testing. Timing-dependent logic is inherently more complex to verify."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Implement server-side ping/pong handler",
+			"complexityScore": 4,
+			"recommendedSubtasks": 2,
+			"expansionPrompt": "Break down into: 1) Add ping message detection and pong response in ws.on('message') handler, 2) Implement rejectPendingTasksForConnection() method and integrate with ws.on('close') handler",
+			"reasoning": "PluginBridge.ts is more complex (227 lines) with task lifecycle management via pendingTasks and taskTimeouts Maps. The ping handling is simple (detect type='ping', respond with pong). The task cleanup on disconnect requires understanding the existing task tracking system - needs to iterate pendingTasks, clear timeouts, and reject promises. The current ws.on('close') handler (lines 82-88) just removes client references. Single-user vs multi-user mode complicates task rejection logic (all tasks vs specific user's tasks)."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Add integration tests and cross-browser validation",
+			"complexityScore": 7,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down into: 1) Create test infrastructure for WebSocket reconnection scenarios, 2) Write integration tests for server restart/network blip scenarios, 3) Write edge case tests for rapid connect/disconnect and concurrent operations, 4) Create cross-browser test plan document and manual testing checklist, 5) Implement or document browser-specific WebSocket behaviors (Chrome iframe throttling, Safari restrictions)",
+			"reasoning": "Testing infrastructure may need to be created - the existing e2e tests (plugins/apps/e2e) use an Agent pattern for plugin execution but don't cover WebSocket reconnection. Simulating network conditions (server restart, network blip) requires test harness setup. Cross-browser testing adds significant manual effort - Chrome's background tab throttling, Safari iframe restrictions require actual browser testing. The task mentions success metrics (>99% uptime, <30s recovery) which need measurement infrastructure. This is inherently the most complex task due to test environment setup and cross-browser coordination."
+		}
+	]
+}

@@ -84,3 +84,26 @@ node_modules
 /render-wasm/target/
 /**/.yarn/*
 /.pnpm-store
+
+# Claude ephemeral files (auto-added)
+.claude/.command-checksums
+
+# Claude God Mode - ephemeral files
+.claude/commands/
+.claude/agents/
+.claude/rules/
+.claude/CLAUDE.md
+.claude/settings.local.json
+.claude/.mode-managed*
+.claude/.current-mode
+.claude/ralph-loop.local.md
+.claude/test-round
+.claude/test-sessions/
+.claude/*.project-backup
+.claude/sessions/
+.claude/exceptions.local
+.claude/sessions/current_mode
+.claude/sessions/current_session
+.claude/.command-checksums
+.taskmaster/config.json
+# End Claude God Mode

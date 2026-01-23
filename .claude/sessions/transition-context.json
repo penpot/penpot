@@ -1,0 +1,12 @@
+{
+  "from_mode": "build",
+  "to_mode": "test",
+  "workflow_source": "build",
+  "workflow_type": "testing",
+  "timestamp": "2026-01-23T22:07:22+01:00",
+  "project_root": "/home/admin/Projects/worktrees/penpot/feature-20260123-203624",
+  "prd_path": "",
+  "plan_path": "",
+  "failures_path": "",
+  "test_round": ""
+}
