@@ -264,7 +264,6 @@ pub(crate) struct RenderState {
     pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub cached_viewbox: Viewbox,
-    pub cached_target_snapshot: Option<skia::Image>,
     pub images: ImageStore,
     pub background_color: skia::Color,
     // Identifier of the current requestAnimationFrame call, if any.
@@ -345,7 +344,6 @@ impl RenderState {
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            cached_target_snapshot: None,
             images: ImageStore::new(gpu_state.context.clone()),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
@@ -1094,14 +1092,11 @@ impl RenderState {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
         let scale = self.get_cached_scale();
-        if let Some(snapshot) = &self.cached_target_snapshot {
-            let canvas = self.surfaces.canvas(SurfaceId::Target);
-            canvas.save();
 
+        // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
+        if self.cached_viewbox.area.width() > 0.0 {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
-
-            canvas.scale((navigate_zoom, navigate_zoom));
 
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
@@ -1111,15 +1106,24 @@ impl RenderState {
                 );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
+            let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
+            let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
+            let bg_color = self.background_color;
 
-            canvas.translate((
-                (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x,
-                (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y,
-            ));
+            // Setup canvas transform
+            {
+                let canvas = self.surfaces.canvas(SurfaceId::Target);
+                canvas.save();
+                canvas.scale((navigate_zoom, navigate_zoom));
+                canvas.translate((translate_x, translate_y));
+                canvas.clear(bg_color);
+            }
 
-            canvas.clear(self.background_color);
-            canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
-            canvas.restore();
+            // Draw directly from cache surface, avoiding snapshot overhead
+            self.surfaces.draw_cache_to_target();
+
+            // Restore canvas state
+            self.surfaces.canvas(SurfaceId::Target).restore();
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -1587,7 +1591,7 @@ impl RenderState {
                 }
             });
 
-        if let Some((image, filter_scale)) = filter_result {
+        if let Some((mut surface, filter_scale)) = filter_result {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
             drop_canvas.save();
             drop_canvas.scale((scale, scale));
@@ -1597,34 +1601,26 @@ impl RenderState {
 
             // If we scaled down in the filter surface, we need to scale back up
             if filter_scale < 1.0 {
-                let scaled_width = bounds.width() * filter_scale;
-                let scaled_height = bounds.height() * filter_scale;
-                let src_rect = skia::Rect::from_xywh(0.0, 0.0, scaled_width, scaled_height);
-
                 drop_canvas.save();
                 drop_canvas.scale((1.0 / filter_scale, 1.0 / filter_scale));
-                drop_canvas.draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                    skia::Rect::from_xywh(
-                        bounds.left * filter_scale,
-                        bounds.top * filter_scale,
-                        scaled_width,
-                        scaled_height,
-                    ),
+                drop_canvas.translate((bounds.left * filter_scale, bounds.top * filter_scale));
+                surface.draw(
+                    drop_canvas,
+                    (0.0, 0.0),
                     self.sampling_options,
-                    &drop_paint,
+                    Some(&drop_paint),
                 );
                 drop_canvas.restore();
             } else {
-                let src_rect = skia::Rect::from_xywh(0.0, 0.0, bounds.width(), bounds.height());
-                drop_canvas.draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                    bounds,
+                drop_canvas.save();
+                drop_canvas.translate((bounds.left, bounds.top));
+                surface.draw(
+                    drop_canvas,
+                    (0.0, 0.0),
                     self.sampling_options,
-                    &drop_paint,
+                    Some(&drop_paint),
                 );
+                drop_canvas.restore();
             }
             drop_canvas.restore();
         }
@@ -2097,10 +2093,8 @@ impl RenderState {
 
         self.surfaces.gc();
 
-        // Cache target surface in a texture
+        // Mark cache as valid for render_from_cache
         self.cached_viewbox = self.viewbox;
-
-        self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {
             debug::render(self);
