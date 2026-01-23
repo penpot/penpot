@@ -763,43 +763,6 @@
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
 
-(defn toggle-border-radius-token
-  [{:keys [token attrs shape-ids expand-with-children]}]
-  (ptk/reify ::on-toggle-border-radius-token
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shapes (into [] (keep (d/getf objects)) shape-ids)
-
-            shapes
-            (if expand-with-children
-              (into []
-                    (mapcat (fn [shape]
-                              (if (= (:type shape) :group)
-                                (keep objects (:shapes shape))
-                                [shape])))
-                    shapes)
-              shapes)
-
-            {:keys [attributes all-attributes]}
-            (get token-properties (:type token))
-
-            unapply-tokens?
-            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
-
-            shape-ids (map :id shapes)]
-
-        (if unapply-tokens?
-          (rx/of
-           (unapply-token {:attributes (or attrs all-attributes attributes)
-                           :token token
-                           :shape-ids shape-ids}))
-          (rx/of
-           (apply-token {:attributes attrs
-                         :token token
-                         :shape-ids shape-ids
-                         :on-update-shape update-shape-radius-for-corners})))))))
-
 (defn apply-token-on-selected
   [color-operations token]
   (ptk/reify ::apply-token-on-selected

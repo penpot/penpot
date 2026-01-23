@@ -16,7 +16,7 @@
 
 (defn on-update-token-set
   [tokens-lib token-set name]
-  (let [name   (ctob/normalize-set-name name)
+  (let [name   (ctob/normalize-set-name name (ctob/get-name token-set))
         errors (sm/validation-errors name (cfo/make-token-set-name-schema
                                            tokens-lib
                                            (ctob/get-id token-set)))]

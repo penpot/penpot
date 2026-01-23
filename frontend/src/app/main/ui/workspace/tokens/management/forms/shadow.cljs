@@ -253,7 +253,7 @@
        [:> reference-form* {:token token
                             :tokens tokens}])]))
 
-;; TODO: use cfo/make-schema:token-value and extend it with shadow and reference fields, adding :optional when needed
+;; TODO: use cfo/make-schema:token-value and extend it with shadow and reference fields
 (defn- make-schema
   [tokens-tree active-tab]
   (sm/schema

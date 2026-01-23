@@ -80,7 +80,7 @@
     value))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SCHEMA
+;; SCHEMA: Token types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
@@ -542,14 +542,6 @@
 ;; HELPERS for tokens application
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO it seems that this function is redundant, maybe?
-;; (defn- toggle-or-apply-token
-;;   "Remove any shape attributes from token if they exists.
-;;   Othewise apply token attributes."
-;;   [shape token]
-;;   (let [[only-in-shape only-in-token _matching] (data/diff (:applied-tokens shape) token)]
-;;     (merge {} only-in-shape only-in-token)))
-
 (defn- generate-attr-map [token attributes]
   (->> (map (fn [attr] [attr (:name token)]) attributes)
        (into {})))
@@ -559,12 +551,6 @@
   [{:keys [shape token attributes] :as _props}]
   (let [map-to-apply (generate-attr-map token attributes)]
     (update shape :applied-tokens #(merge % map-to-apply))))
-
-;; (defn apply-token-to-shape
-;;   [{:keys [shape token attributes] :as _props}]
-;;   (let [map-to-apply (generate-attr-map token attributes)
-;;         applied-tokens (toggle-or-apply-token shape map-to-apply)]
-;;     (update shape :applied-tokens #(merge % applied-tokens))))
 
 (defn unapply-tokens-from-shape
   "Removes any token applied to the given attributes in the shape."
@@ -577,7 +563,6 @@
   (let [layout-item-attrs (set/union sizing-layout-item-keys
                                      spacing-margin-keys)]
     (unapply-tokens-from-shape shape layout-item-attrs)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for typography tokens

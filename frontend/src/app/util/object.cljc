@@ -258,7 +258,11 @@
                                                             `(~decode-sym ~val-sym)
                                                             `(~decode-sym ~val-sym ~decode-options))
                                               val-sym     `(~coercer-sym ~val-sym)]
-                                             [])]
+                                             [])
+
+                                         ~fn-sym ~(if wrap
+                                                    `(~wrap-sym ~fn-sym)
+                                                    fn-sym)]
 
                                      ~(if this?
                                         `(.call ~fn-sym ~this-sym ~this-sym ~val-sym)

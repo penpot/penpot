@@ -64,17 +64,20 @@
 (defn locate-token-theme
   [file-id id]
   (let [tokens-lib (locate-tokens-lib file-id)]
-    (ctob/get-theme tokens-lib id)))
+    (when (some? tokens-lib)
+      (ctob/get-theme tokens-lib id))))
 
 (defn locate-token-set
   [file-id set-id]
   (let [tokens-lib (locate-tokens-lib file-id)]
-    (ctob/get-set tokens-lib set-id)))
+    (when (some? tokens-lib)
+      (ctob/get-set tokens-lib set-id))))
 
 (defn locate-token
   [file-id set-id token-id]
   (let [tokens-lib (locate-tokens-lib file-id)]
-    (ctob/get-token tokens-lib set-id token-id)))
+    (when (some? tokens-lib)
+      (ctob/get-token tokens-lib set-id token-id))))
 
 (defn locate-presence
   [session-id]
@@ -269,4 +272,5 @@
           (if-let [explain (-> cause ex-data ::sm/explain)]
             (println (sm/humanize-explain explain))
             (js/console.log (ex-data cause)))
+          (js/console.log (.-stack cause))
           nil)))))

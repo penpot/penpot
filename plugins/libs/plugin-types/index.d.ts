@@ -2,8 +2,10 @@
  * These are methods and properties available on the `penpot` global object.
  *
  */
-export interface Penpot
-  extends Omit<Context, 'addListener' | 'removeListener'> {
+export interface Penpot extends Omit<
+  Context,
+  'addListener' | 'removeListener'
+> {
   ui: {
     /**
      * Opens the plugin UI. It is possible to develop a plugin without interface (see Palette color example) but if you need, the way to open this UI is using `penpot.ui.open`.
@@ -5019,7 +5021,7 @@ export interface TokenCatalog {
    * @param name The name of the theme (required)
    * @return Returns the created TokenTheme.
    */
-  addTheme({group: string, name: string}): TokenTheme;
+  addTheme({ group, name }: { group: string; name: string }): TokenTheme;
 
   /**
    * Creates a new TokenSet and adds it to the catalog.
@@ -5027,7 +5029,7 @@ export interface TokenCatalog {
    * a group path, separated by `/`.
    * @return Returns the created TokenSet.
    */
-  addSet({name: string}): TokenSet;
+  addSet({ name }: { name: string }): TokenSet;
 
   /**
    * Retrieves a theme.
@@ -5098,7 +5100,15 @@ export interface TokenSet {
    * @param value The value of the token (required), in the string form.
    * @return Returns the created Token.
    */
-  addToken({type: TokenType, name: string, value: TokenValueString}): Token;
+  addToken({
+    type,
+    name,
+    value,
+  }: {
+    type: TokenType;
+    name: string;
+    value: TokenValueString;
+  }): Token;
 
   /**
    * Adds to the catalog a new TokenSet equal to this one but with a new id.
@@ -5200,7 +5210,7 @@ type TokenShadowProps = 'shadow';
 /**
  * The properties that a Color token can be applied to.
  */
-type TokenColorProps = 'fill' | 'stroke';
+type TokenColorProps = 'fill' | 'strokeColor';
 
 /**
  * The properties that a Dimension token can be applied to.

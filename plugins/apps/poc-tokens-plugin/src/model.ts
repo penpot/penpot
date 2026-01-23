@@ -83,7 +83,7 @@ export interface ApplyTokenEvent {
   type: 'apply-token';
   setId: string;
   tokenId: string;
-  attributes?: TokenProperty[];
+  properties?: TokenProperty[];
 }
 
 export type PluginUIEvent =

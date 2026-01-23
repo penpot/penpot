@@ -208,6 +208,7 @@
 
 ;; SCHEMA
 
+;; TODO: use cfo/make-schema:token-value and extend it with typography and reference fields
 (defn- make-schema
   [tokens-tree active-tab]
   (sm/schema
