@@ -209,15 +209,17 @@
             (token-proxy plugin-id file-id id token-id)))))
 
     :addToken
-    {:schema [:tuple (-> (cfo/make-token-schema
-                          (-> (u/locate-tokens-lib file-id)
-                              (ctob/get-tokens id)))
-                         ;; Don't allow plugins to set the id
-                         (sm/dissoc-key :id)
-                         ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn)
-                         ;; and set a converter that changes DTCG types to internal types (:decode/json).
-                         ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
-                         (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))]
+    {:schema (fn [args]
+               [:tuple (-> (cfo/make-token-schema
+                            (-> (u/locate-tokens-lib file-id)
+                                (ctob/get-tokens id))
+                            (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                           ;; Don't allow plugins to set the id
+                           (sm/dissoc-key :id)
+                           ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn)
+                           ;; and set a converter that changes DTCG types to internal types (:decode/json).
+                           ;; E.g. "FontFamilies" -> :font-family or "BorderWidth" -> :stroke-width
+                           (sm/update-properties assoc :decode/json cfo/convert-dtcg-token))])
      :decode/options {:key-fn identity}
      :fn (fn [attrs]
            (let [tokens-lib (u/locate-tokens-lib file-id)
@@ -225,17 +227,17 @@
                  token (ctob/make-token attrs)]
              (->> (assoc tokens-tree (:name token) token)
                   (sd/resolve-tokens-interactive)
-                    (rx/subs!
-                     (fn [resolved-tokens]
-                       (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
-                         (if resolved-value
-                           (st/emit! (dwtl/create-token id token))
-                           (u/display-not-valid :addToken (str errors)))))))
+                  (rx/subs!
+                   (fn [resolved-tokens]
+                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+                       (if resolved-value
+                         (st/emit! (dwtl/create-token id token))
+                         (u/display-not-valid :addToken (str errors)))))))
              ;; TODO: as the addToken function is synchronous, we must return the newly created
              ;;       token even if the validator will throw it away if the resolution fails.
              ;;       This will be solved with the TokenScript resolver, that is syncronous.
              (token-proxy plugin-id file-id (:id set) (:id token))))}
-                                                                    
+
     :duplicate
     (fn []
       (st/emit! (dwtl/duplicate-token-set id)))

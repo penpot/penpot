@@ -97,7 +97,7 @@
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema %)
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
                                              (sm/dissoc-key :id)))  ;; TODO this does not work because the schema is no longer a :map but a :multi
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)

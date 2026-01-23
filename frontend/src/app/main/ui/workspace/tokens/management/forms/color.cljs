@@ -48,11 +48,10 @@
          (nil? (cto/token-value-self-reference? name value))))]]))
 
 (mf/defc form*
-  [props]
-  (let [props (mf/spread-props props {:make-schema #(-> (sm/merge (cfo/make-token-schema %1)
+  [{:keys [token-type] :as props}]
+  (let [props (mf/spread-props props {:make-schema #(-> (sm/merge (cfo/make-token-schema %1 token-type)
                                                                   [:map [:color-result {:optional true} ::sm/any]])
                                                         (sm/dissoc-key :id)
-                                                        ;;(sm/assoc-key :color-result {:optional true} ::sm/any)  ;; TODO WTF does this not work?
-                                                        )
+                                                        (sm/assoc-key :color-result {:optional true} ::sm/any))
                                       :input-component token.controls/color-input*})]
     [:> generic/form* props]))
