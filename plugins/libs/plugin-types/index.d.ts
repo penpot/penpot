@@ -5182,7 +5182,7 @@ type TokenShadowProps = 'shadow';
 /**
  * The properties that a Color token can be applied to.
  */
-type TokenColorProps = 'fill' | 'stroke';
+type TokenColorProps = 'fill' | 'strokeColor';
 
 /**
  * The properties that a Dimension token can be applied to.

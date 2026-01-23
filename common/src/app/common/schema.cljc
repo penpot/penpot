@@ -11,6 +11,7 @@
    #?(:clj [malli.dev.pretty :as mdp])
    #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
@@ -880,6 +881,32 @@
    :decode/json parse-boolean
    :encode/string str
    ::oapi/type "boolean"}})
+
+(defn parse-keyword
+  [v]
+  (if (string? v)
+    (-> v (json/read-kebab-key) (keyword))
+    v))
+
+(defn format-keyword
+  [v]
+  (if (keyword? v)
+    (-> v (name) (json/write-camel-key))
+    v))
+
+(register!
+ {:type ::keyword
+  :pred keyword?
+  :type-properties
+  {:title "keyword"
+   :description "keyword"
+   :error/message "expected keyword"
+   :error/code "errors.invalid-keyword"
+   :gen/gen sg/keyword
+   :decode/string parse-keyword
+   :decode/json parse-keyword
+   :encode/string format-keyword
+   ::oapi/type "string"}})
 
 (register!
  {:type ::contains-any

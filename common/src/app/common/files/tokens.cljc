@@ -80,7 +80,7 @@
    schema:token-value-shadow-vector
    schema:token-value-composite-ref])
 
-(defn make-schema-token-value
+(defn make-token-value-schema
   [token-type]
   [:multi {:dispatch (constantly token-type)
            :title "Token Value"}
@@ -115,7 +115,7 @@
     cto/schema:token-attrs
     [:map
      [:name (make-token-name-schema tokens-tree)]
-     [:value (make-schema-token-value token-type)]
+     [:value (make-token-value-schema token-type)]
      [:description {:optional true} schema:token-description]])
    [:fn {:error/field :value
          :error/fn #(tr "workspace.tokens.self-reference")}

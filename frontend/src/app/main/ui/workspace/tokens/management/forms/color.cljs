@@ -49,9 +49,8 @@
 
 (mf/defc form*
   [{:keys [token-type] :as props}]
-  (let [props (mf/spread-props props {:make-schema #(-> (sm/merge (cfo/make-token-schema %1 token-type)
-                                                                  [:map [:color-result {:optional true} ::sm/any]])
+  (let [props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1 token-type)
                                                         (sm/dissoc-key :id)
-                                                        (sm/assoc-key :color-result {:optional true} ::sm/any))
+                                                        (sm/assoc-key :color-result {:optional true} :any))
                                       :input-component token.controls/color-input*})]
     [:> generic/form* props]))

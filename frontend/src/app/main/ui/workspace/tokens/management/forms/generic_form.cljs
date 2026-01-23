@@ -98,7 +98,7 @@
            input-value-placeholder] :as props}]
 
   (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
-                                             (sm/dissoc-key :id)))  ;; TODO this does not work because the schema is no longer a :map but a :multi
+                                             (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
 
@@ -134,13 +134,11 @@
 
         initial
         (mf/with-memo [token]
-          (-> (or initial
-              {:id (uuid/next)    ;; TODO it should not be necessary if the sm/dissoc-key :id worked correctly
-               :type token-type
+          (or initial
+              {:type token-type
                :name (:name token "")
                :value (:value token "")
-               :description (:description token "")})
-              (d/tap-r #(prn "initial" %))))
+               :description (:description token "")}))
 
         form
         (fm/use-form :schema schema
