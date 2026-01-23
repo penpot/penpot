@@ -364,7 +364,7 @@
   "Parses shadow spread value (non-negative number)."
   [value]
   (let [parsed (parse-sd-token-general-value value)
-        valid? (and (:value parsed) (>= (:value parsed) 0))]
+        valid? (:value parsed)]
     (cond
       valid?
       parsed

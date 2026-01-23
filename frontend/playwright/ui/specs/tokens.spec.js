@@ -1256,6 +1256,192 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toBeEnabled();
   });
 
+    test("User creates shadow token with negative spread", async ({ page }) => {
+    const emptyNameError = "Name should be at least 1 character";
+
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFile(page, {flags: ["enable-token-shadow"]});
+
+    // Open modal
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: `Add Token: Shadow`,
+    });
+
+    await addTokenButton.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    await expect(
+      tokensUpdateCreateModal.getByPlaceholder(
+        "Enter a value or alias with {alias}",
+      ),
+    ).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const colorField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Color",
+    });
+    const offsetXField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "X",
+    });
+    const offsetYField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Y",
+    });
+    const blurField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Blur",
+    });
+    const spreadField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Spread",
+    });
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // 1. Check default values
+    await expect(offsetXField).toHaveValue("4");
+    await expect(offsetYField).toHaveValue("4");
+    await expect(blurField).toHaveValue("4");
+    await expect(spreadField).toHaveValue("0");
+
+    // 2. Name filled + empty value → disabled
+    await nameField.fill("my-token");
+    await expect(submitButton).toBeDisabled();
+
+    // 3. Invalid color → disabled + error message
+    await colorField.fill("1");
+
+    await expect(
+      tokensUpdateCreateModal.getByText("Invalid color value: 1"),
+    ).toBeVisible();
+
+    await expect(submitButton).toBeDisabled();
+
+    await colorField.fill("{missing-reference}");
+
+    await expect(
+      tokensUpdateCreateModal.getByText(
+        "Missing token references: missing-reference",
+      ),
+    ).toBeVisible();
+
+    // 4. Empty name → disabled + error message
+    await nameField.fill("");
+
+    const emptyNameErrorNode =
+      tokensUpdateCreateModal.getByText(emptyNameError);
+
+    await expect(emptyNameErrorNode).toBeVisible();
+    await expect(submitButton).toBeDisabled();
+
+    //
+    // ------- SUCCESSFUL FIELDS -------
+    //
+
+    // 5. Valid color → resolved
+
+    await colorField.fill("red");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: #ff0000"),
+    ).toBeVisible();
+    const colorSwatch = tokensUpdateCreateModal.getByTestId(
+      "token-form-color-bullet",
+    );
+    await colorSwatch.click();
+    const rampSelector = tokensUpdateCreateModal.getByTestId(
+      "value-saturation-selector",
+    );
+    await expect(rampSelector).toBeVisible();
+    await rampSelector.click({ position: { x: 50, y: 50 } });
+
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value:"),
+    ).toBeVisible();
+
+    const sliderOpacity = tokensUpdateCreateModal.getByTestId("slider-opacity");
+    await sliderOpacity.click({ position: { x: 50, y: 0 } });
+    await expect(
+      tokensUpdateCreateModal.getByRole("textbox", { name: "Color" }),
+    ).toHaveValue(/rgba\s*\([^)]*\)/);
+
+    // 6. Valid offset → resolved
+    await offsetXField.fill("3 + 3");
+
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 6"),
+    ).toBeVisible();
+
+    await offsetYField.fill("3 + 7");
+
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 10"),
+    ).toBeVisible();
+
+    // 7. Valid blur → resolved
+
+    await blurField.fill("3 + 1");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 4"),
+    ).toBeVisible();
+
+    // 8. Valid spread → resolved
+
+    await spreadField.fill("3 - 3");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 0"),
+    ).toBeVisible();
+  
+       await spreadField.fill("1 - 3");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: -2"),
+    ).toBeVisible();
+
+    await nameField.fill("my-token");
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
+    ).toBeEnabled();
+
+    //
+    // ------- SECOND TOKEN WITH VALID REFERENCE -------
+    //
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-2");
+    const referenceToggle =
+      tokensUpdateCreateModal.getByTestId("reference-opt");
+    const compositeToggle =
+      tokensUpdateCreateModal.getByTestId("composite-opt");
+    await referenceToggle.click();
+
+    const referenceInput = tokensUpdateCreateModal.getByPlaceholder(
+      "Enter a token shadow alias",
+    );
+    await expect(referenceInput).toBeVisible();
+
+    await compositeToggle.click();
+    await expect(colorField).toBeVisible();
+
+    await referenceToggle.click();
+    const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Reference",
+    });
+    await referenceField.fill("{my-token}");
+    await expect(
+      tokensUpdateCreateModal.getByText(
+        "Resolved value: - X: 6 - Y: 10 - Blur: 4 - Spread: -2",
+      ),
+    ).toBeVisible();
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+    ).toBeEnabled();
+  });
+
   test("User creates typography token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
