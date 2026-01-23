@@ -202,7 +202,6 @@
 
         on-restore-immediately
         (fn []
-          (prn files)
           (st/emit!
            (modal/show {:type :confirm
                         :title (tr "dashboard-restore-file-confirmation.title")
