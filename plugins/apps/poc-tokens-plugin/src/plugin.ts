@@ -1,5 +1,9 @@
 import type { PluginMessageEvent, PluginUIEvent } from './model.js';
-import { TokenType, TokenProperty } from '@penpot/plugin-types';
+import {
+  TokenType,
+  TokenProperty,
+  TokenValueString,
+} from '@penpot/plugin-types';
 
 penpot.ui.open('Design Tokens test', `?theme=${penpot.theme}`, {
   width: 1000,
@@ -43,7 +47,7 @@ penpot.ui.onMessage<PluginUIEvent>(async (message) => {
   } else if (message.type === 'toggle-set') {
     toggleSet(message.setId);
   } else if (message.type === 'apply-token') {
-    applyToken(message.setId, message.tokenId, message.attributes);
+    applyToken(message.setId, message.tokenId, message.properties);
   }
 });
 
@@ -120,8 +124,7 @@ function loadTokens(setId: string) {
 
 function addTheme(themeGroup: string, themeName: string) {
   const tokensCatalog = penpot.library.local.tokens;
-  const theme = tokensCatalog?.addTheme({group: themeGroup,
-                                         name: themeName });
+  const theme = tokensCatalog?.addTheme({ group: themeGroup, name: themeName });
   if (theme) {
     loadLibrary();
   }
@@ -129,7 +132,7 @@ function addTheme(themeGroup: string, themeName: string) {
 
 function addSet(setName: string) {
   const tokensCatalog = penpot.library.local.tokens;
-  const set = tokensCatalog?.addSet({name: setName});
+  const set = tokensCatalog?.addSet({ name: setName });
   if (set) {
     loadLibrary();
   }
@@ -143,11 +146,17 @@ function addToken(
 ) {
   const tokensCatalog = penpot.library.local.tokens;
   const set = tokensCatalog?.getSetById(setId);
-  const token = set?.addToken({type: tokenType as TokenType,
-                               name: tokenName,
-                               value: tokenValue});
+  const token = set?.addToken({
+    type: tokenType as TokenType,
+    name: tokenName,
+    value: tokenValue as TokenValueString,
+  });
   if (token) {
-    loadTokens(setId);
+    // TODO: remove this timeout when styleDictionary is replaced
+    // with tokenScript and the token validation is syncrhronous.
+    setTimeout(() => {
+      loadTokens(setId);
+    }, 0);
   }
 }
 
@@ -175,7 +184,11 @@ function renameToken(setId: string, tokenId: string, newName: string) {
   const token = set?.getTokenById(tokenId);
   if (token) {
     token.name = newName;
-    loadTokens(setId);
+    // TODO: remove this timeout when styleDictionary is replaced
+    // with tokenScript and the token validation is syncrhronous.
+    setTimeout(() => {
+      loadTokens(setId);
+    }, 0);
   }
 }
 
@@ -228,14 +241,14 @@ function toggleSet(setId: string) {
 function applyToken(
   setId: string,
   tokenId: string,
-  attributes: TokenProperty[] | undefined,
+  properties: TokenProperty[] | undefined,
 ) {
   const tokensCatalog = penpot.library.local.tokens;
   const set = tokensCatalog?.getSetById(setId);
   const token = set?.getTokenById(tokenId);
 
   if (token) {
-    token.applyToSelected(attributes);
+    token.applyToSelected(properties);
   }
 
   // Alternatve way
@@ -243,7 +256,7 @@ function applyToken(
   // const selection = penpot.selection;
   // if (token && selection) {
   //   for (const shape of selection) {
-  //     shape.applyToken(token, attributes);
+  //     shape.applyToken(token, properties);
   //   }
   // }
 }

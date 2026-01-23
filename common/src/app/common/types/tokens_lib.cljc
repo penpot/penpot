@@ -314,10 +314,15 @@
 (declare make-token-set)
 (declare normalized-set-name?)
 
+(def schema:token-set-name
+  [:and
+   :string
+   [:fn #(normalized-set-name? %)]]) ;; The #() is necessary because the function is only declared, not defined
+
 (def schema:token-set-attrs
   [:map {:title "TokenSet"}
    [:id ::sm/uuid]
-   [:name [:and :string [:fn #(normalized-set-name? %)]]]
+   [:name schema:token-set-name]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::ct/inst]
    [:tokens {:optional true

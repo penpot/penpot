@@ -47,8 +47,8 @@ A table listing the available plugins and their corresponding startup commands i
 
 ## Sample plugins
 
-| Plugin                  | Description                                                 | PORT | Start command                         | Manifest URL                               |
-| ----------------------- | ----------------------------------------------------------- | ---- | ------------------------------------- | ------------------------------------------ |
+| Plugin                  | Description                                                 | PORT | Start command                          | Manifest URL                               |
+| ----------------------- | ----------------------------------------------------------- | ---- | -------------------------------------- | ------------------------------------------ |
 | poc-state-plugin        | Sandbox plugin to test new plugins api functionality        | 4301 | pnpm run start:plugin:poc-state        | http://localhost:4301/assets/manifest.json |
 | contrast-plugin         | Sample plugin that gives you color contrast information     | 4302 | pnpm run start:plugin:contrast         | http://localhost:4302/assets/manifest.json |
 | icons-plugin            | Tool to add icons from [Feather](https://feathericons.com/) | 4303 | pnpm run start:plugin:icons            | http://localhost:4303/assets/manifest.json |
@@ -61,8 +61,8 @@ A table listing the available plugins and their corresponding startup commands i
 
 ## Web Apps
 
-| App             | Description                                                       | PORT | Start command                    | URL                    |
-| --------------- | ----------------------------------------------------------------- | ---- | -------------------------------- | ---------------------- |
+| App             | Description                                                       | PORT | Start command                     | URL                    |
+| --------------- | ----------------------------------------------------------------- | ---- | --------------------------------- | ---------------------- |
 | plugins-runtime | Runtime for the plugins subsystem                                 | 4200 | pnpm run start:app:runtime        |                        |
 | example-styles  | Showcase of some of the Penpot styles that can be used in plugins | 4201 | pnpm run start:app:styles-example | http://localhost:4201/ |
 

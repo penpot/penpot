@@ -11,6 +11,7 @@
    #?(:clj [malli.dev.pretty :as mdp])
    #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
@@ -98,7 +99,8 @@
   ([s k v]
    (assoc-key s k {} v))
   ([s k opts v]  ;; change order of opts and v to match static schema defintions (e.g. [:something {:optional true} ::sm/integer])
-   (let [s (schema s)]
+   (let [s (schema s)
+         v (schema v)]
      (if (= (m/type s) :map)
        (mu/assoc s k v opts)
        (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
@@ -880,6 +882,32 @@
    :decode/json parse-boolean
    :encode/string str
    ::oapi/type "boolean"}})
+
+(defn parse-keyword
+  [v]
+  (if (string? v)
+    (-> v (json/read-kebab-key) (keyword))
+    v))
+
+(defn format-keyword
+  [v]
+  (if (keyword? v)
+    (-> v (name) (json/write-camel-key))
+    v))
+
+(register!
+ {:type ::keyword
+  :pred keyword?
+  :type-properties
+  {:title "keyword"
+   :description "keyword"
+   :error/message "expected keyword"
+   :error/code "errors.invalid-keyword"
+   :gen/gen sg/keyword
+   :decode/string parse-keyword
+   :decode/json parse-keyword
+   :encode/string format-keyword
+   ::oapi/type "string"}})
 
 (register!
  {:type ::contains-any
