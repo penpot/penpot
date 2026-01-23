@@ -188,10 +188,20 @@ fn propagate_transform(
         || !is_close_to(shape_bounds_before.height(), shape_bounds_after.height())
     {
         if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+            let resized_selrect = math::Rect::from_xywh(
+                shape.selrect.left(),
+                shape.selrect.top(),
+                shape_bounds_after.width(),
+                shape_bounds_after.height(),
+            );
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
-                    if text_content.needs_update_layout() {
-                        text_content.update_layout(shape.selrect);
+                    // For auto-height, always update layout when width changes
+                    // because the new width affects how text wraps
+                    let width_changed =
+                        !is_close_to(shape_bounds_before.width(), shape_bounds_after.width());
+                    if width_changed || text_content.needs_update_layout() {
+                        text_content.update_layout(resized_selrect);
                     }
                     let height = text_content.size.height;
                     let resize_transform = math::resize_matrix(
@@ -204,8 +214,12 @@ fn propagate_transform(
                     transform.post_concat(&resize_transform);
                 }
                 GrowType::AutoWidth => {
-                    if text_content.needs_update_layout() {
-                        text_content.update_layout(shape.selrect);
+                    // For auto-width, always update layout when height changes
+                    // because the new height affects how text flows
+                    let height_changed =
+                        !is_close_to(shape_bounds_before.height(), shape_bounds_after.height());
+                    if height_changed || text_content.needs_update_layout() {
+                        text_content.update_layout(resized_selrect);
                     }
                     let width = text_content.width();
                     let height = text_content.size.height;
