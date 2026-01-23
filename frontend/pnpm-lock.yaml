@@ -28,6 +28,9 @@ importers:
       '@penpot/text-editor':
         specifier: workspace:./text-editor
         version: link:text-editor
+      '@penpot/ui':
+        specifier: file:../plugins/libs/ui
+        version: file:../plugins/libs/ui(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@playwright/test':
         specifier: 1.57.0
         version: 1.57.0
@@ -970,6 +973,12 @@ packages:
 
   '@penpot/plugins-runtime@1.4.2':
     resolution: {integrity: sha512-y9TDZOnb96JBW9E33dHKpmTMeAPXLtHDIZruUVjtM8hBJWZK7RCv+vAGDGxeoZJC/OB2YAHrCZG+mukePBzcuQ==}
+
+  '@penpot/ui@file:../plugins/libs/ui':
+    resolution: {directory: ../plugins/libs/ui, type: directory}
+    peerDependencies:
+      react: '>=19.2'
+      react-dom: '>=19.2'
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -4982,6 +4991,11 @@ snapshots:
       '@penpot/plugin-types': 1.4.2
       ses: 1.14.0
       zod: 3.25.76
+
+  '@penpot/ui@file:../plugins/libs/ui(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
   '@pkgjs/parseargs@0.11.0':
     optional: true

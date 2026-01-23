@@ -50,6 +50,7 @@
     "@penpot/plugins-runtime": "1.4.2",
     "@penpot/svgo": "penpot/svgo#v3.2",
     "@penpot/text-editor": "workspace:./text-editor",
+    "@penpot/ui": "file:../plugins/libs/ui",
     "@playwright/test": "1.57.0",
     "@storybook/addon-docs": "10.1.11",
     "@storybook/addon-themes": "10.1.11",
