@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-23 10:01+0000\n"
+"PO-Revision-Date: 2026-01-25 13:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -2177,3 +2177,439 @@ msgstr "Calculé"
 #: src/app/main/ui/settings/password.cljs:93
 msgid "labels.confirm-password"
 msgstr "Confirmer le mot de passe"
+
+#, unused
+msgid "labels.custom-fonts"
+msgstr "Polices de caractères personnalisées"
+
+#: src/app/main/ui/settings/sidebar.cljs:84
+msgid "labels.dashboard"
+msgstr "Survol"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:291, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
+msgid "labels.delete"
+msgstr "Supprimer"
+
+#: src/app/main/ui/comments.cljs:997
+msgid "labels.delete-comment"
+msgstr "Supprimer commentaire"
+
+#: src/app/main/ui/comments.cljs:919
+msgid "labels.delete-comment-thread"
+msgstr "Supprimer le fil"
+
+#: src/app/main/ui/dashboard/team.cljs:941
+msgid "labels.delete-invitation"
+msgstr "Supprimer l'invitation"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:293
+msgid "labels.delete-multi-files"
+msgstr "Supprimer %s fichiers"
+
+#: src/app/main/ui/dashboard/deleted.cljs:215
+msgid "labels.deleted"
+msgstr "Supprimés"
+
+#: src/app/main/ui/onboarding/questions.cljs:86
+msgid "labels.developer"
+msgstr "Développeur"
+
+#: src/app/main/ui/onboarding/questions.cljs:260
+#, unused
+msgid "labels.director"
+msgstr "Directeur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
+msgid "labels.discard"
+msgstr "Rejeter"
+
+#: src/app/main/ui/settings/feedback.cljs:134, src/app/main/ui/static.cljs:400
+msgid "labels.download"
+msgstr "Télécharger %s"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
+msgid "labels.drafts"
+msgstr "Brouillons"
+
+#: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:65
+msgid "labels.duplicate"
+msgstr "Dupliquer"
+
+#: src/app/main/ui/comments.cljs:993, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:218, src/app/main/ui/workspace/tokens/themes.cljs:52
+msgid "labels.edit"
+msgstr "Modifier"
+
+#: src/app/main/ui/onboarding/questions.cljs:259
+#, unused
+msgid "labels.founder"
+msgstr "PDG ou fondateur"
+
+#: src/app/main/ui/onboarding/questions.cljs:258
+#, unused
+msgid "labels.freelancer"
+msgstr "Pigiste"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:835, src/app/main/ui/workspace/main_menu.cljs:176
+msgid "labels.github-repo"
+msgstr "Répertoire Github"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:810, src/app/main/ui/workspace/main_menu.cljs:205
+msgid "labels.give-feedback"
+msgstr "Partage ton avis"
+
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:176, src/app/main/ui/viewer/login.cljs:113
+msgid "labels.go-back"
+msgstr "Retour"
+
+#: src/app/main/ui/onboarding/questions.cljs:88
+msgid "labels.graphic-design"
+msgstr "Design graphique"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1312, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1528
+msgid "labels.help-center"
+msgstr "Centre d'aide"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1020
+msgid "labels.help-learning"
+msgstr "Aide et formation"
+
+#: src/app/main/ui/dashboard/templates.cljs:91
+msgid "labels.hide"
+msgstr "Cacher"
+
+#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:75
+msgid "labels.hide-resolved-comments"
+msgstr "Cacher les commentaires résolus"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:131
+msgid "labels.import"
+msgstr "Importer"
+
+#: src/app/main/ui/dashboard/team.cljs:1224
+msgid "labels.inactive"
+msgstr "Inactif"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:115
+msgid "labels.info"
+msgstr "Info"
+
+#: src/app/main/ui/dashboard/fonts.cljs:430
+msgid "labels.installed-fonts"
+msgstr "Polices installées"
+
+#: src/app/main/ui/static.cljs:396
+msgid "labels.internal-error.desc-message-first"
+msgstr "Une erreur s'est produite."
+
+#: src/app/main/ui/static.cljs:397
+msgid "labels.internal-error.desc-message-second"
+msgstr "Tu peux réessayer ou contacter le support pour rapporter l'erreur."
+
+#: src/app/main/ui/static.cljs:393
+msgid "labels.internal-error.main-message"
+msgstr "Erreur interne"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:143
+msgid "inspect.tabs.code.selected.circle"
+msgstr "Cercle"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:144
+msgid "inspect.tabs.code.selected.component"
+msgstr "Composant"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:145
+msgid "inspect.tabs.code.selected.curve"
+msgstr "Courbe"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:146
+msgid "inspect.tabs.code.selected.frame"
+msgstr "Tableau"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:147
+msgid "inspect.tabs.code.selected.group"
+msgstr "Groupe"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:148
+msgid "inspect.tabs.code.selected.image"
+msgstr "Image"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:149
+msgid "inspect.tabs.code.selected.mask"
+msgstr "Masque"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:60, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:178
+msgid "inspect.tabs.styles.toggle-style"
+msgstr "Basculer le panneau %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.token-panel"
+msgstr "Collections et thèmes de tokens"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:60
+msgid "inspect.tabs.styles.token-resolved-value"
+msgstr "Valeur résultante :"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.variants-panel"
+msgstr "Propriétés des variantes"
+
+#: src/app/main/ui/dashboard/comments.cljs:96
+msgid "label.mark-all-as-read"
+msgstr "Tout marquer comme lu"
+
+#: src/app/main/ui/workspace/main_menu.cljs:192
+msgid "label.shortcuts"
+msgstr "Raccourcis"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:101
+msgid "labels.copy-color"
+msgstr "Copier couleur"
+
+#: src/app/main/ui/dashboard/team.cljs:650
+msgid "labels.copy-invitation-link"
+msgstr "Copier lien"
+
+#: src/app/main/ui/static.cljs:68
+msgid "labels.copyright-period"
+msgstr "© Kaleidos, depuis 2019"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:203
+msgid "labels.create"
+msgstr "Créer"
+
+#: src/app/main/ui/dashboard/team_form.cljs:100, src/app/main/ui/dashboard/team_form.cljs:120
+msgid "labels.create-team"
+msgstr "Créer une nouvelle équipe"
+
+#: src/app/main/ui/dashboard/team_form.cljs:112
+msgid "labels.create-team.placeholder"
+msgstr "Nom de l'équipe"
+
+#, unused
+msgid "labels.edit-file"
+msgstr "Modifier le fichier"
+
+#: src/app/main/ui/dashboard/team.cljs:132, src/app/main/ui/dashboard/team.cljs:317, src/app/main/ui/dashboard/team.cljs:566, src/app/main/ui/dashboard/team.cljs:599, src/app/main/ui/onboarding/team_choice.cljs:57
+msgid "labels.editor"
+msgstr "Éditeur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:300
+msgid "labels.empty"
+msgstr "Vide"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+msgid "labels.error"
+msgstr "Erreur"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+#, unused
+msgid "labels.event"
+msgstr "Événement"
+
+#: src/app/main/ui/dashboard/team.cljs:668
+msgid "labels.expired-invitation"
+msgstr "Expirée"
+
+#: src/app/main/ui/exports/assets.cljs:172, src/app/main/ui/workspace/tokens/sidebar.cljs:134
+msgid "labels.export"
+msgstr "Exporter"
+
+#: src/app/main/ui/settings/feedback.cljs:83
+msgid "labels.feedback-disabled"
+msgstr "Rétroactions désactivées"
+
+#: src/app/main/ui/settings/feedback.cljs:74
+msgid "labels.feedback-sent"
+msgstr "Rétroaction envoyée"
+
+#: src/app/main/ui/onboarding/questions.cljs:156
+msgid "labels.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Remplissage"
+
+#: src/app/main/ui/dashboard/fonts.cljs:432
+msgid "labels.font-family"
+msgstr "Famille de polices de caractères"
+
+#, unused
+msgid "labels.font-providers"
+msgstr "Fournisseur de police de caractères"
+
+#: src/app/main/ui/dashboard/fonts.cljs:433
+msgid "labels.font-variants"
+msgstr "Styles"
+
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:739
+msgid "labels.fonts"
+msgstr "Police de caractères"
+
+#: src/app/main/ui/onboarding/questions.cljs:164
+msgid "labels.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:436, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:110, src/app/main/ui/dashboard/team.cljs:944
+msgid "labels.invitations"
+msgstr "Invitations"
+
+#: src/app/main/ui/settings/options.cljs:53
+msgid "labels.language"
+msgstr "Langue"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Mise en page"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:799
+msgid "labels.learning-center"
+msgstr "Centre de formation"
+
+#: src/app/main/ui/workspace/main_menu.cljs:168
+msgid "labels.libraries-and-templates"
+msgstr "Bibliothèques et modèles"
+
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:126, src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/dashboard/import.cljs:258, src/app/main/ui/dashboard/placeholder.cljs:140, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:60, src/app/main/ui/viewer.cljs:642, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:249, src/app/main/ui/workspace.cljs:129, src/app/main/ui.cljs:70, src/app/main/ui.cljs:108, src/app/main/ui.cljs:127
+msgid "labels.loading"
+msgstr "Chargement…"
+
+#: src/app/main/ui/settings/sidebar.cljs:98
+msgid "labels.password"
+msgstr "Mot de passe"
+
+#: src/app/main/ui/dashboard/team.cljs:669
+msgid "labels.pending-invitation"
+msgstr "En attente"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:879
+msgid "labels.penpot-changelog"
+msgstr "Journal des modifications de Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:805
+msgid "labels.penpot-hub"
+msgstr "Centre Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:752
+msgid "labels.pinned-projects"
+msgstr "Projets épinglés"
+
+#: src/app/main/ui/comments.cljs:680
+msgid "labels.post"
+msgstr "Envoyer"
+
+#: src/app/main/ui/onboarding/questions.cljs:50, src/app/main/ui/viewer.cljs:105
+msgid "labels.previous"
+msgstr "Précédent"
+
+#: src/app/main/ui/onboarding/questions.cljs:85
+msgid "labels.product-design"
+msgstr "Conception de produit ou UX"
+
+#: src/app/main/ui/onboarding/questions.cljs:90
+msgid "labels.product-management"
+msgstr "Gestion de produit"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:453, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:192, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+msgid "labels.rename"
+msgstr "Renommer"
+
+#: src/app/main/ui/dashboard/team_form.cljs:98
+msgid "labels.rename-team"
+msgstr "Renommer l'équipe"
+
+#: src/app/main/ui/comments.cljs:642
+msgid "labels.replies"
+msgstr "réponses"
+
+#: src/app/main/ui/comments.cljs:647
+msgid "labels.replies.new"
+msgstr "nouvelles réponses"
+
+#: src/app/main/ui/comments.cljs:641
+msgid "labels.reply"
+msgstr "réponse"
+
+#: src/app/main/ui/comments.cljs:646
+msgid "labels.reply.new"
+msgstr "nouvelle réponse"
+
+#: src/app/main/ui/comments.cljs:713
+msgid "labels.reply.thread"
+msgstr "Répondre"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Renvoyer"
+
+#: src/app/main/ui/dashboard/team.cljs:938
+msgid "labels.resend-invitation"
+msgstr "Renvoyer l'invitation"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:87, src/app/main/ui/workspace/sidebar/versions.cljs:197
+msgid "labels.restore"
+msgstr "Restaurer"
+
+#: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:300, src/app/main/ui/static.cljs:309, src/app/main/ui/static.cljs:410
+msgid "labels.retry"
+msgstr "Réessayer"
+
+#: src/app/main/ui/dashboard/team.cljs:513, src/app/main/ui/dashboard/team.cljs:945
+msgid "labels.role"
+msgstr "Rôle"
+
+#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:302, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
+msgid "labels.save"
+msgstr "Enregistrer"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
+msgid "labels.search"
+msgstr "Rechercher"
+
+#: src/app/main/ui/dashboard/fonts.cljs:435
+msgid "labels.search-font"
+msgstr "Recherche une police"
+
+#: src/app/main/ui/onboarding/questions.cljs:84, src/app/main/ui/onboarding/questions.cljs:230, src/app/main/ui/onboarding/questions.cljs:240
+msgid "labels.select-option"
+msgstr "Choisir une option"
+
+#: src/app/main/ui/settings/feedback.cljs:137
+msgid "labels.send"
+msgstr "Envoyer"
+
+#: src/app/main/ui/settings/feedback.cljs:137
+msgid "labels.sending"
+msgstr "Envoi…"
+
+#: src/app/main/ui/static.cljs:307
+msgid "labels.service-unavailable.desc-message"
+msgstr "Nous sommes en période prévue de maintenance des systèmes."
+
+#: src/app/main/ui/static.cljs:306
+msgid "labels.service-unavailable.main-message"
+msgstr "Le service est indisponible"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:75
+msgid "labels.sets"
+msgstr "Collections"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:446, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:115, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
+msgid "labels.settings"
+msgstr "Paramètres"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:229
+msgid "labels.shadow"
+msgstr "Ombre"
+
+#: src/app/main/ui/viewer/header.cljs:201
+msgid "labels.share"
+msgstr "Partager"
+
+#, unused
+msgid "labels.share-prototype"
+msgstr "Partager prototype"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:746
+msgid "labels.shared-libraries"
+msgstr "Bibliothèques"
