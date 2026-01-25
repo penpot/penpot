@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-19 19:01+0000\n"
+"PO-Revision-Date: 2026-01-25 13:01+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -8789,3 +8789,35 @@ msgid "workspace.tokens.remap-explanation"
 msgstr ""
 "Tutti i riferimenti a questo token verranno automaticamente aggiornati e "
 "useranno il nuovo nome."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+msgid "workspace.tokens.theme.enable"
+msgstr "Abilita"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+msgid "workspace.tokens.theme.disable"
+msgstr "Disabilita"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "Il valore della diffusione non può essere negativo"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:280
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "Il valore della sfocatura non può essere negativo"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:83
+msgid "workspace.tokens.renaming-token-from-to"
+msgstr "Rinomino il token da '%s' a '%s'"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
+msgid "workspace.tokens.rename-only"
+msgstr "Rinomina"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Riassegnazione dei riferimenti ai token…"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-token-references"
+msgstr "Riassegna riferimenti token"
