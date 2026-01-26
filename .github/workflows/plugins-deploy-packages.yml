@@ -1,11 +1,135 @@
 name: Plugins/packages deployer
 
 on:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+    paths:
+      - 'plugins/apps/*-plugin/**'
+      - 'libs/plugins-styles/**'
   workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch'
+        type: choice
+        required: true
+        default: 'develop'
+        options:
+          - develop
+          - staging
+          - main
 
 jobs:
-  print_text_job:
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      colors_to_tokens: ${{ steps.filter.outputs.colors_to_tokens }}
+      create_palette: ${{ steps.filter.outputs.create_palette }}
+      lorem_ipsum: ${{ steps.filter.outputs.lorem_ipsum }}
+      rename_layers: ${{ steps.filter.outputs.rename_layers }}
+      contrast: ${{ steps.filter.outputs.contrast }}
+      icons: ${{ steps.filter.outputs.icons }}
+      poc_state: ${{ steps.filter.outputs.poc_state }}
+      table: ${{ steps.filter.outputs.table }}
+      # [For new plugins]
+      #   Add more outputs here
     steps:
-      - name: Print Hello World
-        run: echo "Hello, World!"
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            colors_to_tokens:
+              - 'plugins/apps/colors-to-tokens-plugin/**'
+              - 'libs/plugins-styles/**'
+            contrast:
+              - 'plugins/apps/contrast-plugin/**'
+              - 'libs/plugins-styles/**'
+            create_palette:
+              - 'plugins/apps/create-palette-plugin/**'
+              - 'libs/plugins-styles/**'
+            icons:
+              - 'plugins/apps/icons-plugin/**'
+              - 'libs/plugins-styles/**'
+            lorem_ipsum:
+              - 'plugins/apps/lorem-ipsum-plugin/**'
+              - 'libs/plugins-styles/**'
+            rename_layers:
+              - 'plugins/apps/rename-layers-plugin/**'
+              - 'libs/plugins-styles/**'
+            table:
+              - 'plugins/apps/table-plugin/**'
+              - 'libs/plugins-styles/**'
+           # [For new plugins]
+           #   Add more plugin filters here
+           #     another_plugin:
+           #       - 'plugins/apps/another-plugin/**'
+           #       - 'libs/plugins-styles/**'
+
+  colors-to-tokens-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.colors_to_tokens == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: colors-to-tokens
+
+  contrast-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.contrast == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: contrast
+
+  create-palette-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.create_palette == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: create-palette
+
+  icons-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.icons == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: icons
+
+  lorem-ipsum-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.lorem_ipsum == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: lorem-ipsum
+
+  rename-layers-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rename_layers == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: rename-layers
+
+  table-plugin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.table == 'true'
+    uses: ./.github/workflows/plugins-deploy-package.yml
+    with:
+      gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+      plugin_name: table
+
+  # [For new plugins]
+  #   Add more jobs for other plugins below, following the same pattern
+  #     another-plugin:
+  #       needs: detect-changes
+  #       if: needs.detect-changes.outputs.another_plugin == 'true'
+  #       uses: ./.github/workflows/plugins-deploy-package.yml
+  #       with:
+  #         gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
+  #         plugin_name: another
