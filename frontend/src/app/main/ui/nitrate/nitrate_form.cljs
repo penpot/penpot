@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.dashboard.nitrate-form
+(ns app.main.ui.nitrate.nitrate-form
   (:require-macros [app.main.style :as stl])
   (:require
 

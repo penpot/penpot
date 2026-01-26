@@ -173,12 +173,6 @@
    (map decode-row)
    (map process-permissions)))
 
-(defn- add-org-to-team
-  [cfg team params]
-  (let [params (assoc (or params {}) :team-id (:id team))
-        org (nitrate/call cfg :get-team-org params)]
-    (assoc team :organization-id (:id org) :organization-name (:name org))))
-
 (defn get-teams
   [conn profile-id]
   (let [profile (profile/get-profile conn profile-id)
@@ -199,7 +193,7 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(add-org-to-team cfg % params)))))
+      (map #(nitrate/add-org-to-team cfg % params)))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,

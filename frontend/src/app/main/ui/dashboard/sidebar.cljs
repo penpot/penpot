@@ -26,7 +26,6 @@
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
-   [app.main.ui.dashboard.nitrate-form]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
@@ -36,6 +35,7 @@
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]

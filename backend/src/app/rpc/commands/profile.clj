@@ -9,7 +9,6 @@
    [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.plugins :refer [schema:plugin-registry]]
@@ -90,16 +89,7 @@
 
 ;; --- QUERY: Get profile (own)
 
-(defn- add-nitrate-licence-to-profile
-  [cfg profile]
-  (try
-    (let [nitrate-licence (nitrate/call cfg :is-valid-user {:profile-id (:id profile)})]
-      (assoc profile :nitrate-licence (:valid nitrate-licence)))
-    (catch Throwable cause
-      (l/error :hint "failed to get nitrate licence"
-               :profile-id (:id profile)
-               :cause cause)
-      profile)))
+
 
 (sv/defmethod ::get-profile
   {::rpc/auth false
@@ -115,7 +105,7 @@
                       (strip-private-attrs)
                       (update :props filter-props))]
       (if (contains? cf/flags :nitrate)
-        (add-nitrate-licence-to-profile cfg profile)
+        (nitrate/add-nitrate-licence-to-profile cfg profile)
         profile))
 
     (catch Throwable _

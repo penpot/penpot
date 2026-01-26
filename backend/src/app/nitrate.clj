@@ -122,3 +122,26 @@
 (defmethod ig/halt-key! ::client
   [_ {:keys []}]
   (do :stuff))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; UTILS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn add-nitrate-licence-to-profile
+  [cfg profile]
+  (try
+    (let [nitrate-licence (call cfg :is-valid-user {:profile-id (:id profile)})]
+      (assoc profile :nitrate-licence (:valid nitrate-licence)))
+    (catch Throwable cause
+      (l/error :hint "failed to get nitrate licence"
+               :profile-id (:id profile)
+               :cause cause)
+      profile)))
+
+(defn add-org-to-team
+  [cfg team params]
+  (let [params (assoc (or params {}) :team-id (:id team))
+        org (call cfg :get-team-org params)]
+    (assoc team :organization-id (:id org) :organization-name (:name org))))

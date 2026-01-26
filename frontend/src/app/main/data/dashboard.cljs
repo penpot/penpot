@@ -690,10 +690,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (if (contains? cf/flags :nitrate)
-        (d/update-when-in state [:teams team-id]
-                          #(-> %
-                               (assoc :organization-id organization-id)
-                               (assoc :organization-name organization-name)))
+        (d/update-in-when state [:teams team-id] assoc
+                          :organization-id organization-id
+                          :organization-name organization-name)
         state))))
 
 
