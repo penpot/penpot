@@ -139,10 +139,12 @@
 
 
 (defn- resolve-value
-  [tokens prev-token value]
+  [tokens prev-token token-name value]
   (let [token
         {:value value
-         :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"}
+         :name (if (str/blank? token-name)
+                 "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
+                 token-name)}
         tokens
         (-> tokens
             ;; Remove previous token when renaming a token
@@ -163,6 +165,7 @@
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
+        token-name (get-in @form [:data :name] nil)
 
         touched?
         (and (contains? (:data @form) input-name)
@@ -206,11 +209,11 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name]
+    (mf/with-effect [resolve-stream tokens token input-name token-name]
 
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token))
+                      (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
@@ -236,12 +239,14 @@
    (on-composite-input-change form field value false))
   ([form field value trim?]
    (letfn [(clean-errors [errors]
-             (-> errors
-                 (dissoc field)
-                 (not-empty)))]
+             (some-> errors
+                     (update :value #(when (map? %) (dissoc % field)))
+                     (update :value #(when (seq %) %))
+                     (not-empty)))]
      (swap! form (fn [state]
                    (-> state
                        (assoc-in [:data :value field] (if trim? (str/trim value) value))
+                       (assoc-in [:touched :value field] true)
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
@@ -250,12 +255,16 @@
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
+        token-name (get-in @form [:data :name] nil)
 
         error
         (get-in @form [:errors :value input-name])
 
         value
         (get-in @form [:data :value input-name] "")
+
+        touched?
+        (get-in @form [:touched :value input-name])
 
         resolve-stream
         (mf/with-memo [token]
@@ -284,7 +293,7 @@
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
         props
-        (if error
+        (if (and touched? error)
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message error)})
           props)
@@ -293,10 +302,10 @@
                 (mf/spread-props props {:hint-formated true})
                 props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name name]
+    (mf/with-effect [resolve-stream tokens token input-name name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token))
+                      (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
@@ -360,7 +369,7 @@
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
-
+        token-name (get-in @form [:data :name] nil)
 
         error
         (get-in @form [:errors :value value-subfield index input-name])
@@ -405,10 +414,10 @@
           (mf/spread-props props {:hint-formated true})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index value-subfield]
+    (mf/with-effect [resolve-stream tokens token input-name index value-subfield token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token))
+                      (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]

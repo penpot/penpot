@@ -124,8 +124,6 @@
       (throw (IllegalArgumentException. "invalid email body provided")))
 
     (doseq [[name content] attachments]
-
-      (prn "attachment" name)
       (let [attachment-part (MimeBodyPart.)]
         (.setFileName attachment-part ^String name)
         (.setContent attachment-part ^String content (str "text/plain; charset=" charset))

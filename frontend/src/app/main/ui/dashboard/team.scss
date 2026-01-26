@@ -628,6 +628,7 @@
   width: $sz-400;
   padding: var(--sp-xxxl);
   background-color: var(--color-background-primary);
+  z-index: var(--z-index-set);
 
   &.hero {
     top: px2rem(216);

@@ -48,13 +48,13 @@
     "watch:app:main": "clojure -M:dev:shadow-cljs watch main worker storybook",
     "clear:shadow-cache": "rm -rf .shadow-cljs",
     "watch": "exit 0",
-    "watch:app": "yarn run clear:shadow-cache && concurrently --kill-others-on-fail \"yarn run watch:app:assets\" \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
+    "watch:app": "yarn run clear:shadow-cache && yarn run build:wasm && concurrently --kill-others-on-fail \"yarn run watch:app:assets\" \"yarn run watch:app:main\" \"yarn run watch:app:libs\"",
     "watch:storybook": "yarn run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 --no-open\" \"node ./scripts/watch-storybook.js\""
   },
   "devDependencies": {
     "@penpot/draft-js": "portal:./packages/draft-js",
     "@penpot/mousetrap": "portal:./packages/mousetrap",
-    "@penpot/plugins-runtime": "1.3.2",
+    "@penpot/plugins-runtime": "1.4.2",
     "@penpot/svgo": "penpot/svgo#v3.2",
     "@penpot/text-editor": "portal:./text-editor",
     "@playwright/test": "1.57.0",

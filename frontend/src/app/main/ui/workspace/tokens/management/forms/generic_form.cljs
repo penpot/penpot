@@ -14,6 +14,7 @@
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.refs :as refs]
@@ -110,8 +111,7 @@
 
         token-title (str/lower (:title token-properties))
 
-        tokens
-        (mf/deref refs/workspace-active-theme-sets-tokens)
+        tokens (mf/deref refs/workspace-all-tokens-map)
 
         tokens
         (mf/with-memo [tokens token]
@@ -207,7 +207,11 @@
                                             :value (:value valid-token)
                                             :description description}))
                       (dwtp/propagate-workspace-tokens)
-                      (modal/hide))))))))]
+                      (modal/hide)))
+                   (fn [{:keys [errors]}]
+                     (let [error-messages (wte/humanize-errors errors)
+                           error-message (first error-messages)]
+                       (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))))]
 
     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form
