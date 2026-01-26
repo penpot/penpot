@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.types.text :as txt]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -19,7 +20,6 @@
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [promesa.core :as p]))
 
@@ -138,13 +138,13 @@
                       "&display=block")]
     (dm/str
      (-> cf/public-uri
-         (assoc :path "/internal/gfonts/css")
+         (u/join "internal/gfonts/css")
          (assoc :query query)))))
 
 (defn- process-gfont-css
   [css]
-  (let [base (dm/str (assoc cf/public-uri :path "/internal/gfonts/font"))]
-    (str/replace css "https://fonts.gstatic.com/s" base)))
+  (let [base (u/join cf/public-uri "internal/gfonts/font")]
+    (str/replace css "https://fonts.gstatic.com/s" (dm/str base))))
 
 (defn- fetch-gfont-css
   [url]
@@ -178,7 +178,9 @@
 
 (defn- asset-id->uri
   [asset-id]
-  (str (u/join cf/public-uri "assets/by-id/" asset-id)))
+  (-> cf/public-uri
+      (u/join "assets/by-id/" asset-id)
+      (str)))
 
 (defn generate-custom-font-variant-css
   [family variant]
@@ -370,7 +372,7 @@
       :else
       (let [{:keys [weight style suffix]} (get-variant font font-variant-id)
             suffix (or suffix font-variant-id)
-            params {:uri (dm/str cf/public-uri "fonts/" family "-" suffix ".woff")
+            params {:uri (str (u/join cf/public-uri (str "fonts/" family "-" suffix ".woff")))
                     :family family
                     :style style
                     :weight weight}]
