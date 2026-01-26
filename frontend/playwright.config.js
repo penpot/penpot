@@ -85,7 +85,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     timeout: 2 * 60 * 1000,
-    command: "caddy file-server --root resources/public/ --listen :3000",
+    command: "node ./scripts/e2e-server.js",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
   },
