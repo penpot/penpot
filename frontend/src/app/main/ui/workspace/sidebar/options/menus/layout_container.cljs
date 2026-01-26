@@ -375,7 +375,7 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (on-change :simple attr value event)
              (do
                (let [resolved-value (:resolved-value (first value))
@@ -489,7 +489,7 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (on-change :multiple attr value event)
              (do
                (let [resolved-value (:resolved-value (first value))]
@@ -724,7 +724,7 @@
         (mf/use-fn
          (mf/deps on-change wrap-type ids)
          (fn [value event attr]
-           (if (or (string? value) (int? value))
+           (if (or (string? value) (number? value))
              (on-change (= "nowrap" wrap-type) attr value event)
              (do
                (let [resolved-value (:resolved-value (first value))]

@@ -24,6 +24,20 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
+(def ^:const default-chunk-size
+  (* 1024 1024 4)) ;; 4MiB
+
+(defn- chunk-array
+  [data chunk-size]
+  (let [total-size (alength data)]
+    (loop [offset 0
+           chunks []]
+      (if (< offset total-size)
+        (let [end   (min (+ offset chunk-size) total-size)
+              chunk (.subarray ^js data offset end)]
+          (recur end (conj chunks chunk)))
+        chunks))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General purpose events & IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -116,9 +130,9 @@
                                       (not= hhea-descender win-descent)
                                       (and f-selection (or
                                                         (not= hhea-ascender os2-ascent)
-                                                        (not= hhea-descender os2-descent))))]
-
-              {:content {:data (js/Uint8Array. data)
+                                                        (not= hhea-descender os2-descent))))
+                  data            (js/Uint8Array. data)]
+              {:content {:data (chunk-array data default-chunk-size)
                          :name name
                          :type type}
                :font-family (or family "")
