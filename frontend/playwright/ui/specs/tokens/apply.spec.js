@@ -681,7 +681,8 @@ test.describe("Tokens: Apply token", () => {
     await dimensionXSTokenPill.click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = borderRadiusSection.getByLabel("dimension.xl");
+    const dimensionTokenOptionXl =
+      borderRadiusSection.getByLabel("dimension.xl");
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -698,5 +699,64 @@ test.describe("Tokens: Apply token", () => {
     await detachButton.nth(0).click();
     await expect(dimensionXLTokenPill).not.toBeVisible();
   });
-  
+
+  test("User applies stroke width token to a shape", async ({ page }) => {
+    const workspace = new WorkspacePage(page, {
+      textEditor: true,
+    });
+    // Set up
+    await workspace.mockConfigFlags(["enable-feature-token-input"]);
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("workspace/get-file-layout-stroke-token-json");
+    await workspace.goToWorkspace();
+
+    // Select shape apply stroke
+    await workspace.layers.getByTestId("layer-row").nth(0).click();
+    const rightSidebar = page.getByTestId("right-sidebar");
+    await expect(rightSidebar).toBeVisible();
+    await rightSidebar.getByTestId("add-stroke").click();
+
+    // Apply stroke width token from token panel
+    const tokensTab = page.getByRole("tab", { name: "Tokens" });
+    await expect(tokensTab).toBeVisible();
+    await tokensTab.click();
+    await page.getByRole("button", { name: "Stroke Width 2" }).click();
+    const tokensSidebar = workspace.tokensSidebar;
+    await expect(
+      tokensSidebar.getByRole("button", { name: "width-big" }),
+    ).toBeVisible();
+    await tokensSidebar.getByRole("button", { name: "width-big" }).click();
+
+    // Check if token pill is visible on right sidebar
+    const strokeSectionSidebar = rightSidebar.getByRole("region", {
+      name: "stroke-section",
+    });
+    await expect(strokeSectionSidebar).toBeVisible();
+    const firstStrokeRow = strokeSectionSidebar.getByLabel("stroke-row-0");
+    await expect(firstStrokeRow).toBeVisible();
+    const StrokeWidthPill = firstStrokeRow.getByRole("button", {
+      name: "width-big",
+    });
+    await expect(StrokeWidthPill).toBeVisible();
+
+    // Detach token from right sidebar and apply another from dropdown
+    const detachButton = firstStrokeRow.getByRole("button", {
+      name: "Detach token",
+    });
+    await detachButton.click();
+    await expect(StrokeWidthPill).not.toBeVisible();
+
+    const tokenDropdown = firstStrokeRow.getByRole("button", {
+      name: "Open token list",
+    });
+    await tokenDropdown.click();
+
+    const widthOptionSmall = firstStrokeRow.getByLabel("width-small");
+    await expect(widthOptionSmall).toBeVisible();
+    await widthOptionSmall.click();
+    const StrokeWidthPillSmall = firstStrokeRow.getByRole("button", {
+      name: "width-small",
+    });
+    await expect(StrokeWidthPillSmall).toBeVisible();
+  });
 });

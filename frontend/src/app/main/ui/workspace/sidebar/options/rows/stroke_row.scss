@@ -45,6 +45,11 @@
   padding-inline-start: var(--sp-xs);
 }
 
+.numeric-input-wrapper {
+  grid-column: span 2;
+  --dropdown-width: var(--7-columns-dropdown-width);
+}
+
 .stroke-alignment-select {
   grid-column: span 3;
 }
