@@ -135,6 +135,8 @@
     :subscriptions
     :subscriptions-old
     :inspect-styles
+    ;; Enable performance logs in devconsole (disabled by default)
+    :perf-logs
 
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers

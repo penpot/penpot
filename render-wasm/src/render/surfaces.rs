@@ -401,11 +401,10 @@ impl Surfaces {
         self.tiles.has(tile)
     }
 
-    pub fn remove_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
-        // Clear the specific tile area in the cache surface with color
-        let mut paint = skia::Paint::default();
-        paint.set_color(color);
-        self.cache.canvas().draw_rect(rect, &paint);
+    pub fn remove_cached_tile_surface(&mut self, tile: Tile) {
+        // Mark tile as invalid
+        // Old content stays visible until new tile overwrites it atomically,
+        // preventing flickering during tile re-renders.
         self.tiles.remove(tile);
     }
 

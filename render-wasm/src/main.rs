@@ -23,7 +23,7 @@ use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
-pub(crate) static mut STATE: Option<Box<State<'static>>> = None;
+pub(crate) static mut STATE: Option<Box<State>> = None;
 
 #[macro_export]
 macro_rules! with_state_mut {
@@ -188,6 +188,20 @@ pub extern "C" fn render_from_cache(_: i32) {
     with_state_mut!(state, {
         state.render_state.cancel_animation_frame();
         state.render_from_cache();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn set_preview_mode(enabled: bool) {
+    with_state_mut!(state, {
+        state.render_state.set_preview_mode(enabled);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn render_preview() {
+    with_state_mut!(state, {
+        state.render_preview(performance::get_time());
     });
 }
 
