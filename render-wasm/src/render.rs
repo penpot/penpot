@@ -1168,7 +1168,6 @@ impl RenderState {
         let scale = self.get_scale();
 
         self.tile_viewbox.update(self.viewbox, scale);
-
         self.focus_mode.reset();
 
         performance::begin_measure!("render");
@@ -2111,13 +2110,44 @@ impl RenderState {
     }
 
     /*
-     * Given a shape returns the TileRect with the range of tiles that the shape is in
+     * Given a shape returns the TileRect with the range of tiles that the shape is in.
+     * This is always limited to the interest area to optimize performance and prevent
+     * processing unnecessary tiles outside the viewport. The interest area already
+     * includes a margin (VIEWPORT_INTEREST_AREA_THRESHOLD) calculated via
+     * get_tiles_for_viewbox_with_interest, ensuring smooth pan/zoom interactions.
+     *
+     * When the viewport changes (pan/zoom), the interest area is updated and shapes
+     * are dynamically added to the tile index via the fallback mechanism in
+     * render_shape_tree_partial_uncached, ensuring all shapes render correctly.
      */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
         let extrect = self.get_cached_extrect(shape, tree, scale);
         let tile_size = tiles::get_tile_size(scale);
-        tiles::get_tiles_for_rect(extrect, tile_size)
+        let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
+        let interest_rect = &self.tile_viewbox.interest_rect;
+        // Calculate the intersection of shape_tiles with interest_rect
+        // This returns only the tiles that are both in the shape and in the interest area
+        let intersection_x1 = shape_tiles.x1().max(interest_rect.x1());
+        let intersection_y1 = shape_tiles.y1().max(interest_rect.y1());
+        let intersection_x2 = shape_tiles.x2().min(interest_rect.x2());
+        let intersection_y2 = shape_tiles.y2().min(interest_rect.y2());
+
+        // Return the intersection if valid (there is overlap), otherwise return empty rect
+        if intersection_x1 <= intersection_x2 && intersection_y1 <= intersection_y2 {
+            // Valid intersection: return the tiles that are in both shape_tiles and interest_rect
+            TileRect(
+                intersection_x1,
+                intersection_y1,
+                intersection_x2,
+                intersection_y2,
+            )
+        } else {
+            // No intersection: shape is completely outside interest area
+            // The shape will be added dynamically via add_shape_tiles when it enters
+            // the interest area during pan/zoom operations
+            TileRect(0, 0, -1, -1)
+        }
     }
 
     /*
@@ -2196,17 +2226,6 @@ impl RenderState {
         }
 
         performance::end_measure!("rebuild_tiles_shallow");
-    }
-
-    /// Clears the tile index without invalidating cached tile textures.
-    /// This is useful when tile positions don't change (e.g., during pan operations)
-    /// but the tile index needs to be synchronized. The cached tile textures remain
-    /// valid since they don't depend on the current view position, only on zoom level.
-    /// This is much more efficient than clearing the entire cache surface.
-    pub fn clear_tile_index(&mut self) {
-        performance::begin_measure!("clear_tile_index");
-        self.surfaces.clear_tiles();
-        performance::end_measure!("clear_tile_index");
     }
 
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
