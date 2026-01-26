@@ -43,12 +43,19 @@ export default defineConfig({
   projects: [
     {
       name: "default",
-      use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/specs",
       use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1080 }, // Add custom viewport size
         video: 'retain-on-failure',
         trace: 'retain-on-failure',
-      }
+      },
+      snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
+      expect: {
+        toHaveScreenshot: {
+          maxDiffPixelRatio: 0.001,
+        },
+      },
     },
     {
       name: "ds",
