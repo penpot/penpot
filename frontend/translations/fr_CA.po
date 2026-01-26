@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-25 13:01+0000\n"
+"PO-Revision-Date: 2026-01-26 15:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -2613,3 +2613,251 @@ msgstr "Partager prototype"
 #: src/app/main/ui/dashboard/sidebar.cljs:746
 msgid "labels.shared-libraries"
 msgstr "Bibliothèques"
+
+#: src/app/main/ui/dashboard/fonts.cljs:180
+msgid "labels.upload-custom-fonts"
+msgstr "Téléverser des polices personnalisées"
+
+#: src/app/main/ui/dashboard/fonts.cljs:252
+msgid "labels.uploading"
+msgstr "Téléversement…"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:66, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1039
+msgid "labels.variant"
+msgstr "Variant"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:873
+msgid "labels.version-notes"
+msgstr "Notes de la version %s"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
+msgid "labels.view-only"
+msgstr "Lecture seule"
+
+#: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:314, src/app/main/ui/dashboard/team.cljs:567, src/app/main/ui/dashboard/team.cljs:603, src/app/main/ui/onboarding/team_choice.cljs:56
+msgid "labels.viewer"
+msgstr "Visionneur"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Visibilité"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:441, src/app/main/ui/dashboard/team.cljs:103, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/dashboard/team.cljs:1134
+msgid "labels.webhooks"
+msgstr "Liens de rappel (webhooks)"
+
+#: src/app/main/ui/comments.cljs:838
+msgid "labels.write-new-comment"
+msgstr "Écrire un nouveau commentaire"
+
+#: src/app/main/ui/dashboard/team.cljs:268
+msgid "labels.you"
+msgstr "(toi)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1007
+msgid "labels.your-account"
+msgstr "Ton compte"
+
+#: src/app/main/ui/onboarding/questions.cljs:403
+#, unused
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr ""
+"Maintiens la constance des designs et la facilité de mettre à jour tous les "
+"projets."
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "Composants réutilisables"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr ""
+"Travaille en simultané avec ton équipe et partage les avis instantanément."
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "Collaboration en temps réel"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr "Design flexible avec une mise en page familière à la CSS."
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "Mise en page à la CSS"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "Récupérer du code CSS et SVG directement à partir des designs."
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Exporer le code"
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "Partage les atouts et styles pour garder la constance."
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "Bibliothèques de design"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Fais vivre les idées grâce aux animations et transitions."
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Prototypes interactifs"
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "Penpot utilise SVG et CSS pour un développement fluide."
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Formats web standards"
+
+#: src/app/main/ui/settings/access_tokens.cljs:130
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Date d'expiration"
+
+#: src/app/main/ui/settings/access_tokens.cljs:124
+msgid "modals.create-access-token.name.label"
+msgstr "Nom"
+
+#: src/app/main/ui/settings/access_tokens.cljs:126
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Le nom peut aider à savoir ce à quoi sert le token"
+
+#: src/app/main/ui/settings/access_tokens.cljs:178
+msgid "modals.create-access-token.submit-label"
+msgstr "Créer le token"
+
+#: src/app/main/ui/settings/access_tokens.cljs:111
+msgid "modals.create-access-token.title"
+msgstr "Générer un token d'accès"
+
+#: src/app/main/ui/dashboard/team.cljs:1127
+msgid "modals.create-webhook.submit-label"
+msgstr "Créer le lien de rappel"
+
+#: src/app/main/ui/dashboard/team.cljs:1092
+msgid "modals.create-webhook.title"
+msgstr "Créer un lien de rappel (webhook)"
+
+#: src/app/main/ui/dashboard/team.cljs:1103
+msgid "modals.create-webhook.url.label"
+msgstr "URL destinataire"
+
+#: src/app/main/ui/dashboard/team.cljs:1104
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://exemple.com/receptionpost"
+
+#: src/app/main/ui/settings/access_tokens.cljs:257
+msgid "modals.delete-acces-token.accept"
+msgstr "Supprimer le token"
+
+#: src/app/main/ui/settings/access_tokens.cljs:256
+msgid "modals.delete-acces-token.message"
+msgstr "Vraiment supprimer ce token?"
+
+#: src/app/main/ui/settings/access_tokens.cljs:255
+msgid "modals.delete-acces-token.title"
+msgstr "Suppression de token"
+
+#: src/app/main/ui/settings/delete_account.cljs:56
+msgid "modals.delete-account.cancel"
+msgstr "Annuler et conserver mon compte"
+
+#: src/app/main/ui/settings/delete_account.cljs:61
+msgid "modals.delete-account.confirm"
+msgstr "Oui, supprimer mon compte"
+
+#: src/app/main/ui/settings/delete_account.cljs:50
+msgid "modals.delete-account.info"
+msgstr "Si tu supprimes ton compte, tu vas perdre tous tes projets et fichiers."
+
+#: src/app/main/ui/settings/delete_account.cljs:43
+msgid "modals.delete-account.title"
+msgstr "Vraiment supprimer ton compte?"
+
+#: src/app/main/ui/comments.cljs:889
+msgid "modals.delete-comment-thread.accept"
+msgstr "Supprimer la conversation"
+
+#: src/app/main/ui/comments.cljs:888
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"Vraiment supprimer cette conversation? Tous les commentaires de ce fil "
+"seront supprimés."
+
+#: src/app/main/ui/comments.cljs:887
+msgid "modals.delete-comment-thread.title"
+msgstr "Supprimer la conversation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156
+msgid "modals.delete-component-annotation.message"
+msgstr "Vraiment supprimer cette annotation?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:155
+msgid "modals.delete-component-annotation.title"
+msgstr "Supprimer l'annotation"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:125
+msgid "modals.delete-file-confirm.accept"
+msgstr "Supprimer le fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:124
+msgid "modals.delete-file-confirm.message"
+msgstr "Vraiment supprimer ce fichier?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:123
+msgid "modals.delete-file-confirm.title"
+msgstr "Suppression du fichier"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:119
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Supprimer des fichiers"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:118
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Vraiment supprimer %s fichiers?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:117
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Suppression de %s fichiers"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1044
+msgid "labels.about-penpot"
+msgstr "À propos de Penpot"
+
+#: src/app/main/data/common.cljs:90, src/app/main/ui/dashboard/import.cljs:530
+msgid "labels.accept"
+msgstr "Accepter"
+
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.access-tokens"
+msgstr "Tokens d'accès"
+
+#: src/app/main/ui/static.cljs:298
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"Merci d'attendre un peu et réessayer. Nous réalisons des travaux de "
+"maintenance des serveurs."
+
+#: src/app/main/ui/static.cljs:297
+msgid "labels.bad-gateway.main-message"
+msgstr "Passerelle invalide"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Flouter"
+
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
+msgid "labels.cancel"
+msgstr "Annuler"
