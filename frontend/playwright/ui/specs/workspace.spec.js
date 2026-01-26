@@ -90,7 +90,7 @@ test("Bug 7654 - Toolbar keeps toggling on and off on spacebar press", async ({
   await workspacePage.expectHiddenToolbarOptions();
 });
 
-test("Bug 7525 - User moves a scrollbar and no selciont rectangle appears", async ({
+test("Bug 7525 - User moves a scrollbar and no selection rectangle appears", async ({
   page,
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -109,8 +109,8 @@ test("Bug 7525 - User moves a scrollbar and no selciont rectangle appears", asyn
     pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
   });
 
-  // Move created rect to a corner, in orther to get scrollbars
-  await workspacePage.panOnViewportAt(128, 128, 300, 300);
+  // Move created rect to a corner, in order to get scrollbars
+  await workspacePage.panOnViewportAt(128, 128, 600, 600);
 
   // Check scrollbars appear
   const horizontalScrollbar = workspacePage.horizontalScrollbar;

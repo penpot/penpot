@@ -119,6 +119,9 @@
             [:button {:class (stl/css-case
                               :toggle-content true
                               :inverse expanded?)
+                      :data-testid "toggle-content"
+                      :aria-expanded expanded?
+                      :aria-labelledby (dm/str "layer-name-" id)
                       :on-click on-toggle-collapse}
              deprecated-icon/arrow])
 
