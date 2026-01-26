@@ -223,7 +223,7 @@
         gap-items (all-or-separate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                :row-gap "Row Gap"}
                                             :hint (tr "workspace.tokens.gaps")
-                                            :on-update-shape dwta/update-layout-spacing}
+                                            :on-update-shape dwta/update-layout-gap}
                                            context-data)]
     (->> (concat
           gap-items
@@ -239,7 +239,7 @@
     (all-or-separate-actions {:attribute-labels {:width "Width"
                                                  :height "Height"}
                               :hint (tr "workspace.tokens.size")
-                              :on-update-shape dwta/update-shape-dimensions}
+                              :on-update-shape dwta/apply-dimensions-token}
                              context-data)
     [:separator]
     (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"

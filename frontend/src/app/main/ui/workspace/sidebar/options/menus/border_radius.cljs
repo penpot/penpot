@@ -192,11 +192,10 @@
              (st/emit!
               (change-radius (fn [shape]
                                (ctsr/set-radius-to-all-corners shape value))))
-             (doseq [attr [:r1 :r2 :r3 :r4]]
-               (st/emit!
-                (dwta/toggle-token {:token     (first value)
-                                    :attrs     #{attr}
-                                    :shape-ids ids}))))))
+             (st/emit!
+              (dwta/toggle-token {:token     (first value)
+                                  :attrs     #{:r1 :r2 :r3 :r4}
+                                  :shape-ids ids})))))
 
 
         on-single-radius-change
@@ -205,9 +204,10 @@
          (fn [value attr]
            (if (or (string? value) (number? value))
              (st/emit! (change-one-radius #(ctsr/set-radius-to-single-corner % attr value) attr))
-             (st/emit! (dwta/toggle-border-radius-token {:token (first value)
-                                                         :attrs #{attr}
-                                                         :shape-ids ids})))))
+             (st/emit! (st/emit!
+                        (dwta/toggle-token {:token     (first value)
+                                            :attrs     #{attr}
+                                            :shape-ids ids}))))))
 
         on-radius-r1-change #(on-single-radius-change % :r1)
         on-radius-r2-change #(on-single-radius-change % :r2)

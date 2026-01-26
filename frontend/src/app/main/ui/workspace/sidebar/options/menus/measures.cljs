@@ -284,28 +284,17 @@
            (st/emit! (udw/change-orientation ids (keyword orientation)))))
 
         ;; SIZE AND PROPORTION LOCK
-        do-size-change
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [value attr]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/update-dimensions ids attr value))))
-
         on-size-change
         (mf/use-fn
          (mf/deps ids shapes)
          (fn [value attr]
            (if (or (string? value) (number? value))
-             (do
-               (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (run! #(do-size-change value attr) shapes))
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (run! #(do-size-change resolved-value attr) shapes))))))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/update-dimensions ids attr value))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwta/toggle-token {:token (first value)
+                                           :attrs #{attr}
+                                           :shape-ids ids})))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -315,11 +304,6 @@
              (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
 
         ;; POSITION
-        do-position-change
-        (mf/use-fn
-         (fn [shape' value attr]
-           (st/emit! (udw/update-position (:id shape') {attr value}))))
-
         on-position-change
         (mf/use-fn
          (mf/deps ids)
@@ -327,21 +311,11 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (run! #(do-position-change %1 value attr) shapes))
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (run! #(do-position-change %1 resolved-value attr) shapes))))))
-
-        ;; ROTATION
-        do-rotation-change
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [value]
-           (st/emit! (udw/increase-rotation ids value))))
+               (st/emit! (udw/update-position ids {attr value})))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwta/toggle-token {:token (first value)
+                                           :attrs #{attr}
+                                           :shape-ids ids})))))
 
         on-rotation-change
         (mf/use-fn
@@ -350,14 +324,11 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (run! #(do-rotation-change value) shapes))
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwta/toggle-token {:token (first value)
-                                               :attrs #{:rotation}
-                                               :shape-ids ids}))
-                 (run! #(do-rotation-change resolved-value) shapes))))))
+               (st/emit! (udw/increase-rotation ids value)))
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwta/toggle-token {:token (first value)
+                                           :attrs #{:rotation}
+                                           :shape-ids ids})))))
 
         on-width-change
         (mf/use-fn (mf/deps on-size-change) #(on-size-change % :width))
@@ -410,7 +381,8 @@
          (fn []
            (st/emit! (dwt/selected-fit-content))))]
 
-    [:div {:class (stl/css :element-set)}
+    [:section {:class (stl/css :element-set)
+               :aria-label "shape-measures-section"}
      (when (and (options :presets)
                 (or (nil? all-types) (= (count all-types) 1)))
        [:div {:class (stl/css :presets)}

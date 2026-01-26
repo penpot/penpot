@@ -369,12 +369,12 @@
            (if (or (string? value) (number? value))
              (on-change :simple attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))
-                     updated-attr (if (= :p1 attr) #{:p1 :p3} #{:p2 :p4})]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs updated-attr
-                                               :shape-ids ids}))
-                 (on-change :simple attr resolved-value event))))))
+               (st/emit!
+                (dwta/toggle-token {:token     (first value)
+                                    :attrs     (if (= :p1 attr)
+                                                 #{:p1 :p3}
+                                                 #{:p2 :p4})
+                                    :shape-ids ids}))))))
 
         on-detach-token
         (mf/use-fn
@@ -483,11 +483,9 @@
            (if (or (string? value) (number? value))
              (on-change :multiple attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (on-change :multiple attr resolved-value event))))))
+               (st/emit! (dwta/toggle-token {:token (first value)
+                                             :attrs #{attr}
+                                             :shape-ids ids}))))))
 
         on-focus
         (mf/use-fn
@@ -716,11 +714,12 @@
            (if (or (string? value) (number? value))
              (on-change (= "nowrap" wrap-type) attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (on-change (= "nowrap" wrap-type) attr resolved-value event))))))
+               (st/emit!
+                (dwta/toggle-token {:token     (first value)
+                                    :attrs     (if (= "nowrap" wrap-type)
+                                                 #{:row-gap :colum-gap}
+                                                 #{attr})
+                                    :shape-ids ids}))))))
 
         on-detach-token
         (mf/use-fn
