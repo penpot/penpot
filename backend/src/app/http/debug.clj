@@ -49,13 +49,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn index-handler
-  [_cfg _request]
-  (let [{:keys [clock offset]} @clock/current]
+  [cfg request]
+  (let [profile-id (::session/profile-id request)
+        offset     (clock/get-offset profile-id)
+        profile    (profile/get-profile cfg profile-id)]
     {::yres/status  200
      ::yres/headers {"content-type" "text/html"}
      ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
                         (tmpl/render {:version (:full cf/version)
-                                      :current-clock  (str clock)
+                                      :profile profile
+                                      :current-clock  ct/*clock*
                                       :current-offset (if offset
                                                         (ct/format-duration offset)
                                                         "NO OFFSET")
@@ -447,15 +450,16 @@
 
 (defn- set-virtual-clock
   [_ {:keys [params] :as request}]
-  (let [offset (some-> params :offset str/trim not-empty ct/duration)
-        reset? (contains? params :reset)]
+  (let [offset     (some-> params :offset str/trim not-empty ct/duration)
+        profile-id (::session/profile-id request)
+        reset?     (contains? params :reset)]
     (if (= "production" (cf/get :tenant))
       {::yres/status 501
        ::yres/body "OPERATION NOT ALLOWED"}
       (do
         (if (or reset? (zero? (inst-ms offset)))
-          (clock/set-offset! nil)
-          (clock/set-offset! offset))
+          (clock/assign-offset profile-id nil)
+          (clock/assign-offset profile-id offset))
         {::yres/status 302
          ::yres/headers {"location" "/dbg"}}))))
 
@@ -495,7 +499,7 @@
 
 (defn authorized?
   [pool {:keys [::session/profile-id]}]
-  (or (= "devenv" (cf/get :host))
+  (or (and (= "devenv" (cf/get :host)) profile-id)
       (let [profile (ex/ignoring (profile/get-profile pool profile-id))
             admins  (or (cf/get :admins) #{})]
         (contains? admins (:email profile)))))
