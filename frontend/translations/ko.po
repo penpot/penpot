@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
-"Last-Translator: Suhwan Kim <jgk9282@gmail.com>\n"
-"Language-Team: Korean "
-"<https://hosted.weblate.org/projects/penpot/frontend/ko/>\n"
+"PO-Revision-Date: 2026-01-27 18:01+0000\n"
+"Last-Translator: Dogyeong <d00gann918@naver.com>\n"
+"Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
+"ko/>\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -55,7 +55,7 @@ msgstr "내 계정에 로그인하기"
 
 #: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
-msgstr "여기서 로그인하세요"
+msgstr "여기서 로그인하세요."
 
 #: src/app/main/ui/auth/login.cljs:195
 #, unused
@@ -100,7 +100,7 @@ msgstr "프로필이 검증되지 않았어요. 계속 하려면 검증절차를
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
 msgid "auth.notifications.recovery-token-sent"
-msgstr "비밀번호 복구를 위한 링크를 메일함으로 보냈어요"
+msgstr "비밀번호 복구를 위한 링크를 메일함으로 보냈어요."
 
 #: src/app/main/ui/auth/verify_token.cljs:49
 msgid "auth.notifications.team-invitation-accepted"
@@ -914,3 +914,77 @@ msgstr "그룹"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
 msgid "shortcuts.h-distribute"
 msgstr "가로로 분배하기"
+
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"삭제된 모든 프로젝트와 파일을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 "
+"수 없습니다."
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "휴지통이 비어 있습니다. 삭제된 파일과 프로젝트가 여기에 표시됩니다."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:764
+msgid "dashboard.no-projects-placeholder"
+msgstr "고정된 프로젝트가 여기에 표시됩니다"
+
+#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
+msgid "dashboard.projects-title"
+msgstr "프로젝트"
+
+#: src/app/main/ui/dashboard/deleted.cljs:274
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "모든 프로젝트와 파일을 복원하려 합니다. 시간이 다소 소요될 수 있습니다."
+
+#: src/app/main/ui/dashboard/deleted.cljs:273
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "모든 파일과 프로젝트 복원"
+
+#: src/app/main/ui/dashboard/team.cljs:1344
+msgid "dashboard.team-projects"
+msgstr "팀 프로젝트"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:752
+msgid "labels.pinned-projects"
+msgstr "고정된 프로젝트"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:719
+msgid "labels.projects"
+msgstr "프로젝트"
+
+#: src/app/main/ui/dashboard/deleted.cljs:208
+msgid "labels.recent"
+msgstr "최근"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
+msgid "dashboard.search-placeholder"
+msgstr "검색…"
+
+#: src/app/main/ui/dashboard/search.cljs:72
+msgid "dashboard.searching-for"
+msgstr "“%s” 찾는 중…"
+
+#: src/app/main/ui/dashboard/search.cljs:59
+msgid "dashboard.title-search"
+msgstr "검색 결과"
+
+#: src/app/main/ui/dashboard/search.cljs:67
+msgid "dashboard.type-something"
+msgstr "검색어를 입력하세요"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:787
+msgid "labels.search"
+msgstr "검색"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:111
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "아직 라이브러리가 없습니다."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:209
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "%s 파일을 복원하려 합니다."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:208
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "파일 복원"
