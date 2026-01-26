@@ -409,7 +409,7 @@ export class WorkspacePage extends BaseWebSocketPage {
       await this.viewport.click({ button: "right" });
       return this.page.getByText("PasteCtrlV").click();
     }
-    return this.page.keyboard.press("Control+V");
+    return this.page.keyboard.press("ControlOrMeta+V");
   }
 
   async panOnViewportAt(x, y, width, height) {
@@ -495,13 +495,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickColorPalette(clickOptions = {}) {
     await this.palette
-      .getByRole("button", { name: "Color Palette (Alt+P)" })
-      .click(clickOptions);
-  }
-
-  async clickColorPalette(clickOptions = {}) {
-    await this.palette
-      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .getByRole("button", { name: /Color Palette/ })
       .click(clickOptions);
   }
 

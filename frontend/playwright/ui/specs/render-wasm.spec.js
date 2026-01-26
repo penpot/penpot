@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { WasmWorkspacePage, WASM_FLAGS } from "../pages/WasmWorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
