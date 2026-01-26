@@ -3,7 +3,7 @@ use crate::{with_current_shape_mut, STATE};
 use macros::ToJs;
 
 mod align;
-mod constraints;
+pub mod constraints;
 mod flex;
 mod grid;
 

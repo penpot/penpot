@@ -18,16 +18,16 @@ use crate::shapes::modifiers::grid_layout::grid_cell_data;
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State<'a> {
+pub(crate) struct State {
     pub render_state: RenderState,
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
-    pub shapes: ShapesPool<'a>,
-    pub saved_shapes: Option<ShapesPool<'a>>,
+    pub shapes: ShapesPool,
+    pub saved_shapes: Option<ShapesPool>,
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn new(width: i32, height: i32) -> Self {
         State {
             render_state: RenderState::new(width, height),
@@ -223,17 +223,14 @@ impl<'a> State<'a> {
         self.render_state.rebuild_touched_tiles(&self.shapes);
     }
 
+    pub fn render_preview(&mut self, timestamp: i32) {
+        let _ = self.render_state.render_preview(&self.shapes, timestamp);
+    }
+
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
-        // SAFETY: We're extending the lifetime of the mutable borrow to 'a.
-        // This is safe because:
-        // 1. shapes has lifetime 'a in the struct
-        // 2. The reference won't outlive the struct
-        // 3. No other references to shapes exist during this call
-        unsafe {
-            let shapes_ptr = &mut self.shapes as *mut ShapesPool<'a>;
-            self.render_state
-                .rebuild_modifier_tiles(&mut *shapes_ptr, ids);
-        }
+        // Index-based storage is safe
+        self.render_state
+            .rebuild_modifier_tiles(&mut self.shapes, ids);
     }
 
     pub fn font_collection(&self) -> &FontCollection {

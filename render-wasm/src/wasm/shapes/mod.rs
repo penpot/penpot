@@ -1,3 +1,5 @@
+mod base_props;
+
 use macros::ToJs;
 
 use crate::shapes::{Bool, Frame, Group, Path, Rect, SVGRaw, TextContent, Type};
