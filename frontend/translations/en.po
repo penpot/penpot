@@ -8069,6 +8069,10 @@ msgid "workspace.tokens.missing-references"
 msgstr "Missing token references: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.missing-reference"
+msgstr "Missing reference"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:299
 msgid "workspace.tokens.more-options"
 msgstr "Right click to see options"
 

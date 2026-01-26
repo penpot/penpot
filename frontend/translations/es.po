@@ -7972,6 +7972,10 @@ msgid "workspace.tokens.missing-references"
 msgstr "Referencias de tokens no encontradas: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.missing-reference"
+msgstr "Referencia no encontrada"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
 msgid "workspace.tokens.more-options"
 msgstr "Click derecho para ver opciones"
 
