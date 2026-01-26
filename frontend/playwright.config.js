@@ -64,6 +64,11 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: { width: 1920, height: 1080 }, // Add custom viewport size
         deviceScaleFactor: 2,
+        launchOptions: {
+          args: [
+            '--enable-gpu',
+          ],
+        }
       },
       testDir: "./playwright/ui/render-wasm-specs",
       snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
