@@ -16,7 +16,6 @@
    [app.http.errors :as errors]
    [app.tokens :as tokens]
    [app.util.pointer-map :as pmap]
-   [buddy.core.codecs :as bc]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
    [yetti.middleware :as ymw]
@@ -301,16 +300,20 @@
    :compile (constantly wrap-auth)})
 
 (defn- wrap-shared-key-auth
-  [handler shared-key]
-  (if shared-key
-    (let [shared-key (if (string? shared-key)
-                       shared-key
-                       (bc/bytes->b64-str shared-key true))]
-      (fn [request]
-        (let [key (yreq/get-header request "x-shared-key")]
-          (if (= key shared-key)
-            (handler (assoc request ::http/auth-with-shared-key true))
-            {::yres/status 403}))))
+  [handler keys]
+  (if (seq keys)
+    (fn [request]
+      (if-let [[key-id key] (some-> (yreq/get-header request "x-shared-key")
+                                    (str/split #"\s+" 2))]
+        (let [key-id (str/lower key-id)]
+          (if (and (string? key)
+                   (contains? keys key-id)
+                   (= key (get keys key-id)))
+            (-> request
+                (assoc ::http/auth-key-id key-id)
+                (handler))
+            {::yres/status 403}))
+        {::yres/status 403}))
     (fn [_ _]
       {::yres/status 403})))
 

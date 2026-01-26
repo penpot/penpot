@@ -92,11 +92,11 @@
     (fn [{:keys [params path-params method] :as request}]
       (let [handler-name (:type path-params)
             etag         (yreq/get-header request "if-none-match")
+
+            key-id       (get request ::http/auth-key-id)
             profile-id   (or (::session/profile-id request)
                              (::actoken/profile-id request)
-                             (if (::http/auth-with-shared-key request)
-                               uuid/zero
-                               nil))
+                             (if key-id uuid/zero nil))
 
             ip-addr      (inet/parse-request request)
 
@@ -346,23 +346,20 @@
 
 (defmethod ig/assert-key ::routes
   [_ params]
+  (assert (map? (::setup/shared-keys params)))
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
-  (assert (some? (::setup/props params)))
   (assert (session/manager? (::session/manager params)) "expect valid session manager")
   (assert (valid-methods? (::methods params)) "expect valid methods map")
   (assert (valid-methods? (::management-methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::methods ::management-methods ::setup/props] :as cfg}]
+  [_ {:keys [::methods ::management-methods ::setup/shared-keys] :as cfg}]
 
-  (let [public-uri     (cf/get :public-uri)
-        management-key (or (cf/get :management-api-key)
-                           (get props :management-key))]
-
+  (let [public-uri (cf/get :public-uri)]
     ["/api"
      ["/management"
       ["/methods/:type"
-       {:middleware [[mw/shared-key-auth management-key]
+       {:middleware [[mw/shared-key-auth shared-keys]
                      [session/authz cfg]]
         :handler (make-rpc-handler management-methods)}]
 

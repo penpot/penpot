@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
-export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
+export PENPOT_NITRATE_SHARED_KEY=super-secret-nitrate-api-key
+export PENPOT_EXPORTER_SHARED_KEY=super-secret-exporter-api-key
 export PENPOT_SECRET_KEY=super-secret-devenv-key
+
+# DEPRECATED: only used for subscriptions
+export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
+
 export PENPOT_HOST=devenv
 export PENPOT_PUBLIC_URI=https://localhost:3449
 

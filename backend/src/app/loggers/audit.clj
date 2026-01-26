@@ -140,10 +140,14 @@
         client-version      (get-client-version request)
         client-user-agent   (get-client-user-agent request)
         session-id          (get-external-session-id request)
-        token-id       (::actoken/id request)]
+        key-id              (::http/auth-key-id request)
+        token-id            (::actoken/id request)
+        token-type          (::actoken/type request)]
     (d/without-nils
      {:external-session-id session-id
+      :initiator (or key-id "app")
       :access-token-id (some-> token-id str)
+      :access-token-type (some-> token-type str)
       :client-event-origin client-event-origin
       :client-user-agent client-user-agent
       :client-version client-version
