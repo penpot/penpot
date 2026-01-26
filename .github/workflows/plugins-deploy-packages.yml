@@ -70,7 +70,7 @@ jobs:
 
   colors-to-tokens-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.colors_to_tokens == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.colors_to_tokens == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -79,7 +79,7 @@ jobs:
 
   contrast-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.contrast == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.contrast == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -88,7 +88,7 @@ jobs:
 
   create-palette-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.create_palette == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.create_palette == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -97,7 +97,7 @@ jobs:
 
   icons-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.icons == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.icons == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -106,7 +106,7 @@ jobs:
 
   lorem-ipsum-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.lorem_ipsum == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.lorem_ipsum == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -115,7 +115,7 @@ jobs:
 
   rename-layers-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.rename_layers == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.rename_layers == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -124,7 +124,7 @@ jobs:
 
   table-plugin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.table == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.table == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
     secrets: inherit
     with:
@@ -135,7 +135,7 @@ jobs:
   #   Add more jobs for other plugins below, following the same pattern
   #     another-plugin:
   #       needs: detect-changes
-  #       if: needs.detect-changes.outputs.another_plugin == 'true'
+  #       if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.another_plugin == 'true'
   #       uses: ./.github/workflows/plugins-deploy-package.yml
   #       secrets: inherit
   #       with:
