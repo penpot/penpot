@@ -238,7 +238,8 @@ export class SelectionController extends EventTarget {
   #applyStylesFromElementToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
-      if (styleName === "--fills") {
+      // Only merge fill styles from text spans.
+      if (!isTextSpan(element) && styleName === "--fills") {
         continue;
       }
       let styleValue = element.style.getPropertyValue(styleName);
