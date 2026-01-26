@@ -225,118 +225,83 @@
                                   get-expr)])
 
                              (when set-expr
-                               (concat
-                                (when (and schema-n (not (list? schema-n)))
-                                  [coercer-sym `(sm/coercer ~schema-n)])
+                               [schema-sym  schema-n
 
-                                (when (and schema-n (list? schema-n))
-                                  [schema-sym schema-n])
+                                coercer-sym `(if (and (some? ~schema-sym)
+                                                      (not (fn? ~schema-sym)))
+                                               (sm/coercer ~schema-sym)
+                                               nil)
 
-                                [decode-sym decode-expr]
+                                decode-sym decode-expr
 
-                                [(make-sym pname "set-fn")
-                                 (if this?
-                                   `(fn [~val-sym]
-                                      (let [~@(if (and schema-n (list? schema-n))
-                                                [schema-sym  `(~schema-sym ~val-sym)
-                                                 coercer-sym `(sm/coercer ~schema-sym)]
-                                                [])
-                                            ~this-sym (~'js* "this")
-                                            ~fn-sym   ~set-expr
-                                            ~val-sym  ~(if schema-n
-                                                         (if decode-expr
-                                                           `(~decode-sym ~val-sym)
-                                                           `(~decode-sym ~val-sym ~decode-options))
-                                                         val-sym)
-                                            ~val-sym  ~(if schema-n
-                                                         `(~coercer-sym ~val-sym)
-                                                         val-sym)]
-                                        (.call ~fn-sym ~this-sym ~this-sym ~val-sym)))
-                                   `(fn [~val-sym]
-                                      (let [~@(if (and schema-n (list? schema-n))
-                                                [schema-sym  `(~schema-sym ~val-sym)
-                                                 coercer-sym `(sm/coercer ~schema-sym)]
-                                                [])
-                                            ~this-sym (~'js* "this")
-                                            ~fn-sym   ~set-expr
-                                            ~val-sym  ~(if schema-n
-                                                         (if decode-expr
-                                                           `(~decode-sym ~val-sym)
-                                                           `(~decode-sym ~val-sym ~decode-options))
-                                                         val-sym)
-                                            ~val-sym  ~(if schema-n
-                                                         `(~coercer-sym ~val-sym)
-                                                         val-sym)]
-                                        (.call ~fn-sym ~this-sym ~val-sym))))]))
+                                (make-sym pname "set-fn")
+                                `(fn [~val-sym]
+                                   (let [~this-sym (~'js* "this")
+                                         ~fn-sym   ~set-expr
+
+                                         ;; We only emit schema and coercer bindings if
+                                         ;; schema-n is provided
+                                         ~@(if (some? schema-n)
+                                             [schema-sym  `(if (fn? ~schema-sym)
+                                                             (~schema-sym ~val-sym)
+                                                             ~schema-sym)
+
+                                              coercer-sym `(if (nil? ~coercer-sym)
+                                                             (sm/coercer ~schema-sym)
+                                                             ~coercer-sym)
+                                              val-sym     (if (not= decode-expr 'app.common.json/->clj)
+                                                            `(~decode-sym ~val-sym)
+                                                            `(~decode-sym ~val-sym ~decode-options))
+                                              val-sym     `(~coercer-sym ~val-sym)]
+                                             [])]
+
+                                     ~(if this?
+                                        `(.call ~fn-sym ~this-sym ~this-sym ~val-sym)
+                                        `(.call ~fn-sym ~this-sym ~val-sym))))])
 
                              (when fn-expr
-                               (concat
-                                (cond
-                                  (and schema-n (not (list? schema-n)))
-                                  [coercer-sym `(sm/coercer ~schema-n)]
+                               [schema-sym  (or schema-n schema-1)
+                                coercer-sym `(if (and (some? ~schema-sym)
+                                                      (not (fn? ~schema-sym)))
+                                               (sm/coercer ~schema-sym)
+                                               nil)
+                                decode-sym decode-expr
 
-                                  (and schema-n (list? schema-n))
-                                  [schema-sym schema-n]
+                                (make-sym pname "get-fn")
+                                `(fn []
+                                   (let [~this-sym (~'js* "this")
+                                         ~fn-sym   ~fn-expr
+                                         ~fn-sym   ~(if this?
+                                                      `(.bind ~fn-sym ~this-sym ~this-sym)
+                                                      `(.bind ~fn-sym ~this-sym))
 
-                                  (and schema-1 (not (list? schema-1)))
-                                  [coercer-sym `(sm/coercer ~schema-1)]
+                                         ;; We only emit schema and coercer bindings if
+                                         ;; schema-n or schema-1 is provided
+                                         ~@(if (or schema-n schema-1)
+                                             [fn-sym `(fn* [~@(if schema-1 [val-sym] [])]
+                                                           (let [~@(if schema-n
+                                                                     [val-sym `(into-array (cljs.core/js-arguments))]
+                                                                     [])
+                                                                 ~val-sym     ~(if (not= decode-expr 'app.common.json/->clj)
+                                                                                 `(~decode-sym ~val-sym)
+                                                                                 `(~decode-sym ~val-sym ~decode-options))
 
-                                  (and schema-1 (list? schema-1))
-                                  [schema-sym schema-1])
+                                                                 ~schema-sym  (if (fn? ~schema-sym)
+                                                                                (~schema-sym ~val-sym)
+                                                                                ~schema-sym)
 
-                                [decode-sym decode-expr]
+                                                                 ~coercer-sym (if (nil? ~coercer-sym)
+                                                                                (sm/coercer ~schema-sym)
+                                                                                ~coercer-sym)
 
-                                [(make-sym pname "get-fn")
-                                 `(fn []
-                                    (let [~this-sym (~'js* "this")
-                                          ~fn-sym   ~fn-expr
-                                          ~fn-sym   ~(if this?
-                                                       `(.bind ~fn-sym ~this-sym ~this-sym)
-                                                       `(.bind ~fn-sym ~this-sym))
-
-                                          ~@(if schema-1
-                                              [fn-sym `(fn* [~val-sym]
-                                                            (let [~val-sym
-                                                                  ~(if decode-expr
-                                                                     `(~decode-sym ~val-sym)
-                                                                     `(~decode-sym ~val-sym ~decode-options))
-
-                                                                  ~@(if (or (and schema-n (list? schema-n))
-                                                                            (and schema-1 (list? schema-1)))
-                                                                      [schema-sym  `(~schema-sym ~val-sym)
-                                                                       coercer-sym `(sm/coercer ~schema-sym)]
-                                                                      [])
-
-                                                                  ~val-sym
-                                                                  (~coercer-sym ~val-sym)]
-
-                                                              (~fn-sym ~val-sym)))]
-                                              [])
-                                          ~@(if schema-n
-                                              [fn-sym `(fn* []
-                                                            (let [~val-sym
-                                                                  (into-array (cljs.core/js-arguments))
-
-                                                                  ~val-sym
-                                                                  ~(if decode-expr
-                                                                     `(~decode-sym ~val-sym)
-                                                                     `(~decode-sym ~val-sym ~decode-options))
-
-                                                                  ~@(if (or (and schema-n (list? schema-n))
-                                                                            (and schema-1 (list? schema-1)))
-                                                                      [schema-sym  `(~schema-sym ~val-sym)
-                                                                       coercer-sym `(sm/coercer ~schema-sym)]
-                                                                      [])
-
-                                                                  ~val-sym
-                                                                  (~coercer-sym ~val-sym)]
-                                                              (apply ~fn-sym ~val-sym)))]
-                                              [])
-                                          ~@(if wrap
-                                              [fn-sym `(~wrap-sym ~fn-sym)]
-                                              [])]
-
-                                      ~fn-sym))])))))))]
+                                                                 ~val-sym     (~coercer-sym ~val-sym)]
+                                                             ~(if schema-1
+                                                                `(~fn-sym ~val-sym)
+                                                                `(apply ~fn-sym ~val-sym))))]
+                                             [])]
+                                     ~(if wrap
+                                        `(~wrap-sym ~fn-sym)
+                                        fn-sym)))]))))))]
 
        `(let [~target-sym ~rsym
               ~@bindings]
