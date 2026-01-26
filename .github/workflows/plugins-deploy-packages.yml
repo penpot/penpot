@@ -72,6 +72,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.colors_to_tokens == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: colors-to-tokens
@@ -80,6 +81,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.contrast == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: contrast
@@ -88,6 +90,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.create_palette == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: create-palette
@@ -96,6 +99,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.icons == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: icons
@@ -104,6 +108,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.lorem_ipsum == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: lorem-ipsum
@@ -112,6 +117,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.rename_layers == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: rename-layers
@@ -120,6 +126,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.table == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
+    secrets: inherit
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: table
@@ -130,6 +137,7 @@ jobs:
   #       needs: detect-changes
   #       if: needs.detect-changes.outputs.another_plugin == 'true'
   #       uses: ./.github/workflows/plugins-deploy-package.yml
+  #       secrets: inherit
   #       with:
   #         gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
   #         plugin_name: another
