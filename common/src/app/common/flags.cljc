@@ -62,6 +62,7 @@
   #{:audit-log
     :audit-log-archive
     :audit-log-gc
+    :audit-log-logger
     :auto-file-snapshot
     ;; enables the `/api/doc` endpoint that lists all the rpc methods available.
     :backend-api-doc
