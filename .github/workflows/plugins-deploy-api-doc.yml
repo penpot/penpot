@@ -11,7 +11,7 @@ on:
       - "plugins/libs/plugin-types/REAME.md"
       - "plugins/tools/typedoc.css"
       - "plugins/CHANGELOG.md"
-      - "plugins/wrangle-penpot-plugins-api-doc.toml"
+      - "plugins/wrangler-penpot-plugins-api-doc.toml"
   workflow_dispatch:
     inputs:
       gh_ref:
@@ -98,4 +98,16 @@ jobs:
           workingDirectory: plugins
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config wrangle-penpot-plugins-api-doc.toml --name ${{ env.WORKER_NAME }}
+          command: deploy --config wrangler-penpot-plugins-api-doc.toml --name ${{ env.WORKER_NAME }}
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 🧩📚 *[PENPOT PLUGINS] Error deploying API documentation.*
+            📄 Triggered from ref: `${{ inputs.gh_ref }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
