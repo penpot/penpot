@@ -54,6 +54,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor-input :refer [text-editor-input]]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
@@ -407,7 +408,14 @@
 
       (when picking-color?
         [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
-                                               :canvas-ref canvas-ref}])]
+                                               :canvas-ref canvas-ref}])
+
+      ;; WASM text editor contenteditable (must be outside SVG to work)
+      (when (and show-text-editor?
+                 (features/active-feature? @st/state "text-editor-wasm/v1"))
+        [:& text-editor-input {:shape editing-shape
+                               :zoom zoom
+                               :vbox vbox}])]
 
      [:canvas {:id "render"
                :data-testid "canvas-wasm-shapes"
@@ -452,7 +460,10 @@
                 :height (max 0 (- (:height vbox) rule-area-size))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
-       (when show-text-editor?
+       ;; Text editor handling:
+       ;; - When text-editor-wasm/v1 is active, contenteditable is rendered in viewport-overlays (HTML DOM)
+       (when (and show-text-editor?
+                  (not (features/active-feature? @st/state "text-editor-wasm/v1")))
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
                                       :canvas-ref canvas-ref
