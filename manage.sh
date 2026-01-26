@@ -124,7 +124,7 @@ function run-devenv-shell {
     docker exec -ti \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
-           penpot-devenv-main sudo -EH -u penpot bash;
+           penpot-devenv-main sudo -EH -u penpot $@
 }
 
 function run-devenv-isolated-shell {
@@ -138,7 +138,7 @@ function run-devenv-isolated-shell {
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot bash
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot $@
 }
 
 function build-imagemagick-docker-image {
