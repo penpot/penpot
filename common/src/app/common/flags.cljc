@@ -148,7 +148,10 @@
 
     ;; A temporal flag, enables backend code use more extensivelly
     ;; redis for caching data
-    :redis-cache})
+    :redis-cache
+
+    ;; Activates the nitrate module
+    :nitrate})
 
 (def all-flags
   (set/union email login varia))

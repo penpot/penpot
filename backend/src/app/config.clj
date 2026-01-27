@@ -225,6 +225,8 @@
     [:netty-io-threads {:optional true} ::sm/int]
     [:executor-threads {:optional true} ::sm/int]
 
+    [:nitrate-backend-uri {:optional true} ::sm/uri]
+
     ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]
     [:storage-assets-fs-directory {:optional true} :string]

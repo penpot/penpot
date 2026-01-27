@@ -23,6 +23,7 @@
    [app.main :as-alias main]
    [app.media :as media]
    [app.msgbus :as mbus]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
@@ -190,7 +191,9 @@
    ::sm/params schema:get-teams}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (get-teams conn profile-id)))
+    (cond->> (get-teams conn profile-id)
+      (contains? cf/flags :nitrate)
+      (map #(nitrate/add-org-to-team cfg % params)))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
