@@ -175,6 +175,10 @@ impl Surfaces {
         self.get_mut(id).canvas()
     }
 
+    pub fn surface_clone(&self, id: SurfaceId) -> skia::Surface {
+        self.get(id).clone()
+    }
+
     /// Marks a surface as having content (dirty)
     pub fn mark_dirty(&mut self, id: SurfaceId) {
         self.dirty_surfaces |= id as u32;
@@ -208,6 +212,18 @@ impl Surfaces {
             (0.0, 0.0),
             sampling_options,
             paint,
+        );
+    }
+
+    /// Draws the cache surface directly to the target canvas.
+    /// This avoids creating an intermediate snapshot, reducing GPU stalls.
+    pub fn draw_cache_to_target(&mut self) {
+        let sampling_options = self.sampling_options;
+        self.cache.clone().draw(
+            self.target.canvas(),
+            (0.0, 0.0),
+            sampling_options,
+            Some(&skia::Paint::default()),
         );
     }
 
@@ -305,6 +321,22 @@ impl Surfaces {
         }
     }
 
+    fn get(&self, id: SurfaceId) -> &skia::Surface {
+        match id {
+            SurfaceId::Target => &self.target,
+            SurfaceId::Filter => &self.filter,
+            SurfaceId::Cache => &self.cache,
+            SurfaceId::Current => &self.current,
+            SurfaceId::DropShadows => &self.drop_shadows,
+            SurfaceId::InnerShadows => &self.inner_shadows,
+            SurfaceId::TextDropShadows => &self.text_drop_shadows,
+            SurfaceId::Fills => &self.shape_fills,
+            SurfaceId::Strokes => &self.shape_strokes,
+            SurfaceId::Debug => &self.debug,
+            SurfaceId::UI => &self.ui,
+        }
+    }
+
     fn reset_from_target(&mut self, target: skia::Surface) {
         let dim = (target.width(), target.height());
         self.target = target;
@@ -386,14 +418,22 @@ impl Surfaces {
             self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
         );
 
-        if let Some(snapshot) = self.current.image_snapshot_with_bounds(rect) {
-            self.tiles.add(tile_viewbox, tile, snapshot.clone());
+        let snapshot = self.current.image_snapshot();
+        let mut direct_context = self.current.direct_context();
+        let tile_image_opt = snapshot
+            .make_subset(direct_context.as_mut(), rect)
+            .or_else(|| self.current.image_snapshot_with_bounds(rect));
+
+        if let Some(tile_image) = tile_image_opt {
+            // Draw to cache first (takes reference), then move to tile cache
             self.cache.canvas().draw_image_rect(
-                snapshot.clone(),
+                &tile_image,
                 None,
                 tile_rect,
                 &skia::Paint::default(),
             );
+
+            self.tiles.add(tile_viewbox, tile, tile_image);
         }
     }
 
@@ -409,16 +449,57 @@ impl Surfaces {
     }
 
     pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
-        let image = self.tiles.get(tile).unwrap();
+        if let Some(image) = self.tiles.get(tile) {
+            let mut paint = skia::Paint::default();
+            paint.set_color(color);
 
+            self.target.canvas().draw_rect(rect, &paint);
+
+            self.target
+                .canvas()
+                .draw_image_rect(&image, None, rect, &skia::Paint::default());
+        }
+    }
+
+    /// Draws the current tile directly to the target and cache surfaces without
+    /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
+    /// populate the tile texture cache (suitable for one-shot renders like tests).
+    pub fn draw_current_tile_direct(&mut self, tile_rect: &skia::Rect, color: skia::Color) {
+        let sampling_options = self.sampling_options;
+        let src_rect = IRect::from_xywh(
+            self.margins.width,
+            self.margins.height,
+            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
+            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        );
+        let src_rect_f = skia::Rect::from(src_rect);
+
+        // Draw background
         let mut paint = skia::Paint::default();
         paint.set_color(color);
+        self.target.canvas().draw_rect(tile_rect, &paint);
 
-        self.target.canvas().draw_rect(rect, &paint);
+        // Draw current surface directly to target (no snapshot)
+        self.current.clone().draw(
+            self.target.canvas(),
+            (
+                tile_rect.left - src_rect_f.left,
+                tile_rect.top - src_rect_f.top,
+            ),
+            sampling_options,
+            None,
+        );
 
-        self.target
-            .canvas()
-            .draw_image_rect(&image, None, rect, &skia::Paint::default());
+        // Also draw to cache for render_from_cache
+        self.current.clone().draw(
+            self.cache.canvas(),
+            (
+                tile_rect.left - src_rect_f.left,
+                tile_rect.top - src_rect_f.top,
+            ),
+            sampling_options,
+            None,
+        );
     }
 
     pub fn remove_cached_tiles(&mut self, color: skia::Color) {
@@ -491,9 +572,11 @@ impl TileTextureCache {
         }
     }
 
-    pub fn get(&mut self, tile: Tile) -> Result<&mut skia::Image, String> {
-        let image = self.grid.get_mut(&tile).unwrap();
-        Ok(image)
+    pub fn get(&mut self, tile: Tile) -> Option<&mut skia::Image> {
+        if self.removed.contains(&tile) {
+            return None;
+        }
+        self.grid.get_mut(&tile)
     }
 
     pub fn remove(&mut self, tile: Tile) {

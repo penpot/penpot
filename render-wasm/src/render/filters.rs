@@ -40,41 +40,21 @@ pub fn render_with_filter_surface<F>(
 where
     F: FnOnce(&mut RenderState, SurfaceId),
 {
-    if let Some((image, scale)) = render_into_filter_surface(render_state, bounds, draw_fn) {
+    if let Some((mut surface, scale)) = render_into_filter_surface(render_state, bounds, draw_fn) {
         let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
 
         // If we scaled down, we need to scale the source rect and adjust the destination
         if scale < 1.0 {
-            // The image was rendered at a smaller scale, so we need to scale it back up
-            let scaled_width = bounds.width() * scale;
-            let scaled_height = bounds.height() * scale;
-            let src_rect = skia::Rect::from_xywh(0.0, 0.0, scaled_width, scaled_height);
-
             canvas.save();
             canvas.scale((1.0 / scale, 1.0 / scale));
-            canvas.draw_image_rect_with_sampling_options(
-                image,
-                Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                skia::Rect::from_xywh(
-                    bounds.left * scale,
-                    bounds.top * scale,
-                    scaled_width,
-                    scaled_height,
-                ),
-                render_state.sampling_options,
-                &skia::Paint::default(),
-            );
+            canvas.translate((bounds.left * scale, bounds.top * scale));
+            surface.draw(canvas, (0.0, 0.0), render_state.sampling_options, None);
             canvas.restore();
         } else {
-            // No scaling needed, draw normally
-            let src_rect = skia::Rect::from_xywh(0.0, 0.0, bounds.width(), bounds.height());
-            canvas.draw_image_rect_with_sampling_options(
-                image,
-                Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                bounds,
-                render_state.sampling_options,
-                &skia::Paint::default(),
-            );
+            canvas.save();
+            canvas.translate((bounds.left, bounds.top));
+            surface.draw(canvas, (0.0, 0.0), render_state.sampling_options, None);
+            canvas.restore();
         }
         true
     } else {
@@ -93,7 +73,7 @@ pub fn render_into_filter_surface<F>(
     render_state: &mut RenderState,
     bounds: Rect,
     draw_fn: F,
-) -> Option<(skia::Image, f32)>
+) -> Option<(skia::Surface, f32)>
 where
     F: FnOnce(&mut RenderState, SurfaceId),
 {
@@ -129,5 +109,6 @@ where
 
     render_state.surfaces.canvas(filter_id).restore();
 
-    Some((render_state.surfaces.snapshot(filter_id), scale))
+    let filter_surface = render_state.surfaces.surface_clone(filter_id);
+    Some((filter_surface, scale))
 }
