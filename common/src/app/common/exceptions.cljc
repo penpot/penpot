@@ -241,7 +241,20 @@
        (with-out-str
          (print-all cause)))))
 
-#?(:clj
-   (defn print-throwable
-     [cause & {:as opts}]
-     (println (format-throwable cause opts))))
+(defn print-throwable
+  [cause & {:as opts}]
+  #?(:clj
+     (println (format-throwable cause opts))
+     :cljs
+     (let [prefix (get opts :prefix "exception")
+           title  (str prefix ": " (ex-message cause))
+           exdata (ex-data cause)]
+       (js/console.group title)
+       (when-let [explain (get exdata ::sm/explain)]
+         (println (sm/humanize-explain explain)))
+
+       (js/console.log "\nData:")
+       (pp/pprint (dissoc exdata ::sm/explain))
+
+       (js/console.log "\nTrace:")
+       (js/console.error (.-stack cause)))))
