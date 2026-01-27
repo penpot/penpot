@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as tk]
    [app.main.data.workspace :as udw]
@@ -133,6 +134,7 @@
 
         on-focus
         (mf/use-fn
+         (mf/deps select-margins)
          (fn [attr event]
            (case attr
              :m1 (select-margins true false true false)
@@ -146,6 +148,19 @@
            (st/emit! (dwta/unapply-token {:token (first token)
                                           :attributes #{attr}
                                           :shape-ids ids}))))
+
+        on-detach-horizontal
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (run! #(on-detach-token token %) [:m2 :m4])))
+
+        on-detach-vertical
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (run! #(on-detach-token token %) [:m1 :m3])))
+
         on-change'
         (mf/use-fn
          (mf/deps on-change ids)
@@ -176,7 +191,7 @@
      (if token-numeric-inputs
        [:> numeric-input-wrapper*
         {:on-change on-m1-change
-         :on-detach on-detach-token
+         :on-detach on-detach-vertical
          :class (stl/css :vertical-margin-wrapper)
          :on-blur on-blur
          :on-focus on-focus-m1
@@ -205,7 +220,7 @@
      (if token-numeric-inputs
        [:> numeric-input-wrapper*
         {:on-change on-m2-change
-         :on-detach on-detach-token
+         :on-detach on-detach-horizontal
          :on-blur on-blur
          :on-focus on-focus-m2
          :placeholder m2-placeholder
@@ -257,6 +272,7 @@
 
         on-focus
         (mf/use-fn
+         (mf/deps select-margin)
          (fn [attr event]
            (select-margin attr)
            (dom/select-target event)))
@@ -417,7 +433,9 @@
    ::mf/expect-props #{:value :type :on-type-change :on-change :applied-tokens :ids}}
   [{:keys [type on-type-change] :as props}]
   (let [type       (d/nilv type :simple)
-        on-blur    (mf/use-fn #(select-margins false false false false))
+        on-blur    (mf/use-fn
+                    (mf/deps select-margins)
+                    #(select-margins false false false false))
         props      (mf/spread-props props {:on-blur on-blur})
 
         on-type-change'
@@ -520,9 +538,36 @@
                                  :label "Align self end"
                                  :value "end"}]}])
 
+(def ^:private schema:layout-item-props-schema
+  [:map
+   [:layout-item-margin
+    {:optional true}
+    [:map
+     [:m1 {:optional true} [:or :float :int]]
+     [:m2 {:optional true} [:or :float :int]]
+     [:m3 {:optional true} [:or :float :int]]
+     [:m4 {:optional true} [:or :float :int]]]]
+
+   [:layout-item-margin-type {:optional true} :keyword]
+
+   [:layout-item-h-sizing {:optional true} :keyword]
+   [:layout-item-v-sizing {:optional true} :keyword]
+
+   [:layout-item-min-w {:optional true} [:or :float :int]]
+   [:layout-item-max-w {:optional true} [:or :float :int]]
+   [:layout-item-min-h {:optional true} [:or :float :int]]
+   [:layout-item-max-h {:optional true} [:or :float :int]]])
+
+(def ^:private schema:layout-size-constraints
+  [:map
+   [:values schema:layout-item-props-schema]
+   [:applied-tokens [:map-of :keyword :string]]
+   [:ids [::sm/vec ::sm/uuid]]
+   [:v-sizing {:optional true} [:maybe [:= :fill]]]])
+
 (mf/defc layout-size-constraints*
   {::mf/private true
-   ::mf/expect-props #{:value :applied-tokens :ids :v-sizing}}
+   ::mf/schema (sm/schema schema:layout-size-constraints)}
   [{:keys [values v-sizing ids applied-tokens] :as props}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
@@ -616,6 +661,7 @@
             :class (stl/css :max-w-wrapper)
             :min 0
             :name :layout-item-max-w
+            :align :right
             :property (tr "workspace.options.layout-item.layout-item-max-w")
             :nillable true
             :tooltip-class (stl/css :tooltip-wrapper)
@@ -650,7 +696,6 @@
             :property (tr "workspace.options.layout-item.layout-item-min-h")
             :nillable true
             :tooltip-class (stl/css :tooltip-wrapper)
-
             :applied-tokens {:layout-item-min-h applied-token-to-min-h}
             :values {:layout-item-min-h min-h}}]
 
@@ -677,6 +722,7 @@
             :min 0
             :text-icon "MAX H"
             :name :layout-item-max-h
+            :align :right
             :property (tr "workspace.options.layout-item.layout-item-max-h")
             :nillable true
             :tooltip-class (stl/css :tooltip-wrapper)
@@ -822,7 +868,8 @@
          (fn [value]
            (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index value}))))]
 
-    [:div {:class (stl/css :element-set)}
+    [:section {:class (stl/css :element-set)
+               :aria-label "layout item menu"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  has-content?
                       :collapsed    (not open?)

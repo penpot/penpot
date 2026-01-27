@@ -759,4 +759,87 @@ test.describe("Tokens: Apply token", () => {
     });
     await expect(StrokeWidthPillSmall).toBeVisible();
   });
+
+  test("User applies margin token to a shape", async ({ page }) => {
+    const workspace = new WorkspacePage(page, {
+      textEditor: true,
+    });
+    // Set up
+    await workspace.mockConfigFlags(["enable-feature-token-input"]);
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("workspace/get-file-layout-stroke-token-json");
+    await workspace.goToWorkspace();
+
+    // Select shape apply stroke
+    await workspace.layers
+      .getByTestId("layer-row")
+      .nth(1)
+      .getByRole("button", { name: "Toggle layer" })
+      .click();
+
+    await workspace.layers.getByTestId("layer-row").nth(2).click();
+
+    const rightSidebar = page.getByTestId("right-sidebar");
+    await expect(rightSidebar).toBeVisible();
+    await rightSidebar.getByTestId("add-stroke").click();
+
+    // Apply margin token from token panel
+    const tokensTab = page.getByRole("tab", { name: "Tokens" });
+    await expect(tokensTab).toBeVisible();
+    await tokensTab.click();
+    await page.getByRole("button", { name: "Dimensions 4" }).click();
+    await page.getByRole("button", { name: "dim", exact: true }).click();
+    const tokensSidebar = workspace.tokensSidebar;
+    await expect(
+      tokensSidebar.getByRole("button", { name: "dim.md" }),
+    ).toBeVisible();
+    await tokensSidebar
+      .getByRole("button", { name: "dim.md" })
+      .click({ button: "right" });
+    await page
+      .getByTestId("tokens-context-menu-for-token")
+      .getByText("Spacing")
+      .hover();
+    await page
+      .getByTestId("tokens-context-menu-for-token")
+      .getByText("Horizontal")
+      .click();
+
+    // Check if token pill is visible on right sidebar
+    const layoutItemSectionSidebar = rightSidebar.getByRole("region", {
+      name: "layout item menu",
+    });
+    await expect(layoutItemSectionSidebar).toBeVisible();
+    const marginPillMd = layoutItemSectionSidebar.getByRole("button", {
+      name: "dim.md",
+    });
+    await expect(marginPillMd).toBeVisible();
+
+    await marginPillMd.click();
+    const dimensionTokenOptionXl = page.getByRole("option", { name: "dim.xl" });
+    await expect(dimensionTokenOptionXl).toBeVisible();
+    await dimensionTokenOptionXl.click();
+
+    const marginPillXL = layoutItemSectionSidebar.getByRole("button", {
+      name: "dim.xl",
+    });
+    await expect(marginPillXL).toBeVisible();
+
+    // Detach token from right sidebar and apply another from dropdown
+    const detachButton = layoutItemSectionSidebar.getByRole("button", {
+      name: "Detach token",
+    });
+    await detachButton.click();
+    await expect(marginPillXL).not.toBeVisible();
+    const horizontalMarginInput = layoutItemSectionSidebar.getByText('Horizontal marginOpen token');
+    await expect(horizontalMarginInput).toBeVisible();
+
+    const tokenDropdown = horizontalMarginInput.getByRole('button', { name: 'Open token list' });
+    await tokenDropdown.click();
+
+    await expect(dimensionTokenOptionXl).toBeVisible();
+    await dimensionTokenOptionXl.click();
+    
+    await expect(marginPillXL).toBeVisible();
+  });
 });

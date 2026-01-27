@@ -739,7 +739,7 @@
       (mf/set-ref-val! options-ref dropdown-options))
 
     (if (some? icon)
-      [:div {:class (dm/str class " " (stl/css :input-wrapper))
+      [:div {:class [class (stl/css :input-wrapper)]
              :ref wrapper-ref}
 
        (if (and (some? token-applied)
@@ -757,8 +757,7 @@
                                   :align align
                                   :empty-to-end empty-to-end
                                   :ref set-option-ref}]))]
-      [:div {:class (dm/str class " " (stl/css :input-wrapper))
-             :aria-labelledby property
+      [:div {:class [class (stl/css :input-wrapper)]
              :ref wrapper-ref}
 
        (if (and (some? token-applied)
