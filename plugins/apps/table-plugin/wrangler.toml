@@ -1,0 +1,8 @@
+name = "table-plugin"
+compatibility_date = "2025-01-01"
+
+assets = { directory = "../../dist/apps/table-plugin/browser" }
+
+[[routes]]
+pattern = "WORKER_URI"
+custom_domain = true
