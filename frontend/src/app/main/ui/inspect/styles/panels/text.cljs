@@ -101,7 +101,7 @@
                                     :resolved-tokens resolved-tokens
                                     :color-space color-space}]))
 
-      ;; Typography style
+     ;; Typography style
      (when (and (not composite-typography-token)
                 (:typography-ref-id style))
        [:> typography-name-block* {:style style}])

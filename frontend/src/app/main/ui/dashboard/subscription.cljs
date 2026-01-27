@@ -225,10 +225,10 @@
      (and
       (= subscription-type "unlimited")
       (or
-     ;; common: seats < 25 and diff >= 4
+       ;; common: seats < 25 and diff >= 4
        (and (< seats 25)
             (>= (- editors seats) 4))
-     ;; special: reached 25+ editors, seats < 25 and there is overuse
+       ;; special: reached 25+ editors, seats < 25 and there is overuse
        (and (< seats 25)
             (>= editors 25)
             (> editors seats)))))))

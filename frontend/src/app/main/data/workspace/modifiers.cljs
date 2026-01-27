@@ -793,8 +793,8 @@
             (-> options
                 (assoc :reg-objects? true)
                 (assoc :ignore-tree ignore-tree)
-                 ;; Attributes that can change in the transform. This
-                 ;; way we don't have to check all the attributes
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
                 (assoc :attrs transform-attrs))
 
             update-shape

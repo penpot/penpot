@@ -447,8 +447,8 @@
                            :stroke-opacity 1
                            :stroke-width 2}
 
-            ;; Move the position of the variant container so the main shape doesn't
-            ;; change its position
+             ;; Move the position of the variant container so the main shape doesn't
+             ;; change its position
              delta        (or delta
                               (if (ctsl/any-layout? parent)
                                 (gpt/point 0 0)
@@ -456,8 +456,8 @@
              undo-id      (js/Symbol)]
 
 
-        ;;TODO Refactor all called methods in order to be able to
-        ;;generate changes instead of call the events
+         ;;TODO Refactor all called methods in order to be able to
+         ;;generate changes instead of call the events
 
 
          (rx/concat
@@ -467,7 +467,7 @@
            (when (not= name (:name main))
              (dwl/rename-component component-id name))
 
-          ;; Create variant container
+           ;; Create variant container
            (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
            (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
            (when flex? (dwsl/create-layout-from-id variant-id :flex))
@@ -476,12 +476,12 @@
            (cl/add-stroke variant-vec stroke-props)
            (set-variant-id component-id variant-id))
 
-         ;; Add the necessary number of new properties, with default values
+          ;; Add the necessary number of new properties, with default values
           (rx/from
            (repeatedly num-props
                        #(add-new-property variant-id {:fill-values? true})))
 
-         ;; When the component has path, set the path items as properties values
+          ;; When the component has path, set the path items as properties values
           (when (> (count cpath) 1)
             (rx/from
              (map
@@ -634,7 +634,7 @@
                         prefix        (->> shapes
                                            (mapv #(cpn/split-path (:name %)))
                                            (common-prefix))
-                         ;; When the common parent is root, add a wrapper
+                        ;; When the common parent is root, add a wrapper
                         add-wrapper?  (empty? prefix)
                         first-shape   (first shapes)
                         delta         (gpt/point (- (:x rect) (:x first-shape) 30)
@@ -667,10 +667,10 @@
                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
                             (ev/event {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}))
 
-                      ;; NOTE: we need to schedule a commit into a
-                      ;; microtask for ensure that all the scheduled
-                      ;; microtask of previous events execute before the
-                      ;; commit
+                     ;; NOTE: we need to schedule a commit into a
+                     ;; microtask for ensure that all the scheduled
+                     ;; microtask of previous events execute before the
+                     ;; commit
                      (->> (rx/of (dwu/commit-undo-transaction undo-id))
                           (rx/observe-on :async)))))))
 
@@ -705,7 +705,7 @@
       (let [libraries    (dsh/lookup-libraries state)
             component-id (:component-id shape)
             component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
-             ;; If the value is already val, do nothing
+        ;; If the value is already val, do nothing
         (when (not= val (dm/get-in component [:variant-properties pos :value]))
           (let [current-page-objects   (dsh/lookup-page-objects state)
                 variant-id             (:variant-id component)

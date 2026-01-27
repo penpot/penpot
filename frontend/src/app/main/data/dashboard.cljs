@@ -81,7 +81,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (reduce (fn [state {:keys [id] :as project}]
-                  ;; Replace completely instead of merge to ensure deleted-at is removed
+                ;; Replace completely instead of merge to ensure deleted-at is removed
                 (assoc-in state [:projects id] project))
               state
               projects))))

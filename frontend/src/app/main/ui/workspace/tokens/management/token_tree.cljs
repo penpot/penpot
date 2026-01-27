@@ -146,7 +146,7 @@
              :active-theme-tokens active-theme-tokens
              :on-click on-token-pill-click
              :on-context-menu on-pill-context-menu}])
-          ;; Render segment folder
+         ;; Render segment folder
          [:ul {:class (stl/css :node-parent)
                :key (:path node)}
           [:> folder-node* {:node node

@@ -143,7 +143,7 @@
   ([value shape-ids attributes]
    (update-stroke-color value shape-ids attributes nil))
 
-   ;; The attributes param is needed to have the same arity that other update functions
+  ;; The attributes param is needed to have the same arity that other update functions
   ([value shape-ids _attributes page-id]
    (when-let [color (value->color value)]
      (dwsh/update-shapes shape-ids

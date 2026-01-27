@@ -156,8 +156,8 @@
 (defn- update-plugin-permissions-peek
   [{:keys [plugin-id url]}]
   (when url
-      ;; If the saved manifest has a URL we fetch the manifest to check
-      ;; for updates
+    ;; If the saved manifest has a URL we fetch the manifest to check
+    ;; for updates
     (->> (fetch-manifest url)
          (rx/subs!
           (fn [new-manifest]

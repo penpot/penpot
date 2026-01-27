@@ -74,7 +74,7 @@
           file     (setup-base-file)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events
           [(dws/select-shape (cthi/id :frame1))
            (dwl/add-component)]]
@@ -87,7 +87,7 @@
                frame1'        (cths/get-shape file' :frame1)
                tokens-frame1' (:applied-tokens frame1')]
 
-          ;; ==== Check
+           ;; ==== Check
            (t/is (= (count tokens-frame1') 4))
            (t/is (= (get tokens-frame1' :r1) "test-token-1"))
            (t/is (= (get tokens-frame1' :r2) "test-token-1"))
@@ -105,7 +105,7 @@
           file     (setup-file-with-main)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events
           [(dwl/instantiate-component (:id file)
                                       (cthi/id :component1)
@@ -119,7 +119,7 @@
                c-frame1'      (dsh/lookup-shape new-state (first selected))
                tokens-frame1' (:applied-tokens c-frame1')]
 
-          ;; ==== Check
+           ;; ==== Check
            (t/is (= (count tokens-frame1') 4))
            (t/is (= (get tokens-frame1' :r1) "test-token-1"))
            (t/is (= (get tokens-frame1' :r2) "test-token-1"))
@@ -137,7 +137,7 @@
           file     (setup-file-with-copy)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events [(dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
@@ -153,7 +153,7 @@
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                        ;; ==== Check
+                         ;; ==== Check
                          (t/is (= (count tokens-frame1') 4))
                          (t/is (= (get tokens-frame1' :r1) "test-token-2"))
                          (t/is (= (get tokens-frame1' :r2) "test-token-2"))
@@ -174,7 +174,7 @@
           file     (setup-file-with-copy)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events [(dwta/unapply-token {:shape-ids [(cthi/id :frame1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "test-token-1")})]
@@ -189,7 +189,7 @@
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                        ;; ==== Check
+                         ;; ==== Check
                          (t/is (= (count tokens-frame1') 0))
                          (t/is (= (get c-frame1' :r1) 25))
                          (t/is (= (get c-frame1' :r2) 25))
@@ -245,7 +245,7 @@
           file     (setup-file-with-copy)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events [(dwta/apply-token {:shape-ids [(cthi/id :c-frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
@@ -265,7 +265,7 @@
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                        ;; ==== Check
+                         ;; ==== Check
                          (t/is (= (count tokens-frame1') 4))
                          (t/is (= (get tokens-frame1' :r1) "test-token-2"))
                          (t/is (= (get tokens-frame1' :r2) "test-token-2"))
@@ -286,7 +286,7 @@
           file     (setup-file-with-copy)
           store    (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events [(dwta/unapply-token {:shape-ids [(cthi/id :c-frame1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "test-token-1")})
@@ -305,7 +305,7 @@
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                        ;; ==== Check
+                         ;; ==== Check
                          (t/is (= (count tokens-frame1') 0))
                          (t/is (= (get c-frame1' :r1) 25))
                          (t/is (= (get c-frame1' :r2) 25))
@@ -369,7 +369,7 @@
                     (cthc/instantiate-component :component1 :c-frame1))
           store (ths/setup-store file)
 
-         ;; ==== Action
+          ;; ==== Action
           events [(dwtl/set-selected-token-set-id (cthi/id :test-token-set))
                   (dwtl/update-token (cthi/id :token-radius)
                                      {:name "token-radius"

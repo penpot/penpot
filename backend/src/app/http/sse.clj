@@ -6,7 +6,6 @@
 
 (ns app.http.sse
   "SSE (server sent events) helpers"
-  (:refer-clojure :exclude [tap])
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]

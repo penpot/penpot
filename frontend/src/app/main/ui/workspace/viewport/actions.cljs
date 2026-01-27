@@ -245,7 +245,7 @@
                (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor"))
                (dom/class? (dom/get-target event) "viewport-selrect"))
        (let [position (dom/get-client-position event)]
-           ;; Delayed callback because we need to wait to the previous context menu to be closed
+         ;; Delayed callback because we need to wait to the previous context menu to be closed
          (ts/schedule
           #(st/emit!
             (if (and (not read-only?) (some? @hover))

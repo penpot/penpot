@@ -135,8 +135,8 @@
                              :version "1.1"
                              :xmlns "http://www.w3.org/2000/svg"
                              :xmlnsXlink "http://www.w3.org/1999/xlink"
-                                                       ;; Fix Chromium bug about color of html texts
-                                                       ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+                             ;; Fix Chromium bug about color of html texts
+                             ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
                              :style {:-webkit-print-color-adjust :exact}
                              :fill "none"}
 

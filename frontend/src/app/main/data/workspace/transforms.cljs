@@ -1121,15 +1121,15 @@
                          :cell cell))
 
             add-component-to-variant? (and
-                                        ;; Any of the shapes is a head
+                                       ;; Any of the shapes is a head
                                        (some (comp ctk/instance-head? objects) ids)
                                        ;; Any ancestor of the destination parent is a variant
                                        (->> (cfh/get-parents-with-self objects frame-id)
                                             (some ctk/is-variant?)))
             add-new-variant? (and
-                             ;; The parent is a variant container
+                              ;; The parent is a variant container
                               (-> frame-id objects ctk/is-variant-container?)
-                             ;; Any of the shapes is a main instance
+                              ;; Any of the shapes is a main instance
                               (some (comp ctk/main-instance? objects) ids))]
 
         (rx/concat

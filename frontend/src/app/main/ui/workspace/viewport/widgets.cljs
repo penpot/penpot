@@ -200,7 +200,7 @@
             is-variant?                [:use {:href "#icon-component"}])])
 
        (if ^boolean edition?
-           ;; Case when edition? is true
+         ;; Case when edition? is true
          [:foreignObject {:x text-pos-x
                           :y -15
                           :width (max 0 (- text-width text-pos-x))
@@ -217,7 +217,7 @@
                    :ref ref
                    :default-value (:name frame)
                    :on-blur accept-edit}]]
-           ;; Case when edition? is false
+         ;; Case when edition? is false
          [:foreignObject {:x text-pos-x
                           :y -11
                           :width (max 0 (- text-width text-pos-x))

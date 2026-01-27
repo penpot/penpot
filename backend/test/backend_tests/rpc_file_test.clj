@@ -841,7 +841,7 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
@@ -863,7 +863,7 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
@@ -1261,7 +1261,7 @@
       (t/is (= 1 (count rows)))
       (t/is (every? #(some? (:data %)) rows)))
 
-      ;; Mark the file ellegible again for GC
+    ;; Mark the file ellegible again for GC
     (th/db-update! :file
                    {:has-media-trimmed false}
                    {:id (:id file)})
@@ -1318,7 +1318,7 @@
                        {:file-id (:id file)
                         :type "fragment"}
                        {:order-by [:created-at]})]
-        ;; (pp/pprint rows)
+      ;; (pp/pprint rows)
       (t/is (= 2 (count rows)))
       (t/is (nil? (:data row1)))
       (t/is (= "storage" (:backend row1)))

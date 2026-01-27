@@ -693,7 +693,7 @@
         changes1     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                                  #{(:id main-child)}
                                                  (fn [shape]
-                                                     ;; Update the attrs on all the content tree
+                                                   ;; Update the attrs on all the content tree
                                                    (-> shape
                                                        (assoc-in [:content :children 0 :children 0 :children 0 :font-size] "32")
                                                        (assoc-in [:content :children 0 :children 0 :font-size] "32")
@@ -851,7 +851,7 @@
         changes1     (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                                  #{(:id main-child)}
                                                  (fn [shape]
-                                                     ;; Update the attrs on all the content tree
+                                                   ;; Update the attrs on all the content tree
                                                    (-> shape
                                                        (assoc-in [:content :children 0 :children 0 :children 0 :font-size] "32")
                                                        (assoc-in [:content :children 0 :children 0 :font-size] "32")
