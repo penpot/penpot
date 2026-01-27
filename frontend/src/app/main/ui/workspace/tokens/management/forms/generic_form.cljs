@@ -208,7 +208,7 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield type active-tab)
+         (mf/deps validate-token token tokens token-type value-subfield type active-tab on-remap-token on-rename-token is-create)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  path (str (d/name token-type) "." name)

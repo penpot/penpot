@@ -17,6 +17,7 @@
     [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
     [app.main.ui.ds.foundations.typography.text :refer [text*]]
     [app.util.i18n :refer [tr]]
+    [app.util.keyboard :as kbd]
     [rumext.v2 :as mf]))
 
 (defn hide-remapping-modal
@@ -34,7 +35,7 @@
         ;; Remap logic on confirm
         confirm-remap
         (mf/use-fn
-         (mf/deps on-remap)
+         (mf/deps on-remap remap-modal)
          (fn []
            ;; Call shared remapping logic
            (let [old-token-name (:old-token-name remap-modal)
@@ -59,8 +60,8 @@
         on-key-down
         (mf/use-fn
          (mf/deps cancel-action)
-         (fn [e]
-           (when (= e.key "Escape")
+         (fn [event]
+           (when (kbd/enter? event)
              (cancel-action))))]
 
     [:div {:class (stl/css :modal-overlay)

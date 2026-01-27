@@ -8046,7 +8046,7 @@ msgstr "Errores en referencias: "
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
 msgid "workspace.tokens.remap-token-references-title"
-msgstr "¿Actualizar todas las referencias de `{old-token-name}` a `{new-token-name}`?"
+msgstr "¿Actualizar todas las referencias de `%s` a `%s`?"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
 msgid "workspace.tokens.remap-warning-effects"

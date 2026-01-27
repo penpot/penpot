@@ -20,8 +20,8 @@
   position: fixed;
   inset-inline-start: 0;
   inset-block-start: 0;
-  height: 100%;
-  width: 100%;
+  block-size: 100%;
+  inline-size: 100%;
   background-color: var(--overlay-color);
 }
 
@@ -33,9 +33,9 @@
 
 .modal-dialog {
   @extend .modal-container-base;
-  width: 100%;
-  max-width: 32rem;
-  max-height: unset;
+  block-size: 100%;
+  max-inline-size: 32rem;
+  max-block-size: unset;
   user-select: none;
   position: relative;
 }
