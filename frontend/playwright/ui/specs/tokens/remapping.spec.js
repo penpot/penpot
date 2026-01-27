@@ -12,88 +12,118 @@ test.beforeEach(async ({ page }) => {
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
-test.describe("Tokens: Remapping Feature", () => {
+const createToken = async (page, type, name, textFieldName, value) => {
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+  const { tokensUpdateCreateModal } = await setupTokensFile(page, {
+    flags: ["enable-token-shadow"],
+  });
+
+  // Create base token
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: ${type}` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill(name);
+
+  const colorField = tokensUpdateCreateModal.getByRole("textbox", {
+    name: textFieldName,
+  });
+  await colorField.fill(value);
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+};
+
+const renameToken = async (page, oldName, newName) => {
+  const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+
+  const baseToken = tokensSidebar.getByRole("button", {
+    name: oldName,
+  });
+  await baseToken.click({ button: "right" });
+  await tokenContextMenuForToken.getByText("Edit token").click();
+
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill(newName);
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+};
+
+const createCompositeDerivedToken = async (page, type, name, reference) => {
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+  const { tokensUpdateCreateModal } = await setupTokensFile(page, {
+    flags: ["enable-token-shadow"],
+  });
+
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: ${type}` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByRole("textbox", {
+    name: "Name",
+  });
+  await nameField.fill(name);
+
+  const referenceToggle = tokensUpdateCreateModal.getByTestId("reference-opt");
+  await referenceToggle.click();
+
+  const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
+    name: "Reference",
+  });
+  await referenceField.fill(reference);
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+};
+
+test.describe("Remapping Tokens", () => {
   test.describe("Box Shadow Token Remapping", () => {
     test("User renames box shadow token with alias references", async ({
       page,
     }) => {
-      const {
-        tokensUpdateCreateModal,
-        tokensSidebar,
-        tokenContextMenuForToken,
-      } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
-
-      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+      const { tokensSidebar } = await setupTokensFile(page, {
+        flags: ["enable-token-shadow"],
+      });
 
       // Create base shadow token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Shadow" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      let nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("base-shadow");
-
-      const colorField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Color",
-      });
-      await colorField.fill("#000000");
-
-      let submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(page, "Shadow", "base-shadow", "Color", "#000000");
 
       // Create derived shadow token that references base-shadow
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Shadow" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      nameField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Name",
-      });
-      await nameField.fill("derived-shadow");
-
-      const referenceToggle =
-        tokensUpdateCreateModal.getByTestId("reference-opt");
-      await referenceToggle.click();
-
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Reference",
-      });
-      await referenceField.fill("{base-shadow}");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createCompositeDerivedToken(
+        page,
+        "Shadow",
+        "derived-shadow",
+        "{base-shadow}",
+      );
 
       // Rename base-shadow token
-      const baseToken = tokensSidebar.getByRole("button", {
-        name: "base-shadow",
-      });
-      await baseToken.click({ button: "right" });
-      await tokenContextMenuForToken.getByText("Edit token").click();
-
-      await expect(tokensUpdateCreateModal).toBeVisible();
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("foundation-shadow");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
+      await renameToken(page, "base-shadow", "foundation-shadow");
 
       // Check for remapping modal
       const remappingModal = page.getByTestId("token-remapping-modal");
       await expect(remappingModal).toBeVisible({ timeout: 5000 });
-      await expect(remappingModal).toContainText("1");
+      await expect(remappingModal).toContainText("base-shadow");
+      await expect(remappingModal).toContainText("foundation-shadow");
 
       const confirmButton = remappingModal.getByRole("button", {
-        name: /remap/i,
+        name: "remap tokens",
       });
       await confirmButton.click();
 
@@ -116,51 +146,16 @@ test.describe("Tokens: Remapping Feature", () => {
         workspacePage,
       } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
 
-      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-
       // Create base shadow token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Shadow" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      let nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("primary-shadow");
-
-      let colorField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Color",
-      });
-      await colorField.fill("#000000");
-
-      let submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(page, "Shadow", "primary-shadow", "Color", "#000000");
 
       // Create derived shadow token that references base
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Shadow" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("card-shadow");
-
-      const referenceToggle =
-        tokensUpdateCreateModal.getByTestId("reference-opt");
-      await referenceToggle.click();
-
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Reference",
-      });
-      await referenceField.fill("{primary-shadow}");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createCompositeDerivedToken(
+        page,
+        "Shadow",
+        "card-shadow",
+        "{primary-shadow}",
+      );
 
       // Apply the referenced token to a shape
       await page.getByRole("tab", { name: "Layers" }).click();
@@ -183,16 +178,16 @@ test.describe("Tokens: Remapping Feature", () => {
       await tokenContextMenuForToken.getByText("Edit token").click();
 
       await expect(tokensUpdateCreateModal).toBeVisible();
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
+      const nameField = tokensUpdateCreateModal.getByLabel("Name");
       await nameField.fill("main-shadow");
 
       // Update the color value
-      colorField = tokensUpdateCreateModal.getByRole("textbox", {
+      const colorField = tokensUpdateCreateModal.getByRole("textbox", {
         name: "Color",
       });
       await colorField.fill("#FF0000");
 
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
         name: "Save",
       });
       await submitButton.click();
@@ -202,7 +197,7 @@ test.describe("Tokens: Remapping Feature", () => {
       await expect(remappingModal).toBeVisible({ timeout: 5000 });
 
       const confirmButton = remappingModal.getByRole("button", {
-        name: /remap/i,
+        name: "remap tokens",
       });
       await confirmButton.click();
 
@@ -259,73 +254,25 @@ test.describe("Tokens: Remapping Feature", () => {
       const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
       // Create base typography token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Typography" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      let nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("base-text");
-
-      const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Font size",
-      });
-      await fontSizeField.fill("16");
-
-      let submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(page, "Typography", "base-text", "Font size", "16");
 
       // Create derived typography token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Typography" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      nameField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Name",
-      });
-      await nameField.fill("body-text");
-
-      const referenceToggle =
-        tokensUpdateCreateModal.getByTestId("reference-opt");
-      await referenceToggle.click();
-
-      const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Reference",
-      });
-      await referenceField.fill("{base-text}");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createCompositeDerivedToken(
+        page,
+        "Typography",
+        "body-text",
+        "{base-text}",
+      );
 
       // Rename base token
-      const baseToken = tokensSidebar.getByRole("button", {
-        name: "base-text",
-      });
-      await baseToken.click({ button: "right" });
-      await tokenContextMenuForToken.getByText("Edit token").click();
-
-      await expect(tokensUpdateCreateModal).toBeVisible();
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("default-text");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
+      await renameToken(page, "base-text", "default-text");
 
       // Check for remapping modal
       const remappingModal = page.getByTestId("token-remapping-modal");
       await expect(remappingModal).toBeVisible({ timeout: 5000 });
 
       const confirmButton = remappingModal.getByRole("button", {
-        name: /remap/i,
+        name: "remap tokens",
       });
       await confirmButton.click();
 
@@ -351,24 +298,7 @@ test.describe("Tokens: Remapping Feature", () => {
       const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
       // Create base typography token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Typography" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      let nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("body-style");
-
-      let fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
-        name: "Font size",
-      });
-      await fontSizeField.fill("16");
-
-      let submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(page, "Typography", "body-style", "Font size", "16");
 
       // Create derived typography token
       await tokensTabPanel
@@ -376,7 +306,7 @@ test.describe("Tokens: Remapping Feature", () => {
         .click();
       await expect(tokensUpdateCreateModal).toBeVisible();
 
-      nameField = tokensUpdateCreateModal.getByRole("textbox", {
+      let nameField = tokensUpdateCreateModal.getByRole("textbox", {
         name: "Name",
       });
       await nameField.fill("paragraph-style");
@@ -390,7 +320,7 @@ test.describe("Tokens: Remapping Feature", () => {
       });
       await referenceField.fill("{body-style}");
 
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
+      let submitButton = tokensUpdateCreateModal.getByRole("button", {
         name: "Save",
       });
       await submitButton.click();
@@ -421,7 +351,7 @@ test.describe("Tokens: Remapping Feature", () => {
       await nameField.fill("text-base");
 
       // Update the font size value
-      fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
+      const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
         name: "Font size",
       });
       await fontSizeField.fill("18");
@@ -436,7 +366,7 @@ test.describe("Tokens: Remapping Feature", () => {
       await expect(remappingModal).toBeVisible({ timeout: 5000 });
 
       const confirmButton = remappingModal.getByRole("button", {
-        name: /remap/i,
+        name: "remap tokens",
       });
       await confirmButton.click();
 
@@ -471,72 +401,29 @@ test.describe("Tokens: Remapping Feature", () => {
     test("User renames border radius token with alias references", async ({
       page,
     }) => {
-      const {
-        tokensUpdateCreateModal,
-        tokensSidebar,
-        tokenContextMenuForToken,
-      } = await setupTokensFile(page);
-
-      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+      const { tokensSidebar } = await setupTokensFile(page);
 
       // Create base border radius token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Border Radius" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      let nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("base-radius");
-
-      const valueField = tokensUpdateCreateModal.getByLabel("Value");
-      await valueField.fill("4");
-
-      let submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(page, "Border Radius", "base-radius", "Value", "4");
 
       // Create derived border radius token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Border Radius" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("card-radius");
-
-      const valueField2 = tokensUpdateCreateModal.getByLabel("Value");
-      await valueField2.fill("{base-radius}");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(
+        page,
+        "Border Radius",
+        "card-radius",
+        "Value",
+        "{base-radius}",
+      );
 
       // Rename base token
-      const baseToken = tokensSidebar.getByRole("button", {
-        name: "base-radius",
-      });
-      await baseToken.click({ button: "right" });
-      await tokenContextMenuForToken.getByText("Edit token").click();
-
-      await expect(tokensUpdateCreateModal).toBeVisible();
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("primary-radius");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
+      await renameToken(page, "base-radius", "primary-radius");
 
       // Check for remapping modal
       const remappingModal = page.getByTestId("token-remapping-modal");
       await expect(remappingModal).toBeVisible({ timeout: 5000 });
 
       const confirmButton = remappingModal.getByRole("button", {
-        name: /remap/i,
+        name: "remap tokens",
       });
       await confirmButton.click();
 
@@ -558,43 +445,17 @@ test.describe("Tokens: Remapping Feature", () => {
         tokenContextMenuForToken,
       } = await setupTokensFile(page);
 
-      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
-
       // Create base border radius token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Border Radius" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      let nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("radius-sm");
-
-      let valueField = tokensUpdateCreateModal.getByLabel("Value");
-      await valueField.fill("4");
-
-      let submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(page, "Border Radius", "radius-sm", "Value", "4");
 
       // Create derived border radius token
-      await tokensTabPanel
-        .getByRole("button", { name: "Add Token: Border Radius" })
-        .click();
-      await expect(tokensUpdateCreateModal).toBeVisible();
-
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
-      await nameField.fill("button-radius");
-
-      const valueField2 = tokensUpdateCreateModal.getByLabel("Value");
-      await valueField2.fill("{radius-sm}");
-
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Save",
-      });
-      await submitButton.click();
-      await expect(tokensUpdateCreateModal).not.toBeVisible();
+      await createToken(
+        page,
+        "Border Radius",
+        "button-radius",
+        "Value",
+        "{radius-sm}",
+      );
 
       // Rename and update value of base token
       const radiusToken = tokensSidebar.getByRole("button", {
@@ -604,14 +465,14 @@ test.describe("Tokens: Remapping Feature", () => {
       await tokenContextMenuForToken.getByText("Edit token").click();
 
       await expect(tokensUpdateCreateModal).toBeVisible();
-      nameField = tokensUpdateCreateModal.getByLabel("Name");
+      const nameField = tokensUpdateCreateModal.getByLabel("Name");
       await nameField.fill("radius-base");
 
       // Update the value
-      valueField = tokensUpdateCreateModal.getByLabel("Value");
+      const valueField = tokensUpdateCreateModal.getByLabel("Value");
       await valueField.fill("8");
 
-      submitButton = tokensUpdateCreateModal.getByRole("button", {
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
         name: "Save",
       });
       await submitButton.click();
@@ -621,7 +482,7 @@ test.describe("Tokens: Remapping Feature", () => {
       await expect(remappingModal).toBeVisible({ timeout: 5000 });
 
       const confirmButton = remappingModal.getByRole("button", {
-        name: /remap/i,
+        name: "remap tokens",
       });
       await confirmButton.click();
 
@@ -646,6 +507,84 @@ test.describe("Tokens: Remapping Feature", () => {
       await expect(tokensUpdateCreateModal).toBeVisible();
       const currentValue = tokensUpdateCreateModal.getByLabel("Value");
       await expect(currentValue).toHaveValue("{radius-base}");
+    });
+  });
+
+  test.describe("Cancel remap", () => {
+    test("Only rename - breaks reference", async ({ page }) => {
+      const { tokensSidebar } = await setupTokensFile(page, {
+        flags: ["enable-token-shadow"],
+      });
+
+      // Create base shadow token
+      await createToken(page, "Shadow", "base-shadow", "Color", "#000000");
+
+      // Create derived shadow token that references base-shadow
+      await createCompositeDerivedToken(
+        page,
+        "Shadow",
+        "derived-shadow",
+        "{base-shadow}",
+      );
+
+      // Rename base-shadow token
+      await renameToken(page, "base-shadow", "foundation-shadow");
+
+      // Check for remapping modal
+      const remappingModal = page.getByTestId("token-remapping-modal");
+      await expect(remappingModal).toBeVisible({ timeout: 5000 });
+
+      const cancelButton = remappingModal.getByRole("button", {
+        name: "don't remap",
+      });
+      await cancelButton.click();
+
+      // Verify token was renamed
+      await expect(
+        tokensSidebar.getByRole("button", {
+          name: "foundation-shadow",
+        }),
+      ).toBeVisible();
+      await expect(
+        tokensSidebar.locator('[aria-label="Missing reference"]'),
+      ).toBeVisible();
+    });
+
+    test("Cancel process - no changes applied", async ({ page }) => {
+      const { tokensSidebar } = await setupTokensFile(page, {
+        flags: ["enable-token-shadow"],
+      });
+
+      // Create base shadow token
+      await createToken(page, "Shadow", "base-shadow", "Color", "#000000");
+
+      // Create derived shadow token that references base-shadow
+      await createCompositeDerivedToken(
+        page,
+        "Shadow",
+        "derived-shadow",
+        "{base-shadow}",
+      );
+
+      // Rename base-shadow token
+      await renameToken(page, "base-shadow", "foundation-shadow");
+
+      // Check for remapping modal
+      const remappingModal = page.getByTestId("token-remapping-modal");
+      await expect(remappingModal).toBeVisible({ timeout: 5000 });
+
+      const closeButton = remappingModal.getByRole("button", {
+        name: "close",
+      });
+      await closeButton.click();
+
+      // Verify original token name still exists
+      await expect(
+        tokensSidebar.getByRole("button", { name: "base-shadow" }),
+      ).toBeVisible();
+      await expect(
+        tokensSidebar.getByRole("button", { name: "derived-shadow" }),
+      ).toBeVisible();
     });
   });
 });

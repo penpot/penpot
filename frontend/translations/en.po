@@ -8072,6 +8072,10 @@ msgid "workspace.tokens.missing-references"
 msgstr "Missing token references: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.missing-reference"
+msgstr "Missing reference"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:299
 msgid "workspace.tokens.more-options"
 msgstr "Right click to see options"
 
@@ -8162,36 +8166,29 @@ msgstr "Enter a token shadow alias"
 msgid "workspace.tokens.reference-error"
 msgstr "Reference Errors: "
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
-msgid "workspace.tokens.references-found"
-msgstr "%s references found in your design"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
-msgid "workspace.tokens.remap-and-rename"
-msgstr "Remap & Rename"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
-#, unused
-msgid "workspace.tokens.remap-explanation"
-msgstr ""
-"All references to this token will be automatically updated to use the new "
-"name."
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "Remap all tokens that use `%s` to `%s`?"
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
-msgid "workspace.tokens.remap-token-references"
-msgstr "Remap Token References"
+msgid "workspace.tokens.remap-warning-effects"
+msgstr "This will change all layers and references that use the old token name."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-warning-time"
+msgstr "This action could take a while."
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
 msgid "workspace.tokens.remapping-in-progress"
 msgstr "Remapping token references..."
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
-msgid "workspace.tokens.rename-only"
-msgstr "Rename"
+msgid "workspace.tokens.not-remap"
+msgstr "Don't remap"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:83
-msgid "workspace.tokens.renaming-token-from-to"
-msgstr "Renaming token from '%s' to '%s'"
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
+msgid "workspace.tokens.remap"
+msgstr "Remap tokens"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 #, fuzzy

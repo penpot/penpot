@@ -295,7 +295,8 @@
        errors?
        [:> icon*
         {:icon-id i/broken-link
-         :class (stl/css :token-pill-icon)}]
+         :class (stl/css :token-pill-icon)
+         :aria-label (tr "workspace.tokens.missing-reference")}]
 
        color
        [:> swatch* {:background color

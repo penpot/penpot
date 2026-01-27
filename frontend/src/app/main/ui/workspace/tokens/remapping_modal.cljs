@@ -11,21 +11,14 @@
     [app.main.data.modal :as modal]
     [app.main.store :as st]
     [app.main.ui.ds.buttons.button :refer [button*]]
+    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+    [app.main.ui.ds.foundations.assets.icon :as i]
+    [app.main.ui.ds.foundations.typography :as t]
     [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
-    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-    [app.util.dom :as dom]
+    [app.main.ui.ds.foundations.typography.text :refer [text*]]
     [app.util.i18n :refer [tr]]
+    [app.util.keyboard :as kbd]
     [rumext.v2 :as mf]))
-
-(defn show-remapping-modal
-  "Show the token remapping confirmation modal"
-  [{:keys [old-token-name new-token-name references-count on-confirm on-cancel]}]
-  (let [props {:old-token-name old-token-name
-               :new-token-name new-token-name
-               :references-count references-count
-               :on-confirm on-confirm
-               :on-cancel on-cancel}]
-    (st/emit! (modal/show :tokens/remapping-confirmation props))))
 
 (defn hide-remapping-modal
   "Hide the token remapping confirmation modal"
@@ -34,73 +27,73 @@
 
 ;; Remapping Modal Component
 (mf/defc token-remapping-modal
-  {::mf/wrap-props false
-   ::mf/register modal/components
+  {::mf/register modal/components
    ::mf/register-as :tokens/remapping-confirmation}
-  [{:keys [old-token-name new-token-name references-count on-confirm on-cancel]}]
-  (let [remapping-in-progress* (mf/use-state false)
-        remapping-in-progress? (deref remapping-in-progress*)
+  [{:keys [old-token-name new-token-name on-remap on-rename]}]
+  (let [remap-modal  (get @st/state :remap-modal)
 
         ;; Remap logic on confirm
-        on-confirm-remap
+        confirm-remap
         (mf/use-fn
-         (mf/deps on-confirm remapping-in-progress*)
-         (fn [e]
-           (dom/prevent-default e)
-           (dom/stop-propagation e)
-           (reset! remapping-in-progress* true)
+         (mf/deps on-remap remap-modal)
+         (fn []
            ;; Call shared remapping logic
-           (let [state @st/state
-                 remap-modal (:remap-modal state)
-                 old-token-name (:old-token-name remap-modal)
+           (let [old-token-name (:old-token-name remap-modal)
                  new-token-name (:new-token-name remap-modal)]
              (st/emit! [:tokens/remap-tokens old-token-name new-token-name]))
-           (when (fn? on-confirm)
-             (on-confirm))))
+           (when (fn? on-remap)
+             (on-remap))))
 
-        on-cancel-remap
+        rename-token
         (mf/use-fn
-         (mf/deps on-cancel)
-         (fn [e]
-           (dom/prevent-default e)
-           (dom/stop-propagation e)
-           (modal/hide!)
-           (when (fn? on-cancel)
-             (on-cancel))))]
+         (mf/deps on-rename)
+         (fn []
+           (when (fn? on-rename)
+             (on-rename))))
 
-    [:div {:class (stl/css :modal-overlay)}
+        cancel-action
+        (mf/use-fn
+         (fn []
+           (hide-remapping-modal)))
+
+        ;; Close modal on Escape key if not in progress
+        on-key-down
+        (mf/use-fn
+         (mf/deps cancel-action)
+         (fn [event]
+           (when (kbd/enter? event)
+             (cancel-action))))]
+
+    [:div {:class (stl/css :modal-overlay)
+           :on-key-down on-key-down
+           :role "alertdialog"
+           :aria-modal "true"
+           :aria-labelledby "modal-title"}
+
      [:div {:class (stl/css :modal-dialog)
             :data-testid "token-remapping-modal"}
+      [:> icon-button* {:on-click cancel-action
+                        :class (stl/css :close-btn)
+                        :icon i/close
+                        :variant "action"
+                        :aria-label (tr "labels.close")}]
+
       [:div {:class (stl/css :modal-header)}
        [:> heading* {:level 2
-                     :typography "headline-medium"
+                     :id "modal-title"
+                     :typography "headline-large"
                      :class (stl/css :modal-title)}
-        (tr "workspace.tokens.remap-token-references")]]
+        (tr "workspace.tokens.remap-token-references-title" old-token-name new-token-name)]]
       [:div {:class (stl/css :modal-content)}
-       [:> heading* {:level 3
-                     :typography "title-medium"
-                     :class (stl/css :modal-msg)}
-        (tr "workspace.tokens.renaming-token-from-to" old-token-name new-token-name)]
-       [:div {:class (stl/css :modal-scd-msg)}
-        (if (> references-count 0)
-          (tr "workspace.tokens.references-found" references-count)
-          (tr "workspace.tokens.no-references-found"))]
-       (when remapping-in-progress?
-         [:> context-notification*
-          {:level :info
-           :appearance :ghost}
-          (tr "workspace.tokens.remapping-in-progress")])]
+       [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-warning-effects")]
+       [:> text* {:as "p" :typography t/body-medium} (tr "workspace.tokens.remap-warning-time")]]
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
-        [:> button* {:on-click on-cancel-remap
+        [:> button* {:on-click rename-token
                      :type "button"
-                     :variant "secondary"
-                     :disabled remapping-in-progress?}
-         (tr "labels.cancel")]
-        [:> button* {:on-click on-confirm-remap
+                     :variant "secondary"}
+         (tr "workspace.tokens.not-remap")]
+        [:> button* {:on-click confirm-remap
                      :type "button"
-                     :variant "primary"
-                     :disabled remapping-in-progress?}
-         (if (> references-count 0)
-           (tr "workspace.tokens.remap-and-rename")
-           (tr "workspace.tokens.rename-only"))]]]]]))
+                     :variant "primary"}
+         (tr "workspace.tokens.remap")]]]]]))
