@@ -130,9 +130,9 @@ export class TextEditor extends EventTarget {
       cut: this.#onCut,
       copy: this.#onCopy,
 
+      keydown: this.#onKeyDown,
       beforeinput: this.#onBeforeInput,
       input: this.#onInput,
-      keydown: this.#onKeyDown,
     };
     this.#styleDefaults = options?.styleDefaults;
     this.#options = options;
@@ -160,7 +160,7 @@ export class TextEditor extends EventTarget {
     if (this.#element.ariaAutoComplete) this.#element.ariaAutoComplete = false;
     if (!this.#element.ariaMultiLine) this.#element.ariaMultiLine = true;
     this.#element.dataset.itype = "editor";
-    if (options.shouldUpdatePositionOnScroll) {
+    if (options?.shouldUpdatePositionOnScroll) {
       this.#updatePositionFromCanvas();
     }
   }
@@ -186,7 +186,7 @@ export class TextEditor extends EventTarget {
       "stylechange",
       this.#onStyleChange,
     );
-    if (options.shouldUpdatePositionOnScroll) {
+    if (options?.shouldUpdatePositionOnScroll) {
       window.addEventListener("scroll", this.#onScroll);
     }
     addEventListeners(this.#element, this.#events, {
@@ -218,7 +218,7 @@ export class TextEditor extends EventTarget {
 
     // Disposes the rest of event listeners.
     removeEventListeners(this.#element, this.#events);
-    if (this.#options.shouldUpdatePositionOnScroll) {
+    if (this.#options?.shouldUpdatePositionOnScroll) {
       window.removeEventListener("scroll", this.#onScroll);
     }
 
@@ -385,7 +385,8 @@ export class TextEditor extends EventTarget {
    * @param {InputEvent} e
    */
   #onBeforeInput = (e) => {
-    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+    if (e.inputType === "historyUndo"
+     || e.inputType === "historyRedo") {
       return;
     }
 
@@ -419,7 +420,8 @@ export class TextEditor extends EventTarget {
    * @param {InputEvent} e
    */
   #onInput = (e) => {
-    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+    if (e.inputType === "historyUndo"
+     || e.inputType === "historyRedo") {
       return;
     }
 

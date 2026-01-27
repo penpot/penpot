@@ -214,8 +214,8 @@
        ptk/WatchEvent
        (watch [_ state _]
          (let [change-fn
-               (fn [shape attrs]
-                 (update shape :fills types.fills/prepend attrs))
+               (fn [node attrs]
+                 (update node :fills types.fills/prepend attrs))
                undo-id
                (js/Symbol)]
            (rx/concat

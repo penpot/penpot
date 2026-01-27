@@ -111,7 +111,7 @@
 
 (def token-name-ref
   [:re {:title "TokenNameRef" :gen/gen sg/text}
-   #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"])
+   #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$"])
 
 (def ^:private schema:color
   [:map

@@ -29,4 +29,23 @@ describe("StyleDeclaration", () => {
     expect(styleDeclaration.getPropertyValue("line-height")).toBe("");
     expect(styleDeclaration.getPropertyPriority("line-height")).toBe("");
   });
+
+  test("Iterate styles", () => {
+    const properties = [
+      ["line-height", "1.2"],
+      ["--variable", "hola"],
+    ];
+
+    const styleDeclaration = new StyleDeclaration();
+    for (const [name,value] of properties) {
+      styleDeclaration.setProperty(name, value);
+    }
+    for (let index = 0; index < styleDeclaration.length; index++) {
+      const name = styleDeclaration.item(index);
+      const value = styleDeclaration.getPropertyValue(name);
+      const [expectedName, expectedValue] = properties[index];
+      expect(name).toBe(expectedName);
+      expect(value).toBe(expectedValue);
+    }
+  });
 });

@@ -264,7 +264,6 @@ pub(crate) struct RenderState {
     pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub cached_viewbox: Viewbox,
-    pub cached_target_snapshot: Option<skia::Image>,
     pub images: ImageStore,
     pub background_color: skia::Color,
     // Identifier of the current requestAnimationFrame call, if any.
@@ -345,7 +344,6 @@ impl RenderState {
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            cached_target_snapshot: None,
             images: ImageStore::new(gpu_state.context.clone()),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
@@ -1094,14 +1092,11 @@ impl RenderState {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
         let scale = self.get_cached_scale();
-        if let Some(snapshot) = &self.cached_target_snapshot {
-            let canvas = self.surfaces.canvas(SurfaceId::Target);
-            canvas.save();
 
+        // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
+        if self.cached_viewbox.area.width() > 0.0 {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
-
-            canvas.scale((navigate_zoom, navigate_zoom));
 
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
@@ -1111,15 +1106,24 @@ impl RenderState {
                 );
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
+            let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
+            let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
+            let bg_color = self.background_color;
 
-            canvas.translate((
-                (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x,
-                (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y,
-            ));
+            // Setup canvas transform
+            {
+                let canvas = self.surfaces.canvas(SurfaceId::Target);
+                canvas.save();
+                canvas.scale((navigate_zoom, navigate_zoom));
+                canvas.translate((translate_x, translate_y));
+                canvas.clear(bg_color);
+            }
 
-            canvas.clear(self.background_color);
-            canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
-            canvas.restore();
+            // Draw directly from cache surface, avoiding snapshot overhead
+            self.surfaces.draw_cache_to_target();
+
+            // Restore canvas state
+            self.surfaces.canvas(SurfaceId::Target).restore();
 
             if self.options.is_debug_visible() {
                 debug::render(self);
@@ -1164,7 +1168,6 @@ impl RenderState {
         let scale = self.get_scale();
 
         self.tile_viewbox.update(self.viewbox, scale);
-
         self.focus_mode.reset();
 
         performance::begin_measure!("render");
@@ -1587,7 +1590,7 @@ impl RenderState {
                 }
             });
 
-        if let Some((image, filter_scale)) = filter_result {
+        if let Some((mut surface, filter_scale)) = filter_result {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
             drop_canvas.save();
             drop_canvas.scale((scale, scale));
@@ -1597,34 +1600,26 @@ impl RenderState {
 
             // If we scaled down in the filter surface, we need to scale back up
             if filter_scale < 1.0 {
-                let scaled_width = bounds.width() * filter_scale;
-                let scaled_height = bounds.height() * filter_scale;
-                let src_rect = skia::Rect::from_xywh(0.0, 0.0, scaled_width, scaled_height);
-
                 drop_canvas.save();
                 drop_canvas.scale((1.0 / filter_scale, 1.0 / filter_scale));
-                drop_canvas.draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                    skia::Rect::from_xywh(
-                        bounds.left * filter_scale,
-                        bounds.top * filter_scale,
-                        scaled_width,
-                        scaled_height,
-                    ),
+                drop_canvas.translate((bounds.left * filter_scale, bounds.top * filter_scale));
+                surface.draw(
+                    drop_canvas,
+                    (0.0, 0.0),
                     self.sampling_options,
-                    &drop_paint,
+                    Some(&drop_paint),
                 );
                 drop_canvas.restore();
             } else {
-                let src_rect = skia::Rect::from_xywh(0.0, 0.0, bounds.width(), bounds.height());
-                drop_canvas.draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
-                    bounds,
+                drop_canvas.save();
+                drop_canvas.translate((bounds.left, bounds.top));
+                surface.draw(
+                    drop_canvas,
+                    (0.0, 0.0),
                     self.sampling_options,
-                    &drop_paint,
+                    Some(&drop_paint),
                 );
+                drop_canvas.restore();
             }
             drop_canvas.restore();
         }
@@ -1951,13 +1946,17 @@ impl RenderState {
                     element.children_ids_iter(false).copied().collect()
                 };
 
-                // Z-index ordering on Layouts
+                // Z-index ordering
+                // For reverse flex layouts with custom z-indexes, we reverse the base order
+                // so that visual stacking matches visual position
                 let children_ids = if element.has_layout() {
                     let mut ids = children_ids;
-                    if element.is_flex() && !element.is_flex_reverse() {
+                    let has_z_index = ids
+                        .iter()
+                        .any(|id| tree.get(id).map(|s| s.has_z_index()).unwrap_or(false));
+                    if element.is_flex_reverse() && has_z_index {
                         ids.reverse();
                     }
-
                     ids.sort_by(|id1, id2| {
                         let z1 = tree.get(id1).map(|s| s.z_index()).unwrap_or(0);
                         let z2 = tree.get(id2).map(|s| s.z_index()).unwrap_or(0);
@@ -2097,10 +2096,8 @@ impl RenderState {
 
         self.surfaces.gc();
 
-        // Cache target surface in a texture
+        // Mark cache as valid for render_from_cache
         self.cached_viewbox = self.viewbox;
-
-        self.cached_target_snapshot = Some(self.surfaces.snapshot(SurfaceId::Cache));
 
         if self.options.is_debug_visible() {
             debug::render(self);
@@ -2113,13 +2110,44 @@ impl RenderState {
     }
 
     /*
-     * Given a shape returns the TileRect with the range of tiles that the shape is in
+     * Given a shape returns the TileRect with the range of tiles that the shape is in.
+     * This is always limited to the interest area to optimize performance and prevent
+     * processing unnecessary tiles outside the viewport. The interest area already
+     * includes a margin (VIEWPORT_INTEREST_AREA_THRESHOLD) calculated via
+     * get_tiles_for_viewbox_with_interest, ensuring smooth pan/zoom interactions.
+     *
+     * When the viewport changes (pan/zoom), the interest area is updated and shapes
+     * are dynamically added to the tile index via the fallback mechanism in
+     * render_shape_tree_partial_uncached, ensuring all shapes render correctly.
      */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
         let extrect = self.get_cached_extrect(shape, tree, scale);
         let tile_size = tiles::get_tile_size(scale);
-        tiles::get_tiles_for_rect(extrect, tile_size)
+        let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
+        let interest_rect = &self.tile_viewbox.interest_rect;
+        // Calculate the intersection of shape_tiles with interest_rect
+        // This returns only the tiles that are both in the shape and in the interest area
+        let intersection_x1 = shape_tiles.x1().max(interest_rect.x1());
+        let intersection_y1 = shape_tiles.y1().max(interest_rect.y1());
+        let intersection_x2 = shape_tiles.x2().min(interest_rect.x2());
+        let intersection_y2 = shape_tiles.y2().min(interest_rect.y2());
+
+        // Return the intersection if valid (there is overlap), otherwise return empty rect
+        if intersection_x1 <= intersection_x2 && intersection_y1 <= intersection_y2 {
+            // Valid intersection: return the tiles that are in both shape_tiles and interest_rect
+            TileRect(
+                intersection_x1,
+                intersection_y1,
+                intersection_x2,
+                intersection_y2,
+            )
+        } else {
+            // No intersection: shape is completely outside interest area
+            // The shape will be added dynamically via add_shape_tiles when it enters
+            // the interest area during pan/zoom operations
+            TileRect(0, 0, -1, -1)
+        }
     }
 
     /*
@@ -2198,17 +2226,6 @@ impl RenderState {
         }
 
         performance::end_measure!("rebuild_tiles_shallow");
-    }
-
-    /// Clears the tile index without invalidating cached tile textures.
-    /// This is useful when tile positions don't change (e.g., during pan operations)
-    /// but the tile index needs to be synchronized. The cached tile textures remain
-    /// valid since they don't depend on the current view position, only on zoom level.
-    /// This is much more efficient than clearing the entire cache surface.
-    pub fn clear_tile_index(&mut self) {
-        performance::begin_measure!("clear_tile_index");
-        self.surfaces.clear_tiles();
-        performance::end_measure!("clear_tile_index");
     }
 
     pub fn rebuild_tiles_from(&mut self, tree: ShapesPoolRef, base_id: Option<&Uuid>) {
