@@ -390,12 +390,38 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   /**
-   * Copies the selected element into the clipboard.
+   * Copies the selected element into the clipboard, or copy the
+   * content of the locator into the clipboard.
    *
    * @returns {Promise<void>}
    */
-  async copy() {
-    return this.page.keyboard.press("Control+C");
+  async copy(kind = "keyboard", locator = undefined) {
+    if (kind === "context-menu" && locator) {
+      await locator.click({ button: "right" });
+      await this.page.getByText("Copy", { exact: true }).click();
+    } else {
+      await this.page.keyboard.press("ControlOrMeta+C");
+    }
+    // wait for the clipboard to be updated
+    await this.page.waitForFunction(async () => {
+      const content = await navigator.clipboard.readText()
+      return content !== "";
+    }, { timeout: 1000 });
+  }
+
+  async cut(kind = "keyboard", locator = undefined) {
+    if (kind === "context-menu" && locator) {
+      await locator.click({ button: "right" });
+      await this.page.getByText("Cut", { exact: true }).click();
+    } else {
+      await this.page.keyboard.press("ControlOrMeta+X");
+    }
+    // wait for the clipboard to be updated
+    await this.page.waitForFunction(async () => {
+      const content = await navigator.clipboard.readText()
+      return content !== "";
+    }, { timeout: 1000 });
+
   }
 
   /**
@@ -448,11 +474,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     const layer = this.layers
       .getByTestId("layer-row")
       .filter({ hasText: name });
-    const button = layer.getByRole("button");
+    const button = layer.getByTestId("toggle-content");
 
-    await button.waitFor();
+    await expect(button).toBeVisible();
     await button.click(clickOptions);
-    await this.page.waitForTimeout(500);
+    await button.waitFor({ ariaExpanded: true });
   }
 
   async expectSelectedLayer(name) {
