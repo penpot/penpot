@@ -49,9 +49,9 @@
 (def log-container-ids #{})
 
 (def updatable-attrs (->> (seq (keys ctk/sync-attrs))
-                           ;; We don't update the flex-child attrs
+                          ;; We don't update the flex-child attrs
                           (remove ctk/swap-keep-attrs)
-                           ;; We don't do automatic update of the `layout-grid-cells` property.
+                          ;; We don't do automatic update of the `layout-grid-cells` property.
                           (remove #(= :layout-grid-cells %))))
 
 (defn enabled-shape?
@@ -1898,10 +1898,10 @@
     (gsh/absolute-move shape new-pos)))
 
 (defn- switch-path-change-value
-  [prev-shape           ;; The shape before the switch
-   current-shape        ;; The shape after the switch (a clean copy)
-   ref-shape            ;; The referenced shape on the main component
-                        ;; before the switch
+  [prev-shape           ; The shape before the switch
+   current-shape        ; The shape after the switch (a clean copy)
+   ref-shape            ; The referenced shape on the main component
+                        ; before the switch
    attr]
   (let [old-width (-> ref-shape :selrect :width)
         new-width (-> prev-shape :selrect :width)
@@ -1918,10 +1918,9 @@
 
 
 (defn- switch-text-change-value
-  [prev-content         ;; The :content of the text before the switch
-   current-content      ;; The :content of the text after the switch (a clean copy)
-   ref-content touched] ;; The :content of the referenced text on the main component
-                        ;; before the switch
+  [prev-content         ; The :content of the text before the switch
+   current-content      ; The :content of the text after the switch (a clean copy)
+   ref-content touched] ; The :content of the referenced text on the main component before the switch
   (let [;; We need the differences between the contents on the main
         ;; components. current-content is the content of a clean copy,
         ;; so for all effects its the same as the content on its main
@@ -2845,8 +2844,8 @@
                                                   duplicating-component?
                                                   true
                                                   (and remove-swap-slot?
-                                                               ;; only remove swap slot of children when the current shape
-                                                               ;; is not a subinstance head nor a instance root
+                                                       ;; only remove swap slot of children when the current shape
+                                                       ;; is not a subinstance head nor a instance root
                                                        (not subinstance-head?)
                                                        (not instance-root?))
                                                   variant-props))
@@ -2902,7 +2901,7 @@
                                                        variant-props)
                      changes))
 
-         ;; We need to check the changes to get the ids-map
+        ;; We need to check the changes to get the ids-map
         ids-map
         (into {}
               (comp

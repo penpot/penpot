@@ -281,7 +281,7 @@
                      :options stroke-style-options
                      :on-change on-style-change}]])]
 
-           ;; Stroke Caps
+     ;; Stroke Caps
      (when show-caps
        [:div {:class (stl/css :stroke-caps-options)}
         [:& select {:default-value (:stroke-cap-start stroke)

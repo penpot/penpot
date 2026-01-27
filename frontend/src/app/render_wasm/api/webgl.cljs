@@ -108,7 +108,7 @@ void main() {
             (.bufferData ^js gl (.-ARRAY_BUFFER ^js gl) (js/Float32Array. positions) (.-STATIC_DRAW ^js gl))
             (.enableVertexAttribArray ^js gl position-location)
             (.vertexAttribPointer ^js gl position-location 2 (.-FLOAT ^js gl) false 0 0)
-           ;; Set up texcoord buffer
+            ;; Set up texcoord buffer
             (.bindBuffer ^js gl (.-ARRAY_BUFFER ^js gl) texcoord-buffer)
             (.bufferData ^js gl (.-ARRAY_BUFFER ^js gl) (js/Float32Array. texcoords) (.-STATIC_DRAW ^js gl))
             (.enableVertexAttribArray ^js gl texcoord-location)

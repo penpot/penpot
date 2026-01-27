@@ -54,8 +54,8 @@
                     (assoc acc key (get node key default-value)))) {} attrs)
         fills
         (cond
-           ;; DEPRECATED: still here for backward compatibility with
-           ;; old penpot files that still has a single color.
+          ;; DEPRECATED: still here for backward compatibility with
+          ;; old penpot files that still has a single color.
           (or (some? (:fill-color node))
               (some? (:fill-opacity node))
               (some? (:fill-color-gradient node)))

@@ -410,25 +410,25 @@
       (string? value)
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-shadow value)]}
 
-    ;; Empty value
+      ;; Empty value
       (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
 
-    ;; Invalid value
+      ;; Invalid value
       (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
 
-    ;; Array of shadows
+      ;; Array of shadows
       :else
       (let [converted (js->clj value :keywordize-keys true)
-          ;; Parse each shadow with its index
+            ;; Parse each shadow with its index
             parsed-shadows (map-indexed
                             (fn [idx shadow-map]
                               (parse-single-shadow shadow-map idx))
                             converted)
 
-          ;; Collect all errors from all shadows
+            ;; Collect all errors from all shadows
             all-errors (mapcat :errors parsed-shadows)
 
-          ;; Collect all values from shadows that have values
+            ;; Collect all values from shadows that have values
             all-values (into [] (keep :value parsed-shadows))]
 
         (if (seq all-errors)

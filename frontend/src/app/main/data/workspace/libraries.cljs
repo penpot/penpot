@@ -1292,9 +1292,9 @@
                   (rx/take 1 workspace-data-s)
                   (rx/take 1 workspace-data-s)
                   workspace-data-s)
-                  ;; Need to get the file data before the change, so deleted shapes
-                  ;; still exist, for example. We initialize the buffer with three
-                  ;; copies of the initial state
+                 ;; Need to get the file data before the change, so deleted shapes
+                 ;; still exist, for example. We initialize the buffer with three
+                 ;; copies of the initial state
                  (rx/buffer 3 1))
 
             changes-s

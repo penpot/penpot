@@ -67,7 +67,7 @@
   (let [data           (into [] (remove nil?) (dwc/extract-all-colors shapes file-id libraries))
         groups         (d/group-by :attrs #(dissoc % :attrs) data)
 
-         ;; Unique color attribute maps
+        ;; Unique color attribute maps
         all-colors (distinct (mapv :attrs data))
 
         ;; Split into: library colors, token colors, and plain colors

@@ -258,8 +258,8 @@
   (let [values (unchecked-get wasm/serializers "font-style")
         default (unchecked-get values "normal")]
     (case font-style
-    ;; NOTE: normal == regular!
-    ;; is it OK to keep those two values in our cljs model?
+      ;; NOTE: normal == regular!
+      ;; is it OK to keep those two values in our cljs model?
       "normal" (unchecked-get values "normal")
       "regular" (unchecked-get values "normal")
       "italic" (unchecked-get values "italic")

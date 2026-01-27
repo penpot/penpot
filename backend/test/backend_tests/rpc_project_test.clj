@@ -30,7 +30,7 @@
                 :team-id (:id team)
                 :name "test project"}
           out  (th/command! data)]
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
 
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -93,7 +93,7 @@
                 :id project-id}
           out  (th/command! data)]
 
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 

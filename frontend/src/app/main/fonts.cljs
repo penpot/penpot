@@ -214,8 +214,8 @@
   ([font-id variant-id]
    (log/dbg :action "try-ensure-loaded!" :font-id font-id :variant-id variant-id)
    (if-not (exists? js/window)
-    ;; If we are in the worker environment, we just mark it as loaded
-    ;; without really loading it.
+     ;; If we are in the worker environment, we just mark it as loaded
+     ;; without really loading it.
      (do
        (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
        (p/resolved font-id))

@@ -107,10 +107,10 @@
      (when (:text-decoration style)
        [:div {:class (stl/css :text-row)}
         [:div {:class (stl/css :global/attr-label)} "Text Decoration"]
-              ;; Execution time translation strings:
-              ;;   (tr "inspect.attributes.typography.text-decoration.none")
-              ;;   (tr "inspect.attributes.typography.text-decoration.strikethrough")
-              ;;   (tr "inspect.attributes.typography.text-decoration.underline")
+        ;; Execution time translation strings:
+        ;;   (tr "inspect.attributes.typography.text-decoration.none")
+        ;;   (tr "inspect.attributes.typography.text-decoration.strikethrough")
+        ;;   (tr "inspect.attributes.typography.text-decoration.underline")
         [:div {:class (stl/css :global/attr-value)}
          [:> copy-button* {:data (copy-style-data style :text-decoration)}
           [:div {:class (stl/css :button-children)}
@@ -119,12 +119,12 @@
      (when (:text-transform style)
        [:div {:class (stl/css :text-row)}
         [:div {:class (stl/css :global/attr-label)} "Text Transform"]
-              ;; Execution time translation strings:
-              ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
-              ;;   (tr "inspect.attributes.typography.text-transform.none")
-              ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
-              ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
-              ;;   (tr "inspect.attributes.typography.text-transform.unset")
+        ;; Execution time translation strings:
+        ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
+        ;;   (tr "inspect.attributes.typography.text-transform.none")
+        ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
+        ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
+        ;;   (tr "inspect.attributes.typography.text-transform.unset")
         [:div {:class (stl/css :global/attr-value)}
          [:> copy-button* {:data (copy-style-data style :text-transform)}
           [:div {:class (stl/css :button-children)}

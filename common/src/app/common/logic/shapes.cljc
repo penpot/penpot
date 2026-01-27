@@ -138,12 +138,12 @@
          ids     (cfh/clean-loops objects ids)
          in-component-copy?
          (fn [shape-id]
-          ;; Look for shapes that are inside a component copy, but are
-          ;; not the root. In this case, they must not be deleted,
-          ;; but hidden (to be able to recover them more easily).
-          ;; If we want to specifically allow altering the copies, this is
-          ;; a special case, like a component swap, in which case we want
-          ;; to delete the old shape
+           ;; Look for shapes that are inside a component copy, but are
+           ;; not the root. In this case, they must not be deleted,
+           ;; but hidden (to be able to recover them more easily).
+           ;; If we want to specifically allow altering the copies, this is
+           ;; a special case, like a component swap, in which case we want
+           ;; to delete the old shape
            (let [shape           (get objects shape-id)]
              (and (ctn/has-any-copy-parent? objects shape)
                   (not allow-altering-copies))))
@@ -168,9 +168,9 @@
          groups-to-unmask
          (when-not ignore-mask
            (reduce (fn [group-ids id]
-                    ;; When the shape to delete is the mask of a masked group,
-                    ;; the mask condition must be removed, and it must be
-                    ;; converted to a normal group.
+                     ;; When the shape to delete is the mask of a masked group,
+                     ;; the mask condition must be removed, and it must be
+                     ;; converted to a normal group.
                      (let [obj    (lookup id)
                            parent (lookup (:parent-id obj))]
                        (if (and (:masked-group parent)
@@ -183,8 +183,8 @@
 
          interacting-shapes
          (filter (fn [shape]
-                  ;; If any of the deleted shapes is the destination of
-                  ;; some interaction, this must be deleted, too.
+                   ;; If any of the deleted shapes is the destination of
+                   ;; some interaction, this must be deleted, too.
                    (let [interactions (:interactions shape)]
                      (some #(and (ctsi/has-destination %)
                                  (contains? ids-to-delete (:destination %)))
@@ -207,7 +207,7 @@
 
          all-parents
          (reduce (fn [res id]
-                  ;; All parents of any deleted shape must be resized.
+                   ;; All parents of any deleted shape must be resized.
                    (into res (cfh/get-parent-ids objects id)))
                  (d/ordered-set)
                  (concat ids-to-delete ids-to-hide))
@@ -239,10 +239,10 @@
                (recursive-find-empty-parents parents))))
 
          empty-parents
-        ;; Any parent whose children are all deleted, must be deleted too.
-        ;; If we want to specifically allow altering the copies, this is a special case,
-        ;; for example during a component swap. in this case we are replacing a shape by
-        ;; other one, so must not delete empty parents.
+         ;; Any parent whose children are all deleted, must be deleted too.
+         ;; If we want to specifically allow altering the copies, this is a special case,
+         ;; for example during a component swap. in this case we are replacing a shape by
+         ;; other one, so must not delete empty parents.
          (if-not allow-altering-copies
            (into (d/ordered-set) (find-all-empty-parents #{}))
            #{})
@@ -274,8 +274,8 @@
                          guides-to-delete)
 
          changes (reduce (fn [changes component-id]
-                          ;; It's important to delete the component before the main instance, because we
-                          ;; need to store the instance position if we want to restore it later.
+                           ;; It's important to delete the component before the main instance, because we
+                           ;; need to store the instance position if we want to restore it later.
                            (pcb/delete-component changes component-id (:id page)))
                          changes
                          components-to-delete)
@@ -327,7 +327,7 @@
                result #{}]
 
           (if-not current-id
-                   ;; Base case, no next element
+            ;; Base case, no next element
             result
 
             (let [group (get objects current-id)]
@@ -335,14 +335,14 @@
                        (not= current-id parent-id)
                        (empty? (remove removed-id? (:shapes group))))
 
-                       ;; Adds group to the remove and check its parent
+                ;; Adds group to the remove and check its parent
                 (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
                   (recur (first to-check)
                          (rest to-check)
                          (conj removed-id? current-id)
                          (conj result current-id)))
 
-                       ;; otherwise recur
+                ;; otherwise recur
                 (recur (first to-check)
                        (rest to-check)
                        removed-id?

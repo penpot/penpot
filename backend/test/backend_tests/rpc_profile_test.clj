@@ -536,7 +536,7 @@
                   :token rtoken}
 
           {:keys [result error] :as out} (th/command! data)]
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (map? result))
       (t/is (string? (:invitation-token result))))))

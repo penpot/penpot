@@ -211,7 +211,7 @@
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
                  prev-input-color (some-> value
                                           (tinycolor/valid-color))
-                  ;; If the input is a reference we will take the format from the computed value
+                 ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
                                        (some-> value (tinycolor/valid-color)))
                  prev-format (some-> (or prev-input-color prev-computed-color)
@@ -380,7 +380,7 @@
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
                  prev-input-color (some-> value
                                           (tinycolor/valid-color))
-                  ;; If the input is a reference we will take the format from the computed value
+                 ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
                                        (some-> value (tinycolor/valid-color)))
                  prev-format (some-> (or prev-input-color prev-computed-color)

@@ -112,7 +112,7 @@
          {:class (stl/css :file-name)
           :title file-name
           :on-double-click start-editing-name}
-          ;;-- Persistende state widget
+         ;;-- Persistende state widget
          [:div {:class (case persistence-status
                          :pending (stl/css :status-notification :pending-status)
                          :saving (stl/css :status-notification :saving-status)
