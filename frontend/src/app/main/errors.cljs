@@ -29,6 +29,9 @@
 ;; Will contain the latest error report assigned
 (def last-report nil)
 
+;; Will contain last uncaught exception
+(def last-exception nil)
+
 (defn- print-data!
   [data]
   (-> data
@@ -338,7 +341,6 @@
                                       (print-data! werror)
                                       (print-explain! werror))))))))
 
-
 (defonce uncaught-error-handler
   (letfn [(is-ignorable-exception? [cause]
             (let [message (ex-message cause)]
@@ -349,10 +351,31 @@
 
           (on-unhandled-error [event]
             (.preventDefault ^js event)
-            (when-let [error (unchecked-get event "error")]
-              (when-not (is-ignorable-exception? error)
-                (on-error error))))]
+            (when-let [cause (unchecked-get event "error")]
+              (set! last-exception cause)
+              (when-not (is-ignorable-exception? cause)
+                (ex/print-throwable cause :prefix "uncaught exception")
+                (st/async-emit!
+                 (ntf/show {:content (tr "errors.unexpected-exception" (ex-message cause))
+                            :type :toast
+                            :level :error
+                            :timeout 3000})))))
+
+
+          (on-unhandled-rejection [event]
+            (.preventDefault ^js event)
+            (when-let [cause (unchecked-get event "reason")]
+              (set! last-exception cause)
+              (ex/print-throwable cause :prefix "uncaught rejection")
+              (st/async-emit!
+               (ntf/show {:content (tr "errors.unexpected-exception" (ex-message cause))
+                          :type :toast
+                          :level :error
+                          :timeout 3000}))))]
 
     (.addEventListener glob/window "error" on-unhandled-error)
+    (.addEventListener glob/window "unhandledrejection" on-unhandled-rejection)
     (fn []
-      (.removeEventListener glob/window "error" on-unhandled-error))))
+      (.removeEventListener glob/window "error" on-unhandled-error)
+      (.removeEventListener glob/window "unhandledrejection" on-unhandled-rejection))))
+
