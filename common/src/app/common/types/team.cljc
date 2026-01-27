@@ -19,3 +19,10 @@
 
 (def schema:role
   [::sm/one-of {:title "TeamRole"} valid-roles])
+
+;; FIXME: specify more fields
+(def schema:team
+  [:map
+   [:id ::sm/uuid]
+   [:name :string]])
+
