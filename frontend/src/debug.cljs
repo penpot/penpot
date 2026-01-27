@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
@@ -456,3 +457,8 @@
 (defn ^:export network-averages
   []
   (.log js/console (clj->js @http/network-averages)))
+
+
+(defn print-last-exception
+  []
+  (some-> errors/last-exception ex/print-throwable))
