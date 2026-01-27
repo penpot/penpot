@@ -24,6 +24,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -75,6 +76,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
+   [app.util.perf :as perf]
    [app.util.storage :as storage]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -348,10 +350,11 @@
                                              :file-id file-id}))))))
 
               ;; Install dev perf observers once the workspace is ready
-              (->> stream
-                   (rx/filter (ptk/type? ::workspace-initialized))
-                   (rx/take 1)
-                   (rx/map (fn [_] (ev/init!))))
+              (when (contains? cf/flags :perf-logs)
+                (->> stream
+                     (rx/filter (ptk/type? ::workspace-initialized))
+                     (rx/take 1)
+                     (rx/tap (fn [_] (perf/setup)))))
 
               (->> stream
                    (rx/filter (ptk/type? ::dps/persistence-notification))
