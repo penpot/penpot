@@ -86,7 +86,7 @@ penpot.library.local.createTypography();
 
 Penpot has dark and light modes, and you can easily add this to your plugin so your interface adapts to both themes. When you add theme support, your plugin will automatically sync with Penpot's interface settings, so the user experience is consistent no matter which mode is selected. This makes your plugin look better and also ensures it stays in line with Penpot's overall design.
 
-Just a heads-up: if you use the <a target="_blank" href="https://penpot-plugins-styles.pages.dev/">plugin-styles library</a>, many elements will automatically adapt to dark or light mode without any extra effort from you. However, if you need to customize specific elements, be sure to use the selectors provided in the <code class="language-bash">styles.css</code> of the example.
+Just a heads-up: if you use the <a target="_blank" href="https://styles-doc.plugins.penpot.app/">plugin-styles library</a>, many elements will automatically adapt to dark or light mode without any extra effort from you. However, if you need to customize specific elements, be sure to use the selectors provided in the <code class="language-bash">styles.css</code> of the example.
 
 <a target="_blank" href="https://github.com/penpot/penpot-plugins-samples/tree/main/theme">Theme example</a>
 
