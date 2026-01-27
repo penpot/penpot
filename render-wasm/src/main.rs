@@ -275,29 +275,26 @@ pub extern "C" fn set_view_end() {
         state.render_state.options.set_fast_mode(false);
         state.render_state.cancel_animation_frame();
 
-        let zoom_changed = state.render_state.zoom_changed();
-        // Only rebuild tile indices when zoom has changed.
-        // During pan-only operations, shapes stay in the same tiles
-        // because tile_size = 1/scale * TILE_SIZE (depends only on zoom).
-        if zoom_changed {
-            let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
-            performance::begin_measure!("set_view_end::rebuild_tiles");
-            if state.render_state.options.is_profile_rebuild_tiles() {
-                state.rebuild_tiles();
-            } else {
-                state.rebuild_tiles_shallow();
-            }
-            performance::end_measure!("set_view_end::rebuild_tiles");
-            performance::end_timed_log!("rebuild_tiles", _rebuild_start);
+        // Update tile_viewbox first so that get_tiles_for_shape uses the correct interest area
+        // This is critical because we limit tiles to the interest area for optimization
+        let scale = state.render_state.get_scale();
+        state
+            .render_state
+            .tile_viewbox
+            .update(state.render_state.viewbox, scale);
+
+        // We rebuild the tile index on both pan and zoom because `get_tiles_for_shape`
+        // clips each shape to the current `TileViewbox::interest_rect` (viewport-dependent).
+        let _rebuild_start = performance::begin_timed_log!("rebuild_tiles");
+        performance::begin_measure!("set_view_end::rebuild_tiles");
+        if state.render_state.options.is_profile_rebuild_tiles() {
+            state.rebuild_tiles();
         } else {
-            // During pan, we only clear the tile index without
-            // invalidating cached textures, which is more efficient.
-            let _clear_start = performance::begin_timed_log!("clear_tile_index");
-            performance::begin_measure!("set_view_end::clear_tile_index");
-            state.clear_tile_index();
-            performance::end_measure!("set_view_end::clear_tile_index");
-            performance::end_timed_log!("clear_tile_index", _clear_start);
+            state.rebuild_tiles_shallow();
         }
+        performance::end_measure!("set_view_end::rebuild_tiles");
+        performance::end_timed_log!("rebuild_tiles", _rebuild_start);
+
         state.render_state.sync_cached_viewbox();
         performance::end_measure!("set_view_end");
         performance::end_timed_log!("set_view_end", _end_start);
