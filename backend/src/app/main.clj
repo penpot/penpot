@@ -340,7 +340,8 @@
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
    :app.nitrate/client
-   {::http.client/client (ig/ref ::http.client/client)}
+   {::http.client/client (ig/ref ::http.client/client)
+    ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
    :app.rpc/management-methods
    {::http.client/client (ig/ref ::http.client/client)
