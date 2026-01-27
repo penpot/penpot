@@ -298,10 +298,12 @@
 
 (defn- resolve-management-methods
   [cfg]
-  (let [cfg (assoc cfg ::type "management" ::metrics-id :rpc-management-timing)]
-    (->> (sv/scan-ns
-          'app.rpc.management.nitrate
-          'app.rpc.management.exporter)
+  (let [cfg  (assoc cfg ::type "management" ::metrics-id :rpc-management-timing)
+        mods (cond->> (list 'app.rpc.management.exporter)
+               (contains? cf/flags :nitrate)
+               (cons 'app.rpc.management.nitrate))]
+
+    (->> (apply sv/scan-ns mods)
          (map (partial process-method cfg "management" wrap-management))
          (into {}))))
 

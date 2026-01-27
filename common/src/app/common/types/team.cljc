@@ -22,7 +22,7 @@
 
 ;; FIXME: specify more fields
 (def schema:team
-  [:map
+  [:map {:title "Team"}
    [:id ::sm/uuid]
    [:name :string]])
 
