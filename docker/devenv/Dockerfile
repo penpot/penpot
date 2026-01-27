@@ -179,9 +179,9 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2025.07.28 \
+ENV CLJKONDO_VERSION=2026.01.19 \
     BABASHKA_VERSION=1.12.208 \
-    CLJFMT_VERSION=0.13.1
+    CLJFMT_VERSION=0.15.6
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -398,7 +398,6 @@ COPY files/Caddyfile           /home/
 COPY files/selfsigned.crt      /home/
 COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh
-COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
 COPY files/entrypoint.sh       /home/entrypoint.sh
 COPY files/init.sh             /home/init.sh
 
