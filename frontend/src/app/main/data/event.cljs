@@ -367,98 +367,97 @@
 
 (defn initialize
   []
-  (when (contains? cf/flags :audit-log)
-    (ptk/reify ::initialize
-      ptk/WatchEvent
-      (watch [_ _ _]
-        (rx/of (store-performace-info)))
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (store-performace-info)))
 
-      ptk/EffectEvent
-      (effect [_ _ stream]
-        (let [session (atom nil)
-              stopper (rx/filter (ptk/type? ::initialize) stream)
-              buffer  (atom #queue [])
-              profile (->> (rx/from-atom storage/user {:emit-current-value? true})
-                           (rx/map :profile)
-                           (rx/map :id)
-                           (rx/pipe (rxo/distinct-contiguous)))]
+    ptk/EffectEvent
+    (effect [_ _ stream]
+      (let [session (atom nil)
+            stopper (rx/filter (ptk/type? ::initialize) stream)
+            buffer  (atom #queue [])
+            profile (->> (rx/from-atom storage/user {:emit-current-value? true})
+                         (rx/map :profile)
+                         (rx/map :id)
+                         (rx/pipe (rxo/distinct-contiguous)))]
 
-          (l/debug :hint "event instrumentation initialized")
+        (l/debug :hint "event instrumentation initialized")
 
-          (->> (rx/merge
-                (->> (rx/from-atom buffer)
-                     (rx/filter #(pos? (count %)))
-                     (rx/debounce 2000))
-                (->> stream
-                     (rx/filter (ptk/type? :app.main.data.profile/logout))
-                     (rx/observe-on :async)))
-               (rx/map (fn [_]
-                         (into [] (take max-buffer-size) @buffer)))
-               (rx/with-latest-from profile)
-               (rx/mapcat (fn [[chunk profile-id]]
-                            (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
-                              (->> (persist-events events)
-                                   (rx/tap (fn [_]
-                                             (l/debug :hint "events chunk persisted" :total (count chunk))))
-                                   (rx/map (constantly chunk))))))
-               (rx/take-until stopper)
-               (rx/subs! (fn [chunk]
-                           (swap! buffer remove-from-buffer (count chunk)))
-                         (fn [cause]
-                           (l/error :hint "unexpected error on audit persistence" :cause cause))
-                         (fn []
-                           (l/debug :hint "audit persistence terminated"))))
+        (->> (rx/merge
+              (->> (rx/from-atom buffer)
+                   (rx/filter #(pos? (count %)))
+                   (rx/debounce 2000))
+              (->> stream
+                   (rx/filter (ptk/type? :app.main.data.profile/logout))
+                   (rx/observe-on :async)))
+             (rx/map (fn [_]
+                       (into [] (take max-buffer-size) @buffer)))
+             (rx/with-latest-from profile)
+             (rx/mapcat (fn [[chunk profile-id]]
+                          (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
+                            (->> (persist-events events)
+                                 (rx/tap (fn [_]
+                                           (l/debug :hint "events chunk persisted" :total (count chunk))))
+                                 (rx/map (constantly chunk))))))
+             (rx/take-until stopper)
+             (rx/subs! (fn [chunk]
+                         (swap! buffer remove-from-buffer (count chunk)))
+                       (fn [cause]
+                         (l/error :hint "unexpected error on audit persistence" :cause cause))
+                       (fn []
+                         (l/debug :hint "audit persistence terminated"))))
 
-          (->> (rx/merge
-                (->> stream
-                     (rx/with-latest-from profile)
-                     (rx/map (fn [result]
-                               (let [event      (aget result 0)
-                                     profile-id (aget result 1)]
-                                 (some-> (process-event event)
-                                         (update :profile-id #(or % profile-id)))))))
+        (->> (rx/merge
+              (->> stream
+                   (rx/with-latest-from profile)
+                   (rx/map (fn [result]
+                             (let [event      (aget result 0)
+                                   profile-id (aget result 1)]
+                               (some-> (process-event event)
+                                       (update :profile-id #(or % profile-id)))))))
 
-                (->> (performance-observer-event-stream)
-                     (rx/with-latest-from profile)
-                     (rx/map performance-payload)
-                     (rx/debounce debounce-browser-event-time))
+              (->> (performance-observer-event-stream)
+                   (rx/with-latest-from profile)
+                   (rx/map performance-payload)
+                   (rx/debounce debounce-browser-event-time))
 
-                (->> (performance-observer-longtask-stream)
-                     (rx/with-latest-from profile)
-                     (rx/map performance-payload)
-                     (rx/debounce debounce-longtask-time))
+              (->> (performance-observer-longtask-stream)
+                   (rx/with-latest-from profile)
+                   (rx/map performance-payload)
+                   (rx/debounce debounce-longtask-time))
 
-                (->> stream
-                     (rx/with-latest-from profile)
-                     (rx/merge-map process-performance-event)
-                     (rx/debounce debounce-performance-event-time)))
+              (->> stream
+                   (rx/with-latest-from profile)
+                   (rx/merge-map process-performance-event)
+                   (rx/debounce debounce-performance-event-time)))
 
-               (rx/filter :profile-id)
-               (rx/map (fn [event]
-                         (let [session* (or @session (ct/now))
-                               context  (-> @context
-                                            (merge (:context event))
-                                            (assoc :session session*)
-                                            (assoc :external-session-id (cf/external-session-id))
-                                            (d/without-nils))]
-                           (reset! session session*)
-                           (-> event
-                               (assoc :timestamp (ct/now))
-                               (assoc :context context)))))
+             (rx/filter :profile-id)
+             (rx/map (fn [event]
+                       (let [session* (or @session (ct/now))
+                             context  (-> @context
+                                          (merge (:context event))
+                                          (assoc :session session*)
+                                          (assoc :external-session-id (cf/external-session-id))
+                                          (d/without-nils))]
+                         (reset! session session*)
+                         (-> event
+                             (assoc :timestamp (ct/now))
+                             (assoc :context context)))))
 
-               (rx/tap (fn [event]
-                         (l/debug :hint "event enqueued")
-                         (swap! buffer append-to-buffer event)))
+             (rx/tap (fn [event]
+                       (l/debug :hint "event enqueued")
+                       (swap! buffer append-to-buffer event)))
 
-               (rx/switch-map #(rx/timer session-timeout))
-               (rx/take-until stopper)
-               (rx/subs! (fn [_]
-                           (l/debug :hint "session reinitialized")
-                           (reset! session nil))
-                         (fn [cause]
-                           (l/error :hint "error on event batching stream" :cause cause))
-                         (fn []
-                           (l/debug :hitn "events batching stream terminated")))))))))
+             (rx/switch-map #(rx/timer session-timeout))
+             (rx/take-until stopper)
+             (rx/subs! (fn [_]
+                         (l/debug :hint "session reinitialized")
+                         (reset! session nil))
+                       (fn [cause]
+                         (l/error :hint "error on event batching stream" :cause cause))
+                       (fn []
+                         (l/debug :hitn "events batching stream terminated"))))))))
 
 (defn event
   [props]
