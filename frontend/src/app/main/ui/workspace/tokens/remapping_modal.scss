@@ -33,7 +33,7 @@
 
 .modal-dialog {
   @extend .modal-container-base;
-  block-size: 100%;
+  inline-size: 100%;
   max-inline-size: 32rem;
   max-block-size: unset;
   user-select: none;
