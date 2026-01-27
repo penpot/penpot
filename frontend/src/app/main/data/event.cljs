@@ -31,34 +31,34 @@
 (l/set-level! :info)
 
 ;; Defines the maximum buffer size, after events start discarding.
-(def max-buffer-size 1024)
+(def ^:private ^:const max-buffer-size 1024)
 
 ;; Defines the maximum number of events that can go in a single batch.
-(def max-chunk-size 100)
+(def ^:private ^:const max-chunk-size 100)
 
 ;; Defines the time window (in ms) within events belong to the same session.
-(def session-timeout (* 1000 60 30))
+(def ^:private ^:const session-timeout (* 1000 60 30))
 
 ;; Min time for a long task to be reported to telemetry
-(def min-longtask-time 1000)
+(def ^:private ^:const min-longtask-time 1000)
 
 ;; Min time between long task reports
-(def debounce-longtask-time 1000)
+(def ^:private ^:const debounce-longtask-time 1000)
 
 ;; Min time for a long task to be reported to telemetry
-(def min-browser-event-time 1000)
+(def ^:private ^:const min-browser-event-time 1000)
 
 ;; Min time between long task reports
-(def debounce-browser-event-time 1000)
+(def ^:private ^:const debounce-browser-event-time 1000)
 
 ;; Min time for a long task to be reported to telemetry
-(def min-performace-event-time 1000)
+(def ^:private ^:const min-performace-event-time 1000)
 
 ;; Min time between long task reports
-(def debounce-performance-event-time 1000)
+(def ^:private ^:const debounce-performance-event-time 1000)
 
-;; Def micro-benchmark iterations
-(def micro-benchmark-iterations 1e6)
+;; Default micro-benchmark iterations
+(def ^:private ^:const micro-benchmark-iterations 1e6)
 
 ;; --- CONTEXT
 
@@ -136,12 +136,12 @@
              data
              data))
 
-(defn add-external-context-info
+(defn- add-external-context-info
   [context]
   (let [external-context-info  (json/->clj (cf/external-context-info))]
     (merge context external-context-info)))
 
-(defn- process-event-by-proto
+(defn- make-proto-event
   [event]
   (let [data    (d/deep-merge (-data event) (meta event))
         type    (ptk/type event)
@@ -150,7 +150,6 @@
                     (assoc :event-origin (::origin data))
                     (assoc :event-namespace (namespace type))
                     (assoc :event-symbol ev-name)
-                    (add-external-context-info)
                     (d/without-nils))
         props   (-> data d/without-qualified simplify-props)]
 
@@ -159,7 +158,7 @@
      :context context
      :props props}))
 
-(defn- process-data-event
+(defn- make-data-event
   [event]
   (let [data (deref event)
         name (::name data)]
@@ -168,7 +167,6 @@
       (let [type    (::type data "action")
             context (-> (::context data)
                         (assoc :event-origin (::origin data))
-                        (add-external-context-info)
                         (d/without-nils))
             props   (-> data d/without-qualified simplify-props)]
         {:type    type
@@ -176,56 +174,61 @@
          :context context
          :props   props}))))
 
-(defn performance-payload
+(defn- make-event
+  "Create a standard event"
   ([result]
    (let [props      (aget result 0)
          profile-id (aget result 1)]
-     (performance-payload profile-id props)))
+     (make-event profile-id props)))
+  ([profile-id event]
+   (when-let [event (cond
+                      (satisfies? Event event)
+                      (make-proto-event event)
+
+                      (ptk/data-event? event)
+                      (make-data-event event))]
+     (assoc event :profile-id profile-id))))
+
+(defn- make-performance-event
+  "Create a performance trigger event"
+  ([result]
+   (let [props      (aget result 0)
+         profile-id (aget result 1)]
+     (make-performance-event profile-id props)))
   ([profile-id props]
-   (let [{:keys [performance-info]} @st/state]
-     {:type    "action"
-      :name    "performance"
-      :context (merge @context performance-info)
-      :props   props
+   (let [perf-info (get @st/state :performance-info)
+         name      (get props ::name)]
+     {:type    "trigger"
+      :name    (str "performance-" name)
+      :context {:file-stats (:counters perf-info)}
+      :props   (-> props
+                   (dissoc ::name)
+                   (assoc :file-id (:file-id perf-info)))
       :profile-id profile-id})))
 
 (defn- process-performance-event
+  "Process performance sensitive events"
   [result]
   (let [event      (aget result 0)
         profile-id (aget result 1)]
-
-    (if (and (satisfies? PerformanceEvent event)
-             (exists? js/globalThis)
-             (exists? (.-requestAnimationFrame js/globalThis))
-             (exists? (.-scheduler js/globalThis))
-             (exists? (.-postTask (.-scheduler js/globalThis))))
+    (if (satisfies? PerformanceEvent event)
       (rx/create
        (fn [subs]
-         (let [start (perf/timestamp)]
+         (let [start (perf/now)]
            (js/requestAnimationFrame
-            #(js/scheduler.postTask
-              (fn []
-                (let [time (- (perf/timestamp) start)]
-                  (when (> time min-performace-event-time)
-                    (rx/push!
-                     subs
-                     (performance-payload
-                      profile-id
-                      {::event (str (ptk/type event))
-                       :time time}))))
-                (rx/end! subs))
-              #js {"priority" "user-blocking"})))
-         nil))
+            #(.postTask js/scheduler
+                        (fn []
+                          (let [time (- (perf/now) start)]
+                            (when (> time min-performace-event-time)
+                              (rx/push! subs
+                                        (make-performance-event profile-id
+                                                                {::name "blocking-event"
+                                                                 :event-name (d/name (ptk/type event))
+                                                                 :duration time})))
+                            (rx/end! subs)))
+                        #js {:priority "user-blocking"}))
+           nil)))
       (rx/empty))))
-
-(defn- process-event
-  [event]
-  (cond
-    (satisfies? Event event)
-    (process-event-by-proto event)
-
-    (ptk/data-event? event)
-    (process-data-event event)))
 
 ;; --- MAIN LOOP
 
@@ -254,7 +257,8 @@
     (rx/of nil)))
 
 
-(defn performance-observer-event-stream
+(defn- user-input-observer
+  "Create user interaction/input event observer. Returns rx stream."
   []
   (if (and (exists? js/globalThis)
            (exists? (.-PerformanceObserver js/globalThis)))
@@ -267,18 +271,17 @@
                  (fn [entry]
                    (when (and (= "event" (.-entryType entry))
                               (> (.-duration entry) min-browser-event-time))
-                     (rx/push!
-                      subs
-                      {::event :observer-event
-                       :duration (.-duration entry)
-                       :event-name (.-name entry)})))
+                     (rx/push! subs {::name "user-input"
+                                     :duration (.-duration entry)
+                                     :event-name (.-name entry)})))
                  (.getEntries list))))]
          (.observe observer #js {:entryTypes #js ["event"]})
          (fn []
            (.disconnect observer)))))
     (rx/empty)))
 
-(defn performance-observer-longtask-stream
+(defn- longtask-observer
+  "Create a Long-Task performance observer. Returns rx stream."
   []
   (if (and (exists? js/globalThis)
            (exists? (.-PerformanceObserver js/globalThis)))
@@ -292,7 +295,7 @@
                    (when (and (= "longtask" (.-entryType entry))
                               (> (.-duration entry) min-longtask-time))
                      (rx/push! subs
-                               {::event :observer-longtask
+                               {::name "long-task"
                                 :duration (.-duration entry)})))
                  (.getEntries list))))]
          (.observe observer #js {:entryTypes #js ["longtask"]})
@@ -300,70 +303,59 @@
            (.disconnect observer)))))
     (rx/empty)))
 
-(defn- save-performance-info
-  []
-  (ptk/reify ::save-performance-info
-    ptk/UpdateEvent
-    (update [_ state]
-      (letfn [(count-shapes [file]
-                (->> file :data :pages-index
-                     (reduce-kv
-                      (fn [sum _ page]
-                        (+ sum (count (:objects page))))
-                      0)))
-              (count-library-data [files {:keys [id]}]
-                (let [data (dm/get-in files [id :data])]
-                  {:components (count (:components data))
-                   :colors (count (:colors data))
-                   :typographies (count (:typographies data))}))]
-        (let [file-id (get state :current-file-id)
-              file (get-in state [:files file-id])
-              file-size (count-shapes file)
+(defn- snapshot-performance-info
+  [{:keys [file-id]}]
 
-              libraries
-              (-> (refs/select-libraries (:files state) (:id file))
-                  (d/update-vals (partial count-library-data (:files state))))
+  (letfn [(count-shapes [file]
+            (->> file :data :pages-index
+                 (reduce-kv
+                  (fn [sum _ page]
+                    (+ sum (count (:objects page))))
+                  0)))
 
-              lib-sizes
-              (->> libraries
-                   (reduce-kv
-                    (fn [acc _ {:keys [components colors typographies]}]
-                      (-> acc
-                          (update :components + components)
-                          (update :colors + colors)
-                          (update :typographies + typographies)))
-                    {}))]
-          (update state :performance-info
-                  (fn [info]
-                    (-> info
-                        (assoc :file-size file-size)
-                        (assoc :library-sizes lib-sizes)
-                        (assoc :file-start-time (perf/now))))))))))
+          (add-libraries-counters [state files]
+            (reduce (fn [state library-id]
+                      (let [data (dm/get-in files [library-id :data])]
+                        (-> state
+                            (update :total-components + (count (:components data)))
+                            (update :total-colors + (count (:colors data)))
+                            (update :total-typographies + (count (:typographies data))))))
+                    state
+                    (refs/select-libraries files file-id)))]
 
-(defn store-performace-info
-  []
-  (letfn [(micro-benchmark [state]
-            (let [start (perf/now)]
-              (loop [i micro-benchmark-iterations]
-                (when-not (zero? i)
-                  (* (math/sin i) (math/sqrt i))
-                  (recur (dec i))))
-              (let [end (perf/now)]
-                (update state :performance-info assoc :bench-result (- end start)))))]
-
-    (ptk/reify ::store-performace-info
+    (ptk/reify ::snapshot-performance-info
       ptk/UpdateEvent
       (update [_ state]
-        (-> state
-            micro-benchmark
-            (assoc-in [:performance-info :app-start-time] (perf/now))))
+        (update state :performance-info
+                (fn [info]
+                  (let [files (get state :files)
+                        file  (get files file-id)]
+                    (-> info
+                        (assoc :file-id file-id)
+                        (update :counters assoc :total-shapes (count-shapes file))
+                        (update :counters add-libraries-counters files)))))))))
 
-      ptk/WatchEvent
-      (watch [_ _ stream]
-        (->> stream
-             (rx/filter (ptk/type? :app.main.data.workspace/all-libraries-resolved))
-             (rx/take 1)
-             (rx/map save-performance-info))))))
+(defn- store-performace-info
+  []
+  (ptk/reify ::store-performace-info
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [start (perf/now)
+            _     (loop [i micro-benchmark-iterations]
+                    (when-not (zero? i)
+                      (* (math/sin i) (math/sqrt i))
+                      (recur (dec i))))
+            end   (perf/now)]
+
+        (update state :performance-info assoc :bench (- end start))))
+
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter (ptk/type? :app.main.data.workspace/all-libraries-resolved))
+           (rx/take 1)
+           (rx/map deref)
+           (rx/map snapshot-performance-info)))))
 
 (defn initialize
   []
@@ -392,7 +384,7 @@
                    (rx/filter (ptk/type? :app.main.data.profile/logout))
                    (rx/observe-on :async)))
              (rx/map (fn [_]
-                       (into [] (take max-buffer-size) @buffer)))
+                       (into [] (take max-chunk-size) @buffer)))
              (rx/with-latest-from profile)
              (rx/mapcat (fn [[chunk profile-id]]
                           (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
@@ -411,26 +403,27 @@
         (->> (rx/merge
               (->> stream
                    (rx/with-latest-from profile)
-                   (rx/map (fn [result]
-                             (let [event      (aget result 0)
-                                   profile-id (aget result 1)]
-                               (some-> (process-event event)
-                                       (update :profile-id #(or % profile-id)))))))
+                   (rx/map make-event))
 
-              (->> (performance-observer-event-stream)
+              (->> (user-input-observer)
                    (rx/with-latest-from profile)
-                   (rx/map performance-payload)
+                   (rx/map make-performance-event)
                    (rx/debounce debounce-browser-event-time))
 
-              (->> (performance-observer-longtask-stream)
+              (->> (longtask-observer)
                    (rx/with-latest-from profile)
-                   (rx/map performance-payload)
+                   (rx/map make-performance-event)
                    (rx/debounce debounce-longtask-time))
 
-              (->> stream
-                   (rx/with-latest-from profile)
-                   (rx/merge-map process-performance-event)
-                   (rx/debounce debounce-performance-event-time)))
+              (if (and (exists? js/globalThis)
+                       (exists? (.-requestAnimationFrame js/globalThis))
+                       (exists? (.-scheduler js/globalThis))
+                       (exists? (.-postTask (.-scheduler js/globalThis))))
+                (->> stream
+                     (rx/with-latest-from profile)
+                     (rx/merge-map process-performance-event)
+                     (rx/debounce debounce-performance-event-time))
+                (rx/empty)))
 
              (rx/filter :profile-id)
              (rx/map (fn [event]
@@ -439,6 +432,7 @@
                                           (merge (:context event))
                                           (assoc :session session*)
                                           (assoc :external-session-id (cf/external-session-id))
+                                          (add-external-context-info)
                                           (d/without-nils))]
                          (reset! session session*)
                          (-> event

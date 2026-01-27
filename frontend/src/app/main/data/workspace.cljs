@@ -197,7 +197,7 @@
                        (rx/of (check-libraries-synchronization file-id libraries))))))
 
               ;; This events marks that all the libraries have been resolved
-              (rx/of (ptk/data-event ::all-libraries-resolved)))
+              (rx/of (ptk/data-event ::all-libraries-resolved {:file-id file-id})))
              (rx/take-until stopper-s))))))
 
 (defn- workspace-initialized
