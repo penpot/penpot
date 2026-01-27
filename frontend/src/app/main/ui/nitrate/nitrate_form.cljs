@@ -7,12 +7,14 @@
 (ns app.main.ui.nitrate.nitrate-form
   (:require-macros [app.main.style :as stl])
   (:require
-
    [app.main.data.modal :as modal]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
+
+;; FIXME: rename to `form` (remove the nitrate prefix from namespace,
+;; because it is already under nitrate)
 
 (mf/defc nitrate-form-modal*
   {::mf/register modal/components
