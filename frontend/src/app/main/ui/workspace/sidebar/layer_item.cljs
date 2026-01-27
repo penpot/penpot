@@ -422,7 +422,8 @@
           (reset! observer-var nil))))
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
-    (mf/with-effect [children-count expanded?]
+    ;; and (shapes item) to reconnect observer after shape changes
+    (mf/with-effect [children-count expanded? (:shapes item)]
       (let [total (count (:shapes item))
             node (mf/ref-val ref)
             scroll-node (dom/get-parent-with-data node "scroll-container")
