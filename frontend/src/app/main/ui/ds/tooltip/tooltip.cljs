@@ -36,10 +36,12 @@
 
 (defn- hide-popover
   [node]
-  (dom/unset-css-property! node "block-size")
-  (dom/unset-css-property! node "inset-block-start")
-  (dom/unset-css-property! node "inset-inline-start")
-  (.hidePopover ^js node))
+  (when (and (some? node)
+             (fn? (.-hidePopover node)))
+    (dom/unset-css-property! node "block-size")
+    (dom/unset-css-property! node "inset-block-start")
+    (dom/unset-css-property! node "inset-inline-start")
+    (.hidePopover ^js node)))
 
 (defn- calculate-placement-bounding-rect
   "Given a placement, calcultates the bounding rect for it taking in
