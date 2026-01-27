@@ -13,6 +13,7 @@ export PENPOT_FLAGS="\
        disable-login-with-google \
        disable-login-with-github \
        disable-login-with-gitlab \
+       disable-telemetry \
        enable-backend-worker \
        enable-backend-asserts \
        disable-feature-fdata-pointer-map \
@@ -36,8 +37,7 @@ export PENPOT_FLAGS="\
        enable-file-validation \
        enable-file-schema-validation \
        enable-redis-cache \
-       enable-subscriptions \
-       enable-nitrate";
+       enable-subscriptions";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"

@@ -45,6 +45,7 @@
 /backend/resources/public/media
 /backend/target/
 /backend/experiments
+/backend/scripts/_env.local
 /bundle*
 /cd.md
 /clj-profiler/
