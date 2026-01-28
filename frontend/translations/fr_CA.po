@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-27 18:01+0000\n"
+"PO-Revision-Date: 2026-01-29 01:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -2998,3 +2998,195 @@ msgstr "Référence"
 #: src/app/main/data/common.cljs:83
 msgid "labels.refresh"
 msgstr "Rafraîchir"
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Choisis un thème à ton goût."
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Mode clair et obscur"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr ""
+"Améliore Penpot avec encore plus de fonctionnalités avec les plugiciels "
+"construits par la communauté."
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "Support de plugiciels"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:484, src/app/main/ui/workspace/colorpicker.cljs:485, src/app/main/ui/workspace/colorpicker.cljs:487
+msgid "media.choose-image"
+msgstr "Choisir une image"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:257
+msgid "media.gradient"
+msgstr "Dégradé"
+
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
+msgid "media.image"
+msgstr "Image"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:53
+msgid "media.image.short"
+msgstr "img"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:477
+msgid "media.keep-aspect-ratio"
+msgstr "Maintenir le rapport d'aspect"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:228
+#, unused
+msgid "media.linear"
+msgstr "Linéaire"
+
+#: src/app/main/data/media.cljs:51, src/app/main/data/workspace/media.cljs:228, src/app/main/data/workspace/media.cljs:443
+msgid "media.loading"
+msgstr "Chargement de l'image…"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:229
+#, unused
+msgid "media.radial"
+msgstr "Radial"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:255
+msgid "media.solid"
+msgstr "Solide"
+
+#: src/app/main/ui/dashboard/fonts.cljs:342
+msgid "modals.delete-font.message"
+msgstr ""
+"Vraiment supprimer cette police? Elle ne chargera pas si elle est utilisée "
+"dans un fichier."
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "modals.delete-font.title"
+msgstr "Suppression de la police"
+
+#: src/app/main/ui/workspace/context_menu.cljs:674, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
+msgid "modals.delete-page.body"
+msgstr "Vraiment supprimer cette page?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+msgid "modals.delete-page.title"
+msgstr "Supprimer la page"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:73
+msgid "modals.delete-project-confirm.accept"
+msgstr "Supprimer le projet"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:72
+msgid "modals.delete-project-confirm.message"
+msgstr "Vraiment supprimer ce projet?"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:71
+msgid "modals.delete-project-confirm.title"
+msgstr "Supprimer le projet"
+
+#: src/app/main/ui/delete_shared.cljs:54
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Supprimer le fichier"
+msgstr[1] "Supprimer les fichiers"
+
+#: src/app/main/ui/delete_shared.cljs:58
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Activé dans aucun projet"
+msgstr[1] "Activés dans aucun projet"
+
+#: src/app/main/ui/delete_shared.cljs:60
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Cette bibliothèque est active ici : "
+msgstr[1] "Ces bibliothèques sont actives ici : "
+
+#: src/app/main/ui/delete_shared.cljs:49
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Vraiment supprimer ce fichier?"
+msgstr[1] "Vraiment supprimer ces fichiers?"
+
+#: src/app/main/ui/delete_shared.cljs:44
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Suppression d'un fichier"
+msgstr[1] "Suppression de fichiers"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:425
+msgid "modals.delete-team-confirm.accept"
+msgstr "Supprimer l'équipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:424
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"Vraiment supprimer cette équipe ? Tous les projets et fichiers associés à "
+"l'équipe seront supprimés en permanence."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:423
+msgid "modals.delete-team-confirm.title"
+msgstr "Suppression de l'équipe"
+
+#: src/app/main/ui/dashboard/team.cljs:461
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Supprimer le membre"
+
+#: src/app/main/ui/dashboard/team.cljs:460
+msgid "modals.delete-team-member-confirm.message"
+msgstr "Vraiment supprimer ce membre de l'équipe?"
+
+#: src/app/main/ui/dashboard/team.cljs:459
+msgid "modals.delete-team-member-confirm.title"
+msgstr "Supprimer le membre d'équipe"
+
+#: src/app/main/ui/delete_shared.cljs:62
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Les atouts déjà en usage dans ce fichier demeureront là (aucun design ne "
+"sera brisé)."
+msgstr[1] ""
+"Les atouts déjà en usage dans ces fichiers demeureront là (aucun design ne "
+"sera brisé)."
+
+#: src/app/main/ui/dashboard/team.cljs:1197
+msgid "modals.delete-webhook.accept"
+msgstr "Supprimer le lien de rappel"
+
+#: src/app/main/ui/dashboard/team.cljs:1196
+msgid "modals.delete-webhook.message"
+msgstr "Vraiment supprimer ce lien de rappel?"
+
+#: src/app/main/ui/dashboard/team.cljs:1195
+msgid "modals.delete-webhook.title"
+msgstr "Supprimer un lien de rappel"
+
+#: src/app/main/ui/dashboard/team.cljs:1126
+msgid "modals.edit-webhook.submit-label"
+msgstr "Modifier le lien de rappel"
+
+#: src/app/main/ui/dashboard/team.cljs:1091
+msgid "modals.edit-webhook.title"
+msgstr "Modifier un lien de rappel"
+
+#: src/app/main/ui/dashboard/team.cljs:249
+msgid "modals.invite-member-confirm.accept"
+msgstr "Envoyer l'invitation"
+
+#: src/app/main/ui/dashboard/team.cljs:245, src/app/main/ui/onboarding/team_choice.cljs:203
+msgid "modals.invite-member.emails"
+msgstr "Adresses courriel, séparées par des virgules"
+
+#: src/app/main/ui/dashboard/team.cljs:229
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Certains courriels font déjà partie de l'équipe. Nous inviterons les "
+"courriels nouvellement ajoutés."
+
+#: src/app/main/ui/dashboard/team.cljs:222
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Tu peux inviter des membre à l'équipe pour leur donner accès à ce fichier et "
+"à tous les fichiers de l'équipe."
