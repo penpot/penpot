@@ -16,6 +16,7 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/rename-layers-plugin/tsconfig.app.json",
         "assets": [
+          "apps/rename-layers-plugin/src/_headers",
           "apps/rename-layers-plugin/src/favicon.ico",
           "apps/rename-layers-plugin/src/assets"
         ],
