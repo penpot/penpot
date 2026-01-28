@@ -305,7 +305,7 @@
     (fn [request]
       (if-let [[key-id key] (some-> (yreq/get-header request "x-shared-key")
                                     (str/split #"\s+" 2))]
-        (let [key-id (str/lower key-id)]
+        (let [key-id (-> key-id str/lower keyword)]
           (if (and (string? key)
                    (contains? keys key-id)
                    (= key (get keys key-id)))
