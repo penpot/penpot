@@ -52,6 +52,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
+   [app.plugins.state :refer [natural-child-ordering?]]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.http :as http]
@@ -921,7 +922,6 @@
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-
                  (and (not (cfh/frame-shape? shape))
                       (not (cfh/group-shape? shape))
                       (not (cfh/svg-raw-shape? shape))
@@ -929,9 +929,14 @@
                  (u/display-not-valid :getChildren (:type shape))
 
                  :else
-                 (->> (u/locate-shape file-id page-id id)
-                      (:shapes)
-                      (format/format-array #(shape-proxy plugin-id file-id page-id %))))))
+                 (let [is-reversed? (ctl/flex-layout? shape)
+                       reverse-fn
+                       (if (and (natural-child-ordering? plugin-id) is-reversed?)
+                         reverse identity)]
+                   (->> (u/locate-shape file-id page-id id)
+                        (:shapes)
+                        (reverse-fn)
+                        (format/format-array #(shape-proxy plugin-id file-id page-id %)))))))
 
            :appendChild
            (fn [child]
@@ -950,8 +955,10 @@
                  (u/display-not-valid :appendChild "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [child-id (obj/get child "$id")]
-                   (st/emit! (dwsh/relocate-shapes #{child-id} id 0))))))
+                 (let [child-id (obj/get child "$id")
+                       is-reversed? (ctl/flex-layout? shape)
+                       index (if (and (natural-child-ordering? plugin-id) is-reversed?) 0 (count (:shapes shape)))]
+                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            :insertChild
            (fn [index child]
@@ -970,7 +977,12 @@
                  (u/display-not-valid :insertChild "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [child-id (obj/get child "$id")]
+                 (let [child-id (obj/get child "$id")
+                       is-reversed? (ctl/flex-layout? shape)
+                       index
+                       (if (and (natural-child-ordering? plugin-id) is-reversed?)
+                         (- (count (:shapes shape)) index)
+                         index)]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            ;; Only for frames
@@ -1360,7 +1372,8 @@
                  (let [shape (u/proxy->shape self)
                        file-id (obj/get self "$file")
                        page-id (obj/get self "$page")
-                       ids (->> children (map #(obj/get % "$id")))]
+                       reverse-fn (if (natural-child-ordering? plugin-id) reverse identity)
+                       ids (->> children reverse-fn (map #(obj/get % "$id")))]
 
                    (cond
                      (not= (set ids) (set (:shapes shape)))
