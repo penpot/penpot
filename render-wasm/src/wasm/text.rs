@@ -365,8 +365,23 @@ pub extern "C" fn intersect_position_in_shape(
 
 fn update_text_layout(shape: &mut Shape) {
     if let Type::Text(text_content) = &mut shape.shape_type {
-        text_content.update_layout(shape.selrect);
-        shape.invalidate_extrect();
+        let size = text_content.update_layout(shape.selrect);
+        match text_content.grow_type() {
+            GrowType::AutoWidth => {
+                let left = shape.selrect.left();
+                let top = shape.selrect.top();
+                shape.set_selrect(left, top, left + size.width, top + size.height);
+            }
+            GrowType::AutoHeight => {
+                let left = shape.selrect.left();
+                let top = shape.selrect.top();
+                let width = shape.selrect.width();
+                shape.set_selrect(left, top, left + width, top + size.height);
+            }
+            GrowType::Fixed => {
+                shape.invalidate_extrect();
+            }
+        }
     }
 }
 

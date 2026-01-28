@@ -183,11 +183,12 @@ fn propagate_transform(
 
     let mut transform = entry.transform;
 
-    // Only check the text layout when the width/height changes
-    if !is_close_to(shape_bounds_before.width(), shape_bounds_after.width())
-        || !is_close_to(shape_bounds_before.height(), shape_bounds_after.height())
-    {
-        if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+    let size_changed = !is_close_to(shape_bounds_before.width(), shape_bounds_after.width())
+        || !is_close_to(shape_bounds_before.height(), shape_bounds_after.height());
+
+    if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+        let needs_layout = text_content.needs_update_layout();
+        if size_changed || needs_layout {
             let resized_selrect = math::Rect::from_xywh(
                 shape.selrect.left(),
                 shape.selrect.top(),
@@ -196,11 +197,10 @@ fn propagate_transform(
             );
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
-                    // For auto-height, always update layout when width changes
-                    // because the new width affects how text wraps
+                    // For auto-height, update layout when width changes or content changed
                     let width_changed =
                         !is_close_to(shape_bounds_before.width(), shape_bounds_after.width());
-                    if width_changed || text_content.needs_update_layout() {
+                    if width_changed || needs_layout {
                         text_content.update_layout(resized_selrect);
                     }
                     let height = text_content.size.height;
@@ -214,11 +214,10 @@ fn propagate_transform(
                     transform.post_concat(&resize_transform);
                 }
                 GrowType::AutoWidth => {
-                    // For auto-width, always update layout when height changes
-                    // because the new height affects how text flows
+                    // For auto-width, update layout when height changes or content changed
                     let height_changed =
                         !is_close_to(shape_bounds_before.height(), shape_bounds_after.height());
-                    if height_changed || text_content.needs_update_layout() {
+                    if height_changed || needs_layout {
                         text_content.update_layout(resized_selrect);
                     }
                     let width = text_content.width();

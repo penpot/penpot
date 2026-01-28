@@ -309,7 +309,12 @@ impl TextContent {
     }
 
     pub fn add_paragraph(&mut self, paragraph: Paragraph) {
+        println!("add_paragraph: {:?}", paragraph);
         self.paragraphs.push(paragraph);
+        // Content changed; drop cached layout to force recompute.
+        self.layout = TextContentLayout::new();
+        println!("grow_type: {:?}", self.grow_type);
+
     }
 
     pub fn paragraphs(&self) -> &[Paragraph] {
