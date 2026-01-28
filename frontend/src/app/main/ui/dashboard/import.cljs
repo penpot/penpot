@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
@@ -360,7 +361,7 @@
                  on-error
                  (fn [cause]
                    (reset! status* :error)
-                   (errors/print-error! cause)
+                   (ex/print-throwable cause)
                    (rx/of (modal/hide)
                           (ntf/error (tr "dashboard.libraries-and-templates.import-error"))))
 
