@@ -12,10 +12,13 @@
    ["node:process" :as process]
    [app.common.data :as d]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.version :as v]
    [cljs.core :as c]
    [cuerdas.core :as str]))
+
+(l/set-level! :info)
 
 (def ^:private defaults
   {:public-uri "http://localhost:3449"
@@ -30,7 +33,7 @@
   [:map {:title "config"}
    [:secret-key :string]
    [:public-uri {:optional true} ::sm/uri]
-   [:management-api-key {:optional true} :string]
+   [:exporter-shared-key {:optional true} :string]
    [:host {:optional true} :string]
    [:tenant {:optional true} :string]
    [:flags {:optional true} [::sm/set :keyword]]
@@ -98,8 +101,10 @@
    (c/get config key default)))
 
 (def management-key
-  (or (c/get config :management-api-key)
-      (let [secret-key  (c/get config :secret-key)
-            derived-key (crypto/hkdfSync "blake2b512" secret-key, "management" "" 32)]
-        (-> (.from buffer/Buffer derived-key)
-            (.toString "base64url")))))
+  (let [key (or (c/get config :exporter-shared-key)
+                (let [secret-key  (c/get config :secret-key)
+                      derived-key (crypto/hkdfSync "blake2b512" secret-key, "exporter" "" 32)]
+                  (-> (.from buffer/Buffer derived-key)
+                      (.toString "base64url"))))]
+    (l/inf :hint "exporter key initialized" :key (d/obfuscate-string key))
+    key))

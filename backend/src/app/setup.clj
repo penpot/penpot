@@ -17,6 +17,7 @@
    [app.setup.templates]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
+   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
 (defn- generate-random-key
@@ -88,7 +89,38 @@
                       (-> (get-all-props conn)
                           (assoc :secret-key secret)
                           (assoc :tokens-key (keys/derive secret :salt "tokens"))
-                          (assoc :management-key (keys/derive secret :salt "management"))
                           (update :instance-id handle-instance-id conn (db/read-only? pool)))))))
 
 (sm/register! ::props [:map-of :keyword ::sm/any])
+
+
+(defmethod ig/init-key ::shared-keys
+  [_ {:keys [::props] :as cfg}]
+  (let [secret (get props :secret-key)]
+    (d/without-nils
+     {"exporter"
+      (let [key (or (get cfg :exporter)
+                    (-> (keys/derive secret :salt "exporter")
+                        (bc/bytes->b64-str true)))]
+        (if (or (str/empty? key)
+                (str/blank? key))
+          (do
+            (l/wrn :hint "exporter key is disabled because empty string found")
+            nil)
+          (do
+            (l/inf :hint "exporter key initialized" :key (d/obfuscate-string key))
+            key)))
+
+      "nitrate"
+      (let [key (or (get cfg :nitrate)
+                    (-> (keys/derive secret :salt "nitrate")
+                        (bc/bytes->b64-str true)))]
+        (if (or (str/empty? key)
+                (str/blank? key))
+          (do
+            (l/wrn :hint "nitrate key is disabled because empty string found")
+            nil)
+          (do
+            (l/inf :hint "nitrate key initialized" :key (d/obfuscate-string key))
+            key)))})))
+
