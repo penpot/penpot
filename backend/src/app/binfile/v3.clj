@@ -873,11 +873,8 @@
   (import-storage-objects cfg)
 
   (let [files  (get manifest :files)
-        result (reduce (fn [result {:keys [id] :as file}]
+        result (reduce (fn [result file]
                          (let [name' (get file :name)
-                               name' (if (map? name)
-                                       (get name id)
-                                       name')
                                file (assoc file :name name')]
                            (conj result (import-file cfg file))))
                        []
