@@ -1,31 +1,32 @@
 import type {
-  Penpot,
-  EventsMap,
-  Page,
-  Shape,
-  Rectangle,
-  Board,
-  Group,
-  Viewport,
-  Text,
-  File,
-  Theme,
-  LibraryContext,
-  Ellipse,
-  Path,
-  BooleanType,
-  Boolean,
-  User,
   ActiveUser,
-  FontsContext,
-  SvgRaw,
+  Board,
+  Boolean,
+  BooleanType,
   Color,
   ColorShapeInfo,
+  Ellipse,
+  EventsMap,
+  File,
+  Flags,
+  FontsContext,
+  Group,
   HistoryContext,
-  LocalStorage,
-  VariantContainer,
   LibraryComponent,
+  LibraryContext,
   LibraryVariantComponent,
+  LocalStorage,
+  Page,
+  Path,
+  Penpot,
+  Rectangle,
+  Shape,
+  SvgRaw,
+  Text,
+  Theme,
+  User,
+  VariantContainer,
+  Viewport,
 } from '@penpot/plugin-types';
 
 import { Permissions } from '../models/manifest.model.js';
@@ -191,6 +192,10 @@ export function createApi(
     get fonts(): FontsContext {
       checkPermission('content:read');
       return plugin.context.fonts;
+    },
+
+    get flags(): Flags {
+      return plugin.context.flags;
     },
 
     get currentUser(): User {
