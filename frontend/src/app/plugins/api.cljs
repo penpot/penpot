@@ -32,6 +32,7 @@
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
+   [app.plugins.flags :as flags]
    [app.plugins.fonts :as fonts]
    [app.plugins.format :as format]
    [app.plugins.history :as history]
@@ -123,6 +124,9 @@
 
     :fonts
     {:get (fn [] (fonts/fonts-subcontext plugin-id))}
+
+    :flags
+    {:get (fn [] (flags/flags-proxy plugin-id))}
 
     :library
     {:get (fn [] (library/library-subcontext plugin-id))}
