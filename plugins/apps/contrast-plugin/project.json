@@ -16,6 +16,7 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/contrast-plugin/tsconfig.app.json",
         "assets": [
+          "apps/contrast-plugin/src/_headers",
           "apps/contrast-plugin/src/favicon.ico",
           "apps/contrast-plugin/src/assets"
         ],
