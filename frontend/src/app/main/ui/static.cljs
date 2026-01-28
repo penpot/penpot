@@ -442,7 +442,7 @@
   [{:keys [data route] :as props}]
   (let [type   (get data :type)
         report (mf/with-memo [data]
-                 (generate-report data))
+                 (some-> data ::errors/instance errors/generate-report))
         props  (mf/spread-props props {:report report})]
 
     (mf/with-effect [data route report]
