@@ -32,6 +32,7 @@
 - Fix exception on uploading large fonts [Github #8135](https://github.com/penpot/penpot/pull/8135)
 - Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
+- Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
 ## 2.13.0 (Unreleased)
 
