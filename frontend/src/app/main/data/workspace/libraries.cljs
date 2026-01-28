@@ -1205,6 +1205,7 @@
             file         (dsh/lookup-file state file-id)
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
+            permissions (:permissions state)
 
             libraries-need-sync
             (->> (vals (get state :files))
@@ -1224,7 +1225,8 @@
             do-dismiss
             #(st/emit! ignore-sync (ntf/hide))]
 
-        (when (seq libraries-need-sync)
+        (when (and (:can-edit permissions)
+                   (seq libraries-need-sync))
           (rx/of (ntf/dialog
                   :content (tr "workspace.updates.there-are-updates")
                   :controls :inline-actions
