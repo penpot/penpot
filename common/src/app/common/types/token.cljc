@@ -474,6 +474,8 @@
    :height #{:sizing :dimensions}
    :max-width #{:sizing :dimensions}
    :max-height #{:sizing :dimensions}
+   :min-width #{:sizing :dimensions}
+   :min-height #{:sizing :dimensions}
    :x #{:dimensions}
    :y #{:dimensions}
    :rotation #{:number :rotation}

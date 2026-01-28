@@ -139,6 +139,7 @@
          :is-layout-container? false
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
+         :applied-tokens applied-tokens
          :values layout-item-values}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)

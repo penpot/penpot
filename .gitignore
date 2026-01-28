@@ -66,6 +66,7 @@
 /frontend/resources/public/*
 /frontend/storybook-static/
 /frontend/target/
+/frontend/test-results/
 /other/
 /scripts/
 /telemetry/

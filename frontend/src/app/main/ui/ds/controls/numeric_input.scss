@@ -8,6 +8,7 @@
 @use "ds/spacing.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
 
 .input-wrapper {
   --input-padding-size: var(--sp-xs);
@@ -29,7 +30,14 @@
 
 .icon {
   color: var(--color-foreground-secondary);
-  min-width: var(--sp-l);
+  min-inline-size: var(--sp-l);
+}
+
+.text-icon {
+  color: var(--color-foreground-secondary);
+  @include t.use-typography("code-font");
+  inline-size: fit-content;
+  min-inline-size: px2rem(40);
 }
 
 .invisible-button {

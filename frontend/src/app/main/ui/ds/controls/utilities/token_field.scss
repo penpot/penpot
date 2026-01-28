@@ -17,7 +17,7 @@
   --token-field-outline-color: none;
   --token-field-height: var(--sp-xxxl);
   --token-field-margin: unset;
-  display: grid;
+  display: inline-flex;
   column-gap: var(--sp-xs);
   align-items: center;
   position: relative;

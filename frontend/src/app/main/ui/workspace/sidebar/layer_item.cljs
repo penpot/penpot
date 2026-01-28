@@ -119,6 +119,7 @@
             [:button {:class (stl/css-case
                               :toggle-content true
                               :inverse expanded?)
+                      :aria-label "Toggle layer"
                       :on-click on-toggle-collapse}
              deprecated-icon/arrow])
 
