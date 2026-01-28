@@ -79,7 +79,7 @@
       (db/insert-many! pool :audit-log event-columns events))))
 
 (def valid-event-types
-  #{"action" "identify"})
+  #{"action" "identify" "trigger"})
 
 (def schema:event
   [:map {:title "Event"}
