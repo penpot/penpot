@@ -98,7 +98,7 @@
   [_ {:keys [::props] :as cfg}]
   (let [secret (get props :secret-key)]
     (d/without-nils
-     {"exporter"
+     {:exporter
       (let [key (or (get cfg :exporter)
                     (-> (keys/derive secret :salt "exporter")
                         (bc/bytes->b64-str true)))]
@@ -111,7 +111,7 @@
             (l/inf :hint "exporter key initialized" :key (d/obfuscate-string key))
             key)))
 
-      "nitrate"
+      :nitrate
       (let [key (or (get cfg :nitrate)
                     (-> (keys/derive secret :salt "nitrate")
                         (bc/bytes->b64-str true)))]
