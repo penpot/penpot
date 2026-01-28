@@ -391,7 +391,7 @@
             (group-by :code)
             (clj->js))
        (catch :default cause
-         (errors/print-error! cause))))))
+         (ex/print-throwable cause))))))
 
 (defn ^:export validate-schema
   []
@@ -399,7 +399,7 @@
     (let [file (dsh/lookup-file @st/state)]
       (cfv/validate-file-schema! file))
     (catch :default cause
-      (errors/print-error! cause))))
+      (ex/print-throwable cause))))
 
 (defn ^:export repair
   [reload?]
@@ -431,7 +431,7 @@
                           (when reload?
                             (dom/reload-current-window)))
                         (fn [cause]
-                          (errors/print-error! cause)))))))))
+                          (ex/print-throwable cause)))))))))
 
 (defn ^:export fix-orphan-shapes
   []

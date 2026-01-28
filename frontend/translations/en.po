@@ -1344,7 +1344,7 @@ msgid "errors.generic"
 msgstr "Something wrong has happened."
 
 msgid "errors.unexpected-exception"
-msgstr "Unexpected exception: %s"
+msgstr "Unexpected error: %s"
 
 #: src/app/main/errors.cljs:200
 msgid "errors.internal-assertion-error"

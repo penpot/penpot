@@ -239,22 +239,63 @@
                        (recur cause))))))]
 
        (with-out-str
-         (print-all cause)))))
+         (print-all cause))))
+
+   :cljs
+   (defn format-throwable
+     [cause & {:as opts}]
+     (with-out-str
+       (when-let [exdata (ex-data cause)]
+         (when-let [hint (get exdata :hint)]
+           (when (str/index-of hint "\n")
+             (println "Hint:")
+             (println "--------------------")
+             (println hint)
+             (println)))
+
+         (when-let [explain (get exdata ::sm/explain)]
+           (println "Explain:")
+           (println "--------------------")
+
+           (println (sm/humanize-explain explain))
+           (println))
+
+         (when-let [explain (get exdata :explain)]
+           (println "Server Explain:")
+           (println "--------------------")
+           (println explain))
+
+         (println "Data:")
+         (println "--------------------")
+         (pp/pprint (dissoc exdata ::sm/explain :explain))
+         (println))
+
+       (when-let [trace (.-stack cause)]
+         (println "Trace:")
+         (println "--------------------")
+         (println (.-stack cause))))))
+
+(defn first-line
+  [s]
+  (let [break-index (str/index-of s "\n")]
+    (if (pos? break-index)
+      (subs s 0 break-index)
+      s)))
 
 (defn print-throwable
   [cause & {:as opts}]
   #?(:clj
      (println (format-throwable cause opts))
      :cljs
-     (let [prefix (get opts :prefix "exception")
-           title  (str prefix ": " (ex-message cause))
-           exdata (ex-data cause)]
+     (let [prefix (get opts :prefix)
+           data   (ex-data cause)
+           title  (cond->> (or (some-> (:hint data) first-line)
+                               (ex-message cause))
+                    (string? prefix)
+                    (str prefix ": "))]
+
        (js/console.group title)
-       (when-let [explain (get exdata ::sm/explain)]
-         (println (sm/humanize-explain explain)))
-
-       (js/console.log "\nData:")
-       (pp/pprint (dissoc exdata ::sm/explain))
-
-       (js/console.log "\nTrace:")
-       (js/console.error (.-stack cause)))))
+       (try
+         (js/console.log (format-throwable cause))
+         (finally
+           (js/console.groupEnd))))))
