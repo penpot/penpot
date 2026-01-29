@@ -50,7 +50,7 @@
 .modal-title {
   @include t.use-typography("headline-medium");
   color: var(--modal-title-foreground-color);
-  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .modal-content {
