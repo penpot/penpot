@@ -190,11 +190,14 @@
 (defn update-text-rect!
   [id]
   (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
+    (let [dimensions (get-text-dimensions id)
+          page-id (:current-page-id @st/state)]
+      ;;(prn ">update-text-rect!" id dimensions)
+      (mw/emit!
+       {:cmd :index/update-text-rect
+        :page-id page-id
+        :shape-id id
+        :dimensions dimensions}))))
 
 
 (defn- ensure-text-content
@@ -237,6 +240,12 @@
 
 (defn set-shape-selrect
   [selrect]
+  (when (or (> (mth/abs (:x selrect)) 10000)
+            (> (mth/abs (:y selrect)) 10000)
+            (> (:width selrect) 10000)
+            (> (:height selrect) 10000))
+    (js-debugger)
+    )
   (h/call wasm/internal-module "_set_shape_selrect"
           (dm/get-prop selrect :x1)
           (dm/get-prop selrect :y1)
