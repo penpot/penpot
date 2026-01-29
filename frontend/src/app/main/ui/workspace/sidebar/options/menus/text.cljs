@@ -15,6 +15,7 @@
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -138,7 +139,7 @@
               (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
 
              (when (features/active-feature? @st/state "render-wasm/v1")
-               (st/emit! (dwt/resize-wasm-text-all ids)))
+               (st/emit! (dwwt/resize-wasm-text-all ids)))
              ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]

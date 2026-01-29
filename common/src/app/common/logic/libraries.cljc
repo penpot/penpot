@@ -2017,7 +2017,9 @@
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
         previous-shape (reposition-shape previous-shape prev-root current-root)
-        touched        (get previous-shape :touched #{})]
+        touched        (get previous-shape :touched #{})
+        text-auto?     (and (cfh/text-shape? current-shape)
+                            (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
 
     (loop [attrs       updatable-attrs
            roperations [{:type :set-touched :touched (:touched previous-shape)}]
@@ -2026,6 +2028,10 @@
         (let [attr-group (get ctk/sync-attrs attr)
               skip-operations?
               (or
+               ;; For auto text, avoid copying geometry-driven attrs on switch.
+               (and text-auto?
+                    (contains? #{:points :selrect :width :height :position-data} attr))
+
                ;; If the attribute is not valid for the destiny, don't copy it
                (not (cts/is-allowed-switch-keep-attr? attr (:type current-shape)))
 

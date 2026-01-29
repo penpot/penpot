@@ -46,7 +46,9 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -1012,6 +1014,13 @@
 
             updated-objects  (pcb/get-objects changes)
             new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
+            new-text-ids     (->> new-children-ids
+                                  (keep (fn [id]
+                                          (when-let [child (get updated-objects id)]
+                                            (when (and (cfh/text-shape? child)
+                                                       (not= :fixed (:grow-type child)))
+                                              id))))
+                                  (vec))
 
             [changes parents-of-swapped]
             (if keep-touched?
@@ -1021,6 +1030,9 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
+         (when (and (features/active-feature? state "render-wasm/v1")
+                    (seq new-text-ids))
+           (dwwt/resize-wasm-text-all new-text-ids))
          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id)
          (dws/select-shape (:id new-shape) false))))))
