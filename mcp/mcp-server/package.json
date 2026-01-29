@@ -1,0 +1,50 @@
+{
+  "name": "penpot-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Penpot integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:js-yaml --external:sharp && pnpm run copy-static",
+    "copy-static": "node -e \"require('fs').cpSync('src/static', 'dist/static', { recursive: true })\"",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "build:full": "pnpm run build && pnpm run build:types",
+    "start": "node dist/index.js",
+    "start:multi-user": "node dist/index.js --multi-user",
+    "dev": "node --loader ts-node/esm src/index.ts",
+    "dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user"
+  },
+  "keywords": [
+    "mcp",
+    "penpot",
+    "server"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.0",
+    "@penpot-mcp/common": "file:../common",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "express": "^5.1.0",
+    "js-yaml": "^4.1.1",
+    "penpot-mcp": "file:..",
+    "pino": "^9.10.0",
+    "pino-pretty": "^13.1.1",
+    "reflect-metadata": "^0.1.13",
+    "sharp": "^0.34.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.10",
+    "esbuild": "^0.25.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "ts-node": {
+    "esm": true
+  }
+}

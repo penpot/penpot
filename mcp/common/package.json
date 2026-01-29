@@ -1,0 +1,20 @@
+{
+  "name": "@penpot-mcp/common",
+  "version": "1.0.0",
+  "description": "Shared type definitions and interfaces for Penpot MCP",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "dependencies": {
+    "penpot-mcp": "file:.."
+  }
+}
