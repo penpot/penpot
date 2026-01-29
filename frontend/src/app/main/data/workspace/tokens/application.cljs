@@ -27,9 +27,9 @@
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
@@ -315,7 +315,7 @@
           (and affects-layout?
                (features/active-feature? state "render-wasm/v1"))
           (rx/merge
-           (rx/of (dwt/resize-wasm-text-all shape-ids))))))))
+           (rx/of (dwwt/resize-wasm-text-all shape-ids))))))))
 
 (defn update-line-height
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
@@ -374,7 +374,7 @@
                                             :page-id page-id}))
           (features/active-feature? state "render-wasm/v1")
           (rx/merge
-           (rx/of (dwt/resize-wasm-text-all shape-ids))))))))
+           (rx/of (dwwt/resize-wasm-text-all shape-ids))))))))
 
 (defn- create-font-family-text-attrs
   [value]
@@ -451,7 +451,7 @@
                                             :page-id page-id}))
           (features/active-feature? state "render-wasm/v1")
           (rx/merge
-           (rx/of (dwt/resize-wasm-text-all shape-ids))))))))
+           (rx/of (dwwt/resize-wasm-text-all shape-ids))))))))
 
 (defn update-font-weight
   ([value shape-ids attributes] (update-font-weight value shape-ids attributes nil))
