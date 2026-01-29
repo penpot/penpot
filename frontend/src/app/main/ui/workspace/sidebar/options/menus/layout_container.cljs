@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.token :as tk]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
    [app.main.data.workspace :as udw]
@@ -25,15 +24,14 @@
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -47,44 +45,6 @@
     :row-reverse    i/row-reverse
     :column         i/column
     :column-reverse i/column-reverse))
-
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        input-type (cond
-                     (some #{:p2 :p4} [name])
-                     :horizontal-padding
-
-                     (some #{:p1 :p3} [name])
-                     :vertical-padding
-                     :else
-                     name)
-
-        tokens (mf/with-memo [tokens input-type]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input input-type))
-                       (not-empty))))
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
-
-        props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple (get values name))
-                                                      (nil? (get values name)))
-                                                (tr "settings.multiple")
-                                                "--")
-                                 :class (stl/css :numeric-input-layout)
-                                 :applied-token (get applied-tokens name)
-                                 :tokens tokens
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :value (get values name)})]
-    [:> numeric-input* props]))
 
 ;; FLEX COMPONENTS
 
@@ -415,11 +375,17 @@
          :on-focus on-focus-p1
          :icon i/padding-top-bottom
          :min 0
-         :name :p1
+         :attr :p1
+         :input-type :vertical-padding
          :property (tr "workspace.layout-grid.editor.padding.vertical")
          :nillable true
-         :applied-tokens {:p1 applied-to-p1}
-         :values {:p1 p1}}]
+         :placeholder (if (or (= :multiple applied-to-p1)
+                              (= :multiple p1)
+                              (nil? p1))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p1
+         :value p1}]
 
        [:div {:class (stl/css :padding-simple)
               :title (tr "workspace.layout-grid.editor.padding.vertical")}
@@ -444,12 +410,18 @@
          :on-focus on-focus-p2
          :icon i/padding-left-right
          :min 0
-         :name :p2
+         :attr :p2
+         :input-type :horizontal-padding
          :align :right
          :property (tr "workspace.layout-grid.editor.padding.horizontal")
          :nillable true
-         :applied-tokens {:p2 applied-to-p2}
-         :values {:p2 p2}}]
+         :applied-token applied-to-p2
+         :placeholder (if (or (= :multiple applied-to-p2)
+                              (= :multiple p2)
+                              (nil? p2))
+                        (tr "settings.multiple")
+                        "--")
+         :value p2}]
 
        [:div {:class (stl/css :padding-simple)
               :title (tr "workspace.layout-grid.editor.padding.horizontal")}
@@ -475,6 +447,11 @@
         p2 (:p2 value)
         p3 (:p3 value)
         p4 (:p4 value)
+
+        applied-to-p1 (:p1 applied-tokens)
+        applied-to-p2 (:p2 applied-tokens)
+        applied-to-p3 (:p3 applied-tokens)
+        applied-to-p4 (:p4 applied-tokens)
 
         on-change'
         (mf/use-fn
@@ -535,10 +512,15 @@
          :on-focus on-focus-p1
          :icon i/padding-top
          :min 0
-         :name :p1
+         :attr :p1
+         :input-type :vertical-padding
          :property (tr "workspace.layout-grid.editor.padding.top")
-         :applied-tokens applied-tokens
-         :values value}]
+         :placeholder (if (or (= :multiple applied-to-p1)
+                              (= :multiple p1))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p1
+         :value p1}]
 
        [:div {:class (stl/css :padding-multiple)
               :title (tr "workspace.layout-grid.editor.padding.top")}
@@ -563,11 +545,16 @@
          :on-focus on-focus-p2
          :icon i/padding-right
          :min 0
-         :name :p2
+         :attr :p2
+         :input-type :horizontal-padding
          :align :right
          :property (tr "workspace.layout-grid.editor.padding.right")
-         :applied-tokens applied-tokens
-         :values value}]
+         :placeholder (if (or (= :multiple applied-to-p2)
+                              (= :multiple p2))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p2
+         :value p2}]
 
        [:div {:class (stl/css :padding-multiple)
               :title (tr "workspace.layout-grid.editor.padding.right")}
@@ -592,10 +579,15 @@
          :on-focus on-focus-p3
          :icon i/padding-bottom
          :min 0
-         :name :p3
+         :attr :p3
+         :input-type :vertical-padding
          :property (tr "workspace.layout-grid.editor.padding.bottom")
-         :applied-tokens applied-tokens
-         :values value}]
+         :placeholder (if (or (= :multiple applied-to-p3)
+                              (= :multiple p3))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p3
+         :value p3}]
 
        [:div {:class (stl/css :padding-multiple)
               :title (tr "workspace.layout-grid.editor.padding.bottom")}
@@ -621,10 +613,15 @@
          :icon i/padding-left
          :min 0
          :align :right
-         :name :p4
+         :attr :p4
+         :input-type :horizontal-padding
          :property (tr "workspace.layout-grid.editor.padding.left")
-         :applied-tokens applied-tokens
-         :values value}]
+         :placeholder (if (or (= :multiple applied-to-p4)
+                              (= :multiple p4))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p4
+         :value p4}]
 
        [:div {:class (stl/css :padding-multiple)
               :title (tr "workspace.layout-grid.editor.padding.left")}
@@ -757,11 +754,16 @@
          :icon i/gap-vertical
          :nillable true
          :min 0
-         :name :row-gap
-         :applied-tokens applied-tokens
+         :attr :row-gap
          :property "Row gap"
          :values {:row-gap (:row-gap value)}
-         :disabled row-gap-disabled?}]
+         :disabled row-gap-disabled?
+         :placeholder (if (or (= :multiple (:row-gap applied-tokens))
+                              (= :multiple (:row-gap value)))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token (:row-gap applied-tokens)
+         :value (:row-gap value)}]
 
        [:div {:class (stl/css-case
                       :row-gap true
@@ -791,11 +793,15 @@
          :icon i/gap-horizontal
          :nillable true
          :min 0
-         :name :column-gap
+         :attr :column-gap
          :align :right
-         :applied-tokens applied-tokens
          :property "Column gap"
-         :values {:column-gap (:column-gap value)}
+         :placeholder (if (or (= :multiple (:column-gap applied-tokens))
+                              (= :multiple (:column-gap value)))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token (:column-gap applied-tokens)
+         :value (:column-gap value)
          :disabled col-gap-disabled?}]
 
        [:div {:class (stl/css-case

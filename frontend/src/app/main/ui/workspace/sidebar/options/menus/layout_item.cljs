@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.token :as tk]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -19,61 +18,15 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach placeholder] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        input-type (cond
-                     (some #{:m2 :m4} [name])
-                     :horizontal-margin
-
-                     (some #{:m1 :m3} [name])
-                     :vertical-margin
-
-                     (= name :layout-item-max-w)
-                     :max-width
-
-                     (= name :layout-item-max-h)
-                     :max-height
-
-                     (= name :layout-item-min-w)
-                     :min-width
-
-                     (= name :layout-item-min-h)
-                     :min-height
-
-                     :else
-                     name)
-
-        tokens (mf/with-memo [tokens input-type]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input input-type))
-                       (not-empty))))
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
-
-        props  (mf/spread-props props
-                                {:placeholder (or placeholder "--")
-                                 :applied-token (get applied-tokens name)
-                                 :tokens tokens
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :value (get values name)})]
-    [:> numeric-input* props]))
 
 (def layout-item-attrs
   [:layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
@@ -198,11 +151,12 @@
          :placeholder m1-placeholder
          :icon i/margin-top-bottom
          :min 0
-         :name :m1
+         :attr :m1
+         :input-type :vertical-margin
          :property "Vertical margin "
          :nillable true
-         :applied-tokens {:m1 token-applied-m1}
-         :values {:m1 m1}}]
+         :applied-token token-applied-m1
+         :value m1}]
 
        [:div {:class (stl/css :vertical-margin)
               :title "Vertical margin"}
@@ -227,12 +181,13 @@
          :icon i/margin-left-right
          :class (stl/css :horizontal-margin-wrapper)
          :min 0
-         :name :m2
+         :attr :m2
          :align :right
+         :input-type :horizontal-margin
          :property "Horizontal margin"
          :nillable true
-         :applied-tokens {:m2 token-applied-m2}
-         :values {:m2 m2}}]
+         :applied-token token-applied-m2
+         :value m2}]
 
        [:div {:class (stl/css :horizontal-margin)
               :title "Horizontal margin"}
@@ -324,11 +279,12 @@
          :icon i/margin-top
          :class (stl/css :top-margin-wrapper)
          :min 0
-         :name :m1
+         :attr :m1
+         :input-type :vertical-margin
          :property "Top margin"
          :nillable true
-         :applied-tokens {:m1 applied-token-to-m1}
-         :values {:m1 m1}}]
+         :applied-token applied-token-to-m1
+         :value m1}]
 
        [:div {:class (stl/css :top-margin)
               :title "Top margin"}
@@ -351,12 +307,13 @@
          :icon i/margin-right
          :class (stl/css :right-margin-wrapper)
          :min 0
-         :name :m2
+         :attr :m2
          :align :right
+         :input-type :horizontal-margin
          :property "Right margin"
          :nillable true
-         :applied-tokens {:m2 applied-token-to-m2}
-         :values {:m2 m2}}]
+         :applied-token applied-token-to-m2
+         :value m2}]
 
        [:div {:class (stl/css :right-margin)
               :title "Right margin"}
@@ -380,12 +337,13 @@
          :icon i/margin-bottom
          :class (stl/css :bottom-margin-wrapper)
          :min 0
-         :name :m3
+         :attr :m3
          :align :right
+         :input-type :vertical-margin
          :property "Bottom margin"
          :nillable true
-         :applied-tokens {:m3 applied-token-to-m3}
-         :values {:m3 m3}}]
+         :applied-token applied-token-to-m3
+         :value m3}]
 
        [:div {:class (stl/css :bottom-margin)
               :title "Bottom margin"}
@@ -409,11 +367,12 @@
          :icon i/margin-left
          :class (stl/css :left-margin-wrapper)
          :min 0
-         :name :m4
+         :attr :m4
          :property "Left margin"
+         :input-type :horizontal-margin
          :nillable true
-         :applied-tokens {:m4 applied-token-to-m4}
-         :values {:m4 m4}}]
+         :applied-token applied-token-to-m4
+         :value m4}]
 
        [:div {:class (stl/css :left-margin)
               :title "Left margin"}
@@ -561,7 +520,7 @@
 (def ^:private schema:layout-size-constraints
   [:map
    [:values schema:layout-item-props-schema]
-   [:applied-tokens [:map-of :keyword :string]]
+   [:applied-tokens [:maybe [:map-of :keyword :string]]]
    [:ids [::sm/vec ::sm/uuid]]
    [:v-sizing {:optional true} [:maybe [:= :fill]]]])
 
@@ -627,15 +586,15 @@
           [:> numeric-input-wrapper*
            {:on-change on-layout-item-min-w-change
             :on-detach on-detach-token
-            :class (stl/css :min-w-wrapper)
             :min 0
-            :name :layout-item-min-w
+            :attr :layout-item-min-w
             :property (tr "workspace.options.layout-item.layout-item-min-w")
             :text-icon "MIN W"
+            :input-type :min-width
             :nillable true
-            :applied-tokens {:layout-item-min-w applied-token-to-min-w}
+            :applied-token applied-token-to-min-w
             :tooltip-class (stl/css :tooltip-wrapper)
-            :values {:layout-item-min-w min-w}}]
+            :value min-w}]
 
           [:div {:class (stl/css :layout-item-min-w)
                  :title (tr "workspace.options.layout-item.layout-item-min-w")}
@@ -658,15 +617,15 @@
            {:on-change on-layout-item-max-w-change
             :on-detach on-detach-token
             :text-icon "MAX W"
-            :class (stl/css :max-w-wrapper)
             :min 0
-            :name :layout-item-max-w
             :align :right
+            :input-type :max-width
+            :attr :layout-item-max-w
             :property (tr "workspace.options.layout-item.layout-item-max-w")
             :nillable true
             :tooltip-class (stl/css :tooltip-wrapper)
-            :applied-tokens {:layout-item-max-w applied-token-to-max-w}
-            :values {:layout-item-max-w max-w}}]
+            :applied-token applied-token-to-max-w
+            :value max-w}]
 
           [:div {:class (stl/css :layout-item-max-w)
                  :title (tr "workspace.options.layout-item.layout-item-max-w")}
@@ -690,14 +649,15 @@
            {:on-change on-layout-item-min-h-change
             :on-detach on-detach-token
             :text-icon "MIN H"
-            :class (stl/css :min-h-wrapper)
+            :input-type :max-height
             :min 0
-            :name :layout-item-min-h
+            :attr :layout-item-min-h
             :property (tr "workspace.options.layout-item.layout-item-min-h")
             :nillable true
             :tooltip-class (stl/css :tooltip-wrapper)
-            :applied-tokens {:layout-item-min-h applied-token-to-min-h}
-            :values {:layout-item-min-h min-h}}]
+
+            :applied-token applied-token-to-min-h
+            :value min-h}]
 
           [:div {:class (stl/css :layout-item-min-h)
                  :title (tr "workspace.options.layout-item.layout-item-min-h")}
@@ -718,16 +678,16 @@
           [:> numeric-input-wrapper*
            {:on-change on-layout-item-max-h-change
             :on-detach on-detach-token
-            :class (stl/css :max-h-wrapper)
             :min 0
             :text-icon "MAX H"
-            :name :layout-item-max-h
             :align :right
+            :input-type :max-height
+            :attr :layout-item-max-h
             :property (tr "workspace.options.layout-item.layout-item-max-h")
             :nillable true
             :tooltip-class (stl/css :tooltip-wrapper)
-            :applied-tokens {:layout-item-max-h applied-token-to-max-h}
-            :values {:layout-item-max-h max-h}}]
+            :applied-token applied-token-to-max-h
+            :value max-h}]
 
           [:div {:class (stl/css :layout-item-max-h)
                  :title (tr "workspace.options.layout-item.layout-item-max-h")}
