@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-29 01:01+0000\n"
+"PO-Revision-Date: 2026-01-30 05:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3190,3 +3190,76 @@ msgid "modals.invite-team-member.text"
 msgstr ""
 "Tu peux inviter des membre à l'équipe pour leur donner accès à ce fichier et "
 "à tous les fichiers de l'équipe."
+
+#: src/app/main/ui/static.cljs:406
+msgid "labels.contact-support"
+msgstr "Contacter le support"
+
+#: src/app/main/ui/settings/sidebar.cljs:136
+msgid "labels.contact-us"
+msgstr "Contacte-nous"
+
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
+msgid "labels.continue"
+msgstr "Continuer"
+
+#, unused
+msgid "labels.continue-with"
+msgstr "Continuer avec"
+
+#: src/app/main/ui/viewer/login.cljs:69
+msgid "labels.continue-with-penpot"
+msgstr "Tu peux continuer avec un compte Penpot"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "Copier"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:210
+msgid "labels.lock"
+msgstr "Verrouiller"
+
+#: src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:160
+msgid "labels.release-notes"
+msgstr "Notes de version"
+
+#: src/app/main/ui/workspace.cljs
+#, unused
+msgid "labels.reload-file"
+msgstr "Rafraîchir le fichier"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
+msgid "labels.remove"
+msgstr "Retirer"
+
+#: src/app/main/ui/dashboard/team.cljs:355
+msgid "labels.remove-member"
+msgstr "Supprimer le membre"
+
+#: src/app/main/ui/dashboard/templates.cljs:87
+msgid "labels.show"
+msgstr "Afficher"
+
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
+msgid "labels.show-all-comments"
+msgstr "Afficher tous les commentaires"
+
+#: src/app/main/ui/viewer/comments.cljs:115
+msgid "labels.show-comments-list"
+msgstr "Afficher la liste des commentaires"
+
+#: src/app/main/ui/workspace/comments.cljs:69, src/app/main/ui/workspace/comments.cljs:141
+msgid "labels.show-mentions"
+msgstr "Afficher seulement tes mentions"
+
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
+msgid "labels.show-your-comments"
+msgstr "Afficher seulement tes commentaires"
+
+#: src/app/main/ui/onboarding/questions.cljs:158
+msgid "labels.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:731
+msgid "labels.sources"
+msgstr "Sources"
