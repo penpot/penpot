@@ -353,7 +353,7 @@ msgstr "Token copiado"
 
 #: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
-msgstr "Generar nuevo token"
+msgstr "Crear nuevo token de acceso"
 
 #: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
@@ -361,7 +361,7 @@ msgstr "Access token creado con éxito."
 
 #: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Pulsa el botón \"Generar nuevo token\" para generar uno."
+msgstr "Pulsa el botón \"Crear nuevo token de accesso\" para generar uno."
 
 #: src/app/main/ui/settings/access_tokens.cljs:285
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -2445,6 +2445,10 @@ msgstr "Información"
 msgid "labels.installed-fonts"
 msgstr "Fuentes instaladas"
 
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.integrations"
+msgstr "Integraciones"
+
 #: src/app/main/ui/static.cljs:396
 msgid "labels.internal-error.desc-message-first"
 msgstr "Ha ocurrido algo extraño."
@@ -3117,13 +3121,13 @@ msgstr "Nombre"
 msgid "modals.create-access-token.name.placeholder"
 msgstr "El nombre te pude ayudar a saber para qué se utiliza el token"
 
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Crear token"
-
 #: src/app/main/ui/settings/access_tokens.cljs:111
 msgid "modals.create-access-token.title"
-msgstr "Generar access token"
+msgstr "Crear token de accesso"
+
+#: src/app/main/ui/settings/access_tokens.cljs:111
+msgid "modals.create-access-token.title.created"
+msgstr "Token de acceso creado"
 
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
@@ -5062,13 +5066,13 @@ msgstr "Bibliotecas Compartidas - %s - Penpot"
 msgid "title.default"
 msgstr "Penpot - Diseño Libre para Equipos"
 
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Perfil - Access tokens"
-
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Danos tu opinión - Penpot"
+
+#: src/app/main/ui/settings/access_tokens.cljs:278
+msgid "title.settings.integrations"
+msgstr "Integraciones - Penpot"
 
 #: src/app/main/ui/settings/notifications.cljs:45
 msgid "title.settings.notifications"
