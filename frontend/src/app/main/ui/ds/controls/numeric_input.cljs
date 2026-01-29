@@ -674,7 +674,7 @@
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
                                     (fmt/format-number value)))
-                token-value (if (= name :opacity)
+                token-value (if (and (some? id) (= name :opacity))
                               (* 100 token-value)
                               token-value)]
             (mf/spread-props props
