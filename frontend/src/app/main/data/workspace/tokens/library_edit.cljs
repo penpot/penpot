@@ -433,11 +433,18 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            token-set (if set-id
+                        (lookup-token-set state set-id)
+                        (lookup-token-set state))
+            token     (-> (get-tokens-lib state)
+                          (ctob/get-token (ctob/get-id token-set) token-id))
+            token-type (:type token)
 
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "delete-token" :type token-type}))))))
 
 (defn bulk-delete-tokens
   [set-id token-ids]
@@ -445,9 +452,15 @@
   (dm/assert! (every? uuid? token-ids))
   (ptk/reify ::bulk-delete-tokens
     ptk/WatchEvent
-    (watch [_ _ _]
-      (apply rx/of
-             (map #(delete-token set-id %) token-ids)))))
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (pcb/set-token changes set-id token-id nil))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+                            token-ids)]
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "delete-token-node"}))))))
 
 (defn duplicate-token
   [token-id]
