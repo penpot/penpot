@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-27 18:01+0000\n"
+"PO-Revision-Date: 2026-01-30 05:01+0000\n"
 "Last-Translator: Dogyeong <d00gann918@naver.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
@@ -988,3 +988,58 @@ msgstr "%s 파일을 복원하려 합니다."
 #: src/app/main/ui/dashboard/file_menu.cljs:208
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "파일 복원"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "파일 추가"
+
+#: src/app/main/ui/dashboard/deleted.cljs:313
+msgid "dashboard.clear-trash-button"
+msgstr "휴지통 비우기"
+
+#: src/app/main/ui/workspace/main_menu.cljs:661
+msgid "dashboard.create-version-menu"
+msgstr "이 버전 고정"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "%s 파일을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+
+#: src/app/main/data/dashboard.cljs:764
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s 파일이 성공적으로 삭제되었습니다."
+
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "영구적으로 삭제"
+
+#: src/app/main/ui/dashboard/deleted.cljs:85
+msgid "dashboard.delete-project-button"
+msgstr "프로젝트 제거"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"%s 프로젝트를 영구적으로 삭제하시겠습니까? 이 프로젝트와 안에 포함된 모든 "
+"파일이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
+
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:797
+msgid "dashboard.delete-success-notification"
+msgstr "%s가 영구적으로 삭제되었습니다."
+
+#: src/app/main/ui/auth/register.cljs:350
+msgid "auth.register-account-title"
+msgstr "당신의 이름"
+
+#: src/app/main/ui/auth/register.cljs:51
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "[서비스 약관](%s) 및 [개인정보 처리방침](%s)에 동의합니다."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+msgid "color-row.token-color-row.deleted-token"
+msgstr "이 토큰은 존재하지 않거나 삭제되었습니다."
+
+#: src/app/main/ui/comments.cljs:530
+msgid "comments.mentions.not-found"
+msgstr "@%s 사용자를 찾을 수 없습니다"
