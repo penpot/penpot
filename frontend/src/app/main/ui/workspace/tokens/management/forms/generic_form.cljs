@@ -230,6 +230,7 @@
                            :placeholder (tr "workspace.tokens.enter-token-name" token-title)
                            :max-length max-input-length
                            :variant "comfortable"
+                           :trim true
                            :auto-focus true}]
 
        (when (and warning-name-change? (= action "edit"))
