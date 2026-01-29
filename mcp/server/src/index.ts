@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { PenpotMcpServer } from "./PenpotMcpServer";
-import { createLogger, logFilePath } from "./logger";
+import { PenpotMcpServer } from "./PenpotMcpServer.ts";
+import { createLogger, logFilePath } from "./logger.ts";
 
 /**
  * Entry point for Penpot MCP Server

@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite build --watch",
-    "start:multi-user": "cross-env MULTI_USER_MODE=true vite build --watch",
-    "build": "tsc && vite build",
-    "build:multi-user": "tsc && cross-env MULTI_USER_MODE=true vite build"
+    "start": "vite build --watch --config vite.config.ts",
+    "start:multi-user": "cross-env MULTI_USER_MODE=true vite build --watch --config vite.config.ts",
+    "build": "tsc && vite build --config vite.release.config.ts",
+    "build:multi-user": "tsc && cross-env MULTI_USER_MODE=true vite build  --config vite.release.config.ts"
   },
   "dependencies": {
     "@penpot/plugin-styles": "1.4.1",

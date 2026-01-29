@@ -11,9 +11,11 @@ from markdownify import MarkdownConverter
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString
 from sensai.util import logging
+import sys
 
 log = logging.getLogger(__name__)
 
+DEFAULT_API_DOCS_URL="https://penpot-plugins-api-doc.pages.dev"
 
 class PenpotAPIContentMarkdownConverter(MarkdownConverter):
     """
@@ -131,9 +133,9 @@ class YamlConverter:
 
 
 class PenpotAPIDocsProcessor:
-    def __init__(self):
+    def __init__(self, url=None):
         self.md_converter = PenpotAPIContentMarkdownConverter()
-        self.base_url = "https://penpot-plugins-api-doc.pages.dev"
+        self.base_url = DEFAULT_API_DOCS_URL
         self.types: dict[str, TypeInfo] = {}
         self.type_referenced_by: dict[str, set[str]] = collections.defaultdict(set)
 
@@ -233,8 +235,11 @@ class PenpotAPIDocsProcessor:
 
 
 def main():
-    target_dir = Path(__file__).parent.parent / "server" / "data"
-    PenpotAPIDocsProcessor().run(target_dir=str(target_dir))
+    target_dir = Path(__file__).parent.parent / "mcp-server" / "data"
+    url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_API_DOCS_URL
+
+    print("Fetching plugin data from: {}".format(url))
+    PenpotAPIDocsProcessor(url).run(target_dir=str(target_dir))
 
 
 def debug_type_conversion(rel_url: str):
