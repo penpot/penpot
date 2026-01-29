@@ -53,7 +53,7 @@
 
 (defn set-plugin-flag
   [id key value]
-  (ptk/reify ::reset-plugin-flags
+  (ptk/reify ::set-plugin-flag
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :plugin-flags id] assoc key value))))
