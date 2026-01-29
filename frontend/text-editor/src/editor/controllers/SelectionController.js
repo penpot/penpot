@@ -49,7 +49,6 @@ import {
 } from "../content/dom/TextNode.js";
 import TextNodeIterator from "../content/dom/TextNodeIterator.js";
 import TextEditor from "../TextEditor.js";
-import CommandMutations from "../commands/CommandMutations.js";
 import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import { SafeGuard } from "./SafeGuard.js";
@@ -144,13 +143,6 @@ export class SelectionController extends EventTarget {
    * @type {SelectionControllerDebug}
    */
   #debug = null;
-
-  /**
-   * Command Mutations.
-   *
-   * @type {CommandMutations}
-   */
-  #mutations = new CommandMutations();
 
   /**
    * Style defaults.
@@ -449,14 +441,14 @@ export class SelectionController extends EventTarget {
   dispose() {
     document.removeEventListener("selectionchange", this.#onSelectionChange);
     this.#textEditor = null;
+    this.#currentStyle = null;
+    this.#options = null;
     this.#ranges.clear();
     this.#ranges = null;
     this.#range = null;
     this.#selection = null;
     this.#focusNode = null;
     this.#anchorNode = null;
-    this.#mutations.dispose();
-    this.#mutations = null;
   }
 
   /**
@@ -523,28 +515,6 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Marks the start of a mutation.
-   *
-   * Clears all the mutations kept in CommandMutations.
-   *
-   * @returns {boolean}
-   */
-  startMutation() {
-    this.#mutations.clear();
-    if (!this.#focusNode) return false;
-    return true;
-  }
-
-  /**
-   * Marks the end of a mutation.
-   *
-   * @returns {CommandMutations}
-   */
-  endMutation() {
-    return this.#mutations;
-  }
-
-  /**
    * Selects all content.
    *
    * @returns {SelectionController}
@@ -597,11 +567,18 @@ export class SelectionController extends EventTarget {
    * @returns {SelectionController}
    */
   cursorToEnd() {
+    const root = this.#textEditor.root;
+
     const range = document.createRange(); //Create a range (a range is a like the selection but invisible)
-    range.selectNodeContents(this.#textEditor.element);
+    range.setStart(root.lastChild.firstChild.firstChild, root.lastChild.firstChild.firstChild?.nodeValue?.length ?? 0);
+    range.setEnd(root.lastChild.firstChild.firstChild, root.lastChild.firstChild.firstChild?.nodeValue?.length ?? 0);
     range.collapse(false);
+
     this.#selection.removeAllRanges();
     this.#selection.addRange(range);
+
+    this.#updateState();
+
     return this;
   }
 
@@ -1340,7 +1317,6 @@ export class SelectionController extends EventTarget {
 
     if (this.focusNode.nodeValue !== removedData) {
       this.focusNode.nodeValue = removedData;
-      this.#mutations.update(this.focusTextSpan);
     }
 
     const paragraph = this.focusParagraph;
@@ -1383,7 +1359,6 @@ export class SelectionController extends EventTarget {
       this.focusOffset,
       newText,
     );
-    this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, this.focusOffset + newText.length);
   }
 
@@ -1447,7 +1422,6 @@ export class SelectionController extends EventTarget {
       this.#textEditor.root.replaceChildren(newParagraph);
       return this.collapse(newTextNode, newText.length + 1);
     }
-    this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, startOffset + newText.length);
   }
 
@@ -1525,8 +1499,6 @@ export class SelectionController extends EventTarget {
     const currentParagraph = this.focusParagraph;
     const newParagraph = createEmptyParagraph(this.#currentStyle);
     currentParagraph.after(newParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
     return this.collapse(newParagraph.firstChild.firstChild, 0);
   }
 
@@ -1537,8 +1509,6 @@ export class SelectionController extends EventTarget {
     const currentParagraph = this.focusParagraph;
     const newParagraph = createEmptyParagraph(this.#currentStyle);
     currentParagraph.before(newParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
     return this.collapse(currentParagraph.firstChild.firstChild, 0);
   }
 
@@ -1553,8 +1523,6 @@ export class SelectionController extends EventTarget {
       this.#focusOffset,
     );
     this.focusParagraph.after(newParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
     return this.collapse(newParagraph.firstChild.firstChild, 0);
   }
 
@@ -1586,10 +1554,6 @@ export class SelectionController extends EventTarget {
       this.focusOffset,
     );
     currentParagraph.after(newParagraph);
-
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
-
     // FIXME: Missing collapse?
   }
 
@@ -1610,7 +1574,6 @@ export class SelectionController extends EventTarget {
     const previousOffset = isLineBreak(previousTextSpan.firstChild)
       ? 0
       : previousTextSpan.firstChild.nodeValue?.length || 0;
-    this.#mutations.remove(paragraphToBeRemoved);
     return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
 
@@ -1632,8 +1595,6 @@ export class SelectionController extends EventTarget {
     } else {
       mergeParagraphs(previousParagraph, currentParagraph);
     }
-    this.#mutations.remove(currentParagraph);
-    this.#mutations.update(previousParagraph);
     return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
 
@@ -1647,8 +1608,6 @@ export class SelectionController extends EventTarget {
       return;
     }
     mergeParagraphs(this.focusParagraph, nextParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.remove(nextParagraph);
 
     // FIXME: Missing collapse?
   }
@@ -1665,7 +1624,6 @@ export class SelectionController extends EventTarget {
     paragraphToBeRemoved.remove();
     const nextTextSpan = nextParagraph.firstChild;
     const nextOffset = this.focusOffset;
-    this.#mutations.remove(paragraphToBeRemoved);
     return this.collapse(nextTextSpan.firstChild, nextOffset);
   }
 
@@ -1680,7 +1638,6 @@ export class SelectionController extends EventTarget {
     for (const textSpan of affectedTextSpans) {
       if (textSpan.textContent === "") {
         textSpan.remove();
-        this.#mutations.remove(textSpan);
       }
     }
 
@@ -1688,7 +1645,6 @@ export class SelectionController extends EventTarget {
     for (const paragraph of affectedParagraphs) {
       if (paragraph.children.length === 0) {
         paragraph.remove();
-        this.#mutations.remove(paragraph);
       }
     }
   }
