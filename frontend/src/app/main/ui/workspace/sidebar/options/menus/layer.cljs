@@ -250,10 +250,7 @@
         :on-pointer-enter-option handle-blend-mode-enter
         :on-pointer-leave-option handle-blend-mode-leave}]]
 
-
-
      (if token-numeric-inputs
-
        [:> numeric-input-wrapper*
         {:on-change on-opacity-change
          :on-detach on-detach-token
