@@ -11,8 +11,8 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "start": "node dist/index.js",
     "start:multi-user": "node dist/index.js --multi-user",
-    "dev": "node --loader ts-node/esm src/index.ts",
-    "dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user"
+    "start:dev": "node --loader ts-node/esm src/index.ts",
+    "start:dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user"
   },
   "keywords": [
     "mcp",

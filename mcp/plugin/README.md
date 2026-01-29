@@ -8,14 +8,14 @@ server to execute tasks in Penpot using the Plugin API.
 
 1. Install Dependencies
 
-        npm install
+        pnpm install
 
 2. Build the Project
 
-        npm run build
+        pnpm run build
 
 3. Start a Local Development Server
 
-        npm run dev start
+        pnpm run start
 
    This will start a local development server at `http://localhost:4400`.

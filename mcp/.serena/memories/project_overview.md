@@ -8,7 +8,7 @@ This project is a Model Context Protocol (MCP) server for Penpot integration. It
 - **Runtime**: Node.js
 - **Framework**: MCP SDK (@modelcontextprotocol/sdk)
 - **Build Tool**: TypeScript Compiler (tsc) + esbuild
-- **Package Manager**: npm
+- **Package Manager**: pnpm
 - **WebSocket**: ws library for real-time communication
 
 ## Project Structure

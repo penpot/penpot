@@ -3,34 +3,34 @@
 ## Development Commands
 ```bash
 # Navigate to MCP server directory
-cd mcp-server
+cd penpot/mcp/server
 
 # Install dependencies
-npm install
+pnpm install
 
 # Build the TypeScript project
-npm run build
+pnpm run build
 
 # Start the server (production)
-npm start
+pnpm run start
 
 # Start the server in development mode
-npm run dev
+npm run start:dev
 ```
 
 ## Testing and Development
 ```bash
 # Run TypeScript compiler in watch mode
-npx tsc --watch
+pnpx tsc --watch
 
 # Check TypeScript compilation without emitting files
-npx tsc --noEmit
+pnpx tsc --noEmit
 ```
 
 ## Windows-Specific Commands
 ```cmd
 # Directory navigation
-cd mcp-server
+cd penpot/mcp/server
 dir                    # List directory contents
 type package.json      # Display file contents
 
@@ -50,10 +50,10 @@ rmdir /s directory                 # Remove directory recursively
 ## Project Structure Navigation
 ```bash
 # Key directories
-cd mcp-server\src              # Source code
-cd mcp-server\src\tools        # Tool implementations
-cd mcp-server\src\interfaces   # Type definitions
-cd mcp-server\dist             # Compiled output
+cd penpot/mcp/server/src              # Source code
+cd penpot/mcp/server/src/tools        # Tool implementations
+cd penpot/mcp/server/src/interfaces   # Type definitions
+cd penpot/mcp/server/dist             # Compiled output
 ```
 
 ## Common Utilities

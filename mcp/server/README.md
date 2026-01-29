@@ -1,21 +1,21 @@
 # Penpot MCP Server
 
-A Model Context Protocol (MCP) server that provides Penpot integration 
+A Model Context Protocol (MCP) server that provides Penpot integration
 capabilities for AI clients supporting the model context protocol (MCP).
 
 ## Setup
 
 1. Install Dependencies
 
-        npm install
+        pnpm install
 
 2. Build the Project
 
-        npm run build
+        pnpm run build
 
 3. Run the Server
 
-        npm start
+        pnpm run start
 
 
 ## Penpot Plugin API REPL
