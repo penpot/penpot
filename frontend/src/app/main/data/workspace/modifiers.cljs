@@ -712,8 +712,7 @@
                (ctm/rotation-modifiers shape center angle))
 
              modif-tree
-             (-> (build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))
+             (build-modif-tree ids objects get-modifier)
 
              modifiers
              (mapv (fn [[id {:keys [modifiers]}]]
