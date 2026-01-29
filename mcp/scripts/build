@@ -7,17 +7,32 @@ set -ex
 corepack enable;
 corepack install;
 
-pnpm -r install;
-
+# Ensure clean working directory
 rm -rf dist;
-rm -rf mcp-server/dist;
+rm -rf node_modules;
+rm -rf server/dist;
+rm -rf server/node_modules;
 
 pushd types-generator
 pixi install;
 pixi run python prepare_api_docs.py;
 popd
 
-pnpm -r build:multi-user;
+pnpm -r --filter "!mcp-plugin" install;
+pnpm -r --filter "mcp-server" run build:multi-user;
 
-rsync -avr mcp-server/dist/ ./dist/
-rsync -avr mcp-server/data/ ./dist/data/
+rsync -avr server/dist/ ./dist/;
+rsync -avr server/data/ ./dist/data/;
+
+cp server/package.json ./dist/;
+cp server/pnpm-lock.yaml ./dist/;
+
+cat <<EOF | tee ./dist/setup
+#/usr/bin/env bash
+set -e;
+corepack enable;
+corepack install;
+pnpm install -P
+EOF
+
+chmod +x ./dist/setup;

@@ -6,7 +6,7 @@
  *
  * @template TParams - The strongly-typed parameters for this task
  */
-import { PluginTaskRequest, PluginTaskResult } from "@penpot-mcp/common";
+import { PluginTaskRequest, PluginTaskResult } from "@penpot/mcp-common";
 import { randomUUID } from "crypto";
 
 /**

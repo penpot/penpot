@@ -233,7 +233,7 @@ class PenpotAPIDocsProcessor:
 
 
 def main():
-    target_dir = Path(__file__).parent.parent / "mcp-server" / "data"
+    target_dir = Path(__file__).parent.parent / "server" / "data"
     PenpotAPIDocsProcessor().run(target_dir=str(target_dir))
 
 

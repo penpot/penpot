@@ -1,5 +1,5 @@
 import { PluginTask } from "../PluginTask";
-import { ExecuteCodeTaskParams, ExecuteCodeTaskResultData, PluginTaskResult } from "@penpot-mcp/common";
+import { ExecuteCodeTaskParams, ExecuteCodeTaskResultData, PluginTaskResult } from "@penpot/mcp-common";
 
 /**
  * Task for executing JavaScript code in the plugin context.

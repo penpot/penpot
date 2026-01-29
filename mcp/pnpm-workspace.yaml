@@ -1,6 +1,6 @@
 #shamefullyHoist: true
 
 packages:
-    - "common"
-    - "mcp-server"
-    - "penpot-plugin"
+    - "./common"
+    - "./server"
+    - "./plugin"

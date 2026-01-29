@@ -1,7 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
 import { PluginTask } from "./PluginTask";
-import { PluginTaskResponse, PluginTaskResult } from "@penpot-mcp/common";
+import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 

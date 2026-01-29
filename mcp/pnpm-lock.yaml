@@ -13,22 +13,40 @@ importers:
         version: 3.8.1
 
   common:
-    dependencies:
-      penpot-mcp:
-        specifier: file:..
-        version: 'file:'
     devDependencies:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
 
-  mcp-server:
+  plugin:
+    dependencies:
+      '@penpot/plugin-styles':
+        specifier: 1.4.1
+        version: 1.4.1
+      '@penpot/plugin-types':
+        specifier: 1.4.1
+        version: 1.4.1
+    devDependencies:
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.0.8
+        version: 7.3.1(@types/node@20.19.30)
+      vite-live-preview:
+        specifier: ^0.3.2
+        version: 0.3.2(vite@7.3.1(@types/node@20.19.30))
+
+  server:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.24.0
         version: 1.25.3(hono@4.11.7)(zod@4.3.6)
-      '@penpot-mcp/common':
-        specifier: file:../common
+      '@penpot/mcp-common':
+        specifier: workspace:../common
         version: link:../common
       class-transformer:
         specifier: ^0.5.1
@@ -44,7 +62,7 @@ importers:
         version: 4.1.1
       penpot-mcp:
         specifier: file:..
-        version: 'file:'
+        version: 'mcp-meta@file:'
       pino:
         specifier: ^9.10.0
         version: 9.14.0
@@ -60,6 +78,9 @@ importers:
       ws:
         specifier: ^8.18.0
         version: 8.19.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/express':
         specifier: ^4.17.0
@@ -82,31 +103,6 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
-
-  penpot-plugin:
-    dependencies:
-      '@penpot-mcp/common':
-        specifier: workspace:../common
-        version: link:../common
-      '@penpot/plugin-styles':
-        specifier: 1.4.1
-        version: 1.4.1
-      '@penpot/plugin-types':
-        specifier: 1.4.1
-        version: 1.4.1
-    devDependencies:
-      cross-env:
-        specifier: ^7.0.3
-        version: 7.0.3
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vite:
-        specifier: ^7.0.8
-        version: 7.3.1(@types/node@20.19.30)
-      vite-live-preview:
-        specifier: ^0.3.2
-        version: 0.3.2(vite@7.3.1(@types/node@20.19.30))
 
 packages:
 
@@ -1138,6 +1134,9 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
+  'mcp-meta@file:':
+    resolution: {directory: '', type: directory}
+
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
@@ -1202,9 +1201,6 @@ packages:
 
   path-to-regexp@8.3.0:
     resolution: {integrity: sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA==}
-
-  'penpot-mcp@file:':
-    resolution: {directory: '', type: directory}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -2289,6 +2285,8 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
+  'mcp-meta@file:': {}
+
   media-typer@1.1.0: {}
 
   merge-descriptors@2.0.0: {}
@@ -2328,8 +2326,6 @@ snapshots:
   path-key@3.1.1: {}
 
   path-to-regexp@8.3.0: {}
-
-  'penpot-mcp@file:': {}
 
   picocolors@1.1.1: {}
 

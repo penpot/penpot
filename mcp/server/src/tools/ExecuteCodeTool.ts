@@ -5,7 +5,7 @@ import { TextResponse } from "../ToolResponse";
 import "reflect-metadata";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
-import { ExecuteCodeTaskParams } from "@penpot-mcp/common";
+import { ExecuteCodeTaskParams } from "@penpot/mcp-common";
 
 /**
  * Arguments class for ExecuteCodeTool
