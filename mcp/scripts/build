@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# NOTE: this script should be called from the parent directory to
+# properly work
+
+set -ex
+
+corepack enable;
+corepack install;
+
+# Ensure clean working directory
+rm -rf dist;
+rm -rf node_modules;
+rm -rf packages/server/dist;
+rm -rf packages/server/node_modules;
+
+pushd ../plugins
+pnpm install
+pnpm run build:doc
+popd
+
+rsync -avr ../plugins/dist/doc/ ./types-generator/doc/
+
+pushd types-generator
+set +e;
+pixi install;
+pnpx concurrently --kill-others-on-fail -k \
+     "caddy file-server --root doc --listen :9090" \
+     "pixi run python prepare_api_docs.py http://localhost:9090";
+rm -rf doc;
+popd
+
+set -e;
+
+pnpm -r --filter "!mcp-plugin" install;
+pnpm -r --filter "mcp-server" run build:multi-user;
+
+rsync -avr packages/server/dist/ ./dist/;
+
+cp packages/server/package.json ./dist/;
+cp packages/server/pnpm-lock.yaml ./dist/;
+
+cat <<EOF | tee ./dist/setup
+#/usr/bin/env bash
+set -e;
+corepack enable;
+corepack install;
+pnpm install -P
+EOF
+
+chmod +x ./dist/setup;
