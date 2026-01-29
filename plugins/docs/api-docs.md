@@ -19,7 +19,7 @@ the latest changes from the `main` branch. This will trigger the
 deployment at Cloudfare if the `libs/plugin-types/index.d.ts` or the
 `tools/typedoc.css` files have been updated.
 
-Take a look at the [Penpot plugins API](https://penpot-plugins-api-doc.pages.dev/) to see what's new.
+Take a look at the [Penpot plugins API](https://doc.plugins.penpot.app/) to see what's new.
 
 #### Styles
 

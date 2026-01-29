@@ -1,7 +1,7 @@
-name = "penpot-plugins-api-doc"
+name = "penpot-plugins-style-doc"
 compatibility_date = "2025-01-01"
 
-assets = { directory = "dist/doc" }
+assets = { directory = "dist/apps/example-styles" }
 
 [[routes]]
 pattern = "WORKER_URI"

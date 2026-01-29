@@ -1,4 +1,4 @@
-name: Plugins/api-doc deployer
+name: Plugins/styles-doc deployer
 
 on:
   push:
@@ -7,11 +7,9 @@ on:
       - staging
       - main
     paths:
-      - 'plugins/libs/plugin-types/index.d.ts'
-      - 'plugins/libs/plugin-types/REAME.md'
-      - 'plugins/tools/typedoc.css'
-      - 'plugins/CHANGELOG.md'
-      - 'plugins/wrangler-penpot-plugins-api-doc.toml'
+      - 'plugins/apps/example-styles/**'
+      - 'plugins/libs/plugins-styles/**'
+      - 'plugins/wrangler-penpot-plugins-styles-doc.toml'
   workflow_dispatch:
     inputs:
       gh_ref:
@@ -77,24 +75,24 @@ jobs:
           pnpm install --no-frozen-lockfile;
           pnpm add -D -w wrangler@latest;
 
-      - name: Build docs
+      - name: Build styles
         working-directory: plugins
         shell: bash
-        run: pnpm run build:doc
+        run: npx nx run example-styles:build
 
       - name: Select Worker name
         run: |
           REF="${{ steps.vars.outputs.gh_ref }}"
           case "$REF" in
             main)
-              echo "WORKER_NAME=penpot-plugins-api-doc-pro" >> $GITHUB_ENV
-              echo "WORKER_URI=doc.plugins.penpot.app" >> $GITHUB_ENV ;;
+              echo "WORKER_NAME=penpot-plugins-styles-doc-pro" >> $GITHUB_ENV
+              echo "WORKER_URI=styles-doc.plugins.penpot.app" >> $GITHUB_ENV ;;
             staging)
-              echo "WORKER_NAME=penpot-plugins-api-doc-pre" >> $GITHUB_ENV
-              echo "WORKER_URI=doc.plugins.penpot.dev" >> $GITHUB_ENV ;;
+              echo "WORKER_NAME=penpot-plugins-styles-doc-pre" >> $GITHUB_ENV
+              echo "WORKER_URI=styles-doc.plugins.penpot.dev" >> $GITHUB_ENV ;;
             develop)
-              echo "WORKER_NAME=penpot-plugins-api-doc-hourly" >> $GITHUB_ENV
-              echo "WORKER_URI=doc.plugins.hourly.penpot.dev" >> $GITHUB_ENV ;;
+              echo "WORKER_NAME=penpot-plugins-styles-doc-hourly" >> $GITHUB_ENV
+              echo "WORKER_URI=styles-doc.plugins.hourly.penpot.dev" >> $GITHUB_ENV ;;
             *) echo "Unsupported branch ${REF}" && exit 1 ;;
           esac
 
@@ -102,7 +100,7 @@ jobs:
         working-directory: plugins
         shell: bash
         run: |
-          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-api-doc.toml
+          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-styles-doc.toml
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -110,7 +108,7 @@ jobs:
           workingDirectory: plugins
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config wrangler-penpot-plugins-api-doc.toml --name ${{ env.WORKER_NAME }}
+          command: deploy --config wrangler-penpot-plugins-styles-doc.toml --name ${{ env.WORKER_NAME }}
 
       - name: Notify Mattermost
         if: failure()
@@ -119,7 +117,7 @@ jobs:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
           MATTERMOST_CHANNEL: bot-alerts-cicd
           TEXT: |
-            ❌ 🧩📚 *[PENPOT PLUGINS] Error deploying API documentation.*
+            ❌ 🧩💅 *[PENPOT PLUGINS] Error deploying Styles documentation.*
             📄 Triggered from ref: `${{ inputs.gh_ref }}`
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             @infra

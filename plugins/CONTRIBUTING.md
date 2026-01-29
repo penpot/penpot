@@ -7,7 +7,7 @@ different parts of the platform, please refer to `docs/` directory.
 
 ## Reporting Bugs
 
-We are using [GitHub Issues](https://github.com/penpot/penpot-plugins/issues)
+We are using [GitHub Issues](https://github.com/penpot/penpot/issues)
 for our public bugs. We keep a close eye on this and try to make it
 clear when we have an internal fix in progress. Before filing a new
 task, try to make sure your problem doesn't already exist.
