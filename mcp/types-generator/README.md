@@ -1,7 +1,7 @@
-# Helper Scripts for the Penpot MCP Server
+# Types Generatori
 
 This subproject contains helper scripts used in the development of the 
-Penpot MCP server.
+Penpot MCP server for generate the types yaml.
 
 ## Setup
 
