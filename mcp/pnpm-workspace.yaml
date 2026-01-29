@@ -1,6 +1,4 @@
-#shamefullyHoist: true
-
 packages:
-    - "./common"
-    - "./server"
-    - "./plugin"
+    - "./packages/common"
+    - "./packages/server"
+    - "./packages/plugin"
