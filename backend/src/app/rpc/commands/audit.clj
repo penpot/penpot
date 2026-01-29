@@ -59,29 +59,54 @@
           (update :context assoc :original-timestamp timestamp))
       event)))
 
-(defn- handle-events
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
+
+(defn- excepition-event?
+  [{:keys [type name]}]
+  (and (= "action" type)
+       (or (= "unhandled-exception" name)
+           (= "exception-page" name))))
+
+
+(defn persist-report
+  [{:keys [::db/pool]} event]
+  )
+
+
+(def ^:private xf:map-event-row
+  (comp
+   (map adjust-timestamp)
+   (map event->row)))
+
+(defn- get-events
+  [{:keys [::rpc/request-at ::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
         ip-addr (inet/parse-request request)
-        tnow    (ct/now)
-        xform   (comp
-                 (map (fn [event]
-                        (-> event
-                            (assoc :created-at tnow)
-                            (assoc :profile-id profile-id)
-                            (assoc :ip-addr ip-addr)
-                            (assoc :source "frontend"))))
-                 (filter :profile-id)
-                 (map adjust-timestamp)
-                 (map event->row))
-        events  (sequence xform events)]
-    (when (seq events)
-      (db/insert-many! pool :audit-log event-columns events))))
+        xform   (map (fn [event]
+                       (-> event
+                           (assoc :created-at request-at)
+                           (assoc :profile-id profile-id)
+                           (assoc :ip-addr ip-addr)
+                           (assoc :source "frontend"))))]
 
-(def valid-event-types
+    (sequence xform events)))
+
+(defn- handle-events
+  [{:keys [::db/pool] :as cfg} params]
+  (let [events (get-events params)]
+
+    ;; Look for error reports and save them on internal reports table
+    (->> (filter excepition-event? events)
+         (run! (partial persist-report cfg)))
+
+    ;; Process and save events
+    (when (seq events)
+      (let [rows (sequence xf:map-event-row events)]
+        (db/insert-many! pool :audit-log event-columns rows)))))
+
+(def ^:private valid-event-types
   #{"action" "identify"})
 
-(def schema:event
+(def ^:private schema:event
   [:map {:title "Event"}
    [:name
     [:and {:gen/elements ["update-file", "get-profile"]}
@@ -96,7 +121,7 @@
    [:context {:optional true}
     [:map-of :keyword ::sm/any]]])
 
-(def schema:push-audit-events
+(def ^:private schema:push-audit-events
   [:map {:title "push-audit-events"}
    [:events [:vector schema:event]]])
 
