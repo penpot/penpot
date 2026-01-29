@@ -405,12 +405,8 @@ export class TextEditor extends EventTarget {
 
     if (e.inputType in commands) {
       const command = commands[e.inputType];
-      if (!this.#selectionController.startMutation()) {
-        return;
-      }
       command(e, this, this.#selectionController);
-      const mutations = this.#selectionController.endMutation();
-      this.#notifyLayout(LayoutType.FULL, mutations);
+      this.#notifyLayout(LayoutType.FULL);
     }
   };
 
@@ -456,19 +452,12 @@ export class TextEditor extends EventTarget {
 
     if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
       e.preventDefault();
-
-      if (!this.#selectionController.startMutation()) {
-        return;
-      }
-
       if (this.#selectionController.isCollapsed) {
         this.#selectionController.removeWordBackward();
       } else {
         this.#selectionController.removeSelected();
       }
-
-      const mutations = this.#selectionController.endMutation();
-      this.#notifyLayout(LayoutType.FULL, mutations);
+      this.#notifyLayout(LayoutType.FULL);
     }
   };
 
@@ -476,14 +465,12 @@ export class TextEditor extends EventTarget {
    * Notifies that the edited texts needs layout.
    *
    * @param {'full'|'partial'} type
-   * @param {CommandMutations} mutations
    */
-  #notifyLayout(type = LayoutType.FULL, mutations) {
+  #notifyLayout(type = LayoutType.FULL) {
     this.dispatchEvent(
       new CustomEvent("needslayout", {
         detail: {
           type: type,
-          mutations: mutations,
         },
       }),
     );
@@ -630,10 +617,8 @@ export class TextEditor extends EventTarget {
    * @returns {TextEditor}
    */
   applyStylesToSelection(styles) {
-    this.#selectionController.startMutation();
     this.#selectionController.applyStyles(styles);
-    const mutations = this.#selectionController.endMutation();
-    this.#notifyLayout(LayoutType.FULL, mutations);
+    this.#notifyLayout(LayoutType.FULL);
     this.#changeController.notifyImmediately();
     return this;
   }

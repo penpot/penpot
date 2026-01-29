@@ -581,6 +581,136 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.textContent).toBe("");
   });
 
+  test("`insertParagraph` should insert a new paragraph in an empty editor", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockEmpty();
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(textEditorMock, selection);
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      0,
+    );
+    selectionController.insertParagraph();
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.children.length).toBe(2);
+    expect(textEditorMock.root.children.item(0)).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children.item(0).dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.children.item(0).firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.children.item(0).firstChild.dataset.itype).toBe("span");
+    expect(textEditorMock.root.children.item(1)).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children.item(1).dataset.itype).toBe("paragraph");
+    expect(textEditorMock.root.children.item(1).firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.children.item(1).firstChild.dataset.itype).toBe(
+      "span",
+    );
+    expect(textEditorMock.root.textContent).toBe("");
+  });
+
+  test("`insertParagraph` should insert a new paragraph after a text", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["Hello, World!"]
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      "Hello, World!".length
+    );
+    selectionController.insertParagraph();
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.children.length).toBe(2);
+    expect(textEditorMock.root.children.item(0)).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children.item(0).dataset.itype).toBe(
+      "paragraph",
+    );
+    expect(textEditorMock.root.children.item(0).firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.children.item(0).firstChild.dataset.itype).toBe(
+      "span",
+    );
+    expect(textEditorMock.root.children.item(0).firstChild.textContent).toBe(
+      "Hello, World!",
+    );
+    expect(textEditorMock.root.children.item(1)).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children.item(1).dataset.itype).toBe(
+      "paragraph",
+    );
+    expect(textEditorMock.root.children.item(1).firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.children.item(1).firstChild.dataset.itype).toBe(
+      "span",
+    );
+    expect(textEditorMock.root.children.item(1).firstChild.firstChild).toBeInstanceOf(
+      HTMLBRElement,
+    );
+    expect(textEditorMock.root.textContent).toBe("Hello, World!");
+  });
+
+  test("`insertParagraph` should insert a new paragraph before a text", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWith([
+      ["Hello, World!"],
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(
+      textEditorMock,
+      selection,
+    );
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      0,
+    );
+    selectionController.insertParagraph();
+    expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.dataset.itype).toBe("root");
+    expect(textEditorMock.root.children.length).toBe(2);
+    expect(textEditorMock.root.children.item(0)).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children.item(0).dataset.itype).toBe(
+      "paragraph",
+    );
+    expect(textEditorMock.root.children.item(0).firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.children.item(0).firstChild.dataset.itype).toBe(
+      "span",
+    );
+    expect(textEditorMock.root.children.item(0).firstChild.firstChild).toBeInstanceOf(
+      HTMLBRElement,
+    );
+    expect(textEditorMock.root.children.item(1)).toBeInstanceOf(HTMLDivElement);
+    expect(textEditorMock.root.children.item(1).dataset.itype).toBe(
+      "paragraph",
+    );
+    expect(textEditorMock.root.children.item(1).firstChild).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+    expect(textEditorMock.root.children.item(1).firstChild.dataset.itype).toBe(
+      "span",
+    );
+    expect(textEditorMock.root.children.item(1).firstChild.textContent).toBe(
+      "Hello, World!",
+    );
+    expect(textEditorMock.root.textContent).toBe("Hello, World!");
+  });
+
   test("`mergeBackwardParagraph` should merge two paragraphs in backward direction (backspace)", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWith([
       ["Hello, "],
@@ -1027,7 +1157,7 @@ describe("SelectionController", () => {
     );
   });
 
-  test.skip("`removeSelected` multiple paragraphs", () => {
+  test("`removeSelected` multiple paragraphs", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWith([
       ["Hello, "],
       ["\n"],
@@ -1392,7 +1522,10 @@ describe("SelectionController", () => {
       root.firstChild.lastChild.firstChild.nodeValue.length - 3,
     );
     selectionController.applyStyles({
+      "font-family": "Montserrat, sans-serif",
       "font-weight": "bold",
+      "--fills":
+        '[["^ ","~:fill-color","#000000","~:fill-opacity",1],["^ ","~:fill-color","#aa0000","~:fill-opacity",1]]',
     });
     expect(textEditorMock.root).toBeInstanceOf(HTMLDivElement);
     expect(textEditorMock.root.children.length).toBe(1);
@@ -1491,5 +1624,69 @@ describe("SelectionController", () => {
     expect(textEditorMock.root.lastChild.children.item(1).textContent).toBe(
       "ld!",
     );
+  });
+
+  test("`selectAll` should select everything", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
+      createParagraphWith(["Hello, "], {
+        "font-style": "italic",
+      }),
+      createParagraphWith(["World!"], {
+        "font-style": "oblique",
+      }),
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(textEditorMock, selection);
+    textEditorMock.element.focus();
+    selectionController.selectAll();
+    expect(selectionController.anchorNode).toBe(
+      root.firstChild.firstChild.firstChild
+    );
+    expect(selectionController.focusNode).toBe(
+      root.lastChild.firstChild.firstChild,
+    );
+  });
+
+  test("`cursorToEnd` should move cursor to the end", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
+      createParagraphWith(["Hello, "], {
+        "font-style": "italic",
+      }),
+      createParagraphWith(["World!"], {
+        "font-style": "oblique",
+      }),
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(textEditorMock, selection);
+    textEditorMock.element.focus();
+    selectionController.cursorToEnd();
+    expect(selectionController.focusNode).toBe(root.lastChild.firstChild.firstChild);
+    expect(selectionController.focusAtEnd).toBeTruthy();
+  })
+
+  test("`dispose` should release every held reference", () => {
+    const textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
+      createParagraphWith(["Hello, "], {
+        "font-style": "italic",
+      }),
+      createParagraphWith(["World!"], {
+        "font-style": "oblique",
+      }),
+    ]);
+    const root = textEditorMock.root;
+    const selection = document.getSelection();
+    const selectionController = new SelectionController(textEditorMock, selection);
+    focus(
+      selection,
+      textEditorMock,
+      root.firstChild.firstChild.firstChild,
+      0
+    );
+    selectionController.dispose();
+    expect(selectionController.selection).toBe(null);
+    expect(selectionController.currentStyle).toBe(null);
+    expect(selectionController.options).toBe(null);
   });
 });
