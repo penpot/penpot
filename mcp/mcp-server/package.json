@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:js-yaml --external:sharp && pnpm run copy-static",
+    "build:multi-user": "pnpm run build",
     "copy-static": "node -e \"require('fs').cpSync('src/static', 'dist/static', { recursive: true })\"",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "build:full": "pnpm run build && pnpm run build:types",

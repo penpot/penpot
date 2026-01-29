@@ -1,11 +1,12 @@
-# Types Generatori
+# Types Generator
 
 This subproject contains helper scripts used in the development of the 
 Penpot MCP server for generate the types yaml.
 
 ## Setup
 
-This project uses [pixi](https://pixi.sh) for environment management.
+This project uses [pixi](https://pixi.sh) for environment management
+(already included in devenv).
 
 Install the environment via
 

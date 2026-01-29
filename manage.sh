@@ -215,6 +215,23 @@ function build-frontend-bundle {
     echo ">> bundle frontend end";
 }
 
+function build-mcp-bundle {
+    echo ">> bundle mcp start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/mcp";
+
+    build "mcp";
+
+    rm -rf $bundle_dir;
+    mv ./mcp/dist $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle mcp end";
+}
+
+
 function build-backend-bundle {
     echo ">> bundle backend start";
 
@@ -397,6 +414,7 @@ case $1 in
     ## production builds
     build-bundle)
         build-frontend-bundle;
+        build-mcp-bundle;
         build-backend-bundle;
         build-exporter-bundle;
         build-storybook-bundle;
@@ -404,6 +422,10 @@ case $1 in
 
     build-frontend-bundle)
         build-frontend-bundle;
+        ;;
+
+    build-mcp-bundle)
+        build-mcp-bundle;
         ;;
 
     build-backend-bundle)

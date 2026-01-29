@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "install:all": "pnpm install -r",
+    "install:all": "pnpm -r install",
     "build:all": "pnpm -r run build",
-    "build:all:multi-user": "pnpm -r run build && pnpm -filter penpot-plugin build:multi-user",
+    "build:all:multi-user": "pnpm -r run build:multi-user",
     "start:all": "pnpm -r --parallel run start",
     "start:all:multi-user": "pnpm -r --parallel run start:multi-user",
     "bootstrap": "npm run install:all && npm run build:all",
@@ -15,12 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/oraios/penpot-mcp.git"
+    "url": "https://github.com/penpot/penpot.git"
   },
   "private": true,
   "devDependencies": {
-    "prettier": "^3.0.0",
-    "concurrently": "^8.2.2",
-    "kill-port": "^2.0.1"
+    "prettier": "^3.0.0"
   }
 }

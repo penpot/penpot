@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# NOTE: this script should be called from the parent directory to
+# properly work
+
+set -ex
+
+corepack enable;
+corepack install;
+
+pnpm -r install;
+
+rm -rf dist;
+rm -rf mcp-server/dist;
+
+pushd types-generator
+pixi install;
+pixi run python prepare_api_docs.py;
+popd
+
+pnpm -r build:multi-user;
+
+rsync -avr mcp-server/dist/ ./dist/
+rsync -avr mcp-server/data/ ./dist/data/
