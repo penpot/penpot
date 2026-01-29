@@ -8,8 +8,8 @@
     "build:all:multi-user": "pnpm -r run build:multi-user",
     "start:all": "pnpm -r --parallel run start",
     "start:all:multi-user": "pnpm -r --parallel run start:multi-user",
-    "bootstrap": "npm run install:all && npm run build:all",
-    "bootstrap:multi-user": "npm run install:all && npm run build:all:multi-user",
+    "bootstrap": "pnpm run install:all && pnpm run build:all && pnpm run start:all",
+    "bootstrap:multi-user": "npm run install:all && npm run build:all:multi-user && pnpm run start:all:multi-user",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

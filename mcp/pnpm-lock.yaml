@@ -98,7 +98,7 @@ importers:
         specifier: ^0.25.0
         version: 0.25.12
       ts-node:
-        specifier: ^10.9.0
+        specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.30)(typescript@5.9.3)
       typescript:
         specifier: ^5.0.0
