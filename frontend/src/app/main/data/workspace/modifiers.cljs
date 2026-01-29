@@ -527,6 +527,16 @@
               :else
               (d/vec2 id default-transform))))))
 
+(defn- root-only-modif-tree
+  "Restrict modif-tree to shapes whose parent is not in modif-tree (so WASM
+   propagates once; including children would cause double application)."
+  [modif-tree objects]
+  (let [ids-in-tree (set (keys modif-tree))
+        root?       (fn [id]
+                      (let [parent-id (get-in objects [id :parent-id])]
+                        (or (nil? parent-id) (not (ids-in-tree parent-id)))))]
+    (select-keys modif-tree (filter root? (keys modif-tree)))))
+
 (defn- parse-geometry-modifiers
   [modif-tree]
   (into [] xf:parse-geometry-modifier modif-tree))
@@ -580,7 +590,7 @@
         (set-wasm-props! objects prev-wasm-props wasm-props)
         (let [structure-entries (parse-structure-modifiers modif-tree)]
           (wasm.api/set-structure-modifiers structure-entries)
-          (let [geometry-entries (parse-geometry-modifiers modif-tree)
+          (let [geometry-entries (parse-geometry-modifiers (root-only-modif-tree modif-tree objects))
                 modifiers        (wasm.api/propagate-modifiers geometry-entries pixel-precision)]
             (wasm.api/set-modifiers modifiers)
             (let [ids     (into [] xf:map-key geometry-entries)
@@ -637,7 +647,7 @@
                 (assoc :attrs transform-attrs))
 
             geometry-entries
-            (parse-geometry-modifiers modif-tree)
+            (parse-geometry-modifiers (root-only-modif-tree modif-tree objects))
 
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))

@@ -379,22 +379,10 @@ pub fn propagate_modifiers(
     modifiers: &[TransformEntry],
     pixel_precision: bool,
 ) -> Vec<TransformEntry> {
-    // Ids of all shapes that have an entry in the incoming modifiers list.
-    let modifier_ids: HashSet<Uuid> = modifiers.iter().map(|e| e.id).collect();
+    // Frontend sends only "root" entries (no child when parent is in the list),
+    // so we don't need to filter here.
     let mut entries: VecDeque<_> = modifiers
         .iter()
-        .filter(|entry| {
-            // Skip child shapes whose parent is also in the modifiers list.
-            // Those children will get their transform when the parent's transform
-            // is propagated via propagate_children; including them here would
-            // cause the transform to be applied twice (once here, once from parent).
-            let should_skip = state
-                .shapes
-                .get(&entry.id)
-                .and_then(|s| s.parent_id.map(|pid| modifier_ids.contains(&pid)))
-                .unwrap_or(false);
-            !should_skip
-        })
         .map(|entry| {
             // If we receibe a identity matrix we force a reflow
             if math::identitish(&entry.transform) {
