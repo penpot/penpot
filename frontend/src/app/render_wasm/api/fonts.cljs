@@ -124,19 +124,25 @@
 
     true))
 
+(def fetching (atom #{}))
+
 (defn- fetch-font
   [shape-id font-data font-url emoji? fallback?]
-  {:key font-url
-   :callback #(->> (http/send! {:method :get
-                                :uri font-url
-                                :response-type :buffer})
-                   (rx/map (fn [{:keys [body]}]
-                             (store-font-buffer shape-id font-data body emoji? fallback?)))
-                   (rx/catch (fn [cause]
-                               (log/error :hint "Could not fetch font"
-                                          :font-url font-url
-                                          :cause cause)
-                               (rx/empty))))})
+  (when-not (contains? @fetching font-url)
+    (swap! fetching conj font-url)
+    {:key font-url
+     :callback #(->> (http/send! {:method :get
+                                  :uri font-url
+                                  :response-type :buffer})
+                     (rx/map (fn [{:keys [body]}]
+                               (swap! fetching disj font-url)
+                               (store-font-buffer shape-id font-data body emoji? fallback?)))
+                     (rx/catch (fn [cause]
+                                 (swap! fetching disj font-url)
+                                 (log/error :hint "Could not fetch font"
+                                            :font-url font-url
+                                            :cause cause)
+                                 (rx/empty))))}))
 
 (defn- google-font-ttf-url
   [font-id font-variant-id font-weight font-style]
