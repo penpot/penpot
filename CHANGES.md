@@ -40,6 +40,7 @@
 - Fix app freeze when introducing an error on a very long token name [Taiga #13214](https://tree.taiga.io/project/penpot/issue/13214)
 - Fix import a file with shadow tokens [Taiga #13229](https://tree.taiga.io/project/penpot/issue/13229)
 - Fix allow spaces on token description [Taiga #13184](https://tree.taiga.io/project/penpot/issue/13184)
+- Fix error when creating a token with an invalid name [Taiga #13219](https://tree.taiga.io/project/penpot/issue/13219)
 
 ## 2.12.1
 
