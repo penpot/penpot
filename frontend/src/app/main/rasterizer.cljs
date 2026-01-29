@@ -111,6 +111,7 @@
   "Initializes the rasterizer."
   []
   (let [iframe (dom/create-element "iframe")]
+    (dom/set-attribute! iframe "id" "rasterizer")
     (dom/set-attribute! iframe "src" origin)
     (dom/set-attribute! iframe "hidden" true)
     (.addEventListener js/window "message" on-message)

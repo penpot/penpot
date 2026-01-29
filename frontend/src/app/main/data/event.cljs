@@ -31,40 +31,34 @@
 (l/set-level! :info)
 
 ;; Defines the maximum buffer size, after events start discarding.
-(def max-buffer-size 1024)
+(def ^:private ^:const max-buffer-size 1024)
 
 ;; Defines the maximum number of events that can go in a single batch.
-(def max-chunk-size 100)
+(def ^:private ^:const max-chunk-size 100)
 
 ;; Defines the time window (in ms) within events belong to the same session.
-(def session-timeout (* 1000 60 30))
-
-
-;; Min time for a long task to be reported to telemetry
-(def min-longtask-time 1000)
-
-;; Min time between long task reports
-(def debounce-longtask-time 1000)
+(def ^:private ^:const session-timeout (* 1000 60 30))
 
 ;; Min time for a long task to be reported to telemetry
-(def min-browser-event-time 1000)
+(def ^:private ^:const min-longtask-time 1000)
 
 ;; Min time between long task reports
-(def debounce-browser-event-time 1000)
+(def ^:private ^:const debounce-longtask-time 1000)
 
 ;; Min time for a long task to be reported to telemetry
-(def min-performace-event-time 1000)
+(def ^:private ^:const min-browser-event-time 1000)
 
 ;; Min time between long task reports
-(def debounce-performance-event-time 1000)
+(def ^:private ^:const debounce-browser-event-time 1000)
 
-;; Def micro-benchmark iterations
-(def micro-benchmark-iterations 1e6)
+;; Min time for a long task to be reported to telemetry
+(def ^:private ^:const min-performace-event-time 1000)
 
-;; Performance logs
-(defonce ^:private longtask-observer* (atom nil))
-(defonce ^:private stall-timer* (atom nil))
-(defonce ^:private current-op* (atom nil))
+;; Min time between long task reports
+(def ^:private ^:const debounce-performance-event-time 1000)
+
+;; Default micro-benchmark iterations
+(def ^:private ^:const micro-benchmark-iterations 1e6)
 
 ;; --- CONTEXT
 
@@ -142,12 +136,12 @@
              data
              data))
 
-(defn add-external-context-info
+(defn- add-external-context-info
   [context]
   (let [external-context-info  (json/->clj (cf/external-context-info))]
     (merge context external-context-info)))
 
-(defn- process-event-by-proto
+(defn- make-proto-event
   [event]
   (let [data    (d/deep-merge (-data event) (meta event))
         type    (ptk/type event)
@@ -156,7 +150,6 @@
                     (assoc :event-origin (::origin data))
                     (assoc :event-namespace (namespace type))
                     (assoc :event-symbol ev-name)
-                    (add-external-context-info)
                     (d/without-nils))
         props   (-> data d/without-qualified simplify-props)]
 
@@ -165,7 +158,7 @@
      :context context
      :props props}))
 
-(defn- process-data-event
+(defn- make-data-event
   [event]
   (let [data (deref event)
         name (::name data)]
@@ -174,7 +167,6 @@
       (let [type    (::type data "action")
             context (-> (::context data)
                         (assoc :event-origin (::origin data))
-                        (add-external-context-info)
                         (d/without-nils))
             props   (-> data d/without-qualified simplify-props)]
         {:type    type
@@ -182,56 +174,61 @@
          :context context
          :props   props}))))
 
-(defn performance-payload
+(defn- make-event
+  "Create a standard event"
   ([result]
    (let [props      (aget result 0)
          profile-id (aget result 1)]
-     (performance-payload profile-id props)))
+     (make-event profile-id props)))
+  ([profile-id event]
+   (when-let [event (cond
+                      (satisfies? Event event)
+                      (make-proto-event event)
+
+                      (ptk/data-event? event)
+                      (make-data-event event))]
+     (assoc event :profile-id profile-id))))
+
+(defn- make-performance-event
+  "Create a performance trigger event"
+  ([result]
+   (let [props      (aget result 0)
+         profile-id (aget result 1)]
+     (make-performance-event profile-id props)))
   ([profile-id props]
-   (let [{:keys [performance-info]} @st/state]
-     {:type    "action"
-      :name    "performance"
-      :context (merge @context performance-info)
-      :props   props
+   (let [perf-info (get @st/state :performance-info)
+         name      (get props ::name)]
+     {:type    "trigger"
+      :name    (str "performance-" name)
+      :context {:file-stats (:counters perf-info)}
+      :props   (-> props
+                   (dissoc ::name)
+                   (assoc :file-id (:file-id perf-info)))
       :profile-id profile-id})))
 
 (defn- process-performance-event
+  "Process performance sensitive events"
   [result]
   (let [event      (aget result 0)
         profile-id (aget result 1)]
-
-    (if (and (satisfies? PerformanceEvent event)
-             (exists? js/globalThis)
-             (exists? (.-requestAnimationFrame js/globalThis))
-             (exists? (.-scheduler js/globalThis))
-             (exists? (.-postTask (.-scheduler js/globalThis))))
+    (if (satisfies? PerformanceEvent event)
       (rx/create
        (fn [subs]
-         (let [start (perf/timestamp)]
+         (let [start (perf/now)]
            (js/requestAnimationFrame
-            #(js/scheduler.postTask
-              (fn []
-                (let [time (- (perf/timestamp) start)]
-                  (when (> time min-performace-event-time)
-                    (rx/push!
-                     subs
-                     (performance-payload
-                      profile-id
-                      {::event (str (ptk/type event))
-                       :time time}))))
-                (rx/end! subs))
-              #js {"priority" "user-blocking"})))
-         nil))
+            #(.postTask js/scheduler
+                        (fn []
+                          (let [time (- (perf/now) start)]
+                            (when (> time min-performace-event-time)
+                              (rx/push! subs
+                                        (make-performance-event profile-id
+                                                                {::name "blocking-event"
+                                                                 :event-name (d/name (ptk/type event))
+                                                                 :duration time})))
+                            (rx/end! subs)))
+                        #js {:priority "user-blocking"}))
+           nil)))
       (rx/empty))))
-
-(defn- process-event
-  [event]
-  (cond
-    (satisfies? Event event)
-    (process-event-by-proto event)
-
-    (ptk/data-event? event)
-    (process-data-event event)))
 
 ;; --- MAIN LOOP
 
@@ -260,7 +257,8 @@
     (rx/of nil)))
 
 
-(defn performance-observer-event-stream
+(defn- user-input-observer
+  "Create user interaction/input event observer. Returns rx stream."
   []
   (if (and (exists? js/globalThis)
            (exists? (.-PerformanceObserver js/globalThis)))
@@ -273,18 +271,17 @@
                  (fn [entry]
                    (when (and (= "event" (.-entryType entry))
                               (> (.-duration entry) min-browser-event-time))
-                     (rx/push!
-                      subs
-                      {::event :observer-event
-                       :duration (.-duration entry)
-                       :event-name (.-name entry)})))
+                     (rx/push! subs {::name "user-input"
+                                     :duration (.-duration entry)
+                                     :event-name (.-name entry)})))
                  (.getEntries list))))]
          (.observe observer #js {:entryTypes #js ["event"]})
          (fn []
            (.disconnect observer)))))
     (rx/empty)))
 
-(defn performance-observer-longtask-stream
+(defn- longtask-observer
+  "Create a Long-Task performance observer. Returns rx stream."
   []
   (if (and (exists? js/globalThis)
            (exists? (.-PerformanceObserver js/globalThis)))
@@ -298,7 +295,7 @@
                    (when (and (= "longtask" (.-entryType entry))
                               (> (.-duration entry) min-longtask-time))
                      (rx/push! subs
-                               {::event :observer-longtask
+                               {::name "long-task"
                                 :duration (.-duration entry)})))
                  (.getEntries list))))]
          (.observe observer #js {:entryTypes #js ["longtask"]})
@@ -306,238 +303,156 @@
            (.disconnect observer)))))
     (rx/empty)))
 
-(defn- save-performance-info
-  []
-  (ptk/reify ::save-performance-info
-    ptk/UpdateEvent
-    (update [_ state]
-      (letfn [(count-shapes [file]
-                (->> file :data :pages-index
-                     (reduce-kv
-                      (fn [sum _ page]
-                        (+ sum (count (:objects page))))
-                      0)))
-              (count-library-data [files {:keys [id]}]
-                (let [data (dm/get-in files [id :data])]
-                  {:components (count (:components data))
-                   :colors (count (:colors data))
-                   :typographies (count (:typographies data))}))]
-        (let [file-id (get state :current-file-id)
-              file (get-in state [:files file-id])
-              file-size (count-shapes file)
+(defn- snapshot-performance-info
+  [{:keys [file-id]}]
 
-              libraries
-              (-> (refs/select-libraries (:files state) (:id file))
-                  (d/update-vals (partial count-library-data (:files state))))
+  (letfn [(count-shapes [file]
+            (->> file :data :pages-index
+                 (reduce-kv
+                  (fn [sum _ page]
+                    (+ sum (count (:objects page))))
+                  0)))
 
-              lib-sizes
-              (->> libraries
-                   (reduce-kv
-                    (fn [acc _ {:keys [components colors typographies]}]
-                      (-> acc
-                          (update :components + components)
-                          (update :colors + colors)
-                          (update :typographies + typographies)))
-                    {}))]
-          (update state :performance-info
-                  (fn [info]
-                    (-> info
-                        (assoc :file-size file-size)
-                        (assoc :library-sizes lib-sizes)
-                        (assoc :file-start-time (perf/now))))))))))
+          (add-libraries-counters [state files]
+            (reduce (fn [state library-id]
+                      (let [data (dm/get-in files [library-id :data])]
+                        (-> state
+                            (update :total-components + (count (:components data)))
+                            (update :total-colors + (count (:colors data)))
+                            (update :total-typographies + (count (:typographies data))))))
+                    state
+                    (refs/select-libraries files file-id)))]
 
-(defn store-performace-info
-  []
-  (letfn [(micro-benchmark [state]
-            (let [start (perf/now)]
-              (loop [i micro-benchmark-iterations]
-                (when-not (zero? i)
-                  (* (math/sin i) (math/sqrt i))
-                  (recur (dec i))))
-              (let [end (perf/now)]
-                (update state :performance-info assoc :bench-result (- end start)))))]
-
-    (ptk/reify ::store-performace-info
+    (ptk/reify ::snapshot-performance-info
       ptk/UpdateEvent
       (update [_ state]
-        (-> state
-            micro-benchmark
-            (assoc-in [:performance-info :app-start-time] (perf/now))))
+        (update state :performance-info
+                (fn [info]
+                  (let [files (get state :files)
+                        file  (get files file-id)]
+                    (-> info
+                        (assoc :file-id file-id)
+                        (update :counters assoc :total-shapes (count-shapes file))
+                        (update :counters add-libraries-counters files)))))))))
 
-      ptk/WatchEvent
-      (watch [_ _ stream]
-        (->> stream
-             (rx/filter (ptk/type? :app.main.data.workspace/all-libraries-resolved))
-             (rx/take 1)
-             (rx/map save-performance-info))))))
+(defn- store-performace-info
+  []
+  (ptk/reify ::store-performace-info
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [start (perf/now)
+            _     (loop [i micro-benchmark-iterations]
+                    (when-not (zero? i)
+                      (* (math/sin i) (math/sqrt i))
+                      (recur (dec i))))
+            end   (perf/now)]
+
+        (update state :performance-info assoc :bench (- end start))))
+
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter (ptk/type? :app.main.data.workspace/all-libraries-resolved))
+           (rx/take 1)
+           (rx/map deref)
+           (rx/map snapshot-performance-info)))))
 
 (defn initialize
   []
-  (when (contains? cf/flags :audit-log)
-    (ptk/reify ::initialize
-      ptk/WatchEvent
-      (watch [_ _ _]
-        (rx/of (store-performace-info)))
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (store-performace-info)))
 
-      ptk/EffectEvent
-      (effect [_ _ stream]
-        (let [session (atom nil)
-              stopper (rx/filter (ptk/type? ::initialize) stream)
-              buffer  (atom #queue [])
-              profile (->> (rx/from-atom storage/user {:emit-current-value? true})
-                           (rx/map :profile)
-                           (rx/map :id)
-                           (rx/pipe (rxo/distinct-contiguous)))]
+    ptk/EffectEvent
+    (effect [_ _ stream]
+      (let [session (atom nil)
+            stopper (rx/filter (ptk/type? ::initialize) stream)
+            buffer  (atom #queue [])
+            profile (->> (rx/from-atom storage/user {:emit-current-value? true})
+                         (rx/map :profile)
+                         (rx/map :id)
+                         (rx/pipe (rxo/distinct-contiguous)))]
 
-          (l/debug :hint "event instrumentation initialized")
+        (l/debug :hint "event instrumentation initialized")
 
-          (->> (rx/merge
-                (->> (rx/from-atom buffer)
-                     (rx/filter #(pos? (count %)))
-                     (rx/debounce 2000))
-                (->> stream
-                     (rx/filter (ptk/type? :app.main.data.profile/logout))
-                     (rx/observe-on :async)))
-               (rx/map (fn [_]
-                         (into [] (take max-buffer-size) @buffer)))
-               (rx/with-latest-from profile)
-               (rx/mapcat (fn [[chunk profile-id]]
-                            (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
-                              (->> (persist-events events)
-                                   (rx/tap (fn [_]
-                                             (l/debug :hint "events chunk persisted" :total (count chunk))))
-                                   (rx/map (constantly chunk))))))
-               (rx/take-until stopper)
-               (rx/subs! (fn [chunk]
-                           (swap! buffer remove-from-buffer (count chunk)))
-                         (fn [cause]
-                           (l/error :hint "unexpected error on audit persistence" :cause cause))
-                         (fn []
-                           (l/debug :hint "audit persistence terminated"))))
+        (->> (rx/merge
+              (->> (rx/from-atom buffer)
+                   (rx/filter #(pos? (count %)))
+                   (rx/debounce 2000))
+              (->> stream
+                   (rx/filter (ptk/type? :app.main.data.profile/logout))
+                   (rx/observe-on :async)))
+             (rx/map (fn [_]
+                       (into [] (take max-chunk-size) @buffer)))
+             (rx/with-latest-from profile)
+             (rx/mapcat (fn [[chunk profile-id]]
+                          (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
+                            (->> (persist-events events)
+                                 (rx/tap (fn [_]
+                                           (l/debug :hint "events chunk persisted" :total (count chunk))))
+                                 (rx/map (constantly chunk))))))
+             (rx/take-until stopper)
+             (rx/subs! (fn [chunk]
+                         (swap! buffer remove-from-buffer (count chunk)))
+                       (fn [cause]
+                         (l/error :hint "unexpected error on audit persistence" :cause cause))
+                       (fn []
+                         (l/debug :hint "audit persistence terminated"))))
 
-          (->> (rx/merge
-                (->> stream
-                     (rx/with-latest-from profile)
-                     (rx/map (fn [result]
-                               (let [event      (aget result 0)
-                                     profile-id (aget result 1)]
-                                 (some-> (process-event event)
-                                         (update :profile-id #(or % profile-id)))))))
+        (->> (rx/merge
+              (->> stream
+                   (rx/with-latest-from profile)
+                   (rx/map make-event))
 
-                (->> (performance-observer-event-stream)
-                     (rx/with-latest-from profile)
-                     (rx/map performance-payload)
-                     (rx/debounce debounce-browser-event-time))
+              (->> (user-input-observer)
+                   (rx/with-latest-from profile)
+                   (rx/map make-performance-event)
+                   (rx/debounce debounce-browser-event-time))
 
-                (->> (performance-observer-longtask-stream)
-                     (rx/with-latest-from profile)
-                     (rx/map performance-payload)
-                     (rx/debounce debounce-longtask-time))
+              (->> (longtask-observer)
+                   (rx/with-latest-from profile)
+                   (rx/map make-performance-event)
+                   (rx/debounce debounce-longtask-time))
 
+              (if (and (exists? js/globalThis)
+                       (exists? (.-requestAnimationFrame js/globalThis))
+                       (exists? (.-scheduler js/globalThis))
+                       (exists? (.-postTask (.-scheduler js/globalThis))))
                 (->> stream
                      (rx/with-latest-from profile)
                      (rx/merge-map process-performance-event)
-                     (rx/debounce debounce-performance-event-time)))
+                     (rx/debounce debounce-performance-event-time))
+                (rx/empty)))
 
-               (rx/filter :profile-id)
-               (rx/map (fn [event]
-                         (let [session* (or @session (ct/now))
-                               context  (-> @context
-                                            (merge (:context event))
-                                            (assoc :session session*)
-                                            (assoc :external-session-id (cf/external-session-id))
-                                            (d/without-nils))]
-                           (reset! session session*)
-                           (-> event
-                               (assoc :timestamp (ct/now))
-                               (assoc :context context)))))
+             (rx/filter :profile-id)
+             (rx/map (fn [event]
+                       (let [session* (or @session (ct/now))
+                             context  (-> @context
+                                          (merge (:context event))
+                                          (assoc :session session*)
+                                          (assoc :external-session-id (cf/external-session-id))
+                                          (add-external-context-info)
+                                          (d/without-nils))]
+                         (reset! session session*)
+                         (-> event
+                             (assoc :timestamp (ct/now))
+                             (assoc :context context)))))
 
-               (rx/tap (fn [event]
-                         (l/debug :hint "event enqueued")
-                         (swap! buffer append-to-buffer event)))
+             (rx/tap (fn [event]
+                       (l/debug :hint "event enqueued")
+                       (swap! buffer append-to-buffer event)))
 
-               (rx/switch-map #(rx/timer session-timeout))
-               (rx/take-until stopper)
-               (rx/subs! (fn [_]
-                           (l/debug :hint "session reinitialized")
-                           (reset! session nil))
-                         (fn [cause]
-                           (l/error :hint "error on event batching stream" :cause cause))
-                         (fn []
-                           (l/debug :hitn "events batching stream terminated")))))))))
+             (rx/switch-map #(rx/timer session-timeout))
+             (rx/take-until stopper)
+             (rx/subs! (fn [_]
+                         (l/debug :hint "session reinitialized")
+                         (reset! session nil))
+                       (fn [cause]
+                         (l/error :hint "error on event batching stream" :cause cause))
+                       (fn []
+                         (l/debug :hitn "events batching stream terminated"))))))))
 
 (defn event
   [props]
   (ptk/data-event ::event props))
-
-;; --- DEVTOOLS PERF LOGGING
-
-(defn install-long-task-observer! []
-  (when (and (some? (.-PerformanceObserver js/window)) (nil? @longtask-observer*))
-    (let [observer (js/PerformanceObserver.
-                    (fn [list _]
-                      (when (contains? cf/flags :perf-logs)
-                        (doseq [entry (.getEntries list)]
-                          (let [dur (.-duration entry)
-                                start (.-startTime entry)
-                                attrib (.-attribution entry)
-                                attrib-count (when attrib (.-length attrib))
-                                first-attrib (when (and attrib-count (> attrib-count 0)) (aget attrib 0))
-                                attrib-name (when first-attrib (.-name first-attrib))
-                                attrib-ctype (when first-attrib (.-containerType first-attrib))
-                                attrib-cid (when first-attrib (.-containerId first-attrib))
-                                attrib-csrc (when first-attrib (.-containerSrc first-attrib))]
-
-                            (.warn js/console (str "[perf] long task " (Math/round dur) "ms at " (Math/round start) "ms"
-                                                   (when first-attrib
-                                                     (str " attrib:name=" attrib-name
-                                                          " ctype=" attrib-ctype
-                                                          " cid=" attrib-cid
-                                                          " csrc=" attrib-csrc)))))))))]
-      (.observe observer #js{:entryTypes #js["longtask"]})
-      (reset! longtask-observer* observer))))
-
-(defn start-event-loop-stall-logger!
-  "Log event loop stalls by measuring setInterval drift.
-  interval-ms: base interval
-  threshold-ms: drift over which we report"
-  [interval-ms threshold-ms]
-  (when (nil? @stall-timer*)
-    (let [last (atom (.now js/performance))
-          id (js/setInterval
-              (fn []
-                (when (contains? cf/flags :perf-logs)
-                  (let [now (.now js/performance)
-                        expected (+ @last interval-ms)
-                        drift (- now expected)
-                        current-op @current-op*
-                        measures (.getEntriesByType js/performance "measure")
-                        mlen (.-length measures)
-                        last-measure (when (> mlen 0) (aget measures (dec mlen)))
-                        meas-name (when last-measure (.-name last-measure))
-                        meas-detail (when last-measure (.-detail last-measure))
-                        meas-count (when meas-detail (unchecked-get meas-detail "count"))]
-                    (reset! last now)
-                    (when (> drift threshold-ms)
-                      (.warn js/console
-                             (str "[perf] event loop stall: " (Math/round drift) "ms"
-                                  (when current-op (str " op=" current-op))
-                                  (when meas-name (str " last=" meas-name))
-                                  (when meas-count (str " count=" meas-count))))))))
-              interval-ms)]
-      (reset! stall-timer* id))))
-
-(defn init!
-  "Install perf observers in dev builds. Safe to call multiple times.
-  Perf logs are disabled by default. Enable them with the :perf-logs flag in config."
-  []
-  (when ^boolean js/goog.DEBUG
-    (install-long-task-observer!)
-    (start-event-loop-stall-logger! 50 100)
-    ;; Expose simple API on window for manual control in devtools
-    (let [api #js {:reset (fn []
-                            (try
-                              (.clearMarks js/performance)
-                              (.clearMeasures js/performance)
-                              (catch :default _ nil)))}]
-      (aset js/window "PenpotPerf" api))))
