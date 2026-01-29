@@ -51,7 +51,6 @@
 (defn remove-attribute-for-detached-token
   "Removes applied tokens when token-id is nil for the given `attributes` set from `applied-tokens`."
   [attributes applied-tokens]
-  (prn applied-tokens)
   (apply dissoc applied-tokens attributes))
 
 (defn token-attribute-applied?

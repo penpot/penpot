@@ -218,7 +218,8 @@
      (when open?
        [:div {:class (stl/css :fill-content)}
         (cond
-          (= :multiple fills)
+          (or (= :multiple fills)
+              (= :multiple fill-token-applied))
           [:div {:class (stl/css :fill-multiple)}
            [:div {:class (stl/css :fill-multiple-label)}
             (tr "settings.multiple")]

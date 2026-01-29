@@ -715,11 +715,9 @@
 
   Doesn't update shape attributes."
   [{:keys [attributes shape-ids] :as _props}]
-  (ptk/reify ::unapply-token
+  (ptk/reify ::detach-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (prn "entro en el detach")
-      (prn attributes)
       (rx/of
        (let [remove-token #(when % (cft/remove-attribute-for-detached-token attributes %))]
          (dwsh/update-shapes
