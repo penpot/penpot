@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+set -ex;
+pnpx prettier --write packages/

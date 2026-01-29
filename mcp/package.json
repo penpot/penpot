@@ -1,0 +1,25 @@
+{
+  "name": "mcp-meta",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "build:multi-user": "pnpm -r run build:multi-user",
+    "start": "pnpm -r --parallel run start",
+    "start:multi-user": "pnpm -r --parallel --filter \"./packages/*\"  run start:multi-user",
+    "bootstrap": "pnpm -r install && pnpm run build && pnpm run start",
+    "bootstrap:multi-user": "npm run install && npm run build:multi-user && pnpm run start:multi-user",
+    "fmt": "prettier --write packages/",
+    "fmt:check": "prettier --check packages/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot.git"
+  },
+  "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264",
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.0.0"
+  }
+}
