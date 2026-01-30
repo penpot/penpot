@@ -14,7 +14,9 @@
    [app.common.time :as ct]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
    [beicon.v2.core :as rx]
@@ -586,22 +588,25 @@
     ;; FIXME: this with effect with trigger all the time because
     ;; `config` will be always a different instance
     (mf/with-effect [tokens config]
-      (let [cached (get @cache-atom tokens)]
-        (cond
-          (nil? tokens) nil
-          ;; The tokens are already processing somewhere
-          (rx/observable? cached) (rx/sub! cached #(reset! tokens-state %))
-          ;; Get the cached entry
-          (some? cached) (reset! tokens-state cached)
-          ;; No cached entry, start processing
-          :else (let [resolved-tokens-s (if interactive?
-                                          (resolve-tokens-interactive tokens)
-                                          (resolve-tokens tokens))]
-                  (swap! cache-atom assoc tokens resolved-tokens-s)
-                  (rx/sub! resolved-tokens-s (fn [resolved-tokens]
-                                               (swap! cache-atom assoc tokens resolved-tokens)
-                                               (reset! tokens-state resolved-tokens)))))))
-    @tokens-state))
+      (when-not (contains? cf/flags :tokenscript)
+        (let [cached (get @cache-atom tokens)]
+          (cond
+            (nil? tokens) nil
+            ;; The tokens are already processing somewhere
+            (rx/observable? cached) (rx/sub! cached #(reset! tokens-state %))
+            ;; Get the cached entry
+            (some? cached) (reset! tokens-state cached)
+            ;; No cached entry, start processing
+            :else (let [resolved-tokens-s (if interactive?
+                                            (resolve-tokens-interactive tokens)
+                                            (resolve-tokens tokens))]
+                    (swap! cache-atom assoc tokens resolved-tokens-s)
+                    (rx/sub! resolved-tokens-s (fn [resolved-tokens]
+                                                 (swap! cache-atom assoc tokens resolved-tokens)
+                                                 (reset! tokens-state resolved-tokens))))))))
+    (if (contains? cf/flags :tokenscript)
+      (ts/resolve-tokens tokens)
+      @tokens-state)))
 
 (defn use-resolved-tokens*
   "This hook will return the unresolved tokens as state until they are
@@ -612,16 +617,19 @@
   [tokens & {:keys [interactive?]}]
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
-      (if (seq tokens)
-        (let [tpoint  (ct/tpoint-ms)
-              tokens-s  (if interactive?
-                          (resolve-tokens-interactive tokens)
-                          (resolve-tokens tokens))]
+      (when-not (contains? cf/flags :tokenscript)
+        (if (seq tokens)
+          (let [tpoint  (ct/tpoint-ms)
+                tokens-s  (if interactive?
+                            (resolve-tokens-interactive tokens)
+                            (resolve-tokens tokens))]
 
-          (-> tokens-s
-              (rx/sub! (fn [resolved-tokens]
-                         (let [elapsed (tpoint)]
-                           (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
-                           (reset! state* resolved-tokens))))))
-        (reset! state* tokens)))
-    @state*))
+            (-> tokens-s
+                (rx/sub! (fn [resolved-tokens]
+                           (let [elapsed (tpoint)]
+                             (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
+                             (reset! state* resolved-tokens))))))
+          (reset! state* tokens))))
+    (if (contains? cf/flags :tokenscript)
+      (ts/resolve-tokens tokens)
+      @state*)))
