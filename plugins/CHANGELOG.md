@@ -1,6 +1,10 @@
+## 1.5.0 (Unreleased)
+
+- **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
+
 ## 1.4.2 (2026-01-21)
 
-- **plugin-types:** fix atob/btoa functions
+- **plugin-runtime:** fix atob/btoa functions
 
 ## 1.4.0 (2026-01-21)
 
