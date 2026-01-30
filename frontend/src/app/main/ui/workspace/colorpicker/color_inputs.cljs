@@ -11,6 +11,7 @@
    [app.common.math :as mth]
    [app.common.types.color :as cc]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
 (defn parse-hex
@@ -67,34 +68,71 @@
             (when (some? val)
               (setup-hex-color val))))
 
+        apply-property-change
+        (fn [property val]
+          (let [val (case property
+                      :s (/ val 100)
+                      :v (value->hsv-value val)
+                      val)]
+            (if (#{:r :g :b} property)
+              (let [{:keys [r g b]} (merge color (hash-map property val))
+                    hex (cc/rgb->hex [r g b])
+                    [h s v] (cc/hex->hsv hex)]
+                (on-change {:hex hex
+                            :h h :s s :v v
+                            :r r :g g :b b}))
+
+              (let [{:keys [h s v]} (merge color (hash-map property val))
+                    hex (cc/hsv->hex [h s v])
+                    [r g b] (cc/hex->rgb hex)]
+                (on-change {:hex hex
+                            :h h :s s :v v
+                            :r r :g g :b b})))))
+
         on-change-property
         (fn [property max-value]
           (fn [e]
-            (let [val (-> e dom/get-target-val d/parse-double (mth/clamp 0 max-value))
-                  val (case property
-                        :s (/ val 100)
-                        :v (value->hsv-value val)
-                        val)]
-              (when (not (nil? val))
-                (if (#{:r :g :b} property)
-                  (let [{:keys [r g b]} (merge color (hash-map property val))
-                        hex (cc/rgb->hex [r g b])
-                        [h s v] (cc/hex->hsv hex)]
-                    (on-change {:hex hex
-                                :h h :s s :v v
-                                :r r :g g :b b}))
-
-                  (let [{:keys [h s v]} (merge color (hash-map property val))
-                        hex (cc/hsv->hex [h s v])
-                        [r g b] (cc/hex->rgb hex)]
-                    (on-change {:hex hex
-                                :h h :s s :v v
-                                :r r :g g :b b})))))))
+            (let [val (-> e dom/get-target-val d/parse-double (mth/clamp 0 max-value))]
+              (when (some? val)
+                (apply-property-change property val)))))
 
         on-change-opacity
         (fn [e]
           (when-let [new-alpha (-> e dom/get-target-val (mth/clamp 0 100) (/ 100))]
-            (on-change {:alpha new-alpha})))]
+            (on-change {:alpha new-alpha})))
+
+        on-key-down-property
+        (fn [property max-value]
+          (fn [e]
+            (let [up?   (kbd/up-arrow? e)
+                  down? (kbd/down-arrow? e)]
+              (when (and (or up? down?)
+                         (or (kbd/shift? e) (kbd/alt? e)))
+                (dom/prevent-default e)
+                (when-let [current-value (-> e dom/get-target-val d/parse-double)]
+                  (let [step      (cond
+                                    (kbd/shift? e) (if up? 10 -10)
+                                    (kbd/alt? e)   (if up? 0.1 -0.1))
+                        new-value (mth/clamp (+ current-value step) 0 max-value)
+                        node      (dom/get-target e)]
+                    (dom/set-value! node new-value)
+                    (apply-property-change property new-value)))))))
+
+        on-key-down-opacity
+        (fn [e]
+          (let [up?   (kbd/up-arrow? e)
+                down? (kbd/down-arrow? e)]
+            (when (and (or up? down?)
+                       (or (kbd/shift? e) (kbd/alt? e)))
+              (dom/prevent-default e)
+              (when-let [current-value (-> e dom/get-target-val d/parse-double)]
+                (let [step      (cond
+                                  (kbd/shift? e) (if up? 10 -10)
+                                  (kbd/alt? e)   (if up? 0.1 -0.1))
+                      new-value (mth/clamp (+ current-value step) 0 100)
+                      node      (dom/get-target e)]
+                  (dom/set-value! node new-value)
+                  (on-change {:alpha (/ new-value 100)}))))))]
 
 
     ;; Updates the inputs values when a property is changed in the parent
@@ -127,7 +165,8 @@
                    :min 0
                    :max 255
                    :default-value red
-                   :on-change (on-change-property :r 255)}]]
+                   :on-change (on-change-property :r 255)
+                   :on-key-down (on-key-down-property :r 255)}]]
          [:div {:class (stl/css :input-wrapper)}
           [:label {:for "green-value" :class (stl/css :input-label)} "G"]
           [:input {:id "green-value"
@@ -136,7 +175,8 @@
                    :min 0
                    :max 255
                    :default-value green
-                   :on-change (on-change-property :g 255)}]]
+                   :on-change (on-change-property :g 255)
+                   :on-key-down (on-key-down-property :g 255)}]]
          [:div {:class (stl/css :input-wrapper)}
           [:label {:for "blue-value" :class (stl/css :input-label)} "B"]
           [:input {:id "blue-value"
@@ -145,7 +185,8 @@
                    :min 0
                    :max 255
                    :default-value blue
-                   :on-change (on-change-property :b 255)}]]]
+                   :on-change (on-change-property :b 255)
+                   :on-key-down (on-key-down-property :b 255)}]]]
 
         [:*
          [:div {:class (stl/css :input-wrapper)}
@@ -156,7 +197,8 @@
                    :min 0
                    :max 360
                    :default-value hue
-                   :on-change (on-change-property :h 360)}]]
+                   :on-change (on-change-property :h 360)
+                   :on-key-down (on-key-down-property :h 360)}]]
          [:div {:class (stl/css :input-wrapper)}
           [:label {:for "saturation-value" :class (stl/css :input-label)} "S"]
           [:input {:id "saturation-value"
@@ -166,7 +208,8 @@
                    :max 100
                    :step 1
                    :default-value saturation
-                   :on-change (on-change-property :s 100)}]]
+                   :on-change (on-change-property :s 100)
+                   :on-key-down (on-key-down-property :s 100)}]]
          [:div {:class (stl/css :input-wrapper)}
           [:label {:for "value-value" :class (stl/css :input-label)} "V"]
           [:input {:id "value-value"
@@ -175,7 +218,8 @@
                    :min 0
                    :max 100
                    :default-value value
-                   :on-change (on-change-property :v 100)}]]])]
+                   :on-change (on-change-property :v 100)
+                   :on-key-down (on-key-down-property :v 100)}]]])]
      [:div {:class (stl/css :hex-alpha-wrapper)}
       [:div {:class (stl/css-case :input-wrapper true
                                   :hex true)}
@@ -195,4 +239,5 @@
                   :step 1
                   :max 100
                   :default-value (if (= alpha :multiple) "" alpha)
-                  :on-change on-change-opacity}]])]]))
+                  :on-change on-change-opacity
+                  :on-key-down on-key-down-opacity}]])]]))
