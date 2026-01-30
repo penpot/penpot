@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-30 05:01+0000\n"
+"PO-Revision-Date: 2026-01-31 14:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3263,3 +3263,82 @@ msgstr "Sketch"
 #: src/app/main/ui/dashboard/sidebar.cljs:731
 msgid "labels.sources"
 msgstr "Sources"
+
+#: src/app/main/ui/dashboard/fonts.cljs:253
+msgid "labels.upload"
+msgstr "Téléverser"
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr ""
+"Accélère ton travail avec des raccourcis pratiques comme Shift + A pour la "
+"mise en page automatique."
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Raccourcis clavier"
+
+#: src/app/main/data/common.cljs:118
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Ta bibliothèque est vide. Une fois ajoutée comme bibliothèque partagée, les "
+"atouts créés seront disponibles à tous tes autres fichiers. Vraiment la "
+"publier?"
+
+#: src/app/main/data/common.cljs:120
+msgid "modals.add-shared-confirm.accept"
+msgstr "Ajouter comme bibliothèque partagée"
+
+#: src/app/main/data/common.cljs:118
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"Une fois ajoutée comme bibliothèque partagée, les atouts de ce fichier "
+"seront disponibles à partir de tes autres fichiers."
+
+#: src/app/main/data/common.cljs:117
+msgid "modals.add-shared-confirm.message"
+msgstr "Ajouter « %s » comme bibliothèque partagée"
+
+#: src/app/main/ui/workspace/nudge.cljs:59
+msgid "modals.big-nudge"
+msgstr "Grand ajustement"
+
+#: src/app/main/ui/settings/change_email.cljs:109
+msgid "modals.change-email.confirm-email"
+msgstr "Répéter le nouveau courriel"
+
+#: src/app/main/ui/settings/change_email.cljs:97
+msgid "modals.change-email.info"
+msgstr ""
+"Nous allons envoyer un courriel à l'adresse actuelle « %s » pour vérifier "
+"ton identité."
+
+#: src/app/main/ui/settings/change_email.cljs:102
+msgid "modals.change-email.new-email"
+msgstr "Nouveau courriel"
+
+#: src/app/main/ui/settings/change_email.cljs:117
+msgid "modals.change-email.submit"
+msgstr "Changer l'adresse courriel"
+
+#: src/app/main/ui/settings/change_email.cljs:90
+msgid "modals.change-email.title"
+msgstr "Changer d'adresse courriel"
+
+#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
+msgid "modals.create-access-token.copy-token"
+msgstr "Copier le token"
+
+#: src/app/main/ui/dashboard/fonts.cljs:356
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Vraiment supprimer ce style de police? Il ne chargera pas si il est utilité "
+"dans un fichier."
+
+#: src/app/main/ui/dashboard/fonts.cljs:355
+msgid "modals.delete-font-variant.title"
+msgstr "Supprimer un style de police"
+
+#: src/app/main/ui/dashboard/team.cljs:218
+msgid "modals.invite-team-member.title"
+msgstr "Inviter des membres à l'équipe"
