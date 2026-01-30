@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
@@ -644,8 +644,8 @@
                           shape-ids (d/nilv (keys shapes)  [])
                           any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
-                          resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                          tokenized-attributes (cft/attributes-map attributes token)
+                          resolved-value (get-in resolved-tokens [(cfo/token-identifier token) :resolved-value])
+                          tokenized-attributes (cfo/attributes-map attributes token)
                           type (:type token)]
                       (rx/concat
                        (rx/of
@@ -704,7 +704,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
+       (let [remove-token #(when % (cfo/remove-attributes-for-token attributes token %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
@@ -732,7 +732,7 @@
             (get token-properties (:type token))
 
             unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
 
             shape-ids (map :id shapes)]
 
@@ -754,6 +754,43 @@
                            :token token
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
+
+(defn toggle-border-radius-token
+  [{:keys [token attrs shape-ids expand-with-children]}]
+  (ptk/reify ::on-toggle-border-radius-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            shapes (into [] (keep (d/getf objects)) shape-ids)
+
+            shapes
+            (if expand-with-children
+              (into []
+                    (mapcat (fn [shape]
+                              (if (= (:type shape) :group)
+                                (keep objects (:shapes shape))
+                                [shape])))
+                    shapes)
+              shapes)
+
+            {:keys [attributes all-attributes]}
+            (get token-properties (:type token))
+
+            unapply-tokens?
+            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+
+            shape-ids (map :id shapes)]
+
+        (if unapply-tokens?
+          (rx/of
+           (unapply-token {:attributes (or attrs all-attributes attributes)
+                           :token token
+                           :shape-ids shape-ids}))
+          (rx/of
+           (apply-token {:attributes attrs
+                         :token token
+                         :shape-ids shape-ids
+                         :on-update-shape update-shape-radius-for-corners})))))))
 
 (defn apply-token-on-selected
   [color-operations token]

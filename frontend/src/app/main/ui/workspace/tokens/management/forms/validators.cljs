@@ -1,13 +1,11 @@
 (ns app.main.ui.workspace.tokens.management.forms.validators
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.errors :as wte]
-   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -29,7 +27,8 @@
                 ;; When creating a new token we dont have a name yet or invalid name,
                 ;; but we still want to resolve the value to show in the form.
                 ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
-                (not (sm/valid? cto/token-name-ref (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+                (not (sm/valid? cto/schema:token-name (:name token)))
+                (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
         tokens' (cond-> tokens
                   ;; Remove previous token when renaming a token
                   (not= (:name token) (:name prev-token))
@@ -89,23 +88,3 @@
   [token-name token-vals]
   (when (some #(cto/token-value-self-reference? token-name %) token-vals)
     (wte/get-error-code :error.token/direct-self-reference)))
-
-
-
-;; This is used in plugins
-
-(defn- make-token-name-schema
-  "Generate a dynamic schema validation to check if a token path derived
-  from the name already exists at `tokens-tree`."
-  [tokens-tree]
-  [:and
-   [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-   (sm/update-properties cto/token-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-    #(not (cft/token-name-path-exists? % tokens-tree))]])
-
-(defn validate-token-name
-  [tokens-tree name]
-  (let [schema    (make-token-name-schema tokens-tree)
-        explainer (sm/explainer schema)]
-    (-> name explainer sm/simplify not-empty)))
