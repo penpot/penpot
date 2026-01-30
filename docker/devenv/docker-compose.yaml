@@ -46,6 +46,11 @@ services:
       - 9090:9090
       - 9091:9091
 
+      # MCP
+      - 4400:4400
+      - 4401:4401
+      - 4402:4402
+
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
       # SMTP setup
