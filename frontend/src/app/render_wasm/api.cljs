@@ -39,6 +39,7 @@
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
+   [app.render-wasm.text-editor :as text-editor]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -73,6 +74,18 @@
 (def ^:const SHAPES_CHUNK_SIZE 100)
 ;; Threshold below which we use synchronous processing (no chunking overhead)
 (def ^:const ASYNC_THRESHOLD 100)
+
+;; Re-export public WebGL functions
+(def capture-canvas-pixels webgl/capture-canvas-pixels)
+(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
+(def clear-canvas-pixels webgl/clear-canvas-pixels)
+
+;; Re-export public text editor functions
+(def text-editor-start text-editor/text-editor-start)
+(def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
+(def text-editor-is-active? text-editor/text-editor-is-active?)
+(def text-editor-sync-content text-editor/text-editor-sync-content)
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
@@ -109,11 +122,36 @@
    (mf/element object-svg #js {:shape shape})
    (rds/renderToStaticMarkup)))
 
+;; forward declare helpers so render can call them
+(declare request-render)
+(declare set-shape-vertical-align fonts-from-text-content)
+
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render" timestamp)
+
+    ;; Update text editor blink (so cursor toggles) using the same timestamp
+    (try
+      (when wasm/context-initialized?
+        (text-editor/text-editor-update-blink timestamp)
+        ;; Render text editor overlay on top of main canvas (only if feature enabled)
+        ;; Determine if text-editor-wasm feature is active without requiring
+        ;; app.main.features to avoid circular dependency: check runtime and
+        ;; persisted feature sets in the store state.
+        (let [runtime-features (get @st/state :features-runtime)
+              enabled-features (get @st/state :features)]
+          (when (or (contains? runtime-features "text-editor-wasm/v1")
+                    (contains? enabled-features "text-editor-wasm/v1"))
+            (text-editor/text-editor-render-overlay)))
+        ;; Poll for editor events; if any event occurs, trigger a re-render
+        (let [ev (text-editor/text-editor-poll-event)]
+          (when (and ev (not= ev 0))
+            (request-render "text-editor-event"))))
+      (catch :default e
+        (js/console.error "text-editor overlay/update failed:" e)))
+
     (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
@@ -187,23 +225,6 @@
 
 (declare get-text-dimensions)
 
-(defn update-text-rect!
-  [id]
-  (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
-
-
-(defn- ensure-text-content
-  "Guarantee that the shape always sends a valid text tree to WASM. When the
-  content is nil (freshly created text) we fall back to
-  tc/default-text-content so the renderer receives typography information."
-  [content]
-  (or content (tc/v2-default-text-content)))
-
 (defn use-shape
   [id]
   (when wasm/context-initialized?
@@ -213,6 +234,47 @@
               (aget buffer 1)
               (aget buffer 2)
               (aget buffer 3)))))
+
+(defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
+  [shape-id content]
+
+  ;; Cache content for text editor sync
+  (text-editor/cache-shape-text-content! shape-id content)
+
+  (h/call wasm/internal-module "_clear_shape_text")
+
+  (set-shape-vertical-align (get content :vertical-align))
+
+  (let [fonts         (f/get-content-fonts content)
+        fallback-fonts (fonts-from-text-content content true)
+        all-fonts (concat fonts fallback-fonts)
+        result (f/store-fonts shape-id all-fonts)]
+    (f/load-fallback-fonts-for-editor! fallback-fonts)
+    (h/call wasm/internal-module "_update_shape_text_layout")
+    result))
+
+(defn apply-style-to-selection
+  "Apply style attrs to the currently selected text spans.
+   Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
+  [attrs]
+  (text-editor/apply-style-to-selection attrs use-shape set-shape-text-content))
+
+(defn update-text-rect!
+  [id]
+  (when wasm/context-initialized?
+    (mw/emit!
+     {:cmd :index/update-text-rect
+      :page-id (:current-page-id @st/state)
+      :shape-id id
+      :dimensions (get-text-dimensions id)})))
+
+(defn- ensure-text-content
+  "Guarantee that the shape always sends a valid text tree to WASM. When the
+  content is nil (freshly created text) we fall back to
+  tc/default-text-content so the renderer receives typography information."
+  [content]
+  (or content (tc/v2-default-text-content)))
 
 (defn set-parent-id
   [id]
@@ -856,22 +918,6 @@
               fallback-fonts (filter #(get % :is-fallback) updated-fonts)]
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))
-
-(defn set-shape-text-content
-  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
-  [shape-id content]
-
-  (h/call wasm/internal-module "_clear_shape_text")
-
-  (set-shape-vertical-align (get content :vertical-align))
-
-  (let [fonts         (f/get-content-fonts content)
-        fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts shape-id all-fonts)]
-    (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
-    result))
 
 (defn set-shape-grow-type
   [grow-type]
@@ -1539,33 +1585,41 @@
               (persistent! result)))
 
           result
-          (->> result
-               (mapv
-                (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
-                  (let [content (:content shape)
-                        element (-> content :children
-                                    (get 0) :children ;; paragraph-set
-                                    (get paragraph) :children ;; paragraph
-                                    (get span))
-                        text (subs (:text element) start-pos end-pos)]
+          (into []
+                (keep
+                 (fn [{:keys [paragraph span start-pos end-pos direction x y width height]}]
+                   (let [content (:content shape)
+                         element (-> content :children
+                                     (get 0) :children ;; paragraph-set
+                                     (get paragraph) :children ;; paragraph
+                                     (get span))
+                         element-text (:text element)]
 
-                    (d/patch-object
-                     txt/default-text-attrs
-                     (d/without-nils
-                      {:x x
-                       :y (+ y height)
-                       :width width
-                       :height height
-                       :direction       (dr/translate-direction direction)
-                       :font-family     (get element :font-family)
-                       :font-size       (get element :font-size)
-                       :font-weight     (get element :font-weight)
-                       :text-transform  (get element :text-transform)
-                       :text-decoration (get element :text-decoration)
-                       :letter-spacing  (get element :letter-spacing)
-                       :font-style      (get element :font-style)
-                       :fills           (get element :fills)
-                       :text            text}))))))]
+                     ;; Add comprehensive nil-safety checks
+                     (when (and element
+                                element-text
+                                (>= start-pos 0)
+                                (<= end-pos (count element-text))
+                                (<= start-pos end-pos))
+                       (let [text (subs element-text start-pos end-pos)]
+                         (d/patch-object
+                          txt/default-text-attrs
+                          (d/without-nils
+                           {:x x
+                            :y (+ y height)
+                            :width width
+                            :height height
+                            :direction       (dr/translate-direction direction)
+                            :font-family     (get element :font-family)
+                            :font-size       (get element :font-size)
+                            :font-weight     (get element :font-weight)
+                            :text-transform  (get element :text-transform)
+                            :text-decoration (get element :text-decoration)
+                            :letter-spacing  (get element :letter-spacing)
+                            :font-style      (get element :font-style)
+                            :fills           (get element :fills)
+                            :text            text})))))))
+                result)]
       (mem/free)
 
       result)))
@@ -1599,7 +1653,4 @@
                 (p/resolved false)))))
       (p/resolved false))))
 
-;; Re-export public WebGL functions
-(def capture-canvas-pixels webgl/capture-canvas-pixels)
-(def restore-previous-canvas-pixels webgl/restore-previous-canvas-pixels)
-(def clear-canvas-pixels webgl/clear-canvas-pixels)
+

@@ -345,11 +345,9 @@
                 max-height (max height selrect-height)
                 valign (-> shape :content :vertical-align)
                 y (:y selrect)
-                y (if (and valign (> height selrect-height))
-                    (case valign
-                      "bottom" (- y (- height selrect-height))
-                      "center" (- y (/ (- height selrect-height) 2))
-                      y)
+                y (case valign
+                    "bottom" (+ y (- selrect-height height))
+                    "center" (+ y (/ (- selrect-height height) 2))
                     y)]
             [(assoc selrect :y y :width max-width :height max-height) transform])
 
