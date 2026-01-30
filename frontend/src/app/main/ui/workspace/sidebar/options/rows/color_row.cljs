@@ -85,14 +85,13 @@
         (mf/use-fn
          (mf/deps detach-token token applied-token-name)
          (fn []
-           (let [token (or token applied-token-name)]
-             (detach-token token))))
+           (detach-token token)))
 
         has-errors (some? (:errors token))
         token-name (:name token)
         resolved (:resolved-value token)
-        not-active (and (empty? active-tokens)
-                        (nil? token))
+        not-active (or (empty? active-tokens)
+                       (nil? token))
         id (dm/str (:id token) "-name")
         swatch-tooltip-content (cond
                                  not-active
@@ -344,7 +343,6 @@
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
-
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)

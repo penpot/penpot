@@ -172,9 +172,12 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token attrs]
-           (st/emit! (dwta/unapply-token {:attributes attrs
-                                          :token token
-                                          :shape-ids ids}))))]
+           (if (seq token)
+             (st/emit! (dwta/unapply-token {:token (first token)
+                                            :attributes attrs
+                                            :shape-ids ids}))
+             (st/emit! (dwta/detach-token {:attributes attrs
+                                           :shape-ids ids})))))]
 
     [:section {:class (stl/css :stroke-section)
                :aria-label "stroke-section"}

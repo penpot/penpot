@@ -166,9 +166,16 @@
                                (d/without-nils))]
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))
-                 (st/emit! (dwta/unapply-token {:attributes attr
-                                                :token token
-                                                :shape-ids [(:shape-id op)]})))))))
+                 (prn token)
+                 (if (seq token)
+                   (st/emit! (dwta/unapply-token {:token (first token)
+                                                  :attributes attr
+                                                  :shape-ids [(:shape-id op)]}))
+                   (st/emit! (dwta/detach-token {:attributes attr
+                                                 :shape-ids [(:shape-id op)]})))
+                 #_(st/emit! (dwta/unapply-token {:attributes attr
+                                                  :token token
+                                                  :shape-ids [(:shape-id op)]})))))))
 
         select-only
         (mf/use-fn

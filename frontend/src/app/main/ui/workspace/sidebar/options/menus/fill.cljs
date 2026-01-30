@@ -74,7 +74,6 @@
 
         render-wasm?   (feat/use-feature "render-wasm/v1")
 
-
         ^boolean
         multiple?      (= :multiple fills)
 
@@ -184,9 +183,13 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token]
-           (st/emit! (dwta/unapply-token {:attributes #{:fill}
-                                          :token token
-                                          :shape-ids ids}))))]
+           (prn "on-detach-token" token)
+           (if (seq token)
+             (st/emit! (dwta/unapply-token {:token (first token)
+                                            :attributes #{:fill}
+                                            :shape-ids ids}))
+             (st/emit! (dwta/detach-token {:attributes #{:fill}
+                                           :shape-ids ids})))))]
 
     (mf/with-layout-effect [hide-on-export]
       (when-let [checkbox (mf/ref-val checkbox-ref)]
@@ -215,7 +218,8 @@
      (when open?
        [:div {:class (stl/css :fill-content)}
         (cond
-          (= :multiple fills)
+          (or (= :multiple fills)
+              (= :multiple fill-token-applied))
           [:div {:class (stl/css :fill-multiple)}
            [:div {:class (stl/css :fill-multiple-label)}
             (tr "settings.multiple")]

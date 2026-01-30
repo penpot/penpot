@@ -710,6 +710,21 @@
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
 
+(defn detach-token
+  "Removes `attributes` when token-id is nil.
+
+  Doesn't update shape attributes."
+  [{:keys [attributes shape-ids] :as _props}]
+  (ptk/reify ::detach-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (let [remove-token #(when % (cft/remove-attribute-for-detached-token attributes %))]
+         (dwsh/update-shapes
+          shape-ids
+          (fn [shape]
+            (update shape :applied-tokens remove-token))))))))
+
 (defn toggle-token
   [{:keys [token attrs shape-ids expand-with-children]}]
   (ptk/reify ::on-toggle-token
