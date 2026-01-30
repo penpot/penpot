@@ -10,22 +10,35 @@ corepack install;
 # Ensure clean working directory
 rm -rf dist;
 rm -rf node_modules;
-rm -rf server/dist;
-rm -rf server/node_modules;
+rm -rf packages/server/dist;
+rm -rf packages/server/node_modules;
+
+pushd ../plugins
+pnpm install
+pnpm run build:doc
+popd
+
+rsync -avr ../plugins/dist/doc/ ./types-generator/doc/
 
 pushd types-generator
+set +e;
 pixi install;
-pixi run python prepare_api_docs.py;
+pnpx concurrently --kill-others-on-fail -k \
+     "(cd doc; pixi run python -m http.server 9090)" \
+     "pixi run python prepare_api_docs.py http://localhost:9090";
+rm -rf doc;
 popd
+
+set -e;
 
 pnpm -r --filter "!mcp-plugin" install;
 pnpm -r --filter "mcp-server" run build:multi-user;
 
-rsync -avr server/dist/ ./dist/;
-rsync -avr server/data/ ./dist/data/;
+rsync -avr packages/server/dist/ ./dist/;
+rsync -avr packages/server/data/ ./dist/data/;
 
-cp server/package.json ./dist/;
-cp server/pnpm-lock.yaml ./dist/;
+cp packages/server/package.json ./dist/;
+cp packages/server/pnpm-lock.yaml ./dist/;
 
 cat <<EOF | tee ./dist/setup
 #/usr/bin/env bash

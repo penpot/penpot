@@ -235,7 +235,7 @@ class PenpotAPIDocsProcessor:
 
 
 def main():
-    target_dir = Path(__file__).parent.parent / "mcp-server" / "data"
+    target_dir = Path(__file__).parent.parent / "packages" / "server" / "data"
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_API_DOCS_URL
 
     print("Fetching plugin data from: {}".format(url))
