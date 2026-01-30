@@ -9,7 +9,7 @@ This guide explains how to get your own Penpot instance, running on a machine yo
 to test it, use it by you or your team, or even customize and extend it any way you like.
 
 If you need more context you can look at the <a
-href="https://community.penpot.app/t/self-hosting-penpot-i/2336" target="_blank">post
+href="https://penpot.app/blog/how-to-self-host-penpot/" target="_blank">post
 about self-hosting</a> in Penpot community.
 
 <strong>The experience stays the same, whether you use
