@@ -64,6 +64,8 @@
    [:id ::sm/uuid]
    [:fullname [::sm/word-string {:max 250}]]
    [:email ::sm/email]
+   [:theme {:optional true} :string]
+   [:is-admin {:optional true} ::sm/boolean]
    [:is-active {:optional true} ::sm/boolean]
    [:is-blocked {:optional true} ::sm/boolean]
    [:is-demo {:optional true} ::sm/boolean]
