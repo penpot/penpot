@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -34,7 +35,7 @@
 (def ^:private accept-font-types
   (str (str/join "," cm/font-types)
        ;; A workaround to solve a problem with chrome input selector
-       ",.ttf,application/font-woff,woff,.otf"))
+       ",.ttf,application/font-woff,.woff,.woff2,.otf"))
 
 (defn- use-page-title
   [team section]
@@ -118,10 +119,10 @@
                             (swap! fonts* dissoc id)
                             (swap! uploading* disj id)
                             (st/emit! (df/add-font font)))
-                          (fn [error]
+                          (fn [cause]
                             (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
                             (swap! fonts* dissoc id)
-                            (js/console.log "error" error))))))
+                            (ex/print-throwable cause))))))
 
         on-upload
         (mf/use-fn
