@@ -370,6 +370,22 @@
               (when (zero? (:exit res))
                 (:out res))))
 
+          (woff2->sfnt [data]
+            ;; woff2_decompress outputs to same directory with .ttf extension
+            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix ".woff2")
+                  foutput (fs/path (str/replace (str finput) #"\.woff2$" ".ttf"))]
+              (try
+                (io/write* finput data)
+                (let [res (sh/sh "woff2_decompress" (str finput))]
+                  (if (zero? (:exit res))
+                    foutput
+                    (do
+                      (when (fs/exists? foutput)
+                        (fs/delete foutput))
+                      nil)))
+                (finally
+                  (fs/delete finput)))))
+
           ;; Documented here:
           ;; https://docs.microsoft.com/en-us/typography/opentype/spec/otff#table-directory
           (get-sfnt-type [data]
@@ -419,4 +435,27 @@
 
               (= stype :ttf)
               (-> (assoc "font/otf" (ttf->otf sfnt))
-                  (assoc "font/ttf" sfnt)))))))))
+                  (assoc "font/ttf" sfnt)))))
+
+        (contains? current "font/woff2")
+        (let [data   (get input "font/woff2")
+              foutput (woff2->sfnt data)]
+          (when-not foutput
+            (ex/raise :type :validation
+                      :code :invalid-woff2-file
+                      :hint "invalid woff2 file"))
+          (try
+            (let [sfnt  (io/read* foutput)
+                  type (get-sfnt-type sfnt)]
+              (cond-> input
+                (= type :otf)
+                (-> (assoc "font/otf" sfnt)
+                    (assoc "font/ttf" (otf->ttf sfnt))
+                    (update "font/woff" gen-if-nil #(ttf-or-otf->woff sfnt)))
+
+                (= type :ttf)
+                (-> (assoc "font/ttf" sfnt)
+                    (assoc "font/otf" (ttf->otf sfnt))
+                    (update "font/woff" gen-if-nil #(ttf-or-otf->woff sfnt)))))
+            (finally
+              (io/delete-file! foutput))))))))
