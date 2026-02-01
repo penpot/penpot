@@ -504,12 +504,12 @@
                           :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
-                          :command "shift+0"
+                          :command ["shift+0" ")"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/reset-zoom)}
 
    :fit-all              {:tooltip (ds/shift "1")
-                          :command "shift+1"
+                          :command ["shift+1" "!"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-fit-all)}
 
