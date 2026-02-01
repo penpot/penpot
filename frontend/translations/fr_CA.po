@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-31 14:01+0000\n"
+"PO-Revision-Date: 2026-02-01 16:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3301,7 +3301,7 @@ msgstr "Ajouter « %s » comme bibliothèque partagée"
 
 #: src/app/main/ui/workspace/nudge.cljs:59
 msgid "modals.big-nudge"
-msgstr "Grand ajustement"
+msgstr "Grande pichenotte"
 
 #: src/app/main/ui/settings/change_email.cljs:109
 msgid "modals.change-email.confirm-email"
@@ -3342,3 +3342,320 @@ msgstr "Supprimer un style de police"
 #: src/app/main/ui/dashboard/team.cljs:218
 msgid "modals.invite-team-member.title"
 msgstr "Inviter des membres à l'équipe"
+
+#: src/app/main/ui/dashboard/team.cljs:377
+msgid "modals.promote-owner-confirm.title"
+msgstr "Nouveau propriétaire d'équipe"
+
+#: src/app/main/ui/workspace/libraries.cljs:286
+msgid "modals.publish-empty-library.accept"
+msgstr "Publier"
+
+#: src/app/main/ui/workspace/libraries.cljs:285
+msgid "modals.publish-empty-library.message"
+msgstr "Ta bibliothèque est vide. Vraiment la publier?"
+
+#: src/app/main/ui/workspace/libraries.cljs:284
+msgid "modals.publish-empty-library.title"
+msgstr "Publier une bibliothèque vide"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Retirer la bibliothèque partagée"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"Une fois la bibliothèque partagée retirée, la bibliothèque de ce fichier ne "
+"sera plus disponible dans tes autres fichiers."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "modals.remove-shared-confirm.message"
+msgstr "Retirer « %s » comme bibliothèque partagée"
+
+#: src/app/main/ui/workspace/nudge.cljs:52
+msgid "modals.small-nudge"
+msgstr "Petite pichenotte"
+
+#: src/app/main/ui/workspace/main_menu.cljs:302, src/app/main/ui/workspace/nudge.cljs:46
+msgid "modals.nudge-title"
+msgstr "Taille de pichenotte"
+
+#: src/app/main/ui/onboarding/questions.cljs:55
+msgid "labels.start"
+msgstr "Démarrer"
+
+#: src/app/main/ui/dashboard/team.cljs:954
+msgid "labels.status"
+msgstr "Statut"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Contour"
+
+#: src/app/main/ui/onboarding/questions.cljs:87
+msgid "labels.student-teacher"
+msgstr "Étudiant ou enseignant"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:108, src/app/main/ui/inspect/styles.cljs:135
+msgid "labels.styles"
+msgstr "Styles"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
+msgid "labels.switch"
+msgstr "Basculer"
+
+#: src/app/main/ui/onboarding/questions.cljs:256
+#, unused
+msgid "labels.team-leader"
+msgstr "Chef d'équipe"
+
+#: src/app/main/ui/onboarding/questions.cljs:257
+#, unused
+msgid "labels.team-member"
+msgstr "Membre de l'équipe"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Texte"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:36
+msgid "labels.themes"
+msgstr "Thèmes"
+
+#: src/app/main/ui/workspace/main_menu.cljs:152
+msgid "labels.tutorials"
+msgstr "Tutoriels"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:189
+msgid "labels.typography"
+msgstr "Typographie"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:121
+msgid "labels.unknown-error"
+msgstr "Erreur inconnue"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:204
+msgid "labels.unlock"
+msgstr "Déverrouiller"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:287
+msgid "labels.unpublish-multi-files"
+msgstr "Dépublier %s fichiers"
+
+#: src/app/main/ui/dashboard/team.cljs:379
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Si tu transfères la propriété, ton rôle deviendra « Admin » et tu perdras "
+"des permissions sur cette équipe. "
+
+#: src/app/main/ui/dashboard/team.cljs:378
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"Tu es le propriétaire actuel de cette équipe. Vraiment transférer la "
+"propriété de l'équipe à « %s » ?"
+
+#: src/app/main/ui/delete_shared.cljs:55
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Dépublier"
+msgstr[1] "Dépublier"
+
+#: src/app/main/ui/delete_shared.cljs:50
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Vraiment dépublier cette bibliothèque?"
+msgstr[1] "Vraiment dépublier ces bibliothèques?"
+
+#: src/app/main/ui/delete_shared.cljs:45
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Dépublier bibliothèque"
+msgstr[1] "Dépublier bibliothèques"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Tu es sur le point de mettre à jour les composants d'une bibliothèque "
+"partagée. Ceci pourrait affecter les autres fichiers qui l'utilisent."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Mise à jour de composants d'une bibliothèque partagée"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:417
+msgid "modals.update-remote-component.accept"
+msgstr "Mettre à jour"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:416
+msgid "modals.update-remote-component.cancel"
+msgstr "Annuler"
+
+#: src/app/main/ui/static.cljs:70
+msgid "not-found.made-with-love"
+msgstr "Fait avec AMOUR et du code source libre"
+
+#: src/app/main/ui/static.cljs:249
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Tu as déjà demandé l'accès à ce fichier."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Tu as déjà demandé l'accès à ce fichier ou d'autres fichiers ou projets de "
+"cette équipe."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Tu as déjà demandé l'accès à ce projet ou d'autres projets ou fichiers de "
+"cette équipe."
+
+#: src/app/main/ui/static.cljs:255
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Tu as déjà demandé l'accès à ce projet."
+
+#: src/app/main/ui/static.cljs:270, src/app/main/ui/static.cljs:279
+msgid "not-found.no-permission.ask"
+msgstr "DEMANDER L'ACCÈS"
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.done.remember"
+msgstr "Souviens-toi que si le propriétaire le permet, tu joindras l'équipe."
+
+#: src/app/main/ui/static.cljs:261
+msgid "not-found.no-permission.done.success"
+msgstr "Ta demande a bien été envoyée!"
+
+#: src/app/main/ui/static.cljs:267
+msgid "not-found.no-permission.file"
+msgstr "Tu n'as pas accès à ce fichier."
+
+#: src/app/main/ui/static.cljs:57, src/app/main/ui/static.cljs:245, src/app/main/ui/static.cljs:251, src/app/main/ui/static.cljs:257, src/app/main/ui/static.cljs:263, src/app/main/ui/static.cljs:272, src/app/main/ui/static.cljs:281
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Aller à ton Penpot"
+
+#: src/app/main/ui/static.cljs:269, src/app/main/ui/static.cljs:278
+msgid "not-found.no-permission.if-approves"
+msgstr "Si le propriétaire le permet, tu joindras l'équipe."
+
+#: src/app/main/ui/static.cljs:484, src/app/main/ui/static.cljs:497
+msgid "not-found.no-permission.penpot-file"
+msgstr "Fichier Penpot"
+
+#: src/app/main/ui/static.cljs:244, src/app/main/ui/static.cljs:276
+msgid "not-found.no-permission.project"
+msgstr "Tu n'as pas accès à ce projet."
+
+#: src/app/main/ui/static.cljs:483, src/app/main/ui/static.cljs:495
+msgid "not-found.no-permission.project-name"
+msgstr "PROJET"
+
+#: src/app/main/ui/static.cljs:268
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr ""
+"Pour accéder à ce fichier, tu peux demander au propriétaire de l'équipe."
+
+#: src/app/main/ui/static.cljs:277
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "Pour accéder à ce projet, tu peux demander au propriétaire de l'équipe."
+
+#: src/app/main/data/common.cljs:89
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Pause de maintenance: nous serons hors service pour les 5 prochaines minutes."
+
+#: src/app/main/data/common.cljs:82
+msgid "notifications.by-code.upgrade-version"
+msgstr "Une nouvelle version est disponible. Merci de rafraîchir la page"
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "Invitation supprimée"
+
+#: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
+msgid "notifications.invitation-email-sent"
+msgstr "Invitation envoyée"
+
+#: src/app/main/ui/dashboard/team.cljs:635
+msgid "notifications.invitation-link-copied"
+msgstr "Lien d'invitation copié"
+
+#: src/app/main/ui/settings/delete_account.cljs:24
+msgid "notifications.profile-deletion-not-allowed"
+msgstr ""
+"Tu ne peux pas supprimer ton profile. Réassigne tes équipe avant de "
+"continuer."
+
+#: src/app/main/ui/settings/options.cljs:27, src/app/main/ui/settings/profile.cljs:30
+msgid "notifications.profile-saved"
+msgstr "Profile enregistré!"
+
+#: src/app/main/ui/settings/change_email.cljs:46
+msgid "notifications.validation-email-sent"
+msgstr "Courriel de vérification envoyé à %s. Va voir tes courriels!"
+
+#, unused
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Plusieurs ressources sont disponibles pour t'aider à démarrer avec Penpot, "
+"comme le guide utilisateur et notre chaîne Youtube."
+
+#, unused
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Infos détaillées sur comment utiliser Penpot. Du prototypage à "
+"l'organisation au partage de designs."
+
+#, unused
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Guide utilisateur"
+
+#, unused
+msgid "onboarding-v2.before-start.desc3"
+msgstr "Tu peux regarder nos tutoriels et ceux créés par la communauté."
+
+#, unused
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Tutoriels vidéo"
+
+#, unused
+msgid "onboarding-v2.before-start.title"
+msgstr "Avant de commencer"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:68
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Abonne-toi à l'infolettre Penpot pour être au courant du développement et "
+"des nouvelles."
+
+#: src/app/main/ui/onboarding/newsletter.cljs:88
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"M'envoyer les nouvelles de Penpot (articles de blogue, tutoriels vidéo, flux "
+"en direct...)."
+
+#: src/app/main/ui/onboarding/newsletter.cljs:96
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "La vie privée est importante pour nous. Lis notre "
+
+#: src/app/main/ui/onboarding/newsletter.cljs:102
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Nous t'envoyons seulement des courriels pertinents. Tu peux te désabonner en "
+"tout temps via les liens de désabonnement dans nos infolettres."
+
+#: src/app/main/ui/auth/register.cljs:35, src/app/main/ui/onboarding/newsletter.cljs:76
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"M'envoyer des mises à jour produit (nouvelles fonctionnalités, sorties, "
+"réparatifs...)."
