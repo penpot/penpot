@@ -12,6 +12,7 @@
 (def font-types
   #{"font/ttf"
     "font/woff"
+    "font/woff2"
     "font/otf"
     "font/opentype"})
 
