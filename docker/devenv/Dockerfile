@@ -181,7 +181,8 @@ FROM base AS setup-utils
 
 ENV CLJKONDO_VERSION=2026.01.19 \
     BABASHKA_VERSION=1.12.208 \
-    CLJFMT_VERSION=0.15.6
+    CLJFMT_VERSION=0.15.6 \
+    PIXI_VERSION=0.63.2
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -223,6 +224,26 @@ RUN set -ex; \
     cd /opt/utils/bin; \
     tar -xf /tmp/babashka.tar.gz; \
     rm -rf /tmp/babashka.tar.gz;
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/prefix-dev/pixi/releases/download/v$PIXI_VERSION/pixi-aarch64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/prefix-dev/pixi/releases/download/v$PIXI_VERSION/pixi-x86_64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/pixi.tar.gz ${BINARY_URL}; \
+    cd /opt/utils/bin; \
+    tar -xf /tmp/pixi.tar.gz; \
+    rm -rf /tmp/pixi.tar.gz;
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
