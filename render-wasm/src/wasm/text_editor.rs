@@ -1,3 +1,5 @@
+use std::io::Cursor;
+
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::shapes::{Paragraph, Shape, TextContent, Type, VerticalAlign};
@@ -5,6 +7,17 @@ use crate::state::{TextCursor, TextSelection};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(u8)]
+pub enum CursorDirection {
+    Backward,
+    Forward,
+    LineBefore,
+    LineAfter,
+    LineStart,
+    LineEnd,
+}
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -462,7 +475,7 @@ pub extern "C" fn text_editor_insert_paragraph() {
 // ============================================================================
 
 #[no_mangle]
-pub extern "C" fn text_editor_move_cursor(direction: u8, extend_selection: bool) {
+pub extern "C" fn text_editor_move_cursor(direction: CursorDirection, extend_selection: bool) {
     with_state_mut!(state, {
         if !state.text_editor_state.is_active {
             return;
@@ -488,12 +501,12 @@ pub extern "C" fn text_editor_move_cursor(direction: u8, extend_selection: bool)
         let current = state.text_editor_state.selection.focus;
 
         let new_cursor = match direction {
-            0 => move_cursor_left(&current, paragraphs),
-            1 => move_cursor_right(&current, paragraphs),
-            2 => move_cursor_up(&current, paragraphs, text_content, shape),
-            3 => move_cursor_down(&current, paragraphs, text_content, shape),
-            4 => move_cursor_line_start(&current, paragraphs),
-            5 => move_cursor_line_end(&current, paragraphs),
+            CursorDirection::Backward => move_cursor_backward(&current, paragraphs),
+            CursorDirection::Forward => move_cursor_forward(&current, paragraphs),
+            CursorDirection::LineBefore => move_cursor_up(&current, paragraphs, text_content, shape),
+            CursorDirection::LineAfter => move_cursor_down(&current, paragraphs, text_content, shape),
+            CursorDirection::LineStart => move_cursor_line_start(&current, paragraphs),
+            CursorDirection::LineEnd => move_cursor_line_end(&current, paragraphs),
             _ => current,
         };
 
@@ -504,11 +517,6 @@ pub extern "C" fn text_editor_move_cursor(direction: u8, extend_selection: bool)
         }
 
         state.text_editor_state.reset_blink();
-
-        if direction == 0 || direction == 1 || direction == 4 || direction == 5 {
-            state.text_editor_state.clear_x_affinity();
-        }
-
         state
             .text_editor_state
             .push_event(crate::state::EditorEvent::SelectionChanged);
@@ -944,7 +952,7 @@ fn clamp_cursor(cursor: TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
 }
 
 /// Move cursor left by one character.
-fn move_cursor_left(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
+fn move_cursor_backward(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
     if cursor.char_offset > 0 {
         TextCursor::new(cursor.paragraph, cursor.char_offset - 1)
     } else if cursor.paragraph > 0 {
@@ -957,7 +965,7 @@ fn move_cursor_left(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor
 }
 
 /// Move cursor right by one character.
-fn move_cursor_right(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
+fn move_cursor_forward(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
     let para = &paragraphs[cursor.paragraph];
     let char_count = paragraph_char_count(para);
 
