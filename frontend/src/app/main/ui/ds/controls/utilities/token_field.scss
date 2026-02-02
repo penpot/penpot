@@ -37,6 +37,9 @@
     --token-field-outline-color: var(--color-accent-primary);
   }
 }
+.token-field-wrapper {
+  inline-size: 100%;
+}
 
 .with-icon {
   grid-template-columns: auto 1fr;
