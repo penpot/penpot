@@ -41,4 +41,9 @@ tmux select-window -t penpot:3
 tmux send-keys -t penpot 'cd penpot/backend' enter C-l
 tmux send-keys -t penpot './scripts/start-dev' enter
 
+tmux new-window -t penpot:4 -n 'rust-wasm'
+tmux select-window -t penpot:4
+tmux send-keys -t penpot 'cd penpot/render-wasm' enter C-l
+tmux send-keys -t penpot './build' enter
+
 tmux -2 attach-session -t penpot
