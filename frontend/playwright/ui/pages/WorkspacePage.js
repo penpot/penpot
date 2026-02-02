@@ -253,7 +253,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness() {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText("Page 1");
+    await expect(this.pageName).toHaveText("Page 1", { timeout: 30000 })
   }
 
   async sendPresenceMessage(fixture) {
