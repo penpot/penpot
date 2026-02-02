@@ -7,3 +7,4 @@ packages:
   - "packages/draft-js"
   - "packages/mousetrap"
   - "text-editor"
+  - "packages/ui"

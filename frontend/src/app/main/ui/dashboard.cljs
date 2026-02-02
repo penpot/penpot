@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard
   (:require-macros [app.main.style :as stl])
   (:require
-   ["@penpot/ui" :refer [Example]]
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
@@ -313,9 +312,6 @@
      ;; team is already set so don't put the team into mf/deps.
      [:main {:class (stl/css :dashboard)
              :key (dm/str (:id team))}
-
-      [:div
-       [:> Example]]
       [:> sidebar*
        {:team team
         :projects projects

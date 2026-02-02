@@ -14,6 +14,7 @@ export function Example() {
         <button onClick={() => setCount(0)}>Reset</button>
       </div>
     </div>
+
   );
 }
 

@@ -3,8 +3,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { copyFileSync } from 'node:fs';
 
 const copyCssPlugin = () => ({
@@ -13,7 +11,7 @@ const copyCssPlugin = () => ({
     try {
       copyFileSync(
         'dist/index.css',
-        '../../../frontend/resources/public/css/ui.css',
+        '../../resources/public/css/ui.css',
       );
     } catch (e) {
       console.log('Error copying css file', e);
@@ -23,15 +21,12 @@ const copyCssPlugin = () => ({
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  cacheDir: '../../node_modules/.vite/libs/ui',
   plugins: [
     react({
       babel: {
         plugins: ['babel-plugin-react-compiler'],
       },
     }),
-    nxViteTsPaths(),
-    nxCopyAssetsPlugin(['*.md']),
     dts({
       entryRoot: 'src',
       tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
