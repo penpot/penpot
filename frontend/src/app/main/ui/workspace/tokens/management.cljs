@@ -112,6 +112,7 @@
         tokens
         (sd/use-resolved-tokens* tokens)
 
+        ;; Group tokens by their type
         tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]
           (let [tokens (reduce-kv (fn [tokens k _]
@@ -139,12 +140,46 @@
                         (let [[_ token-value] token]
                           (:id token-value)))))))
 
+        remaining-tokens-of-type?
+        (mf/use-fn
+         (fn [tokens-by-type tokens-in-path-ids]
+           (let [token-ids (set tokens-in-path-ids)
+                 remaining-tokens (filter (fn [token]
+                                            (not (contains? token-ids (:id token))))
+                                          tokens-by-type)]
+             (seq remaining-tokens))))
+
+        delete-token
+        (mf/with-memo [tokens selected-token-set-id]
+          (fn [token]
+            (let [id (:id token)
+                  type (:type token)
+                  path (:name token)
+                  tokens-by-type (ctob/group-by-type tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  tokens-in-path-ids (filter-tokens-by-path-ids type path)
+                  remaining-tokens? (remaining-tokens-of-type? tokens-filtered-by-type tokens-in-path-ids)]
+              ;; Delete the token
+              (st/emit! (dwtl/delete-token selected-token-set-id id))
+              ;; Remove from unfolded tree path
+              (if remaining-tokens?
+                (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                (st/emit! (dwtl/toggle-token-path (name type)))))))
+
         delete-node
         (mf/with-memo [tokens selected-token-set-id]
           (fn [node type]
             (let [path (:path node)
-                  tokens-in-path-ids (filter-tokens-by-path-ids type path)]
-              (st/emit! (dwtl/bulk-delete-tokens selected-token-set-id tokens-in-path-ids)))))]
+                  tokens-by-type (ctob/group-by-type tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  tokens-in-path-ids (filter-tokens-by-path-ids type path)
+                  remaining-tokens? (remaining-tokens-of-type? tokens-filtered-by-type tokens-in-path-ids)]
+              ;; Delete tokens in path
+              (st/emit! (dwtl/bulk-delete-tokens selected-token-set-id tokens-in-path-ids))
+              ;; Remove from unfolded tree path
+              (if remaining-tokens?
+                (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                (st/emit! (dwtl/toggle-token-path (name type)))))))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -157,7 +192,7 @@
             (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
     [:*
-     [:& token-context-menu]
+     [:& token-context-menu {:on-delete-token delete-token}]
      [:> token-node-context-menu* {:on-delete-node delete-node}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib
