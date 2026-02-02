@@ -249,7 +249,7 @@
   (let [fonts         (f/get-content-fonts content)
         fallback-fonts (fonts-from-text-content content true)
         all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts shape-id all-fonts)]
+        result (f/store-fonts all-fonts)]
     (f/load-fallback-fonts-for-editor! fallback-fonts)
     (h/call wasm/internal-module "_update_shape_text_layout")
     result))
