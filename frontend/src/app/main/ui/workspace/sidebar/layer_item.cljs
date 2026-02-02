@@ -300,7 +300,7 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id index objects expanded? selected)
+         (mf/deps id objects expanded? selected)
          (fn [side _data]
            (let [single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
@@ -321,14 +321,18 @@
 
                      [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected) false files)
 
-                     parent    (get objects parent-id)
+                     parent        (get objects parent-id)
+                     current-index (d/index-of (:shapes parent) id)
 
                      to-index  (cond
                                  (= side :center) 0
                                  (and expanded? (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
-                                 (= side :top) (inc index)
-                                 :else index)]
-                 (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))))
+                                 ;; target not found in parent (while lazy loading)
+                                 (neg? current-index) nil
+                                 (= side :top) (inc current-index)
+                                 :else current-index)]
+                 (when (some? to-index)
+                   (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))))
 
         on-hold
         (mf/use-fn
@@ -417,11 +421,7 @@
                 current @children-count*
                 new-count (min total (max current chunk-size min-count))]
             (reset! children-count* new-count))
-          (reset! children-count* 0)))
-      (fn []
-        (when-let [obs ^js @observer-var]
-          (.disconnect obs)
-          (reset! observer-var nil))))
+          (reset! children-count* 0))))
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
     ;; and (shapes item) to reconnect observer after shape changes
@@ -502,4 +502,4 @@
                 :component-child? component-tree?}])))
         (when (< children-count (count (:shapes item)))
           [:div {:ref lazy-ref
-                 :style {:min-height 1}}])])]))
+                 :class (stl/css :lazy-load-sentinel)}])])]))
