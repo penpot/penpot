@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-01 16:01+0000\n"
+"PO-Revision-Date: 2026-02-02 19:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3659,3 +3659,139 @@ msgid "onboarding-v2.newsletter.updates"
 msgstr ""
 "M'envoyer des mises à jour produit (nouvelles fonctionnalités, sorties, "
 "réparatifs...)."
+
+#: src/app/main/ui/settings/profile.cljs:111
+msgid "labels.update"
+msgstr "Modifier"
+
+#: src/app/main/ui/dashboard/team_form.cljs:119
+msgid "labels.update-team"
+msgstr "Enregistrer le nom d'équipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:427
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Comme tu es le seul membre de cette équipe, l'équipe sera supprimée ainsi "
+"que tous ses projets et fichiers."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:412, src/app/main/ui/dashboard/team.cljs:426
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Vraiment quitter l'équipe %s ?"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:54
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"Tu ne peux quitter l'équipe s'il n'y a aucun autre membre pour en devenir "
+"propriétaire. Tu peux toutefois supprimer l'équipe."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:50
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"Tu es le propriétaire de cette équipe. Sélectionne un autre membre pour en "
+"devenir propriétaire avant de quitter."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:73
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "Promouvoir et quitter"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:30
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "Choisir un membre à promouvoir"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:44
+msgid "modals.leave-and-reassign.title"
+msgstr "Avant de quitter"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:392, src/app/main/ui/dashboard/sidebar.cljs:414, src/app/main/ui/dashboard/team.cljs:428, src/app/main/ui/dashboard/team.cljs:450
+msgid "modals.leave-confirm.accept"
+msgstr "Quitter l'équipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/team.cljs:449
+msgid "modals.leave-confirm.message"
+msgstr "Vraiment quitter cette équipe?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
+msgid "modals.leave-confirm.title"
+msgstr "Quitter l'équipe"
+
+#: src/app/main/ui/delete_shared.cljs:56
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Déplacer"
+msgstr[1] "Déplacer"
+
+#, unused
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Un espace publique pour apprendre, partager et discuter du présent et futur "
+"avec toute les communauté et l'équipe de Penpot."
+
+#, unused
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participant de la communauté"
+
+#, unused
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Ici tu vas trouver comment collaborer sur les traductions, demandes de "
+"fonctionnalité, contributions au code et la chasse aux bogues…"
+
+#, unused
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Guide de contribution"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:241
+msgid "onboarding-v2.welcome.title"
+msgstr "Bienvenue à Penpot!"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:254
+#, unused
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Continer en créant une équipe"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:230
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Continuer sans créer d'équipe"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:214
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Créer l'équipe et inviter"
+
+#, unused
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Créer l'équipe et envoyer les invitations"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:219
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Tu pourras envoyer des invitations plus tard"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:177
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"Après avoir nommé ton équipe, tu pourras inviter des gens à la rejoindre."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:185
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Nom de l'équipe"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:215
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Créer l'équipe"
+
+#, unused
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Créer une équipe sans inviter"
+
+#: src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/onboarding/team_choice.cljs:187
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Inviter des membres"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:188
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"N'oublie pas d'inclure tout le monde. Développeurs, designers et "
+"gestionnaires... l'union fait la force :)"
+
+#: src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/onboarding/team_choice.cljs:194
+msgid "onboarding.choice.team-up.roles"
+msgstr "Inviter avec le rôle :"
