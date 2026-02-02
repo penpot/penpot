@@ -270,3 +270,7 @@
 .filtered {
   min-width: deprecated.$s-12;
 }
+.lazy-load-sentinel {
+  min-height: 1px;
+  pointer-events: none;
+}
