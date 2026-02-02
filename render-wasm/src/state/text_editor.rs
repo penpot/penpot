@@ -2,6 +2,7 @@
 
 use crate::shapes::TextPositionWithAffinity;
 use crate::uuid::Uuid;
+use skia_safe::Color;
 
 /// Cursor position within text content.
 /// Uses character offsets for precise positioning.
@@ -105,27 +106,41 @@ pub enum EditorEvent {
     NeedsLayout = 3,
 }
 
+/// FIXME: It should be better to get these constants from the frontend through the API.
+const SELECTION_COLOR: Color = Color::from_argb(255, 0, 209, 184);
+const CURSOR_WIDTH: f32 = 1.5;
+const CURSOR_COLOR: Color = Color::BLACK;
+const CURSOR_BLINK_INTERVAL_MS: f64 = 530.0;
+
+pub struct TextEditorTheme {
+    pub selection_color: Color,
+    pub cursor_width: f32,
+    pub cursor_color: Color,
+}
+
 pub struct TextEditorState {
+    pub theme: TextEditorTheme,
     pub selection: TextSelection,
     pub is_active: bool,
     pub active_shape_id: Option<Uuid>,
     pub cursor_visible: bool,
     pub last_blink_time: f64,
-    pub x_affinity: Option<f32>,
     pending_events: Vec<EditorEvent>,
 }
-
-const CURSOR_BLINK_INTERVAL_MS: f64 = 530.0;
 
 impl TextEditorState {
     pub fn new() -> Self {
         Self {
+            theme: TextEditorTheme {
+                selection_color: SELECTION_COLOR,
+                cursor_width: CURSOR_WIDTH,
+                cursor_color: CURSOR_COLOR,
+            },
             selection: TextSelection::new(),
             is_active: false,
             active_shape_id: None,
             cursor_visible: true,
             last_blink_time: 0.0,
-            x_affinity: None,
             pending_events: Vec::new(),
         }
     }
@@ -136,7 +151,6 @@ impl TextEditorState {
         self.cursor_visible = true;
         self.last_blink_time = 0.0;
         self.selection = TextSelection::new();
-        self.x_affinity = None;
         self.pending_events.clear();
     }
 
@@ -144,7 +158,6 @@ impl TextEditorState {
         self.is_active = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
-        self.x_affinity = None;
         self.pending_events.clear();
     }
 
@@ -152,7 +165,6 @@ impl TextEditorState {
         let cursor = TextCursor::new(position.paragraph as usize, position.offset as usize);
         self.selection.set_caret(cursor);
         self.reset_blink();
-        self.clear_x_affinity();
         self.push_event(EditorEvent::SelectionChanged);
     }
 
@@ -184,10 +196,6 @@ impl TextEditorState {
     pub fn reset_blink(&mut self) {
         self.cursor_visible = true;
         self.last_blink_time = 0.0;
-    }
-
-    pub fn clear_x_affinity(&mut self) {
-        self.x_affinity = None;
     }
 
     pub fn push_event(&mut self, event: EditorEvent) {

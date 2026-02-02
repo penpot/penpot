@@ -1,12 +1,7 @@
 use crate::shapes::{Shape, TextContent, Type, VerticalAlign};
-use crate::state::{TextCursor, TextEditorState, TextSelection};
+use crate::state::{TextEditorState, TextSelection};
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-use skia_safe::{Canvas, Color, Matrix, Paint, Rect};
-
-const CURSOR_WIDTH: f32 = 1.5;
-/// FIXME: Use theme color, take into account background color for contrast
-const SELECTION_COLOR: Color = Color::from_argb(80, 66, 133, 244);
-const CURSOR_COLOR: Color = Color::BLACK;
+use skia_safe::{BlendMode, Canvas, Matrix, Paint, Rect};
 
 pub fn render_overlay(
     canvas: &Canvas,
@@ -26,23 +21,28 @@ pub fn render_overlay(
     canvas.concat(transform);
 
     if editor_state.selection.is_selection() {
-        render_selection(canvas, &editor_state.selection, text_content, shape);
+        render_selection(canvas, &editor_state, text_content, shape);
     }
 
     if editor_state.cursor_visible {
-        render_cursor(canvas, &editor_state.selection.focus, text_content, shape);
+        render_cursor(canvas, &editor_state, text_content, shape);
     }
 
     canvas.restore();
 }
 
-fn render_cursor(canvas: &Canvas, cursor: &TextCursor, text_content: &TextContent, shape: &Shape) {
-    let Some(rect) = calculate_cursor_rect(cursor, text_content, shape) else {
+fn render_cursor(
+    canvas: &Canvas,
+    editor_state: &TextEditorState,
+    text_content: &TextContent,
+    shape: &Shape,
+) {
+    let Some(rect) = calculate_cursor_rect(editor_state, text_content, shape) else {
         return;
     };
 
     let mut paint = Paint::default();
-    paint.set_color(CURSOR_COLOR);
+    paint.set_color(editor_state.theme.cursor_color);
     paint.set_anti_alias(true);
 
     canvas.draw_rect(rect, &paint);
@@ -50,10 +50,11 @@ fn render_cursor(canvas: &Canvas, cursor: &TextCursor, text_content: &TextConten
 
 fn render_selection(
     canvas: &Canvas,
-    selection: &TextSelection,
+    editor_state: &TextEditorState,
     text_content: &TextContent,
     shape: &Shape,
 ) {
+    let selection = &editor_state.selection;
     let rects = calculate_selection_rects(selection, text_content, shape);
 
     if rects.is_empty() {
@@ -61,9 +62,9 @@ fn render_selection(
     }
 
     let mut paint = Paint::default();
-    paint.set_color(SELECTION_COLOR);
+    paint.set_blend_mode(BlendMode::Multiply);
+    paint.set_color(editor_state.theme.selection_color);
     paint.set_anti_alias(true);
-
     for rect in rects {
         canvas.draw_rect(rect, &paint);
     }
@@ -82,10 +83,11 @@ fn vertical_align_offset(
 }
 
 fn calculate_cursor_rect(
-    cursor: &TextCursor,
+    editor_state: &TextEditorState,
     text_content: &TextContent,
     shape: &Shape,
 ) -> Option<Rect> {
+    let cursor = editor_state.selection.focus;
     let paragraphs = text_content.paragraphs();
     if cursor.paragraph >= paragraphs.len() {
         return None;
@@ -120,7 +122,7 @@ fn calculate_cursor_rect(
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
                     0..1,
-                    RectHeightStyle::Tight,
+                    RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
@@ -131,7 +133,7 @@ fn calculate_cursor_rect(
             } else if char_pos >= para_char_count {
                 let rects = laid_out_para.get_rects_for_range(
                     para_char_count.saturating_sub(1)..para_char_count,
-                    RectHeightStyle::Tight,
+                    RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
@@ -142,7 +144,7 @@ fn calculate_cursor_rect(
             } else {
                 let rects = laid_out_para.get_rects_for_range(
                     char_pos..char_pos + 1,
-                    RectHeightStyle::Tight,
+                    RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
                 if !rects.is_empty() {
@@ -157,7 +159,7 @@ fn calculate_cursor_rect(
             return Some(Rect::from_xywh(
                 selrect.x() + cursor_x,
                 selrect.y() + y_offset,
-                CURSOR_WIDTH,
+                editor_state.theme.cursor_width,
                 cursor_height,
             ));
         }
@@ -216,7 +218,7 @@ fn calculate_selection_rects(
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let text_boxes = laid_out_para.get_rects_for_range(
                 range_start..range_end,
-                RectHeightStyle::Tight,
+                RectHeightStyle::Max,
                 RectWidthStyle::Tight,
             );
 
