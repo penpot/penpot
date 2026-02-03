@@ -25,6 +25,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
@@ -97,12 +98,12 @@
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema           (or make-schema default-make-schema)
+  (let [make-schema     (or make-schema default-make-schema)
         input-component (or input-component token.controls/input*)
-        validate-token (or validator default-validate-token)
+        validate-token  (or validator default-validate-token)
 
-        active-tab* (mf/use-state #(if (cft/is-reference? token) :reference :composite))
-        active-tab (deref active-tab*)
+        active-tab*     (mf/use-state #(if (cft/is-reference? token) :reference :composite))
+        active-tab      (deref active-tab*)
 
         token
         (mf/with-memo [token]
@@ -141,6 +142,10 @@
         form
         (fm/use-form :schema schema
                      :initial initial)
+
+        warning-name-change?
+        (not= (get-in @form [:data :name])
+              (:name initial))
 
         on-toggle-tab
         (mf/use-fn
@@ -273,10 +278,10 @@
                            :trim true
                            :auto-focus true}]
 
-       #_(when (and warning-name-change? (= action "edit"))
-           [:div {:class (stl/css :warning-name-change-notification-wrapper)}
-            [:> context-notification*
-             {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
+       (when (and warning-name-change? (= action "edit"))
+         [:div {:class (stl/css :warning-name-change-notification-wrapper)}
+          [:> context-notification*
+           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
        (case type
