@@ -109,9 +109,12 @@
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
 
+(def token-name-validation-regex
+  #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
+
 (def token-name-ref
   [:re {:title "TokenNameRef" :gen/gen sg/text}
-   #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$"])
+   token-name-validation-regex])
 
 (def ^:private schema:color
   [:map

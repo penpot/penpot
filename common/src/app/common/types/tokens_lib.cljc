@@ -1467,11 +1467,12 @@ Will return a value that matches this schema:
 (def ^:private schema:dtcg-node
   [:schema {:registry
             {::simple-value
-             [:or :string :int :double]
+             [:or :string :int :double ::sm/boolean]
              ::value
              [:or
               [:ref ::simple-value]
               [:vector ::simple-value]
+              [:vector [:map-of :string ::simple-value]]
               [:map-of :string [:or
                                 [:ref ::simple-value]
                                 [:vector ::simple-value]]]]}}

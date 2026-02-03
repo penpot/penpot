@@ -11,7 +11,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -29,10 +28,10 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.router :as rt]
-   [app.render-wasm.api :as wasm.api]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -51,50 +50,6 @@
 
 (declare v2-update-text-shape-content)
 (declare v2-update-text-editor-styles)
-
-(defn resize-wasm-text-modifiers
-  ([shape]
-   (resize-wasm-text-modifiers shape (:content shape)))
-
-  ([{:keys [id points selrect grow-type] :as shape} content]
-   (wasm.api/use-shape id)
-   (wasm.api/set-shape-text-content id content)
-   (wasm.api/set-shape-text-images id content)
-
-   (let [dimension (wasm.api/get-text-dimensions)
-         width-scale (if (#{:fixed :auto-height} grow-type)
-                       1.0
-                       (/ (:width dimension) (:width selrect)))
-         height-scale (if (= :fixed grow-type)
-                        1.0
-                        (/ (:height dimension) (:height selrect)))
-         resize-v  (gpt/point width-scale height-scale)
-         origin    (first points)]
-
-     {id
-      {:modifiers
-       (ctm/resize-modifiers
-        resize-v
-        origin
-        (:transform shape (gmt/matrix))
-        (:transform-inverse shape (gmt/matrix)))}})))
-
-(defn resize-wasm-text
-  [id]
-  (ptk/reify ::resize-wasm-text
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shape   (get objects id)]
-        (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape)))))))
-
-(defn resize-wasm-text-all
-  [ids]
-  (ptk/reify ::resize-wasm-text-all
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rx/from ids)
-           (rx/map resize-wasm-text)))))
 
 ;; -- Content helpers
 
@@ -178,7 +133,7 @@
                      {:undo-group (when new-shape? id)})
 
                     (dwm/apply-wasm-modifiers
-                     (resize-wasm-text-modifiers shape content)
+                     (dwwt/resize-wasm-text-modifiers shape content)
                      {:undo-group (when new-shape? id)})))))
 
               (let [content (d/merge (ted/export-content content)
@@ -823,7 +778,7 @@
            (when (features/active-feature? state "render-wasm/v1")
              ;; This delay is to give time for the font to be correctly rendered
              ;; in wasm.
-             (cond->> (rx/of (resize-wasm-text id))
+             (cond->> (rx/of (dwwt/resize-wasm-text id))
                (contains? attrs :font-id)
                (rx/delay 200)))))))
 
@@ -973,11 +928,11 @@
 
             (if (and (not= :fixed (:grow-type shape)) finalize?)
               (dwm/apply-wasm-modifiers
-               (resize-wasm-text-modifiers shape content)
+               (dwwt/resize-wasm-text-modifiers shape content)
                {:undo-group (when new-shape? id)})
 
               (dwm/set-wasm-modifiers
-               (resize-wasm-text-modifiers shape content)
+               (dwwt/resize-wasm-text-modifiers shape content)
                {:undo-group (when new-shape? id)})))
 
            (when finalize?
