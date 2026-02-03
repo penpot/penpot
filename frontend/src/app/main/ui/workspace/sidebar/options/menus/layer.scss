@@ -47,6 +47,5 @@
 
 .numeric-input-wrapper {
   grid-column: span 2;
-  --dropdown-width: var(--7-columns-dropdown-width);
   --dropdown-offset: #{px2rem(-35)};
 }

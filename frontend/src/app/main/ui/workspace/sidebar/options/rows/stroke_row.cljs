@@ -9,49 +9,19 @@
   (:require
    [app.common.data :as d]
    [app.common.types.color :as ctc]
-   [app.common.types.token :as tk]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        tokens (mf/with-memo [tokens name]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input name))
-                       (not-empty))))
-
-        on-detach-attr (mf/use-fn
-                        (mf/deps on-detach name)
-                        #(on-detach % name))
-
-        applied-token (get applied-tokens name)
-
-        props  (mf/spread-props props
-                                {:placeholder (if (= :multiple values)
-                                                (tr "settings.multiple")
-                                                "--")
-                                 :applied-token applied-token
-                                 :tokens (if (delay? tokens) @tokens tokens)
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :name name
-                                 :value values})]
-    [:> numeric-input* props]))
 
 (mf/defc stroke-row*
   [{:keys [index
@@ -250,11 +220,11 @@
                                     :min 0
                                     :on-focus on-focus
                                     :on-blur on-blur
-                                    :name :stroke-width
+                                    :attr :stroke-width
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width")
-                                    :applied-tokens applied-tokens
-                                    :values stroke-width}]
+                                    :applied-token (get applied-tokens :stroke-width)
+                                    :value stroke-width}]
 
         [:div {:class (stl/css :stroke-width-input)
                :title (tr "workspace.options.stroke-width")}

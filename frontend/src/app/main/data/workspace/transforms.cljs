@@ -406,13 +406,13 @@
                        (ctm/change-property :grow-type new-grow-type)))
                    modifiers)))
 
-             modif-tree
-             (-> (dwm/build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))]
+             modif-tree (dwm/build-modif-tree ids objects get-modifier)]
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
-           (rx/of (dwm/apply-modifiers* objects modif-tree nil options))))))))
+
+           (let [modif-tree (gm/set-objects-modifiers modif-tree objects)]
+             (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.

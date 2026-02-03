@@ -16,6 +16,7 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
+   [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
    [app.main.ui :as ui]
@@ -65,8 +66,11 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (rx/of (ev/initialize)
-              (dp/refresh-profile))
+       (if (contains? cf/flags :audit-log)
+         (rx/of (ev/initialize))
+         (rx/empty))
+
+       (rx/of (dp/refresh-profile))
 
        ;; Watch for profile deletion events
        (->> stream
@@ -87,7 +91,12 @@
             (rx/map deref)
             (rx/filter dp/is-authenticated?)
             (rx/take 1)
-            (rx/map #(ws/initialize)))))))
+            (rx/map #(ws/initialize)))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when-not (feat/active-feature? state "render-wasm/v1")
+        (thr/init!)))))
 
 (defn ^:export init
   [options]
@@ -97,7 +106,7 @@
   (mw/init!)
   (i18n/init)
   (cur/init-styles)
-  (thr/init!)
+
   (init-ui)
   (st/emit! (plugins/initialize)
             (initialize)))

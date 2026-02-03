@@ -16,6 +16,7 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/colors-to-tokens-plugin/tsconfig.app.json",
         "assets": [
+          "apps/colors-to-tokens-plugin/src/_headers",
           "apps/colors-to-tokens-plugin/src/favicon.ico",
           "apps/colors-to-tokens-plugin/src/assets"
         ],

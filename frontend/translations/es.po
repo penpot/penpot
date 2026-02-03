@@ -7170,11 +7170,11 @@ msgstr "Ancho"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:535, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:552
 msgid "workspace.options.x"
-msgstr "eje X"
+msgstr "Eje X"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:545, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:563
 msgid "workspace.options.y"
-msgstr "eje Y"
+msgstr "Eje Y"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:140
 msgid "workspace.path.actions.add-node"

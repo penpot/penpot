@@ -7,11 +7,11 @@ on:
       - staging
       - main
     paths:
-      - "plugins/libs/plugin-types/index.d.ts"
-      - "plugins/libs/plugin-types/REAME.md"
-      - "plugins/tools/typedoc.css"
-      - "plugins/CHANGELOG.md"
-      - "plugins/wrangler-penpot-plugins-api-doc.toml"
+      - 'plugins/libs/plugin-types/index.d.ts'
+      - 'plugins/libs/plugin-types/REAME.md'
+      - 'plugins/tools/typedoc.css'
+      - 'plugins/CHANGELOG.md'
+      - 'plugins/wrangler-penpot-plugins-api-doc.toml'
   workflow_dispatch:
     inputs:
       gh_ref:
@@ -86,11 +86,23 @@ jobs:
         run: |
           REF="${{ steps.vars.outputs.gh_ref }}"
           case "$REF" in
-            main) echo "WORKER_NAME=penpot-plugins-api-doc-pro" >> $GITHUB_ENV ;;
-            staging) echo "WORKER_NAME=penpot-plugins-api-doc-pre" >> $GITHUB_ENV ;;
-            develop) echo "WORKER_NAME=penpot-plugins-api-doc-hourly" >> $GITHUB_ENV ;;
+            main)
+              echo "WORKER_NAME=penpot-plugins-api-doc-pro" >> $GITHUB_ENV
+              echo "WORKER_URI=doc.plugins.penpot.app" >> $GITHUB_ENV ;;
+            staging)
+              echo "WORKER_NAME=penpot-plugins-api-doc-pre" >> $GITHUB_ENV
+              echo "WORKER_URI=doc.plugins.penpot.dev" >> $GITHUB_ENV ;;
+            develop)
+              echo "WORKER_NAME=penpot-plugins-api-doc-hourly" >> $GITHUB_ENV
+              echo "WORKER_URI=doc.plugins.hourly.penpot.dev" >> $GITHUB_ENV ;;
             *) echo "Unsupported branch ${REF}" && exit 1 ;;
           esac
+
+      - name: Set the custom url
+        working-directory: plugins
+        shell: bash
+        run: |
+          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-api-doc.toml
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

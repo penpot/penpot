@@ -1,9 +1,3 @@
-;; This Source Code Form is subject to the terms of the Mozilla Public
-;; License, v. 2.0. If a copy of the MPL was not distributed with this
-;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
-;;
-;; Copyright (c) KALEIDOS INC
-
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
@@ -17,18 +11,17 @@
    [clojure.core :as c]
    [integrant.core :as ig]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- request-builder
-  [cfg method uri management-key profile-id]
+  [cfg method uri shared-key profile-id]
   (fn []
     (http/req! cfg {:method method
                     :headers {"content-type" "application/json"
                               "accept" "application/json"
-                              "x-shared-key" management-key
+                              "x-shared-key" shared-key
                               "x-profile-id" (str profile-id)}
                     :uri uri
                     :version :http1.1})))
@@ -54,9 +47,9 @@
 
 (defn- with-validate [handler uri schema]
   (fn []
-    (let [coercer-http   (sm/coercer schema
-                                     :type :validation
-                                     :hint (str "invalid data received calling " uri))]
+    (let [coercer-http (sm/coercer schema
+                                   :type :validation
+                                   :hint (str "invalid data received calling " uri))]
       (try
         (coercer-http (-> (handler) :body json/decode))
         (catch Exception e
@@ -65,8 +58,9 @@
           nil)))))
 
 (defn- request-to-nitrate
-  [{:keys [::management-key] :as cfg} method uri schema {:keys [::rpc/profile-id] :as params}]
-  (let [full-http-call (-> (request-builder cfg method uri management-key profile-id)
+  [cfg method uri schema {:keys [::rpc/profile-id] :as params}]
+  (let [shared-key     (-> cfg ::setup/shared-keys :nitrate)
+        full-http-call (-> (request-builder cfg method uri shared-key profile-id)
                            (with-retries 3)
                            (with-validate uri schema))]
     (full-http-call)))
@@ -103,26 +97,15 @@
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get (str baseuri "/api/users/" (str profile-id)) schema:user params)))
 
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod ig/init-key ::client
-  [_ {:keys [::setup/props] :as cfg}]
-  (if (contains? cf/flags :nitrate)
-    (let [management-key (or (cf/get :management-api-key)
-                             (get props :management-key))
-          cfg (assoc cfg ::management-key management-key)]
-      {:get-team-org (partial get-team-org cfg)
-       :is-valid-user (partial is-valid-user cfg)})
-    {}))
-
-(defmethod ig/halt-key! ::client
-  [_ {:keys []}]
-  (do :stuff))
-
+  [_ cfg]
+  (when (contains? cf/flags :nitrate)
+    {:get-team-org (partial get-team-org cfg)
+     :is-valid-user (partial is-valid-user cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS

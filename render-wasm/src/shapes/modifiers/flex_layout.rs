@@ -13,6 +13,7 @@ use super::common::GetBounds;
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
+const TRACK_TOLERANCE: f32 = 0.01;
 
 #[derive(Debug)]
 struct TrackData {
@@ -139,7 +140,7 @@ impl ChildAxis {
                 max_across_size: layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE),
                 is_fill_main: child.is_layout_horizontal_fill(),
                 is_fill_across: child.is_layout_vertical_fill(),
-                z_index: layout_item.map(|i| i.z_index).unwrap_or(0),
+                z_index: layout_item.and_then(|i| i.z_index).unwrap_or(0),
                 bounds: *child_bounds,
             }
         } else {
@@ -157,7 +158,7 @@ impl ChildAxis {
                 max_main_size: layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE),
                 is_fill_main: child.is_layout_vertical_fill(),
                 is_fill_across: child.is_layout_horizontal_fill(),
-                z_index: layout_item.map(|i| i.z_index).unwrap_or(0),
+                z_index: layout_item.and_then(|i| i.z_index).unwrap_or(0),
                 bounds: *child_bounds,
             }
         };
@@ -228,12 +229,12 @@ fn initialize_tracks(
         };
 
         let gap_main = if first { 0.0 } else { layout_axis.gap_main };
-        let next_main_size = current_track.main_size + child_main_size + gap_main;
 
-        if !layout_axis.is_auto_main
-            && flex_data.is_wrap()
-            && (next_main_size > layout_axis.main_space())
-        {
+        let next_main_size = current_track.main_size + child_main_size + gap_main;
+        let main_space = layout_axis.main_space();
+        let exceeds_main_space = next_main_size > main_space + TRACK_TOLERANCE;
+
+        if !layout_axis.is_auto_main && flex_data.is_wrap() && exceeds_main_space {
             tracks.push(current_track);
 
             current_track = TrackData {

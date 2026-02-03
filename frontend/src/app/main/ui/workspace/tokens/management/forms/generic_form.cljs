@@ -270,7 +270,13 @@
                            :placeholder (tr "workspace.tokens.enter-token-name" token-title)
                            :max-length max-input-length
                            :variant "comfortable"
-                           :auto-focus true}]]
+                           :trim true
+                           :auto-focus true}]
+
+       #_(when (and warning-name-change? (= action "edit"))
+           [:div {:class (stl/css :warning-name-change-notification-wrapper)}
+            [:> context-notification*
+             {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
        (case type

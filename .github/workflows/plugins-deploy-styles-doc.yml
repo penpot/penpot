@@ -1,0 +1,123 @@
+name: Plugins/styles-doc deployer
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+    paths:
+      - 'plugins/apps/example-styles/**'
+      - 'plugins/libs/plugins-styles/**'
+      - 'plugins/wrangler-penpot-plugins-styles-doc.toml'
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch'
+        type: choice
+        required: true
+        default: 'develop'
+        options:
+          - develop
+          - staging
+          - main
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.vars.outputs.gh_ref }}
+
+      # START: Setup Node and PNPM enabling cache
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable PNPM
+        working-directory: ./plugins
+        shell: bash
+        run: |
+          corepack enable;
+          corepack install;
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        working-directory: ./plugins
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      # END: Setup Node and PNPM enabling cache
+
+      - name: Install deps
+        working-directory: ./plugins
+        shell: bash
+        run: |
+          pnpm install --no-frozen-lockfile;
+          pnpm add -D -w wrangler@latest;
+
+      - name: Build styles
+        working-directory: plugins
+        shell: bash
+        run: npx nx run example-styles:build
+
+      - name: Select Worker name
+        run: |
+          REF="${{ steps.vars.outputs.gh_ref }}"
+          case "$REF" in
+            main)
+              echo "WORKER_NAME=penpot-plugins-styles-doc-pro" >> $GITHUB_ENV
+              echo "WORKER_URI=styles-doc.plugins.penpot.app" >> $GITHUB_ENV ;;
+            staging)
+              echo "WORKER_NAME=penpot-plugins-styles-doc-pre" >> $GITHUB_ENV
+              echo "WORKER_URI=styles-doc.plugins.penpot.dev" >> $GITHUB_ENV ;;
+            develop)
+              echo "WORKER_NAME=penpot-plugins-styles-doc-hourly" >> $GITHUB_ENV
+              echo "WORKER_URI=styles-doc.plugins.hourly.penpot.dev" >> $GITHUB_ENV ;;
+            *) echo "Unsupported branch ${REF}" && exit 1 ;;
+          esac
+
+      - name: Set the custom url
+        working-directory: plugins
+        shell: bash
+        run: |
+          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-styles-doc.toml
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          workingDirectory: plugins
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config wrangler-penpot-plugins-styles-doc.toml --name ${{ env.WORKER_NAME }}
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 🧩💅 *[PENPOT PLUGINS] Error deploying Styles documentation.*
+            📄 Triggered from ref: `${{ inputs.gh_ref }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra

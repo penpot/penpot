@@ -437,7 +437,8 @@
        [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
                         :on-click do-transform-to-path}])
 
-     (when (and (not disable-booleans)
+     (when (and (not has-frame?)
+                (not disable-booleans)
                 (or multiple? (and single? (or is-group? is-bool?))))
        [:> menu-entry* {:title (tr "workspace.shape.menu.path")}
         [:> menu-entry* {:title (tr "workspace.shape.menu.union")

@@ -135,6 +135,7 @@
          :is-flex-layout? is-flex-layout?
          :is-grid-layout? is-grid-layout?
          :is-layout-child? is-layout-child?
+         :applied-tokens applied-tokens
          :is-layout-container? is-layout-container?
          :shape shape}])
 

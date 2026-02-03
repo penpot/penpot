@@ -243,6 +243,9 @@ export function normalizeStyles(
  * @returns {HTMLElement}
  */
 export function setStyle(element, styleName, styleValue, styleUnit) {
+  if (styleValue === "mixed")
+    return element;
+
   if (
     styleName.startsWith("--") &&
     typeof styleValue !== "string" &&

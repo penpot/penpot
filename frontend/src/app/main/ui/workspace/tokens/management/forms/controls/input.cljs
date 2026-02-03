@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cft]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
@@ -155,9 +156,13 @@
 
 (defn- resolve-value
   [tokens prev-token token-name value]
-  (let [token
+  (let [valid-token-name?
+        (and (string? token-name)
+             (re-matches  cto/token-name-validation-regex token-name))
+
+        token
         {:value value
-         :name (if (str/blank? token-name)
+         :name (if (or (not valid-token-name?) (str/blank? token-name))
                  "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
                  token-name)}
         tokens

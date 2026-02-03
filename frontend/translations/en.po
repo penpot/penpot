@@ -6719,19 +6719,19 @@ msgstr "Advanced options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "Max.Height"
+msgstr "Max height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "Max.Width"
+msgstr "Max width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "Min.Height"
+msgstr "Min height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "Min.Width"
+msgstr "Min width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
