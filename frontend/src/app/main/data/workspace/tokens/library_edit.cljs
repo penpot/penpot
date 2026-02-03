@@ -69,9 +69,30 @@
 ;; Toggle tree nodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- remove-paths-recursively
+  [path paths]
+  (->> paths
+       (remove #(str/starts-with? % (str path)))
+       vec))
+
+(defn add-path
+  [path paths]
+  (let [split-path (cpn/split-path path :separator ".")
+        partial-paths (->> split-path
+                           (reduce
+                            (fn [acc segment]
+                              (let [new-acc (if (empty? acc)
+                                              segment
+                                              (str (last acc) "." segment))]
+                                (conj acc new-acc)))
+                            []))]
+    (->> paths
+         (into partial-paths)
+         distinct
+         vec)))
+
 (defn clean-tokens-paths
   []
-
   (ptk/reify ::clean-tokens-paths
     ptk/UpdateEvent
     (update [_ state]
@@ -86,18 +107,8 @@
                  (fn [paths]
                    (let [paths (or paths [])]
                      (if (some #(= % path) paths)
-                       (vec (remove #(str/starts-with? % (str path))
-                                    paths))
-                       (let [split-path (cpn/split-path path :separator ".")
-                             partial-paths (reduce
-                                            (fn [acc segment]
-                                              (let [new-acc (if (empty? acc)
-                                                              segment
-                                                              (str (last acc) "." segment))]
-                                                (conj acc new-acc)))
-                                            []
-                                            split-path)]
-                         (vec (distinct (into paths partial-paths)))))))))))
+                       (remove-paths-recursively path paths)
+                       (add-path path paths))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
