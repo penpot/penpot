@@ -309,7 +309,7 @@
 
         on-remove'
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index on-remove)
          (fn [_]
            (when on-remove
              (on-remove index))))
