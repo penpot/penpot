@@ -94,10 +94,7 @@
         ;; This only checks for the currently explicitly selected set
         ;; id, it is ephimeral and can be nil
         ;; FIXME: this is a repeated deref for the same `:workspace-tokens` state
-        selected-token-set-id
-        (mf/deref refs/selected-token-set-id)
-
-
+        selected-token-set-id  (mf/deref refs/selected-token-set-id)
 
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
@@ -130,9 +127,9 @@
         ;; Filter tokens by their path and return their ids
         filter-tokens-by-path-ids
         (mf/use-fn
-         (mf/deps tokens)
+         (mf/deps selected-token-set-tokens)
          (fn [type path]
-           (->> tokens
+           (->> selected-token-set-tokens
                 (filter (fn [token]
                           (let [[_ token-value] token]
                             (and (= (:type token-value) type) (str/starts-with? (:name token-value) path)))))
@@ -140,25 +137,26 @@
                         (let [[_ token-value] token]
                           (:id token-value)))))))
 
-        remaining-tokens-of-type?
+        remaining-tokens-of-type-in-set?
         (mf/use-fn
-         (fn [tokens-by-type tokens-in-path-ids]
+         (fn [selected-token-set-tokens tokens-in-path-ids]
            (let [token-ids (set tokens-in-path-ids)
                  remaining-tokens (filter (fn [token]
                                             (not (contains? token-ids (:id token))))
-                                          tokens-by-type)]
+                                          selected-token-set-tokens)
+                 _ (prn "Remaining tokens:" remaining-tokens)]
              (seq remaining-tokens))))
 
         delete-token
-        (mf/with-memo [tokens selected-token-set-id]
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
           (fn [token]
             (let [id (:id token)
                   type (:type token)
                   path (:name token)
-                  tokens-by-type (ctob/group-by-type tokens)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                   tokens-filtered-by-type (get tokens-by-type type)
                   tokens-in-path-ids (filter-tokens-by-path-ids type path)
-                  remaining-tokens? (remaining-tokens-of-type? tokens-filtered-by-type tokens-in-path-ids)]
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type tokens-in-path-ids)]
               ;; Delete the token
               (st/emit! (dwtl/delete-token selected-token-set-id id))
               ;; Remove from unfolded tree path
@@ -167,13 +165,13 @@
                 (st/emit! (dwtl/toggle-token-path (name type)))))))
 
         delete-node
-        (mf/with-memo [tokens selected-token-set-id]
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
           (fn [node type]
             (let [path (:path node)
-                  tokens-by-type (ctob/group-by-type tokens)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                   tokens-filtered-by-type (get tokens-by-type type)
                   tokens-in-path-ids (filter-tokens-by-path-ids type path)
-                  remaining-tokens? (remaining-tokens-of-type? tokens-filtered-by-type tokens-in-path-ids)]
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type tokens-in-path-ids)]
               ;; Delete tokens in path
               (st/emit! (dwtl/bulk-delete-tokens selected-token-set-id tokens-in-path-ids))
               ;; Remove from unfolded tree path

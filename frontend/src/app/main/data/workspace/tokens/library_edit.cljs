@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.tokens.library-edit
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
@@ -28,7 +27,6 @@
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-id)
-(declare toggle-token-path)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Getters
@@ -91,9 +89,9 @@
          distinct
          vec)))
 
-(defn clean-tokens-paths
+(defn clear-tokens-paths
   []
-  (ptk/reify ::clean-tokens-paths
+  (ptk/reify ::clear-tokens-paths
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
@@ -293,8 +291,9 @@
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set-group
   [group-path]
@@ -305,6 +304,7 @@
             changes (-> (pcb/empty-changes)
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
+
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -487,14 +487,11 @@
             token     (-> (get-tokens-lib state)
                           (ctob/get-token (ctob/get-id token-set) token-id))
             token-type (:type token)
-            token-name (:name token)
-            token-path (str (d/name token-type) "." token-name)
 
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
         (rx/of (dch/commit-changes changes)
-               (toggle-token-path token-path)
                (ptk/data-event ::ev/event {::ev/name "delete-token" :type token-type}))))))
 
 (defn bulk-delete-tokens
