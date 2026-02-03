@@ -1512,6 +1512,16 @@ impl RenderState {
             Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur);
         let blur_filter = combined_blur
             .and_then(|blur| skia::image_filters::blur((blur.value, blur.value), None, None, None));
+        // Legacy path is only stable up to 1.0 zoom: the canvas is scaled and the shadow
+        // filter is evaluated in that scaled space, so for scale > 1 it over-inflates blur/spread.
+        // We also disable it when combined layer blur is present to avoid incorrect composition.
+        let use_low_zoom_path = scale <= 1.0 && combined_blur.is_none();
+
+        if use_low_zoom_path {
+            // Match pre-commit behavior: scale blur/spread with zoom for low zoom levels.
+            transformed_shadow.to_mut().blur = shadow.blur * scale;
+            transformed_shadow.to_mut().spread = shadow.spread * scale;
+        }
 
         let mut transform_matrix = shape.transform;
         let center = shape.center();
@@ -1556,6 +1566,39 @@ impl RenderState {
         let mut bounds = drop_filter.compute_fast_bounds(shape_bounds);
         // Account for the shadow offset so the temporary surface fully contains the shifted blur.
         bounds.offset(world_offset);
+        // Early cull if the shadow bounds are outside the render area.
+        if !bounds.intersects(self.render_area) {
+            return;
+        }
+
+        if use_low_zoom_path {
+            let mut shadow_paint = skia::Paint::default();
+            shadow_paint.set_image_filter(drop_filter);
+            shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+            drop_canvas.save_layer(&layer_rec);
+            drop_canvas.scale((scale, scale));
+            drop_canvas.translate(translation);
+
+            self.with_nested_blurs_suppressed(|state| {
+                state.render_shape(
+                    &plain_shape,
+                    clip_bounds,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    false,
+                    Some(shadow.offset),
+                    None,
+                );
+            });
+
+            self.surfaces.canvas(SurfaceId::DropShadows).restore();
+            return;
+        }
 
         let filter_result =
             filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
