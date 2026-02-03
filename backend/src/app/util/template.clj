@@ -11,7 +11,8 @@
    [selmer.filters :as sf]
    [selmer.parser :as sp]))
 
-;; (sp/cache-off!)
+
+(sp/cache-off!)
 
 (sf/add-filter! :abbreviate
                 (fn [s n]

@@ -337,7 +337,10 @@
     ::setup/props        (ig/ref ::setup/props)
 
     ::email/blacklist    (ig/ref ::email/blacklist)
-    ::email/whitelist    (ig/ref ::email/whitelist)}
+    ::email/whitelist    (ig/ref ::email/whitelist)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)}
 
    :app.rpc/management-methods
    {::http.client/client (ig/ref ::http.client/client)

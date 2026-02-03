@@ -112,6 +112,8 @@
 ;; COLLECTOR API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare ^:private prepare-context-from-request)
+
 ;; Defines a service that collects the audit/activity log using
 ;; internal database. Later this audit log can be transferred to
 ;; an external storage and data cleared.
@@ -125,6 +127,8 @@
    [::props {:optional true} [:map-of :keyword :any]]
    [::context {:optional true} [:map-of :keyword :any]]
    [::tracked-at {:optional true} ::ct/inst]
+   [::created-at {:optional true} ::ct/inst]
+   [::source {:optional true} ::sm/text]
    [::webhooks/event? {:optional true} ::sm/boolean]
    [::webhooks/batch-timeout {:optional true} ::ct/duration]
    [::webhooks/batch-key {:optional true}
@@ -133,32 +137,8 @@
 (def ^:private check-event
   (sm/check-fn schema:event))
 
-(defn- prepare-context-from-request
-  [request]
-  (let [client-event-origin (get-client-event-origin request)
-        client-version      (get-client-version request)
-        client-user-agent   (get-client-user-agent request)
-        session-id          (get-external-session-id request)
-        token-id       (::actoken/id request)]
-    (d/without-nils
-     {:external-session-id session-id
-      :access-token-id (some-> token-id str)
-      :client-event-origin client-event-origin
-      :client-user-agent client-user-agent
-      :client-version client-version
-      :version (:full cf/version)})))
-
-(defn event-from-rpc-params
-  "Create a base event skeleton with pre-filled some important
-  data that can be extracted from RPC params object"
-  [params]
-  (let [context (some-> params meta ::http/request prepare-context-from-request)
-        event   {::type "action"
-                 ::profile-id (or (::rpc/profile-id params) uuid/zero)
-                 ::ip-addr (::rpc/ip-addr params)}]
-    (cond-> event
-      (some? context)
-      (assoc ::context context))))
+(def valid-event?
+  (sm/validator schema:event))
 
 (defn prepare-event
   [cfg mdata params result]
@@ -207,6 +187,33 @@
          (::webhooks/event? resultm)
          false)}))
 
+(defn- prepare-context-from-request
+  [request]
+  (let [client-event-origin (get-client-event-origin request)
+        client-version      (get-client-version request)
+        client-user-agent   (get-client-user-agent request)
+        session-id          (get-external-session-id request)
+        token-id       (::actoken/id request)]
+    (d/without-nils
+     {:external-session-id session-id
+      :access-token-id (some-> token-id str)
+      :client-event-origin client-event-origin
+      :client-user-agent client-user-agent
+      :client-version client-version
+      :version (:full cf/version)})))
+
+(defn event-from-rpc-params
+  "Create a base event skeleton with pre-filled some important
+  data that can be extracted from RPC params object"
+  [params]
+  (let [context (some-> params meta ::http/request prepare-context-from-request)
+        event   {::type "action"
+                 ::profile-id (or (::rpc/profile-id params) uuid/zero)
+                 ::ip-addr (::rpc/ip-addr params)}]
+    (cond-> event
+      (some? context)
+      (assoc ::context context))))
+
 (defn- event->params
   [event]
   (let [params {:id (uuid/next)
@@ -233,17 +240,16 @@
 
 (defn- handle-event!
   [cfg event]
-  (let [params (event->params event)
-        tnow   (ct/now)]
+  (let [tnow   (ct/now)
+        params (-> (event->params event)
+                   (assoc :created-at tnow)
+                   (update :tracked-at #(or % tnow)))]
 
     (when (contains? cf/flags :audit-log)
       ;; NOTE: this operation may cause primary key conflicts on inserts
       ;; because of the timestamp precission (two concurrent requests), in
       ;; this case we just retry the operation.
-      (let [params (-> params
-                       (assoc :created-at tnow)
-                       (update :tracked-at #(or % tnow)))]
-        (append-audit-entry! cfg params)))
+      (append-audit-entry! cfg params))
 
     (when (and (or (contains? cf/flags :telemetry)
                    (cf/get :telemetry-enabled))
@@ -254,8 +260,6 @@
       ;;
       ;; NOTE: this is only executed when general audit log is disabled
       (let [params (-> params
-                       (assoc :created-at tnow)
-                       (update :tracked-at #(or % tnow))
                        (assoc :props {})
                        (assoc :context {}))]
         (append-audit-entry! cfg params)))

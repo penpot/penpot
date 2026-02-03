@@ -229,13 +229,20 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
+                                 (assoc :created-at (ct/format-inst created-at :rfc1123))))))
+
+          (render-template-v4 [{:keys [content id created-at]}]
+            (-> (io/resource "app/templates/error-report.v4.tmpl")
+                (tmpl/render (-> content
+                                 (assoc :id id)
                                  (assoc :created-at (ct/format-inst created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
       (let [result (case (:version report)
                      1 (render-template-v1 report)
                      2 (render-template-v2 report)
-                     3 (render-template-v3 report))]
+                     3 (render-template-v3 report)
+                     4 (render-template-v4 report))]
         {::yres/status 200
          ::yres/body result
          ::yres/headers {"content-type" "text/html; charset=utf-8"

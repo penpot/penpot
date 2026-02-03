@@ -181,6 +181,7 @@
          (fn [origin]
            (let [mdata  {:on-success on-file-created}
                  params {:project-id project-id}]
+             (assert (= 1 2) "foo")
              (st/emit! (-> (dd/create-file (with-meta params mdata))
                            (with-meta {::ev/origin origin :has-files (> file-count 0)}))))))
 

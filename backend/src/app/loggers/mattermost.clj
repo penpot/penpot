@@ -11,7 +11,7 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.http.client :as http]
-   [app.loggers.database :as ldb]
+   [app.loggers.audit :as audit]
    [app.util.json :as json]
    [integrant.core :as ig]
    [promesa.exec :as px]
@@ -50,7 +50,7 @@
       (l/warn :hint "error on sending data"
               :response (pr-str resp)))))
 
-(defn record->report
+(defn- record->report
   [{:keys [::l/context ::l/id ::l/cause] :as record}]
   (assert (l/valid-record? record) "expectd valid log record")
   {:id               id
@@ -64,14 +64,21 @@
    :logger           (::l/logger record)
    :trace            (ex/format-throwable cause :detail? false :header? false)})
 
-(defn handle-event
+(defn- handle-log-record
   [cfg record]
-  (when @enabled
-    (try
-      (let [report (record->report record)]
-        (send-mattermost-notification! cfg report))
-      (catch Throwable cause
-        (l/warn :hint "unhandled error" :cause cause)))))
+  (try
+    (let [report (record->report record)]
+      (send-mattermost-notification! cfg report))
+    (catch Throwable cause
+      (l/warn :hint "unhandled error" :cause cause))))
+
+(defn- handle-audit-event
+  [cfg record]
+  #_(try
+    (let [report (audit-event->report record)]
+      (send-mattermost-notification! cfg report))
+    (catch Throwable cause
+      (l/warn :hint "unhandled error" :cause cause))))
 
 (defmethod ig/assert-key ::reporter
   [_ params]
@@ -80,27 +87,43 @@
 (defmethod ig/init-key ::reporter
   [_ cfg]
   (when-let [uri (cf/get :error-report-webhook)]
-    (px/thread
-      {:name "penpot/mattermost-reporter"
-       :virtual true}
-      (l/info :hint "initializing error reporter" :uri uri)
-      (let [input (sp/chan :buf (sp/sliding-buffer 128)
-                           :xf (filter ldb/error-record?))]
-        (add-watch l/log-record ::reporter #(sp/put! input %4))
-        (try
-          (loop []
-            (when-let [msg (sp/take! input)]
-              (handle-event cfg msg)
-              (recur)))
-          (catch InterruptedException _
-            (l/debug :hint "reporter interrupted"))
-          (catch Throwable cause
-            (l/error :hint "unexpected error" :cause cause))
-          (finally
-            (sp/close! input)
-            (remove-watch l/log-record ::reporter)
-            (l/info :hint "reporter terminated")))))))
+    (let [input  (sp/chan :buf (sp/sliding-buffer 256))
+          thread (px/thread
+                   {:name "penpot/reporter/mattermost"}
+                   (l/info :hint "initializing error reporter" :uri uri)
+
+                   (try
+                     (loop []
+                       (when-let [item (sp/take! input)]
+                         (when @enabled
+                           (cond
+                             (::l/id item)
+                             (handle-log-record cfg item)
+
+                             (::audit/id item)
+                             (handle-audit-event cfg item)
+
+                             :else
+                             (l/warn :hint "received unexpected item" :item item)))
+
+                         (recur)))
+                     (catch InterruptedException _
+                       (l/debug :hint "reporter interrupted"))
+                     (catch Throwable cause
+                       (l/error :hint "unexpected error" :cause cause))
+                     (finally
+                       (l/info :hint "reporter terminated"))))]
+
+      (add-watch l/log-record ::reporter
+                 (fn [_ _ _ record]
+                   (when (= :error (::l/level record))
+                     (sp/put! input record))))
+
+      {::input input
+       ::thread thread})))
 
 (defmethod ig/halt-key! ::reporter
-  [_ thread]
+  [_ {:keys [::input ::thread]}]
+  (remove-watch l/log-record ::reporter)
+  (some-> input sp/close!)
   (some-> thread px/interrupt!))
