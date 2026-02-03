@@ -337,7 +337,13 @@
     ::setup/props        (ig/ref ::setup/props)
 
     ::email/blacklist    (ig/ref ::email/blacklist)
-    ::email/whitelist    (ig/ref ::email/whitelist)}
+    ::email/whitelist    (ig/ref ::email/whitelist)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)
+
+    :app.loggers.mattermost/reporter
+    (ig/ref :app.loggers.mattermost/reporter)}
 
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)

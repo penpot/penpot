@@ -36,7 +36,6 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
@@ -447,7 +446,6 @@
                        (rx/of default)
                        (rx/throw cause)))))))
 
-
 (mf/defc exception-section*
   {::mf/private true}
   [{:keys [data route] :as props}]
@@ -459,13 +457,13 @@
     (mf/with-effect [data route report]
       (let [params (:query-params route)
             params (u/map->query-string params)]
-        (st/emit! (ptk/data-event ::ev/event
-                                  {::ev/name "exception-page"
-                                   :type (get data :type :unknown)
-                                   :hint (get data :hint)
-                                   :path (get route :path)
-                                   :report report
-                                   :params params}))))
+        (st/emit! (ev/event {::ev/name "exception-page"
+                             :type (get data :type :unknown)
+                             :href (rt/get-current-href)
+                             :hint (get data :hint)
+                             :path (get route :path)
+                             :report report
+                             :params params}))))
 
     (case type
       :not-found

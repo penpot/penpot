@@ -7,10 +7,8 @@
 (ns app.main.errors
   "Generic error handling"
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
@@ -35,7 +33,7 @@
 ;; Will contain last uncaught exception
 (def last-exception nil)
 
-(defn- exception->error-data
+(defn exception->error-data
   [cause]
   (let [data (ex-data cause)]
     (-> data
@@ -74,8 +72,8 @@
         (when-let [file-id (or (:file-id data) file-id)]
           (println "File ID: " (str file-id)))
         (println "Version: " (:full cf/version))
-        (println "URI:     " cf/public-uri)
-        (println "HREF:    " (.-href g/location))
+        (println "URI:     " (str cf/public-uri))
+        (println "HREF:    " (rt/get-current-href))
         (println)
 
         (println
@@ -100,6 +98,7 @@
     (st/emit!
      (ev/event {::ev/name "unhandled-exception"
                 :hint hint
+                :href (rt/get-current-href)
                 :type (get data :type :unknown)
                 :report (generate-report cause)})
 

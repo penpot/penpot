@@ -456,7 +456,10 @@
     :fn (mg/resource "app/migrations/sql/0142-add-sso-provider-table.sql")}
 
    {:name "0143-http-session-v2-table"
-    :fn (mg/resource "app/migrations/sql/0143-add-http-session-v2-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0143-add-http-session-v2-table.sql")}
+
+   {:name "0144-mod-server-error-report-table"
+    :fn (mg/resource "app/migrations/sql/0144-mod-server-error-report-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

@@ -32,7 +32,7 @@
         (assoc :request/ip-addr (inet/parse-request request))
         (assoc :request/profile-id (get claims :uid))
         (assoc :request/auth-data auth)
-        (assoc :version/frontend (or (yreq/get-header request "x-frontend-version") "unknown")))))
+        (assoc :frontend/version (or (yreq/get-header request "x-frontend-version") "unknown")))))
 
 (defmulti handle-error
   (fn [cause _ _]
