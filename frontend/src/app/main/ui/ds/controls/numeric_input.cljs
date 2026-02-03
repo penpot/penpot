@@ -564,18 +564,17 @@
         (mf/use-fn
          (mf/deps on-detach tokens disabled token-applied)
          (fn [event]
-           (let [token (get-token-op tokens token-applied)]
-             (when-not disabled
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
-               (reset! token-applied* nil)
-               (reset! selected-id* nil)
-               (reset! focused-id* nil)
-               (when on-detach
-                 (on-detach token))
-               (ts/schedule-on-idle
-                (fn []
-                  (dom/focus! (mf/ref-val ref))))))))
+           (when-not disabled
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (reset! token-applied* nil)
+             (reset! selected-id* nil)
+             (reset! focused-id* nil)
+             (when on-detach
+               (on-detach token-applied))
+             (ts/schedule-on-idle
+              (fn []
+                (dom/focus! (mf/ref-val ref)))))))
 
         on-token-key-down
         (mf/use-fn

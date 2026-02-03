@@ -72,13 +72,10 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         current-blend-mode  (or (get values :blend-mode) :normal)
         current-opacity     (opacity->string (:opacity values))

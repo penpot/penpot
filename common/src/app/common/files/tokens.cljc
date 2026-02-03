@@ -39,19 +39,14 @@
        (into {})))
 
 (defn remove-attributes-for-token
-  "Removes applied tokens with `token-id` for the given `attributes` set from `applied-tokens`."
-  [attributes token applied-tokens]
+  "Removes applied tokens with `token-name` for the given `attributes` set from `applied-tokens`."
+  [attributes token-name applied-tokens]
   (let [attr? (set attributes)]
     (->> (remove (fn [[k v]]
                    (and (attr? k)
-                        (= v (or (token-identifier token) token))))
+                        (= v token-name)))
                  applied-tokens)
          (into {}))))
-
-(defn remove-attribute-for-detached-token
-  "Removes applied tokens when token-id is nil for the given `attributes` set from `applied-tokens`."
-  [attributes applied-tokens]
-  (apply dissoc applied-tokens attributes))
 
 (defn token-attribute-applied?
   "Test if `token` is applied to a `shape` on single `token-attribute`."

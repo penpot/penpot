@@ -339,13 +339,10 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-focus
         (mf/use-fn
@@ -478,12 +475,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+           (st/emit! (dwta/unapply-token {:token-name token
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-p1-change
         (mf/use-fn (mf/deps on-change') #(on-change' % :p1))
@@ -728,12 +722,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+           (st/emit! (dwta/unapply-token {:token-name token
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-row-gap-change
         (mf/use-fn (mf/deps on-change') #(on-change' %1 %2 :row-gap))

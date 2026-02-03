@@ -97,13 +97,10 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-detach-horizontal
         (mf/use-fn
@@ -223,13 +220,10 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-focus
         (mf/use-fn
@@ -556,13 +550,10 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{attr}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{attr}
-                                           :shape-ids ids})))))
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-size-change
         (mf/use-fn

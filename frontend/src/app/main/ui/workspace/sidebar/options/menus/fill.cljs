@@ -182,14 +182,10 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token]
-           (prn "on-detach-token" token)
-           (if (seq token)
-             (st/emit! (dwta/unapply-token {:token (first token)
-                                            :attributes #{:fill}
-                                            :shape-ids ids}))
-             (st/emit! (dwta/detach-token {:attributes #{:fill}
-                                           :shape-ids ids})))))]
+         (fn [token-name]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{:fill}
+                                          :shape-ids ids}))))]
 
     (mf/with-layout-effect [hide-on-export]
       (when-let [checkbox (mf/ref-val checkbox-ref)]

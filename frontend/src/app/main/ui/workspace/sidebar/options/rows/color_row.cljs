@@ -85,7 +85,8 @@
         (mf/use-fn
          (mf/deps detach-token token applied-token-name)
          (fn []
-           (detach-token token)))
+           (let [token-name (or (:name token) applied-token-name)]
+             (detach-token token-name))))
 
         has-errors (some? (:errors token))
         token-name (:name token)
