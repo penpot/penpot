@@ -177,6 +177,26 @@ impl ShapesPoolImpl {
         }
     }
 
+    // Given an id, returns the depth in the tree-shaped structure
+    // of shapes.
+    pub fn get_depth(&self, id: &Uuid) -> usize {
+        if id == &Uuid::nil() {
+            return 0;
+        }
+
+        let Some(idx) = self.uuid_to_idx.get(id) else {
+            return 0;
+        };
+
+        let shape = &self.shapes[*idx];
+
+        let Some(parent_id) = shape.parent_id else {
+            return 0;
+        };
+
+        self.get_depth(&parent_id) + 1
+    }
+
     #[allow(dead_code)]
     pub fn iter(&self) -> std::slice::Iter<'_, Shape> {
         self.shapes.iter()

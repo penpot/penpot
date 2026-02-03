@@ -62,6 +62,65 @@
           (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape)))
           (rx/empty))))))
 
+(defn resize-wasm-text-debounce-commit
+  []
+  (ptk/reify ::resize-wasm-text
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ids (get state ::resize-wasm-text-debounce-ids)
+            objects (dsh/lookup-page-objects state)
+
+            modifiers
+            (reduce
+             (fn [modifiers id]
+               (let [shape (get objects id)]
+                 (cond-> modifiers
+                   (and (some? shape)
+                        (cfh/text-shape? shape)
+                        (not= :fixed (:grow-type shape)))
+                   (merge (resize-wasm-text-modifiers shape)))))
+             {}
+             ids)]
+        (if (not (empty? modifiers))
+          (rx/of (dwm/apply-wasm-modifiers modifiers))
+          (rx/empty))))))
+
+;; This event will debounce the resize events so, if there are many, they
+;; are processed at the same time and not one-by-one. This will improve
+;; performance because it's better to make only one layout calculation instead
+;; of (potentialy) hundreds.
+(defn resize-wasm-text-debounce
+  [id]
+  (let [cur-event (js/Symbol)]
+    (ptk/reify ::resize-wasm-text-debounce
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (update ::resize-wasm-text-debounce-ids (fnil conj []) id)
+            (cond-> (nil? (::resize-wasm-text-debounce-event state))
+              (assoc ::resize-wasm-text-debounce-event cur-event))))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= (::resize-wasm-text-debounce-event state) cur-event)
+          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+            (rx/concat
+             (rx/merge
+              (->> stream
+                   (rx/filter (ptk/type? ::resize-wasm-text-debounce))
+                   (rx/debounce 20)
+                   (rx/take 1)
+                   (rx/delay 200)
+                   (rx/map #(resize-wasm-text-debounce-commit))
+                   (rx/take-until stopper))
+
+              (rx/of (resize-wasm-text-debounce id)))
+
+             (rx/of #(dissoc %
+                             ::resize-wasm-text-debounce-ids
+                             ::resize-wasm-text-debounce-event))))
+          (rx/empty))))))
+
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
   [ids]
