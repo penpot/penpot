@@ -83,6 +83,7 @@
 ;; Re-export public text editor functions
 (def text-editor-start text-editor/text-editor-start)
 (def text-editor-stop text-editor/text-editor-stop)
+(def text-editor-testing-coords text-editor/text-editor-testing-coords)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
 (def text-editor-is-active? text-editor/text-editor-is-active?)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
@@ -1110,7 +1111,7 @@
 (defn- set-objects-async
   "Asynchronously process shapes in chunks, yielding to the browser between chunks.
    Returns a promise that resolves when all shapes are processed.
-   
+
    Renders a preview only periodically during loading to show progress,
    then does a full tile-based render at the end."
   [shapes render-callback]

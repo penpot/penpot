@@ -22,6 +22,11 @@
               (aget buffer 2)
               (aget buffer 3)))))
 
+(defn text-editor-testing-coords
+  [x y]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_testing_coords" x y)))
+
 (defn text-editor-set-cursor-from-point
   [x y]
   (when wasm/context-initialized?

@@ -208,9 +208,10 @@
              (when (and (= :text (:type hover-shape))
                         (features/active-feature? @st/state "text-editor-wasm/v1")
                         wasm.wasm/context-initialized?)
-               (let [raw-pt (dom/get-client-position event)]
+               (let [point (dom/get-client-position event)]
                  ;; FIXME
-                 (wasm.api/text-editor-set-cursor-from-point (.-x raw-pt) (.-y raw-pt))))))
+                 (js/console.log (.-x point) (.-y point) event)
+                 (wasm.api/text-editor-set-cursor-from-point (.-x point) (.-y point))))))
 
          (when (and @z?
                     (not @space?)
@@ -381,7 +382,9 @@
   (let [last-position (mf/use-var nil)]
     (mf/use-fn
      (fn [event]
-       (let [raw-pt   (dom/get-client-position event)
+       (let [native-event (unchecked-get event "nativeEvent")
+             off-pt   (dom/get-offset-position native-event)
+             raw-pt   (dom/get-client-position event)
              pt       (uwvv/point->viewport raw-pt)
 
              ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
@@ -389,6 +392,8 @@
              delta (if @last-position
                      (gpt/subtract raw-pt @last-position)
                      (gpt/point 0 0))]
+
+         (wasm.api/text-editor-testing-coords (.-x off-pt) (.-y off-pt))
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
