@@ -383,7 +383,8 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.keyboard.press("T");
     await this.page.waitForTimeout(timeToWait);
     await this.clickAndMove(x1, y1, x2, y2);
-    await this.page.waitForTimeout(timeToWait);
+    await expect(this.page.getByTestId("text-editor")).toBeVisible();
+
     if (initialText) {
       await this.page.keyboard.type(initialText);
     }
@@ -433,7 +434,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   async paste(kind = "keyboard") {
     if (kind === "context-menu") {
       await this.viewport.click({ button: "right" });
-      return this.page.getByText("PasteCtrlV").click();
+      return this.page.getByText("Paste", { exact: true }).click();
     }
     return this.page.keyboard.press("ControlOrMeta+V");
   }

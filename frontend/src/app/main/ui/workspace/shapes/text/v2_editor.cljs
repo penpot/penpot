@@ -401,7 +401,8 @@
                              (dm/fmt "scale(%)" maybe-zoom))}))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
-                     :transform (dm/str transform)}
+                     :transform (dm/str transform)
+                     :data-testid "text-editor"}
      [:defs
       [:clipPath {:id clip-id}
        [:rect {:x x :y y :width width :height height}]]]
