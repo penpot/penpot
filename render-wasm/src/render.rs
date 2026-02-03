@@ -22,7 +22,7 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, Type,
+    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -1536,28 +1536,20 @@ impl RenderState {
         let world_offset = (mapped.x, mapped.y);
 
         // The opacity of fills and strokes shouldn't affect the shadow,
-        // so we paint everything black with the same opacity
-        plain_shape.to_mut().clear_fills();
+        // so we paint everything black with the same opacity.
+        let plain_shape_mut = plain_shape.to_mut();
+        plain_shape_mut.clear_fills();
         if shape.has_fills() {
-            plain_shape
-                .to_mut()
-                .add_fill(Fill::Solid(SolidColor(skia::Color::BLACK)));
+            plain_shape_mut.add_fill(Fill::Solid(SolidColor(skia::Color::BLACK)));
         }
 
-        plain_shape.to_mut().clear_strokes();
-        for stroke in shape.strokes.iter() {
-            plain_shape.to_mut().add_stroke(Stroke {
-                fill: Fill::Solid(SolidColor(skia::Color::BLACK)),
-                width: stroke.width,
-                style: stroke.style,
-                cap_end: stroke.cap_end,
-                cap_start: stroke.cap_start,
-                kind: stroke.kind,
-            });
+        // Reuse existing strokes and only override their fill color.
+        for stroke in plain_shape_mut.strokes.iter_mut() {
+            stroke.fill = Fill::Solid(SolidColor(skia::Color::BLACK));
         }
 
-        plain_shape.to_mut().clear_shadows();
-        plain_shape.to_mut().blur = None;
+        plain_shape_mut.clear_shadows();
+        plain_shape_mut.blur = None;
 
         let Some(drop_filter) = transformed_shadow.get_drop_shadow_filter() else {
             return;
