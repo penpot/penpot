@@ -273,7 +273,7 @@
                            :trim true
                            :auto-focus true}]
 
-       (when (and warning-name-change? (= action "edit"))
+       #_(when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
           [:> context-notification*
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
