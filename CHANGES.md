@@ -36,7 +36,8 @@
 - Fix exception on uploading large fonts [Github #8135](https://github.com/penpot/penpot/pull/8135)
 - Fix unhandled exception on open-new-window helper [Github #7787](https://github.com/penpot/penpot/issues/7787)
 - Fix incorrect handling of input values on layout gap and padding inputs [Github #8113](https://github.com/penpot/penpot/issues/8113)
-
+- Fix several race conditions on path editor [Github #8187](https://github.com/penpot/penpot/pull/8187)
+- Fix app freeze when introducing an error on a very long token name [Taiga #13214](https://tree.taiga.io/project/penpot/issue/13214)
 
 ## 2.12.1
 
