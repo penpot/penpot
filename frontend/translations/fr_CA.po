@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-02 19:01+0000\n"
+"PO-Revision-Date: 2026-02-04 01:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3795,3 +3795,133 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/onboarding/team_choice.cljs:194
 msgid "onboarding.choice.team-up.roles"
 msgstr "Inviter avec le rôle :"
+
+#: src/app/main/ui/delete_shared.cljs:51
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Vraiment déplacer cette bibliothèque?"
+msgstr[1] "Vraiment déplacer ces bibliothèques?"
+
+#: src/app/main/ui/delete_shared.cljs:46
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Déplacer une bibliothèque"
+msgstr[1] "Déplacer des bibliothèques"
+
+#: src/app/main/ui/dashboard/team.cljs:380
+msgid "modals.promote-owner-confirm.accept"
+msgstr "Transférer la propriété"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:415
+msgid "modals.update-remote-component.hint"
+msgstr ""
+"Tu es sur le point de mettre à jour un composant dans une bibliothèque "
+"partagée. Ceci pourrait affecter les autres fichiers qui l'utilisent."
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:414
+msgid "modals.update-remote-component.message"
+msgstr "Mettre à jour un composant d'une bibliothèque partagée"
+
+#: src/app/main/ui/static.cljs:289
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Cette page n'existe pas"
+
+#: src/app/main/ui/static.cljs:288
+msgid "not-found.desc-message.error"
+msgstr "Erreur 404"
+
+#: src/app/main/ui/static.cljs:139
+msgid "not-found.login.free"
+msgstr ""
+"Penpot est l'outil de design gratuit à code source libre pour la "
+"collaboration entre le design et le code"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Nous avons envoyé un courriel de récupération à"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr ""
+"Vérifie tes courriels et clique sur le lien pour créer un nouveau mot de "
+"passe."
+
+#: src/app/main/ui/static.cljs:153
+msgid "not-found.login.signup-free"
+msgstr "S'inscrire gratuitement"
+
+#: src/app/main/ui/static.cljs:154
+msgid "not-found.login.start-using"
+msgstr "Et commence à utiliser Penpot en quelques secondes!"
+
+#, unused
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot est à code source libre et fait par Kaleidos et la communauté, où "
+"beaucoup de gens s'aident les uns les autres. Tout le monde peut collaborer "
+"en :"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:223
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Commencer sans équipe"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:225
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Tu pourras créer une équipe plus tard."
+
+#, unused
+msgid "onboarding.newsletter.accept"
+msgstr "Oui, s'abonner"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:42
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Ta demande d'abonnement a été envoyée. Nous t'enverrons une confirmation via "
+"courriel."
+
+#: src/app/main/ui/onboarding/newsletter.cljs:100
+msgid "onboarding.newsletter.policy"
+msgstr "Politique de confidentialité."
+
+#: src/app/main/ui/onboarding/newsletter.cljs:65
+msgid "onboarding.newsletter.title"
+msgstr "Veux-tu recevoir des nouvelles de Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:108
+msgid "onboarding.questions.lets-get-started"
+msgstr "Commençons!"
+
+#: src/app/main/ui/onboarding/questions.cljs:249
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Je cherche une alternative à Figma, XD, etc."
+
+#: src/app/main/ui/onboarding/questions.cljs:243
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Je teste simplement"
+
+#: src/app/main/ui/onboarding/questions.cljs:246
+msgid "onboarding.questions.reasons.fit"
+msgstr "Je cherche un outil qui convient à mes besoins"
+
+#: src/app/main/ui/onboarding/questions.cljs:252
+msgid "onboarding.questions.reasons.testing"
+msgstr "Je teste avant d'auto-héberger"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+#, unused
+msgid "onboarding.questions.referer.article"
+msgstr "Article (blogue, publication, infolettre)"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+#, unused
+msgid "onboarding.questions.referer.search"
+msgstr "Moteur de recherche (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+#, unused
+msgid "onboarding.questions.referer.social"
+msgstr "Médias sociaux (X, LinkedIn, Facebook, etc.)"
+
+#: src/app/main/ui/onboarding/questions.cljs:322
+msgid "onboarding.questions.start-with.code"
+msgstr "Générer du vrai code à partir de designs"
