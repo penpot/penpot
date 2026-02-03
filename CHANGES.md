@@ -1,10 +1,6 @@
 # CHANGELOG
 
-## 2.13.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
+## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
 
