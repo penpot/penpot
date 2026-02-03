@@ -1074,6 +1074,10 @@ impl Shape {
         self.children.first()
     }
 
+    pub fn children_count(&self) -> usize {
+        self.children_ids_iter(false).count()
+    }
+
     pub fn children_ids(&self, include_hidden: bool) -> Vec<Uuid> {
         if include_hidden {
             return self.children.iter().rev().copied().collect();

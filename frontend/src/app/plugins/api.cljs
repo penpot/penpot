@@ -26,6 +26,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.fonts :refer [fetch-font-css]]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -338,9 +339,14 @@
 
         :else
         (let [page  (dsh/lookup-page @st/state)
-              shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                        (update :content txt/change-text text)
-                        (assoc :position-data nil))
+              shape (-> (cts/setup-shape {:type :text
+                                          :x 0 :y 0
+                                          :width 1 :height 1
+                                          :grow-type :auto-width})
+                        (update :content txt/change-text text
+                                ;; Text should be given a color by default
+                                {:fills [{:fill-color "#000000" :fill-opacity 1}]})
+                        (dissoc :position-data))
 
               changes
               (-> (cb/empty-changes)
@@ -348,7 +354,9 @@
                   (cb/with-objects (:objects page))
                   (cb/add-object shape))]
 
-          (st/emit! (ch/commit-changes changes))
+          (st/emit!
+           (ch/commit-changes changes)
+           (dwwt/resize-wasm-text-debounce (:id shape)))
           (shape/shape-proxy plugin-id (:id shape)))))
 
     :createShapeFromSvg

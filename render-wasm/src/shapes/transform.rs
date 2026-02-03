@@ -8,7 +8,7 @@ use skia::Matrix;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Modifier {
     Transform(TransformEntry),
-    Reflow(Uuid),
+    Reflow(Uuid, bool),
 }
 
 impl Modifier {
@@ -18,8 +18,8 @@ impl Modifier {
     pub fn parent(id: Uuid, transform: Matrix) -> Self {
         Modifier::Transform(TransformEntry::parent(id, transform))
     }
-    pub fn reflow(id: Uuid) -> Self {
-        Modifier::Reflow(id)
+    pub fn reflow(id: Uuid, force_reflow: bool) -> Self {
+        Modifier::Reflow(id, force_reflow)
     }
 }
 
