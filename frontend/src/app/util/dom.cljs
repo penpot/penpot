@@ -106,17 +106,20 @@
 
 (defn stop-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopPropagation event)))
     (.stopPropagation event)))
 
 (defn stop-immediate-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopImmediatePropagation event)))
     (.stopImmediatePropagation event)))
 
 (defn prevent-default
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-preventDefault event)))
     (.preventDefault event)))
 
 (defn get-target
