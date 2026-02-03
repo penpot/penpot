@@ -87,7 +87,11 @@
 (def text-editor-start text-editor/text-editor-start)
 (def text-editor-stop text-editor/text-editor-stop)
 (def text-editor-set-cursor-from-point text-editor/text-editor-set-cursor-from-point)
+(def text-editor-pointer-down text-editor/text-editor-pointer-down)
+(def text-editor-pointer-move text-editor/text-editor-pointer-move)
+(def text-editor-pointer-up text-editor/text-editor-pointer-up)
 (def text-editor-is-active? text-editor/text-editor-is-active?)
+(def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
 
 (def dpr
@@ -262,22 +266,6 @@
    Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving."
   [attrs]
   (text-editor/apply-style-to-selection attrs use-shape set-shape-text-content))
-
-(defn update-text-rect!
-  [id]
-  (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
-
-(defn- ensure-text-content
-  "Guarantee that the shape always sends a valid text tree to WASM. When the
-  content is nil (freshly created text) we fall back to
-  tc/default-text-content so the renderer receives typography information."
-  [content]
-  (or content (tc/v2-default-text-content)))
 
 (defn set-parent-id
   [id]
@@ -995,6 +983,22 @@
           (h/call wasm/internal-module "_render_from_cache" 0)
           (render-finish)
           (perf/end-measure "set-view-box::zoom")))))
+
+(defn update-text-rect!
+  [id]
+  (when wasm/context-initialized?
+    (mw/emit!
+     {:cmd :index/update-text-rect
+      :page-id (:current-page-id @st/state)
+      :shape-id id
+      :dimensions (get-text-dimensions id)})))
+
+(defn- ensure-text-content
+  "Guarantee that the shape always sends a valid text tree to WASM. When the
+  content is nil (freshly created text) we fall back to
+  tc/default-text-content so the renderer receives typography information."
+  [content]
+  (or content (tc/v2-default-text-content)))
 
 (defn set-object
   [shape]
