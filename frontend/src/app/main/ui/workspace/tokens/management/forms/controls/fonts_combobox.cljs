@@ -50,9 +50,13 @@
 
 (defn- resolve-value
   [tokens prev-token token-name value]
-  (let [token
+  (let [valid-token-name?
+        (and (string? token-name)
+             (re-matches  cto/token-name-validation-regex token-name))
+
+        token
         {:value (cto/split-font-family value)
-         :name (if (str/blank? token-name)
+         :name (if (or (not valid-token-name?) (str/blank? token-name))
                  "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
                  token-name)}
 

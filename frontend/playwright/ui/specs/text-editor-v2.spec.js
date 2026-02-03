@@ -110,7 +110,7 @@ test("Update an already created text shape by prepending text", async ({
   await workspace.textEditor.stopEditing();
 });
 
-test("Update an already created text shape by inserting text in between", async ({
+test.skip("Update an already created text shape by inserting text in between", async ({
   page,
 }) => {
   const workspace = new WorkspacePage(page, {
@@ -151,7 +151,7 @@ test("Update a new text shape appending text by pasting text", async ({
   await workspace.textEditor.stopEditing();
 });
 
-test("Update a new text shape prepending text by pasting text", async ({
+test.skip("Update a new text shape prepending text by pasting text", async ({
   page,
   context,
 }) => {

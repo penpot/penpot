@@ -16,7 +16,7 @@
 (def context (mf/create-context nil))
 
 (mf/defc form-input*
-  [{:keys [name] :rest props}]
+  [{:keys [name trim] :rest props}]
 
   (let [form       (mf/use-ctx context)
         input-name name
@@ -33,7 +33,7 @@
          (mf/deps input-name)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-input-value)]
-             (fm/on-input-change form input-name value true))))
+             (fm/on-input-change form input-name value trim))))
 
         props
         (mf/spread-props props {:on-change on-change
