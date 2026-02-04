@@ -30,6 +30,7 @@ Penpot:
         currentFile: null | File; 
         currentPage: null | Page; 
         viewport: Viewport; 
+        flags: Flags; 
         history: HistoryContext; 
         library: LibraryContext; 
         fonts: FontsContext; 
@@ -268,6 +269,12 @@ Penpot:
         ```
         const viewportSettings = context.viewport;console.log(viewportSettings);
         ```
+      flags: |-
+        ```
+        readonly flags: Flags
+        ```
+
+        Provides flags to customize the API behavior.
       history: |-
         ```
         readonly history: HistoryContext
@@ -4477,6 +4484,7 @@ Context:
         currentFile: null | File; 
         currentPage: null | Page; 
         viewport: Viewport; 
+        flags: Flags; 
         history: HistoryContext; 
         library: LibraryContext; 
         fonts: FontsContext; 
@@ -4572,6 +4580,12 @@ Context:
         ```
         const viewportSettings = context.viewport;console.log(viewportSettings);
         ```
+      flags: |-
+        ```
+        readonly flags: Flags
+        ```
+
+        Provides flags to customize the API behavior.
       history: |-
         ```
         readonly history: HistoryContext
@@ -6763,6 +6777,31 @@ Fill:
         ```
 
         The optional image fill defined by an ImageData object.
+Flags:
+  overview: |-
+    Interface Flags
+    ===============
+
+    This subcontext allows the API o change certain defaults
+
+    ```
+    interface Flags { 
+        naturalChildOrdering: boolean; 
+    }
+    ```
+
+    Referenced by: Context, Penpot
+  members:
+    Properties:
+      naturalChildOrdering: |-
+        ```
+        naturalChildOrdering: boolean
+        ```
+
+        If `true` the .children property will be always sorted in the z-index ordering.
+        Also, appendChild method will be append the children in the top-most position.
+        The insertchild method is changed acordingly to respect this ordering.
+        Defaults to false
 FlexLayout:
   overview: |-
     Interface FlexLayout

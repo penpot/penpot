@@ -2,9 +2,14 @@
 
 # Penpot's Official MCP Server
 
-Penpot integrates a LLM layer built on the Model Context Protocol (MCP) via Penpot's Plugin API to interact with a Penpot design file. Penpot's MCP server enables LLMs to perfom data queries, transformation and creation operations.
+Penpot integrates a LLM layer built on the Model Context Protocol
+(MCP) via Penpot's Plugin API to interact with a Penpot design
+file. Penpot's MCP server enables LLMs to perfom data queries,
+transformation and creation operations.
 
-Penpot's MCP Server is unlike any other you've seen. You get design-to- design, code-to-design and design-code supercharged workflows.
+Penpot's MCP Server is unlike any other you've seen. You get
+design-to- design, code-to-design and design-code supercharged
+workflows.
 
 
 [![Penpot MCP video playlist](https://github.com/user-attachments/assets/204f1d99-ce51-41dd-a5dd-1ef739f8f089)](https://www.youtube.com/playlist?list=PLgcCPfOv5v57SKMuw1NmS0-lkAXevpn10)
@@ -12,9 +17,10 @@ Penpot's MCP Server is unlike any other you've seen. You get design-to- design, 
 
 ## Architecture
 
-The **Penpot MCP Server** exposes tools to AI clients (LLMs), which support the retrieval
-of design data as well as the modification and creation of design elements.
-The MCP server communicates with Penpot via the dedicated **Penpot MCP Plugin**,
+The **Penpot MCP Server** exposes tools to AI clients (LLMs), which
+support the retrieval of design data as well as the modification and
+creation of design elements.  The MCP server communicates with Penpot
+via the dedicated **Penpot MCP Plugin**,
 which connects to the MCP server via WebSocket.  
 This enables the LLM to carry out tasks in the context of a design file by 
 executing code that leverages the Penpot Plugin API.
@@ -44,23 +50,36 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22).
-Following the installation of Node.js, the tools `npm` and `npx` should be 
-available in your terminal.
+The project requires [Node.js](https://nodejs.org/) (tested with v22.x
+with corepack).
 
-You should probably be using penpot devenv, where all this dependencies are
-already present and correctly setup.
+Following the installation of Node.js, the tools `pnpm` and `npx`
+should be available in your terminal. For ensure corepack installed
+and enabled correctly, just execute the `./scripts/setup`.
+
+It is also required to have `caddy` executeable in the path, it is
+used for start a local server for generate types documentation from
+the current branch. If you want to run it outside devenv where all
+dependencies are already provided, please download caddy from
+[here](https://caddyserver.com/download).
+
+You should probably be using penpot devenv, where all this
+dependencies are already present and correctly setup. But nothing
+prevents you execute this outside of devenv if you satisfy the
+specified dependencies.
 
 
 ### 1. Build & Launch the MCP Server and the Plugin Server
 
 If it's your first execution, install the required dependencies:
+
 ```shell
 cd mcp/
 ./scripts/setup
 ```
 
 Then build all components and start the two servers:
+
 ```shell
 pnpm run bootstrap
 ```
@@ -69,8 +88,34 @@ This bootstrap command will:
 
   * install dependencies for all components (`pnpm -r run install`)
   * build all components (`pnpm -r run build`)
+  * build plugins types  (`pnpm run build-types`)
   * start all components (`pnpm -r --parallel run start`)
 
+If you want to have types scrapped from a remote repository, the best
+apprach is executing the following:
+
+```shell
+PENPOT_PLUGINS_API_DOC_URL=https://doc.plugins.penpot.app pnpm run build:types
+pnpm run bootstrap
+```
+
+Or this, if you want skip build step bacause you have already have all
+build artifacts ready (per example from previous `bootstrap` command):
+
+```
+PENPOT_PLUGINS_API_DOC_URL=https://doc.plugins.penpot.app pnpm run build:types
+pnpm run start
+```
+
+If you want just to update the types definitions with the plugins api doc from the
+current branch:
+
+```shell
+pnpm run build:types
+```
+
+(That command will build plugins doc locally and will generate the types yaml from
+the locally build documentation)
 
 ### 2. Load the Plugin in Penpot and Establish the Connection
 
@@ -80,14 +125,14 @@ This bootstrap command will:
 > Starting with Chromium version 142, the private network access (PNA) restrictions have been hardened,
 > and when connecting to `localhost` from a web application served from a different origin
 > (such as https://design.penpot.app), the connection must explicitly be allowed.
-> 
+>
 > Most Chromium-based browsers (e.g. Chrome, Vivaldi) will display a popup requesting permission
 > to access the local network. Be sure to approve the request to allow the connection.
-> 
+>
 > Some browsers take additional security measures, and you may need to disable them.
 > For example, in Brave, disable the "Shield" for the Penpot website to allow local network access.
-> 
-> If your browser refuses to connect to the locally served plugin, check its configuration or 
+>
+> If your browser refuses to connect to the locally served plugin, check its configuration or
 > try a different browser (e.g. Firefox) that does not enforce these restrictions.
 
 1. Open Penpot in your browser
