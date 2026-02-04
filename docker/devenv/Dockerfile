@@ -31,7 +31,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v22.21.1 \
+ENV NODE_VERSION=v22.22.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -97,18 +97,19 @@ RUN set -eux; \
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.3.1577
+# https://clojure.org/releases/tools
+ENV CLOJURE_VERSION=1.12.4.1602
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='8c5321f16d9f1d8149f83e4e9ff8ca5d9e94320b92d205e6db42a604de3d1140'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_aarch64.tar.gz'; \
+         ESUM='9903c6b19183a33725ca1dfdae5b72400c9d00995c76fafc4a0d31c5152f33f7'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='471b3e62bdffaed27e37005d842d8639f10d244ccce1c7cdebf7abce06c8313e'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_x64.tar.gz'; \
+         ESUM='946ad9766d98fc6ab495a1a120072197db54997f6925fb96680f1ecd5591db4e'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
