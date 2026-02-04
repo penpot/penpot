@@ -183,15 +183,18 @@ fn initialize_tracks(
 ) -> Vec<TrackData> {
     let mut tracks = Vec::<TrackData>::new();
     let mut current_track = TrackData::default();
-    let mut children = shape.children_ids(true);
     let mut first = true;
 
-    if flex_data.is_reverse() {
-        children.reverse();
-    }
+    // When is_reverse() is true, we need forward order (children_ids_iter_forward).
+    // When is_reverse() is false, we need reversed order (children_ids_iter).
+    let children_iter: Box<dyn Iterator<Item = Uuid>> = if flex_data.is_reverse() {
+        Box::new(shape.children_ids_iter_forward(true).copied())
+    } else {
+        Box::new(shape.children_ids_iter(true).copied())
+    };
 
-    for child_id in children.iter() {
-        let Some(child) = shapes.get(child_id) else {
+    for child_id in children_iter {
+        let Some(child) = shapes.get(&child_id) else {
             continue;
         };
 
