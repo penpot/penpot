@@ -1050,6 +1050,20 @@
                                         :ignore-touched (:ignore-touched options)
                                         :ignore-snap-pixel true}))))))))
 
+(defn update-positions
+  "Move multiple shapes to a new position."
+  ([ids position] (update-positions ids position nil))
+  ([ids position options]
+   (assert (every? uuid? ids)
+           "expected valid coll of uuids")
+   (assert (map? position) "expected a valid map for `position`")
+   (ptk/reify ::update-positions
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> ids
+            (map (fn [id] (update-position id position options)))
+            (rx/from))))))
+
 (defn position-shapes
   [shapes]
   (ptk/reify ::position-shapes

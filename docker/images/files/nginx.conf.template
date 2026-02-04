@@ -130,6 +130,7 @@ http {
         }
 
         location /readyz {
+            access_log off;
             proxy_pass $PENPOT_BACKEND_URI$request_uri;
         }
 

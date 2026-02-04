@@ -283,7 +283,7 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/update-position ids {attr value})))
+               (st/emit! (udw/update-positions ids {attr value})))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/toggle-token {:token (first value)
                                            :attrs #{attr}
