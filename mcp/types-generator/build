@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+export URL=${1:-http://localhost:9090}
+
+SCRIPT_DIR=$(dirname $0);
+pushd $SCRIPT_DIR;
+echo "Scrapping $URL..."
+
+set -e
+pixi install;
+pixi run python prepare_api_docs.py $URL;

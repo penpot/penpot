@@ -1,0 +1,6 @@
+linkWorkspacePackages: true
+
+packages:
+    - "./packages/common"
+    - "./packages/server"
+    - "./packages/plugin"
