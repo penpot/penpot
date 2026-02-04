@@ -3,7 +3,7 @@
 
  :deps
  {penpot/common {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.12.2"}
+  org.clojure/clojure {:mvn/version "1.12.4"}
   org.clojure/tools.namespace {:mvn/version "1.5.0"}
 
   com.github.luben/zstd-jni {:mvn/version "1.5.7-4"}
@@ -28,8 +28,8 @@
   com.google.guava/guava {:mvn/version "33.4.8-jre"}
 
   funcool/yetti
-  {:git/tag "v11.8"
-   :git/sha "1d1b33f"
+  {:git/tag "v11.9"
+   :git/sha "5fad7a9"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
@@ -39,7 +39,7 @@
   metosin/reitit-core {:mvn/version "0.9.1"}
   nrepl/nrepl {:mvn/version "1.4.0"}
 
-  org.postgresql/postgresql {:mvn/version "42.7.7"}
+  org.postgresql/postgresql {:mvn/version "42.7.9"}
   org.xerial/sqlite-jdbc {:mvn/version "3.50.3.0"}
 
   com.zaxxer/HikariCP {:mvn/version "7.0.2"}
@@ -49,7 +49,7 @@
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.6.1-359"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.2"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.3"}
 
   org.jsoup/jsoup {:mvn/version "1.21.2"}
   org.im4java/im4java
@@ -66,7 +66,7 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.33.10"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.41.21"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases

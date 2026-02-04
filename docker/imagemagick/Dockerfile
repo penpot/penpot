@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-ARG IMAGEMAGICK_VERSION=7.1.1-47
+ARG IMAGEMAGICK_VERSION=7.1.2-13
 
 RUN set -e; \
     apt-get -qq update; \

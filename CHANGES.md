@@ -34,11 +34,7 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
-## 2.13.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
+## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
 
