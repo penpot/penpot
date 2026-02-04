@@ -53,7 +53,10 @@ export const loadPlugin = async function (
       manifest,
       () => {
         plugins = plugins.filter((api) => api !== plugin);
-        closeCallback && closeCallback();
+
+        if (closeCallback) {
+          closeCallback();
+        }
       },
     );
 
