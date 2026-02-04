@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { WasmWorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 import { presenceFixture, joinFixture2, joinFixture3 } from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
