@@ -282,7 +282,7 @@ fn propagate_reflow(
     state: &State,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
-    layout_reflows: &mut Vec<Uuid>,
+    layout_reflows: &mut HashSet<Uuid>,
     reflown: &mut HashSet<Uuid>,
     modifiers: &HashMap<Uuid, Matrix>,
 ) {
@@ -312,7 +312,7 @@ fn propagate_reflow(
             }
 
             if !skip_reflow {
-                layout_reflows.push(*id);
+                layout_reflows.insert(*id);
             }
         }
         Type::Group(Group { masked: true }) => {
@@ -394,7 +394,7 @@ pub fn propagate_modifiers(
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
     let mut bounds = HashMap::<Uuid, Bounds>::new();
     let mut reflown = HashSet::<Uuid>::new();
-    let mut layout_reflows = Vec::<Uuid>::new();
+    let mut layout_reflows = HashSet::<Uuid>::new();
 
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
@@ -424,13 +424,12 @@ pub fn propagate_modifiers(
             }
         }
 
-        for id in layout_reflows.iter() {
-            if reflown.contains(id) {
+        for id in std::mem::take(&mut layout_reflows) {
+            if reflown.contains(&id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds);
+            reflow_shape(&id, state, &mut reflown, &mut entries, &mut bounds);
         }
-        layout_reflows = Vec::new();
     }
 
     modifiers
