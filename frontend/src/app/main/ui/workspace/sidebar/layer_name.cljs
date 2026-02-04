@@ -108,6 +108,7 @@
         :on-blur accept-edit
         :on-key-down on-key-down
         :auto-focus true
+        :id (dm/str "layer-name-" shape-id)
         :default-value (d/nilv default-value "")}]
       [:*
        [:span
@@ -118,6 +119,7 @@
                  :hidden is-hidden
                  :type-comp type-comp
                  :type-frame type-frame)
+         :id (dm/str "layer-name-" shape-id)
          :style {"--depth" depth "--parent-size" parent-size}
          :ref ref
          :on-double-click start-edit}
