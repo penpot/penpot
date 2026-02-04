@@ -295,7 +295,7 @@ fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]
                 track.main_size += delta;
 
                 if (child.main_size - child.max_main_size).abs() < MIN_SIZE {
-                    to_resize_children.remove(i);
+                    to_resize_children.swap_remove(i);
                 }
             }
         }
@@ -332,7 +332,7 @@ fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackDat
             left_space -= delta;
 
             if (track.across_size - track.max_across_size).abs() < MIN_SIZE {
-                to_resize_tracks.remove(i);
+                to_resize_tracks.swap_remove(i);
             }
         }
     }
