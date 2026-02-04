@@ -139,13 +139,13 @@
         zip-input-ref (mf/use-ref)
 
         on-display-file-explorer
-        (mf/use-fn #(dom/click (mf/ref-val file-input-ref)))
+        (mf/use-fn #(dom/click! (mf/ref-val file-input-ref)))
 
         on-display-dir-explorer
-        (mf/use-fn #(dom/click (mf/ref-val dir-input-ref)))
+        (mf/use-fn #(dom/click! (mf/ref-val dir-input-ref)))
 
         on-display-zip-explorer
-        (mf/use-fn #(dom/click (mf/ref-val zip-input-ref)))
+        (mf/use-fn #(dom/click! (mf/ref-val zip-input-ref)))
 
         handle-import-action
         (mf/use-fn

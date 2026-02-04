@@ -33,7 +33,7 @@
            (dom/open-new-window "https://penpot.app/penpothub/libraries-templates")))
 
         on-import
-        (mf/use-fn #(dom/click (mf/ref-val file-input)))]
+        (mf/use-fn #(dom/click! (mf/ref-val file-input)))]
 
     [:div {:class (stl/css :empty-project-container)}
      [:div {:class (stl/css :empty-project-card)

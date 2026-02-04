@@ -99,7 +99,7 @@
 
         on-image-click
         (mf/use-fn
-         #(dom/click (mf/ref-val input-ref)))
+         #(dom/click! (mf/ref-val input-ref)))
 
         on-file-selected
         (fn [file]
