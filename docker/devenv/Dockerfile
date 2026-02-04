@@ -397,7 +397,7 @@ ENV LANG='C.UTF-8' \
     RUSTUP_HOME="/opt/rustup" \
     PATH="/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
