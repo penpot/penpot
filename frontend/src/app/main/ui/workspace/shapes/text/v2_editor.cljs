@@ -117,7 +117,8 @@
               (st/emit! (dwt/v2-update-text-shape-content shape-id content
                                                           :update-name? update-name?
                                                           :name generated-name
-                                                          :finalize? true))))
+                                                          :finalize? true
+                                                          :save-undo? false))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))
@@ -135,15 +136,21 @@
         on-needs-layout
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true)))
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                        :update-name? true
+                                                        :save-undo? false)))
           ;; FIXME: We need to find a better way to trigger layout changes.
           #_(st/emit!
              (dwt/v2-update-text-shape-position-data shape-id [])))
 
         on-change
         (fn []
-          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))
+          (let [is-empty? (dwt/is-empty? instance)
+                save-undo? (not is-empty?)]
+            (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+              (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                          :update-name? true
+                                                          :save-undo? save-undo?)))))
 
         on-clipboard-change
         (fn [event]
@@ -247,7 +254,7 @@
       :ref container-ref
       :data-testid "text-editor-container"
       :style {:width "var(--editor-container-width)"
-              :height "var(--editor-container-height)"}
+              :height "var(--editor-container-height)"}}
       ;; We hide the editor when is blurred because otherwise the
       ;; selection won't let us see the underlying text. Use opacity
       ;; because display or visibility won't allow to recover focus
@@ -256,7 +263,7 @@
       ;; IMPORTANT! This is now done through DOM mutations (see
       ;; on-blur and on-focus) but I keep this for future references.
       ;; :opacity (when @blurred 0)}}
-      }
+
      [:div
       {:class (dm/str
                "mousetrap "

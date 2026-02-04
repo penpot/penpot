@@ -46,6 +46,7 @@
 (def ^function create-editor editor.v2/create)
 (def ^function set-editor-root! editor.v2/setRoot)
 (def ^function get-editor-root editor.v2/getRoot)
+(def ^function is-empty? editor.v2/isEmpty)
 (def ^function dispose! editor.v2/dispose)
 
 (declare v2-update-text-shape-content)
@@ -905,15 +906,22 @@
       (update-in state [:workspace-text-modifier shape-id] {:position-data position-data}))))
 
 (defn v2-update-text-shape-content
-  [id content & {:keys [update-name? name finalize?]
-                 :or {update-name? false name nil finalize? false}}]
+  [id content & {:keys [update-name? name finalize? save-undo?]
+                 :or {update-name? false name nil finalize? false save-undo? true}}]
   (ptk/reify ::v2-update-text-shape-content
     ptk/WatchEvent
     (watch [_ state _]
       (if (features/active-feature? state "render-wasm/v1")
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
-              new-shape?   (nil? (:content shape))]
+              new-shape?   (nil? (:content shape))
+              prev-content (:content shape)
+              has-prev-content? (not (nil? (:prev-content shape)))
+              has-content? (when-not new-shape?
+                             (v2-content-has-text? content))
+              did-has-content? (when-not new-shape?
+                                 (v2-content-has-text? prev-content))]
+
           (rx/concat
            (rx/of
             (dwsh/update-shapes
@@ -921,10 +929,16 @@
              (fn [shape]
                (let [new-shape (-> shape
                                    (assoc :content content)
+                                   (cond-> (and has-content?
+                                                has-prev-content?)
+                                     (dissoc :prev-content))
+                                   (cond-> (and did-has-content?
+                                                (not has-content?))
+                                     (assoc :prev-content prev-content))
                                    (cond-> (and update-name? (some? name))
                                      (assoc :name name)))]
                  new-shape))
-             {:undo-group (when new-shape? id)})
+             {:save-undo? save-undo? :undo-group (when new-shape? id)})
 
             (if (and (not= :fixed (:grow-type shape)) finalize?)
               (dwm/apply-wasm-modifiers
@@ -937,8 +951,16 @@
 
            (when finalize?
              (rx/concat
-              (when (and (not (v2-content-has-text? content)) (some? id))
+              (when (and (not has-content?) (some? id))
                 (rx/of
+                 (when has-prev-content?
+                   (dwsh/update-shapes
+                    [id]
+                    (fn [shape]
+                      (let [new-shape (-> shape
+                                          (assoc :content (:prev-content shape)))]
+                        new-shape))
+                    {:save-undo? false}))
                  (dws/deselect-shape id)
                  (dwsh/delete-shapes #{id})))
               (rx/of (dwt/finish-transform))))))
