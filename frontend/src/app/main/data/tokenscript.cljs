@@ -1,12 +1,13 @@
 (ns app.main.data.tokenscript
   (:require
-   ["./tokenscript-schemas.js" :refer [makeConfig]]
-   ["@tokens-studio/tokenscript-interpreter" :refer [BaseSymbolType
-                                                     ColorSymbol
-                                                     ListSymbol NumberSymbol
-                                                     NumberWithUnitSymbol
-                                                     ProcessorError
-                                                     processTokens TokenSymbol]]
+   ["@penpot/tokenscript" :refer [BaseSymbolType
+                                  ColorSymbol
+                                  ListSymbol NumberSymbol
+                                  NumberWithUnitSymbol
+                                  ProcessorError
+                                  processTokens
+                                  TokenSymbol
+                                  makeConfig]]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.main.data.workspace.tokens.errors :as wte]))

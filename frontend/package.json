@@ -47,6 +47,7 @@
   "devDependencies": {
     "@penpot/draft-js": "workspace:./packages/draft-js",
     "@penpot/mousetrap": "workspace:./packages/mousetrap",
+    "@penpot/tokenscript": "workspace:./packages/tokenscript",
     "@penpot/plugins-runtime": "1.4.2",
     "@penpot/svgo": "penpot/svgo#v3.2",
     "@penpot/text-editor": "workspace:./text-editor",
@@ -116,8 +117,5 @@
     "watcher": "^2.3.1",
     "workerpool": "^9.3.2",
     "xregexp": "^5.1.2"
-  },
-  "dependencies": {
-    "@tokens-studio/tokenscript-interpreter": "^0.23.1"
   }
 }

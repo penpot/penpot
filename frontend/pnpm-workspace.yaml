@@ -6,4 +6,5 @@ shamefullyHoist: true
 packages:
   - "packages/draft-js"
   - "packages/mousetrap"
+  - "packages/tokenscript"
   - "text-editor"
