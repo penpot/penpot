@@ -6,7 +6,7 @@
 
 import { Config } from "@tokens-studio/tokenscript-interpreter";
 
-export const SCHEMAS = [
+const SCHEMAS = [
   {
     uri: "https://schema.tokenscript.dev.gcp.tokens.studio/api/v1/core/hex-color/0/",
     schema: {
