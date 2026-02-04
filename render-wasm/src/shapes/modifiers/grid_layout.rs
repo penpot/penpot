@@ -6,7 +6,7 @@ use crate::shapes::{
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use super::common::GetBounds;
 
@@ -537,7 +537,7 @@ fn cell_bounds(
 
 pub fn create_cell_data<'a>(
     layout_bounds: &Bounds,
-    children: &[Uuid],
+    children: &HashSet<Uuid>,
     shapes: ShapesPoolRef<'a>,
     cells: &Vec<GridCell>,
     column_tracks: &[TrackData],
@@ -614,7 +614,7 @@ pub fn grid_cell_data<'a>(
 
     let bounds = &mut HashMap::<Uuid, Bounds>::new();
     let layout_bounds = shape.bounds();
-    let children = shape.children_ids(false);
+    let children: HashSet<Uuid> = shape.children_ids_iter(false).copied().collect();
 
     let column_tracks = calculate_tracks(
         true,
@@ -707,7 +707,7 @@ pub fn reflow_grid_layout(
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
-    let children = shape.children_ids(true);
+    let children: HashSet<Uuid> = shape.children_ids_iter(true).copied().collect();
 
     let column_tracks = calculate_tracks(
         true,
