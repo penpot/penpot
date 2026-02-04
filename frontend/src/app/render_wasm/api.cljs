@@ -1355,10 +1355,28 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
-  (reset! wasm/context-lost? true)
-  (log/warn :hint "WebGL context lost")
-  (ex/raise :type :webgl-context-lost
-            :hint "WebGL context lost"))
+  (when-not (or @wasm/disposing?
+                (identical? (.-target event) @wasm/disposing-canvas))
+    (reset! wasm/context-lost? true)
+    (log/warn :hint "WebGL context lost")
+    (ex/raise :type :webgl-context-lost
+              :hint "WebGL context lost")))
+
+(defn- dispose-context!
+  [gl force-lose?]
+  (when wasm/gl-context-handle
+    (reset! wasm/disposing? true)
+    (try
+      (when (and force-lose? wasm/gl-context)
+        (reset! wasm/disposing-canvas (or (.-canvas ^js wasm/gl-context) wasm/canvas))
+        (when-let [lose-ext (.getExtension ^js wasm/gl-context "WEBGL_lose_context")]
+          (.loseContext ^js lose-ext)))
+      (.deleteContext ^js gl wasm/gl-context-handle)
+      (finally
+        (reset! wasm/disposing? false)
+        (js/setTimeout #(reset! wasm/disposing-canvas nil) 1000)
+        (set! wasm/gl-context-handle nil)
+        (set! wasm/gl-context nil)))))
 
 (defn init-canvas-context
   [canvas]
@@ -1370,13 +1388,30 @@
         browser (get-browser)
         browser (sr/translate-browser browser)]
     (when-not (nil? context)
-      (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
-        (.makeContextCurrent ^js gl handle)
-        (set! wasm/gl-context-handle handle)
-        (set! wasm/gl-context context)
+      (let [reuse-context? (and wasm/gl-context
+                                wasm/gl-context-handle
+                                (identical? wasm/gl-context context))
+            current-canvas (or (.-canvas ^js wasm/gl-context) wasm/canvas)
+            same-canvas? (identical? current-canvas canvas)]
+        (println "reuse-context?" reuse-context?)
+        (println "same-canvas?" same-canvas?)
+        (if reuse-context?
+          (.makeContextCurrent ^js gl wasm/gl-context-handle)
+          (do
+            ;; Dispose any previous context to avoid accumulating contexts.
+            ;; Only force context loss when changing canvases. For hot reloads
+            ;; on the same canvas, avoid loseContext to prevent spurious errors.
+            (dispose-context! gl (not same-canvas?))
+            (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
+              (.makeContextCurrent ^js gl handle)
+              (set! wasm/gl-context-handle handle)
+              (set! wasm/gl-context context))))
 
         ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
         (.getExtension context "WEBGL_debug_renderer_info")
+
+        ;; Clear stale context-loss state after a successful init.
+        (reset! wasm/context-lost? false)
 
         ;; Initialize Wasm Render Engine
         (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
@@ -1406,19 +1441,7 @@
         (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
         (set! wasm/canvas nil))
 
-      ;; Ensure the WebGL context is properly disposed so browsers do not keep
-      ;; accumulating active contexts between page switches.
-      (when-let [gl (unchecked-get wasm/internal-module "GL")]
-        (when-let [handle wasm/gl-context-handle]
-          (try
-            ;; Ask the browser to release resources explicitly if available.
-            (when-let [ctx wasm/gl-context]
-              (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
-                (.loseContext ^js lose-ext)))
-            (.deleteContext ^js gl handle)
-            (finally
-              (set! wasm/gl-context-handle nil)
-              (set! wasm/gl-context nil)))))
+      ;; Keep the WebGL context around so hot reloads can reuse it.
 
       ;; If this calls panics we don't want to crash. This happens sometimes
       ;; with hot-reload in develop
