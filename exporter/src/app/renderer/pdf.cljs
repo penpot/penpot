@@ -41,32 +41,23 @@
           (sync-page-size! [dom]
             (bw/eval! dom
                       (fn [elem]
-                        (let [attr-w (.getAttribute ^js elem "width")
-                              attr-h (.getAttribute ^js elem "height")
-                              rect (.getBoundingClientRect ^js elem)
-                              width (js/Math.max
-                                     (if (and attr-w (not= attr-w ""))
-                                       (js/parseFloat attr-w)
-                                       0)
-                                     (.-width rect))
-                              height (js/Math.max
-                                      (if (and attr-h (not= attr-h ""))
-                                        (js/parseFloat attr-h)
-                                        0)
-                                      (.-height rect))
+                        (let [rect (.getBoundingClientRect ^js elem)
+                              width (or (some-> (.getAttribute ^js elem "width") js/parseFloat) 0)
+                              height (or (some-> (.getAttribute ^js elem "height") js/parseFloat) 0)
+                              width (js/Math.max width (.-width rect))
+                              height (js/Math.max height (.-height rect))
                               width-px (str width "px")
                               height-px (str height "px")
                               head (.-head js/document)
                               style-id "penpot-pdf-page-size"
                               style-node (or (.getElementById js/document style-id)
-                                             (let [node (.createElement js/document "style")]
-                                               (set! (.-id node) style-id)
-                                               (.appendChild head node)
-                                               node))
-                              css (str "@page { size: " width-px " " height-px "; margin: 0; }\n"
-                                       "html, body, #app { margin: 0; padding: 0; "
-                                       "width: " width-px "; height: " height-px "; overflow: visible; }\n")]
-                          (set! (.-textContent style-node) css)))))
+                                             (doto (.createElement js/document "style")
+                                               (set! (.-id %) style-id)
+                                               (.appendChild head %)))]
+                          (set! (.-textContent style-node)
+                                (str "@page { size: " width-px " " height-px "; margin: 0; }\n"
+                                     "html, body, #app { margin: 0; padding: 0; "
+                                     "width: " width-px "; height: " height-px "; overflow: visible; }\n"))))))
 
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
