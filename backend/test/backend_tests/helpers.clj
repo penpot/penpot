@@ -103,6 +103,14 @@
                      (assoc-in [::db/pool ::db/username] (:database-username config))
                      (assoc-in [::db/pool ::db/password] (:database-password config))
                      (assoc-in [:app.rpc/methods :app.setup/templates] templates)
+                     (assoc-in [:app.rpc/methods :app.setup/templates] templates)
+                     (update :app.rpc/methods
+                             (fn [state]
+                               (-> state
+                                   (assoc :app.setup/templates templates)
+                                   (assoc :app.loggers.mattermost/reporter nil)
+                                   (assoc :app.loggers.database/reporter nil))))
+
                      (dissoc :app.srepl/server
                              :app.http/server
                              :app.http/route

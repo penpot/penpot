@@ -232,13 +232,22 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
+                                 (assoc :version 3)
+                                 (assoc :created-at (ct/format-inst created-at :rfc1123))))))
+
+          (render-template-v4 [{:keys [content id created-at]}]
+            (-> (io/resource "app/templates/error-report.v4.tmpl")
+                (tmpl/render (-> content
+                                 (assoc :id id)
+                                 (assoc :version 4)
                                  (assoc :created-at (ct/format-inst created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
       (let [result (case (:version report)
                      1 (render-template-v1 report)
                      2 (render-template-v2 report)
-                     3 (render-template-v3 report))]
+                     3 (render-template-v3 report)
+                     4 (render-template-v4 report))]
         {::yres/status 200
          ::yres/body result
          ::yres/headers {"content-type" "text/html; charset=utf-8"
@@ -246,20 +255,22 @@
       {::yres/status 404
        ::yres/body "not found"})))
 
-(def sql:error-reports
+(def ^:private sql:error-reports
   "SELECT id, created_at,
           content->>'~:hint' AS hint
      FROM server_error_report
+    WHERE version = ?
     ORDER BY created_at DESC
-    LIMIT 200")
+    LIMIT 300")
 
-(defn error-list-handler
-  [{:keys [::db/pool]} _request]
-  (let [items (->> (db/exec! pool [sql:error-reports])
-                   (map #(update % :created-at ct/format-inst :rfc1123)))]
+(defn- error-list-handler
+  [{:keys [::db/pool]} {:keys [params]}]
+  (let [version (or (some-> (get params :version) parse-long) 3)
+        items   (->> (db/exec! pool [sql:error-reports version])
+                     (map #(update % :created-at ct/format-inst :rfc1123)))]
     {::yres/status 200
      ::yres/body (-> (io/resource "app/templates/error-list.tmpl")
-                     (tmpl/render {:items items}))
+                     (tmpl/render {:items items :version version}))
      ::yres/headers {"content-type" "text/html; charset=utf-8"
                      "x-robots-tag" "noindex"}}))
 
