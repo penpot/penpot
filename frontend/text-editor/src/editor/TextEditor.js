@@ -326,7 +326,9 @@ export class TextEditor extends EventTarget {
    * @param {FocusEvent} e
    */
   #onBlur = (e) => {
-    this.#changeController.notifyImmediately();
+    if (!this.isEmpty) {
+      this.#changeController.notifyImmediately();
+    }
     this.#selectionController.saveSelection();
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
