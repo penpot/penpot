@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-04 01:01+0000\n"
+"PO-Revision-Date: 2026-02-05 14:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3925,3 +3925,92 @@ msgstr "Médias sociaux (X, LinkedIn, Facebook, etc.)"
 #: src/app/main/ui/onboarding/questions.cljs:322
 msgid "onboarding.questions.start-with.code"
 msgstr "Générer du vrai code à partir de designs"
+
+#: src/app/main/ui/onboarding/questions.cljs:320
+msgid "onboarding.questions.start-with.ds"
+msgstr "Créer un système design"
+
+#: src/app/main/ui/onboarding/questions.cljs:318
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototyper"
+
+#: src/app/main/ui/onboarding/questions.cljs:314
+msgid "onboarding.questions.start-with.ui"
+msgstr "Concevoir le UI et UX d'une appli"
+
+#: src/app/main/ui/onboarding/questions.cljs:316
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Maquettes en fil de fer"
+
+#: src/app/main/ui/onboarding/questions.cljs:116
+msgid "onboarding.questions.step1.question1"
+msgstr "Pour quoi utiliseras-tu Penpot ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:273
+msgid "onboarding.questions.step1.question2"
+msgstr "Qu'est-ce qui t'emmène à Penpot aujourd'hui ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:112
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Parle-nous un peu de toi pour que nous puissions adapter Penpot à tes "
+"besoins. Tes réponses nous aident à prioriser les nouvelles fonctionnalités "
+"et t'orienter dans ton parcours d'utilisation."
+
+#: src/app/main/ui/onboarding/questions.cljs:110
+msgid "onboarding.questions.step1.title"
+msgstr "Aide-nous à te connaître"
+
+#: src/app/main/ui/onboarding/questions.cljs:190
+msgid "onboarding.questions.step2.title"
+msgstr "Lequel de ces outils utilises-tu le plus ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:122
+msgid "onboarding.questions.step3.question1"
+msgstr "Quel genre de travail fais-tu ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:303
+#, unused
+msgid "onboarding.questions.step3.question2"
+msgstr "Quel est ton rôle ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:290
+msgid "onboarding.questions.step3.question3"
+msgstr "Quelle est la taille de ton entreprise ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:270
+msgid "onboarding.questions.step3.title"
+msgstr "Parle-nous de ta job"
+
+#: src/app/main/ui/onboarding/questions.cljs:345
+msgid "onboarding.questions.step4.title"
+msgstr "Où aimerais-tu commencer ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:428
+#, unused
+msgid "onboarding.questions.step5.title"
+msgstr "Comment nous as-tu découvert ?"
+
+#: src/app/main/ui/onboarding/questions.cljs:233
+msgid "onboarding.questions.team-size.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs:234
+msgid "onboarding.questions.team-size.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs:232
+msgid "onboarding.questions.team-size.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs:235
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Je suis pigiste"
+
+#: src/app/main/ui/onboarding/questions.cljs:231
+msgid "onboarding.questions.team-size.more-than-50"
+msgstr "Plus de 50"
+
+#: src/app/main/ui/onboarding/questions.cljs:236
+msgid "onboarding.questions.team-size.personal-project"
+msgstr "Je travaille sur un projet personnel"
