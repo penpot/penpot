@@ -19,10 +19,14 @@
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.assets.components :as wsac]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
+   [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm.wasm]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
@@ -91,7 +95,17 @@
                          ::dwsp/interrupt)
 
                (when (and (not= edition id) (or text-editing? grid-editing?))
-                 (st/emit! (dw/clear-edition-mode)))
+                 (st/emit! (dw/clear-edition-mode))
+                 ;; Sync and stop WASM text editor when exiting edit mode
+                 (when (and text-editing?
+                            (features/active-feature? @st/state "render-wasm/v1")
+                            wasm.wasm/context-initialized?)
+                   (when-let [{:keys [shape-id content]} (wasm.api/text-editor-sync-content)]
+                     (st/emit! (dwt/v2-update-text-shape-content
+                                shape-id content
+                                :update-name? true
+                                :finalize? true)))
+                   (wasm.api/text-editor-stop)))
 
                (when (and (not text-editing?)
                           (not blocked)
@@ -184,6 +198,20 @@
                     (not drawing-tool))
            (st/emit! (dw/select-shape (:id @hover) shift?)))
 
+         ;; If clicking on a text shape and wasm render is enabled, forward cursor position
+         (when (and hovering?
+                    (not @space?)
+                    edition  ;; Only when already in edit mode
+                    (not drawing-path?)
+                    (not drawing-tool))
+           (let [hover-shape @hover]
+             (when (and (= :text (:type hover-shape))
+                        (features/active-feature? @st/state "text-editor-wasm/v1")
+                        wasm.wasm/context-initialized?)
+               (let [raw-pt (dom/get-client-position event)]
+                 ;; FIXME
+                 (wasm.api/text-editor-set-cursor-from-point (.-x raw-pt) (.-y raw-pt))))))
+
          (when (and @z?
                     (not @space?)
                     (not edition)
@@ -223,8 +251,15 @@
             (when (and (not drawing-path?) shape)
               (cond
                 (and editable? (not= id edition) (not read-only?))
-                (st/emit! (dw/select-shape id)
-                          (dw/start-editing-selected))
+                (do
+                  (st/emit! (dw/select-shape id)
+                            (dw/start-editing-selected))
+                  ;; If using wasm text-editor, notify WASM to start editing this shape
+                  ;; and set cursor position from the double-click location
+                  (when (and (= type :text)
+                             (features/active-feature? @st/state "text-editor-wasm/v1")
+                             wasm.wasm/context-initialized?)
+                    (wasm.api/text-editor-start id)))
 
                 (some? selected-shape)
                 (do

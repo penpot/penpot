@@ -32,6 +32,7 @@
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.router :as rt]
+   [app.render-wasm.api :as wasm.api]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -776,11 +777,20 @@
              (rx/of (v2-update-text-editor-styles id attrs)))
 
            (when (features/active-feature? state "render-wasm/v1")
-             ;; This delay is to give time for the font to be correctly rendered
-             ;; in wasm.
-             (cond->> (rx/of (dwwt/resize-wasm-text id))
-               (contains? attrs :font-id)
-               (rx/delay 200)))))))
+             (rx/concat
+              ;; Apply style to selected spans and sync content
+              (when (wasm.api/text-editor-is-active?)
+                (let [span-attrs (select-keys attrs txt/text-node-attrs)]
+                  (when (not (empty? span-attrs))
+                    (let [result (wasm.api/apply-style-to-selection span-attrs)]
+                      (when result
+                        (rx/of (v2-update-text-shape-content
+                                (:shape-id result) (:content result)
+                                :update-name? true)))))))
+              ;; Resize (with delay for font-id changes)
+              (cond->> (rx/of (dwwt/resize-wasm-text id))
+                (contains? attrs :font-id)
+                (rx/delay 200))))))))
 
     ptk/EffectEvent
     (effect [_ state _]

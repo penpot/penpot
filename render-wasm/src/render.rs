@@ -10,6 +10,7 @@ mod shadows;
 mod strokes;
 mod surfaces;
 pub mod text;
+pub mod text_editor;
 mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
