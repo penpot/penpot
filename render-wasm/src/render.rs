@@ -2189,17 +2189,16 @@ impl RenderState {
      * Given a shape, check the indexes and update it's location in the tile set
      * returns the tiles that have changed in the process.
      */
-    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
+    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> HashSet<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
 
-        let old_tiles = self
+        // Collect old tiles to avoid borrow conflict with remove_shape_at
+        let old_tiles: Vec<_> = self
             .tiles
             .get_tiles_of(shape.id)
-            .map_or(Vec::new(), |tiles| tiles.iter().copied().collect());
+            .map_or(Vec::new(), |t| t.iter().copied().collect());
 
-        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)));
-
-        let mut result = HashSet::<tiles::Tile>::new();
+        let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
@@ -2208,12 +2207,12 @@ impl RenderState {
         }
 
         // Then, add the shape to the new tiles
-        for tile in new_tiles {
+        for tile in (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y))) {
             self.tiles.add_shape_at(tile, shape.id);
             result.insert(tile);
         }
 
-        result.iter().copied().collect()
+        result
     }
 
     /*
