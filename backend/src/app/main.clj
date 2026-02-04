@@ -369,6 +369,7 @@
     ;; FIXME: revisit if db/pool is necessary here
     ::db/pool                (ig/ref ::db/pool)
     ::session/manager        (ig/ref ::session/manager)
+    ::setup/props            (ig/ref ::setup/props)
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::wrk/registry
