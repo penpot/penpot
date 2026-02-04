@@ -2307,7 +2307,7 @@ impl RenderState {
 
         let mut all_tiles = HashSet::<tiles::Tile>::new();
 
-        let ids = self.touched_ids.clone();
+        let ids = std::mem::take(&mut self.touched_ids);
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
@@ -2321,8 +2321,6 @@ impl RenderState {
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
-
-        self.clean_touched();
 
         performance::end_measure!("rebuild_touched_tiles");
     }
