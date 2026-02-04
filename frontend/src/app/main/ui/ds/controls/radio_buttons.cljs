@@ -55,7 +55,7 @@
                  label  (dom/get-parent-with-data target "label")]
              (dom/prevent-default event)
              (dom/stop-propagation event)
-             (dom/click label))))
+             (dom/click! label))))
 
         handle-change
         (mf/use-fn
