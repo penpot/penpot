@@ -1,0 +1,13 @@
+{
+  "name": "lorem-ipsum-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "ng build lorem-ipsum-plugin",
+    "build:dev": "ng build lorem-ipsum-plugin --configuration development",
+    "serve": "ng serve lorem-ipsum-plugin",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
+}
