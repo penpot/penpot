@@ -805,6 +805,11 @@ export interface Context {
   readonly viewport: Viewport;
 
   /**
+   * Provides flags to customize the API behavior.
+   */
+  readonly flags: Flags;
+
+  /**
    * Context encapsulating the history operations
    *
    * @example
@@ -1677,6 +1682,19 @@ export interface Fill {
    * The optional image fill defined by an ImageData object.
    */
   fillImage?: ImageData;
+}
+
+/**
+ * This subcontext allows the API o change certain defaults
+ */
+export interface Flags {
+  /**
+   * If `true` the .children property will be always sorted in the z-index ordering.
+   * Also, appendChild method will be append the children in the top-most position.
+   * The insertchild method is changed acordingly to respect this ordering.
+   * Defaults to false
+   */
+  naturalChildOrdering: boolean;
 }
 
 /**
