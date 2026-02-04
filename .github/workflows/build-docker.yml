@@ -19,9 +19,14 @@ on:
 jobs:
   build-and-push:
     name: Build and Push Penpot Docker Images
-    runs-on: ubuntu-24.04-arm
+    runs-on: penpot-runner-02
 
     steps:
+      - name: Set common environment variables
+        run: |
+          # Each job execution will use its own docker configuration.
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -65,6 +70,15 @@ jobs:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # To avoid the “429 Too Many Requests” error when downloading
+      # images from DockerHub for unregistered users.
+      # https://docs.docker.com/docker-hub/usage/
+      - name: Login to DockerHub Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
       - name: Extract metadata (tags, labels)
         id: meta
