@@ -1120,7 +1120,10 @@ impl Shape {
     }
 
     /// Returns children in forward (non-reversed) order - useful for layout calculations
-    pub fn children_ids_iter_forward(&self, include_hidden: bool) -> Box<dyn Iterator<Item = &Uuid> + '_> {
+    pub fn children_ids_iter_forward(
+        &self,
+        include_hidden: bool,
+    ) -> Box<dyn Iterator<Item = &Uuid> + '_> {
         if include_hidden {
             return Box::new(self.children.iter());
         }

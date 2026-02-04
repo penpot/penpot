@@ -2195,7 +2195,11 @@ impl RenderState {
      * Given a shape, check the indexes and update it's location in the tile set
      * returns the tiles that have changed in the process.
      */
-    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> HashSet<tiles::Tile> {
+    pub fn update_shape_tiles(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+    ) -> HashSet<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
 
         // Collect old tiles to avoid borrow conflict with remove_shape_at
@@ -2447,6 +2451,7 @@ impl RenderState {
         self.touched_ids.insert(uuid);
     }
 
+    #[allow(dead_code)]
     pub fn clean_touched(&mut self) {
         self.touched_ids.clear();
     }

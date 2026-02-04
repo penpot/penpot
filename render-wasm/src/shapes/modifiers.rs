@@ -430,34 +430,26 @@ pub fn propagate_modifiers(
                 }
             }
         }
-        // let mut layout_reflows_vec: Vec<Uuid> = layout_reflows.into_iter().collect();
+        // We sort the reflows so they are processed deepest-first in the
+        // tree structure. This way we can be sure that the children layouts
+        // are already reflowed before their parents.
+        let mut layout_reflows_vec: Vec<Uuid> =
+            std::mem::take(&mut layout_reflows).into_iter().collect();
+        layout_reflows_vec.sort_unstable_by(|id_a, id_b| {
+            let da = shapes.get_depth(id_a);
+            let db = shapes.get_depth(id_b);
+            db.cmp(&da)
+        });
 
-        // // We sort the reflows so they are process first the ones that are more
-        // // deep in the tree structure. This way we can be sure that the children layouts
-        // // are already reflowed.
-        // layout_reflows_vec.sort_unstable_by(|id_a, id_b| {
-        //     let da = shapes.get_depth(id_a);
-        //     let db = shapes.get_depth(id_b);
-        //     db.cmp(&da)
-        // });
-
-        // let mut bounds_temp = bounds.clone();
-        // for id in layout_reflows_vec.iter() {
-        //     if reflown.contains(id) {
-        //         continue;
-        //     }
-        //     reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
-        // }
-        // layout_reflows = HashSet::new();
-
-        for id in std::mem::take(&mut layout_reflows) {
-            if reflown.contains(&id) {
+        for id in &layout_reflows_vec {
+            if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(&id, state, &mut reflown, &mut entries, &mut bounds);
+            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds);
         }
     }
 
+    #[allow(dead_code)]
     modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))
