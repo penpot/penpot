@@ -43,7 +43,7 @@ test("User receives presence notifications updates in the workspace", async ({
 test("BUG 13058 - Presence list shows up to 3 user avatars", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
 
   await workspacePage.goToWorkspace();
