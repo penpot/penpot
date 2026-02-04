@@ -62,6 +62,52 @@
       (watch [_ _ _]
         (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Toggle tree nodes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- remove-paths-recursively
+  [path paths]
+  (->> paths
+       (remove #(str/starts-with? % (str path)))
+       vec))
+
+(defn add-path
+  [path paths]
+  (let [split-path (cpn/split-path path :separator ".")
+        partial-paths (->> split-path
+                           (reduce
+                            (fn [acc segment]
+                              (let [new-acc (if (empty? acc)
+                                              segment
+                                              (str (last acc) "." segment))]
+                                (conj acc new-acc)))
+                            []))]
+    (->> paths
+         (into partial-paths)
+         distinct
+         vec)))
+
+(defn clear-tokens-paths
+  []
+  (ptk/reify ::clear-tokens-paths
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
+
+(defn toggle-token-path
+  [path]
+  (ptk/reify ::toggle-token-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-paths]
+                 (fn [paths]
+                   (let [paths (or paths [])]
+                     (if (some #(= % path) paths)
+                       (remove-paths-recursively path paths)
+                       (add-path path paths))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -245,8 +291,9 @@
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set-group
   [group-path]
@@ -257,6 +304,7 @@
             changes (-> (pcb/empty-changes)
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
+
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -486,35 +534,7 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn clean-tokens-paths
-  []
-  (ptk/reify ::clean-tokens-paths
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
 
-(defn toggle-token-path
-  [path]
-  (ptk/reify ::toggle-token-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-tokens :unfolded-token-paths]
-                 (fn [paths]
-                   (let [paths (or paths [])]
-                     (if (some #(= % path) paths)
-                       (vec (remove #(or (= % path)
-                                         (str/starts-with? % (str path ".")))
-                                    paths))
-                       (let [split-path (cpn/split-path path :separator ".")
-                             partial-paths (reduce
-                                            (fn [acc segment]
-                                              (let [new-acc (if (empty? acc)
-                                                              segment
-                                                              (str (last acc) "." segment))]
-                                                (conj acc new-acc)))
-                                            []
-                                            split-path)]
-                         (into paths partial-paths)))))))))
 
 (defn assign-token-context-menu
   [{:keys [position] :as params}]

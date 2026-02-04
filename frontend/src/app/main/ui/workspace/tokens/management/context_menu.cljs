@@ -316,8 +316,9 @@
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
                        (clean-separators)))}))
 
-(defn default-actions [{:keys [token selected-token-set-id]}]
-  (let [{:keys [modal]} (dwta/get-token-properties token)]
+(defn default-actions [{:keys [token selected-token-set-id on-delete-token]}]
+  (let [{:keys [modal]} (dwta/get-token-properties token)
+        on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
     [{:title (tr "workspace.tokens.edit")
       :no-selectable true
       :action (fn [event]
@@ -333,12 +334,10 @@
                                              :token token}))))}
      {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
-      :action #(st/emit! (dwtl/duplicate-token (:id token)))}
+      :action on-duplicate-token}
      {:title (tr "workspace.tokens.delete")
       :no-selectable true
-      :action #(st/emit! (dwtl/delete-token
-                          selected-token-set-id
-                          (:id token)))}]))
+      :action #(on-delete-token token)}]))
 
 (defn- allowed-shape-attributes [shapes]
   (reduce into #{} (map #(ctt/shape-type->attributes (:type %) (:layout %)) shapes)))
@@ -464,7 +463,7 @@
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree
-  [{:keys [width errors] :as mdata}]
+  [{:keys [width errors on-delete-token] :as mdata}]
   (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
 
@@ -488,10 +487,11 @@
                     :errors errors
                     :selected-token-set-id selected-token-set-id
                     :selected-shapes selected-shapes
-                    :is-selected-inside-layout is-selected-inside-layout}]]))
+                    :is-selected-inside-layout is-selected-inside-layout
+                    :on-delete-token on-delete-token}]]))
 
 (mf/defc token-context-menu
-  []
+  [{:keys [on-delete-token]}]
   (let [mdata               (mf/deref tokens-menu-ref)
         is-open?            (boolean mdata)
         width               (mf/use-state 0)
@@ -538,5 +538,5 @@
                         :left (dm/str left "px")}
                 :on-context-menu prevent-default}
           (when mdata
-            [:& token-context-menu-tree (assoc mdata :width @width)])]])
+            [:& token-context-menu-tree (assoc mdata :width @width :on-delete-token on-delete-token)])]])
        (dom/get-body)))))
