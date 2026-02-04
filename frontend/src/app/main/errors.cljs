@@ -145,8 +145,10 @@
 ;; and frontend.
 
 (defmethod ptk/handle-error :validation
-  [{:keys [code ::instance] :as error}]
-  (ex/print-throwable instance :prefix "Validation Error")
+  [{:keys [code] :as error}]
+
+  (when-let [instance (get error ::instance)]
+    (ex/print-throwable instance :prefix "Validation Error"))
 
   (cond
     (= code :invalid-paste-data)
@@ -243,8 +245,9 @@
 (derive :service-unavailable ::exceptional-state)
 
 (defmethod ptk/handle-error ::exceptional-state
-  [{:keys [::instance] :as error}]
-  (ex/print-throwable instance :prefix "Exceptional State")
+  [error]
+  (when-let [instance (get error ::instance)]
+    (ex/print-throwable instance :prefix "Exceptional State"))
   (ts/schedule #(st/emit! (rt/assign-exception error))))
 
 (defn- redirect-to-dashboard
@@ -311,8 +314,9 @@
 ;; uncontrolled error.
 
 (defmethod ptk/handle-error :server-error
-  [{:keys [::instance] :as error}]
-  (ex/print-throwable instance :prefix "Server Error")
+  [error]
+  (when-let [instance (get error ::instance)]
+    (ex/print-throwable instance :prefix "Server Error"))
   (st/async-emit! (rt/assign-exception error)))
 
 (defonce uncaught-error-handler
