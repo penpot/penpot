@@ -38,47 +38,24 @@
                   (assoc :path "/render.html")
                   (assoc :query (u/map->query-string params)))))
 
-          (wait-for-render [page dom]
-            (p/loop [attempt 0]
-              (p/let [size (bw/eval! dom
-                                     (fn [elem]
-                                       (let [rect (.getBoundingClientRect ^js elem)]
-                                         #js {:width (.-width rect)
-                                              :height (.-height rect)})))]
-                (let [width (some-> size (unchecked-get "width"))
-                      height (some-> size (unchecked-get "height"))
-                      ready? (and (number? width) (number? height) (> width 1) (> height 1))
-                      max-attempts 15]
-                  (cond
-                    ready?
-                    true
-
-                    (< attempt max-attempts)
-                    (p/let [_ (bw/sleep page 200)]
-                      (p/recur (inc attempt)))
-
-                    :else
-                    false)))))
-
           (sync-page-size! [dom]
             (bw/eval! dom
                       (fn [elem]
                         (let [attr-w (.getAttribute ^js elem "width")
                               attr-h (.getAttribute ^js elem "height")
                               rect (.getBoundingClientRect ^js elem)
-                              attr-width (when (and attr-w (not= attr-w ""))
-                                           (js/parseFloat attr-w))
-                              attr-height (when (and attr-h (not= attr-h ""))
-                                            (js/parseFloat attr-h))
-                              rect-width (.-width rect)
-                              rect-height (.-height rect)
-                              width (js/Math.max (or attr-width 0) rect-width)
-                              height (js/Math.max (or attr-height 0) rect-height)
+                              width (js/Math.max
+                                     (if (and attr-w (not= attr-w ""))
+                                       (js/parseFloat attr-w)
+                                       0)
+                                     (.-width rect))
+                              height (js/Math.max
+                                      (if (and attr-h (not= attr-h ""))
+                                        (js/parseFloat attr-h)
+                                        0)
+                                      (.-height rect))
                               width-px (str width "px")
                               height-px (str height "px")
-                              root (.-documentElement js/document)
-                              body (.-body js/document)
-                              app (.querySelector js/document "#app")
                               head (.-head js/document)
                               style-id "penpot-pdf-page-size"
                               style-node (or (.getElementById js/document style-id)
@@ -87,18 +64,9 @@
                                                (.appendChild head node)
                                                node))
                               css (str "@page { size: " width-px " " height-px "; margin: 0; }\n"
-                                       "html, body, #app { margin: 0; padding: 0; }\n")]
-                          (set! (.-textContent style-node) css)
-                          (set! (.-width (.-style root)) width-px)
-                          (set! (.-height (.-style root)) height-px)
-                          (set! (.-overflow (.-style root)) "visible")
-                          (set! (.-width (.-style body)) width-px)
-                          (set! (.-height (.-style body)) height-px)
-                          (set! (.-overflow (.-style body)) "visible")
-                          (when app
-                            (set! (.-width (.-style app)) width-px)
-                            (set! (.-height (.-style app)) height-px)
-                            (set! (.-overflow (.-style app)) "visible"))))))
+                                       "html, body, #app { margin: 0; padding: 0; "
+                                       "width: " width-px "; height: " height-px "; overflow: visible; }\n")]
+                          (set! (.-textContent style-node) css)))))
 
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
@@ -107,7 +75,6 @@
               (bw/nav! page uri)
               (p/let [dom (bw/select page (dm/str "#screenshot-" id))]
                 (bw/wait-for dom)
-                (wait-for-render page dom)
                 (sync-page-size! dom)
                 (bw/screenshot dom {:full-page? true})
                 (bw/sleep page 2000) ; the good old fix with sleep
