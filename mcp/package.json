@@ -5,10 +5,11 @@
   "scripts": {
     "build": "pnpm -r run build",
     "build:multi-user": "pnpm -r run build:multi-user",
+    "build:types": "./scripts/build-types",
     "start": "pnpm -r --parallel run start",
     "start:multi-user": "pnpm -r --parallel --filter \"./packages/*\"  run start:multi-user",
     "bootstrap": "pnpm -r install && pnpm run build && pnpm run start",
-    "bootstrap:multi-user": "npm run install && npm run build:multi-user && pnpm run start:multi-user",
+    "bootstrap:multi-user": "pnpm -r install && pnpm run build:multi-user && pnpm run start:multi-user",
     "fmt": "prettier --write packages/",
     "fmt:check": "prettier --check packages/"
   },
