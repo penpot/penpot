@@ -1,0 +1,19 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+// TODO: Remove this after creating a non deprecated scrollbar class
+@use "refactor/common-refactor.scss" as deprecated;
+
+.dropdown {
+  // TODO: create new scrollbar class not deprecated.
+  @extend .new-scrollbar;
+  position: fixed;
+  max-block-size: $sz-400;
+  max-block-size: 200px;
+  overflow-y: auto;
+}

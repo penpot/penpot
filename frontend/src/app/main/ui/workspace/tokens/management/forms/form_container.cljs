@@ -10,6 +10,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.management.forms.color :as color]
+   [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.font-family :as font-family]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.main.ui.workspace.tokens.management.forms.shadow :as shadow]
@@ -39,7 +40,8 @@
                                 :token token})
         text-case-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
         text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})
-        font-weight-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})]
+        font-weight-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
+        border-radius-props (mf/spread-props props {:input-component token.controls/combobox*})]
 
     (case token-type
       :color [:> color/form* props]
@@ -49,4 +51,5 @@
       :text-case [:> generic/form* text-case-props]
       :text-decoration [:> generic/form* text-decoration-props]
       :font-weight [:> generic/form* font-weight-props]
+      :border-radius [:> generic/form* border-radius-props]
       [:> generic/form* props])))

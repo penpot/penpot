@@ -35,6 +35,8 @@
 (def ^:private schema:options-dropdown
   [:map
    [:ref {:optional true} fn?]
+   [:class {:optional true} :string]
+   [:wrapper-ref {:optional true} :any]
    [:on-click fn?]
    [:options [:vector schema:option]]
    [:selected {:optional true} :any]
@@ -83,6 +85,7 @@
                           :name name
                           :resolved (get option :resolved-value)
                           :ref ref
+                          :role "option"
                           :focused (= id focused)
                           :on-click on-click}]
 
@@ -94,6 +97,7 @@
                     :aria-label (get option :aria-label)
                     :icon (get option :icon)
                     :ref ref
+                    :role "option"
                     :focused (= id focused)
                     :dimmed (true? (:dimmed option))
                     :on-click on-click}]))))
@@ -101,15 +105,16 @@
 
 (mf/defc options-dropdown*
   {::mf/schema schema:options-dropdown}
-  [{:keys [ref on-click options selected focused empty-to-end align] :rest props}]
+  [{:keys [ref on-click options selected focused empty-to-end align wrapper-ref class] :rest props}]
   (let [align
         (d/nilv align :left)
 
         props
         (mf/spread-props props
-                         {:class (stl/css-case :option-list true
-                                               :left-align (= align :left)
-                                               :right-align (= align :right))
+                         {:class [class (stl/css-case :option-list true
+                                                      :left-align (= align :left)
+                                                      :right-align (= align :right))]
+                          :ref wrapper-ref
                           :tab-index "-1"
                           :role "listbox"})
 
