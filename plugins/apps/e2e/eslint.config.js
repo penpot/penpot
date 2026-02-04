@@ -7,7 +7,7 @@ export default [
   {
     languageOptions: {
       parser: typescriptEslintParser,
-      parserOptions: { project: './apps/e2e/tsconfig.json' },
+      parserOptions: { project: './tsconfig.json' },
     },
   },
   {

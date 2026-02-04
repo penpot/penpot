@@ -25,7 +25,6 @@ penpot.ui.onMessage<PluginMessageEvent>((message) => {
     });
     shapesToUpdate?.forEach((shape) => {
       shape.name = shape.name.replace(
-        // eslint-disable-next-line
         message.content.search,
         message.content.replace,
       );

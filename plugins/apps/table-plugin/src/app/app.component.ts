@@ -69,7 +69,7 @@ export class AppComponent {
       target.files[0] &&
       target.files[0].type === 'text/csv'
     ) {
-      var reader = new FileReader();
+      const reader = new FileReader();
       reader.readAsText(target.files[0]);
       reader.onload = (e) => {
         this.table = (e?.target?.result as string)

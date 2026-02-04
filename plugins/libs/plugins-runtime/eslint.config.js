@@ -31,17 +31,6 @@ export default [
     languageOptions: {
       parser: jsoncParser,
     },
-    rules: {
-      '@nx/dependency-checks': [
-        'error',
-        {
-          ignoredFiles: [
-            'libs/plugins-runtime/vite.config.ts',
-            'libs/plugins-runtime/eslint.config.js',
-            'libs/plugins-runtime/**/*.spec.ts',
-          ],
-        },
-      ],
-    },
+    rules: {},
   },
 ];
