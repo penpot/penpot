@@ -88,11 +88,10 @@ This bootstrap command will:
 
   * install dependencies for all components (`pnpm -r run install`)
   * build all components (`pnpm -r run build`)
-  * build plugins types  (`pnpm run build-types`)
   * start all components (`pnpm -r --parallel run start`)
 
 If you want to have types scrapped from a remote repository, the best
-apprach is executing the following:
+approach is executing the following:
 
 ```shell
 PENPOT_PLUGINS_API_DOC_URL=https://doc.plugins.penpot.app pnpm run build:types
