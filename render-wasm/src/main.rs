@@ -302,8 +302,7 @@ pub extern "C" fn set_view_end() {
         {
             let total_time = performance::get_time() - unsafe { VIEW_INTERACTION_START };
             performance::console_log!(
-                "[PERF] view_interaction (zoom_changed={}): {}ms",
-                zoom_changed,
+                "[PERF] view_interaction: {}ms",
                 total_time
             );
         }
