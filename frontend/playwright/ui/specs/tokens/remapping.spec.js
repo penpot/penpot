@@ -41,6 +41,34 @@ const createToken = async (page, type, name, textFieldName, value) => {
   await expect(tokensUpdateCreateModal).not.toBeVisible();
 };
 
+const createTokenCombobox = async (page, type, name, textFieldName, value) => {
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+  const { tokensUpdateCreateModal } = await setupTokensFile(page, {
+    flags: ["enable-token-shadow"],
+  });
+
+  // Create base token
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: ${type}` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill(name);
+
+  const valueFill = tokensUpdateCreateModal.getByRole("combobox", {
+    name: textFieldName,
+  });
+  await valueFill.fill(value);
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+};
+
 const renameToken = async (page, oldName, newName) => {
   const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
     await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
@@ -399,10 +427,10 @@ test.describe("Remapping Tokens", () => {
       const { tokensSidebar } = await setupTokensFileRender(page);
 
       // Create base border radius token
-      await createToken(page, "Border Radius", "base-radius", "Value", "4");
+      await createTokenCombobox(page, "Border Radius", "base-radius", "Value", "4");
 
       // Create derived border radius token
-      await createToken(
+      await createTokenCombobox(
         page,
         "Border Radius",
         "card-radius",
@@ -441,10 +469,10 @@ test.describe("Remapping Tokens", () => {
       } = await setupTokensFileRender(page);
 
       // Create base border radius token
-      await createToken(page, "Border Radius", "radius-sm", "Value", "4");
+      await createTokenCombobox(page, "Border Radius", "radius-sm", "Value", "4");
 
       // Create derived border radius token
-      await createToken(
+      await createTokenCombobox(
         page,
         "Border Radius",
         "button-radius",
