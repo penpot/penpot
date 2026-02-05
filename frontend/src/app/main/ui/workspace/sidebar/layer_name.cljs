@@ -16,38 +16,35 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private space-for-icons 110)
-
-(def lens:shape-for-rename
-  (-> #(dm/get-in % [:workspace-local :shape-for-rename])
-      (l/derived st/state)))
+(def ^:private ^:const space-for-icons 110)
 
 (mf/defc layer-name*
-  {::mf/forward-ref true}
-  [{:keys [shape-id shape-name is-shape-touched disabled-double-click
+  [{:keys [shape-id rename-id shape-name is-shape-touched disabled-double-click
            on-start-edit on-stop-edit depth parent-size is-selected
            type-comp type-frame component-id is-hidden is-blocked
-           variant-id variant-name variant-properties variant-error]} external-ref]
+           variant-id variant-name variant-properties variant-error ref]}]
+
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
         local-ref        (mf/use-ref)
-        ref              (d/nilv external-ref local-ref)
+        ref              (d/nilv ref local-ref)
 
-        shape-for-rename (mf/deref lens:shape-for-rename)
+        shape-name
+        (if variant-id
+          (d/nilv variant-error variant-name)
+          shape-name)
 
-        shape-name       (if variant-id
-                           (d/nilv variant-error variant-name)
-                           shape-name)
+        default-value
+        (mf/with-memo [variant-id variant-error variant-properties]
+          (if variant-id
+            (or variant-error (ctv/properties-map->formula variant-properties))
+            shape-name))
 
-        default-value    (if variant-id
-                           (or variant-error (ctv/properties-map->formula variant-properties))
-                           shape-name)
-
-        has-path?        (str/includes? shape-name "/")
+        has-path?
+        (str/includes? shape-name "/")
 
         start-edit
         (mf/use-fn
@@ -84,10 +81,11 @@
            (when (kbd/enter? event) (accept-edit))
            (when (kbd/esc? event) (cancel-edit))))
 
-        parent-size (dm/str (- parent-size space-for-icons) "px")]
+        parent-size
+        (dm/str (- parent-size space-for-icons) "px")]
 
-    (mf/with-effect [shape-for-rename edition? start-edit shape-id]
-      (when (and (= shape-for-rename shape-id)
+    (mf/with-effect [rename-id edition? start-edit shape-id]
+      (when (and (= rename-id shape-id)
                  (not ^boolean edition?))
         (start-edit)))
 
@@ -109,21 +107,24 @@
         :auto-focus true
         :id (dm/str "layer-name-" shape-id)
         :default-value (d/nilv default-value "")}]
+
       [:*
-       [:span
-        {:class (stl/css-case
-                 :element-name true
-                 :left-ellipsis has-path?
-                 :selected is-selected
-                 :hidden is-hidden
-                 :type-comp type-comp
-                 :type-frame type-frame)
-         :id (dm/str "layer-name-" shape-id)
-         :style {"--depth" depth "--parent-size" parent-size}
-         :ref ref
-         :on-double-click start-edit}
-        (if (dbg/enabled? :show-ids)
-          (str (d/nilv shape-name "") " | " (str/slice (str shape-id) 24))
+       [:span {:class (stl/css-case
+                       :element-name true
+                       :left-ellipsis has-path?
+                       :selected is-selected
+                       :hidden is-hidden
+                       :type-comp type-comp
+                       :type-frame type-frame)
+               :id (dm/str "layer-name-" shape-id)
+               :style {"--depth" depth "--parent-size" parent-size}
+               :ref ref
+               :on-double-click start-edit}
+
+        (if ^boolean (dbg/enabled? :show-ids)
+          (dm/str (d/nilv shape-name "") " | " (str/slice (str shape-id) 24))
           (d/nilv shape-name ""))]
-       (when (and (dbg/enabled? :show-touched) ^boolean is-shape-touched)
+
+       (when (and ^boolean (dbg/enabled? :show-touched)
+                  ^boolean is-shape-touched)
          [:span {:class (stl/css :element-name-touched)} "*"])])))
