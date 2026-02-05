@@ -94,7 +94,7 @@
         (some :height-warning? (vals fonts))
 
         on-click
-        (mf/use-fn #(dom/click (mf/ref-val input-ref)))
+        (mf/use-fn #(dom/click! (mf/ref-val input-ref)))
 
         on-selected
         (mf/use-fn

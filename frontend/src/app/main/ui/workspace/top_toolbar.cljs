@@ -38,7 +38,7 @@
         (mf/use-fn
          (fn []
            (st/emit! :interrupt (dw/clear-edition-mode))
-           (dom/click (mf/ref-val ref))))
+           (dom/click! (mf/ref-val ref))))
 
         on-selected
         (mf/use-fn

@@ -158,7 +158,7 @@
                       (not drag?)))))
 
         on-fill-image-click
-        (mf/use-fn #(dom/click (mf/ref-val fill-image-ref)))
+        (mf/use-fn #(dom/click! (mf/ref-val fill-image-ref)))
 
         on-fill-image-selected
         (mf/use-fn

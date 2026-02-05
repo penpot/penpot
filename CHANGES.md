@@ -33,6 +33,7 @@
 - Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
+- Fix unable to finish the create account form using keyboard [Taiga #11333](https://tree.taiga.io/project/penpot/issue/11333)
 
 ## 2.13.0
 

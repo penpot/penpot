@@ -32,6 +32,7 @@
         input-name   (get props :name)
         more-classes (get props :class)
         auto-focus?  (get props :auto-focus? false)
+        input-ref    (mf/use-ref nil)
 
         data-testid  (d/nilv data-testid input-name)
 
@@ -82,7 +83,6 @@
                       (swap! form assoc-in [:touched input-name] true)
                       (fm/on-input-change form input-name value trim)
                       (on-change-value name value)))
-
         on-blur
         (fn [_]
           (reset! focus? false))
@@ -92,9 +92,18 @@
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
 
+        on-key-press
+        (mf/use-fn
+         (mf/deps input-ref)
+         (fn [e]
+           (dom/prevent-default e)
+           (when (kbd/space? e)
+             (dom/click! (mf/ref-val input-ref)))))
+
         props (-> props
                   (dissoc :help-icon :form :trim :children :show-success? :auto-focus? :label)
                   (assoc :id (name input-name)
+                         :ref input-ref
                          :value value
                          :auto-focus auto-focus?
                          :on-click (when (or is-radio? is-checkbox?) on-click)
@@ -131,7 +140,7 @@
                  :for (name input-name)} label
 
          (when is-checkbox?
-           [:span {:class (stl/css-case :global/checked checked?)} (when checked? deprecated-icon/status-tick)])
+           [:span {:class (stl/css-case :global/checked checked?) :tab-index "0" :on-key-press on-key-press} (when checked? deprecated-icon/status-tick)])
 
          (if is-checkbox?
            [:> :input props]

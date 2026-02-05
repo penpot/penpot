@@ -364,7 +364,7 @@
         (mf/use-fn
          (fn []
            (st/emit! (dw/set-assets-section-open file-id :components true))
-           (dom/click (mf/ref-val input-ref))))
+           (dom/click! (mf/ref-val input-ref))))
 
         on-file-selected
         (mf/use-fn

@@ -316,7 +316,7 @@
    :insert-image         {:tooltip (ds/shift "K")
                           :command "shift+k"
                           :subsections [:tools]
-                          :fn #(-> "image-upload" dom/get-element dom/click)}
+                          :fn #(-> "image-upload" dom/get-element dom/click!)}
 
    :toggle-visibility    {:tooltip (ds/meta-shift "H")
                           :command (ds/c-mod "shift+h")

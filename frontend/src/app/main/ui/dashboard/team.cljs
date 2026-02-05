@@ -1286,7 +1286,7 @@
                         (:is-admin permissions))
 
         on-image-click
-        (mf/use-fn #(dom/click (mf/ref-val finput)))
+        (mf/use-fn #(dom/click! (mf/ref-val finput)))
 
         on-file-selected
         (fn [file]
