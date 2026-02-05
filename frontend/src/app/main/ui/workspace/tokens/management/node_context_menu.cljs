@@ -42,7 +42,7 @@
                                (let [node (get mdata :node)
                                      type (get mdata :type)]
                                  (when node
-                                   on-rename-node node type))))
+                                   (on-rename-node node type)))))
         delete-node          (mf/use-fn
                               (mf/deps mdata)
                               (fn []

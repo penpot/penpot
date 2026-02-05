@@ -145,8 +145,7 @@
            (let [token-ids (set tokens-in-path-ids)
                  remaining-tokens (filter (fn [token]
                                             (not (contains? token-ids (:id token))))
-                                          selected-token-set-tokens)
-                 _ (prn "Remaining tokens:" remaining-tokens)]
+                                          selected-token-set-tokens)]
              (seq remaining-tokens))))
 
         delete-token
@@ -169,13 +168,18 @@
         ;; node-to-rename (mf/use-state nil)
         ;; node-to-rename* (deref node-to-rename)
 
+        ;; rename-node
+        ;; (fn [node type]
+        ;;   (st/emit! (dwtl/assign-token-node-context-menu nil))
+        ;;   (st/emit! (modal/show :tokens/rename-node {:node node
+        ;;                                              :type type})))
+
         rename-node
-        (mf/with-memo []
-          (fn [node type]
-            (mf/portal
-             (st/emit! (dwtl/assign-token-node-context-menu nil)
-                       (modal/show :tokens/rename-node {:node node
-                                                        :type type})))))
+        (mf/use-fn
+         (fn [node type]
+           (prn "Open rename node modal")
+           (modal/show! :tokens/rename-node {:node node
+                                             :type type})))
 
         delete-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
@@ -206,6 +210,7 @@
      [:& token-context-menu {:on-delete-token delete-token}]
      [:> token-node-context-menu* {:on-rename-node rename-node
                                    :on-delete-node delete-node}]
+     ;;  [:> rename-node-modal* {}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib
                              :selected-token-set-id selected-token-set-id}]

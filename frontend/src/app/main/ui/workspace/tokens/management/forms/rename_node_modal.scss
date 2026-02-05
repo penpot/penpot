@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  --modal-title-foreground-color: var(--color-foreground-primary);
+  --modal-text-foreground-color: var(--color-foreground-secondary);
+
+  @extend .modal-overlay-base;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  background-color: var(--overlay-color);
+}
+
+.close-btn {
+  position: absolute;
+  inset-block-start: $sz-6;
+  inset-inline-end: $sz-6;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  inline-size: 100%;
+  max-inline-size: 32rem;
+  max-block-size: unset;
+  user-select: none;
+  position: relative;
+}
