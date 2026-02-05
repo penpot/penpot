@@ -98,7 +98,6 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
         wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
-        modifiers         (mf/deref refs/workspace-modifiers)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
@@ -705,10 +704,9 @@
         (when show-grid-editor?
           [:& grid-layout/editor
            {:zoom zoom
-            :objects base-objects
-            :modifiers modifiers
-            :shape (or (get base-objects edition)
-                       (get base-objects @hover-top-frame-id))
+            :objects objects-modified
+            :shape (or (get objects-modified edition)
+                       (get objects-modified @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
