@@ -37,6 +37,8 @@
 (defonce ^:private sidebar-hover-queue (atom {:enter #{} :leave #{}}))
 (defonce ^:private sidebar-hover-pending? (atom false))
 
+(def ^:const default-chunk-size 50)
+
 (defn- schedule-sidebar-hover-flush []
   (when (compare-and-set! sidebar-hover-pending? false true)
     (ts/raf
@@ -196,7 +198,7 @@
         drag-disabled*    (mf/use-state false)
         drag-disabled?    (deref drag-disabled*)
 
-        scroll-to-middle? (mf/use-var true)
+        scroll-middle-ref (mf/use-ref true)
         expanded-iref     (mf/with-memo [id]
                             (-> (l/in [:expanded id])
                                 (l/derived refs/workspace-local)))
@@ -211,6 +213,24 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         parent-board?     (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
+
+        name-node-ref     (mf/use-ref)
+
+        depth             (+ depth 1)
+
+        component-tree?   (or ^boolean component-child?
+                              ^boolean (ctk/instance-root? item)
+                              ^boolean (ctk/instance-head? item))
+
+        enable-drag       (mf/use-fn #(reset! drag-disabled* false))
+        disable-drag      (mf/use-fn #(reset! drag-disabled* true))
+
+        ;; Lazy loading of child elements via IntersectionObserver
+        children-count*   (mf/use-state 0)
+        children-count    (deref children-count*)
+
+        lazy-ref          (mf/use-ref nil)
+        observer-ref      (mf/use-ref nil)
 
         toggle-collapse
         (mf/use-fn
@@ -245,7 +265,7 @@
          (mf/deps id filtered? objects)
          (fn [event]
            (dom/prevent-default event)
-           (reset! scroll-to-middle? false)
+           (mf/set-ref-val! scroll-middle-ref false)
            (cond
              (kbd/shift? event)
              (if filtered?
@@ -359,41 +379,31 @@
          :data {:id (:id item)
                 :index index
                 :name (:name item)}
+         ;; We don't want to change the structure of component copies
          :draggable? (and
                       sortable?
                       (not read-only?)
-                      (not (ctn/has-any-copy-parent? objects item)))) ;; We don't want to change the structure of component copies
-
-        ref             (mf/use-ref)
-        depth           (+ depth 1)
-        component-tree? (or component-child? (ctk/instance-root? item) (ctk/instance-head? item))
-
-        enable-drag      (mf/use-fn #(reset! drag-disabled* false))
-        disable-drag     (mf/use-fn #(reset! drag-disabled* true))
-
-        ;; Lazy loading of child elements via IntersectionObserver
-        children-count*  (mf/use-state 0)
-        children-count   (deref children-count*)
-        lazy-ref         (mf/use-ref nil)
-        observer-var     (mf/use-var nil)
-        chunk-size       50]
+                      (not (ctn/has-any-copy-parent? objects item))))]
 
     (mf/with-effect [selected? selected]
       (let [single? (= (count selected) 1)
-            node (mf/ref-val ref)
-            scroll-node (dom/get-parent-with-data node "scroll-container")
-            parent-node (dom/get-parent-at node 2)
-            first-child-node (dom/get-first-child parent-node)
+            node              (mf/ref-val name-node-ref)
+            scroll-node       (dom/get-parent-with-data node "scroll-container")
+            parent-node       (dom/get-parent-at node 2)
+            first-child-node  (dom/get-first-child parent-node)
+            scroll-to-middle? (mf/ref-val scroll-middle-ref)
 
             subid
-            (when (and single? selected? @scroll-to-middle?)
+            (when (and ^boolean single?
+                       ^boolean selected?
+                       ^boolean scroll-to-middle?)
               (ts/schedule
                100
                #(when (and node scroll-node)
                   (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
                         scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
                     (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
-                    (reset! scroll-to-middle? true)))))]
+                    (mf/set-ref-val! scroll-middle-ref true)))))]
 
         #(when (some? subid)
            (rx/dispose! subid))))
@@ -407,7 +417,7 @@
           (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
                 ;; Find if any selected id is a direct child and get its render index
                 selected-child-render-idx
-                (when (and (> total chunk-size) (seq selected))
+                (when (and (> total default-chunk-size) (seq selected))
                   (let [shapes-reversed (vec (reverse shapes-vec))]
                     (some (fn [sel-id]
                             (let [idx (.indexOf shapes-reversed sel-id)]
@@ -416,24 +426,30 @@
                 ;; Load at least enough to include the selected child plus extra
                 ;; for context (so it can be centered in the scroll view)
                 min-count (if selected-child-render-idx
-                            (+ selected-child-render-idx chunk-size)
-                            chunk-size)
+                            (+ selected-child-render-idx default-chunk-size)
+                            default-chunk-size)
                 current @children-count*
-                new-count (min total (max current chunk-size min-count))]
+                new-count (min total (max current default-chunk-size min-count))]
             (reset! children-count* new-count))
-          (reset! children-count* 0))))
+          (reset! children-count* 0)))
+      (fn []
+        (when-let [obs (mf/ref-val observer-ref)]
+          (.disconnect obs)
+          (mf/set-ref-val! obs nil))))
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
     ;; and (shapes item) to reconnect observer after shape changes
     (mf/with-effect [children-count expanded? (:shapes item)]
       (let [total (count (:shapes item))
-            node (mf/ref-val ref)
+            node (mf/ref-val name-node-ref)
             scroll-node (dom/get-parent-with-data node "scroll-container")
             lazy-node (mf/ref-val lazy-ref)]
+
         ;; Disconnect previous observer
-        (when-let [obs ^js @observer-var]
+        (when-let [obs (mf/ref-val observer-ref)]
           (.disconnect obs)
-          (reset! observer-var nil))
+          (mf/set-ref-val! observer-ref nil))
+
         ;; Setup new observer if there are more children to load
         (when (and expanded?
                    (< children-count total)
@@ -444,18 +460,18 @@
                                 (.-isIntersecting (first entries)))
                        ;; Load next chunk when sentinel intersects
                        (let [current @children-count*
-                             next-count (min total (+ current chunk-size))]
+                             next-count (min total (+ current default-chunk-size))]
                          (reset! children-count* next-count))))
                 observer (js/IntersectionObserver. cb #js {:root scroll-node})]
             (.observe observer lazy-node)
-            (reset! observer-var observer)))))
+            (mf/set-ref-val! observer-ref observer)))))
 
     [:& layer-item-inner
      {:ref dref
       :item item
       :depth depth
       :parent-size parent-size
-      :name-ref ref
+      :name-ref name-node-ref
       :read-only? read-only?
       :highlighted? highlighted?
       :selected? selected?
