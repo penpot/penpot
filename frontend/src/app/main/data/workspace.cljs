@@ -23,6 +23,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape :as cts]
    [app.common.types.variant :as ctv]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
@@ -212,7 +213,34 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dp/check-open-plugin)
-             (fdf/fix-deleted-fonts-for-local-library file-id)))))
+             (fdf/fix-deleted-fonts-for-local-library file-id)))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (dp/start-plugin!
+       {:url (str (u/join cf/public-uri "mcp/manifest.json"))
+        :code "plugin.js"
+        :host (str (u/join cf/public-uri "mcp/"))
+        :name "Penpot MCP Plugin"
+        :plugin-id "96dfa740-005d-8020-8007-55ede24a2bae"
+        :description "This plugin enables interaction with the Penpot MCP server"
+        :allow-background true
+        :permissions
+        #{"library:read"
+          "library:write"
+          "comment:read"
+          "content:write"
+          "comment:write"
+          "content:read"}}
+
+       #js
+       {:mcp
+        #js
+        {:getToken (fn [] "xxxxx")
+         :getServerUrl (fn [] "ws://localhost:4402")
+         :setMcpStatus (fn [status]
+                         (when-let [node (.getElementById ^js js/document "mcp-status")]
+                           (set! (.-textContent node) status)))}}))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]

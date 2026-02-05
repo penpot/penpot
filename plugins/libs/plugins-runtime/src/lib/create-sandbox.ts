@@ -2,8 +2,10 @@ import type { Penpot } from '@penpot/plugin-types';
 import type { createPluginManager } from './plugin-manager';
 import { createApi } from './api';
 import { ses } from './ses.js';
+
 export function createSandbox(
   plugin: Awaited<ReturnType<typeof createPluginManager>>,
+  apiExtensions?: Object,
 ) {
   ses.hardenIntrinsics();
 
@@ -51,7 +53,7 @@ export function createSandbox(
     });
   };
 
-  const publicPluginApi = {
+  let publicPluginApi = {
     penpot: proxyApi,
     fetch: ses.harden(safeFetch),
     setTimeout: ses.harden(
@@ -122,6 +124,10 @@ export function createSandbox(
     btoa: ses.harden(window.btoa.bind(null)),
     structuredClone: ses.harden(window.structuredClone),
   };
+
+  if (apiExtensions) {
+    publicPluginApi = Object.assign(publicPluginApi, apiExtensions);
+  }
 
   const compartment = ses.createCompartment(publicPluginApi);
 

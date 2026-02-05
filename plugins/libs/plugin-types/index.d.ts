@@ -1,3 +1,10 @@
+
+export interface OpenModalOptions {
+  width: number;
+  height: number;
+  hidden: boolean;
+}
+
 /**
  * These are methods and properties available on the `penpot` global object.
  *
@@ -23,7 +30,7 @@ export interface Penpot extends Omit<
     open: (
       name: string,
       url: string,
-      options?: { width: number; height: number },
+      options?: UIOptions,
     ) => void;
 
     size: {

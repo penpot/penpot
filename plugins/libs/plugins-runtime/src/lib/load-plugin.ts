@@ -19,7 +19,9 @@ export const getPlugins = () => plugins;
 
 const closeAllPlugins = () => {
   plugins.forEach((pluginApi) => {
-    pluginApi.plugin.close();
+    if (!(pluginApi.manifest as any).allowBackground) {
+      pluginApi.plugin.close();
+    }
   });
 
   plugins = [];
@@ -38,6 +40,7 @@ window.addEventListener('message', (event) => {
 export const loadPlugin = async function (
   manifest: Manifest,
   closeCallback?: () => void,
+  apiExtensions?: Object,
 ) {
   try {
     const context = contextBuilder && contextBuilder(manifest.pluginId);
@@ -55,6 +58,7 @@ export const loadPlugin = async function (
         plugins = plugins.filter((api) => api !== plugin);
         closeCallback && closeCallback();
       },
+      apiExtensions,
     );
 
     plugins.push(plugin);
@@ -67,8 +71,9 @@ export const loadPlugin = async function (
 export const ɵloadPlugin = async function (
   manifest: Manifest,
   closeCallback?: () => void,
+  apiExtensions?: Object,
 ) {
-  loadPlugin(manifest, closeCallback);
+  loadPlugin(manifest, closeCallback, apiExtensions);
 };
 
 export const ɵloadPluginByUrl = async function (manifestUrl: string) {

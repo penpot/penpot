@@ -2,6 +2,7 @@ import { Manifest } from './models/manifest.model.js';
 import { manifestSchema } from './models/manifest.schema.js';
 
 export function getValidUrl(host: string, path: string): string {
+  console.log("getValidUrl", host, path, new URL(path, host).toString());
   return new URL(path, host).toString();
 }
 

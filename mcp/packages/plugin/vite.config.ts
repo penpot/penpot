@@ -9,6 +9,7 @@ let WS_URI = "http://localhost:4402";
 console.log("Will define PENPOT_MCP_WEBSOCKET_URL as:", JSON.stringify(WS_URI));
 
 export default defineConfig({
+    base: "./",
     plugins: [
         livePreview({
             reload: true,
