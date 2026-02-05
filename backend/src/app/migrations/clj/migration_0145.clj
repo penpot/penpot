@@ -65,7 +65,8 @@
 (def ^:private sql:get-profiles
   "SELECT id, props FROM profile
     WHERE props ?? '~:plugins'
-    ORDER BY created_at")
+    ORDER BY created_at
+      FOR UPDATE")
 
 (defn migrate
   [conn]
