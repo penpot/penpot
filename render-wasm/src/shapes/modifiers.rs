@@ -414,7 +414,7 @@ pub fn propagate_modifiers(
                         &mut reflown,
                         &modifiers,
                     )
-                },
+                }
             }
         }
 
