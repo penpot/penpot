@@ -16,7 +16,7 @@
         (mf/use-fn
          (mf/deps [])
          (fn []
-           (prn "Close rename node modal")))]
+           (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -25,6 +25,4 @@
                         :aria-label (tr "labels.close")
                         :variant "ghost"
                         :icon i/close}]
-      "Rename node modal for node:"
-      [:pre (str node)]
-      [:pre (str type)]]]))
+      (str "Rename node modal for node: " node " of type: " type)]]))
