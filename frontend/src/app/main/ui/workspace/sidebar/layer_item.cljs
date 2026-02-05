@@ -67,7 +67,7 @@
         hidden?               (:hidden item)
         has-shapes?           (-> item :shapes seq boolean)
         touched?              (-> item :touched seq boolean)
-        parent-board?         (and (cfh/frame-shape? item)
+        root-board?           (and (cfh/frame-shape? item)
                                    (= uuid/zero (:parent-id item)))
         absolute?             (ctl/item-absolute? item)
         is-variant?           (ctk/is-variant? item)
@@ -76,9 +76,11 @@
         variant-name          (when is-variant? (:variant-name item))
         variant-error         (when is-variant? (:variant-error item))
 
-        data                  (deref refs/workspace-data)
-        component             (ctkl/get-component data (:component-id item))
-        variant-properties    (:variant-properties component)
+        component-id          (get item :component-id)
+        data                  (mf/deref refs/workspace-data)
+        variant-properties    (-> (ctkl/get-component data component-id)
+                                  (get :variant-properties))
+
         icon-shape            (usi/get-shape-icon item)]
 
     [:*
@@ -100,7 +102,7 @@
                     :dnd-over dnd-over
                     :dnd-over-top dnd-over-top
                     :dnd-over-bot dnd-over-bot
-                    :root-board parent-board?)
+                    :root-board root-board?)
             :style style}
       [:span {:class (stl/css-case
                       :tab-indentation true
@@ -160,7 +162,7 @@
                         :variant-name variant-name
                         :variant-properties variant-properties
                         :variant-error variant-error
-                        :component-id (:id component)
+                        :component-id component-id
                         :is-hidden hidden?}]]
       (when (not ^boolean is-read-only)
         [:div {:class (stl/css-case
@@ -240,7 +242,7 @@
                               (cfh/group-shape? item))
 
         is-read-only      (mf/use-ctx ctx/workspace-read-only?)
-        parent-board?     (and (cfh/frame-shape? item)
+        root-board?       (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
 
         name-node-ref     (mf/use-ref)
@@ -536,7 +538,7 @@
        [:div {:class (stl/css-case
                       :element-children true
                       :parent-selected is-selected
-                      :sticky-children parent-board?)
+                      :sticky-children root-board?)
               :data-testid (dm/str "children-" id)}
         (for [item (take children-count shapes)]
           [:> layer-item*
