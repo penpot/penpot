@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.common.weak :as weak]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -31,31 +32,47 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(def ^:private highlighted-shapes-ref
+  (l/derived (fn [local]
+               (-> local
+                   (get :highlighted)
+                   (not-empty)))
+             refs/workspace-local))
+
+(defn use-selected-shapes
+  "A convencience hook wrapper for get selected shapes"
+  []
+  (let [selected (mf/deref refs/selected-shapes)]
+    (hooks/use-equal-memo selected)))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
 (mf/defc frame-wrapper*
   [{:keys [selected] :as props}]
-  (let [pending-selected (mf/use-var selected)
-        current-selected (mf/use-state selected)
-        props            (mf/spread-object props {:selected @current-selected})
+  (let [pending-selected-ref
+        (mf/use-ref selected)
+
+        current-selected
+        (mf/use-state selected)
+
+        props
+        (mf/spread-object props {:selected @current-selected})
 
         set-selected
-        (mf/use-memo
-         (fn []
-           (throttle-fn
-            50
-            #(when-let [pending-selected @pending-selected]
-               (reset! current-selected pending-selected)))))]
+        (mf/with-memo []
+          (throttle-fn 50 #(when-let [pending-selected (mf/ref-val pending-selected-ref)]
+                             (reset! current-selected pending-selected))))]
 
     (mf/with-effect [selected set-selected]
-      (reset! pending-selected selected)
-      (set-selected)
+      (mf/set-ref-val! pending-selected-ref selected)
+      (^function set-selected)
       (fn []
-        (reset! pending-selected nil)
-        #(rx/dispose! set-selected)))
+        (mf/set-ref-val! pending-selected-ref nil)
+        (rx/dispose! set-selected)))
 
     [:> layer-item* props]))
 
@@ -63,38 +80,63 @@
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
    ::mf/wrap-props false}
   [{:keys [objects is-filtered parent-size] :as props}]
-  (let [selected       (mf/deref refs/selected-shapes)
-        selected       (hooks/use-equal-memo selected)
-        highlighted    (mf/deref refs/highlighted-shapes)
-        highlighted    (hooks/use-equal-memo highlighted)
-        root           (get objects uuid/zero)]
+  (let [selected       (use-selected-shapes)
+        highlighted    (mf/deref highlighted-shapes-ref)
+        root           (get objects uuid/zero)
+
+        shapes         (get root :shapes)
+        shapes         (mf/with-memo [shapes objects]
+                         (loop [counter 0
+                                shapes (seq shapes)
+                                result (list)]
+
+                           (if-let [id (first shapes)]
+                             (if-let [obj (get objects id)]
+                               (do
+                                 ;; NOTE: this is a bit hacky, but reduces substantially
+                                 ;; the allocation; If we use enumeration, we allocate
+                                 ;; new sequence and add one iteration on each render,
+                                 ;; independently if objects are changed or not. If we
+                                 ;; store counter on metadata, we still need to create a
+                                 ;; new allocation for each shape; with this method we
+                                 ;; bypass this by mutating a private property on the
+                                 ;; object removing extra allocation and extra iteration
+                                 ;; on every request.
+                                 (unchecked-set obj "__$__counter" counter)
+                                 (recur (inc counter)
+                                        (rest shapes)
+                                        (conj result obj)))
+                               (recur (inc counter)
+                                      (rest shapes)
+                                      result))
+                             result)))]
+
     [:div {:class (stl/css :element-list) :data-testid "layer-item"}
      [:> hooks/sortable-container* {}
-      (for [[index id] (reverse (d/enumerate (:shapes root)))]
-        (when-let [obj (get objects id)]
-          (if (cfh/frame-shape? obj)
-            [:> frame-wrapper*
-             {:item obj
-              :selected selected
-              :highlighted highlighted
-              :index index
-              :objects objects
-              :key id
-              :is-sortable true
-              :is-filtered is-filtered
-              :parent-size parent-size
-              :depth -1}]
-            [:> layer-item*
-             {:item obj
-              :selected selected
-              :highlighted highlighted
-              :index index
-              :objects objects
-              :key id
-              :is-sortable true
-              :is-filtered is-filtered
-              :depth -1
-              :parent-size parent-size}])))]]))
+      (for [obj shapes]
+        (if (cfh/frame-shape? obj)
+          [:> frame-wrapper*
+           {:item obj
+            :selected selected
+            :highlighted highlighted
+            :index (unchecked-get obj "__$__counter")
+            :objects objects
+            :key (weak/weak-key obj)
+            :is-sortable true
+            :is-filtered is-filtered
+            :parent-size parent-size
+            :depth -1}]
+          [:> layer-item*
+           {:item obj
+            :selected selected
+            :highlighted highlighted
+            :index (unchecked-get obj "__$__counter")
+            :objects objects
+            :key (weak/weak-key obj)
+            :is-sortable true
+            :is-filtered is-filtered
+            :depth -1
+            :parent-size parent-size}]))]]))
 
 (mf/defc filters-tree
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
