@@ -38,6 +38,7 @@
         desc (obj/get manifest "description")
         code (obj/get manifest "code")
         icon (obj/get manifest "icon")
+        vers (d/nilv (obj/get manifest "version") 1)
 
         permissions (into #{} (obj/get manifest "permissions" []))
         permissions
@@ -55,9 +56,13 @@
         (u/uri plugin-url)
 
         origin
-        (-> plugin-url
-            (u/join ".")
-            (str))
+        (if (= vers 1)
+          (-> plugin-url
+              (assoc :path "/")
+              (str))
+          (-> plugin-url
+              (u/join ".")
+              (str)))
 
         prev-plugin
         (->> (:data @registry)
