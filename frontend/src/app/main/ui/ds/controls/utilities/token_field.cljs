@@ -68,22 +68,24 @@
 
       (when (some? slot-start) slot-start)
 
-      [:> tooltip* {:content content
-                    :id (dm/str id "-pill")}
-       [:button {:on-click on-click
-                 :class (stl/css-case :pill true
-                                      :no-set-pill (not set-active?)
-                                      :pill-disabled disabled)
-                 :disabled disabled
-                 :aria-labelledby (dm/str id "-pill")
-                 :on-key-down on-token-key-down}
-        value
-        (when-not set-active?
-          [:div {:class (stl/css :pill-dot)}])]]
+      [:div  {:class (stl/css :content-wrapper)}
+       [:> tooltip* {:content content
+                     :id (dm/str id "-pill")}
+        [:button {:on-click on-click
+                  :class (stl/css-case :pill true
+                                       :no-set-pill (not set-active?)
+                                       :pill-disabled disabled)
+                  :disabled disabled
+                  :aria-labelledby (dm/str id "-pill")
+                  :on-key-down on-token-key-down}
+         value
+         (when-not set-active?
+           [:div {:class (stl/css :pill-dot)}])]]]
 
       (when-not ^boolean disabled
         [:> icon-button* {:variant "ghost"
                           :class (stl/css :invisible-button)
+                          :tooltip-class (stl/css :button-tooltip)
                           :icon i/broken-link
                           :ref token-detach-btn-ref
                           :aria-label (tr "ds.inputs.token-field.detach-token")

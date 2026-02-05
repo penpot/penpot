@@ -647,6 +647,7 @@
                                             (when (some? tokens)
                                               (mf/html [:> icon-button* {:variant "ghost"
                                                                          :icon i/tokens
+                                                                         :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref
