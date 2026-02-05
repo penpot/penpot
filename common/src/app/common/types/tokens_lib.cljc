@@ -153,6 +153,18 @@
                   tokens)]
     (group-by :type tokens')))
 
+(defn rename-path
+  "Renames a node or token path segment with a new name.
+   If token is provided, it renames a token path, otherwise it renames a node path."
+  ([node new-name]
+   (rename-path node nil new-name))
+  ([node token new-name]
+   (let [element (if token (:name token) (:path node))
+         split-path (cpn/split-path element :separator ".")
+         updated-split-element-name (assoc split-path (:depth node) new-name)
+         new-element-path (cpn/join-path updated-split-element-name :separator "." :with-spaces? false)]
+     new-element-path)))
+
 ;; === Token Set
 
 (defprotocol ITokenSet
@@ -1494,6 +1506,30 @@ Will return a value that matches this schema:
       :else (-> (get path-target selector)
                 (seq)
                 (boolean)))))
+
+(defn update-tokens-group
+  "Updates the active tokens path when renaming a group node.
+   - Filters tokens whose path matches the current path prefix
+   - Replaces the token name with the new name
+   - Updates the :path value in the token object
+
+   active-tokens: map of token-name to token-object for all active tokens in the set
+   current-path: the path of the group being renamed, e.g. \"foo.bar\"
+   current-name: the current name of the group being renamed, e.g. \"bar\"
+   new-name: the new name for the group being renamed, e.g. \"baz\""
+
+  [active-tokens current-path current-name new-name]
+  (let [path-prefix (str/replace current-path current-name "")]
+    (mapv (fn [[token-path token-obj]]
+            (if (str/starts-with? token-path path-prefix)
+              (let [new-token-path (str/replace token-path current-name new-name)
+                    new-token-obj (-> token-obj
+                                      (assoc :name new-token-path)
+                                      (cond-> (:path token-obj)
+                                        (assoc :path (str/replace (:path token-obj) current-name new-name))))]
+                [new-token-path new-token-obj])
+              [token-path token-obj]))
+          active-tokens)))
 
 ;; === Import / Export from JSON format
 

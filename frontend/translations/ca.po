@@ -4272,6 +4272,26 @@ msgstr "Pàgines"
 msgid "workspace.sitemap"
 msgstr "Mapa del lloc"
 
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "Canviar el nom de `%s` a `%s` i remapejar tots els tokens d'aquest grup?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
+msgid "workspace.tokens.remap-token-warning-effects"
+msgstr "Això canviarà totes les capes i referències que utilitzen el token antic."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "Aquest procés pot trigar una mica"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group"
+msgstr "Canviar nom del grup de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Els teus tokens es renomenaran automàticament a %s.(sufix).(token)"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
