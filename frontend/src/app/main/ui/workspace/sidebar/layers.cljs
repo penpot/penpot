@@ -76,9 +76,8 @@
 
     [:> layer-item* props]))
 
-(mf/defc layers-tree
-  {::mf/wrap [mf/memo #(mf/throttle % 200)]
-   ::mf/wrap-props false}
+(mf/defc layers-tree*
+  {::mf/wrap [mf/memo]}
   [{:keys [objects is-filtered parent-size] :as props}]
   (let [selected       (use-selected-shapes)
         highlighted    (mf/deref highlighted-shapes-ref)
@@ -137,6 +136,32 @@
             :is-filtered is-filtered
             :depth -1
             :parent-size parent-size}]))]]))
+
+(mf/defc layers-tree-wrapper*
+  {::mf/private true}
+  [{:keys [objects] :as props}]
+  ;; This is a performance sensitive componet, so we use lower-level primitives for
+  ;; reduce residual allocation for this specific case
+  (let [state-tmp   (mf/useState objects)
+        objects'    (aget state-tmp 0)
+        set-objects (aget state-tmp 1)
+
+        subject-s   (mf/with-memo []
+                      (rx/subject))
+        changes-s   (mf/with-memo [subject-s]
+                      (->> subject-s
+                           (rx/debounce 500)))
+
+        props     (mf/spread-props props {:objects objects'})]
+
+    (mf/with-effect [objects subject-s]
+      (rx/push! subject-s objects))
+
+    (mf/with-effect [changes-s]
+      (let [sub (rx/subscribe changes-s set-objects)]
+        #(rx/dispose! sub)))
+
+    [:> layers-tree* props]))
 
 (mf/defc filters-tree
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
@@ -504,6 +529,8 @@
   {::mf/wrap [mf/memo]}
   [{:keys [size-parent]}]
   (let [page           (mf/deref refs/workspace-page)
+        page-id        (get page :id)
+
         focus          (mf/deref refs/workspace-focus-selected)
 
         objects        (hooks/with-focus-objects (:objects page) focus)
@@ -568,16 +595,16 @@
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
 
-         [:& layers-tree {:objects filtered-objects
-                          :key (dm/str (:id page))
-                          :is-filtered true
-                          :parent-size size-parent}]]]
+         [:> layers-tree-wrapper* {:objects filtered-objects
+                                   :key (dm/str page-id)
+                                   :is-filtered true
+                                   :parent-size size-parent}]]]
 
        [:div {:on-scroll on-scroll
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}
-        [:& layers-tree {:objects objects
-                         :key (dm/str (:id page))
-                         :is-filtered false
-                         :parent-size size-parent}]])]))
+        [:> layers-tree-wrapper* {:objects objects
+                                  :key (dm/str page-id)
+                                  :is-filtered false
+                                  :parent-size size-parent}]])]))
