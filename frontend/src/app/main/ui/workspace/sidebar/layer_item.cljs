@@ -50,8 +50,7 @@
          (when (seq enter)
            (apply st/emit! (map dw/highlight-shape enter))))))))
 
-(mf/defc layer-item-inner
-  {::mf/wrap-props false}
+(mf/defc layer-item-inner*
   [{:keys [item depth parent-size name-ref children ref style
            ;; Flags
            is-read-only is-highlighted is-selected is-component-tree
@@ -186,9 +185,8 @@
      children]))
 
 ;; Memoized for performance
-(mf/defc layer-item
-  {::mf/props :obj
-   ::mf/wrap [mf/memo]}
+(mf/defc layer-item*
+  {::mf/wrap [mf/memo]}
   [{:keys [index item selected objects is-sortable is-filtered depth parent-size is-component-child highlighted style render-children]
     :or {render-children true}}]
   (let [id                (:id item)
@@ -467,7 +465,7 @@
             (.observe observer lazy-node)
             (mf/set-ref-val! observer-ref observer)))))
 
-    [:& layer-item-inner
+    [:> layer-item-inner*
      {:ref dref
       :item item
       :depth depth
@@ -506,7 +504,7 @@
               visible      (take children-count all-children)]
           (for [[index id] visible]
             (when-let [item (get objects id)]
-              [:& layer-item
+              [:> layer-item*
                {:item item
                 :highlighted highlighted
                 :selected selected
