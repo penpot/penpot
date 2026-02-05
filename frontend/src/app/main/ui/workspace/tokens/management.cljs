@@ -5,6 +5,7 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
+   [app.main.data.modal :as modal]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
@@ -13,6 +14,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
+   [app.main.ui.workspace.tokens.management.forms.rename-node-modal :refer [rename-node-modal*]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
    [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
@@ -164,6 +166,17 @@
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
                 (st/emit! (dwtl/toggle-token-path (name type)))))))
 
+        ;; node-to-rename (mf/use-state nil)
+        ;; node-to-rename* (deref node-to-rename)
+
+        rename-node
+        (mf/with-memo []
+          (fn [node type]
+            (mf/portal
+             (st/emit! (dwtl/assign-token-node-context-menu nil)
+                       (modal/show :tokens/rename-node {:node node
+                                                        :type type})))))
+
         delete-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
           (fn [node type]
@@ -191,7 +204,8 @@
 
     [:*
      [:& token-context-menu {:on-delete-token delete-token}]
-     [:> token-node-context-menu* {:on-delete-node delete-node}]
+     [:> token-node-context-menu* {:on-rename-node rename-node
+                                   :on-delete-node delete-node}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib
                              :selected-token-set-id selected-token-set-id}]
