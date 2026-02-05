@@ -568,9 +568,7 @@
             (extract-property-changes modif-tree)]
         (-> state
             (assoc :prev-wasm-props (:wasm-props state))
-            (assoc :wasm-props property-changes)
-            ;; Keep overlays in sync during WASM transforms.
-            (assoc :workspace-modifiers modif-tree))))
+            (assoc :wasm-props property-changes))))
 
     ptk/WatchEvent
     (watch [_ state _]
