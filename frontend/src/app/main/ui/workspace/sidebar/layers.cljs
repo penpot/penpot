@@ -42,7 +42,7 @@
                    (not-empty)))
              refs/workspace-local))
 
-(defn use-selected-shapes
+(defn- use-selected-shapes
   "A convencience hook wrapper for get selected shapes"
   []
   (let [selected (mf/deref refs/selected-shapes)]
@@ -163,13 +163,12 @@
 
     [:> layers-tree* props]))
 
-(mf/defc filters-tree
-  {::mf/wrap [mf/memo #(mf/throttle % 200)]
-   ::mf/wrap-props false}
+(mf/defc filters-tree*
+  {::mf/wrap [mf/memo #(mf/throttle % 300)]
+   ::mf/private true}
   [{:keys [objects parent-size]}]
-  (let [selected       (mf/deref refs/selected-shapes)
-        selected       (hooks/use-equal-memo selected)
-        root           (get objects uuid/zero)]
+  (let [selected (use-selected-shapes)
+        root     (get objects uuid/zero)]
     [:ul {:class (stl/css :element-list)}
      (for [[index id] (d/enumerate (:shapes root))]
        (when-let [obj (get objects id)]
@@ -540,7 +539,8 @@
         observer-var   (mf/use-var nil)
         lazy-load-ref  (mf/use-ref nil)
 
-        [filtered-objects show-more filter-component] (use-search page objects)
+        [filtered-objects show-more filter-component]
+        (use-search page objects)
 
         intersection-callback
         (fn [entries]
@@ -586,9 +586,9 @@
         [:div {:class (stl/css :tool-window-content)
                :data-scroll-container true
                :ref on-render-container}
-         [:& filters-tree {:objects filtered-objects
-                           :key (dm/str (:id page))
-                           :parent-size size-parent}]
+         [:> filters-tree* {:objects filtered-objects
+                            :key (dm/str page-id)
+                            :parent-size size-parent}]
          [:div {:ref lazy-load-ref}]]
         [:div {:on-scroll on-scroll
                :class (stl/css :tool-window-content)
