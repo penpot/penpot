@@ -10,11 +10,13 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.common.weak :as weak]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.refs :as refs]
@@ -184,26 +186,54 @@
 
      children]))
 
-;; Memoized for performance
 (mf/defc layer-item*
   {::mf/wrap [mf/memo]}
-  [{:keys [index item selected objects is-sortable is-filtered depth parent-size is-component-child highlighted style render-children]
+  [{:keys [index item selected objects
+           is-sortable is-filtered depth is-component-child
+           highlighted style render-children parent-size]
     :or {render-children true}}]
-  (let [id                (:id item)
-        blocked?          (:blocked item)
-        hidden?           (:hidden item)
+  (let [id                (get item :id)
+        blocked?          (get item :blocked)
+        hidden?           (get item :hidden)
+
+        shapes            (get item :shapes)
+        shapes            (mf/with-memo [shapes objects]
+                            (loop [counter 0
+                                   shapes  (seq shapes)
+                                   result  (list)]
+
+                              (if-let [id (first shapes)]
+                                (if-let [obj (get objects id)]
+                                  (do
+                                    ;; NOTE: this is a bit hacky, but reduces substantially
+                                    ;; the allocation; If we use enumeration, we allocate
+                                    ;; new sequence and add one iteration on each render,
+                                    ;; independently if objects are changed or not. If we
+                                    ;; store counter on metadata, we still need to create a
+                                    ;; new allocation for each shape; with this method we
+                                    ;; bypass this by mutating a private property on the
+                                    ;; object removing extra allocation and extra iteration
+                                    ;; on every request.
+                                    (unchecked-set obj "__$__counter" counter)
+                                    (recur (inc counter)
+                                           (rest shapes)
+                                           (conj result obj)))
+                                  (recur (inc counter)
+                                         (rest shapes)
+                                         result))
+
+                                (-> result vec not-empty))))
 
         drag-disabled*    (mf/use-state false)
         drag-disabled?    (deref drag-disabled*)
 
         scroll-middle-ref (mf/use-ref true)
         expanded-iref     (mf/with-memo [id]
-                            (-> (l/in [:expanded id])
-                                (l/derived refs/workspace-local)))
+                            (l/derived #(dm/get-in % [:expanded id]) refs/workspace-local))
         is-expanded       (mf/deref expanded-iref)
 
-        is-selected         (contains? selected id)
-        is-highlighted      (contains? highlighted id)
+        is-selected       (contains? selected id)
+        is-highlighted    (contains? highlighted id)
 
         container?        (or (cfh/frame-shape? item)
                               (cfh/group-shape? item))
@@ -337,7 +367,8 @@
                        :else
                        (cfh/get-parent-id objects id))
 
-                     [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected) false files)
+                     [parent-id _]
+                     (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected) false files)
 
                      parent        (get objects parent-id)
                      current-index (d/index-of (:shapes parent) id)
@@ -379,10 +410,9 @@
                 :index index
                 :name (:name item)}
          ;; We don't want to change the structure of component copies
-         :draggable? (and
-                      is-sortable
-                      (not is-read-only)
-                      (not (ctn/has-any-copy-parent? objects item))))]
+         :draggable? (and ^boolean is-sortable
+                          ^boolean (not is-read-only)
+                          ^boolean (not (ctn/has-any-copy-parent? objects item))))]
 
     (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)
@@ -409,40 +439,47 @@
 
     ;; Setup scroll-driven lazy loading when expanded
     ;; and ensures selected children are loaded immediately
-    (mf/with-effect [is-expanded (:shapes item) selected]
-      (let [shapes-vec (:shapes item)
-            total (count shapes-vec)]
-        (if is-expanded
+    (mf/with-effect [is-expanded shapes selected]
+      (let [total (count shapes)]
+        (if ^boolean is-expanded
           (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
                 ;; Find if any selected id is a direct child and get its render index
                 selected-child-render-idx
-                (when (and (> total default-chunk-size) (seq selected))
-                  (let [shapes-reversed (vec (reverse shapes-vec))]
-                    (some (fn [sel-id]
-                            (let [idx (.indexOf shapes-reversed sel-id)]
-                              (when (>= idx 0) idx)))
-                          selected)))
+                (when (> total default-chunk-size)
+                  (some (fn [sel-id]
+                          (let [idx (.indexOf shapes sel-id)]
+                            (when (>= idx 0) idx)))
+                        selected))
+
                 ;; Load at least enough to include the selected child plus extra
                 ;; for context (so it can be centered in the scroll view)
-                min-count (if selected-child-render-idx
-                            (+ selected-child-render-idx default-chunk-size)
-                            default-chunk-size)
-                current @children-count*
-                new-count (min total (max current default-chunk-size min-count))]
+                min-count
+                (if selected-child-render-idx
+                  (+ selected-child-render-idx default-chunk-size)
+                  default-chunk-size)
+
+                current-count
+                @children-count*
+
+                new-count
+                (mth/min total (mth/max current-count default-chunk-size min-count))]
+
             (reset! children-count* new-count))
-          (reset! children-count* 0)))
-      (fn []
-        (when-let [obs (mf/ref-val observer-ref)]
-          (.disconnect obs)
-          (mf/set-ref-val! obs nil))))
+
+          (reset! children-count* 0))
+
+        (fn []
+          (when-let [obs (mf/ref-val observer-ref)]
+            (.disconnect obs)
+            (mf/set-ref-val! obs nil)))))
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
     ;; and (shapes item) to reconnect observer after shape changes
-    (mf/with-effect [children-count is-expanded (:shapes item)]
-      (let [total (count (:shapes item))
-            node (mf/ref-val name-node-ref)
-            scroll-node (dom/get-parent-with-data node "scroll-container")
-            lazy-node (mf/ref-val lazy-ref)]
+    (mf/with-effect [children-count is-expanded shapes]
+      (let [total       (count shapes)
+            name-node   (mf/ref-val name-node-ref)
+            scroll-node (dom/get-parent-with-data name-node "scroll-container")
+            lazy-node   (mf/ref-val lazy-ref)]
 
         ;; Disconnect previous observer
         (when-let [obs (mf/ref-val observer-ref)]
@@ -450,16 +487,15 @@
           (mf/set-ref-val! observer-ref nil))
 
         ;; Setup new observer if there are more children to load
-        (when (and is-expanded
-                   (< children-count total)
-                   scroll-node
-                   lazy-node)
+        (when (and ^boolean is-expanded
+                   ^boolean (< children-count total)
+                   ^boolean scroll-node
+                   ^boolean lazy-node)
           (let [cb (fn [entries]
-                     (when (and (seq entries)
-                                (.-isIntersecting (first entries)))
+                     (when (and (pos? (alength entries))
+                                (.-isIntersecting ^js (aget entries 0)))
                        ;; Load next chunk when sentinel intersects
-                       (let [current @children-count*
-                             next-count (min total (+ current default-chunk-size))]
+                       (let [next-count (mth/min total (+ children-count default-chunk-size))]
                          (reset! children-count* next-count))))
                 observer (js/IntersectionObserver. cb #js {:root scroll-node})]
             (.observe observer lazy-node)
@@ -492,29 +528,27 @@
       :on-toggle-blocking toggle-blocking
       :style style}
 
-     (when (and render-children
-                (:shapes item)
-                is-expanded)
+     (when (and ^boolean render-children
+                ^boolean shapes
+                ^boolean is-expanded)
        [:div {:class (stl/css-case
                       :element-children true
                       :parent-selected is-selected
                       :sticky-children parent-board?)
               :data-testid (dm/str "children-" id)}
-        (let [all-children (reverse (d/enumerate (:shapes item)))
-              visible      (take children-count all-children)]
-          (for [[index id] visible]
-            (when-let [item (get objects id)]
-              [:> layer-item*
-               {:item item
-                :highlighted highlighted
-                :selected selected
-                :index index
-                :objects objects
-                :key (dm/str id)
-                :is-sortable is-sortable
-                :depth depth
-                :parent-size parent-size
-                :is-component-child is-component-tree}])))
-        (when (< children-count (count (:shapes item)))
+        (for [item (take children-count shapes)]
+          [:> layer-item*
+           {:item item
+            :highlighted highlighted
+            :selected selected
+            :index (unchecked-get item "__$__counter")
+            :objects objects
+            :key (weak/weak-key item)
+            :is-sortable is-sortable
+            :depth depth
+            :parent-size parent-size
+            :is-component-child is-component-tree}])
+
+        (when (< children-count (count shapes))
           [:div {:ref lazy-ref
                  :class (stl/css :lazy-load-sentinel)}])])]))

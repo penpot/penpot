@@ -22,12 +22,11 @@
 (def ^:private space-for-icons 110)
 
 (def lens:shape-for-rename
-  (-> (l/in [:workspace-local :shape-for-rename])
+  (-> #(dm/get-in % [:workspace-local :shape-for-rename])
       (l/derived st/state)))
 
 (mf/defc layer-name*
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
+  {::mf/forward-ref true}
   [{:keys [shape-id shape-name is-shape-touched disabled-double-click
            on-start-edit on-stop-edit depth parent-size is-selected
            type-comp type-frame component-id is-hidden is-blocked

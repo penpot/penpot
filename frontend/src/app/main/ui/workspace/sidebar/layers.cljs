@@ -79,36 +79,35 @@
 (mf/defc layers-tree*
   {::mf/wrap [mf/memo]}
   [{:keys [objects is-filtered parent-size] :as props}]
-  (let [selected       (use-selected-shapes)
-        highlighted    (mf/deref highlighted-shapes-ref)
-        root           (get objects uuid/zero)
+  (let [selected    (use-selected-shapes)
+        highlighted (mf/deref highlighted-shapes-ref)
+        root        (get objects uuid/zero)
 
-        shapes         (get root :shapes)
-        shapes         (mf/with-memo [shapes objects]
-                         (loop [counter 0
-                                shapes (seq shapes)
-                                result (list)]
-
-                           (if-let [id (first shapes)]
-                             (if-let [obj (get objects id)]
-                               (do
-                                 ;; NOTE: this is a bit hacky, but reduces substantially
-                                 ;; the allocation; If we use enumeration, we allocate
-                                 ;; new sequence and add one iteration on each render,
-                                 ;; independently if objects are changed or not. If we
-                                 ;; store counter on metadata, we still need to create a
-                                 ;; new allocation for each shape; with this method we
-                                 ;; bypass this by mutating a private property on the
-                                 ;; object removing extra allocation and extra iteration
-                                 ;; on every request.
-                                 (unchecked-set obj "__$__counter" counter)
-                                 (recur (inc counter)
-                                        (rest shapes)
-                                        (conj result obj)))
-                               (recur (inc counter)
-                                      (rest shapes)
-                                      result))
-                             result)))]
+        shapes      (get root :shapes)
+        shapes      (mf/with-memo [shapes objects]
+                      (loop [counter 0
+                             shapes (seq shapes)
+                             result (list)]
+                        (if-let [id (first shapes)]
+                          (if-let [obj (get objects id)]
+                            (do
+                              ;; NOTE: this is a bit hacky, but reduces substantially
+                              ;; the allocation; If we use enumeration, we allocate
+                              ;; new sequence and add one iteration on each render,
+                              ;; independently if objects are changed or not. If we
+                              ;; store counter on metadata, we still need to create a
+                              ;; new allocation for each shape; with this method we
+                              ;; bypass this by mutating a private property on the
+                              ;; object removing extra allocation and extra iteration
+                              ;; on every request.
+                              (unchecked-set obj "__$__counter" counter)
+                              (recur (inc counter)
+                                     (rest shapes)
+                                     (conj result obj)))
+                            (recur (inc counter)
+                                   (rest shapes)
+                                   result))
+                          result)))]
 
     [:div {:class (stl/css :element-list) :data-testid "layer-item"}
      [:> hooks/sortable-container* {}
@@ -195,6 +194,7 @@
              keys
              (filter #(not= uuid/zero %))
              vec)]
+
     (update reparented-objects uuid/zero assoc :shapes reparented-shapes)))
 
 ;; --- Layers Toolbox
