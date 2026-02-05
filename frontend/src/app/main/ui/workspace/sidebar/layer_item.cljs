@@ -54,8 +54,8 @@
   {::mf/wrap-props false}
   [{:keys [item depth parent-size name-ref children ref style
            ;; Flags
-           read-only? highlighted? selected? component-tree?
-           filtered? expanded? dnd-over? dnd-over-top? dnd-over-bot? hide-toggle?
+           is-read-only is-highlighted is-selected is-component-tree
+           is-filtered is-expanded dnd-over dnd-over-top dnd-over-bot hide-toggle
            ;; Callbacks
            on-select-shape on-context-menu on-pointer-enter on-pointer-leave on-zoom-to-selected
            on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}]
@@ -88,27 +88,27 @@
             :data-testid "layer-row"
             :class (stl/css-case
                     :layer-row true
-                    :highlight highlighted?
+                    :highlight is-highlighted
                     :component (ctk/instance-head? item)
                     :masked (:masked-group item)
-                    :selected selected?
+                    :selected is-selected
                     :type-frame (cfh/frame-shape? item)
                     :type-bool (cfh/bool-shape? item)
-                    :type-comp (or component-tree? is-variant-container?)
+                    :type-comp (or is-component-tree is-variant-container?)
                     :hidden hidden?
-                    :dnd-over dnd-over?
-                    :dnd-over-top dnd-over-top?
-                    :dnd-over-bot dnd-over-bot?
+                    :dnd-over dnd-over
+                    :dnd-over-top dnd-over-top
+                    :dnd-over-bot dnd-over-bot
                     :root-board parent-board?)
             :style style}
       [:span {:class (stl/css-case
                       :tab-indentation true
-                      :filtered filtered?)
+                      :filtered is-filtered)
               :style {"--depth" depth}}]
       [:div {:class (stl/css-case
                      :element-list-body true
-                     :filtered filtered?
-                     :selected selected?
+                     :filtered is-filtered
+                     :selected is-selected
                      :icon-layer (= (:type item) :icon))
              :style {"--depth" depth}
              :on-pointer-enter on-pointer-enter
@@ -117,12 +117,12 @@
 
        (if (< 0 (count (:shapes item)))
          [:div {:class (stl/css :button-content)}
-          (when (and (not hide-toggle?) (not filtered?))
+          (when (and (not hide-toggle) (not is-filtered))
             [:button {:class (stl/css-case
                               :toggle-content true
-                              :inverse expanded?)
+                              :inverse is-expanded)
                       :data-testid "toggle-content"
-                      :aria-expanded expanded?
+                      :aria-expanded is-expanded
                       :on-click on-toggle-collapse}
              deprecated-icon/arrow])
 
@@ -133,7 +133,7 @@
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]]
 
          [:div {:class (stl/css :button-content)}
-          (when (not ^boolean filtered?)
+          (when (not ^boolean is-filtered)
             [:span {:class (stl/css :toggle-content)}])
           [:div {:class (stl/css :icon-shape)
                  :on-double-click on-zoom-to-selected}
@@ -145,14 +145,14 @@
                         :shape-id id
                         :shape-name name
                         :is-shape-touched touched?
-                        :disabled-double-click read-only?
+                        :disabled-double-click is-read-only
                         :on-start-edit on-disable-drag
                         :on-stop-edit on-enable-drag
                         :depth depth
                         :is-blocked blocked?
                         :parent-size parent-size
-                        :is-selected selected?
-                        :type-comp (or component-tree? is-variant-container?)
+                        :is-selected is-selected
+                        :type-comp (or is-component-tree is-variant-container?)
                         :type-frame (cfh/frame-shape? item)
                         :variant-id variant-id
                         :variant-name variant-name
@@ -160,7 +160,7 @@
                         :variant-error variant-error
                         :component-id (:id component)
                         :is-hidden hidden?}]]
-      (when (not read-only?)
+      (when (not is-read-only)
         [:div {:class (stl/css-case
                        :element-actions true
                        :is-parent has-shapes?
@@ -189,8 +189,8 @@
 (mf/defc layer-item
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [{:keys [index item selected objects sortable? filtered? depth parent-size component-child? highlighted style render-children?]
-    :or {render-children? true}}]
+  [{:keys [index item selected objects is-sortable is-filtered depth parent-size is-component-child highlighted style render-children]
+    :or {render-children true}}]
   (let [id                (:id item)
         blocked?          (:blocked item)
         hidden?           (:hidden item)
@@ -202,15 +202,15 @@
         expanded-iref     (mf/with-memo [id]
                             (-> (l/in [:expanded id])
                                 (l/derived refs/workspace-local)))
-        expanded?         (mf/deref expanded-iref)
+        is-expanded       (mf/deref expanded-iref)
 
-        selected?         (contains? selected id)
-        highlighted?      (contains? highlighted id)
+        is-selected         (contains? selected id)
+        is-highlighted      (contains? highlighted id)
 
         container?        (or (cfh/frame-shape? item)
                               (cfh/group-shape? item))
 
-        read-only?        (mf/use-ctx ctx/workspace-read-only?)
+        is-read-only      (mf/use-ctx ctx/workspace-read-only?)
         parent-board?     (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
 
@@ -218,7 +218,7 @@
 
         depth             (+ depth 1)
 
-        component-tree?   (or ^boolean component-child?
+        is-component-tree (or ^boolean is-component-child
                               ^boolean (ctk/instance-root? item)
                               ^boolean (ctk/instance-head? item))
 
@@ -234,10 +234,10 @@
 
         toggle-collapse
         (mf/use-fn
-         (mf/deps expanded?)
+         (mf/deps is-expanded)
          (fn [event]
            (dom/stop-propagation event)
-           (if (and expanded? (kbd/shift? event))
+           (if (and is-expanded (kbd/shift? event))
              (st/emit! (dwc/collapse-all))
              (st/emit! (dwc/toggle-collapse id)))))
 
@@ -262,13 +262,13 @@
 
         select-shape
         (mf/use-fn
-         (mf/deps id filtered? objects)
+         (mf/deps id is-filtered objects)
          (fn [event]
            (dom/prevent-default event)
            (mf/set-ref-val! scroll-middle-ref false)
            (cond
              (kbd/shift? event)
-             (if filtered?
+             (if is-filtered
                (st/emit! (dw/shift-select-shapes id objects))
                (st/emit! (dw/shift-select-shapes id)))
 
@@ -303,11 +303,11 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps item read-only?)
+         (mf/deps item is-read-only)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not read-only?
+           (when-not is-read-only
              (let [pos (dom/get-client-position event)]
                (st/emit! (dw/show-shape-context-menu {:position pos :shape item}))))))
 
@@ -320,7 +320,7 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id objects expanded? selected)
+         (mf/deps id objects is-expanded selected)
          (fn [side _data]
            (let [single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
@@ -333,7 +333,7 @@
                        (= side :center)
                        id
 
-                       (and expanded? (= side :bot) (d/not-empty? (:shapes shape)))
+                       (and is-expanded (= side :bot) (d/not-empty? (:shapes shape)))
                        id
 
                        :else
@@ -346,19 +346,20 @@
 
                      to-index  (cond
                                  (= side :center) 0
-                                 (and expanded? (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
+                                 (and is-expanded (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
                                  ;; target not found in parent (while lazy loading)
                                  (neg? current-index) nil
                                  (= side :top) (inc current-index)
                                  :else current-index)]
+
                  (when (some? to-index)
                    (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))))
 
         on-hold
         (mf/use-fn
-         (mf/deps id expanded?)
+         (mf/deps id is-expanded)
          (fn []
-           (when-not expanded?
+           (when-not is-expanded
              (st/emit! (dwc/toggle-collapse id)))))
 
         zoom-to-selected
@@ -381,11 +382,11 @@
                 :name (:name item)}
          ;; We don't want to change the structure of component copies
          :draggable? (and
-                      sortable?
-                      (not read-only?)
+                      is-sortable
+                      (not is-read-only)
                       (not (ctn/has-any-copy-parent? objects item))))]
 
-    (mf/with-effect [selected? selected]
+    (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)
             node              (mf/ref-val name-node-ref)
             scroll-node       (dom/get-parent-with-data node "scroll-container")
@@ -395,7 +396,7 @@
 
             subid
             (when (and ^boolean single?
-                       ^boolean selected?
+                       ^boolean is-selected
                        ^boolean scroll-to-middle?)
               (ts/schedule
                100
@@ -410,10 +411,10 @@
 
     ;; Setup scroll-driven lazy loading when expanded
     ;; and ensures selected children are loaded immediately
-    (mf/with-effect [expanded? (:shapes item) selected]
+    (mf/with-effect [is-expanded (:shapes item) selected]
       (let [shapes-vec (:shapes item)
             total (count shapes-vec)]
-        (if expanded?
+        (if is-expanded
           (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
                 ;; Find if any selected id is a direct child and get its render index
                 selected-child-render-idx
@@ -439,7 +440,7 @@
 
     ;; Re-observe sentinel whenever children-count changes (sentinel moves)
     ;; and (shapes item) to reconnect observer after shape changes
-    (mf/with-effect [children-count expanded? (:shapes item)]
+    (mf/with-effect [children-count is-expanded (:shapes item)]
       (let [total (count (:shapes item))
             node (mf/ref-val name-node-ref)
             scroll-node (dom/get-parent-with-data node "scroll-container")
@@ -451,7 +452,7 @@
           (mf/set-ref-val! observer-ref nil))
 
         ;; Setup new observer if there are more children to load
-        (when (and expanded?
+        (when (and is-expanded
                    (< children-count total)
                    scroll-node
                    lazy-node)
@@ -472,15 +473,15 @@
       :depth depth
       :parent-size parent-size
       :name-ref name-node-ref
-      :read-only? read-only?
-      :highlighted? highlighted?
-      :selected? selected?
-      :component-tree? component-tree?
-      :filtered? filtered?
-      :expanded? expanded?
-      :dnd-over? (= (:over dprops) :center)
-      :dnd-over-top? (= (:over dprops) :top)
-      :dnd-over-bot? (= (:over dprops) :bot)
+      :is-read-only is-read-only
+      :is-highlighted is-highlighted
+      :is-selected is-selected
+      :is-component-tree is-component-tree
+      :is-filtered is-filtered
+      :is-expanded is-expanded
+      :dnd-over (= (:over dprops) :center)
+      :dnd-over-top (= (:over dprops) :top)
+      :dnd-over-bot (= (:over dprops) :bot)
       :on-select-shape select-shape
       :on-context-menu on-context-menu
       :on-pointer-enter on-pointer-enter
@@ -493,12 +494,12 @@
       :on-toggle-blocking toggle-blocking
       :style style}
 
-     (when (and render-children?
+     (when (and render-children
                 (:shapes item)
-                expanded?)
+                is-expanded)
        [:div {:class (stl/css-case
                       :element-children true
-                      :parent-selected selected?
+                      :parent-selected is-selected
                       :sticky-children parent-board?)
               :data-testid (dm/str "children-" id)}
         (let [all-children (reverse (d/enumerate (:shapes item)))
@@ -512,10 +513,10 @@
                 :index index
                 :objects objects
                 :key (dm/str id)
-                :sortable? sortable?
+                :is-sortable is-sortable
                 :depth depth
                 :parent-size parent-size
-                :component-child? component-tree?}])))
+                :is-component-child is-component-tree}])))
         (when (< children-count (count (:shapes item)))
           [:div {:ref lazy-ref
                  :class (stl/css :lazy-load-sentinel)}])])]))

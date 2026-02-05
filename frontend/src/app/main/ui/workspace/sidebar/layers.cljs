@@ -65,7 +65,7 @@
 (mf/defc layers-tree
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
    ::mf/wrap-props false}
-  [{:keys [objects filtered? parent-size] :as props}]
+  [{:keys [objects is-filtered parent-size] :as props}]
   (let [selected       (mf/deref refs/selected-shapes)
         selected       (hooks/use-equal-memo selected)
         highlighted    (mf/deref refs/highlighted-shapes)
@@ -83,8 +83,8 @@
               :index index
               :objects objects
               :key id
-              :sortable? true
-              :filtered? filtered?
+              :is-sortable true
+              :is-filtered is-filtered
               :parent-size parent-size
               :depth -1}]
             [:& layer-item
@@ -94,8 +94,8 @@
               :index index
               :objects objects
               :key id
-              :sortable? true
-              :filtered? filtered?
+              :is-sortable true
+              :is-filtered is-filtered
               :depth -1
               :parent-size parent-size}])))]]))
 
@@ -115,8 +115,8 @@
            :index index
            :objects objects
            :key id
-           :sortable? false
-           :filtered? true
+           :is-sortable false
+           :is-filtered true
            :depth -1
            :parent-size parent-size}]))]))
 
@@ -529,7 +529,7 @@
 
          [:& layers-tree {:objects filtered-objects
                           :key (dm/str (:id page))
-                          :filtered? true
+                          :is-filtered true
                           :parent-size size-parent}]]]
 
        [:div {:on-scroll on-scroll
@@ -538,5 +538,5 @@
               :style {:display (when (some? filtered-objects) "none")}}
         [:& layers-tree {:objects objects
                          :key (dm/str (:id page))
-                         :filtered? false
+                         :is-filtered false
                          :parent-size size-parent}]])]))
