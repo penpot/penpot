@@ -25,7 +25,6 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
-   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
@@ -142,10 +141,6 @@
         form
         (fm/use-form :schema schema
                      :initial initial)
-
-        warning-name-change?
-        (not= (get-in @form [:data :name])
-              (:name initial))
 
         on-toggle-tab
         (mf/use-fn
@@ -276,12 +271,7 @@
                            :max-length max-input-length
                            :variant "comfortable"
                            :trim true
-                           :auto-focus true}]
-
-       (when (and warning-name-change? (= action "edit"))
-         [:div {:class (stl/css :warning-name-change-notification-wrapper)}
-          [:> context-notification*
-           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
+                           :auto-focus true}]]
 
       [:div {:class (stl/css :input-row)}
        (case type
