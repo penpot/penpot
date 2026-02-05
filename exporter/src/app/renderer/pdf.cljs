@@ -38,6 +38,18 @@
                   (assoc :path "/render.html")
                   (assoc :query (u/map->query-string params)))))
 
+          (sync-page-size! [dom]
+            (bw/eval! dom
+                      (fn [elem]
+                        (let [width (.getAttribute ^js elem "width")
+                              height (.getAttribute ^js elem "height")
+                              style-node (let [node (.createElement js/document "style")]
+                                           (.appendChild (.-head js/document) node)
+                                           node)]
+                          (set! (.-textContent style-node)
+                                (str "@page { size: " width "px " height "px; margin: 0; }\n"
+                                     "html, body, #app { margin: 0; padding: 0; width: " width "px; height: " height "px; overflow: visible; }"))))))
+
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
                     path (sh/tempfile :prefix "penpot.tmp.pdf." :suffix (mime/get-extension type))]
@@ -45,6 +57,7 @@
               (bw/nav! page uri)
               (p/let [dom (bw/select page (dm/str "#screenshot-" id))]
                 (bw/wait-for dom)
+                (sync-page-size! dom)
                 (bw/screenshot dom {:full-page? true})
                 (bw/sleep page 2000) ; the good old fix with sleep
                 (bw/pdf page {:path path})
