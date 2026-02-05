@@ -459,8 +459,8 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.up();
   }
 
-  async clickLeafLayer(name, clickOptions = {}) {
-    const layer = this.layers.getByText(name).first();
+  async clickLeafLayer(name, clickOptions = {}, index = 0) {
+    const layer = this.layers.getByText(name).nth(index);
     await layer.waitFor();
     await layer.click(clickOptions);
     await this.page.waitForTimeout(500);
@@ -471,10 +471,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.clickLeafLayer(name, clickOptions);
   }
 
-  async clickToggableLayer(name, clickOptions = {}) {
+  async clickToggableLayer(name, clickOptions = {}, index = 0) {
     const layer = this.layers
       .getByTestId("layer-row")
-      .filter({ hasText: name });
+      .filter({ hasText: name })
+      .nth(index);
     const button = layer.getByTestId("toggle-content");
 
     await expect(button).toBeVisible();
