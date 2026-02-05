@@ -72,8 +72,8 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 

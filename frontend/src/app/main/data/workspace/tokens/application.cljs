@@ -706,16 +706,17 @@
   "Removes `attributes` that match `token` for `shape-ids`.
 
   Doesn't update shape attributes."
-  [{:keys [attributes token shape-ids] :as _props}]
+  [{:keys [attributes token-name shape-ids] :as _props}]
   (ptk/reify ::unapply-token
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
+       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token-name %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
+
 
 (defn toggle-token
   [{:keys [token attrs shape-ids expand-with-children]}]
@@ -746,7 +747,7 @@
         (if unapply-tokens?
           (rx/of
            (unapply-token {:attributes (or attrs all-attributes attributes)
-                           :token token
+                           :token-name (:name token)
                            :shape-ids shape-ids}))
           (rx/of
            (cond

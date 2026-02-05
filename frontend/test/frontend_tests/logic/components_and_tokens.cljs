@@ -177,7 +177,7 @@
           ;; ==== Action
           events [(dwta/unapply-token {:shape-ids [(cthi/id :frame1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
-                                       :token (toht/get-token file "test-token-1")})]
+                                       :token-name "test-token-1"})]
 
           step2 (fn [_]
                   (let [events2 [(dwl/sync-file (:id file) (:id file))]]
@@ -289,7 +289,7 @@
           ;; ==== Action
           events [(dwta/unapply-token {:shape-ids [(cthi/id :c-frame1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
-                                       :token (toht/get-token file "test-token-1")})
+                                       :token-name  "test-token-1"})
                   (dwta/apply-token {:shape-ids [(cthi/id :frame1)]
                                      :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
