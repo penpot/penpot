@@ -867,12 +867,12 @@
 
   (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (f/get-content-fonts content)
+  (let [fonts          (f/get-content-fonts content)
         fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts shape-id all-fonts)]
+        all-fonts      (concat fonts fallback-fonts)
+        result         (f/store-fonts all-fonts)]
     (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
+    (f/update-text-layout shape-id)
     result))
 
 (defn set-shape-grow-type
