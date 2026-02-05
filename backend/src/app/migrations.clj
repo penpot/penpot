@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.migrations.clj.migration-0023 :as mg0023]
+   [app.migrations.clj.migration-0145 :as mg0145]
    [app.util.migrations :as mg]
    [integrant.core :as ig]))
 
@@ -459,7 +460,11 @@
     :fn (mg/resource "app/migrations/sql/0143-add-http-session-v2-table.sql")}
 
    {:name "0144-mod-server-error-report-table"
-    :fn (mg/resource "app/migrations/sql/0144-mod-server-error-report-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0144-mod-server-error-report-table.sql")}
+
+   {:name "0145-fix-plugins-uri-on-profile"
+    :fn mg0145/migrate}])
+
 
 (defn apply-migrations!
   [pool name migrations]
