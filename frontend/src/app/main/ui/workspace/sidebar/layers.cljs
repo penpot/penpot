@@ -31,9 +31,7 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import
-   goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
@@ -276,9 +274,11 @@
              (swap! state* update :num-items + 100))))]
 
     (mf/with-effect []
-      (let [keys [(events/listen globals/document EventType.KEYDOWN on-key-down)
-                  (events/listen globals/document EventType.CLICK hide-menu)]]
-        (fn [] (doseq [key keys] (events/unlistenByKey key)))))
+      (let [key1 (events/listen globals/document "keydown" on-key-down)
+            key2 (events/listen globals/document "click" hide-menu)]
+        (fn []
+          (events/unlistenByKey key1)
+          (events/unlistenByKey key2))))
 
     [filtered-objects
      handle-show-more
