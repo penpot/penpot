@@ -31,14 +31,14 @@ jobs:
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
       # --- Publicly release the docker images ---
       - name: Configure ECR credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.DOCKER_USERNAME }}
           aws-secret-access-key: ${{ secrets.DOCKER_PASSWORD }}
@@ -93,7 +93,7 @@ jobs:
 
       # --- Create GitHub release ---
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
