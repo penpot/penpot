@@ -35,12 +35,15 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private highlighted-shapes-ref
+(def ^:private ref:highlighted-shapes
   (l/derived (fn [local]
                (-> local
                    (get :highlighted)
                    (not-empty)))
              refs/workspace-local))
+
+(def ^:private ref:shape-for-rename
+  (l/derived (l/key :shape-for-rename) refs/workspace-local))
 
 (defn- use-selected-shapes
   "A convencience hook wrapper for get selected shapes"
@@ -80,8 +83,10 @@
   {::mf/wrap [mf/memo]}
   [{:keys [objects is-filtered parent-size] :as props}]
   (let [selected    (use-selected-shapes)
-        highlighted (mf/deref highlighted-shapes-ref)
+        highlighted (mf/deref ref:highlighted-shapes)
         root        (get objects uuid/zero)
+
+        rename-id   (mf/deref ref:shape-for-rename)
 
         shapes      (get root :shapes)
         shapes      (mf/with-memo [shapes objects]
@@ -115,6 +120,7 @@
         (if (cfh/frame-shape? obj)
           [:> frame-wrapper*
            {:item obj
+            :rename-id rename-id
             :selected selected
             :highlighted highlighted
             :index (unchecked-get obj "__$__counter")
@@ -126,6 +132,7 @@
             :depth -1}]
           [:> layer-item*
            {:item obj
+            :rename-id rename-id
             :selected selected
             :highlighted highlighted
             :index (unchecked-get obj "__$__counter")

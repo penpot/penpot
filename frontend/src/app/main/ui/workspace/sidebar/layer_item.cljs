@@ -53,7 +53,7 @@
            (apply st/emit! (map dw/highlight-shape enter))))))))
 
 (mf/defc layer-item-inner*
-  [{:keys [item depth parent-size name-ref children ref style
+  [{:keys [item depth parent-size name-ref children ref style rename-id
            ;; Flags
            is-read-only is-highlighted is-selected is-component-tree
            is-filtered is-expanded dnd-over dnd-over-top dnd-over-bot hide-toggle
@@ -143,6 +143,7 @@
            [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]])
 
        [:> layer-name* {:ref name-ref
+                        :rename-id rename-id
                         :shape-id id
                         :shape-name name
                         :is-shape-touched touched?
@@ -161,7 +162,7 @@
                         :variant-error variant-error
                         :component-id (:id component)
                         :is-hidden hidden?}]]
-      (when (not is-read-only)
+      (when (not ^boolean is-read-only)
         [:div {:class (stl/css-case
                        :element-actions true
                        :is-parent has-shapes?
@@ -188,7 +189,7 @@
 
 (mf/defc layer-item*
   {::mf/wrap [mf/memo]}
-  [{:keys [index item selected objects
+  [{:keys [index item selected objects rename-id
            is-sortable is-filtered depth is-component-child
            highlighted style render-children parent-size]
     :or {render-children true}}]
@@ -507,6 +508,7 @@
       :depth depth
       :parent-size parent-size
       :name-ref name-node-ref
+      :rename-id rename-id
       :is-read-only is-read-only
       :is-highlighted is-highlighted
       :is-selected is-selected
@@ -539,6 +541,7 @@
         (for [item (take children-count shapes)]
           [:> layer-item*
            {:item item
+            :rename-id rename-id
             :highlighted highlighted
             :selected selected
             :index (unchecked-get item "__$__counter")
