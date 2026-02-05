@@ -21,7 +21,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
-   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
+   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item*]]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -38,8 +38,7 @@
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
-(mf/defc frame-wrapper
-  {::mf/props :obj}
+(mf/defc frame-wrapper*
   [{:keys [selected] :as props}]
   (let [pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
@@ -60,7 +59,7 @@
         (reset! pending-selected nil)
         #(rx/dispose! set-selected)))
 
-    [:> layer-item props]))
+    [:> layer-item* props]))
 
 (mf/defc layers-tree
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
@@ -76,7 +75,7 @@
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
         (when-let [obj (get objects id)]
           (if (cfh/frame-shape? obj)
-            [:& frame-wrapper
+            [:> frame-wrapper*
              {:item obj
               :selected selected
               :highlighted highlighted
@@ -87,7 +86,7 @@
               :is-filtered is-filtered
               :parent-size parent-size
               :depth -1}]
-            [:& layer-item
+            [:> layer-item*
              {:item obj
               :selected selected
               :highlighted highlighted
@@ -109,7 +108,7 @@
     [:ul {:class (stl/css :element-list)}
      (for [[index id] (d/enumerate (:shapes root))]
        (when-let [obj (get objects id)]
-         [:& layer-item
+         [:> layer-item*
           {:item obj
            :selected selected
            :index index
