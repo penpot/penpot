@@ -107,6 +107,7 @@ export async function Agent() {
 
       console.log('Running plugin code...');
       await page.evaluate((testingPlugin) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (globalThis as any).ɵloadPlugin({
           pluginId: 'TEST',
           name: 'Test',

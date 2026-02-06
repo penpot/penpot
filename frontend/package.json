@@ -52,6 +52,7 @@
     "@penpot/svgo": "penpot/svgo#v3.2",
     "@penpot/text-editor": "workspace:./text-editor",
     "@playwright/test": "1.58.0",
+    "@penpot/ui": "workspace:./packages/ui",
     "@storybook/addon-docs": "10.1.11",
     "@storybook/addon-themes": "10.1.11",
     "@storybook/addon-vitest": "10.1.11",

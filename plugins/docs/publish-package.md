@@ -11,15 +11,6 @@ packages and managing releases.
 Before generating the release, please, check the update the changelog with
 the changes that will be released.
 
-## Problem with pnpm
-
-There is an issue with dependencies and release with pnpm. For it to work
-you need to add the following into your `.npmrc`
-
-```
-link-workspace-packages=true
-```
-
 ## NPM Authentication
 
 You need to generate a temporary access token in the NPM website.
@@ -45,21 +36,28 @@ expected, run the following command:
 
 ```shell
 git checkout main
-pnpm run release
+pnpm run release -- --version patch
 ```
+
+The `--version` option accepts:
+
+- `patch` - Increments the patch version (1.0.0 → 1.0.1)
+- `minor` - Increments the minor version (1.0.0 → 1.1.0)
+- `major` - Increments the major version (1.0.0 → 2.0.0)
+- An exact version like `1.5.0`
 
 ### Generating a Real Release
 
 To create an actual release, disable the dry-run option:
 
 ```shell
-pnpm run release -- --dry-run false
+pnpm run release -- --version patch --dry-run false
 ```
 
 This command will:
 
 - Update the library's `package.json` version
-- Generate a commit
+- Build all packages
 - Publish to NPM with the `latest` tag
 
 Ensure everything is correct before proceeding with the git push. Once
@@ -70,20 +68,17 @@ git commit -m ":arrow_up: Updated plugins release to X.X.X"
 git push
 ```
 
-For detailed information, refer to the [Nx Release
-Documentation](https://nx.dev/recipes/nx-release/get-started-with-nx-release).
-
 ### Creating a Preview Version
 
 To generate a preview version and avoid publishing it as the latest release, use:
 
 ```shell
-pnpm run release -- --dry-run false --latest false --preid next
+pnpm run release -- --version prepatch --dry-run false --latest false --preid next
 ```
 
-For example, if the current version is `0.8.0` and you select the
-`prepatch` option as a version specifier, it will generate the version
-`0.8.1-next.0` and publish it with the next tag on npm.
+For example, if the current version is `0.8.0` and you use `prepatch`,
+it will generate the version `0.8.1-next.0` and publish it with the
+`next` tag on npm.
 
 ### Help
 
@@ -104,4 +99,3 @@ pnpm run release -- --help
 - **CSS Build Script**: `./tools/scripts/build-css.mjs`
 - **Types Build Script**: `./tools/scripts/build-types.mjs`
 - **Release Script**: `./tools/scripts/publish.ts`
-- **Publish config**: `./nx.json`

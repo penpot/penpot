@@ -1,0 +1,490 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "apps",
+  "projects": {
+    "contrast-plugin": {
+      "projectType": "application",
+      "root": "apps/contrast-plugin",
+      "sourceRoot": "apps/contrast-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/contrast-plugin",
+            "index": "apps/contrast-plugin/src/index.html",
+            "browser": "apps/contrast-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/contrast-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/contrast-plugin/src/_headers",
+              "apps/contrast-plugin/src/favicon.ico",
+              "apps/contrast-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/contrast-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": { "buildTarget": "contrast-plugin:build:production" },
+            "development": {
+              "buildTarget": "contrast-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4302
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "icons-plugin": {
+      "projectType": "application",
+      "root": "apps/icons-plugin",
+      "sourceRoot": "apps/icons-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/icons-plugin",
+            "index": "apps/icons-plugin/src/index.html",
+            "browser": "apps/icons-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/icons-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/icons-plugin/src/_headers",
+              "apps/icons-plugin/src/favicon.ico",
+              "apps/icons-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/icons-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": { "buildTarget": "icons-plugin:build:production" },
+            "development": {
+              "buildTarget": "icons-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4303
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "lorem-ipsum-plugin": {
+      "projectType": "application",
+      "root": "apps/lorem-ipsum-plugin",
+      "sourceRoot": "apps/lorem-ipsum-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/lorem-ipsum-plugin",
+            "index": "apps/lorem-ipsum-plugin/src/index.html",
+            "browser": "apps/lorem-ipsum-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/lorem-ipsum-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/lorem-ipsum-plugin/src/_headers",
+              "apps/lorem-ipsum-plugin/src/favicon.ico",
+              "apps/lorem-ipsum-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/lorem-ipsum-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "lorem-ipsum-plugin:build:production"
+            },
+            "development": {
+              "buildTarget": "lorem-ipsum-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4304
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "table-plugin": {
+      "projectType": "application",
+      "root": "apps/table-plugin",
+      "sourceRoot": "apps/table-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/table-plugin",
+            "index": "apps/table-plugin/src/index.html",
+            "browser": "apps/table-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/table-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/table-plugin/src/_headers",
+              "apps/table-plugin/src/favicon.ico",
+              "apps/table-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/table-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": { "buildTarget": "table-plugin:build:production" },
+            "development": {
+              "buildTarget": "table-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4306
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "rename-layers-plugin": {
+      "projectType": "application",
+      "root": "apps/rename-layers-plugin",
+      "sourceRoot": "apps/rename-layers-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/rename-layers-plugin",
+            "index": "apps/rename-layers-plugin/src/index.html",
+            "browser": "apps/rename-layers-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/rename-layers-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/rename-layers-plugin/src/_headers",
+              "apps/rename-layers-plugin/src/favicon.ico",
+              "apps/rename-layers-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/rename-layers-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "rename-layers-plugin:build:production"
+            },
+            "development": {
+              "buildTarget": "rename-layers-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4307
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "colors-to-tokens-plugin": {
+      "projectType": "application",
+      "root": "apps/colors-to-tokens-plugin",
+      "sourceRoot": "apps/colors-to-tokens-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/colors-to-tokens-plugin",
+            "index": "apps/colors-to-tokens-plugin/src/index.html",
+            "browser": "apps/colors-to-tokens-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/colors-to-tokens-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/colors-to-tokens-plugin/src/_headers",
+              "apps/colors-to-tokens-plugin/src/favicon.ico",
+              "apps/colors-to-tokens-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/colors-to-tokens-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "colors-to-tokens-plugin:build:production"
+            },
+            "development": {
+              "buildTarget": "colors-to-tokens-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4308
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "poc-state-plugin": {
+      "projectType": "application",
+      "root": "apps/poc-state-plugin",
+      "sourceRoot": "apps/poc-state-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/poc-state-plugin",
+            "index": "apps/poc-state-plugin/src/index.html",
+            "browser": "apps/poc-state-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/poc-state-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/poc-state-plugin/src/favicon.ico",
+              "apps/poc-state-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/poc-state-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "poc-state-plugin:build:production"
+            },
+            "development": {
+              "buildTarget": "poc-state-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4309
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    }
+  }
+}

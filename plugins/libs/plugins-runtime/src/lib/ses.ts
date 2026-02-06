@@ -7,10 +7,10 @@ export const ses = {
       hardenIntrinsics();
     }
   },
-  createCompartment: (globals?: Object) => {
+  createCompartment: (globals?: object) => {
     return new Compartment(globals);
   },
-  harden: (obj: Object) => {
+  harden: (obj: object) => {
     return harden(obj);
   },
   safeReturn<T>(value: T): T {

@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": []
+    "types": [],
+    "moduleResolution": "bundler"
   },
   "files": ["src/plugin.ts"],
   "include": ["../../libs/plugin-types/index.d.ts"]

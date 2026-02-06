@@ -21,6 +21,7 @@ repairIntrinsics({
   unhandledRejectionTrapping: 'none',
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const globalThisAny$ = globalThis as any;
 
 export const initPluginsRuntime = (contextBuilder: (id: string) => Context) => {

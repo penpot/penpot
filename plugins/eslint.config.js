@@ -1,119 +1,66 @@
-import baseConfig, { compat } from './eslint.base.config.js';
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 import globals from 'globals';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
-  ...baseConfig,
+  js.configs.recommended,
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: config.files || ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+  })),
+  eslintConfigPrettier,
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    rules: {
-      '@nx/enforce-module-boundaries': [
-        'error',
-        {
-          enforceBuildableLibDependency: true,
-          allow: [],
-          depConstraints: [
-            {
-              sourceTag: 'type:plugin',
-              onlyDependOnLibsWithTags: [
-                'type:util',
-                'type:ui',
-                'type:feature',
-              ],
-            },
-            {
-              sourceTag: 'type:app',
-              onlyDependOnLibsWithTags: [
-                'type:util',
-                'type:ui',
-                'type:feature',
-              ],
-            },
-            {
-              sourceTag: 'type:feature',
-              onlyDependOnLibsWithTags: [
-                'type:feature',
-                'type:ui',
-                'type:util',
-              ],
-            },
-            {
-              sourceTag: 'type:ui',
-              onlyDependOnLibsWithTags: ['type:ui', 'type:util'],
-            },
-            {
-              sourceTag: 'type:util',
-              onlyDependOnLibsWithTags: ['type:util'],
-            },
-            {
-              sourceTag: 'type:e2e',
-              onlyDependOnLibsWithTags: ['type:ui', 'type:util'],
-            },
-          ],
-        },
-      ],
-    },
     languageOptions: {
       globals: {
+        ...globals.browser,
+        ...globals.node,
         penpot: 'readonly',
         repairIntrinsics: 'readonly',
         hardenIntrinsics: 'readonly',
         Compartment: 'readonly',
         harden: 'readonly',
       },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
+      'no-multiple-empty-lines': ['error', { max: 1 }],
+      quotes: ['error', 'single', { avoidEscape: true }],
     },
   },
-  ...compat
-    .config({
-      extends: [
-        'plugin:@typescript-eslint/recommended',
-        'plugin:@typescript-eslint/recommended-requiring-type-checking',
-        'plugin:deprecation/recommended',
-        'prettier',
-      ],
-    })
-    .map((config) => ({
-      ...config,
-      files: ['**/*.ts', '**/*.tsx'],
-      rules: {
-        '@typescript-eslint/no-unused-vars': ['error'],
-        'no-multiple-empty-lines': [2, { max: 1 }],
-        quotes: ['error', 'single', { avoidEscape: true }],
-        'no-unused-vars': 'off',
-        '@typescript-eslint/no-unused-vars': ['error'],
+  {
+    files: ['**/*.spec.ts', '**/*.test.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
       },
-    })),
-  ...compat
-    .config({
-      extends: [
-        'plugin:@typescript-eslint/recommended',
-        'plugin:@typescript-eslint/recommended-requiring-type-checking',
-        'plugin:deprecation/recommended',
-        'prettier',
-      ],
-    })
-    .map((config) => ({
-      ...config,
-      files: ['**/*.spec.ts'],
-      rules: {
-        '@typescript-eslint/no-unused-vars': ['error'],
-        'no-multiple-empty-lines': [2, { max: 1 }],
-        quotes: ['error', 'single', { avoidEscape: true }],
-        '@typescript-eslint/no-unsafe-member-access': 'off',
-        '@typescript-eslint/no-unsafe-call': 'off',
-        '@typescript-eslint/no-unsafe-assignment': 'off',
-        '@typescript-eslint/no-explicit-any': 'off',
-        '@typescript-eslint/no-unsafe-argument': 'off',
-        '@typescript-eslint/no-unsafe-return': 'off',
-        '@ngrx/prefix-selectors-with-select': 'off',
-      },
-      languageOptions: {
-        globals: {
-          ...globals.jest,
-        },
-      },
-    })),
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
   {
     files: ['**/*.js', '**/*.jsx'],
     rules: {},
+  },
+  {
+    ignores: [
+      'node_modules',
+      'dist',
+      '**/dist/**',
+      '**/.vite/**',
+      'eslint.config.js',
+      'vite.config.{js,ts,mjs,mts}',
+      '**/vite.config.*.timestamp*',
+      '**/vitest.config.*.timestamp*',
+    ],
   },
 ];

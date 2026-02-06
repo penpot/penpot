@@ -1,0 +1,13 @@
+{
+  "name": "poc-state-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "ng build poc-state-plugin",
+    "build:dev": "ng build poc-state-plugin --configuration development",
+    "serve": "ng serve poc-state-plugin",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
+}

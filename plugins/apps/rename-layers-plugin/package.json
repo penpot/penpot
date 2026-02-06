@@ -1,0 +1,13 @@
+{
+  "name": "rename-layers-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "ng build rename-layers-plugin",
+    "build:dev": "ng build rename-layers-plugin --configuration development",
+    "serve": "ng serve rename-layers-plugin",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
+}
