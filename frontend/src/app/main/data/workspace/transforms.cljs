@@ -621,7 +621,7 @@
       (->> stream
            (rx/filter (ptk/type? ::dws/duplicate-selected))
            (rx/take 1)
-           (rx/map #(start-move from-position))))))
+           (rx/map #(start-move from-position nil true))))))
 
 (defn get-drop-cell
   [target-frame objects position]
@@ -641,8 +641,9 @@
         (dom/set-property! node "transform" (gmt/translate-matrix move-vector))))))
 
 (defn start-move
-  ([from-position] (start-move from-position nil))
-  ([from-position ids]
+  ([from-position] (start-move from-position nil false))
+  ([from-position ids] (start-move from-position ids false))
+  ([from-position ids from-duplicate?]
    (ptk/reify ::start-move
      ptk/UpdateEvent
      (update [_ state]
@@ -750,38 +751,47 @@
                       (rx/share))]
 
              (if (features/active-feature? state "render-wasm/v1")
-               (rx/merge
-                (->> modifiers-stream
-                     (rx/map
-                      (fn [[modifiers snap-ignore-axis]]
-                        (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
+               (let [duplicate-stopper
+                     (->> ms/mouse-position-alt
+                          (rx/mapcat
+                           (fn [alt?]
+                             (if (and alt? (not from-duplicate?))
+                               (rx/of true)
+                               (rx/empty)))))]
+                 (rx/merge
+                  (->> modifiers-stream
+                       (rx/take-until duplicate-stopper)
+                       (rx/map
+                        (fn [[modifiers snap-ignore-axis]]
+                          (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
 
-                (->> move-stream
-                     (rx/with-latest-from ms/mouse-position-alt)
-                     (rx/filter (fn [[_ alt?]] alt?))
-                     (rx/take 1)
-                     (rx/mapcat
-                      (fn [[_ alt?]]
-                        (if (and (not duplicate-move-started?) alt?)
-                          (rx/of (start-move-duplicate from-position)
-                                 (dws/duplicate-selected false true))
-                          (rx/empty)))))
+                  (->> move-stream
+                       (rx/with-latest-from ms/mouse-position-alt)
+                       (rx/filter (fn [[_ alt?]] alt?))
+                       (rx/take 1)
+                       (rx/mapcat
+                        (fn [[_ alt?]]
+                          (if (and (not from-duplicate?) alt?)
+                            (rx/of (start-move-duplicate from-position)
+                                   (dws/duplicate-selected false true))
+                            (rx/empty)))))
 
-                ;; Last event will write the modifiers creating the changes
-                (->> move-stream
-                     (rx/last)
-                     (rx/with-latest-from modifiers-stream)
-                     (rx/mapcat
-                      (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
-                        (let [undo-id (js/Symbol)]
-                          (rx/of
-                           (dwu/start-undo-transaction undo-id)
-                           (dwm/apply-wasm-modifiers modifiers
-                                                     :snap-ignore-axis snap-ignore-axis
-                                                     :undo-transation? false)
-                           (move-shapes-to-frame ids target-frame drop-index drop-cell)
-                           (finish-transform)
-                           (dwu/commit-undo-transaction undo-id)))))))
+                  ;; Last event will write the modifiers creating the changes
+                  (->> move-stream
+                       (rx/last)
+                       (rx/take-until duplicate-stopper)
+                       (rx/with-latest-from modifiers-stream)
+                       (rx/mapcat
+                        (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
+                          (let [undo-id (js/Symbol)]
+                            (rx/of
+                             (dwu/start-undo-transaction undo-id)
+                             (dwm/apply-wasm-modifiers modifiers
+                                                       :snap-ignore-axis snap-ignore-axis
+                                                       :undo-transation? false)
+                             (move-shapes-to-frame ids target-frame drop-index drop-cell)
+                             (finish-transform)
+                             (dwu/commit-undo-transaction undo-id))))))))
 
                (rx/merge
                 (->> modifiers-stream
