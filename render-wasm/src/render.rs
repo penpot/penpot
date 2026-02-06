@@ -1240,8 +1240,6 @@ impl RenderState {
         if self.render_in_progress {
             if tree.len() != 0 {
                 self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
-            } else {
-                println!("Empty tree");
             }
             self.flush_and_submit();
 
@@ -1264,8 +1262,6 @@ impl RenderState {
     ) -> Result<(), String> {
         if tree.len() != 0 {
             self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
-        } else {
-            println!("Empty tree");
         }
         self.flush_and_submit();
 
