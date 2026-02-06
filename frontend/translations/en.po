@@ -8412,6 +8412,10 @@ msgstr "Invalid value: % is not allowed."
 msgid "workspace.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
 
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:16
+msgid "workspace.tokens.rename-group"
+msgstr "Rename tokens group"
+
 #: src/app/main/ui/workspace/sidebar.cljs:154, src/app/main/ui/workspace/sidebar.cljs:161
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
