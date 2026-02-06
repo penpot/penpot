@@ -11,12 +11,14 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.render-wasm.api :as wasm.api]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -39,11 +41,16 @@
 (defn- check-layer-menu-props
   [old-props new-props]
   (let [old-values (unchecked-get old-props "values")
-        new-values (unchecked-get new-props "values")]
+        new-values (unchecked-get new-props "values")
+
+        old-applied-tokens (unchecked-get old-props "appliedTokens")
+        new-applied-tokens (unchecked-get new-props "appliedTokens")]
     (and (identical? (unchecked-get old-props "class")
                      (unchecked-get new-props "class"))
          (identical? (unchecked-get old-props "ids")
                      (unchecked-get new-props "ids"))
+         (identical? old-applied-tokens
+                     new-applied-tokens)
          (identical? (get old-values :opacity)
                      (get new-values :opacity))
          (identical? (get old-values :blend-mode)
@@ -55,9 +62,20 @@
 
 (mf/defc layer-menu*
   {::mf/wrap [#(mf/memo' % check-layer-menu-props)]}
-  [{:keys [ids values]}]
-  (let [hidden?             (get values :hidden)
+  [{:keys [ids values applied-tokens]}]
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        hidden?             (get values :hidden)
         blocked?            (get values :blocked)
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         current-blend-mode  (or (get values :blend-mode) :normal)
         current-opacity     (opacity->string (:opacity values))
@@ -118,6 +136,17 @@
            (let [value (/ value 100)]
              (on-change ids :opacity value))))
 
+        on-opacity-change
+        (mf/use-fn
+         (mf/deps on-change handle-opacity-change)
+         (fn [value]
+           (if (or (string? value) (int? value))
+             (handle-opacity-change value)
+             (do
+               (st/emit! (dwta/toggle-token {:token (first value)
+                                             :attrs #{:opacity}
+                                             :shape-ids ids}))))))
+
         handle-set-hidden
         (mf/use-fn
          (mf/deps ids)
@@ -176,8 +205,9 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    [:div {:class (stl/css-case :element-set-content true
-                                :hidden hidden?)}
+    [:section {:class (stl/css-case :element-set-content true
+                                    :hidden hidden?)
+               :aria-label "layer-menu-section"}
      [:div {:class (stl/css :select)}
       [:& select
        {:default-value selected-blend-mode
@@ -187,17 +217,36 @@
         :class (stl/css-case :hidden-select hidden?)
         :on-pointer-enter-option handle-blend-mode-enter
         :on-pointer-leave-option handle-blend-mode-leave}]]
-     [:div {:class (stl/css :input)
-            :title (tr "workspace.options.opacity")}
-      [:span {:class (stl/css :icon)} "%"]
-      [:> numeric-input*
-       {:value current-opacity
-        :placeholder "--"
-        :on-change handle-opacity-change
-        :min 0
-        :max 100
-        :className (stl/css :numeric-input)}]]
 
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-opacity-change
+         :on-detach on-detach-token
+         :icon i/percentage
+         :min 0
+         :max 100
+         :attr :opacity
+         :property (tr "workspace.options.opacity")
+         :applied-token (get applied-tokens :opacity)
+         :placeholder (if (or (= :multiple (get applied-tokens :opacity))
+                              (= :multiple (or (get values :opacity) 1)))
+                        (tr "settings.multiple")
+                        "--")
+         :align :right
+         :class (stl/css :numeric-input-wrapper)
+         :value (* 100
+                   (or (get values :opacity) 1))}]
+
+       [:div {:class (stl/css :input)
+              :title (tr "workspace.options.opacity")}
+        [:span {:class (stl/css :icon)} "%"]
+        [:> deprecated-input/numeric-input*
+         {:value current-opacity
+          :placeholder "--"
+          :on-change handle-opacity-change
+          :min 0
+          :max 100
+          :className (stl/css :numeric-input)}]])
 
      [:div {:class (stl/css :actions)}
       (cond

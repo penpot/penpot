@@ -69,17 +69,6 @@ const determineArgs = async () => {
     },
   );
 
-  await releaseChangelog({
-    dryRun: args.dryRun,
-    versionData: result.projectsVersionData,
-    version: result.workspaceVersion,
-    gitCommitMessage: `chore(release): publish ${result.workspaceVersion} [skip ci]`,
-    gitCommit: true,
-    gitTag: true,
-    verbose: args.verbose,
-    firstRelease: args.firstRelease,
-  });
-
   if (!args.skipPublish) {
     await releasePublish({
       dryRun: args.dryRun,

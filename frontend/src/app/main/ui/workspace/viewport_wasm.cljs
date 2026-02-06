@@ -312,6 +312,11 @@
                                          (js/console.error "Error initializing canvas context:" e)
                                          false))]
                            (reset! canvas-init? init?)
+                           (when init?
+                             ;; Restore previous canvas pixels immediately after context initialization
+                             ;; This happens before initialize-viewport is called
+                             (wasm.api/apply-canvas-blur)
+                             (wasm.api/restore-previous-canvas-pixels))
                            (when-not init?
                              (js/alert "WebGL not supported")
                              (st/emit! (dcm/go-to-dashboard-recent))))))))
@@ -340,6 +345,7 @@
 
     (mf/with-effect [@canvas-init? zoom vbox background]
       (when (and @canvas-init? (not @initialized?))
+        (wasm.api/clear-canvas-pixels)
         (wasm.api/initialize-viewport base-objects zoom vbox background)
         (reset! initialized? true)))
 
@@ -418,6 +424,7 @@
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
        :key (str "viewport" page-id)
+       :id "viewport-controls"
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
@@ -467,7 +474,7 @@
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
-              [:g.ghost-outline
+              [:g.ghost-outline.blurrable
                [:& outline/shape-outlines
                 {:objects base-objects
                  :selected selected
@@ -698,8 +705,8 @@
           [:& grid-layout/editor
            {:zoom zoom
             :objects objects-modified
-            :shape (or (get base-objects edition)
-                       (get base-objects @hover-top-frame-id))
+            :shape (or (get objects-modified edition)
+                       (get objects-modified @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}

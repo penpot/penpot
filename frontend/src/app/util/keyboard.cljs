@@ -7,15 +7,16 @@
 (ns app.util.keyboard
   (:require
    [app.config :as cfg]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]))
 
 (defrecord KeyboardEvent [type key shift ctrl alt meta mod editing native-event]
   Object
   (preventDefault [_]
-    (.preventDefault native-event))
+    (dom/prevent-default native-event))
 
   (stopPropagation [_]
-    (.stopPropagation native-event)))
+    (dom/stop-propagation native-event)))
 
 (defn keyboard-event?
   [o]

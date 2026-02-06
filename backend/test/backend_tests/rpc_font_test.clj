@@ -12,7 +12,6 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -147,7 +146,7 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
         (t/is (= 2 (:processed res))))
 
@@ -208,7 +207,7 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
         (t/is (= 1 (:processed res))))
 
@@ -268,7 +267,7 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
         (t/is (= 1 (:processed res))))
 

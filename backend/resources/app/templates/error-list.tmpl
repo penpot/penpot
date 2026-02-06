@@ -5,23 +5,25 @@ penpot - error list
 {% endblock %}
 
 {% block content %}
-<nav>
-  <div class="title">
-    <h1>Error reports (last 200)
-      <a href="/dbg">[GO BACK]</a>
-    </h1>
-  </div>
-</nav>
-<main class="horizontal-list">
-  <ul>
-    {% for item in items %}
-      <li>
-        <a class="date" href="/dbg/error/{{item.id}}">{{item.created-at}}</a>
-        <a class="hint" href="/dbg/error/{{item.id}}">
-          <span class="title">{{item.hint|abbreviate:150}}</span>
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
-</main>
+  <nav>
+    <div class="title">
+      <a href="/dbg"> [BACK]</a>
+      <h1>Error reports (last 300)</h1>
+
+      <a class="{% if version = 3 %}strong{% endif %}" href="?version=3">[BACKEND ERRORS]</a>
+      <a class="{% if version = 4 %}strong{% endif %}" href="?version=4">[FRONTEND ERRORS]</a>
+    </div>
+  </nav>
+  <main class="horizontal-list">
+    <ul>
+      {% for item in items %}
+        <li>
+          <a class="date" href="/dbg/error/{{item.id}}">{{item.created-at}}</a>
+          <a class="hint" href="/dbg/error/{{item.id}}">
+            <span class="title">{{item.hint|abbreviate:150}}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </main>
 {% endblock %}

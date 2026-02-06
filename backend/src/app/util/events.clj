@@ -8,7 +8,7 @@
   "A generic asynchronous events notifications subsystem; used mainly
   for mark event points in functions and be able to attach listeners
   to them. Mainly used in http.sse for progress reporting."
-  (:refer-clojure :exclude [tap run!])
+  (:refer-clojure :exclude [run!])
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]

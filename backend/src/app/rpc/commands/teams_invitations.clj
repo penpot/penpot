@@ -248,11 +248,11 @@
 
         invitations       (into #{}
                                 (comp
-                                ;; We don't re-send invitations to
-                                ;; already existing members
+                                 ;; We don't re-send invitations to
+                                 ;; already existing members
                                  (remove #(contains? team-members (:email %)))
-                                ;; We don't send invitations to
-                                ;; join-requested members
+                                 ;; We don't send invitations to
+                                 ;; join-requested members
                                  (remove #(contains? join-requests (:email %)))
                                  (map (fn [{:keys [email role]}]
                                         (create-invitation cfg

@@ -18,7 +18,7 @@ fn draw_image_fill(
     }
 
     let size = image.unwrap().dimensions();
-    let canvas = render_state.surfaces.canvas(surface_id);
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
 

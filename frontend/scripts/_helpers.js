@@ -27,9 +27,11 @@ export function startWorker() {
   });
 }
 
-export const isDebug = process.env.NODE_ENV !== "production";
-export const CURRENT_VERSION = process.env.CURRENT_VERSION || "develop";
-export const BUILD_DATE = process.env.BUILD_DATE || "" + new Date();
+export const IS_DEBUG = process.env.NODE_ENV !== "production";
+export const BUILD_DATE = process.env.BUILD_DATE || new Date().toString();
+export const BUILD_TS = process.env.BUILD_TS || Date.now();
+export const VERSION = process.env.VERSION || "develop";
+export const VERSION_TAG = process.env.VERSION_TAG || VERSION;
 
 async function findFiles(basePath, predicate, options = {}) {
   predicate =
@@ -49,7 +51,8 @@ async function findFiles(basePath, predicate, options = {}) {
 function syncDirs(originPath, destPath) {
   const command = `rsync -ar --delete ${originPath} ${destPath}`;
 
-  return new Promise((resolve, reject) => {proc.exec(command, (cause, stdout) => {
+  return new Promise((resolve, reject) => {
+    proc.exec(command, (cause, stdout) => {
       if (cause) {
         reject(cause);
       } else {
@@ -172,6 +175,7 @@ export async function watch(baseDir, predicate, callback) {
   const watcher = new Watcher(baseDir, {
     persistent: true,
     recursive: true,
+    debounce: 500,
   });
 
   watcher.on("change", (path) => {
@@ -179,6 +183,15 @@ export async function watch(baseDir, predicate, callback) {
       callback(path);
     }
   });
+
+  watcher.on("error", (cause) => {
+    console.log("WATCHER ERROR", cause);
+  });
+}
+
+export async function ensureDirectories() {
+  await fs.mkdir("./resources/public/js/worker/", { recursive: true });
+  await fs.mkdir("./resources/public/css/", { recursive: true });
 }
 
 async function readManifestFile(resource) {
@@ -193,27 +206,30 @@ async function generateManifest() {
     render_main: "./js/render.js",
     rasterizer_main: "./js/rasterizer.js",
 
-    config: "./js/config.js?version=" + CURRENT_VERSION,
-    polyfills: "./js/polyfills.js?version=" + CURRENT_VERSION,
-    libs: "./js/libs.js?version=" + CURRENT_VERSION,
-    worker_main: "./js/worker/main.js?version=" + CURRENT_VERSION,
-    default_translations: "./js/translation.en.js?version=" + CURRENT_VERSION,
+    config: "./js/config.js?version=" + VERSION_TAG,
+    polyfills: "./js/polyfills.js?version=" + VERSION_TAG,
+    libs: "./js/libs.js?version=" + VERSION_TAG,
+    worker_main: "./js/worker/main.js?version=" + VERSION_TAG,
+    default_translations: "./js/translation.en.js?version=" + VERSION_TAG,
 
     importmap: JSON.stringify({
-      "imports": {
-        "./js/shared.js": "./js/shared.js?version=" + CURRENT_VERSION,
-        "./js/main.js": "./js/main.js?version=" + CURRENT_VERSION,
-        "./js/render.js": "./js/render.js?version=" + CURRENT_VERSION,
-        "./js/render-wasm.js": "./js/render-wasm.js?version=" + CURRENT_VERSION,
-        "./js/rasterizer.js": "./js/rasterizer.js?version=" + CURRENT_VERSION,
-        "./js/main-dashboard.js": "./js/main-dashboard.js?version=" + CURRENT_VERSION,
-        "./js/main-auth.js": "./js/main-auth.js?version=" + CURRENT_VERSION,
-        "./js/main-viewer.js": "./js/main-viewer.js?version=" + CURRENT_VERSION,
-        "./js/main-settings.js": "./js/main-settings.js?version=" + CURRENT_VERSION,
-        "./js/main-workspace.js": "./js/main-workspace.js?version=" + CURRENT_VERSION,
-        "./js/util-highlight.js": "./js/util-highlight.js?version=" + CURRENT_VERSION
-      }
-    })
+      imports: {
+        "./js/shared.js": "./js/shared.js?version=" + VERSION_TAG,
+        "./js/main.js": "./js/main.js?version=" + VERSION_TAG,
+        "./js/render.js": "./js/render.js?version=" + VERSION_TAG,
+        "./js/render-wasm.js": "./js/render-wasm.js?version=" + VERSION_TAG,
+        "./js/rasterizer.js": "./js/rasterizer.js?version=" + VERSION_TAG,
+        "./js/main-dashboard.js":
+          "./js/main-dashboard.js?version=" + VERSION_TAG,
+        "./js/main-auth.js": "./js/main-auth.js?version=" + VERSION_TAG,
+        "./js/main-viewer.js": "./js/main-viewer.js?version=" + VERSION_TAG,
+        "./js/main-settings.js": "./js/main-settings.js?version=" + VERSION_TAG,
+        "./js/main-workspace.js":
+          "./js/main-workspace.js?version=" + VERSION_TAG,
+        "./js/util-highlight.js":
+          "./js/util-highlight.js?version=" + VERSION_TAG,
+      },
+    }),
   };
 
   return index;
@@ -222,11 +238,12 @@ async function generateManifest() {
 async function renderTemplate(path, context = {}, partials = {}) {
   const content = await fs.readFile(path, { encoding: "utf-8" });
 
-  const ts = Math.floor(new Date());
-
   context = Object.assign({}, context, {
-    ts: ts,
-    isDebug,
+    isDebug: IS_DEBUG,
+    version: VERSION,
+    version_tag: VERSION_TAG,
+    build_date: BUILD_DATE,
+    build_ts: BUILD_TS,
   });
 
   return mustache.render(content, context, partials);
@@ -257,6 +274,9 @@ const markedOptions = {
 marked.use(markedOptions);
 
 export async function compileTranslations() {
+  const outputDir = "resources/public/js/";
+  await fs.mkdir(outputDir, { recursive: true });
+
   const langs = [
     "ar",
     "ca",
@@ -338,7 +358,6 @@ export async function compileTranslations() {
     }
 
     const esm = `export default ${JSON.stringify(result, null, 0)};\n`;
-    const outputDir = "resources/public/js/";
     const outputFile = ph.join(outputDir, "translation." + lang + ".js");
     await fs.writeFile(outputFile, esm);
   }
@@ -390,7 +409,6 @@ async function generateSvgSprites() {
 }
 
 async function generateTemplates() {
-  const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
   const manifest = await generateManifest();
@@ -416,9 +434,6 @@ async function generateTemplates() {
 
   const context = {
     manifest: manifest,
-    version: CURRENT_VERSION,
-    build_date: BUILD_DATE,
-    isDebug,
   };
 
   content = await renderTemplate(
@@ -450,11 +465,17 @@ async function generateTemplates() {
   );
   await fs.writeFile("./.storybook/preview-head.html", content);
 
-  content = await renderTemplate("resources/templates/render.mustache", context);
+  content = await renderTemplate(
+    "resources/templates/render.mustache",
+    context,
+  );
 
   await fs.writeFile("./resources/public/render.html", content);
 
-  content = await renderTemplate("resources/templates/rasterizer.mustache", context);
+  content = await renderTemplate(
+    "resources/templates/rasterizer.mustache",
+    context,
+  );
 
   await fs.writeFile("./resources/public/rasterizer.html", content);
 }
@@ -487,7 +508,7 @@ export async function compileStyles() {
   await fs.mkdir("./resources/public/css", { recursive: true });
   await fs.writeFile("./resources/public/css/main.css", result);
 
-  if (isDebug) {
+  if (IS_DEBUG) {
     let debugCSS = await compileSassDebug(worker);
     await fs.writeFile("./resources/public/css/debug.css", debugCSS);
   }
@@ -500,17 +521,43 @@ export async function compileStyles() {
 export async function compileSvgSprites() {
   const start = process.hrtime();
   log.info("init: compile svgsprite");
-  await generateSvgSprites();
+  let error = false;
+
+  try {
+    await generateSvgSprites();
+  } catch (cause) {
+    error = cause;
+  }
+
   const end = process.hrtime(start);
-  log.info("done: compile svgsprite", `(${ppt(end)})`);
+
+  if (error) {
+    log.error("error: compile svgsprite", `(${ppt(end)})`);
+    console.error(error);
+  } else {
+    log.info("done: compile svgsprite", `(${ppt(end)})`);
+  }
 }
 
 export async function compileTemplates() {
   const start = process.hrtime();
+  let error = false;
   log.info("init: compile templates");
-  await generateTemplates();
+
+  try {
+    await generateTemplates();
+  } catch (cause) {
+    error = cause;
+  }
+
   const end = process.hrtime(start);
-  log.info("done: compile templates", `(${ppt(end)})`);
+
+  if (error) {
+    log.error("error: compile templates", `(${ppt(end)})`);
+    console.error(error);
+  } else {
+    log.info("done: compile templates", `(${ppt(end)})`);
+  }
 }
 
 export async function compilePolyfills() {

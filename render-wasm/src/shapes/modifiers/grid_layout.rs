@@ -765,9 +765,12 @@ pub fn reflow_grid_layout(
 
         let mut transform = Matrix::default();
 
+        let mut force_reflow = false;
         if (new_width - child_bounds.width()).abs() > MIN_SIZE
             || (new_height - child_bounds.height()).abs() > MIN_SIZE
         {
+            // When the child is a fill it needs to be reflown
+            force_reflow = true;
             transform.post_concat(&math::resize_matrix(
                 &layout_bounds,
                 &child_bounds,
@@ -793,7 +796,7 @@ pub fn reflow_grid_layout(
 
         result.push_back(Modifier::transform_propagate(child.id, transform));
         if child.has_layout() {
-            result.push_back(Modifier::reflow(child.id));
+            result.push_back(Modifier::reflow(child.id, force_reflow));
         }
     }
 

@@ -28,14 +28,12 @@ async function compileFile(path) {
         ],
         sourceMap: false,
       });
-      // console.dir(result);
       resolve({
         inputPath: path,
         outputPath: dest,
         css: result.css,
       });
     } catch (cause) {
-      console.error(cause);
       reject(cause);
     }
   });

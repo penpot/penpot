@@ -20,7 +20,7 @@ Import the CSS file into your project:
 
 For detailed examples and to see how to use the styles and components, visit the documentation at:
 
-[Penpot Plugin Styles Documentation](https://penpot-plugins-styles.pages.dev)
+[Penpot Plugin Styles Documentation](https://styles-doc.plugins.penpot.app)
 
 #### Icons
 

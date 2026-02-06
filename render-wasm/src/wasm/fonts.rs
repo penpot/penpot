@@ -31,21 +31,17 @@ impl From<RawFontStyle> for FontStyle {
 
 #[no_mangle]
 pub extern "C" fn store_font(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
     weight: u32,
     style: u8,
     is_emoji: bool,
     is_fallback: bool,
 ) {
     with_state_mut!(state, {
-        let id = uuid_from_u32_quartet(a2, b2, c2, d2);
+        let id = uuid_from_u32_quartet(a, b, c, d);
         let font_bytes = mem::bytes();
         let font_style = RawFontStyle::from(style);
 
@@ -57,9 +53,6 @@ pub extern "C" fn store_font(
                 .add(family, &font_bytes, is_emoji, is_fallback);
 
         mem::free_bytes();
-
-        let shape_id = uuid_from_u32_quartet(a1, b1, c1, d1);
-        state.touch_shape(shape_id);
     });
 }
 

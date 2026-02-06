@@ -10,15 +10,25 @@ import Components from "@target/components";
 const { RadioButtons } = Components;
 
 const options = [
-  {id: "left", label: "Left", value: "left" },
-  {id: "center", label: "Center", value: "center" },
-  {id: "right", label: "Right", value: "right" },
+  { id: "left", label: "Left", value: "left" },
+  { id: "center", label: "Center", value: "center" },
+  { id: "right", label: "Right", value: "right" },
 ];
 
 const optionsIcon = [
-  {id: "left", label: "Left align", value: "left", icon: "text-align-left" },
-  {id: "center", label: "Center align", value: "center", icon: "text-align-center" },
-  {id: "right", label: "Right align", value: "right", icon: "text-align-right" },
+  { id: "left", label: "Left align", value: "left", icon: "text-align-left" },
+  {
+    id: "center",
+    label: "Center align",
+    value: "center",
+    icon: "text-align-center",
+  },
+  {
+    id: "right",
+    label: "Right align",
+    value: "right",
+    icon: "text-align-right",
+  },
 ];
 
 export default {

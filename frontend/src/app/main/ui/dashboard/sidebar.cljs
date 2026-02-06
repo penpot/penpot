@@ -35,6 +35,7 @@
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
@@ -280,8 +281,8 @@
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
-  [{:keys [team profile teams] :rest props}]
-  (let [on-create-click
+  [{:keys [team profile teams show-default-team allow-create-teams allow-create-org] :rest props}]
+  (let [on-create-team-click
         (mf/use-fn #(st/emit! (modal/show :team-form {})))
 
         on-team-click
@@ -290,18 +291,27 @@
            (let [team-id (-> (dom/get-current-target event)
                              (dom/get-data "value")
                              (uuid/parse))]
-             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))]
+             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
+
+        on-create-org-click
+        (mf/use-fn
+         (fn []
+           (if (:nitrate-licence profile)
+             ;; TODO update when org creation route is ready
+             (dom/open-new-window "/control-center/org/create")
+             (st/emit! (modal/show :nitrate-form {})))))]
 
     [:> dropdown-menu* props
 
-     [:> dropdown-menu-item* {:on-click    on-team-click
-                              :data-value  (:default-team-id profile)
-                              :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
+     (when show-default-team
+       [:> dropdown-menu-item* {:on-click    on-team-click
+                                :data-value  (:default-team-id profile)
+                                :class       (stl/css :team-dropdown-item)}
+        [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
 
-      [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
-      (when (= (:default-team-id profile) (:id team))
-        tick-icon)]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
+        (when (= (:default-team-id profile) (:id team))
+          tick-icon)])
 
      (for [team-item (remove :is-default (vals teams))]
        [:> dropdown-menu-item* {:on-click    on-team-click
@@ -322,11 +332,19 @@
         (when (= (:id team-item) (:id team))
           tick-icon)])
 
-     [:hr {:role "separator" :class (stl/css :team-separator)}]
-     [:> dropdown-menu-item* {:on-click    on-create-click
-                              :class       (stl/css :team-dropdown-item :action)}
-      [:span {:class (stl/css :icon-wrapper)} add-icon]
-      [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-team")]]]))
+     (when allow-create-teams
+       [:hr {:role "separator" :class (stl/css :team-separator)}]
+       [:> dropdown-menu-item* {:on-click    on-create-team-click
+                                :class       (stl/css :team-dropdown-item :action)}
+        [:span {:class (stl/css :icon-wrapper)} add-icon]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-team")]])
+
+     (when allow-create-org
+       [:hr {:role "separator" :class (stl/css :team-separator)}]
+       [:> dropdown-menu-item* {:on-click    on-create-org-click
+                                :class       (stl/css :team-dropdown-item :action)}
+        [:span {:class (stl/css :icon-wrapper)} add-icon]
+        [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-org")]])]))
 
 (mf/defc team-options-dropdown*
   {::mf/private true}
@@ -476,9 +494,80 @@
                                 :data-testid "delete-team"}
         (tr "dashboard.delete-team")])]))
 
+
+(mf/defc sidebar-org-switch*
+  [{:keys [team profile]}]
+  (let [teams (->> (mf/deref refs/teams)
+                   vals
+                   (group-by :organization-id)
+                   (map (fn [[_group entries]] (first entries)))
+                   vec
+                   (d/index-by :id))
+
+        teams (update-vals teams
+                           (fn [t]
+                             (assoc t :name (str "ORG: " (:organization-name t)))))
+
+        team (assoc team :name (str "ORG: " (:organization-name team)))
+
+        show-teams-menu*
+        (mf/use-state false)
+
+        show-teams-menu?
+        (deref show-teams-menu*)
+
+        on-show-teams-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! show-teams-menu* not)))
+
+        on-show-teams-keydown
+        (mf/use-fn
+         (fn [event]
+           (when (or (kbd/space? event)
+                     (kbd/enter? event))
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (some-> (dom/get-current-target event)
+                     (dom/click!)))))
+        close-teams-menu
+        (mf/use-fn #(reset! show-teams-menu* false))]
+
+    [:div {:class (stl/css :sidebar-team-switch)}
+     [:div {:class (stl/css :switch-content)}
+      [:button {:class (stl/css :current-team)
+                :on-click on-show-teams-click
+                :on-key-down on-show-teams-keydown}
+
+       [:div {:class (stl/css :team-name)}
+        [:img {:src (cf/resolve-team-photo-url team)
+               :class (stl/css :team-picture)
+               :alt (:name team)}]
+        [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]]
+
+       arrow-icon]]
+
+     ;; Teams Dropdown
+
+     [:> teams-selector-dropdown* {:show show-teams-menu?
+                                   :on-close close-teams-menu
+                                   :id "organizations-list"
+                                   :class (stl/css :dropdown :teams-dropdown)
+                                   :team team
+                                   :profile profile
+                                   :teams teams
+                                   :show-default-team false
+                                   :allow-create-teams false
+                                   :allow-create-org true}]]))
+
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
-  (let [teams (mf/deref refs/teams)
+  (let [nitrate?     (contains? cf/flags :nitrate)
+        org-id (when nitrate? (:organization-id team))
+        teams (cond->> (mf/deref refs/teams)
+                nitrate?
+                (filter #(= (-> % val :organization-id) org-id)))
 
         subscription
         (get team :subscription)
@@ -586,7 +675,10 @@
                                    :class (stl/css :dropdown :teams-dropdown)
                                    :team team
                                    :profile profile
-                                   :teams teams}]
+                                   :teams teams
+                                   :show-default-team true
+                                   :allow-create-teams true
+                                   :allow-create-org false}]
 
      [:> team-options-dropdown* {:show show-team-options-menu?
                                  :on-close close-team-options-menu
@@ -703,6 +795,8 @@
     [:*
      [:div {:class (stl/css-case :sidebar-content true)
             :ref container}
+      (when (contains? cf/flags :nitrate)
+        [:> sidebar-org-switch* {:team team :profile profile}])
       [:> sidebar-team-switch* {:team team :profile profile}]
 
       [:> sidebar-search* {:search-term search-term

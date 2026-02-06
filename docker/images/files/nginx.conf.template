@@ -130,6 +130,7 @@ http {
         }
 
         location /readyz {
+            access_log off;
             proxy_pass $PENPOT_BACKEND_URI$request_uri;
         }
 
@@ -139,12 +140,20 @@ http {
             proxy_pass $PENPOT_BACKEND_URI/ws/notifications;
         }
 
+        location /control-center {
+            proxy_http_version 1.1;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $http_cf_connecting_ip;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_pass $PENPOT_NITRATE_URI$request_uri;
+        }
+
         include /etc/nginx/overrides/server.d/*.conf;
 
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
-            location ~* \.(js|css|jpg|png|svg|ttf|woff|woff2|wasm)$ {
+            location ~* \.(js|css|jpg|png|svg|gif|ttf|woff|woff2|wasm|map)$ {
                 add_header Cache-Control "public, max-age=604800" always; # 7 days
             }
 
@@ -152,8 +161,10 @@ http {
                 return 301 " /404";
             }
 
+            add_header X-Frame-Options SAMEORIGIN always;
             add_header Cache-Control "no-store, no-cache, max-age=0" always;
             try_files $uri /index.html$is_args$args /index.html =404;
+
         }
     }
 }

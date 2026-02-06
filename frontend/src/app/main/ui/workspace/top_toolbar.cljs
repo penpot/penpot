@@ -228,7 +228,7 @@
                               :class (stl/css :main-toolbar-options-button)
                               :icon i/bug
                               :aria-pressed (contains? layout :debug-panel)
-                              :aria-label "Debugging tool"
+                              :aria-label (tr "workspace.toolbar.debug")
                               :tooltip-placement "bottom"
                               :on-click toggle-debug-panel}]])]]
 

@@ -18,7 +18,6 @@
 (def ^:svg-id brand-google "brand-google")
 (def ^:svg-id loader "loader")
 (def ^:svg-id logo-error-screen "logo-error-screen")
-(def ^:svg-id login-illustration "login-illustration")
 (def ^:svg-id logo-subscription "logo-subscription")
 (def ^:svg-id logo-subscription-light "logo-subscription-light")
 (def ^:svg-id marketing-arrows "marketing-arrows")

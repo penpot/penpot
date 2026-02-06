@@ -16,6 +16,7 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/lorem-ipsum-plugin/tsconfig.app.json",
         "assets": [
+          "apps/lorem-ipsum-plugin/src/_headers",
           "apps/lorem-ipsum-plugin/src/favicon.ico",
           "apps/lorem-ipsum-plugin/src/assets"
         ],

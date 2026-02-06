@@ -62,6 +62,52 @@
       (watch [_ _ _]
         (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Toggle tree nodes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- remove-paths-recursively
+  [path paths]
+  (->> paths
+       (remove #(str/starts-with? % (str path)))
+       vec))
+
+(defn add-path
+  [path paths]
+  (let [split-path (cpn/split-path path :separator ".")
+        partial-paths (->> split-path
+                           (reduce
+                            (fn [acc segment]
+                              (let [new-acc (if (empty? acc)
+                                              segment
+                                              (str (last acc) "." segment))]
+                                (conj acc new-acc)))
+                            []))]
+    (->> paths
+         (into partial-paths)
+         distinct
+         vec)))
+
+(defn clear-tokens-paths
+  []
+  (ptk/reify ::clear-tokens-paths
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
+
+(defn toggle-token-path
+  [path]
+  (ptk/reify ::toggle-token-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-paths]
+                 (fn [paths]
+                   (let [paths (or paths [])]
+                     (if (some #(= % path) paths)
+                       (remove-paths-recursively path paths)
+                       (add-path path paths))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -245,8 +291,9 @@
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set-group
   [group-path]
@@ -257,6 +304,7 @@
             changes (-> (pcb/empty-changes)
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
+
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -433,10 +481,34 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            token-set (if set-id
+                        (lookup-token-set state set-id)
+                        (lookup-token-set state))
+            token     (-> (get-tokens-lib state)
+                          (ctob/get-token (ctob/get-id token-set) token-id))
+            token-type (:type token)
+
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "delete-token" :type token-type}))))))
+
+(defn bulk-delete-tokens
+  [set-id token-ids]
+  (dm/assert! (uuid? set-id))
+  (dm/assert! (every? uuid? token-ids))
+  (ptk/reify ::bulk-delete-tokens
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (pcb/set-token changes set-id token-id nil))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+                            token-ids)]
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "delete-token-node"}))))))
 
 (defn duplicate-token
   [token-id]
@@ -462,35 +534,7 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn clean-tokens-paths
-  []
-  (ptk/reify ::clean-tokens-paths
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
 
-(defn toggle-token-path
-  [path]
-  (ptk/reify ::toggle-token-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-tokens :unfolded-token-paths]
-                 (fn [paths]
-                   (let [paths (or paths [])]
-                     (if (some #(= % path) paths)
-                       (vec (remove #(or (= % path)
-                                         (str/starts-with? % (str path ".")))
-                                    paths))
-                       (let [split-path (cpn/split-path path :separator ".")
-                             partial-paths (reduce
-                                            (fn [acc segment]
-                                              (let [new-acc (if (empty? acc)
-                                                              segment
-                                                              (str (last acc) "." segment))]
-                                                (conj acc new-acc)))
-                                            []
-                                            split-path)]
-                         (into paths partial-paths)))))))))
 
 (defn assign-token-context-menu
   [{:keys [position] :as params}]
@@ -504,6 +548,19 @@
       (if params
         (update state :workspace-tokens assoc :token-context-menu params)
         (update state :workspace-tokens dissoc :token-context-menu)))))
+
+(defn assign-token-node-context-menu
+  [{:keys [position] :as params}]
+
+  (when params
+    (assert (gpt/point? position) "expected a point instance for `position` param"))
+
+  (ptk/reify ::show-token-node-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (if params
+        (update state :workspace-tokens assoc :token-node-context-menu params)
+        (update state :workspace-tokens dissoc :token-node-context-menu)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN-SET UI OPS

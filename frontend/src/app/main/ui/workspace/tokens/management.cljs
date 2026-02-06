@@ -14,8 +14,10 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
+   [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn- get-sorted-token-groups
@@ -44,7 +46,7 @@
   {::mf/private true}
   [{:keys [tokens-lib selected-token-set-id]}]
   (let [selected-token-set
-        (mf/with-memo [tokens-lib]
+        (mf/with-memo [tokens-lib selected-token-set-id]
           (when selected-token-set-id
             (some-> tokens-lib (ctob/get-set selected-token-set-id))))
 
@@ -60,18 +62,20 @@
     [:div {:class (stl/css :sets-header-container)}
      [:> text* {:as "span"
                 :typography "headline-small"
-                :class (stl/css :sets-header)}
+                :class (stl/css :sets-header)
+                :data-testid "active-token-set-title"}
       (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
-     [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
+     (when (and (some? selected-token-set-id)
+                (not (token-set-active? (ctob/get-name selected-token-set))))
+       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
         ;; NOTE: when no set in tokens-lib, the selected-token-set-id
         ;; will be `nil`, so for properly hide the inactive message we
         ;; check that at least `selected-token-set-id` has a value
-      (when (and (some? selected-token-set-id)
-                 (not (token-set-active? (ctob/get-name selected-token-set))))
+
         [:*
          [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
-          (tr "workspace.tokens.inactive-set")]])]]))
+          (tr "workspace.tokens.inactive-set")]]])]))
 
 (mf/defc tokens-section*
   {::mf/private true}
@@ -90,10 +94,7 @@
         ;; This only checks for the currently explicitly selected set
         ;; id, it is ephimeral and can be nil
         ;; FIXME: this is a repeated deref for the same `:workspace-tokens` state
-        selected-token-set-id
-        (mf/deref refs/selected-token-set-id)
-
-
+        selected-token-set-id  (mf/deref refs/selected-token-set-id)
 
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
@@ -108,6 +109,7 @@
         tokens
         (sd/use-resolved-tokens* tokens)
 
+        ;; Group tokens by their type
         tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]
           (let [tokens (reduce-kv (fn [tokens k _]
@@ -120,7 +122,62 @@
 
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
-          (get-sorted-token-groups tokens-by-type))]
+          (get-sorted-token-groups tokens-by-type))
+
+        ;; Filter tokens by their path and return their ids
+        filter-tokens-by-path-ids
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens)
+         (fn [type path]
+           (->> selected-token-set-tokens
+                (filter (fn [token]
+                          (let [[_ token-value] token]
+                            (and (= (:type token-value) type) (str/starts-with? (:name token-value) path)))))
+                (mapv (fn [token]
+                        (let [[_ token-value] token]
+                          (:id token-value)))))))
+
+        remaining-tokens-of-type-in-set?
+        (mf/use-fn
+         (fn [selected-token-set-tokens tokens-in-path-ids]
+           (let [token-ids (set tokens-in-path-ids)
+                 remaining-tokens (filter (fn [token]
+                                            (not (contains? token-ids (:id token))))
+                                          selected-token-set-tokens)
+                 _ (prn "Remaining tokens:" remaining-tokens)]
+             (seq remaining-tokens))))
+
+        delete-token
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
+          (fn [token]
+            (let [id (:id token)
+                  type (:type token)
+                  path (:name token)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  tokens-in-path-ids (filter-tokens-by-path-ids type path)
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type tokens-in-path-ids)]
+              ;; Delete the token
+              (st/emit! (dwtl/delete-token selected-token-set-id id))
+              ;; Remove from unfolded tree path
+              (if remaining-tokens?
+                (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                (st/emit! (dwtl/toggle-token-path (name type)))))))
+
+        delete-node
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
+          (fn [node type]
+            (let [path (:path node)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  tokens-in-path-ids (filter-tokens-by-path-ids type path)
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type tokens-in-path-ids)]
+              ;; Delete tokens in path
+              (st/emit! (dwtl/bulk-delete-tokens selected-token-set-id tokens-in-path-ids))
+              ;; Remove from unfolded tree path
+              (if remaining-tokens?
+                (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                (st/emit! (dwtl/toggle-token-path (name type)))))))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -133,9 +190,10 @@
             (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
     [:*
-     [:& token-context-menu]
+     [:& token-context-menu {:on-delete-token delete-token}]
+     [:> token-node-context-menu* {:on-delete-node delete-node}]
 
-     [:& selected-set-info* {:tokens-lib tokens-lib
+     [:> selected-set-info* {:tokens-lib tokens-lib
                              :selected-token-set-id selected-token-set-id}]
 
      (for [type filled-group]

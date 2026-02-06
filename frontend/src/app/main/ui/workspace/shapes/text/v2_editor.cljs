@@ -90,7 +90,8 @@
         instance
         (dwt/create-editor editor-node canvas-node options)
 
-        update-name? (nil? content)
+        ;; Store original content to compare name later
+        original-content content
 
         on-key-up
         (fn [event]
@@ -101,10 +102,22 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content
-                                                        :update-name? update-name?
-                                                        :name (gen-name instance)
-                                                        :finalize? true)))
+            (let [state @st/state
+                  objects (dsh/lookup-page-objects state)
+                  shape (get objects shape-id)
+                  current-name (:name shape)
+                  generated-name (gen-name instance)
+                  ;; Update name if: (1) it's a new shape (nil original content), or
+                  ;; (2) the current name matches the generated name from original content
+                  ;; (meaning it was never manually renamed)
+                  update-name? (or (nil? original-content)
+                                   (and (some? current-name)
+                                        (some? original-content)
+                                        (= current-name (txt/generate-shape-name (txt/content->text original-content)))))]
+              (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                          :update-name? update-name?
+                                                          :name generated-name
+                                                          :finalize? true))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))
@@ -138,7 +151,6 @@
             (st/emit! (dw/set-clipboard-style style))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
-    (.addEventListener ^js instance "blur" on-blur)
     (.addEventListener ^js instance "focus" on-focus)
     (.addEventListener ^js instance "needslayout" on-needs-layout)
     (.addEventListener ^js instance "stylechange" on-style-change)
@@ -153,8 +165,12 @@
 
     ;; This function is called when the component is unmounted
     (fn []
+      ;; Explicitly call on-blur here instead of relying on browser blur events,
+      ;; because in Firefox blur is not reliably fired when leaving the text editor
+      ;; by clicking elsewhere. The component does unmount when the shape is
+      ;; deselected, so we can safely call the blur handler here to finalize the editor.
+      (on-blur)
       (.removeEventListener ^js global/document "keyup" on-key-up)
-      (.removeEventListener ^js instance "blur" on-blur)
       (.removeEventListener ^js instance "focus" on-focus)
       (.removeEventListener ^js instance "needslayout" on-needs-layout)
       (.removeEventListener ^js instance "stylechange" on-style-change)
@@ -385,7 +401,8 @@
                              (dm/fmt "scale(%)" maybe-zoom))}))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
-                     :transform (dm/str transform)}
+                     :transform (dm/str transform)
+                     :data-testid "text-editor"}
      [:defs
       [:clipPath {:id clip-id}
        [:rect {:x x :y y :width width :height height}]]]

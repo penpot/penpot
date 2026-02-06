@@ -39,12 +39,12 @@
        (into {})))
 
 (defn remove-attributes-for-token
-  "Removes applied tokens with `token-id` for the given `attributes` set from `applied-tokens`."
-  [attributes token applied-tokens]
+  "Removes applied tokens with `token-name` for the given `attributes` set from `applied-tokens`."
+  [attributes token-name applied-tokens]
   (let [attr? (set attributes)]
     (->> (remove (fn [[k v]]
                    (and (attr? k)
-                        (= v (or (token-identifier token) token))))
+                        (= v token-name)))
                  applied-tokens)
          (into {}))))
 

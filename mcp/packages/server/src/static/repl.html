@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Penpot API REPL</title>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <style>
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            body {
+                font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+                background-color: #f5f5f5;
+                display: flex;
+                flex-direction: column;
+                padding: 15px;
+                box-sizing: border-box;
+            }
+
+            .repl-container {
+                background-color: white;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 15px;
+                flex: 1;
+                overflow-y: auto;
+                max-width: 1200px;
+                width: 100%;
+                margin: 0 auto;
+                box-sizing: border-box;
+            }
+
+            .repl-entry {
+                margin-bottom: 20px;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 15px;
+            }
+
+            .repl-entry:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+                padding-bottom: 0;
+            }
+
+            .input-section {
+                margin-bottom: 10px;
+            }
+
+            .input-label {
+                color: #007acc;
+                font-weight: bold;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            .code-input {
+                width: 100%;
+                min-height: 80px;
+                font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+                font-size: 14px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 10px;
+                resize: vertical;
+                background-color: white;
+                box-sizing: border-box;
+            }
+
+            .code-input:read-only {
+                background-color: #f8f9fa;
+                border-color: #e9ecef;
+                color: #6c757d;
+            }
+
+            .code-input:focus {
+                outline: none;
+                border-color: #007acc;
+                box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.1);
+            }
+
+            .execute-btn {
+                background-color: #007acc;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                font-size: 14px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-top: 10px;
+                font-family: inherit;
+            }
+
+            .execute-btn:hover {
+                background-color: #005a9e;
+            }
+
+            .execute-btn:disabled {
+                background-color: #ccc;
+                cursor: not-allowed;
+            }
+
+            .output-section {
+                margin-top: 10px;
+            }
+
+            .output-label {
+                color: #28a745;
+                font-size: 12px;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            .log-output {
+                background-color: #f8f9fa;
+                border: 1px solid #e9ecef;
+                border-radius: 4px;
+                padding: 10px;
+                margin-bottom: 10px;
+                white-space: pre-wrap;
+                font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+                font-size: 13px;
+                color: #495057;
+            }
+
+            .result-output {
+                background-color: #f0fff4;
+                border: 1px solid #c3e6cb;
+                border-radius: 4px;
+                padding: 10px;
+                white-space: pre-wrap;
+                font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+                font-size: 14px;
+                color: #155724;
+            }
+
+            .error-output {
+                background-color: #fff5f5;
+                border: 1px solid #f5c6cb;
+                border-radius: 4px;
+                padding: 10px;
+                white-space: pre-wrap;
+                font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+                font-size: 14px;
+                color: #721c24;
+            }
+
+            .loading-output {
+                background-color: #fffbf0;
+                border: 1px solid #ffeeba;
+                border-radius: 4px;
+                padding: 10px;
+                font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+                font-size: 14px;
+                color: #856404;
+                font-style: italic;
+            }
+
+            .controls-hint {
+                text-align: center;
+                color: #666;
+                font-size: 12px;
+                padding: 10px 0;
+                font-style: italic;
+                flex-shrink: 0;
+            }
+
+            .entry-number {
+                color: #666;
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+
+            .history-indicator {
+                background-color: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-size: 12px;
+                color: #856404;
+                display: inline-block;
+                margin-bottom: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="repl-container" id="repl-container">
+            <!-- REPL entries will be dynamically added here -->
+        </div>
+
+        <div class="controls-hint">Ctrl+Enter to execute • Arrow up/down for command history</div>
+
+        <script>
+            $(document).ready(function () {
+                let isExecuting = false;
+                let entryCounter = 1;
+                let commandHistory = []; // full history of executed commands
+                let historyIndex = 0; // current position in history
+                let isBrowsingHistory = false; // whether we are currently browsing history
+                let tempInput = ""; // temporary storage for current input when browsing history
+
+                // create the initial input entry
+                createNewEntry();
+
+                function createNewEntry() {
+                    const entryId = `entry-${entryCounter}`;
+                    const isFirstEntry = entryCounter === 1;
+                    const placeholder = isFirstEntry
+                        ? `// Enter your JavaScript code here...
+console.log('Hello from Penpot!');
+return 'This will be the result';`
+                        : "";
+                    const entryHtml = `
+                        <div class="repl-entry" id="${entryId}">
+                            <div class="entry-number">In [${entryCounter}]:</div>
+                            <div class="input-section">
+                                <textarea class="code-input" id="code-input-${entryCounter}"
+                                         placeholder="${placeholder}"></textarea>
+                                <button class="execute-btn" id="execute-btn-${entryCounter}">Execute Code</button>
+                            </div>
+                        </div>
+                        `;
+
+                    $("#repl-container").append(entryHtml);
+
+                    // bind events for this entry
+                    bindEntryEvents(entryCounter);
+
+                    // focus on the new input without scrolling
+                    const $input = $(`#code-input-${entryCounter}`);
+                    $input[0].focus({ preventScroll: true });
+
+                    // auto-resize textarea on input
+                    $input.on("input", function () {
+                        autoResizeTextarea(this);
+                    });
+
+                    entryCounter++;
+                }
+
+                /**
+                 * Resizes a textarea to fit its content, with a minimum height.
+                 * Adds border height since scrollHeight excludes borders but box-sizing: border-box includes them.
+                 */
+                function autoResizeTextarea(textarea) {
+                    textarea.style.height = "auto";
+                    // add 2px for top and bottom border (1px each)
+                    textarea.style.height = Math.max(80, textarea.scrollHeight + 2) + "px";
+                }
+
+                /**
+                 * Checks if the cursor is at the beginning of a textarea (position 0 with no selection).
+                 */
+                function isCursorAtBeginning(textarea) {
+                    return textarea.selectionStart === 0 && textarea.selectionEnd === 0;
+                }
+
+                /**
+                 * Checks if the cursor is at the end of a textarea (position at text length with no selection).
+                 */
+                function isCursorAtEnd(textarea) {
+                    const len = textarea.value.length;
+                    return textarea.selectionStart === len && textarea.selectionEnd === len;
+                }
+
+                /**
+                 * Navigates through command history for the given entry's textarea.
+                 * @param direction -1 for previous (up), +1 for next (down)
+                 * @param entryNum the entry number
+                 */
+                function navigateHistory(direction, entryNum) {
+                    const $codeInput = $(`#code-input-${entryNum}`);
+                    const textarea = $codeInput[0];
+
+                    if (commandHistory.length === 0) return;
+
+                    if (direction === -1) {
+                        // going back in history (arrow up)
+                        if (!isBrowsingHistory) {
+                            // starting to browse history: save current input
+                            tempInput = $codeInput.val();
+                            isBrowsingHistory = true;
+                            historyIndex = commandHistory.length - 1;
+                        } else if (historyIndex > 0) {
+                            // go further back in history
+                            historyIndex--;
+                        } else {
+                            // already at oldest entry, do nothing
+                            return;
+                        }
+                        $codeInput.val(commandHistory[historyIndex]);
+                        autoResizeTextarea(textarea);
+                        // keep cursor at beginning for continued history navigation
+                        textarea.setSelectionRange(0, 0);
+                        // show history position (1 = most recent)
+                        const position = commandHistory.length - historyIndex;
+                        showHistoryIndicator(entryNum, position, commandHistory.length);
+                    } else {
+                        // going forward in history (arrow down)
+                        if (!isBrowsingHistory) {
+                            // not browsing history, do nothing
+                            return;
+                        } else if (historyIndex >= commandHistory.length - 1) {
+                            // at most recent entry, return to original input
+                            isBrowsingHistory = false;
+                            $codeInput.val(tempInput);
+                            autoResizeTextarea(textarea);
+                            // cursor at beginning (same as when we entered history)
+                            textarea.setSelectionRange(0, 0);
+                            hideHistoryIndicator();
+                        } else {
+                            // go forward in history
+                            historyIndex++;
+                            $codeInput.val(commandHistory[historyIndex]);
+                            autoResizeTextarea(textarea);
+                            // keep cursor at beginning
+                            textarea.setSelectionRange(0, 0);
+                            // update history position indicator
+                            const position = commandHistory.length - historyIndex;
+                            showHistoryIndicator(entryNum, position, commandHistory.length);
+                        }
+                    }
+                }
+
+                /**
+                 * Exits history browsing mode, keeping current content in the input.
+                 * Moves cursor to end of input.
+                 * @param entryNum the entry number (optional, cursor not moved if not provided)
+                 */
+                function exitHistoryBrowsing(entryNum) {
+                    if (isBrowsingHistory) {
+                        isBrowsingHistory = false;
+                        hideHistoryIndicator();
+                        if (entryNum !== undefined) {
+                            const textarea = $(`#code-input-${entryNum}`)[0];
+                            const len = textarea.value.length;
+                            textarea.setSelectionRange(len, len);
+                        }
+                    }
+                }
+
+                /**
+                 * Scrolls the repl container to show the output section of the given entry.
+                 */
+                function scrollToOutput($entry) {
+                    const $container = $("#repl-container");
+                    const $outputSection = $entry.find(".output-section");
+                    if ($outputSection.length) {
+                        const containerTop = $container.offset().top;
+                        const outputTop = $outputSection.offset().top;
+                        const scrollTop = $container.scrollTop();
+                        $container.animate(
+                            {
+                                scrollTop: scrollTop + (outputTop - containerTop),
+                            },
+                            300
+                        );
+                    }
+                }
+
+                /**
+                 * Shows or updates the history indicator for the current entry.
+                 * @param entryNum the entry number
+                 * @param position 1-based position from most recent (1 = most recent)
+                 * @param total total number of history items
+                 */
+                function showHistoryIndicator(entryNum, position, total) {
+                    const $entry = $(`#entry-${entryNum}`);
+                    let $indicator = $entry.find(".history-indicator");
+
+                    if ($indicator.length === 0) {
+                        $entry.find(".input-section").before('<div class="history-indicator"></div>');
+                        $indicator = $entry.find(".history-indicator");
+                    }
+
+                    $indicator.text(`History item ${position}/${total}`);
+                }
+
+                /**
+                 * Hides the history indicator.
+                 */
+                function hideHistoryIndicator() {
+                    $(".history-indicator").remove();
+                }
+
+                function bindEntryEvents(entryNum) {
+                    const $executeBtn = $(`#execute-btn-${entryNum}`);
+                    const $codeInput = $(`#code-input-${entryNum}`);
+
+                    // bind execute button click
+                    $executeBtn.on("click", () => executeCode(entryNum));
+
+                    // bind keyboard shortcuts
+                    $codeInput.on("keydown", function (e) {
+                        // Ctrl+Enter to execute
+                        if (e.ctrlKey && e.key === "Enter") {
+                            e.preventDefault();
+                            exitHistoryBrowsing(entryNum);
+                            executeCode(entryNum);
+                            return;
+                        }
+
+                        // arrow up at beginning of input (or while browsing history): navigate to previous history entry
+                        if (e.key === "ArrowUp" && (isBrowsingHistory || isCursorAtBeginning(this))) {
+                            e.preventDefault();
+                            navigateHistory(-1, entryNum);
+                            return;
+                        }
+
+                        // arrow down at end of input (or while browsing history): navigate to next history entry
+                        if (e.key === "ArrowDown" && (isBrowsingHistory || isCursorAtEnd(this))) {
+                            e.preventDefault();
+                            navigateHistory(+1, entryNum);
+                            return;
+                        }
+
+                        // any key except pure modifier keys exits history browsing
+                        if (isBrowsingHistory) {
+                            const isModifierOnly = ["Shift", "Control", "Alt", "Meta"].includes(e.key);
+                            if (!isModifierOnly) {
+                                exitHistoryBrowsing();
+                            }
+                        }
+                    });
+                }
+
+                function setExecuting(entryNum, executing) {
+                    isExecuting = executing;
+                    $(`#execute-btn-${entryNum}`).prop("disabled", executing);
+                    $(`#execute-btn-${entryNum}`).text(executing ? "Executing..." : "Execute Code");
+                }
+
+                function displayResult(entryNum, data, isError = false) {
+                    const $entry = $(`#entry-${entryNum}`);
+
+                    // remove any existing output
+                    $entry.find(".output-section").remove();
+
+                    // create output section
+                    const outputHtml = `
+                    <div class="output-section">
+                        <div class="output-label">Out [${entryNum}]:</div>
+                        <div class="output-content"></div>
+                    </div>
+                `;
+
+                    $entry.append(outputHtml);
+                    const $outputContent = $entry.find(".output-content");
+
+                    if (isError) {
+                        const errorHtml = `<div class="error-output">Error: ${data.error}</div>`;
+                        $outputContent.html(errorHtml);
+                    } else {
+                        let outputElements = "";
+
+                        // add log output if present
+                        if (data.log && data.log.trim()) {
+                            outputElements += `<div class="log-output">${escapeHtml(data.log)}</div>`;
+                        }
+
+                        // add result output
+                        let resultText;
+                        if (data.result !== undefined) {
+                            resultText = JSON.stringify(data.result, null, 2);
+                        } else {
+                            resultText = "(no return value)";
+                        }
+
+                        outputElements += `<div class="result-output">${escapeHtml(resultText)}</div>`;
+
+                        $outputContent.html(outputElements);
+                    }
+                }
+
+                function escapeHtml(text) {
+                    const div = document.createElement("div");
+                    div.textContent = text;
+                    return div.innerHTML;
+                }
+
+                function executeCode(entryNum) {
+                    if (isExecuting) return;
+
+                    const $codeInput = $(`#code-input-${entryNum}`);
+                    const code = $codeInput.val().trim();
+
+                    if (!code) {
+                        displayResult(entryNum, { error: "Please enter some code to execute" }, true);
+                        return;
+                    }
+
+                    setExecuting(entryNum, true);
+
+                    // show loading state
+                    const $entry = $(`#entry-${entryNum}`);
+                    $entry.find(".output-section").remove();
+
+                    const loadingHtml = `
+                    <div class="output-section">
+                        <div class="output-label">Out [${entryNum}]:</div>
+                        <div class="loading-output">Executing code...</div>
+                    </div>
+                `;
+                    $entry.append(loadingHtml);
+
+                    $.ajax({
+                        url: "/execute",
+                        method: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify({ code: code }),
+                        success: function (data) {
+                            displayResult(entryNum, data, false);
+
+                            // make the textarea read-only and remove the execute button
+                            $codeInput.prop("readonly", true);
+                            $(`#execute-btn-${entryNum}`).remove();
+
+                            // store the code in history
+                            commandHistory.push(code);
+                            isBrowsingHistory = false; // reset history navigation
+                            tempInput = ""; // clear temporary input
+
+                            // create a new entry for the next input
+                            createNewEntry();
+
+                            // scroll to the output section of the executed entry
+                            scrollToOutput($entry);
+                        },
+                        error: function (xhr) {
+                            let errorData;
+                            try {
+                                errorData = JSON.parse(xhr.responseText);
+                            } catch {
+                                errorData = { error: "Network error or invalid response" };
+                            }
+                            displayResult(entryNum, errorData, true);
+
+                            // scroll to the error output
+                            scrollToOutput($entry);
+                        },
+                        complete: function () {
+                            setExecuting(entryNum, false);
+                        },
+                    });
+                }
+            });
+        </script>
+    </body>
+</html>

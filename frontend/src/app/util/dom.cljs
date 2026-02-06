@@ -106,17 +106,20 @@
 
 (defn stop-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopPropagation event)))
     (.stopPropagation event)))
 
 (defn stop-immediate-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopImmediatePropagation event)))
     (.stopImmediatePropagation event)))
 
 (defn prevent-default
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-preventDefault event)))
     (.preventDefault event)))
 
 (defn get-target
@@ -802,9 +805,10 @@
   ([uri name]
    (open-new-window uri name "noopener,noreferrer"))
   ([uri name features]
-   (let [new-window (.open js/window (str uri) name features)]
+   (when-let [new-window (.open js/window (str uri) name features)]
      (when (not= name "_blank")
-       (.reload (.-location new-window))))))
+       (when-let [location (.-location new-window)]
+         (.reload location))))))
 
 (defn browser-back
   []

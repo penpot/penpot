@@ -144,7 +144,7 @@
         modifiers (hooks/use-equal-memo modifiers)
         shapes    (hooks/use-equal-memo shapes)]
 
-    [:g.outlines
+    [:g.outlines.blurrable
      [:& shape-outlines-render {:shapes shapes
                                 :zoom zoom
                                 :modifiers modifiers}]]))

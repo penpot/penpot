@@ -21,6 +21,7 @@
 .rebel_readline_history
 .repl
 .shadow-cljs
+.pnpm-store/
 /*.jpg
 /*.md
 /*.png
@@ -44,6 +45,7 @@
 /backend/resources/public/media
 /backend/target/
 /backend/experiments
+/backend/scripts/_env.local
 /bundle*
 /cd.md
 /clj-profiler/
@@ -54,6 +56,8 @@
 /exporter/target
 /frontend/.storybook/preview-body.html
 /frontend/.storybook/preview-head.html
+/frontend/playwright-report/
+/frontend/text-editor/src/wasm/
 /frontend/dist/
 /frontend/npm-debug.log
 /frontend/out/
@@ -62,6 +66,7 @@
 /frontend/resources/public/*
 /frontend/storybook-static/
 /frontend/target/
+/frontend/test-results/
 /other/
 /scripts/
 /telemetry/
@@ -72,6 +77,7 @@
 /library/target/
 /library/*.zip
 /external
+/penpot-nitrate
 
 clj-profiler/
 node_modules

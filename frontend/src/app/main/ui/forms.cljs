@@ -16,13 +16,14 @@
 (def context (mf/create-context nil))
 
 (mf/defc form-input*
-  [{:keys [name] :rest props}]
+  [{:keys [name trim] :rest props}]
 
   (let [form       (mf/use-ctx context)
         input-name name
 
         touched?   (and (contains? (:data @form) input-name)
                         (get-in @form [:touched input-name]))
+
         error      (get-in @form [:errors input-name])
 
         value      (get-in @form [:data input-name] "")
@@ -32,7 +33,7 @@
          (mf/deps input-name)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-input-value)]
-             (fm/on-input-change form input-name value true))))
+             (fm/on-input-change form input-name value trim))))
 
         props
         (mf/spread-props props {:on-change on-change
@@ -52,7 +53,8 @@
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))
-                               (seq (:external-errors @form))))
+                               (seq (:async-errors @form))
+                               (seq (:extra-errors @form))))
                       (true? disabled))
         handle-key-down-save
         (mf/use-fn

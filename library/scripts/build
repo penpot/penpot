@@ -7,6 +7,6 @@ export NODE_ENV=production;
 
 set -ex
 
-yarn run build
+pnpm run build
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" target/library/penpot.js

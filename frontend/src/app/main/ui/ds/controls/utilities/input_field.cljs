@@ -17,7 +17,7 @@
 
 (def ^:private schema:input-field
   [:map
-   [:class {:optional true} :string]
+   [:class {:optional true} [:maybe :string]]
    [:aria-label {:optional true} [:maybe :string]]
    [:id :string]
    [:icon {:optional true}
@@ -42,26 +42,22 @@
         type  (d/nilv type "text")
         variant (d/nilv variant "dense")
         tooltip-id (mf/use-id)
-
         props (mf/spread-props props
-                               {:class (stl/css-case
-                                        :input true
-                                        :input-with-icon (some? icon))
+                               {:class [class
+                                        (stl/css-case
+                                         :input true
+                                         :input-with-icon (some? icon))]
                                 :ref (or ref input-ref)
                                 :aria-invalid (when (and has-hint
                                                          (= hint-type "error"))
                                                 "true")
                                 :aria-describedby (when has-hint
                                                     (str id "-hint"))
+                                :aria-labelledby tooltip-id
                                 :type (d/nilv type "text")
                                 :id id
                                 :max-length (d/nilv max-length max-input-length)})
 
-        props (if (and aria-label (not (some? icon)))
-                (mf/spread-props props
-                                 {:aria-label aria-label})
-                (mf/spread-props props
-                                 {:aria-labelledby tooltip-id}))
         inside-class (stl/css-case :input-wrapper true
                                    :has-hint has-hint
                                    :hint-type-hint (= hint-type "hint")
@@ -82,11 +78,14 @@
      (when (some? slot-start)
        slot-start)
      (when (some? icon)
-       (if aria-label
-         [:> tooltip* {:content aria-label
-                       :id tooltip-id}
-          [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}]]
-         [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}]))
-     [:> "input" props]
+       [:> icon* {:icon-id icon
+                  :class (stl/css :icon)
+                  :size "s"
+                  :on-click on-icon-click}])
+     (if aria-label
+       [:> tooltip* {:content aria-label
+                     :id tooltip-id}
+        [:> "input" props]]
+       [:> "input" props])
      (when (some? slot-end)
        slot-end)]))

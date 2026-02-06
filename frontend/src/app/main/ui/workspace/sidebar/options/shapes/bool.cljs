@@ -85,6 +85,7 @@
     [:*
      [:> layer-menu* {:ids ids
                       :type type
+                      :applied-tokens applied-tokens
                       :values layer-values}]
 
      [:> measures-menu* {:ids ids
@@ -113,6 +114,7 @@
          :is-layout-child? true
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
+         :applied-tokens applied-tokens
          :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)

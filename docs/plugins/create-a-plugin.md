@@ -49,7 +49,7 @@ There are two libraries that can help you with your plugin's development. They a
 
 ### Plugin styles
 
-<code class="language-js">@penpot/plugin-styles</code> contains styles to help build the UI for Penpot plugins. To check the styles go to <a target="_blank" href="https://penpot-plugins-styles.pages.dev/">Plugin styles</a>.
+<code class="language-js">@penpot/plugin-styles</code> contains styles to help build the UI for Penpot plugins. To check the styles go to <a target="_blank" href="https://styles-doc.plugins.penpot.app/">Plugin styles</a>.
 
 ```bash
 npm install @penpot/plugin-styles
@@ -139,7 +139,7 @@ parent.postMessage(responseMessage, targetOrigin);
 
 By using these message-based events, any data retrieved through the Penpot API can be communicated to and from your plugin interface seamlessly.
 
-For more detailed information, refer to the [Penpot Plugins API Documentation](https://penpot-plugins-api-doc.pages.dev/).
+For more detailed information, refer to the [Penpot Plugins API Documentation](https://doc.plugins.penpot.app/).
 
 ## 2.5. Step 5. Build the plugin file
 

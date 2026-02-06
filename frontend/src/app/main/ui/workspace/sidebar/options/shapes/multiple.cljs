@@ -223,7 +223,6 @@
             (cond
               (= existing ::not-found) (assoc acc t-attr new-val)
               (= existing new-val)     acc
-              (nil? new-val)           acc
               :else                    (assoc acc t-attr :multiple))))
 
         merge-shape-attr
@@ -237,10 +236,8 @@
         (fn [acc shape-attrs applied-tokens]
           "Merges token values across all shape attributes.
            For each shape attribute, its corresponding token attributes are merged
-           into the accumulator. If applied tokens are empty, the accumulator is returned unchanged."
-          (if (seq applied-tokens)
-            (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs)
-            acc))
+           into the accumulator."
+          (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
@@ -385,7 +382,7 @@
                        objects
                        objects)))
 
-        [layer-ids layer-values]
+        [layer-ids layer-values layer-tokens]
         (get-attrs shapes objects :layer)
 
         [text-ids text-values]
@@ -409,10 +406,10 @@
         [exports-ids exports-values]
         (get-attrs shapes objects :exports)
 
-        [layout-container-ids layout-container-values layout-contianer-tokens]
+        [layout-container-ids layout-container-values layout-container-tokens]
         (get-attrs shapes objects :layout-container)
 
-        [layout-item-ids layout-item-values {}]
+        [layout-item-ids layout-item-values layout-item-tokens]
         (get-attrs shapes objects :layout-item)
 
         components
@@ -445,6 +442,7 @@
      (when-not (empty? layer-ids)
        [:> layer-menu* {:type type
                         :ids layer-ids
+                        :applied-tokens layer-tokens
                         :values layer-values}])
 
      (when-not (empty? measure-ids)
@@ -462,7 +460,7 @@
       {:type type
        :ids layout-container-ids
        :values layout-container-values
-       :applied-tokens layout-contianer-tokens
+       :applied-tokens layout-container-tokens
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
@@ -473,6 +471,7 @@
          :is-layout-container? all-flex-layout-container?
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
+         :applied-tokens layout-item-tokens
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)

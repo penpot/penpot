@@ -13,16 +13,28 @@
 - Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 - Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
+- Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
+- Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
+- Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
 
 ### :bug: Bugs fixed
 
-### :bug: Bugs fixed
+- Remove whitespaces from asset export filename [Github #8133](https://github.com/penpot/penpot/pull/8133)
+- Fix prototype connections lost when switching between variants [Taiga #12812](https://tree.taiga.io/project/penpot/issue/12812)
+- Fix wrong image in the onboarding invitation block [Taiga #13040](https://tree.taiga.io/project/penpot/issue/13040)
+- Fix wrong register image [Taiga #12955](https://tree.taiga.io/project/penpot/task/12955)
+- Fix error message on components doesn't close automatically [Taiga #12012](https://tree.taiga.io/project/penpot/issue/12012)
+- Fix incorrect handling of input values on layout gap and padding inputs [Github #8113](https://github.com/penpot/penpot/issues/8113)
+- Fix incorrect default option on tokens import dialog [Github #8051](https://github.com/penpot/penpot/pull/8051)
+- Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
+- Fix displaying a hidden user avatar when there is only one more [Taiga #13058](https://tree.taiga.io/project/penpot/issue/13058)
+- Fix unhandled exception on open-new-window helper [Github #7787](https://github.com/penpot/penpot/issues/7787)
+- Fix exception on uploading large fonts [Github #8135](https://github.com/penpot/penpot/pull/8135)
+- Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
+- Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
+- Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
-## 2.13.0 (Unreleased)
-
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
+## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
 
@@ -48,6 +60,19 @@
 - Fix missing text color token from selected shapes in selected colors list [Taiga #12956](https://tree.taiga.io/project/penpot/issue/12956)
 - Fix dropdown option width in Guides columns dropdown [Taiga #12959](https://tree.taiga.io/project/penpot/issue/12959)
 - Fix typos on download modal [Taiga #12865](https://tree.taiga.io/project/penpot/issue/12865)
+- Fix problem with text editor maintaining previous styles [Taiga #12835](https://tree.taiga.io/project/penpot/issue/12835)
+- Fix unhandled exception tokens creation dialog [Github #8110](https://github.com/penpot/penpot/issues/8110)
+- Fix allow negative spread values on shadow token creation [Taiga #13167](https://tree.taiga.io/project/penpot/issue/13167)
+- Fix spanish translations on import export token modal [Taiga #13171](https://tree.taiga.io/project/penpot/issue/13171)
+- Remove whitespaces from asset export filename [Github #8133](https://github.com/penpot/penpot/pull/8133)
+- Fix exception on uploading large fonts [Github #8135](https://github.com/penpot/penpot/pull/8135)
+- Fix unhandled exception on open-new-window helper [Github #7787](https://github.com/penpot/penpot/issues/7787)
+- Fix incorrect handling of input values on layout gap and padding inputs [Github #8113](https://github.com/penpot/penpot/issues/8113)
+- Fix several race conditions on path editor [Github #8187](https://github.com/penpot/penpot/pull/8187)
+- Fix app freeze when introducing an error on a very long token name [Taiga #13214](https://tree.taiga.io/project/penpot/issue/13214)
+- Fix import a file with shadow tokens [Taiga #13229](https://tree.taiga.io/project/penpot/issue/13229)
+- Fix allow spaces on token description [Taiga #13184](https://tree.taiga.io/project/penpot/issue/13184)
+- Fix error when creating a token with an invalid name [Taiga #13219](https://tree.taiga.io/project/penpot/issue/13219)
 
 ## 2.12.1
 
@@ -163,7 +188,6 @@ example. It's still usable as before, we just removed the example.
 
 - Deprecated configuration variables with the prefix `PENPOT_ASSETS_*`, and will be
   removed in future versions:
-
   - The `PENPOT_ASSETS_STORAGE_BACKEND` becomes `PENPOT_OBJECTS_STORAGE_BACKEND` and its
     values passes from (`assets-fs` or `assets-s3`) to (`fs` or `s3`)
   - The `PENPOT_STORAGE_ASSETS_FS_DIRECTORY` becomes `PENPOT_OBJECTS_STORAGE_FS_DIRECTORY`

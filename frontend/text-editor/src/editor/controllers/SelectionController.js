@@ -49,10 +49,9 @@ import {
 } from "../content/dom/TextNode.js";
 import TextNodeIterator from "../content/dom/TextNodeIterator.js";
 import TextEditor from "../TextEditor.js";
-import CommandMutations from "../commands/CommandMutations.js";
 import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
-import SafeGuard from "./SafeGuard.js";
+import { SafeGuard } from "./SafeGuard.js";
 import { sanitizeFontFamily } from "../content/dom/Style.js";
 import StyleDeclaration from "./StyleDeclaration.js";
 
@@ -146,13 +145,6 @@ export class SelectionController extends EventTarget {
   #debug = null;
 
   /**
-   * Command Mutations.
-   *
-   * @type {CommandMutations}
-   */
-  #mutations = new CommandMutations();
-
-  /**
    * Style defaults.
    *
    * @type {Object.<string, *>}
@@ -167,7 +159,7 @@ export class SelectionController extends EventTarget {
   /**
    * @type {TextEditorOptions}
    */
-  #options;
+  #options = {};
 
   /**
    * Constructor
@@ -185,7 +177,7 @@ export class SelectionController extends EventTarget {
       throw new TypeError("Invalid EventTarget");
     }
     */
-    this.#options = options;
+    this.#options = options ?? {};
     this.#debug = options?.debug;
     this.#styleDefaults = options?.styleDefaults;
     this.#selection = selection;
@@ -238,7 +230,8 @@ export class SelectionController extends EventTarget {
   #applyStylesFromElementToCurrentStyle(element) {
     for (let index = 0; index < element.style.length; index++) {
       const styleName = element.style.item(index);
-      if (styleName === "--fills") {
+      // Only merge fill styles from text spans.
+      if (!isTextSpan(element) && styleName === "--fills") {
         continue;
       }
       let styleValue = element.style.getPropertyValue(styleName);
@@ -448,14 +441,14 @@ export class SelectionController extends EventTarget {
   dispose() {
     document.removeEventListener("selectionchange", this.#onSelectionChange);
     this.#textEditor = null;
+    this.#currentStyle = null;
+    this.#options = null;
     this.#ranges.clear();
     this.#ranges = null;
     this.#range = null;
     this.#selection = null;
     this.#focusNode = null;
     this.#anchorNode = null;
-    this.#mutations.dispose();
-    this.#mutations = null;
   }
 
   /**
@@ -522,28 +515,6 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Marks the start of a mutation.
-   *
-   * Clears all the mutations kept in CommandMutations.
-   *
-   * @returns {boolean}
-   */
-  startMutation() {
-    this.#mutations.clear();
-    if (!this.#focusNode) return false;
-    return true;
-  }
-
-  /**
-   * Marks the end of a mutation.
-   *
-   * @returns {CommandMutations}
-   */
-  endMutation() {
-    return this.#mutations;
-  }
-
-  /**
    * Selects all content.
    *
    * @returns {SelectionController}
@@ -596,11 +567,18 @@ export class SelectionController extends EventTarget {
    * @returns {SelectionController}
    */
   cursorToEnd() {
+    const root = this.#textEditor.root;
+
     const range = document.createRange(); //Create a range (a range is a like the selection but invisible)
-    range.selectNodeContents(this.#textEditor.element);
+    range.setStart(root.lastChild.firstChild.firstChild, root.lastChild.firstChild.firstChild?.nodeValue?.length ?? 0);
+    range.setEnd(root.lastChild.firstChild.firstChild, root.lastChild.firstChild.firstChild?.nodeValue?.length ?? 0);
     range.collapse(false);
+
     this.#selection.removeAllRanges();
     this.#selection.addRange(range);
+
+    this.#updateState();
+
     return this;
   }
 
@@ -1339,7 +1317,6 @@ export class SelectionController extends EventTarget {
 
     if (this.focusNode.nodeValue !== removedData) {
       this.focusNode.nodeValue = removedData;
-      this.#mutations.update(this.focusTextSpan);
     }
 
     const paragraph = this.focusParagraph;
@@ -1382,7 +1359,6 @@ export class SelectionController extends EventTarget {
       this.focusOffset,
       newText,
     );
-    this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, this.focusOffset + newText.length);
   }
 
@@ -1446,7 +1422,6 @@ export class SelectionController extends EventTarget {
       this.#textEditor.root.replaceChildren(newParagraph);
       return this.collapse(newTextNode, newText.length + 1);
     }
-    this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, startOffset + newText.length);
   }
 
@@ -1524,8 +1499,6 @@ export class SelectionController extends EventTarget {
     const currentParagraph = this.focusParagraph;
     const newParagraph = createEmptyParagraph(this.#currentStyle);
     currentParagraph.after(newParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
     return this.collapse(newParagraph.firstChild.firstChild, 0);
   }
 
@@ -1536,8 +1509,6 @@ export class SelectionController extends EventTarget {
     const currentParagraph = this.focusParagraph;
     const newParagraph = createEmptyParagraph(this.#currentStyle);
     currentParagraph.before(newParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
     return this.collapse(currentParagraph.firstChild.firstChild, 0);
   }
 
@@ -1552,8 +1523,6 @@ export class SelectionController extends EventTarget {
       this.#focusOffset,
     );
     this.focusParagraph.after(newParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
     return this.collapse(newParagraph.firstChild.firstChild, 0);
   }
 
@@ -1585,10 +1554,6 @@ export class SelectionController extends EventTarget {
       this.focusOffset,
     );
     currentParagraph.after(newParagraph);
-
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
-
     // FIXME: Missing collapse?
   }
 
@@ -1609,7 +1574,6 @@ export class SelectionController extends EventTarget {
     const previousOffset = isLineBreak(previousTextSpan.firstChild)
       ? 0
       : previousTextSpan.firstChild.nodeValue?.length || 0;
-    this.#mutations.remove(paragraphToBeRemoved);
     return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
 
@@ -1631,8 +1595,6 @@ export class SelectionController extends EventTarget {
     } else {
       mergeParagraphs(previousParagraph, currentParagraph);
     }
-    this.#mutations.remove(currentParagraph);
-    this.#mutations.update(previousParagraph);
     return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
 
@@ -1646,8 +1608,6 @@ export class SelectionController extends EventTarget {
       return;
     }
     mergeParagraphs(this.focusParagraph, nextParagraph);
-    this.#mutations.update(currentParagraph);
-    this.#mutations.remove(nextParagraph);
 
     // FIXME: Missing collapse?
   }
@@ -1664,7 +1624,6 @@ export class SelectionController extends EventTarget {
     paragraphToBeRemoved.remove();
     const nextTextSpan = nextParagraph.firstChild;
     const nextOffset = this.focusOffset;
-    this.#mutations.remove(paragraphToBeRemoved);
     return this.collapse(nextTextSpan.firstChild, nextOffset);
   }
 
@@ -1679,7 +1638,6 @@ export class SelectionController extends EventTarget {
     for (const textSpan of affectedTextSpans) {
       if (textSpan.textContent === "") {
         textSpan.remove();
-        this.#mutations.remove(textSpan);
       }
     }
 
@@ -1687,7 +1645,6 @@ export class SelectionController extends EventTarget {
     for (const paragraph of affectedParagraphs) {
       if (paragraph.children.length === 0) {
         paragraph.remove();
-        this.#mutations.remove(paragraph);
       }
     }
   }
@@ -1698,7 +1655,8 @@ export class SelectionController extends EventTarget {
    * @param {RemoveSelectedOptions} [options]
    */
   removeSelected(options) {
-    if (this.isCollapsed) return;
+    if (this.isCollapsed)
+      return;
 
     const affectedTextSpans = new Set();
     const affectedParagraphs = new Set();
@@ -1707,7 +1665,6 @@ export class SelectionController extends EventTarget {
     let nextNode = null;
 
     let { startNode, endNode, startOffset, endOffset } = this.getRanges();
-
     if (this.shouldHandleCompleteDeletion(startNode, endNode)) {
       return this.handleCompleteContentDeletion();
     }
@@ -1752,9 +1709,10 @@ export class SelectionController extends EventTarget {
     const endTextSpan = getTextSpan(endNode);
     const endParagraph = getParagraph(endNode);
 
-    SafeGuard.start();
+    const safeGuard = new SafeGuard("removeSelected");
+    safeGuard.start();
     do {
-      SafeGuard.update();
+      safeGuard.update();
 
       const { currentNode } = this.#textNodeIterator;
 
@@ -1766,6 +1724,8 @@ export class SelectionController extends EventTarget {
       affectedParagraphs.add(paragraph);
 
       let shouldRemoveNodeCompletely = false;
+      const isEndNode = currentNode === endNode;
+
       if (currentNode === startNode) {
         if (startOffset === 0) {
           // We should remove this node completely.
@@ -1774,11 +1734,11 @@ export class SelectionController extends EventTarget {
           // We should remove this node partially.
           currentNode.nodeValue = currentNode.nodeValue.slice(0, startOffset);
         }
-      } else if (currentNode === endNode) {
+      } else if (isEndNode) {
         if (
           isLineBreak(endNode) ||
           (isTextNode(endNode) &&
-            endOffset === (endNode.nodeValue?.length || 0))
+            endOffset >= (endNode.nodeValue?.length || 0))
         ) {
           // We should remove this node completely.
           shouldRemoveNodeCompletely = true;
@@ -1791,9 +1751,13 @@ export class SelectionController extends EventTarget {
         shouldRemoveNodeCompletely = true;
       }
 
+      // We need to step to the next node before
+      // we remove them completely from the DOM tree
+      // because we need to iterate through parents
+      // and childrens.
       this.#textNodeIterator.nextNode();
 
-      // Realizamos el borrado del nodo actual.
+      // We remove the current node.
       if (shouldRemoveNodeCompletely) {
         currentNode.remove();
         if (currentNode === startNode) {
@@ -1804,12 +1768,14 @@ export class SelectionController extends EventTarget {
           textSpan.remove();
         }
 
-        if (paragraph !== startParagraph && paragraph.children.length === 0) {
+        if (paragraph !== startParagraph
+         && paragraph.children.length === 0) {
           paragraph.remove();
         }
       }
 
-      if (currentNode === endNode) {
+      // Break immediately after processing endNode, before advancing iterator
+      if (isEndNode) {
         break;
       }
     } while (this.#textNodeIterator.currentNode);
@@ -1860,16 +1826,28 @@ export class SelectionController extends EventTarget {
     return this.collapse(startNode, startOffset);
   }
 
+  /**
+   * Returns an object with ranges.
+   *
+   * @returns {}
+   */
   getRanges() {
     let startNode = getClosestTextNode(this.#range.startContainer);
     let endNode = getClosestTextNode(this.#range.endContainer);
 
     let startOffset = this.#range.startOffset;
-    let endOffset = this.#range.startOffset + this.#range.toString().length;
+    let endOffset = this.#range.endOffset;
 
     return { startNode, endNode, startOffset, endOffset };
   }
 
+  /**
+   * Returns true if we should remove the complete root.
+   *
+   * @param {*} startNode
+   * @param {*} endNode
+   * @returns {boolean}
+   */
   shouldHandleCompleteDeletion(startNode, endNode) {
     const root = this.#textEditor.root;
     return (
@@ -1997,11 +1975,12 @@ export class SelectionController extends EventTarget {
       // then we need to iterate through those nodes to apply
       // the styles.
     } else if (startNode !== endNode) {
-      SafeGuard.start();
+      const safeGuard = new SafeGuard("applyStylesTo");
+      safeGuard.start();
       const expectedEndNode = getClosestTextNode(endNode);
       this.#textNodeIterator.currentNode = getClosestTextNode(startNode);
       do {
-        SafeGuard.update();
+        safeGuard.update();
 
         const paragraph = getParagraph(this.#textNodeIterator.currentNode);
         setParagraphStyles(paragraph, newStyles);

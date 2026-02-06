@@ -406,13 +406,13 @@
                        (ctm/change-property :grow-type new-grow-type)))
                    modifiers)))
 
-             modif-tree
-             (-> (dwm/build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))]
+             modif-tree (dwm/build-modif-tree ids objects get-modifier)]
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
-           (rx/of (dwm/apply-modifiers* objects modif-tree nil options))))))))
+
+           (let [modif-tree (gm/set-objects-modifiers modif-tree objects)]
+             (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.
@@ -1050,6 +1050,20 @@
                                         :ignore-touched (:ignore-touched options)
                                         :ignore-snap-pixel true}))))))))
 
+(defn update-positions
+  "Move multiple shapes to a new position."
+  ([ids position] (update-positions ids position nil))
+  ([ids position options]
+   (assert (every? uuid? ids)
+           "expected valid coll of uuids")
+   (assert (map? position) "expected a valid map for `position`")
+   (ptk/reify ::update-positions
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (->> ids
+            (map (fn [id] (update-position id position options)))
+            (rx/from))))))
+
 (defn position-shapes
   [shapes]
   (ptk/reify ::position-shapes
@@ -1121,15 +1135,15 @@
                          :cell cell))
 
             add-component-to-variant? (and
-                                        ;; Any of the shapes is a head
+                                       ;; Any of the shapes is a head
                                        (some (comp ctk/instance-head? objects) ids)
                                        ;; Any ancestor of the destination parent is a variant
                                        (->> (cfh/get-parents-with-self objects frame-id)
                                             (some ctk/is-variant?)))
             add-new-variant? (and
-                             ;; The parent is a variant container
+                              ;; The parent is a variant container
                               (-> frame-id objects ctk/is-variant-container?)
-                             ;; Any of the shapes is a main instance
+                              ;; Any of the shapes is a main instance
                               (some (comp ctk/main-instance? objects) ids))]
 
         (rx/concat

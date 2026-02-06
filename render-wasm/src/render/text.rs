@@ -192,7 +192,7 @@ pub fn render(
             }
         }
 
-        let canvas = render_state.surfaces.canvas(target_surface);
+        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
         render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
         return;
     }
@@ -371,7 +371,7 @@ pub fn render_as_path(
 ) {
     let canvas = render_state
         .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::Fills));
+        .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::Fills));
 
     for (path, paint) in paths {
         // Note: path can be empty
@@ -397,7 +397,7 @@ pub fn render_position_data(
         let rect = Rect::from_xywh(pd.x, pd.y, pd.width, pd.height);
         render_state
             .surfaces
-            .canvas(surface_id)
+            .canvas_and_mark_dirty(surface_id)
             .draw_rect(rect, &paint);
     }
 }

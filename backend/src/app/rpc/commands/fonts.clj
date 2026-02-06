@@ -27,7 +27,17 @@
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
-   [app.util.services :as sv]))
+   [app.storage.tmp :as tmp]
+   [app.util.services :as sv]
+   [datoteka.io :as io])
+  (:import
+   java.io.InputStream
+   java.io.OutputStream
+   java.io.SequenceInputStream
+   java.util.Collections))
+
+(set! *warn-on-reflection* true)
+
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
@@ -105,7 +115,7 @@
 
 (defn create-font-variant
   [{:keys [::sto/storage ::db/conn]} {:keys [data] :as params}]
-  (letfn [(generate-missing! [data]
+  (letfn [(generate-missing [data]
             (let [data (media/run {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
                          (not (contains? data "font/ttf"))
@@ -116,8 +126,26 @@
                           :hint "invalid font upload, unable to generate missing font assets"))
               data))
 
+          (process-chunks [chunks]
+            (let [tmp     (tmp/tempfile :prefix "penpot.tempfont." :suffix "")
+                  streams (map io/input-stream chunks)
+                  streams (Collections/enumeration streams)]
+              (with-open [^OutputStream output (io/output-stream tmp)
+                          ^InputStream input (SequenceInputStream. streams)]
+                (io/copy input output))
+              tmp))
+
+          (join-chunks [data]
+            (reduce-kv (fn [data mtype content]
+                         (if (vector? content)
+                           (assoc data mtype (process-chunks content))
+                           data))
+                       data
+                       data))
+
           (prepare-font [data mtype]
             (when-let [resource (get data mtype)]
+
               (let [hash    (sto/calculate-hash resource)
                     content (-> (sto/content resource)
                                 (sto/wrap-with-hash hash))]
@@ -156,7 +184,8 @@
                          :otf-file-id (:id otf)
                          :ttf-file-id (:id ttf)}))]
 
-    (let [data   (generate-missing! data)
+    (let [data   (join-chunks data)
+          data   (generate-missing data)
           assets (persist-fonts-files! data)
           result (insert-font-variant! assets)]
       (vary-meta result assoc ::audit/replace-props (update params :data (comp vec keys))))))

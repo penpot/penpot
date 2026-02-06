@@ -210,6 +210,22 @@ test("Renders a file with shadows applied to any kind of shape", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with flex layouts and different directions", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-flex-layouts.json");
+
+  await workspace.goToWorkspace({
+    id: "31fe2e21-73e7-80f3-8007-73894fb58240",
+    pageId: "02e9633d-4ce7-80da-8007-736558496fa8",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a file with a closed path shape with multiple segments using strokes and shadow", async ({
   page,
 }) => {

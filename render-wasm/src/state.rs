@@ -18,16 +18,16 @@ use crate::shapes::modifiers::grid_layout::grid_cell_data;
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State<'a> {
+pub(crate) struct State {
     pub render_state: RenderState,
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
-    pub shapes: ShapesPool<'a>,
-    pub saved_shapes: Option<ShapesPool<'a>>,
+    pub shapes: ShapesPool,
+    pub saved_shapes: Option<ShapesPool>,
 }
 
-impl<'a> State<'a> {
+impl State {
     pub fn new(width: i32, height: i32) -> Self {
         State {
             render_state: RenderState::new(width, height),
@@ -100,6 +100,16 @@ impl<'a> State<'a> {
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
+        // If zoom changed, we MUST rebuild the tile index before using it.
+        // Otherwise, the index will have tiles from the old zoom level, causing visible
+        // tiles to appear empty. This can happen if start_render_loop() is called before
+        // set_view_end() finishes rebuilding the index, or if set_view_end() hasn't been
+        // called yet.
+        let zoom_changed = self.render_state.zoom_changed();
+        if zoom_changed {
+            self.rebuild_tiles_shallow();
+        }
+
         self.render_state
             .start_render_loop(None, &self.shapes, timestamp, false)?;
         Ok(())
@@ -197,10 +207,6 @@ impl<'a> State<'a> {
         self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
-    pub fn clear_tile_index(&mut self) {
-        self.render_state.clear_tile_index();
-    }
-
     pub fn rebuild_tiles(&mut self) {
         self.render_state.rebuild_tiles_from(&self.shapes, None);
     }
@@ -213,17 +219,14 @@ impl<'a> State<'a> {
         self.render_state.rebuild_touched_tiles(&self.shapes);
     }
 
+    pub fn render_preview(&mut self, timestamp: i32) {
+        let _ = self.render_state.render_preview(&self.shapes, timestamp);
+    }
+
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
-        // SAFETY: We're extending the lifetime of the mutable borrow to 'a.
-        // This is safe because:
-        // 1. shapes has lifetime 'a in the struct
-        // 2. The reference won't outlive the struct
-        // 3. No other references to shapes exist during this call
-        unsafe {
-            let shapes_ptr = &mut self.shapes as *mut ShapesPool<'a>;
-            self.render_state
-                .rebuild_modifier_tiles(&mut *shapes_ptr, ids);
-        }
+        // Index-based storage is safe
+        self.render_state
+            .rebuild_modifier_tiles(&mut self.shapes, ids);
     }
 
     pub fn font_collection(&self) -> &FontCollection {

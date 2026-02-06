@@ -9,13 +9,13 @@ desc: See the Penpot plugin API changelog for version 1.0! Find breaking changes
 ### <g-emoji class="g-emoji" alias="boom" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f680.png"><img class="emoji" alt="boom" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f680.png"></g-emoji> Epics and highlights</code>
 - This marks the release of version 1.0, and from this point forward, we’ll do our best to avoid making any more breaking changes (or make deprecations backward compatible).
 - We’ve redone the documentation. You can check the API here:
-[https://penpot-plugins-api-doc.pages.dev/](https://penpot-plugins-api-doc.pages.dev/)
+[https://doc.plugins.penpot.app/](https://doc.plugins.penpot.app/)
 - New samples repository with lots of samples to use the API:
 [https://github.com/penpot/penpot-plugins-samples](https://github.com/penpot/penpot-plugins-samples)
 
 ### <g-emoji class="g-emoji" alias="boom" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4a5.png"><img class="emoji" alt="boom" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f4a5.png"></g-emoji> Breaking changes & Deprecations
 
-- Changed types names to remove the Penpot prefix. So for example: <code class="language-js">PenpotShape</code> becomes <code class="language-js">Shape</code>; <code class="language-js">PenpotFile</code> becomes <code class="language-js">File</code>, and so on. Check the [API documentation](https://penpot-plugins-api-doc.pages.dev/) for more details.
+- Changed types names to remove the Penpot prefix. So for example: <code class="language-js">PenpotShape</code> becomes <code class="language-js">Shape</code>; <code class="language-js">PenpotFile</code> becomes <code class="language-js">File</code>, and so on. Check the [API documentation](https://doc.plugins.penpot.app/) for more details.
 - Changes on the <code class="language-js">penpot.on</code> and <code class="language-js">penpot.off</code> methods.
 Previously you had to send the original callback to the off method in order to remove an event listener. Now, <code class="language-js">penpot.on</code> will return an *id* that you can pass to the <code class="language-js">penpot.off</code> method in order to remove the listener.
 

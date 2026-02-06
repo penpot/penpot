@@ -114,7 +114,7 @@
 
 (defn- load
   [locale]
-  (let [path (str "./translation." locale ".js?version=" (:full cf/version))]
+  (let [path (str "./translation." locale ".js?version=" cf/version-tag)]
     (->> (mod/import path)
          (p/fmap (fn [result] (unchecked-get result "default")))
          (p/fnly (fn [data cause]

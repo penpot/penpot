@@ -7,6 +7,29 @@ This guide details the process of publishing `plugin-types`,
 for plugin development. Below is a walkthrough for publishing these
 packages and managing releases.
 
+**Warning**
+Before generating the release, please, check the update the changelog with
+the changes that will be released.
+
+## Problem with pnpm
+
+There is an issue with dependencies and release with pnpm. For it to work
+you need to add the following into your `.npmrc`
+
+```
+link-workspace-packages=true
+```
+
+## NPM Authentication
+
+You need to generate a temporary access token in the NPM website.
+
+Once you have the token add the following to the `.npmrc`
+
+```
+//registry.npmjs.org/:_authToken=<TOKEN>
+```
+
 ## Publishing Libraries
 
 Publishing packages enables the distribution of types and styles
@@ -35,28 +58,16 @@ pnpm run release -- --dry-run false
 
 This command will:
 
-- Update the `CHANGELOG.md`
 - Update the library's `package.json` version
 - Generate a commit
-- Create a new git tag
 - Publish to NPM with the `latest` tag
 
 Ensure everything is correct before proceeding with the git push. Once
 verified, execute the following commands:
 
 ```shell
+git commit -m ":arrow_up: Updated plugins release to X.X.X"
 git push
-git push origin vX.X.X
-```
-
-Replace `vX.X.X` with the new version number.
-
-> 📘 To update the documentation site, you must also update the `stable` branch:
-
-```shell
-git checkout stable
-git merge main
-git push origin stable
 ```
 
 For detailed information, refer to the [Nx Release

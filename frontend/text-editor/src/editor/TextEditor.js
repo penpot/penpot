@@ -130,9 +130,9 @@ export class TextEditor extends EventTarget {
       cut: this.#onCut,
       copy: this.#onCopy,
 
+      keydown: this.#onKeyDown,
       beforeinput: this.#onBeforeInput,
       input: this.#onInput,
-      keydown: this.#onKeyDown,
     };
     this.#styleDefaults = options?.styleDefaults;
     this.#options = options;
@@ -160,7 +160,7 @@ export class TextEditor extends EventTarget {
     if (this.#element.ariaAutoComplete) this.#element.ariaAutoComplete = false;
     if (!this.#element.ariaMultiLine) this.#element.ariaMultiLine = true;
     this.#element.dataset.itype = "editor";
-    if (options.shouldUpdatePositionOnScroll) {
+    if (options?.shouldUpdatePositionOnScroll) {
       this.#updatePositionFromCanvas();
     }
   }
@@ -186,7 +186,7 @@ export class TextEditor extends EventTarget {
       "stylechange",
       this.#onStyleChange,
     );
-    if (options.shouldUpdatePositionOnScroll) {
+    if (options?.shouldUpdatePositionOnScroll) {
       window.addEventListener("scroll", this.#onScroll);
     }
     addEventListeners(this.#element, this.#events, {
@@ -218,7 +218,7 @@ export class TextEditor extends EventTarget {
 
     // Disposes the rest of event listeners.
     removeEventListeners(this.#element, this.#events);
-    if (this.#options.shouldUpdatePositionOnScroll) {
+    if (this.#options?.shouldUpdatePositionOnScroll) {
       window.removeEventListener("scroll", this.#onScroll);
     }
 
@@ -385,7 +385,8 @@ export class TextEditor extends EventTarget {
    * @param {InputEvent} e
    */
   #onBeforeInput = (e) => {
-    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+    if (e.inputType === "historyUndo"
+     || e.inputType === "historyRedo") {
       return;
     }
 
@@ -404,12 +405,8 @@ export class TextEditor extends EventTarget {
 
     if (e.inputType in commands) {
       const command = commands[e.inputType];
-      if (!this.#selectionController.startMutation()) {
-        return;
-      }
       command(e, this, this.#selectionController);
-      const mutations = this.#selectionController.endMutation();
-      this.#notifyLayout(LayoutType.FULL, mutations);
+      this.#notifyLayout(LayoutType.FULL);
     }
   };
 
@@ -419,7 +416,8 @@ export class TextEditor extends EventTarget {
    * @param {InputEvent} e
    */
   #onInput = (e) => {
-    if (e.inputType === "historyUndo" || e.inputType === "historyRedo") {
+    if (e.inputType === "historyUndo"
+     || e.inputType === "historyRedo") {
       return;
     }
 
@@ -454,19 +452,12 @@ export class TextEditor extends EventTarget {
 
     if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
       e.preventDefault();
-
-      if (!this.#selectionController.startMutation()) {
-        return;
-      }
-
       if (this.#selectionController.isCollapsed) {
         this.#selectionController.removeWordBackward();
       } else {
         this.#selectionController.removeSelected();
       }
-
-      const mutations = this.#selectionController.endMutation();
-      this.#notifyLayout(LayoutType.FULL, mutations);
+      this.#notifyLayout(LayoutType.FULL);
     }
   };
 
@@ -474,14 +465,12 @@ export class TextEditor extends EventTarget {
    * Notifies that the edited texts needs layout.
    *
    * @param {'full'|'partial'} type
-   * @param {CommandMutations} mutations
    */
-  #notifyLayout(type = LayoutType.FULL, mutations) {
+  #notifyLayout(type = LayoutType.FULL) {
     this.dispatchEvent(
       new CustomEvent("needslayout", {
         detail: {
           type: type,
-          mutations: mutations,
         },
       }),
     );
@@ -628,10 +617,8 @@ export class TextEditor extends EventTarget {
    * @returns {TextEditor}
    */
   applyStylesToSelection(styles) {
-    this.#selectionController.startMutation();
     this.#selectionController.applyStyles(styles);
-    const mutations = this.#selectionController.endMutation();
-    this.#notifyLayout(LayoutType.FULL, mutations);
+    this.#notifyLayout(LayoutType.FULL);
     this.#changeController.notifyImmediately();
     return this;
   }

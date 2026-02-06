@@ -8,6 +8,7 @@
 @use "ds/spacing.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
 
 .input-wrapper {
   --input-padding-size: var(--sp-xs);
@@ -29,16 +30,33 @@
 
 .icon {
   color: var(--color-foreground-secondary);
-  min-width: var(--sp-l);
+  min-inline-size: var(--sp-l);
+}
+
+.text-icon {
+  color: var(--color-foreground-secondary);
+  @include t.use-typography("code-font");
+  inline-size: fit-content;
+  min-inline-size: px2rem(40);
 }
 
 .invisible-button {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   opacity: var(--opacity-button);
-
+  background-color: var(--color-background-quaternary);
   &:hover {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
   &:focus {
+    background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
+}
+
+.button-tooltip {
+  inline-size: var($sz-28);
+  block-size: 100%;
 }

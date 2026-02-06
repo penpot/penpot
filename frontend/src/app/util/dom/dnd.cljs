@@ -44,9 +44,9 @@
     (js/console.log
      label
      "[" (:name data) "]"
-      ;; (if currentTarget
-      ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
-      ;;   "null")
+     ;; (if currentTarget
+     ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
+     ;;   "null")
      (if relatedTarget
        (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
        "null"))))

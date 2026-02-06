@@ -298,3 +298,11 @@
 .filtered {
   min-inline-size: $sz-12;
 }
+.lazy-load-sentinel {
+  min-height: 1px;
+  pointer-events: none;
+}
+.lazy-load-sentinel {
+  min-height: 1px;
+  pointer-events: none;
+}

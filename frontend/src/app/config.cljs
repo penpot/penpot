@@ -95,6 +95,7 @@
 (def browser              (parse-browser))
 (def platform             (parse-platform))
 
+(def version-tag          (obj/get global "penpotVersionTag"))
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
@@ -110,12 +111,9 @@
 
 (defn- normalize-uri
   [uri-str]
-  (let [uri (u/uri uri-str)]
-    ;; Ensure that the path always ends with "/"; this ensures that
-    ;; all path join operations works as expected.
-    (cond-> uri
-      (not (str/ends-with? (:path uri) "/"))
-      (update :path #(str % "/")))))
+  ;; Ensure that the path always ends with "/"; this ensures that
+  ;; all path join operations works as expected.
+  (u/ensure-path-slash uri-str))
 
 (def public-uri
   (normalize-uri (or (obj/get global "penpotPublicURI")
@@ -190,9 +188,8 @@
 
 (defn resolve-href
   [resource]
-  (let [version (get version :full)
-        href    (-> public-uri
-                    (u/ensure-path-slash)
-                    (u/join resource)
-                    (get :path))]
-    (str href "?version=" version)))
+  (let [href (-> public-uri
+                 (u/ensure-path-slash)
+                 (u/join resource)
+                 (get :path))]
+    (str href "?version=" version-tag)))

@@ -264,10 +264,13 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)]
-        (rx/of
-         (dwc/expand-all-parents ids objects)
-         ::dwsp/interrupt)))))
+      (let [objects (dsh/lookup-page-objects state)
+            ;; Schedule expanding parents asynchronously to avoid blocking
+            ;; the event loop
+            expand-s (->> (rx/of (dwc/expand-all-parents ids objects))
+                          (rx/observe-on :async))
+            interrupt-s (rx/of ::dwsp/interrupt)]
+        (rx/merge expand-s interrupt-s)))))
 
 (defn select-all
   []

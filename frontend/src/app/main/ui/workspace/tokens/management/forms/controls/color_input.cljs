@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as cl]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
@@ -51,12 +52,17 @@
 ;; Both variants provide identical color-picker and text-input behavior, but
 ;; differ in how they persist the value within the form’s nested structure.
 
-
 (defn- resolve-value
-  [tokens prev-token value]
-  (let [token
+  [tokens prev-token token-name value]
+  (let [valid-token-name?
+        (and (string? token-name)
+             (re-matches  cto/token-name-validation-regex token-name))
+
+        token
         {:value value
-         :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"}
+         :name (if (or (not valid-token-name?) (str/blank? token-name))
+                 "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
+                 token-name)}
 
         tokens
         (-> tokens
@@ -131,6 +137,7 @@
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
+        token-name (get-in @form [:data :name] nil)
 
 
         touched?
@@ -139,6 +146,9 @@
 
         error
         (get-in @form [:errors input-name])
+
+        extra-error
+        (get-in @form [:extra-errors input-name])
 
         value
         (get-in @form [:data input-name] "")
@@ -205,7 +215,7 @@
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
                  prev-input-color (some-> value
                                           (tinycolor/valid-color))
-                  ;; If the input is a reference we will take the format from the computed value
+                 ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
                                        (some-> value (tinycolor/valid-color)))
                  prev-format (some-> (or prev-input-color prev-computed-color)
@@ -247,15 +257,20 @@
                                   :hint-type (:type hint)})
 
         props
-        (if (and error touched?)
+        (cond
+          (and error touched?)
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message error)})
+          (and extra-error touched?)
+          (mf/spread-props props {:hint-type "error"
+                                  :hint-message (:message extra-error)})
+          :else
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name]
+    (mf/with-effect [resolve-stream tokens token input-name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token))
+                      (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]
@@ -301,7 +316,7 @@
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
-
+        token-name (get-in @form [:data :name] nil)
         error
         (get-in @form [:errors :value value-subfield index input-name])
 
@@ -369,7 +384,7 @@
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
                  prev-input-color (some-> value
                                           (tinycolor/valid-color))
-                  ;; If the input is a reference we will take the format from the computed value
+                 ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
                                        (some-> value (tinycolor/valid-color)))
                  prev-format (some-> (or prev-input-color prev-computed-color)
@@ -414,10 +429,10 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name index value-subfield]
+    (mf/with-effect [resolve-stream tokens token input-name index value-subfield token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
-                      (rx/mapcat (partial resolve-value tokens token))
+                      (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error
                                                (fn [error]

@@ -458,13 +458,13 @@
                                           (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))
                                           (every? nil?)))]
     (or
-      ;;We don't want to change the structure of component copies
+     ;;We don't want to change the structure of component copies
      (ctk/in-component-copy? parent)
      (has-any-copy-parent? objects parent)
-      ;; If we are moving something containing a main instance the container can't be part of a component (neither main nor copy)
+     ;; If we are moving something containing a main instance the container can't be part of a component (neither main nor copy)
      (and selected-main-instance? parent-in-component?)
-      ;; Avoid placing a shape as a direct or indirect child of itself,
-      ;; or inside its main component if it's in a copy.
+     ;; Avoid placing a shape as a direct or indirect child of itself,
+     ;; or inside its main component if it's in a copy.
      comps-nesting-loop?)))
 
 (defn find-valid-parent-and-frame-ids

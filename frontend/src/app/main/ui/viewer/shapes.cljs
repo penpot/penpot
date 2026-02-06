@@ -47,7 +47,7 @@
 (defn- ignore-frame-shape
   [shape objects manual?]
   (let [shape (cond-> shape ;; When the the interaction is not manual and its origin is a frame,
-                            ;; we need to ignore it on all the find-frame calculations
+                ;; we need to ignore it on all the find-frame calculations
                 (and (:frame-id shape) (not manual?))
                 (assoc :type :rect))
         objects (assoc objects (:id shape) shape)]

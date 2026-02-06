@@ -19,7 +19,6 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -842,7 +841,7 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
@@ -864,7 +863,7 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
@@ -922,7 +921,7 @@
       (t/is (= 0 (:processed result))))
 
     ;; run permanent deletion
-    (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [result (th/run-task! :objects-gc {})]
         (t/is (= 3 (:processed result)))))
 
@@ -1262,7 +1261,7 @@
       (t/is (= 1 (count rows)))
       (t/is (every? #(some? (:data %)) rows)))
 
-      ;; Mark the file ellegible again for GC
+    ;; Mark the file ellegible again for GC
     (th/db-update! :file
                    {:has-media-trimmed false}
                    {:id (:id file)})
@@ -1319,7 +1318,7 @@
                        {:file-id (:id file)
                         :type "fragment"}
                        {:order-by [:created-at]})]
-        ;; (pp/pprint rows)
+      ;; (pp/pprint rows)
       (t/is (= 2 (count rows)))
       (t/is (nil? (:data row1)))
       (t/is (= "storage" (:backend row1)))
@@ -1875,7 +1874,7 @@
         file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
@@ -1937,7 +1936,7 @@
         file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
@@ -2000,7 +1999,7 @@
         team-id (:default-team-id profile)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [project (th/create-project* 1 {:profile-id (:id profile)
                                            :team-id team-id})
             file    (th/create-file* 1 {:profile-id (:id profile)

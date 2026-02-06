@@ -18,27 +18,8 @@
   margin: deprecated.$s-16 deprecated.$s-12 deprecated.$s-4 deprecated.$s-12;
 }
 
-.shortcuts-header {
-  @include deprecated.flexCenter;
-  @include deprecated.uppercaseTitleTipography;
-  position: relative;
-  height: deprecated.$s-32;
-  padding: deprecated.$s-2 deprecated.$s-2 deprecated.$s-2 0;
-  margin: deprecated.$s-4 deprecated.$s-4 0 deprecated.$s-4;
-  border-radius: deprecated.$br-6;
-  background-color: var(--panel-title-background-color);
-
-  .shortcuts-title {
-    @include deprecated.flexCenter;
-    flex-grow: 1;
-    color: var(--title-foreground-color-hover);
-  }
-
-  .shortcuts-close-button {
-    position: absolute;
-    right: 0;
-    top: 0;
-  }
+.shortcuts-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
 }
 
 .section {

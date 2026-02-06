@@ -88,7 +88,7 @@
 
         expandable? (d/nilv (seq tokens) false)
 
-        on-context-menu
+        on-pill-context-menu
         (mf/use-fn
          (fn [event token]
            (dom/prevent-default event)
@@ -97,6 +97,15 @@
                        :position (dom/get-client-position event)
                        :errors (:errors token)
                        :token-id (:id token)}))))
+
+        on-node-context-menu
+        (mf/use-fn
+         (fn [event node]
+           (dom/prevent-default event)
+           (st/emit! (dwtl/assign-token-node-context-menu
+                      {:node node
+                       :type type
+                       :position (dom/get-client-position event)}))))
 
         on-toggle-open-click
         (mf/use-fn
@@ -159,4 +168,5 @@
                         :selected-token-set-id selected-token-set-id
                         :is-selected-inside-layout is-selected-inside-layout
                         :on-token-pill-click on-token-pill-click
-                        :on-context-menu on-context-menu}])]))
+                        :on-pill-context-menu on-pill-context-menu
+                        :on-node-context-menu on-node-context-menu}])]))
