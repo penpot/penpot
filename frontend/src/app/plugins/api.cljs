@@ -364,13 +364,10 @@
                   (cb/with-objects (:objects page))
                   (cb/add-object shape))]
 
-          (st/emit!
-           (ch/commit-changes changes)
-<<<<<<< HEAD
-           (se/event plugin-id "create-shape" :type :text))
-=======
-           (dwwt/resize-wasm-text-debounce (:id shape)))
->>>>>>> origin/staging-render
+          (st/emit! (ch/commit-changes changes)
+                    (se/event plugin-id "create-shape" :type :text)
+                    (dwwt/resize-wasm-text-debounce (:id shape)))
+
           (shape/shape-proxy plugin-id (:id shape)))))
 
     :createShapeFromSvg
