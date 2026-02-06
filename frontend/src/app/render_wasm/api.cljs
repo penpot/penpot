@@ -190,11 +190,13 @@
 (defn update-text-rect!
   [id]
   (when wasm/context-initialized?
-    (mw/emit!
-     {:cmd :index/update-text-rect
-      :page-id (:current-page-id @st/state)
-      :shape-id id
-      :dimensions (get-text-dimensions id)})))
+    (let [dimensions (get-text-dimensions id)
+          page-id (:current-page-id @st/state)]
+      (mw/emit!
+       {:cmd :index/update-text-rect
+        :page-id page-id
+        :shape-id id
+        :dimensions dimensions}))))
 
 
 (defn- ensure-text-content
@@ -865,12 +867,12 @@
 
   (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (f/get-content-fonts content)
+  (let [fonts          (f/get-content-fonts content)
         fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts shape-id all-fonts)]
+        all-fonts      (concat fonts fallback-fonts)
+        result         (f/store-fonts all-fonts)]
     (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
+    (f/update-text-layout shape-id)
     result))
 
 (defn set-shape-grow-type
@@ -1564,7 +1566,7 @@
                        :text-decoration (get element :text-decoration)
                        :letter-spacing  (get element :letter-spacing)
                        :font-style      (get element :font-style)
-                       :fills           (get element :fills)
+                       :fills           (d/nilv (get element :fills) [{:fill-color "#000000"}])
                        :text            text}))))))]
       (mem/free)
 

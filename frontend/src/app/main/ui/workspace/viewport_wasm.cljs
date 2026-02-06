@@ -705,8 +705,8 @@
           [:& grid-layout/editor
            {:zoom zoom
             :objects objects-modified
-            :shape (or (get base-objects edition)
-                       (get base-objects @hover-top-frame-id))
+            :shape (or (get objects-modified edition)
+                       (get objects-modified @hover-top-frame-id))
             :view-only (not show-grid-editor?)}])]
 
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}

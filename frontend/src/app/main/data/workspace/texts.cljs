@@ -776,11 +776,7 @@
              (rx/of (v2-update-text-editor-styles id attrs)))
 
            (when (features/active-feature? state "render-wasm/v1")
-             ;; This delay is to give time for the font to be correctly rendered
-             ;; in wasm.
-             (cond->> (rx/of (dwwt/resize-wasm-text id))
-               (contains? attrs :font-id)
-               (rx/delay 200)))))))
+             (rx/of (dwwt/resize-wasm-text-debounce id)))))))
 
     ptk/EffectEvent
     (effect [_ state _]

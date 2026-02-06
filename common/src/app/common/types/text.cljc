@@ -407,17 +407,19 @@
 (defn change-text
   "Changes the content of the text shape to use the text as argument. Will use the styles of the
    first paragraph and text that is present in the shape (and override the rest)"
-  [content text]
+  [content text & {:as styles}]
   (let [root-styles (select-keys content root-attrs)
 
         paragraph-style
         (merge
          default-text-attrs
+         styles
          (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
 
         text-style
         (merge
          default-text-attrs
+         styles
          (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
 
         paragraph-texts

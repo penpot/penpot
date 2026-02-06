@@ -61,6 +61,7 @@ impl LayoutAxis {
         layout_data: &LayoutData,
         flex_data: &FlexData,
     ) -> Self {
+        let num_child = shape.children_count();
         if flex_data.is_row() {
             Self {
                 main_size: layout_bounds.width(),
@@ -73,8 +74,8 @@ impl LayoutAxis {
                 padding_across_end: layout_data.padding_bottom,
                 gap_main: layout_data.column_gap,
                 gap_across: layout_data.row_gap,
-                is_auto_main: shape.is_layout_horizontal_auto(),
-                is_auto_across: shape.is_layout_vertical_auto(),
+                is_auto_main: num_child > 0 && shape.is_layout_horizontal_auto(),
+                is_auto_across: num_child > 0 && shape.is_layout_vertical_auto(),
             }
         } else {
             Self {
@@ -88,8 +89,8 @@ impl LayoutAxis {
                 padding_across_end: layout_data.padding_right,
                 gap_main: layout_data.row_gap,
                 gap_across: layout_data.column_gap,
-                is_auto_main: shape.is_layout_vertical_auto(),
-                is_auto_across: shape.is_layout_horizontal_auto(),
+                is_auto_main: num_child > 0 && shape.is_layout_vertical_auto(),
+                is_auto_across: num_child > 0 && shape.is_layout_horizontal_auto(),
             }
         }
     }
@@ -345,7 +346,10 @@ fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackDat
                 let mut size =
                     track.across_size - child.margin_across_start - child.margin_across_end;
                 size = size.clamp(child.min_across_size, child.max_across_size);
-                size = f32::min(size, layout_axis.across_space());
+
+                if !layout_axis.is_auto_across {
+                    size = f32::min(size, layout_axis.across_space());
+                }
                 child.across_size = size;
             }
         }
@@ -620,9 +624,12 @@ pub fn reflow_flex_layout(
 
             let mut transform = Matrix::default();
 
+            let mut force_reflow = false;
             if (new_width - child_bounds.width()).abs() > MIN_SIZE
                 || (new_height - child_bounds.height()).abs() > MIN_SIZE
             {
+                // When the child is fill we need to force a reflow
+                force_reflow = true;
                 transform.post_concat(&math::resize_matrix(
                     layout_bounds,
                     child_bounds,
@@ -637,7 +644,7 @@ pub fn reflow_flex_layout(
 
             result.push_back(Modifier::transform_propagate(child.id, transform));
             if child.has_layout() {
-                result.push_back(Modifier::reflow(child.id));
+                result.push_back(Modifier::reflow(child.id, force_reflow));
             }
 
             shape_anchor = next_anchor(
