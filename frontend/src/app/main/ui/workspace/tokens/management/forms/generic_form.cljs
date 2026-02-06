@@ -22,6 +22,7 @@
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -126,6 +127,10 @@
           (cond-> (merge tokens tokens-in-selected-set)
             (and (:name token) (:value token))
             (assoc (:name token) token)))
+
+        active-tokens-by-type
+        (mf/with-memo [tokens]
+          (delay (ctob/group-by-type tokens)))
 
         schema
         (mf/with-memo [tokens-tree-in-selected-set active-tab]
@@ -253,7 +258,8 @@
                            error-message (first error-messages)]
                        (swap! form assoc-in [:extra-errors :value] {:message error-message}))))))))]
 
-    [:> fc/form* {:class (stl/css :form-wrapper)
+    [(mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+     [:> fc/form* {:class (stl/css :form-wrapper)
                   :form form
                   :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
@@ -296,6 +302,7 @@
            :label       (tr "workspace.tokens.token-value")
            :name        :value
            :token       token
+           :token-type  token-type
            :tokens      tokens}])]
 
       [:div {:class (stl/css :input-row)}
@@ -327,4 +334,4 @@
 
        [:> fc/form-submit* {:variant "primary"
                             :on-submit on-submit}
-        (tr "labels.save")]]]]))
+        (tr "labels.save")]]]]]))

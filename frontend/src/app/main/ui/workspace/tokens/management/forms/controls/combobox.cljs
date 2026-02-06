@@ -5,21 +5,29 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.combobox
+  (:require-macros [app.main.style :as stl])
   (:require
+
+
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
    [app.common.types.token :as cto]
+   [app.common.types.token :as tk]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.ui.context :as muc]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :as ds]
+   [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.forms :as fc]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
+   [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]
@@ -56,7 +64,7 @@
   [token]
   {:id (str (get token :id))
    :type :token
-   :resolved-value (get token :resolved-value)
+   :resolved-value (get token :value)
    :name (get token :name)})
 
 (defn- generate-dropdown-options
@@ -123,33 +131,38 @@
           [group (sort-by :name tokens)])))
 
 
+
 (mf/defc combobox*
-  [{:keys [name tokens token] :rest props}]
+  [{:keys [name tokens token token-type empty-to-end align ref] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
-        tokens2          (if (object? tokens)
-                           (mfu/bean tokens)
-                           tokens)
+
         input-name name
         token-name (get-in @form [:data :name] nil)
 
-        tokens3 (mf/use-ctx muc/active-tokens-by-type)
+        is-open*        (mf/use-state false)
+        is-open         (deref is-open*)
+        listbox-id      (mf/use-id)
+        focused-id*     (mf/use-state nil)
+        focused-id      (deref focused-id*)
 
-        tokens3 (mf/with-memo [tokens3 "boder-radius"]
-                 (delay
-                   (-> (deref tokens3)
-                       (select-keys (get cto/tokens-by-input "boder-radius"))
-                       (not-empty))))
-        _ (prn "tokens" @tokens3)
+        raw-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
+
+        filtered-tokens-by-type (mf/with-memo [raw-tokens-by-type token-type]
+                                  (delay
+                                    (-> (deref raw-tokens-by-type)
+                                        (select-keys (get tk/tokens-by-input token-type))
+                                        (not-empty))))
+        _ (prn @filtered-tokens-by-type)
 
         ;; OPTIONS -> duplicated from numeric input
         filter-id*      (mf/use-state "")
         filter-id       (deref filter-id*)
 
         dropdown-options
-        (mf/with-memo [tokens3 filter-id]
+        (mf/with-memo [filtered-tokens-by-type filter-id]
           (delay
-            (let [tokens  (if (delay? tokens3) @tokens3 tokens3)
+            (let [tokens  (if (delay? filtered-tokens-by-type) @filtered-tokens-by-type filtered-tokens-by-type)
 
                   sorted-tokens (sort-groups-and-tokens tokens)
                   partial (extract-partial-brace-text filter-id)
@@ -159,6 +172,7 @@
                   no-sets? (nil? sorted-tokens)]
               (generate-dropdown-options options no-sets?))))
         _ (.log js/console (clj->js @dropdown-options))
+
 
         touched?
         (and (contains? (:data @form) input-name)
@@ -182,6 +196,23 @@
         hint
         (deref hint*)
 
+        nodes-ref            (mf/use-ref nil)
+
+        set-option-ref
+        (mf/use-fn
+         (fn [node]
+           (let [state (mf/ref-val nodes-ref)
+                 state (d/nilv state #js {})
+                 id    (dom/get-data node "id")
+                 state (obj/set! state id node)]
+             (mf/set-ref-val! nodes-ref state)
+             (fn []
+               (let [state (mf/ref-val nodes-ref)
+                     state (d/nilv state #js {})
+                     id    (dom/get-data node "id")
+                     state (obj/unset! state id)]
+                 (mf/set-ref-val! nodes-ref state))))))
+
         on-change
         (mf/use-fn
          (mf/deps resolve-stream input-name)
@@ -190,11 +221,47 @@
              (fm/on-input-change form input-name value true)
              (rx/push! resolve-stream value))))
 
+        on-option-click
+        (mf/use-fn
+         (mf/deps)
+         (fn [event]
+           (let [_ (prn "deberia añadir el contenido a X")]
+
+             (reset! filter-id* ""))))
+
+        on-option-enter
+        (mf/use-fn
+         (mf/deps)
+         (fn [_]
+           (let [_ (prn "deberia añadir el contenido a X pero con enter")]
+
+             (reset! filter-id* ""))))
+        internal-ref         (mf/use-ref nil)
+        ref                  (or ref internal-ref)
+        open-dropdown-ref    (mf/use-ref nil)
+
+        open-dropdown
+        (mf/use-fn
+         (mf/deps  ref)
+         (fn [event]
+           (dom/prevent-default event)
+           (swap! is-open* not)
+           (dom/focus! (mf/ref-val ref))))
+
+
         props
         (mf/spread-props  props  {:on-change on-change
                                   :default-value value
                                   :variant "comfortable"
                                   :hint-message (:message hint)
+                                  :slot-end (when (some? tokens)
+                                              (mf/html [:> icon-button* {:variant "ghost"
+                                                                         :icon i/arrow-down
+                                                                         :tooltip-class (stl/css :button-tooltip)
+                                                                         :class (stl/css :invisible-button)
+                                                                         :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
+                                                                         :ref open-dropdown-ref
+                                                                         :on-click open-dropdown}]))
                                   :hint-type (:type hint)})
         props
         (if (and error touched?)
@@ -225,4 +292,27 @@
         (fn []
           (rx/dispose! subs))))
 
-    [:> ds/input* props]))
+    [:div {}
+     [:> ds/input* props]
+     (when ^boolean is-open
+       (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+         [:> options-dropdown* {:on-click on-option-click
+                                :id listbox-id
+                                :options options
+                                :focused focused-id
+                                :selected nil
+                                :align :right
+                                :empty-to-end empty-to-end
+                                :ref set-option-ref}])
+       #_(mf/portal
+          (mf/html
+           (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+             [:> options-dropdown* {:on-click on-option-click
+                                    :id listbox-id
+                                    :options options
+                                    :focused focused-id
+                                    :selected nil
+                                    :align :right
+                                    :empty-to-end empty-to-end
+                                    :ref set-option-ref}]))
+          (dom/get-body)))]))
