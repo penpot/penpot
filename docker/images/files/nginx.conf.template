@@ -73,6 +73,7 @@ http {
 
     server {
         listen 8080 default_server;
+        listen [::]:8080 default_server;
         server_name _;
 
         client_max_body_size $PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE;
