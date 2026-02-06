@@ -347,77 +347,6 @@ msgstr "Vas a restaurar %s."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurar archivo"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "Token copiado"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "Generar nuevo token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "Access token creado con éxito."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Pulsa el botón \"Generar nuevo token\" para generar uno."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Todavía no tienes ningún token."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 días"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 días"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 días"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 días"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "Nunca"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Expiró el %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "Expira el %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "Sin fecha de expiración"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "Access tokens personales"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Los access tokens personales funcionan como una alternativa a nuestro "
-"sistema de autenticación usuario/password y se pueden usar para permitir a "
-"otras aplicaciones acceso a la API interna de Penpot"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "El token expirará el %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "El token no tiene fecha de expiración"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Añadir archivo"
@@ -807,6 +736,109 @@ msgstr "Enviando datos al servidor (%s/%s)"
 #: src/app/main/ui/dashboard/import.cljs:122
 msgid "dashboard.import.progress.upload-media"
 msgstr "Enviando fichero: %s"
+
+#: src/app/main/ui/settings/integrations.cljs:480
+msgid "dashboard.integrations.title"
+msgstr "Integraciones"
+
+#: src/app/main/ui/settings/integrations.cljs:189
+msgid "dashboard.integrations.access-tokens.create"
+msgstr "Crear nuevo token de acceso"
+
+#: src/app/main/ui/settings/integrations.cljs:286
+msgid "dashboard.integrations.access-tokens.empty.add-one"
+msgstr "Pulsa el botón \"Crear nuevo token de accesso\" para generar uno."
+
+#: src/app/main/ui/settings/integrations.cljs:285
+msgid "dashboard.integrations.access-tokens.empty.no-access-tokens"
+msgstr "Todavía no tienes ningún token."
+
+#: src/app/main/ui/settings/integrations.cljs:184
+msgid "dashboard.integrations.access-tokens.personal"
+msgstr "Tokens de acceso personales"
+
+#: src/app/main/ui/settings/integrations.cljs:185
+msgid "dashboard.integrations.access-tokens.personal.description"
+msgstr ""
+"Los tokens de accesso personales funcionan como una alternativa a nuestro "
+"sistema de autenticación usuario/password y se pueden usar para permitir a "
+"otras aplicaciones acceso a la API interna de Penpot"
+
+#: src/app/main/ui/settings/integrations.cljs:336
+msgid "dashboard.integrations.mcp-server.title"
+msgstr "Servidor MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:336
+msgid "dashboard.integrations.mcp-server.title.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/integrations.cljs:347
+msgid "dashboard.integrations.mcp-server.description"
+msgstr "El servidor MCP de Penpot permite que los clientes MCP interactúen directamente con los archivos de diseño de Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:353
+msgid "dashboard.integrations.mcp-server.status"
+msgstr "Estado"
+
+#: src/app/main/ui/settings/integrations.cljs:370
+msgid "dashboard.integrations.mcp-server.status.enabled"
+msgstr "Habilitado"
+
+#: src/app/main/ui/settings/integrations.cljs:370
+msgid "dashboard.integrations.mcp-server.status.disabled"
+msgstr "Deshabilitado"
+
+#: src/app/main/ui/settings/integrations.cljs:363
+msgid "dashboard.integrations.mcp-server.status.expired.0"
+msgstr "La clave MCP utilizada para conectarse al servidor MCP ha expirado. Como resultado, no se puede establecer la conexión."
+
+#: src/app/main/ui/settings/integrations.cljs:368
+msgid "dashboard.integrations.mcp-server.status.expired.1"
+msgstr "Por favor, regenera la clave MCP y actualiza la configuración de tu cliente con la nueva clave." 
+
+#: src/app/main/ui/settings/integrations.cljs:415
+msgid "dashboard.integrations.mcp-server.mcp-keys.copy"
+msgstr  "Copiar enlace"
+
+#: src/app/main/ui/settings/integrations.cljs:422
+msgid "dashboard.integrations.mcp-server.mcp-keys.help"
+msgstr "Cómo configurar clientes MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:405
+msgid "dashboard.integrations.mcp-server.mcp-keys.info"
+msgstr "Esta es la URL del servidor que necesitarás configurar en tu cliente MCP para conectarlo al servidor MCP de Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:387
+msgid "dashboard.integrations.mcp-server.mcp-keys.regenerate"
+msgstr "Regenerar clave MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:381
+msgid "dashboard.integrations.mcp-server.mcp-keys.title"
+msgstr "Claves MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:388
+msgid "dashboard.integrations.mcp-server.mcp-keys.tootip"
+msgstr "La clave MCP es necesaria para la configuración del cliente MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:103
+msgid "dashboard.integrations.notification.success.copied"
+msgstr "Token copiado"
+
+#: src/app/main/ui/settings/integrations.cljs:64
+msgid "dashboard.integrations.notification.success.created"
+msgstr "Token creado con éxito"
+
+#: src/app/main/ui/settings/integrations.cljs:327
+msgid "dashboard.integrations.notification.success.copied-link"
+msgstr "Enlace copiado al portapapeles"
+
+#: src/app/main/ui/settings/integrations.cljs:293
+msgid "dashboard.integrations.notification.success.mcp-server-disabled"
+msgstr "Servidor MCP deshabilitado"
+
+#: src/app/main/ui/settings/integrations.cljs:299
+msgid "dashboard.integrations.notification.success.mcp-server-enabled"
+msgstr "Servidor MCP habilitado"
 
 #: src/app/main/ui/dashboard/team.cljs:765
 msgid "dashboard.invitation-modal.delete"
@@ -2445,6 +2477,10 @@ msgstr "Información"
 msgid "labels.installed-fonts"
 msgstr "Fuentes instaladas"
 
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.integrations"
+msgstr "Integraciones"
+
 #: src/app/main/ui/static.cljs:396
 msgid "labels.internal-error.desc-message-first"
 msgstr "Ha ocurrido algo extraño."
@@ -3101,30 +3137,6 @@ msgstr "Cambiar correo"
 msgid "modals.change-email.title"
 msgstr "Cambiar tu correo"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "Copiar token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Fecha de expiración"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Nombre"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "El nombre te pude ayudar a saber para qué se utiliza el token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Crear token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Generar access token"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Crear webhook"
@@ -3140,18 +3152,6 @@ msgstr "Payload URL"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Borrar token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "¿Seguro que deseas borrar este token?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Borrar token"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -3340,6 +3340,106 @@ msgstr "Modificar webhook"
 #: src/app/main/ui/dashboard/team.cljs:1091
 msgid "modals.edit-webhook.title"
 msgstr "Modificar webhook"
+
+#: src/app/main/ui/settings/integrations.cljs:152, src/app/main/ui/settings/integrations.cljs:158
+msgid "modals.integrations.copy-token"
+msgstr "Copiar token"
+
+#: src/app/main/ui/settings/integrations.cljs:135
+msgid "modals.integrations.expiration-180-days"
+msgstr "180 días"
+
+#: src/app/main/ui/settings/integrations.cljs:132
+msgid "modals.integrations.expiration-30-days"
+msgstr "30 días"
+
+#: src/app/main/ui/settings/integrations.cljs:133
+msgid "modals.integrations.expiration-60-days"
+msgstr "60 días"
+
+#: src/app/main/ui/settings/integrations.cljs:134
+msgid "modals.integrations.expiration-90-days"
+msgstr "90 días"
+
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "modals.integrations.expiration-never"
+msgstr "Nunca"
+
+#: src/app/main/ui/settings/integrations.cljs:268
+msgid "modals.integrations.expired-on"
+msgstr "Expiró el %s"
+
+#: src/app/main/ui/settings/integrations.cljs:269
+msgid "modals.integrations.expires-on"
+msgstr "Expira el %s"
+
+#: src/app/main/ui/settings/integrations.cljs:267
+msgid "modals.integrations.no-expiration"
+msgstr "Sin fecha de expiración"
+
+#: src/app/main/ui/settings/integrations.cljs:130
+msgid "modals.integrations.expiration-date.label"
+msgstr "Fecha de expiración"
+
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "modals.integrations.info.non-recuperable"
+msgstr "Esta clave única no es recuperable. Si la pierdes, tendrás que crear una nueva."
+
+#: src/app/main/ui/settings/integrations.cljs:124
+msgid "modals.integrations.name.label"
+msgstr "Nombre"
+
+#: src/app/main/ui/settings/integrations.cljs:126
+msgid "modals.integrations.name.placeholder"
+msgstr "El nombre te pude ayudar a saber para qué se utiliza el token"
+
+#: src/app/main/ui/settings/integrations.cljs:432
+msgid "modals.integrations.access-token.title"
+msgstr "Crear token de accesso"
+
+#: src/app/main/ui/settings/integrations.cljs:433
+msgid "modals.integrations.access-token.title.created"
+msgstr "Token de acceso creado"
+
+#: src/app/main/ui/settings/integrations.cljs:290
+msgid "modals.integrations.mcp-create.title"
+msgstr "Crear nueva clave MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:291
+msgid "modals.integrations.mcp-create.title.created"
+msgstr "Clave MCP creada"
+
+#: src/app/main/ui/settings/integrations.cljs:317
+msgid "modals.integrations.mcp-regenerate.info"
+msgstr "Regenerar la clave revocará inmediatamente la actual. Cualquier aplicación que la esté utilizando dejará de funcionar."
+
+#: src/app/main/ui/settings/integrations.cljs:317
+msgid "modals.integrations.mcp-regenerate.title"
+msgstr "Regenerar clave MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:318
+msgid "modals.integrations.mcp-regenerate.title.created"
+msgstr "Clave MCP regenerada"
+
+#: src/app/main/ui/settings/integrations.cljs:142
+msgid "modals.integrations.token-will-expire"
+msgstr "El token expirará el %s"
+
+#: src/app/main/ui/settings/integrations.cljs:143
+msgid "modals.integrations.token-will-not-expire"
+msgstr "El token no tiene fecha de expiración"
+
+#: src/app/main/ui/settings/integrations.cljs:257
+msgid "modals.integrations.delete-token.accept"
+msgstr "Borrar token"
+
+#: src/app/main/ui/settings/integrations.cljs:256
+msgid "modals.integrations.delete-token.message"
+msgstr "¿Seguro que deseas borrar este token?"
+
+#: src/app/main/ui/settings/integrations.cljs:255
+msgid "modals.integrations.delete-token.title"
+msgstr "Borrar token"
 
 #: src/app/main/ui/dashboard/team.cljs:249
 msgid "modals.invite-member-confirm.accept"
@@ -5062,13 +5162,13 @@ msgstr "Bibliotecas Compartidas - %s - Penpot"
 msgid "title.default"
 msgstr "Penpot - Diseño Libre para Equipos"
 
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Perfil - Access tokens"
-
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Danos tu opinión - Penpot"
+
+#: src/app/main/ui/settings/integrations.cljs:278
+msgid "title.settings.integrations"
+msgstr "Integraciones - Penpot"
 
 #: src/app/main/ui/settings/notifications.cljs:45
 msgid "title.settings.notifications"

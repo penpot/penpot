@@ -9,14 +9,17 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
    [goog.events :as events]
    [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+  (:import
+   goog.events.EventType))
 
 (mf/defc confirm-dialog
   {::mf/register modal/components
@@ -68,8 +71,11 @@
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
-       [:button {:class (stl/css :modal-close-btn)
-                 :on-click cancel-fn} deprecated-icon/close]]
+       [:> icon-button* {:variant "ghost"
+                         :class (stl/css :modal-close-btn)
+                         :aria-label (tr "labels.close")
+                         :on-click cancel-fn
+                         :icon i/close}]]
 
       [:div {:class (stl/css :modal-content)}
        (when (and (string? message) (not= message ""))
@@ -87,24 +93,19 @@
           [:ul {:class (stl/css :component-list)}
            (for [item items]
              [:li {:class (stl/css :modal-item-element)}
-              [:span {:class (stl/css :modal-component-icon)}
-               deprecated-icon/component]
+              [:> icon* {:icon-id i/component
+                         :class (stl/css :modal-component-icon)
+                         :size "s"}]
               [:span {:class (stl/css :modal-component-name)}
                (:name item)]])]])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
         (when-not (= cancel-label :omit)
-          [:input
-           {:class (stl/css :cancel-button)
-            :type "button"
-            :value cancel-label
-            :on-click cancel-fn}])
-
-        [:input
-         {:class (stl/css-case :accept-btn true
-                               :danger (= accept-style :danger)
-                               :primary (= accept-style :primary))
-          :type "button"
-          :value accept-label
-          :on-click accept-fn}]]]]]))
+          [:> button* {:variant "secondary"
+                       :on-click cancel-fn}
+           cancel-label])
+        [:> button* {:variant (cond (= accept-style :danger)  "destructive"
+                                    (= accept-style :primary) "primary")
+                     :on-click accept-fn}
+         accept-label]]]]]))

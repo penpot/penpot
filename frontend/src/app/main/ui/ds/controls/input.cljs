@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
@@ -52,10 +51,11 @@
                                       :has-hint has-hint
                                       :hint-type hint-type
                                       :variant variant})]
-    [:div {:class (dm/str class " " (stl/css-case :input-wrapper true
-                                                  :variant-dense (= variant "dense")
-                                                  :variant-comfortable (= variant "comfortable")
-                                                  :has-hint has-hint))}
+
+    [:div {:class [class (stl/css-case :input-wrapper true
+                                       :variant-dense (= variant "dense")
+                                       :variant-comfortable (= variant "comfortable")
+                                       :has-hint has-hint)]}
      (when has-label
        [:> label* {:for id :is-optional is-optional} label])
      [:> input-field* props]
@@ -64,4 +64,3 @@
                           :class hint-class
                           :message hint-message
                           :type hint-type}])]))
-

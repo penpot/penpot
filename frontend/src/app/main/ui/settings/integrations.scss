@@ -1,0 +1,205 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.color-primary {
+  color: var(--color-foreground-primary);
+}
+
+.color-secondary {
+  color: var(--color-foreground-secondary);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.fit-content {
+  inline-size: fit-content;
+}
+
+.beta {
+  color: var(--color-accent-primary);
+  border: $b-1 solid var(--color-accent-primary);
+  inline-size: fit-content;
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-4;
+}
+
+.title {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--sp-s);
+}
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  inline-size: $sz-400;
+  position: relative;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxxl);
+}
+
+.modal-close-button {
+  position: absolute;
+  top: var(--sp-s);
+  right: var(--sp-s);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: right;
+  gap: var(--sp-s);
+}
+
+.modal-token {
+  position: relative;
+}
+
+.modal-token-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.integrations {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  margin: $sz-88 auto $sz-120 auto;
+  gap: $sz-32;
+  inline-size: $sz-500;
+}
+
+.access-tokens-section {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: var(--sp-s);
+}
+
+.mcp-server-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.mcp-server-notification {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.mcp-server-notification-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-m);
+}
+
+.mcp-server-notification-link {
+  color: var(--color-accent-primary);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.mcp-server-title {
+  margin: var(--sp-s) 0;
+}
+
+.mcp-server-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.mcp-server-regenerate {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.separator {
+  border: $b-1 solid var(--color-background-quaternary);
+  margin: var(--sp-s) 0;
+}
+
+.frame {
+  border: $b-1 solid var(--color-background-quaternary);
+  padding: var(--sp-m);
+  border-radius: $br-8;
+}
+
+.list {
+  display: grid;
+  grid-auto-rows: $sz-64;
+  gap: var(--sp-m);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 45% 1fr auto;
+  align-items: center;
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-8;
+}
+
+.item-title {
+  @include textEllipsis;
+  align-content: center;
+  block-size: $sz-64;
+  padding: 0 var(--sp-l);
+  color: var(--color-foreground-primary);
+}
+
+.item-subtitle {
+  align-content: center;
+  block-size: $sz-64;
+  color: var(--color-foreground-secondary);
+
+  &.warning {
+    padding: var(--sp-s) var(--sp-m);
+    block-size: fit-content;
+    inline-size: fit-content;
+    color: var(--color-foreground-primary);
+    background-color: var(--color-background-warning);
+    border: $b-1 solid var(--color-accent-warning);
+    border-radius: $br-8;
+  }
+}
+
+.item-actions {
+  position: relative;
+}
+
+.item-button {
+  block-size: $sz-64;
+  inline-size: $sz-48;
+  border-radius: 0 var(--sp-s) var(--sp-s) 0;
+}
