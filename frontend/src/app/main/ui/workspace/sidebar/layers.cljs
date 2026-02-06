@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.common.weak :as weak]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -21,7 +22,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
-   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
+   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item*]]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -31,92 +32,160 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import
-   goog.events.EventType))
+   [okulary.core :as l]
+   [rumext.v2 :as mf]))
+
+(def ^:private ref:highlighted-shapes
+  (l/derived (fn [local]
+               (-> local
+                   (get :highlighted)
+                   (not-empty)))
+             refs/workspace-local))
+
+(def ^:private ref:shape-for-rename
+  (l/derived (l/key :shape-for-rename) refs/workspace-local))
+
+(defn- use-selected-shapes
+  "A convencience hook wrapper for get selected shapes"
+  []
+  (let [selected (mf/deref refs/selected-shapes)]
+    (hooks/use-equal-memo selected)))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
-(mf/defc frame-wrapper
-  {::mf/props :obj}
+(mf/defc frame-wrapper*
   [{:keys [selected] :as props}]
-  (let [pending-selected (mf/use-var selected)
-        current-selected (mf/use-state selected)
-        props            (mf/spread-object props {:selected @current-selected})
+  (let [pending-selected-ref
+        (mf/use-ref selected)
+
+        current-selected
+        (mf/use-state selected)
+
+        props
+        (mf/spread-object props {:selected @current-selected})
 
         set-selected
-        (mf/use-memo
-         (fn []
-           (throttle-fn
-            50
-            #(when-let [pending-selected @pending-selected]
-               (reset! current-selected pending-selected)))))]
+        (mf/with-memo []
+          (throttle-fn 50 #(when-let [pending-selected (mf/ref-val pending-selected-ref)]
+                             (reset! current-selected pending-selected))))]
 
     (mf/with-effect [selected set-selected]
-      (reset! pending-selected selected)
-      (set-selected)
+      (mf/set-ref-val! pending-selected-ref selected)
+      (^function set-selected)
       (fn []
-        (reset! pending-selected nil)
-        #(rx/dispose! set-selected)))
+        (mf/set-ref-val! pending-selected-ref nil)
+        (rx/dispose! set-selected)))
 
-    [:> layer-item props]))
+    [:> layer-item* props]))
 
-(mf/defc layers-tree
-  {::mf/wrap [mf/memo #(mf/throttle % 200)]
-   ::mf/wrap-props false}
-  [{:keys [objects filtered? parent-size] :as props}]
-  (let [selected       (mf/deref refs/selected-shapes)
-        selected       (hooks/use-equal-memo selected)
-        highlighted    (mf/deref refs/highlighted-shapes)
-        highlighted    (hooks/use-equal-memo highlighted)
-        root           (get objects uuid/zero)]
+(mf/defc layers-tree*
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects is-filtered parent-size] :as props}]
+  (let [selected    (use-selected-shapes)
+        highlighted (mf/deref ref:highlighted-shapes)
+        root        (get objects uuid/zero)
+
+        rename-id   (mf/deref ref:shape-for-rename)
+
+        shapes      (get root :shapes)
+        shapes      (mf/with-memo [shapes objects]
+                      (loop [counter 0
+                             shapes (seq shapes)
+                             result (list)]
+                        (if-let [id (first shapes)]
+                          (if-let [obj (get objects id)]
+                            (do
+                              ;; NOTE: this is a bit hacky, but reduces substantially
+                              ;; the allocation; If we use enumeration, we allocate
+                              ;; new sequence and add one iteration on each render,
+                              ;; independently if objects are changed or not. If we
+                              ;; store counter on metadata, we still need to create a
+                              ;; new allocation for each shape; with this method we
+                              ;; bypass this by mutating a private property on the
+                              ;; object removing extra allocation and extra iteration
+                              ;; on every request.
+                              (unchecked-set obj "__$__counter" counter)
+                              (recur (inc counter)
+                                     (rest shapes)
+                                     (conj result obj)))
+                            (recur (inc counter)
+                                   (rest shapes)
+                                   result))
+                          result)))]
+
     [:div {:class (stl/css :element-list) :data-testid "layer-item"}
      [:> hooks/sortable-container* {}
-      (for [[index id] (reverse (d/enumerate (:shapes root)))]
-        (when-let [obj (get objects id)]
-          (if (cfh/frame-shape? obj)
-            [:& frame-wrapper
-             {:item obj
-              :selected selected
-              :highlighted highlighted
-              :index index
-              :objects objects
-              :key id
-              :sortable? true
-              :filtered? filtered?
-              :parent-size parent-size
-              :depth -1}]
-            [:& layer-item
-             {:item obj
-              :selected selected
-              :highlighted highlighted
-              :index index
-              :objects objects
-              :key id
-              :sortable? true
-              :filtered? filtered?
-              :depth -1
-              :parent-size parent-size}])))]]))
+      (for [obj shapes]
+        (if (cfh/frame-shape? obj)
+          [:> frame-wrapper*
+           {:item obj
+            :rename-id rename-id
+            :selected selected
+            :highlighted highlighted
+            :index (unchecked-get obj "__$__counter")
+            :objects objects
+            :key (weak/weak-key obj)
+            :is-sortable true
+            :is-filtered is-filtered
+            :parent-size parent-size
+            :depth -1}]
+          [:> layer-item*
+           {:item obj
+            :rename-id rename-id
+            :selected selected
+            :highlighted highlighted
+            :index (unchecked-get obj "__$__counter")
+            :objects objects
+            :key (weak/weak-key obj)
+            :is-sortable true
+            :is-filtered is-filtered
+            :depth -1
+            :parent-size parent-size}]))]]))
 
-(mf/defc filters-tree
-  {::mf/wrap [mf/memo #(mf/throttle % 200)]
-   ::mf/wrap-props false}
+(mf/defc layers-tree-wrapper*
+  {::mf/private true}
+  [{:keys [objects] :as props}]
+  ;; This is a performance sensitive componet, so we use lower-level primitives for
+  ;; reduce residual allocation for this specific case
+  (let [state-tmp   (mf/useState objects)
+        objects'    (aget state-tmp 0)
+        set-objects (aget state-tmp 1)
+
+        subject-s   (mf/with-memo []
+                      (rx/subject))
+        changes-s   (mf/with-memo [subject-s]
+                      (->> subject-s
+                           (rx/debounce 500)))
+
+        props     (mf/spread-props props {:objects objects'})]
+
+    (mf/with-effect [objects subject-s]
+      (rx/push! subject-s objects))
+
+    (mf/with-effect [changes-s]
+      (let [sub (rx/subscribe changes-s set-objects)]
+        #(rx/dispose! sub)))
+
+    [:> layers-tree* props]))
+
+(mf/defc filters-tree*
+  {::mf/wrap [mf/memo #(mf/throttle % 300)]
+   ::mf/private true}
   [{:keys [objects parent-size]}]
-  (let [selected       (mf/deref refs/selected-shapes)
-        selected       (hooks/use-equal-memo selected)
-        root           (get objects uuid/zero)]
+  (let [selected (use-selected-shapes)
+        root     (get objects uuid/zero)]
     [:ul {:class (stl/css :element-list)}
      (for [[index id] (d/enumerate (:shapes root))]
        (when-let [obj (get objects id)]
-         [:& layer-item
+         [:> layer-item*
           {:item obj
            :selected selected
            :index index
            :objects objects
            :key id
-           :sortable? false
-           :filtered? true
+           :is-sortable false
+           :is-filtered true
            :depth -1
            :parent-size parent-size}]))]))
 
@@ -132,6 +201,7 @@
              keys
              (filter #(not= uuid/zero %))
              vec)]
+
     (update reparented-objects uuid/zero assoc :shapes reparented-shapes)))
 
 ;; --- Layers Toolbox
@@ -277,9 +347,11 @@
              (swap! state* update :num-items + 100))))]
 
     (mf/with-effect []
-      (let [keys [(events/listen globals/document EventType.KEYDOWN on-key-down)
-                  (events/listen globals/document EventType.CLICK hide-menu)]]
-        (fn [] (doseq [key keys] (events/unlistenByKey key)))))
+      (let [key1 (events/listen globals/document "keydown" on-key-down)
+            key2 (events/listen globals/document "click" hide-menu)]
+        (fn []
+          (events/unlistenByKey key1)
+          (events/unlistenByKey key2))))
 
     [filtered-objects
      handle-show-more
@@ -463,6 +535,8 @@
   {::mf/wrap [mf/memo]}
   [{:keys [size-parent]}]
   (let [page           (mf/deref refs/workspace-page)
+        page-id        (get page :id)
+
         focus          (mf/deref refs/workspace-focus-selected)
 
         objects        (hooks/with-focus-objects (:objects page) focus)
@@ -472,7 +546,8 @@
         observer-var   (mf/use-var nil)
         lazy-load-ref  (mf/use-ref nil)
 
-        [filtered-objects show-more filter-component] (use-search page objects)
+        [filtered-objects show-more filter-component]
+        (use-search page objects)
 
         intersection-callback
         (fn [entries]
@@ -518,25 +593,25 @@
         [:div {:class (stl/css :tool-window-content)
                :data-scroll-container true
                :ref on-render-container}
-         [:& filters-tree {:objects filtered-objects
-                           :key (dm/str (:id page))
-                           :parent-size size-parent}]
+         [:> filters-tree* {:objects filtered-objects
+                            :key (dm/str page-id)
+                            :parent-size size-parent}]
          [:div {:ref lazy-load-ref}]]
         [:div {:on-scroll on-scroll
                :class (stl/css :tool-window-content)
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
 
-         [:& layers-tree {:objects filtered-objects
-                          :key (dm/str (:id page))
-                          :filtered? true
-                          :parent-size size-parent}]]]
+         [:> layers-tree-wrapper* {:objects filtered-objects
+                                   :key (dm/str page-id)
+                                   :is-filtered true
+                                   :parent-size size-parent}]]]
 
        [:div {:on-scroll on-scroll
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}
-        [:& layers-tree {:objects objects
-                         :key (dm/str (:id page))
-                         :filtered? false
-                         :parent-size size-parent}]])]))
+        [:> layers-tree-wrapper* {:objects objects
+                                  :key (dm/str page-id)
+                                  :is-filtered false
+                                  :parent-size size-parent}]])]))
