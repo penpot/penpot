@@ -51,6 +51,7 @@
     :ref-shape-is-head
     :ref-shape-is-not-head
     :shape-ref-in-main
+    :component-id-mismatch
     :root-main-not-allowed
     :nested-main-not-allowed
     :root-copy-not-allowed
@@ -59,6 +60,7 @@
     :not-head-copy-not-allowed
     :not-component-not-allowed
     :component-nil-objects-not-allowed
+    :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
     :invalid-text-touched
     :misplaced-slot
@@ -326,6 +328,20 @@
                     :component-file (:component-file ref-shape)
                     :component-id (:component-id ref-shape)))))
 
+(defn- check-ref-component-id
+  "Validate that if the copy has not been swwpped, the component-id and component-file are
+   the same as in the referenced shape in the near main."
+  [shape file page libraries]
+  (when (nil? (ctk/get-swap-slot shape))
+    (when-let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+      (when (or (not= (:component-id shape) (:component-id ref-shape))
+                (not= (:component-file shape) (:component-file ref-shape)))
+        (report-error :component-id-mismatch
+                      "Nested copy component-id and component-file must be the same as the near main"
+                      shape file page
+                      :component-id (:component-id ref-shape)
+                      :component-file (:component-file ref-shape))))))
+
 (defn- check-empty-swap-slot
   "Validate that this shape does not have any swap slot."
   [shape file page]
@@ -418,6 +434,7 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
+  (check-ref-component-id shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
@@ -648,6 +665,13 @@
                     "Component main not allowed inside other component"
                     main-instance file component-page))))
 
+(defn- check-not-objects
+  [component file]
+  (when (d/not-empty? (:objects component))
+    (report-error :non-deleted-component-cannot-have-objects
+                  "A non-deleted component cannot have shapes inside"
+                  component file nil)))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -656,7 +680,8 @@
                   "Objects list cannot be nil"
                   component file nil))
   (when-not (:deleted component)
-    (check-main-inside-main component file))
+    (check-main-inside-main component file)
+    (check-not-objects component file))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))

@@ -147,12 +147,15 @@
   "Check if some attribute is one that is involved in component syncrhonization.
    Note that design tokens also are involved, although they go by an alternate
    route and thus they are not part of :sync-attrs.
-   Also when detaching a nested copy it also needs to trigger a synchronization,
-   even though :shape-ref is not a synced attribute per se"
+   Also when detaching a nested copy or it also needs to trigger a synchronization,
+   even though :shape-ref or :component-id are not synced attribute per se"
   [attr]
   (or (get sync-attrs attr)
       (= :shape-ref attr)
-      (= :applied-tokens attr)))
+      (= :applied-tokens attr)
+      (= :component-id attr)
+      (= :component-file attr)
+      (= :component-root attr)))
 
 (defn instance-root?
   "Check if this shape is the head of a top instance."
