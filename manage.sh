@@ -362,11 +362,12 @@ function usage {
     echo "- isolated-shell                   Starts a bash shell in a new devenv container."
     echo "- log-devenv                       Show logs of the running devenv docker compose service."
     echo ""
-    echo "- build-bundle                     Build all bundles (frontend, backend and exporter)."
+    echo "- build-bundle                     Build all bundles (frontend, backend, exporter, storybook and mcp)."
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
     echo "- build-storybook-bundle           Build storybook bundle."
+    echo "- build-mcp-bundle                 Build mcp bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
@@ -446,7 +447,7 @@ case $1 in
     build-exporter-bundle)
         build-exporter-bundle;
         ;;
-    
+
     build-storybook-bundle)
         build-storybook-bundle;
         ;;
