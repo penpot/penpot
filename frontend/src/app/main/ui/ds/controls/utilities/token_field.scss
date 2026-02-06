@@ -9,6 +9,7 @@
 @use "ds/typography.scss" as t;
 @use "ds/colors.scss" as *;
 @use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .token-field {
   --token-field-bg-color: var(--color-background-tertiary);
@@ -36,6 +37,9 @@
     --token-field-bg-color: var(--color-background-primary);
     --token-field-outline-color: var(--color-accent-primary);
   }
+}
+.token-field-wrapper {
+  inline-size: 100%;
 }
 
 .with-icon {
@@ -131,4 +135,13 @@
     background-color: var(--color-background-quaternary);
     --opacity-button: 1;
   }
+}
+
+.content-wrapper {
+  inline-size: 100%;
+}
+
+.button-tooltip {
+  inline-size: px2rem(28);
+  block-size: 100%;
 }
