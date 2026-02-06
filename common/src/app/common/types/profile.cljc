@@ -21,3 +21,10 @@
    ;; Only present on resolved profile objects, the resolve process
    ;; takes the photo-id or geneates an image from the name
    [:photo-url {:optional true} :string]])
+
+
+(def schema:basic-profile
+  [:map {:title "Basic profile"}
+   [:id ::sm/uuid]
+   [:name {:optional true} :string]
+   [:email {:optional true} :string]])
