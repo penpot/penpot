@@ -2,6 +2,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.ui.workspace.tokens.management.forms.controls.color-input :as color]
+   [app.main.ui.workspace.tokens.management.forms.controls.combobox :as combobox]
    [app.main.ui.workspace.tokens.management.forms.controls.fonts-combobox :as fonts]
    [app.main.ui.workspace.tokens.management.forms.controls.input :as input]
    [app.main.ui.workspace.tokens.management.forms.controls.select :as select]))
@@ -17,3 +18,5 @@
 (dm/export fonts/composite-fonts-combobox*)
 
 (dm/export select/select-indexed*)
+
+(dm/export combobox/combobox*)

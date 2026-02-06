@@ -10,6 +10,7 @@
    [app.common.files.tokens :as cft]
    [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
+   [app.main.ui.workspace.tokens.management.forms.border-radius :as test]
    [app.main.ui.workspace.tokens.management.forms.color :as color]
    [app.main.ui.workspace.tokens.management.forms.font-family :as font-family]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
@@ -50,4 +51,5 @@
       :text-case [:> generic/form* text-case-props]
       :text-decoration [:> generic/form* text-decoration-props]
       :font-weight [:> generic/form* font-weight-props]
+      :border-radius [:> test/form* props]
       [:> generic/form* props])))
