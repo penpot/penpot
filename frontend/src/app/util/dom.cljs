@@ -134,6 +134,12 @@
   (when (some? event)
     (.-relatedTarget event)))
 
+(defn get-event-submitter
+  "Extract the submitter from a form submit event."
+  [^js event]
+  (when (some? event)
+    (.-submitter event)))
+
 (defn select-target
   "Extract the target from event instance and select it"
   [^js event]

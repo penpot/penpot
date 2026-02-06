@@ -112,6 +112,13 @@
 (def token-name-validation-regex
   #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*$")
 
+(def token-node-name-validation-regex
+  #"^[a-zA-Z0-9_-][a-zA-Z0-9$_-]*$")
+
+(def node-name-ref
+  [:re {:title "TokenNodeNameRef" :gen/gen sg/text}
+   token-node-name-validation-regex])
+
 (def token-name-ref
   [:re {:title "TokenNameRef" :gen/gen sg/text}
    token-name-validation-regex])
