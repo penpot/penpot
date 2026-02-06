@@ -40,15 +40,15 @@
 
           (sync-page-size! [dom]
             (bw/eval! dom
-                      (fn [elem]
-                        (let [width (.getAttribute ^js elem "width")
-                              height (.getAttribute ^js elem "height")
-                              style-node (let [node (.createElement js/document "style")]
-                                           (.appendChild (.-head js/document) node)
-                                           node)]
-                          (set! (.-textContent style-node)
-                                (str "@page { size: " width "px " height "px; margin: 0; }\n"
-                                     "html, body, #app { margin: 0; padding: 0; width: " width "px; height: " height "px; overflow: visible; }"))))))
+                      (js* "(elem) => {
+  const width = elem.getAttribute('width');
+  const height = elem.getAttribute('height');
+  const styleNode = document.createElement('style');
+  document.head.appendChild(styleNode);
+  styleNode.textContent =
+    `@page { size: ${width}px ${height}px; margin: 0; }
+     html, body, #app { margin: 0; padding: 0; width: ${width}px; height: ${height}px; overflow: visible; }`;
+}")))
 
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
