@@ -41,14 +41,20 @@
           (sync-page-size! [dom]
             (bw/eval! dom
                       (fn [elem]
+                        ;; IMPORTANT: No CLJS runtime allowed. Use only JS
+                        ;; primitives.  This runs in a context without access to
+                        ;; cljs.core. Avoid any functions that transpile to
+                        ;; cljs.core/* calls, as they will break in the browser
+                        ;; runtime.
+
                         (let [width (.getAttribute ^js elem "width")
                               height (.getAttribute ^js elem "height")
                               style-node (let [node (.createElement js/document "style")]
                                            (.appendChild (.-head js/document) node)
                                            node)]
                           (set! (.-textContent style-node)
-                                (str "@page { size: " width "px " height "px; margin: 0; }\n"
-                                     "html, body, #app { margin: 0; padding: 0; width: " width "px; height: " height "px; overflow: visible; }"))))))
+                                (dm/str "@page { size: " width "px " height "px; margin: 0; }\n"
+                                        "html, body, #app { margin: 0; padding: 0; width: " width "px; height: " height "px; overflow: visible; }"))))))
 
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
