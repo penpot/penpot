@@ -39,3 +39,8 @@
   user-select: none;
   position: relative;
 }
+
+.form-modal-title {
+  @include t.use-typography("headline-medium");
+  color: var(--color-foreground-primary);
+}

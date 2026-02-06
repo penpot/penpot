@@ -11,7 +11,6 @@
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
-   [app.util.keyboard :as k]
    [rumext.v2 :as mf]))
 
 (def context (mf/create-context nil))
@@ -66,24 +65,17 @@
     [:> select* props]))
 
 (mf/defc form-submit*
-  [{:keys [disabled on-submit] :rest props}]
+  [{:keys [disabled] :rest props}]
+
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))
                                (seq (:async-errors @form))
                                (seq (:extra-errors @form))))
                       (true? disabled))
-        handle-key-down-save
-        (mf/use-fn
-         (mf/deps on-submit form)
-         (fn [e]
-           (when (or (k/enter? e) (k/space? e))
-             (dom/prevent-default e)
-             (on-submit form e))))
 
         props
         (mf/spread-props props {:disabled disabled?
-                                :on-key-down handle-key-down-save
                                 :type "submit"})]
 
     [:> button* props]))
