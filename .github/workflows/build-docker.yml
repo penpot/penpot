@@ -59,6 +59,7 @@ jobs:
           mv penpot/frontend bundle-frontend
           mv penpot/exporter bundle-exporter
           mv penpot/storybook bundle-storybook
+          mv penpot/mcp bundle-mcp
           popd
 
       - name: Set up Docker Buildx
@@ -89,6 +90,7 @@ jobs:
             backend
             exporter
             storybook
+            mcp
           labels: |
             bundle_version=${{ steps.bundles.outputs.bundle_version }}
 
@@ -145,6 +147,21 @@ jobs:
         with:
           context: ./docker/images/
           file: ./docker/images/Dockerfile.storybook
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push MCP Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_IMAGE: 'mcp'
+          BUNDLE_PATH: './bundle-mcp'
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.mcp
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
