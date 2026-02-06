@@ -1122,6 +1122,9 @@ Board:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -1149,6 +1152,7 @@ Board:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -1488,6 +1492,20 @@ Board:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -2005,6 +2023,28 @@ Board:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -2121,6 +2161,9 @@ VariantContainer:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -2148,6 +2191,7 @@ VariantContainer:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -2490,6 +2534,20 @@ VariantContainer:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -3007,6 +3065,28 @@ VariantContainer:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -3113,6 +3193,9 @@ Boolean:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -3140,6 +3223,7 @@ Boolean:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -3444,6 +3528,20 @@ Boolean:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -3914,6 +4012,28 @@ Boolean:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -5566,6 +5686,9 @@ Ellipse:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -5593,6 +5716,7 @@ Ellipse:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -5867,6 +5991,20 @@ Ellipse:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -6284,6 +6422,28 @@ Ellipse:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -7904,6 +8064,9 @@ Group:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -7931,6 +8094,7 @@ Group:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -8211,6 +8375,20 @@ Group:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -8692,6 +8870,28 @@ Group:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -9062,6 +9262,9 @@ Image:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -9089,6 +9292,7 @@ Image:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -9363,6 +9567,20 @@ Image:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -9780,6 +9998,28 @@ Image:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -10082,6 +10322,7 @@ Library:
         colors: LibraryColor[]; 
         typographies: LibraryTypography[]; 
         components: LibraryComponent[]; 
+        tokens: TokenCatalog; 
         createColor(): LibraryColor; 
         createTypography(): LibraryTypography; 
         createComponent(shapes: Shape[]): LibraryComponent; 
@@ -10142,6 +10383,14 @@ Library:
         ```
         console.log(penpot.library.local.components
         ```
+      tokens: |-
+        ```
+        readonly tokens: TokenCatalog
+        ```
+
+        A catalog of Design Tokens in the library.
+
+        See `TokenCatalog` type to see usage.
     Methods:
       createColor: |-
         ```
@@ -11298,7 +11547,7 @@ LibraryTypography:
         name: string; 
         path: string; 
         fontId: string; 
-        fontFamily: string; 
+        fontFamilies: string; 
         fontVariantId: string; 
         fontSize: string; 
         fontWeight: string; 
@@ -11360,12 +11609,12 @@ LibraryTypography:
         ```
 
         The unique identifier of the font used in the typography element.
-      fontFamily: |-
+      fontFamilies: |-
         ```
-        fontFamily: string
+        fontFamilies: string
         ```
 
-        The font family of the typography element.
+        The font families of the typography element.
       fontVariantId: |-
         ```
         fontVariantId: string
@@ -12365,6 +12614,9 @@ Path:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -12392,6 +12644,7 @@ Path:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -12690,6 +12943,20 @@ Path:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -13121,6 +13388,28 @@ Path:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -13602,6 +13891,9 @@ Rectangle:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -13629,6 +13921,7 @@ Rectangle:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -13905,6 +14198,20 @@ Rectangle:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -14322,6 +14629,28 @@ Rectangle:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -14534,6 +14863,9 @@ ShapeBase:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -14561,6 +14893,7 @@ ShapeBase:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
     }
@@ -14836,6 +15169,20 @@ ShapeBase:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -15253,6 +15600,28 @@ ShapeBase:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -15526,6 +15895,9 @@ SvgRaw:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -15553,6 +15925,7 @@ SvgRaw:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
         type: "svg-raw"; 
@@ -15822,6 +16195,20 @@ SvgRaw:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -16243,6 +16630,28 @@ SvgRaw:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -16341,6 +16750,9 @@ Text:
         layoutChild?: LayoutChildProperties; 
         layoutCell?: LayoutChildProperties; 
         setParentIndex(index: number): void; 
+        tokens: { 
+            [property: string]: string; 
+        }; 
         isComponentInstance(): boolean; 
         isComponentMainInstance(): boolean; 
         isComponentCopyInstance(): boolean; 
@@ -16368,6 +16780,7 @@ Text:
         interactions: Interaction[]; 
         addInteraction(trigger: Trigger, action: Action, delay?: number): Interaction; 
         removeInteraction(interaction: Interaction): void; 
+        applyToken(token: Token, properties: undefined | TokenProperty[]): void; 
         clone(): Shape; 
         remove(): void; 
         type: "text"; 
@@ -16681,6 +17094,20 @@ Text:
         ```
 
         Layout properties for cells in a grid layout.
+      tokens: |-
+        ```
+        readonly tokens: { 
+            [property: string]: string; 
+        }
+        ```
+
+        The design tokens applied to this shape.
+        It's a map property name -> token name.
+
+        NOTE that the tokens application is by name and not by id. If there exist
+        several tokens with the same name in different sets, the actual token applied
+        and the value set to the attributes will depend on which sets are active
+        (and will change if different sets or themes are activated later).
       interactions: |-
         ```
         readonly interactions: Interaction[]
@@ -17226,6 +17653,28 @@ Text:
           ```
           shape.removeInteraction(interaction);
           ```
+      applyToken: |-
+        ```
+        applyToken(token, properties): void
+        ```
+
+        * Applies one design token to one or more properties of the shape.
+
+          Parameters
+          + token: Token
+
+            is the Token to apply
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
       clone: |-
         ```
         clone(): Shape
@@ -17627,6 +18076,2907 @@ Track:
 
         The value of the track.
         This can be a number representing the size of the track, or null if not applicable.
+TokenBase:
+  overview: |-
+    Interface TokenBase
+    ===================
+
+    Represents the base properties and methods of a Design Token in Penpot, shared by
+    all token types.
+
+    ```
+    interface TokenBase { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenBorderRadius
+      + TokenShadow
+      + TokenColor
+      + TokenDimension
+      + TokenFontFamilies
+      + TokenFontSizes
+      + TokenFontWeights
+      + TokenLetterSpacing
+      + TokenNumber
+      + TokenOpacity
+      + TokenRotation
+      + TokenSizing
+      + TokenSpacing
+      + TokenBorderWidth
+      + TokenTextCase
+      + TokenTextDecoration
+      + TokenTypography
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenBorderRadius:
+  overview: |-
+    Interface TokenBorderRadius
+    ===========================
+
+    Represents a token of type BorderRadius.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenBorderRadius { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "borderRadius"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenBorderRadius
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a positive number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a positive number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenShadowValue:
+  overview: |-
+    Interface TokenShadowValue
+    ==========================
+
+    ```
+    interface TokenShadowValue { 
+        color: string; 
+        inset: boolean; 
+        offsetX: number; 
+        offsetY: number; 
+        spread: number; 
+        blur: number; 
+    }
+    ```
+
+    Referenced by: TokenShadow
+  members:
+    Properties:
+      color: |-
+        ```
+        color: string
+        ```
+
+        The color as a string (e.g. "#FF5733").
+      inset: |-
+        ```
+        inset: boolean
+        ```
+
+        If the shadow is inset or drop.
+      offsetX: |-
+        ```
+        offsetX: number
+        ```
+
+        The horizontal offset of the shadow in pixels.
+      offsetY: |-
+        ```
+        offsetY: number
+        ```
+
+        The vertical offset of the shadow in pixels.
+      spread: |-
+        ```
+        spread: number
+        ```
+
+        The spread distance of the shadow in pixels.
+      blur: |-
+        ```
+        blur: number
+        ```
+
+        The amount of blur to apply to the shadow.
+TokenShadowValueString:
+  overview: |-
+    Interface TokenShadowValueString
+    ================================
+
+    ```
+    interface TokenShadowValueString { 
+        color: string; 
+        inset: string; 
+        offsetX: string; 
+        offsetY: string; 
+        spread: string; 
+        blur: string; 
+    }
+    ```
+
+    Referenced by: TokenShadow, TokenValueString
+  members:
+    Properties:
+      color: |-
+        ```
+        color: string
+        ```
+
+        The color as a string (e.g. "#FF5733"), or a reference
+        to a color token.
+      inset: |-
+        ```
+        inset: string
+        ```
+
+        If the shadow is inset or drop, or a reference of a
+        boolean token.
+      offsetX: |-
+        ```
+        offsetX: string
+        ```
+
+        The horizontal offset of the shadow in pixels, or a reference
+        to a number token.
+      offsetY: |-
+        ```
+        offsetY: string
+        ```
+
+        The vertical offset of the shadow in pixels, or a reference
+        to a number token.
+      spread: |-
+        ```
+        spread: string
+        ```
+
+        The spread distance of the shadow in pixels, or a reference
+        to a number token.
+      blur: |-
+        ```
+        blur: string
+        ```
+
+        The amount of blur to apply to the shadow, or a reference
+        to a number token.
+TokenShadow:
+  overview: |-
+    Interface TokenShadow
+    =====================
+
+    Represents a token of type Shadow.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenShadow { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "shadow"; 
+        value: string | TokenShadowValueString[]; 
+        resolvedValue: undefined | TokenShadowValue[]; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenShadow
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string | TokenShadowValueString[]
+        ```
+
+        The value as defined in the token itself.
+        It may be a string with a reference to other token, or else
+        an array of TokenShadowValueString.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | TokenShadowValue[]
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's an array of TokenShadowValue, or undefined if no value has been found
+        in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenColor:
+  overview: |-
+    Interface TokenColor
+    ====================
+
+    Represents a token of type Color.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenColor { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "color"; 
+        value: string; 
+        resolvedValue: undefined | string; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenColor
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a rgb color or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | string
+        ```
+
+        The value as defined in the token itself.
+        It's a rgb color or a reference.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenDimension:
+  overview: |-
+    Interface TokenDimension
+    ========================
+
+    Represents a token of type Dimension.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenDimension { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "dimension"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenDimension
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a positive number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a positive number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenFontFamilies:
+  overview: |-
+    Interface TokenFontFamilies
+    ===========================
+
+    Represents a token of type FontFamilies.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenFontFamilies { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "fontFamilies"; 
+        value: string | string[]; 
+        resolvedValue: undefined | string[]; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenFontFamilies
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string | string[]
+        ```
+
+        The value as defined in the token itself.
+        It may be a string with a reference to other token, or else
+        an array of strings with one or more font families (each family
+        is an item in the array).
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | string[]
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's an array of strings with one or more font families,
+        or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenFontSizes:
+  overview: |-
+    Interface TokenFontSizes
+    ========================
+
+    Represents a token of type FontSizes.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenFontSizes { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "fontSizes"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenFontSizes
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a positive number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a positive number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenFontWeights:
+  overview: |-
+    Interface TokenFontWeights
+    ==========================
+
+    Represents a token of type FontWeights.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenFontWeights { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "fontWeights"; 
+        value: string; 
+        resolvedValue: undefined | string; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenFontWeights
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a weight string or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | string
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a weight string ("bold", "strong", etc.), or undefined if no value has
+        been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenLetterSpacing:
+  overview: |-
+    Interface TokenLetterSpacing
+    ============================
+
+    Represents a token of type LetterSpacing.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenLetterSpacing { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "letterSpacing"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenLetterSpacing
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenNumber:
+  overview: |-
+    Interface TokenNumber
+    =====================
+
+    Represents a token of type Number.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenNumber { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "number"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenNumber
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenOpacity:
+  overview: |-
+    Interface TokenOpacity
+    ======================
+
+    Represents a token of type Opacity.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenOpacity { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "opacity"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenOpacity
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a number between 0 and 1 or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a number between 0 and 1, or undefined if no value has been found
+        in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenRotation:
+  overview: |-
+    Interface TokenRotation
+    =======================
+
+    Represents a token of type Rotation.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenRotation { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "rotation"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenRotation
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a number in degrees or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a number in degrees, or undefined if no value has been found
+        in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenSizing:
+  overview: |-
+    Interface TokenSizing
+    =====================
+
+    Represents a token of type Sizing.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenSizing { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "sizing"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenSizing
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenSpacing:
+  overview: |-
+    Interface TokenSpacing
+    ======================
+
+    Represents a token of type Spacing.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenSpacing { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "spacing"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenSpacing
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenBorderWidth:
+  overview: |-
+    Interface TokenBorderWidth
+    ==========================
+
+    Represents a token of type BorderWidth.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenBorderWidth { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "borderWidth"; 
+        value: string; 
+        resolvedValue: undefined | number; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenBorderWidth
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a positive number or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | number
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a positive number, or undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenTextCase:
+  overview: |-
+    Interface TokenTextCase
+    =======================
+
+    Represents a token of type TextCase.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenTextCase { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "textCase"; 
+        value: string; 
+        resolvedValue: undefined | string; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenTextCase
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a case string or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | string
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a case string ("none", "uppercase", "lowercase", "capitalize"), or
+        undefined if no value has been found in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenTextDecoration:
+  overview: |-
+    Interface TokenTextDecoration
+    =============================
+
+    Represents a token of type Decoration.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenTextDecoration { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "textDecoration"; 
+        value: string; 
+        resolvedValue: undefined | string; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenTextDecoration
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string
+        ```
+
+        The value as defined in the token itself.
+        It's a decoration string or a reference.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | string
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a decoration string, or undefined if no value has been found
+        in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenTypographyValue:
+  overview: |-
+    Interface TokenTypographyValue
+    ==============================
+
+    ```
+    interface TokenTypographyValue { 
+        letterSpacing: number; 
+        fontFamilies: string[]; 
+        fontSizes: number; 
+        fontWeights: string; 
+        lineHeight: number; 
+        textCase: string; 
+        textDecoration: string; 
+    }
+    ```
+
+    Referenced by: TokenTypography
+  members:
+    Properties:
+      letterSpacing: |-
+        ```
+        letterSpacing: number
+        ```
+
+        The letter spacing, as a number.
+      fontFamilies: |-
+        ```
+        fontFamilies: string[]
+        ```
+
+        The list of font families.
+      fontSizes: |-
+        ```
+        fontSizes: number
+        ```
+
+        The font size, as a positive number.
+      fontWeights: |-
+        ```
+        fontWeights: string
+        ```
+
+        The font weight, as a weight string ("bold", "strong", etc.).
+      lineHeight: |-
+        ```
+        lineHeight: number
+        ```
+
+        The line height, as a number.
+      textCase: |-
+        ```
+        textCase: string
+        ```
+
+        The text case as a string ("none", "uppercase", "lowercase" "capitalize").
+      textDecoration: |-
+        ```
+        textDecoration: string
+        ```
+
+        The text decoration as a string ("none", "underline", "strike-through").
+TokenTypographyValueString:
+  overview: |-
+    Interface TokenTypographyValueString
+    ====================================
+
+    ```
+    interface TokenTypographyValueString { 
+        letterSpacing: string; 
+        fontFamilies: string | string[]; 
+        fontSizes: string; 
+        fontWeight: string; 
+        lineHeight: string; 
+        textCase: string; 
+        textDecoration: string; 
+    }
+    ```
+
+    Referenced by: TokenTypography, TokenValueString
+  members:
+    Properties:
+      letterSpacing: |-
+        ```
+        letterSpacing: string
+        ```
+
+        The letter spacing, as a number, or a reference to a TokenLetterSpacing.
+      fontFamilies: |-
+        ```
+        fontFamilies: string | string[]
+        ```
+
+        The list of font families, or a reference to a TokenFontFamilies.
+      fontSizes: |-
+        ```
+        fontSizes: string
+        ```
+
+        The font size, as a positive number, or a reference to a TokenFontSizes.
+      fontWeight: |-
+        ```
+        fontWeight: string
+        ```
+
+        The font weight, as a weight string ("bold", "strong", etc.), or a
+        reference to a TokenFontWeights.
+      lineHeight: |-
+        ```
+        lineHeight: string
+        ```
+
+        The line height, as a number. Note that there not exists an individual
+        token type line height, only part of a Typography token. If you need to
+        put here a reference, use a NumberToken.
+      textCase: |-
+        ```
+        textCase: string
+        ```
+
+        The text case as a string ("none", "uppercase", "lowercase" "capitalize"),
+        or a reference to a TokenTextCase.
+      textDecoration: |-
+        ```
+        textDecoration: string
+        ```
+
+        The text decoration as a string ("none", "underline", "strike-through"),
+        or a reference to a TokenTextDecoration.
+TokenTypography:
+  overview: |-
+    Interface TokenTypography
+    =========================
+
+    Represents a token of type Typography.
+    This interface extends `TokenBase` and specifies the data type of the value.
+
+    ```
+    interface TokenTypography { 
+        id: string; 
+        name: string; 
+        description: string; 
+        duplicate(): Token; 
+        remove(): void; 
+        applyToShapes(shapes: Shape[], properties: undefined | TokenProperty[]): void; 
+        applyToSelected(properties: undefined | TokenProperty[]): void; 
+        type: "typography"; 
+        value: string | TokenTypographyValueString; 
+        resolvedValue: undefined | TokenTypographyValue[]; 
+    }
+    ```
+
+    Hierarchy (view full)
+
+    * TokenBase
+      + TokenTypography
+
+    Referenced by: Token
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this token, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the token. It may include a group path separated by `.`.
+      description: |-
+        ```
+        description: string
+        ```
+
+        An optional description text.
+      type: |-
+        ```
+        readonly type
+        ```
+
+        The type of the token.
+      value: |-
+        ```
+        value: string | TokenTypographyValueString
+        ```
+
+        The value as defined in the token itself.
+        It may be a string with a reference to other token, or a
+        TokenTypographyValueString.
+      resolvedValue: |-
+        ```
+        readonly resolvedValue: undefined | TokenTypographyValue[]
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a TokenTypographyValue, or undefined if no value has been found
+        in active sets.
+    Methods:
+      duplicate: |-
+        ```
+        duplicate(): Token
+        ```
+
+        * Adds to the set that contains this Token a new one equal to this one
+          but with a new id.
+
+          Returns Token
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this token from the catalog.
+
+          It will NOT be unapplied from any shape, since there may be other tokens
+          with the same name.
+
+          Returns void
+      applyToShapes: |-
+        ```
+        applyToShapes(shapes, properties): void
+        ```
+
+        * Applies this token to one or more properties of the given shapes.
+
+          Parameters
+          + shapes: Shape[]
+
+            is an array of shapes to apply it.
+          + properties: undefined | TokenProperty[]
+
+            an optional list of property names. If omitted, the
+            default properties will be applied.
+
+            NOTE that the tokens application is by name and not by id. If there exist
+            several tokens with the same name in different sets, the actual token applied
+            and the value set to the attributes will depend on which sets are active
+            (and will change if different sets or themes are activated later).
+
+          Returns void
+      applyToSelected: |-
+        ```
+        applyToSelected(properties): void
+        ```
+
+        * Applies this token to the currently selected shapes.
+
+          Parameters and warnings are the same as above.
+
+          Parameters
+          + properties: undefined | TokenProperty[]
+
+          Returns void
+TokenCatalog:
+  overview: |-
+    Interface TokenCatalog
+    ======================
+
+    The collection of all tokens in a Penpot file's library.
+
+    Tokens are contained in sets, that can be marked as active
+    or inactive to control the resolved value of the tokens.
+
+    The active status of sets can be handled by presets named
+    Themes.
+
+    ```
+    interface TokenCatalog { 
+        themes: TokenTheme[]; 
+        sets: TokenSet[]; 
+        addTheme(group: string, name: string): TokenTheme; 
+        addSet(name: string): TokenSet; 
+        getThemeById(id: string): undefined | TokenTheme; 
+        getSetById(id: string): undefined | TokenSet; 
+    }
+    ```
+
+    Referenced by: Library
+  members:
+    Properties:
+      themes: |-
+        ```
+        readonly themes: TokenTheme[]
+        ```
+
+        The list of themes in this catalog, in creation order.
+      sets: |-
+        ```
+        readonly sets: TokenSet[]
+        ```
+
+        The list of sets in this catalog, in the order defined
+        by the user. The order is important because then same token name
+        exists in several active sets, the latter has precedence.
+    Methods:
+      addTheme: |-
+        ```
+        addTheme(group, name): TokenTheme
+        ```
+
+        * Creates a new TokenTheme and adds it to the catalog.
+
+          Parameters
+          + group: string
+
+            The group name of the theme (can be empty string).
+          + name: string
+
+            The name of the theme (required)
+
+          Returns TokenTheme
+
+          Returns the created TokenTheme.
+      addSet: |-
+        ```
+        addSet(name): TokenSet
+        ```
+
+        * Creates a new TokenSet and adds it to the catalog.
+
+          Parameters
+          + name: string
+
+            The name of the set (required). It may contain
+            a group path, separated by `/`.
+
+          Returns TokenSet
+
+          Returns the created TokenSet.
+      getThemeById: |-
+        ```
+        getThemeById(id): undefined | TokenTheme
+        ```
+
+        * Retrieves a theme.
+
+          Parameters
+          + id: string
+
+            the id of the theme.
+
+          Returns undefined | TokenTheme
+
+          Returns the theme or undefined if not found.
+      getSetById: |-
+        ```
+        getSetById(id): undefined | TokenSet
+        ```
+
+        * Retrieves a set.
+
+          Parameters
+          + id: string
+
+            the id of the set.
+
+          Returns undefined | TokenSet
+
+          Returns the set or undefined if not found.
+TokenSet:
+  overview: |-
+    Interface TokenSet
+    ==================
+
+    A collection of Design Tokens.
+
+    Inside a set, tokens have an unique name, that will designate
+    what token to use if the name is applied to a shape and this
+    set is active.
+
+    ```
+    interface TokenSet { 
+        id: string; 
+        name: string; 
+        active: boolean; 
+        tokens: Token[]; 
+        tokensByType: [string, Token[]][]; 
+        toggleActive(): void; 
+        getTokenById(id: string): undefined | Token; 
+        addToken(type: TokenType, name: string, value: TokenValueString): Token; 
+        duplicate(): TokenSet; 
+        remove(): void; 
+    }
+    ```
+
+    Referenced by: TokenCatalog, TokenSet, TokenTheme
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this set, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the set. It may include a group path separated by `/`.
+      active: |-
+        ```
+        active: boolean
+        ```
+
+        Indicates if the set is currently active.
+      tokens: |-
+        ```
+        readonly tokens: Token[]
+        ```
+
+        The tokens contained in this set, in alphabetical order.
+      tokensByType: |-
+        ```
+        readonly tokensByType: [string, Token[]][]
+        ```
+
+        The tokens contained in this set, grouped by type.
+    Methods:
+      toggleActive: |-
+        ```
+        toggleActive(): void
+        ```
+
+        * Toggles the active status of this set.
+
+          Returns void
+      getTokenById: |-
+        ```
+        getTokenById(id): undefined | Token
+        ```
+
+        * Retrieves a token.
+
+          Parameters
+          + id: string
+
+            the id of the token.
+
+          Returns undefined | Token
+
+          Returns the token or undefined if not found.
+      addToken: |-
+        ```
+        addToken(type, name, value): Token
+        ```
+
+        * Creates a new Token and adds it to the set.
+
+          Parameters
+          + type: TokenType
+
+            Thetype of token.
+          + name: string
+
+            The name of the token (required). It may contain
+            a group path, separated by `.`.
+          + value: TokenValueString
+
+            The value of the token (required), in the string form.
+
+          Returns Token
+
+          Returns the created Token.
+      duplicate: |-
+        ```
+        duplicate(): TokenSet
+        ```
+
+        * Adds to the catalog a new TokenSet equal to this one but with a new id.
+
+          Returns TokenSet
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this set from the catalog.
+
+          Returns void
+TokenTheme:
+  overview: |-
+    Interface TokenTheme
+    ====================
+
+    A preset of active TokenSets.
+
+    A theme contains a list of references to TokenSets. When the theme
+    is activated, it sets are activated too. This will not deactivate
+    sets that are *not* in this theme, because they may have been
+    activated by other themes.
+
+    Themes may be gruped. At any time only one of the themes in a group
+    may be active. But there may be active themes in other groups. This
+    allows to define multiple "axis" for theming (e.g. color scheme,
+    density or brand).
+
+    When a TokenSet is activated or deactivated directly, all themes
+    are disabled (indicating that now there is a "custom" manual theme
+    active).
+
+    ```
+    interface TokenTheme { 
+        id: string; 
+        externalId: undefined | string; 
+        group: string; 
+        name: string; 
+        active: boolean; 
+        toggleActive(): void; 
+        activeSets: TokenSet[]; 
+        addSet(tokenSet: TokenSet): void; 
+        removeSet(tokenSet: TokenSet): void; 
+        duplicate(): TokenTheme; 
+        remove(): void; 
+    }
+    ```
+
+    Referenced by: TokenCatalog, TokenTheme
+  members:
+    Properties:
+      id: |-
+        ```
+        readonly id: string
+        ```
+
+        The unique identifier for this theme, used only internally inside Penpot.
+        This one is not exported or synced with external Design Token sources.
+      externalId: |-
+        ```
+        readonly externalId: undefined | string
+        ```
+
+        Optional identifier that may exists if the theme was imported from an
+        external tool that uses ids in the json file.
+      group: |-
+        ```
+        group: string
+        ```
+
+        The group name of the theme. Can be empt string.
+      name: |-
+        ```
+        name: string
+        ```
+
+        The name of the theme.
+      active: |-
+        ```
+        active: boolean
+        ```
+
+        Indicates if the theme is currently active.
+      activeSets: |-
+        ```
+        activeSets: TokenSet[]
+        ```
+
+        The sets that will be activated if this theme is activated.
+    Methods:
+      toggleActive: |-
+        ```
+        toggleActive(): void
+        ```
+
+        * Toggles the active status of this theme.
+
+          Returns void
+      addSet: |-
+        ```
+        addSet(tokenSet): void
+        ```
+
+        * Adds a set to the list of the theme.
+
+          Parameters
+          + tokenSet: TokenSet
+
+          Returns void
+      removeSet: |-
+        ```
+        removeSet(tokenSet): void
+        ```
+
+        * Removes a set from the list of the theme.
+
+          Parameters
+          + tokenSet: TokenSet
+
+          Returns void
+      duplicate: |-
+        ```
+        duplicate(): TokenTheme
+        ```
+
+        * Adds to the catalog a new TokenTheme equal to this one but with a new id.
+
+          Returns TokenTheme
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        * Removes this theme from the catalog.
+
+          Returns void
 User:
   overview: |-
     Interface User
@@ -18229,7 +21579,7 @@ Shape:
     let shape: Shape;if (penpot.utils.types.isRectangle(shape)) {  console.log(shape.type);}
     ```
 
-    Referenced by: Board, Boolean, Context, ContextGeometryUtils, ContextTypesUtils, Ellipse, EventsMap, FlexLayout, GridLayout, Group, Image, Interaction, Library, LibraryComponent, LibraryTypography, LibraryVariantComponent, OpenOverlay, OverlayAction, Page, Path, Penpot, Rectangle, ShapeBase, SvgRaw, Text, ToggleOverlay, VariantContainer, Viewport
+    Referenced by: Board, Boolean, Context, ContextGeometryUtils, ContextTypesUtils, Ellipse, EventsMap, FlexLayout, GridLayout, Group, Image, Interaction, Library, LibraryComponent, LibraryTypography, LibraryVariantComponent, OpenOverlay, OverlayAction, Page, Path, Penpot, Rectangle, ShapeBase, SvgRaw, Text, ToggleOverlay, TokenBase, TokenBorderRadius, TokenBorderWidth, TokenColor, TokenDimension, TokenFontFamilies, TokenFontSizes, TokenFontWeights, TokenLetterSpacing, TokenNumber, TokenOpacity, TokenRotation, TokenShadow, TokenSizing, TokenSpacing, TokenTextCase, TokenTextDecoration, TokenTypography, VariantContainer, Viewport
   members: {}
 StrokeCap:
   overview: |-
@@ -18304,4 +21654,342 @@ Trigger:
     * `after-delay` triggers after the `delay` time has passed even if no interaction from the user happens.
 
     Referenced by: Board, Boolean, Ellipse, Group, Image, Interaction, Path, Rectangle, ShapeBase, SvgRaw, Text, VariantContainer
+  members: {}
+TokenValueString:
+  overview: |-
+    Type Alias TokenValueString
+    ===========================
+
+    ```
+    TokenValueString: 
+        | TokenShadowValueString
+        | TokenTypographyValueString
+        | string
+        | string[]
+    ```
+
+    Any possible type of value field in a token.
+
+    Referenced by: TokenSet
+  members: {}
+Token:
+  overview: |-
+    Type Alias Token
+    ================
+
+    ```
+    Token: 
+        | TokenBorderRadius
+        | TokenShadow
+        | TokenColor
+        | TokenDimension
+        | TokenFontFamilies
+        | TokenFontSizes
+        | TokenFontWeights
+        | TokenLetterSpacing
+        | TokenNumber
+        | TokenOpacity
+        | TokenRotation
+        | TokenSizing
+        | TokenSpacing
+        | TokenBorderWidth
+        | TokenTextCase
+        | TokenTextDecoration
+        | TokenTypography
+    ```
+
+    The supported Design Tokens in Penpot.
+
+    Referenced by: Board, Boolean, Ellipse, Group, Image, Path, Rectangle, ShapeBase, SvgRaw, Text, TokenBase, TokenBorderRadius, TokenBorderWidth, TokenColor, TokenDimension, TokenFontFamilies, TokenFontSizes, TokenFontWeights, TokenLetterSpacing, TokenNumber, TokenOpacity, TokenRotation, TokenSet, TokenShadow, TokenSizing, TokenSpacing, TokenTextCase, TokenTextDecoration, TokenTypography, VariantContainer
+  members: {}
+TokenBorderRadiusProps:
+  overview: |-
+    Type Alias TokenBorderRadiusProps
+    =================================
+
+    ```
+    TokenBorderRadiusProps: 
+        | "r1"
+        | "r2"
+        | "r3"
+        | "r4"
+    ```
+
+    The properties that a BorderRadius token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenShadowProps:
+  overview: |-
+    Type Alias TokenShadowProps
+    ===========================
+
+    ```
+    TokenShadowProps
+    ```
+
+    The properties that a Shadow token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenColorProps:
+  overview: |-
+    Type Alias TokenColorProps
+    ==========================
+
+    ```
+    TokenColorProps: "fill" | "stroke"
+    ```
+
+    The properties that a Color token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenDimensionProps:
+  overview: |-
+    Type Alias TokenDimensionProps
+    ==============================
+
+    ```
+    TokenDimensionProps: "x" | "y" | "stroke-width"
+    ```
+
+    The properties that a Dimension token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenFontFamiliesProps:
+  overview: |-
+    Type Alias TokenFontFamiliesProps
+    =================================
+
+    ```
+    TokenFontFamiliesProps
+    ```
+
+    The properties that a FontFamilies token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenFontSizesProps:
+  overview: |-
+    Type Alias TokenFontSizesProps
+    ==============================
+
+    ```
+    TokenFontSizesProps
+    ```
+
+    The properties that a FontSizes token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenFontWeightProps:
+  overview: |-
+    Type Alias TokenFontWeightProps
+    ===============================
+
+    ```
+    TokenFontWeightProps
+    ```
+
+    The properties that a FontWeight token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenLetterSpacingProps:
+  overview: |-
+    Type Alias TokenLetterSpacingProps
+    ==================================
+
+    ```
+    TokenLetterSpacingProps
+    ```
+
+    The properties that a LetterSpacing token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenNumberProps:
+  overview: |-
+    Type Alias TokenNumberProps
+    ===========================
+
+    ```
+    TokenNumberProps: "rotation" | "line-height"
+    ```
+
+    The properties that a Number token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenOpacityProps:
+  overview: |-
+    Type Alias TokenOpacityProps
+    ============================
+
+    ```
+    TokenOpacityProps
+    ```
+
+    The properties that an Opacity token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenSizingProps:
+  overview: |-
+    Type Alias TokenSizingProps
+    ===========================
+
+    ```
+    TokenSizingProps: 
+        | "width"
+        | "height"
+        | "layout-item-min-w"
+        | "layout-item-max-w"
+        | "layout-item-min-h"
+        | "layout-item-max-h"
+    ```
+
+    The properties that a Sizing token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenSpacingProps:
+  overview: |-
+    Type Alias TokenSpacingProps
+    ============================
+
+    ```
+    TokenSpacingProps: 
+        | "row-gap"
+        | "column-gap"
+        | "p1"
+        | "p2"
+        | "p3"
+        | "p4"
+        | "m1"
+        | "m2"
+        | "m3"
+        | "m4"
+    ```
+
+    The properties that a Spacing token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenBorderWidthProps:
+  overview: |-
+    Type Alias TokenBorderWidthProps
+    ================================
+
+    ```
+    TokenBorderWidthProps
+    ```
+
+    The properties that a BorderWidth token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenTextCaseProps:
+  overview: |-
+    Type Alias TokenTextCaseProps
+    =============================
+
+    ```
+    TokenTextCaseProps
+    ```
+
+    The properties that a TextCase token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenTextDecorationProps:
+  overview: |-
+    Type Alias TokenTextDecorationProps
+    ===================================
+
+    ```
+    TokenTextDecorationProps
+    ```
+
+    The properties that a TextDecoration token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenTypographyProps:
+  overview: |-
+    Type Alias TokenTypographyProps
+    ===============================
+
+    ```
+    TokenTypographyProps
+    ```
+
+    The properties that a Typography token can be applied to.
+
+    Referenced by: TokenProperty
+  members: {}
+TokenProperty:
+  overview: |-
+    Type Alias TokenProperty
+    ========================
+
+    ```
+    TokenProperty: 
+        | "all"
+        | TokenBorderRadiusProps
+        | TokenShadowProps
+        | TokenColorProps
+        | TokenDimensionProps
+        | TokenFontFamiliesProps
+        | TokenFontSizesProps
+        | TokenFontWeightProps
+        | TokenLetterSpacingProps
+        | TokenNumberProps
+        | TokenOpacityProps
+        | TokenSizingProps
+        | TokenSpacingProps
+        | TokenBorderWidthProps
+        | TokenTextCaseProps
+        | TokenTextDecorationProps
+        | TokenTypographyProps
+    ```
+
+    All the properties that a token can be applied to.
+    Not always correspond to Shape properties. For example,
+    `fill` property applies to `fillColor` of the first fill
+    of the shape.
+
+    Referenced by: Board, Boolean, Ellipse, Group, Image, Path, Rectangle, ShapeBase, SvgRaw, Text, TokenBase, TokenBorderRadius, TokenBorderWidth, TokenColor, TokenDimension, TokenFontFamilies, TokenFontSizes, TokenFontWeights, TokenLetterSpacing, TokenNumber, TokenOpacity, TokenRotation, TokenShadow, TokenSizing, TokenSpacing, TokenTextCase, TokenTextDecoration, TokenTypography, VariantContainer
+  members: {}
+TokenType:
+  overview: |-
+    Type Alias TokenType
+    ====================
+
+    ```
+    TokenType: 
+        | "borderRadius"
+        | "shadow"
+        | "color"
+        | "dimension"
+        | "fontFamilies"
+        | "fontSizes"
+        | "fontWeights"
+        | "letterSpacing"
+        | "number"
+        | "opacity"
+        | "rotation"
+        | "sizing"
+        | "spacing"
+        | "borderWidth"
+        | "textCase"
+        | "textDecoration"
+        | "typography"
+    ```
+
+    The supported types of Design Tokens in Penpot.
+
+    Referenced by: TokenSet
   members: {}
