@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6",
   "scripts": {
     "start": "pnpm run start:app:runtime",
-    "start:app:runtime": "concurrently --kill-others --names build,server \"pnpm --filter @penpot/plugins-runtime build:watch\" \"pnpm --filter @penpot/plugins-runtime preview\"",
+    "start:app:runtime": "concurrently --kill-others --names build,server \"pnpm --filter @penpot/plugins-runtime run build:watch\" \"pnpm --filter @penpot/plugins-runtime run preview\"",
     "start:app:styles-example": "pnpm --filter example-styles dev",
     "start:plugin:all": "concurrently --kill-others \"pnpm:start:plugin:*(!all)\"",
     "start:plugin:poc-state": "pnpm --filter poc-state-plugin serve",
