@@ -255,28 +255,28 @@
                     (cls/generate-update-shapes [(:id frame1)]
                                                 (fn [shape]
                                                   (-> shape
-                                                      (cto/unapply-token-id [:r1 :r2 :r3 :r4])
-                                                      (cto/unapply-token-id [:rotation])
-                                                      (cto/unapply-token-id [:opacity])
-                                                      (cto/unapply-token-id [:stroke-width])
-                                                      (cto/unapply-token-id [:stroke-color])
-                                                      (cto/unapply-token-id [:fill])
-                                                      (cto/unapply-token-id [:width :height])))
+                                                      (cto/unapply-tokens-from-shape [:r1 :r2 :r3 :r4])
+                                                      (cto/unapply-tokens-from-shape [:rotation])
+                                                      (cto/unapply-tokens-from-shape [:opacity])
+                                                      (cto/unapply-tokens-from-shape [:stroke-width])
+                                                      (cto/unapply-tokens-from-shape [:stroke-color])
+                                                      (cto/unapply-tokens-from-shape [:fill])
+                                                      (cto/unapply-tokens-from-shape [:width :height])))
                                                 (:objects page)
                                                 {})
                     (cls/generate-update-shapes [(:id text1)]
                                                 (fn [shape]
                                                   (-> shape
-                                                      (cto/unapply-token-id [:font-size])
-                                                      (cto/unapply-token-id [:letter-spacing])
-                                                      (cto/unapply-token-id [:font-family])))
+                                                      (cto/unapply-tokens-from-shape [:font-size])
+                                                      (cto/unapply-tokens-from-shape [:letter-spacing])
+                                                      (cto/unapply-tokens-from-shape [:font-family])))
                                                 (:objects page)
                                                 {})
                     (cls/generate-update-shapes [(:id circle1)]
                                                 (fn [shape]
                                                   (-> shape
-                                                      (cto/unapply-token-id [:layout-item-max-h :layout-item-min-h :layout-item-max-w :layout-item-min-w])
-                                                      (cto/unapply-token-id [:m1 :m2 :m3 :m4])))
+                                                      (cto/unapply-tokens-from-shape [:layout-item-max-h :layout-item-min-h :layout-item-max-w :layout-item-min-w])
+                                                      (cto/unapply-tokens-from-shape [:m1 :m2 :m3 :m4])))
                                                 (:objects page)
                                                 {}))
 

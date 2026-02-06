@@ -106,6 +106,11 @@
           (identical? (.getPrototypeOf js/Object o)
                       (.-prototype js/Object)))))
 
+#?(:cljs
+   (defn stringify
+     [obj]
+     (js/JSON.stringify obj)))
+
 ;; EXPERIMENTAL: unsafe, does not checks and not validates the input,
 ;; should be improved over time, for now it works for define a class
 ;; extending js/Error that is more than enought for a first, quick and
@@ -163,14 +168,14 @@
            bindings
            (->> properties
                 (mapcat (fn [params]
-                          (let [pname    (c/get params :name)
-                                get-expr (c/get params :get)
-                                set-expr (c/get params :set)
-                                fn-expr  (c/get params :fn)
-                                schema-n (c/get params :schema)
-                                wrap     (c/get params :wrap)
-                                schema-1 (c/get params :schema-1)
-                                this?    (c/get params :this false)
+                          (let [pname         (c/get params :name)
+                                get-expr      (c/get params :get)
+                                set-expr      (c/get params :set)
+                                fn-expr       (c/get params :fn)
+                                schema-n      (c/get params :schema)
+                                wrap          (c/get params :wrap)
+                                schema-1      (c/get params :schema-1)
+                                this?         (c/get params :this false)
 
                                 decode-expr
                                 (c/get params :decode/fn)
@@ -253,7 +258,11 @@
                                                             `(~decode-sym ~val-sym)
                                                             `(~decode-sym ~val-sym ~decode-options))
                                               val-sym     `(~coercer-sym ~val-sym)]
-                                             [])]
+                                             [])
+
+                                         ~fn-sym ~(if wrap
+                                                    `(~wrap-sym ~fn-sym)
+                                                    fn-sym)]
 
                                      ~(if this?
                                         `(.call ~fn-sym ~this-sym ~this-sym ~val-sym)

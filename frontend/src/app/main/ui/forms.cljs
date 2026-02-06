@@ -49,7 +49,6 @@
 
 (mf/defc form-submit*
   [{:keys [disabled on-submit] :rest props}]
-
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))

@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
    [app.main.data.modal :as modal]
@@ -47,9 +47,9 @@
 ;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
-  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cfo/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids (into #{} (map :id selected-shapes))]
-    {:all-selected? (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)
+    {:all-selected? (cfo/shapes-applied-all? ids-by-attributes shape-ids attributes)
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 

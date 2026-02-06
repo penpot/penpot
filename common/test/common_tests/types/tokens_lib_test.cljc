@@ -678,35 +678,35 @@
 
 (t/deftest list-active-themes-tokens-bug-taiga-10617
   (let [tokens-lib (-> (ctob/make-tokens-lib)
-                       (ctob/add-set (ctob/make-token-set :name "Mode / Dark"
+                       (ctob/add-set (ctob/make-token-set :name "Mode/Dark"
                                                           :tokens {"red"
                                                                    (ctob/make-token :name "red"
                                                                                     :type :color
                                                                                     :value "#700000")}))
-                       (ctob/add-set (ctob/make-token-set :name "Mode / Light"
+                       (ctob/add-set (ctob/make-token-set :name "Mode/Light"
                                                           :tokens {"red"
                                                                    (ctob/make-token :name "red"
                                                                                     :type :color
                                                                                     :value "#ff0000")}))
-                       (ctob/add-set (ctob/make-token-set :name "Device / Desktop"
+                       (ctob/add-set (ctob/make-token-set :name "Device/Desktop"
                                                           :tokens {"border1"
                                                                    (ctob/make-token :name "border1"
                                                                                     :type :border-radius
                                                                                     :value 30)}))
-                       (ctob/add-set (ctob/make-token-set :name "Device / Mobile"
+                       (ctob/add-set (ctob/make-token-set :name "Device/Mobile"
                                                           :tokens {"border1"
                                                                    (ctob/make-token :name "border1"
                                                                                     :type :border-radius
                                                                                     :value 50)}))
                        (ctob/add-theme (ctob/make-token-theme :group "App"
                                                               :name "Mobile"
-                                                              :sets #{"Mode / Dark" "Device / Mobile"}))
+                                                              :sets #{"Mode/Dark" "Device/Mobile"}))
                        (ctob/add-theme (ctob/make-token-theme :group "App"
                                                               :name "Web"
-                                                              :sets #{"Mode / Dark" "Mode / Light" "Device / Desktop"}))
+                                                              :sets #{"Mode/Dark" "Mode/Light" "Device/Desktop"}))
                        (ctob/add-theme (ctob/make-token-theme :group "Brand"
                                                               :name "Brand A"
-                                                              :sets #{"Mode / Dark" "Mode / Light" "Device / Desktop" "Device / Mobile"}))
+                                                              :sets #{"Mode/Dark" "Mode/Light" "Device/Desktop" "Device/Mobile"}))
                        (ctob/add-theme (ctob/make-token-theme :group "Brand"
                                                               :name "Brand B"
                                                               :sets #{}))
@@ -2013,3 +2013,11 @@
            (t/is (some? imported-ref))
            (t/is (= (:type original-ref) (:type imported-ref)))
            (t/is (= (:value imported-ref) (:value original-ref))))))))
+
+(t/deftest token-name-path-exists?-test
+  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm" {"border-radius" {:name "sm"}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
+  (t/is (false? (ctob/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
+  (t/is (false? (ctob/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))
