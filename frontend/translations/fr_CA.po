@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-05 14:01+0000\n"
+"PO-Revision-Date: 2026-02-08 17:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4014,3 +4014,350 @@ msgstr "Plus de 50"
 #: src/app/main/ui/onboarding/questions.cljs:236
 msgid "onboarding.questions.team-size.personal-project"
 msgstr "Je travaille sur un projet personnel"
+
+#: src/app/main/ui/onboarding/questions.cljs:79
+msgid "onboarding.questions.use.education"
+msgstr "Éducation"
+
+#: src/app/main/ui/onboarding/questions.cljs:80
+msgid "onboarding.questions.use.personal"
+msgstr "Personnel"
+
+#: src/app/main/ui/onboarding/questions.cljs:78
+msgid "onboarding.questions.use.work"
+msgstr "Travail"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:175
+msgid "onboarding.team-modal.create-team"
+msgstr "Créer une équipe"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:31
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"En équipe tu peux collaborer avec d'autres usagers de Penpot en travaillant "
+"dans les mêmes fichiers et projets."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:36
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Fichiers et projets illimités"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:40
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Édition multijoueur"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:44
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Gestion des rôles"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:48
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Membres illimités"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:52
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100 % gratuit!"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:29
+msgid "onboarding.team-modal.team-definition"
+msgstr "C'est quoi une équipe?"
+
+#: src/app/main/ui/onboarding/templates.cljs:77
+msgid "onboarding.templates.subtitle"
+msgstr "Voici quelques modèles."
+
+#: src/app/main/ui/onboarding/templates.cljs:76
+msgid "onboarding.templates.title"
+msgstr "Commencer à designer"
+
+#, unused
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+#: src/app/main/ui/auth/recovery.cljs:88
+msgid "profile.recovery.go-to-login"
+msgstr "Aller à la connexion"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:378
+msgid "settings.detach"
+msgstr "Détacher"
+
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+msgid "settings.multiple"
+msgstr "Multiple"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:436
+msgid "settings.remove-color"
+msgstr "Supprimer la couleur"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:441
+msgid "settings.select-this-color"
+msgstr "Sélectionner les éléments avec ce style"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:409
+msgid "shortcut-section.basics"
+msgstr "De base"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:415
+msgid "shortcut-section.dashboard"
+msgstr "Tableau de bord"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:418
+msgid "shortcut-section.viewer"
+msgstr "Visionneuse"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:412
+msgid "shortcut-section.workspace"
+msgstr "Espace de travail"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:58
+msgid "shortcut-subsection.alignment"
+msgstr "Alignement"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
+msgid "shortcut-subsection.edit"
+msgstr "Édition"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Général"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
+msgid "shortcut-subsection.general-viewer"
+msgstr "Général"
+
+#: src/app/main/ui/workspace/main_menu.cljs:857, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62
+msgid "shortcut-subsection.main-menu"
+msgstr "Menu principal"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:63
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modification des calques"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:64
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigation"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:65
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navigation"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:66
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navigation"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:67
+msgid "shortcut-subsection.panels"
+msgstr "Panneaux"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:68
+msgid "shortcut-subsection.path-editor"
+msgstr "Tracés"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:69
+msgid "shortcut-subsection.shape"
+msgstr "Formes"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:70
+msgid "shortcut-subsection.text-editor"
+msgstr "Textes"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:71
+msgid "shortcut-subsection.tools"
+msgstr "Outils"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:72
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:73
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:74
+msgid "shortcuts.add-comment"
+msgstr "Commentaires"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:75
+msgid "shortcuts.add-node"
+msgstr "Ajouter un nœud"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:76
+msgid "shortcuts.align-bottom"
+msgstr "Aligner en bas"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:77
+msgid "shortcuts.align-center"
+msgstr "Aligner au centre"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:78
+msgid "shortcuts.align-hcenter"
+msgstr "Aligner au centre horizontal"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:79
+msgid "shortcuts.align-justify"
+msgstr "Justifier"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:80
+msgid "shortcuts.align-left"
+msgstr "Aligner à gauche"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:81
+msgid "shortcuts.align-right"
+msgstr "Aligner à droite"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:82
+msgid "shortcuts.align-top"
+msgstr "Aligner en haut"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:83
+msgid "shortcuts.align-vcenter"
+msgstr "Aligner au centre vertical"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:84
+msgid "shortcuts.artboard-selection"
+msgstr "Créer un tableau à partir de la sélection"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:85
+msgid "shortcuts.bold"
+msgstr "Basculer la graisse"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
+msgid "shortcuts.bool-difference"
+msgstr "Soustraction booléenne"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:87
+msgid "shortcuts.bool-exclude"
+msgstr "Exclusion booléenne"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:88
+msgid "shortcuts.bool-intersection"
+msgstr "Intersection booléenne"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:89
+msgid "shortcuts.bool-union"
+msgstr "Union booléenne"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:90
+msgid "shortcuts.bring-back"
+msgstr "Envoyer à l'arrière-plan"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:91
+msgid "shortcuts.bring-backward"
+msgstr "Envoyer vers l'arrière"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:92
+msgid "shortcuts.bring-forward"
+msgstr "Emmener vers l'avant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:93
+msgid "shortcuts.bring-front"
+msgstr "Emmener à l'avant-plan"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.clear-undo"
+msgstr "Vider l'historique d'actions"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
+msgid "shortcuts.copy"
+msgstr "Copier"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
+msgid "shortcuts.copy-link"
+msgstr "Copier le lien"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "Copier les propriétés"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Créer composant / variant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
+msgid "shortcuts.create-new-project"
+msgstr "Créer nouveau projet"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:99
+msgid "shortcuts.cut"
+msgstr "Couper"
+
+#: src/app/main/ui/viewer/header.cljs:82, src/app/main/ui/workspace/right_header.cljs:82, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
+msgid "shortcuts.decrease-zoom"
+msgstr "Zoom avant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:101
+msgid "shortcuts.delete"
+msgstr "Supprimer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:102
+msgid "shortcuts.delete-node"
+msgstr "Supprimer un nœud"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+msgid "shortcuts.detach-component"
+msgstr "Détacher un composant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:104
+msgid "shortcuts.draw-curve"
+msgstr "Courbe"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:105
+msgid "shortcuts.draw-ellipse"
+msgstr "Ellipse"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+msgid "shortcuts.draw-frame"
+msgstr "Tableau"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:107
+msgid "shortcuts.draw-nodes"
+msgstr "Dessiner un chemin"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:108
+msgid "shortcuts.draw-path"
+msgstr "Chemin"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:109
+msgid "shortcuts.draw-rect"
+msgstr "Rectangle"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:110
+msgid "shortcuts.draw-text"
+msgstr "Texte"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+msgid "shortcuts.duplicate"
+msgstr "Dupliquer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:112
+msgid "shortcuts.escape"
+msgstr "Annuler"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:113
+msgid "shortcuts.export-shapes"
+msgstr "Exporter les éléments"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
+msgid "shortcuts.fit-all"
+msgstr "Zoom cadrant tout"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
+msgid "shortcuts.flip-horizontal"
+msgstr "Retourner horizontalement"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:116
+msgid "shortcuts.flip-vertical"
+msgstr "Retourner verticalement"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:117
+msgid "shortcuts.font-size-dec"
+msgstr "Réduire la taille de la police"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:118
+msgid "shortcuts.font-size-inc"
+msgstr "Augmenter la taille de la police"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:119
+msgid "shortcuts.go-to-drafts"
+msgstr "Accéder aux brouillons"
