@@ -32,7 +32,7 @@
 (def ^:private accept-font-types
   (str (str/join "," cm/font-types)
        ;; A workaround to solve a problem with chrome input selector
-       ",.ttf,application/font-woff,woff,.otf"))
+       ",.ttf,application/font-woff,.woff,.woff2,.otf"))
 
 (defn- use-page-title
   [team section]
