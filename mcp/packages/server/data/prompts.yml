@@ -262,247 +262,51 @@ initial_instructions: |
     * const shapes: Shape[] = [shape1, shape2]; // shapes to include
       const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
       newComponent.name = 'My Button';
-    
+
   # Design Tokens
 
-  Design Tokens in Penpot are reusable design values (colors, dimensions, typography, shadows, etc.) that enable consistent styling across designs.
-  Tokens are organized in sets and can be controlled by themes.
+  Design tokens are reusable design values (colors, dimensions, typography, etc.) for consistent styling.
 
-  ## Accessing Tokens
+  The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
+    * `sets: TokenSet[]` - Token collections (order matters for precedence)
+    * `themes: TokenTheme[]` - Presets that activate specific sets
+    * `addSet(name: string): TokenSet` - Create new set
+    * `addTheme(group: string, name: string): TokenTheme` - Create new theme
 
-  Tokens are accessed through the library's token catalog:
-    * `penpot.library.local.tokens` (type: `TokenCatalog`) - The token catalog for the current file
+  `TokenSet` contains tokens with unique names:
+    * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`
+    * `tokens: Token[]` - All tokens in set
+    * `addToken(type: TokenType, name: string, value: TokenValueString): Token` - Creates a token, adding it to the set.
+       - `TokenType`: "color" | "dimension" | "spacing" | "typography" | "shadow" | "opacity" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
+       - Examples:
+         const token = set.addToken("color", "color.primary", "#0066FF"); // direct value
+         const token2 = set.addToken("color", "color.accent", "{color.primary}"); // reference to another token
 
-  The `TokenCatalog` contains:
-    * `sets: TokenSet[]` - Array of token sets (order matters: later sets override earlier ones for same-named tokens)
-    * `themes: TokenTheme[]` - Array of themes that control which sets are active
-    * `addSet(name: string): TokenSet` - Create a new token set
-    * `addTheme(group: string, name: string): TokenTheme` - Create a new theme
-    * `getSetById(id: string): TokenSet | undefined` - Retrieve a set by ID
-    * `getThemeById(id: string): TokenTheme | undefined` - Retrieve a theme by ID
+  `Token`:
+    * `name: string` - Token name (may include group path like "color.base.white")
+    * `value: string | TokenValueString` - Raw value (may be direct value or reference to another token like "{color.primary}")
+    * `resolvedValue` - Computed final value (follows references)
+    * `type: TokenType`
 
-  ## Token Sets
-
-  A `TokenSet` is a collection of tokens with unique names:
-    * `id: string` - Unique identifier
-    * `name: string` - Display name (may include group path separated by `/`)
-    * `active: boolean` - Whether this set is currently active (only active sets affect shapes)
-    * `tokens: Token[]` - Array of all tokens in this set
-    * `tokensByType: [string, Token[]][]` - Tokens grouped by type
-    * `toggleActive(): void` - Toggle the set's active status
-    * `addToken(type: TokenType, name: string, value: TokenValueString): Token` - Create and add a new token
-    * `getTokenById(id: string): Token | undefined` - Retrieve a token by ID
-    * `duplicate(): TokenSet` - Create a copy of this set
-    * `remove(): void` - Delete this set
-
-  ## Token Themes
-
-  A `TokenTheme` is a preset that activates specific token sets:
-    * `id: string` - Unique identifier
-    * `group: string` - Theme group (only one theme per group can be active at a time)
-    * `name: string` - Display name
-    * `active: boolean` - Whether this theme is currently active
-    * `activeSets: TokenSet[]` - Array of sets activated by this theme
-    * `toggleActive(): void` - Activate/deactivate this theme
-    * `addSet(tokenSet: TokenSet): void` - Add a set to this theme
-    * `removeSet(tokenSet: TokenSet): void` - Remove a set from this theme
-
-  Themes in different groups can be active simultaneously (e.g., one for color scheme, one for density).
-  When a theme is activated, it activates its sets. Manually toggling a set deactivates all themes.
-
-  ## Token Types
-
-  Tokens have specific types that determine what properties they can be applied to:
-    * `TokenColor` - Colors (can apply to: `"fill"`, `"stroke"`)
-    * `TokenDimension` - Measurements (can apply to: `"x"`, `"y"`, `"stroke-width"`)
-    * `TokenSpacing` - Spacing values
-    * `TokenSizing` - Size values
-    * `TokenTypography` - Complete typography styles (font family, size, weight, line height, etc.)
-    * `TokenShadow` - Shadow effects
-    * `TokenBorderRadius` - Border radius values
-    * `TokenOpacity` - Opacity values
-    * `TokenRotation` - Rotation angles
-    * And more...
-
-  Each token has:
-    * `id: string` - Unique identifier
-    * `name: string` - Token name (may include group path separated by `.`)
-    * `type: TokenType` - The token type (e.g., `"color"`, `"dimension"`)
-    * `value: string | TokenValueString` - The raw value (may be a direct value or a reference to another token)
-    * `resolvedValue: <type-specific> | undefined` - The computed final value (follows references)
-    * `description: string` - Optional description
-    * `duplicate(): Token` - Create a copy
-    * `remove(): void` - Delete this token
-
-  ## Token References
-
-  Tokens can reference other tokens using curly brace syntax in their `value`:
-    * Direct value: `"#FFFFFF"` or `"16px"`
-    * Reference: `"{color.base.white}"` - references another token by name
-
-  The `resolvedValue` property contains the final computed value after following all references.
-
-  ## Discovering Tokens
-
-  To explore available tokens in a project:
-
-  ```javascript
-  const tokenCatalog = penpot.library.local.tokens;
-
-  // List all token sets
-  console.log("Token sets:", tokenCatalog.sets.map(s => ({ 
-    name: s.name, 
-    active: s.active, 
-    tokenCount: s.tokens.length 
-  })));
-
-  // Find tokens by type
-  for (const set of tokenCatalog.sets) {
-    const colorTokens = set.tokens.filter(t => t.type === 'color');
-    console.log(`Set "${set.name}" has ${colorTokens.length} color tokens`);
-  }
-
-  // Find a specific token by name
-  let targetToken = null;
-  for (const set of tokenCatalog.sets) {
-    const token = set.tokens.find(t => t.name === 'color.base.white');
-    if (token) {
-      targetToken = token;
-      break;
+  Discovering tokens:
+    ```javascript
+    for (const set of penpot.library.local.tokens.sets) {
+      const token = set.tokens.find(t => t.name === 'color.base.white');
+      if (token) { /* found it */ }
     }
-  }
+    ```
 
-  // Check which themes are active
-  console.log("Active themes:", tokenCatalog.themes.filter(t => t.active).map(t => t.name));
-  ```
+  Applying tokens:
+    * `shape.applyToken(token)` - Apply to shape
+    * `token.applyToShapes(shapes)` or `token.applyToSelected()` - Apply from token
+    * Application is **asynchronous** (wait for ~100ms to see the effects)
+    * After application:
+       - `shape.tokens` returns `{ propertyName: "token.name" }`
+       - The properties that the tokens control will reflect the token's resolved value.
 
-  ## Applying Tokens to Shapes
-
-  There are multiple ways to apply tokens to shapes:
-
-  **From the shape:**
-  ```javascript
-  // Apply a token to specific properties
-  shape.applyToken(colorToken, ["fill"]);
-
-  // Apply to default properties (recommended - more reliable)
-  shape.applyToken(colorToken);
-  ```
-
-  **From the token:**
-  ```javascript
-  // Apply to multiple shapes
-  token.applyToShapes([shape1, shape2, shape3], ["fill"]);
-
-  // Apply to currently selected shapes
-  token.applyToSelected();
-  ```
-
-  **Important notes on applying tokens:**
-    * Token application is **asynchronous** - there is a delay (typically ~100-150ms) before changes take effect
-    * Token application is **by name, not by ID** - if multiple tokens share the same name in different sets, 
-      the active set with highest precedence (last in the sets array) determines which value is applied
-    * If you specify properties explicitly (e.g., `["fill"]`), in some cases it may be more reliable to omit 
-      the properties parameter and let the token use its default properties
-    * After applying a token, `shape.tokens` will contain the mapping of properties to token names
-
-  **Reading applied tokens:**
-  ```javascript
-  // Check which tokens are applied to a shape
-  console.log("Applied tokens:", shape.tokens);
-  // Example output: { fill: "color.base.white", typography: "typography.button" }
-
-  // The actual values are in the shape's properties
-  console.log("Actual fill color:", shape.fills[0].fillColor);
-  ```
-
-  ## Removing Tokens from Shapes
-
-  To remove a token from a shape, simply set the property directly:
-
-  ```javascript
-  // Remove a fill color token by setting fills directly
-  shape.fills = [{
-    fillColor: "#000000",
-    fillOpacity: 1
-  }];
-  // The token binding is automatically removed from shape.tokens
-
-  // Remove a typography token by setting font properties
-  shape.fontSize = 16;
-  // This breaks the typography token binding
-  ```
-
-  **The token removal mechanism is elegant:** Penpot automatically removes token bindings when you directly set 
-  the corresponding property. You don't need an explicit "removeToken" method.
-
-  ## Creating New Tokens
-
-  To create tokens, first create or access a token set, then add tokens to it:
-
-  ```javascript
-  const tokenCatalog = penpot.library.local.tokens;
-
-  // Create a new token set (or use an existing one)
-  const mySet = tokenCatalog.addSet("my-tokens");
-
-  // Make sure the set is active
-  if (!mySet.active) {
-    mySet.toggleActive();
-  }
-
-  // Add a color token
-  const primaryColor = mySet.addToken("color", "color.primary", "#0066FF");
-
-  // Add a dimension token
-  const baseSpacing = mySet.addToken("dimension", "spacing.base", "8px");
-
-  // Add a token that references another token
-  const accentColor = mySet.addToken("color", "color.accent", "{color.primary}");
-
-  // Token names can include group paths with dots
-  const buttonPrimary = mySet.addToken("color", "color.button.primary", "#0066FF");
-  ```
-
-  **Token value formats:**
-    * Colors: `"#RRGGBB"` or `"#RRGGBBAA"` or references like `"{color.base.white}"`
-    * Dimensions: `"16px"` or `"1.5rem"` or references
-    * Numbers: `"1.5"` or `"100"` or references
-    * Typography: Complex object or string representation
-    * Shadows: Array of shadow objects
-
-  ## Creating and Using Themes
-
-  Themes allow you to switch between different token configurations:
-
-  ```javascript
-  const tokenCatalog = penpot.library.local.tokens;
-
-  // Create theme groups (e.g., for color schemes)
-  const lightTheme = tokenCatalog.addTheme("color-scheme", "Light");
-  const darkTheme = tokenCatalog.addTheme("color-scheme", "Dark");
-
-  // Add sets to themes
-  const lightColorsSet = tokenCatalog.sets.find(s => s.name === "colors-light");
-  const darkColorsSet = tokenCatalog.sets.find(s => s.name === "colors-dark");
-
-  lightTheme.addSet(lightColorsSet);
-  darkTheme.addSet(darkColorsSet);
-
-  // Activate a theme (only one theme per group can be active)
-  darkTheme.toggleActive();
-
-  // When you switch themes, all shapes using tokens will update automatically
-  ```
-
-  ## Best Practices
-
-    * Use semantic token names (e.g., `color.text.primary`) rather than literal names (e.g., `color.black`)
-    * Organize tokens in sets by purpose (e.g., "base-colors", "semantic-colors", "spacing")
-    * Use token references to create hierarchies (base tokens → semantic tokens → component tokens)
-    * Keep token sets active when you want their tokens to be available
-    * When applying tokens programmatically, account for the async nature (use small delays if you need to read results)
-    * Prefer omitting the `properties` parameter when applying tokens, unless you have a specific need
+  Removing tokens:
+    Simply set the respective property directly - token binding is automatically removed, e.g.
+    shape.fills = [{ fillColor: "#000000", fillOpacity: 1 }]; // Removes fill token
 
   --
   You have hereby read the 'Penpot High-Level Overview' and need not use a tool to read it again.
