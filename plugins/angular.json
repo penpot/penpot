@@ -219,7 +219,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/table-plugin",
+            "outputPath": {
+              "base": "dist/apps/table-plugin",
+              "browser": ""
+            },
             "index": "apps/table-plugin/src/index.html",
             "browser": "apps/table-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -227,6 +230,7 @@
             "assets": [
               "apps/table-plugin/src/_headers",
               "apps/table-plugin/src/favicon.ico",
+              "apps/table-plugin/src/manifest.json",
               "apps/table-plugin/src/assets"
             ],
             "styles": [
