@@ -73,8 +73,13 @@
           (let [val (case property
                       :s (/ val 100)
                       :v (value->hsv-value val)
+                      :alpha (/ val 100)
                       val)]
-            (if (#{:r :g :b} property)
+            (cond
+              (= property :alpha)
+              (on-change {:alpha val})
+
+              (#{:r :g :b} property)
               (let [{:keys [r g b]} (merge color (hash-map property val))
                     hex (cc/rgb->hex [r g b])
                     [h s v] (cc/hex->hsv hex)]
@@ -82,6 +87,7 @@
                             :h h :s s :v v
                             :r r :g g :b b}))
 
+              :else
               (let [{:keys [h s v]} (merge color (hash-map property val))
                     hex (cc/hsv->hex [h s v])
                     [r g b] (cc/hex->rgb hex)]
@@ -96,13 +102,8 @@
               (when (some? val)
                 (apply-property-change property val)))))
 
-        on-change-opacity
-        (fn [e]
-          (when-let [new-alpha (-> e dom/get-target-val (mth/clamp 0 100) (/ 100))]
-            (on-change {:alpha new-alpha})))
-
-        on-key-down-property
-        (fn [property max-value]
+        on-key-down-step
+        (fn [max-value on-step]
           (fn [e]
             (let [up?   (kbd/up-arrow? e)
                   down? (kbd/down-arrow? e)]
@@ -116,23 +117,11 @@
                         new-value (mth/clamp (+ current-value step) 0 max-value)
                         node      (dom/get-target e)]
                     (dom/set-value! node new-value)
-                    (apply-property-change property new-value)))))))
+                    (on-step new-value)))))))
 
-        on-key-down-opacity
-        (fn [e]
-          (let [up?   (kbd/up-arrow? e)
-                down? (kbd/down-arrow? e)]
-            (when (and (or up? down?)
-                       (or (kbd/shift? e) (kbd/alt? e)))
-              (dom/prevent-default e)
-              (when-let [current-value (-> e dom/get-target-val d/parse-double)]
-                (let [step      (cond
-                                  (kbd/shift? e) (if up? 10 -10)
-                                  (kbd/alt? e)   (if up? 0.1 -0.1))
-                      new-value (mth/clamp (+ current-value step) 0 100)
-                      node      (dom/get-target e)]
-                  (dom/set-value! node new-value)
-                  (on-change {:alpha (/ new-value 100)}))))))]
+        on-key-down-property
+        (fn [property max-value]
+          (on-key-down-step max-value #(apply-property-change property %)))]
 
 
     ;; Updates the inputs values when a property is changed in the parent
@@ -239,5 +228,5 @@
                   :step 1
                   :max 100
                   :default-value (if (= alpha :multiple) "" alpha)
-                  :on-change on-change-opacity
-                  :on-key-down on-key-down-opacity}]])]]))
+                  :on-change (on-change-property :alpha 100)
+                  :on-key-down (on-key-down-property :alpha 100)}]])]]))
