@@ -26,7 +26,7 @@ fn draw_stroke_on_rect(
     // Draw the different kind of strokes for a rect is straightforward, we just need apply a stroke to:
     // - The same rect if it's a center stroke
     // - A bigger rect if it's an outer stroke
-    // - A smaller rect if it's an outer stroke
+    // - A smaller rect if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
 
@@ -34,14 +34,75 @@ fn draw_stroke_on_rect(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    match corners {
-        Some(radii) => {
-            let radii = stroke.outer_corners(radii);
-            let rrect = RRect::new_rect_radii(stroke_rect, &radii);
-            canvas.draw_rrect(rrect, &paint);
+    // For inner/outer strokes, we need clipping to prevent stroke pattern
+    // (like dotted circles) from appearing in wrong areas
+    match stroke.kind {
+        StrokeKind::Inner => {
+            // Inner: clip to original rect to hide parts outside boundary
+            canvas.save();
+            match corners {
+                Some(radii) => {
+                    let rrect = RRect::new_rect_radii(*rect, radii);
+                    canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+                }
+                None => {
+                    canvas.clip_rect(*rect, skia::ClipOp::Intersect, antialias);
+                }
+            }
+
+            // Draw the stroke
+            match corners {
+                Some(radii) => {
+                    let radii = stroke.outer_corners(radii);
+                    let rrect = RRect::new_rect_radii(stroke_rect, &radii);
+                    canvas.draw_rrect(rrect, &paint);
+                }
+                None => {
+                    canvas.draw_rect(stroke_rect, &paint);
+                }
+            }
+
+            canvas.restore();
         }
-        None => {
-            canvas.draw_rect(stroke_rect, &paint);
+        StrokeKind::Outer => {
+            // Outer: clip to exclude original rect to hide parts inside boundary
+            canvas.save();
+            match corners {
+                Some(radii) => {
+                    let rrect = RRect::new_rect_radii(*rect, radii);
+                    canvas.clip_rrect(rrect, skia::ClipOp::Difference, antialias);
+                }
+                None => {
+                    canvas.clip_rect(*rect, skia::ClipOp::Difference, antialias);
+                }
+            }
+
+            // Draw the stroke
+            match corners {
+                Some(radii) => {
+                    let radii = stroke.outer_corners(radii);
+                    let rrect = RRect::new_rect_radii(stroke_rect, &radii);
+                    canvas.draw_rrect(rrect, &paint);
+                }
+                None => {
+                    canvas.draw_rect(stroke_rect, &paint);
+                }
+            }
+
+            canvas.restore();
+        }
+        StrokeKind::Center => {
+            // Center strokes don't need clipping
+            match corners {
+                Some(radii) => {
+                    let radii = stroke.outer_corners(radii);
+                    let rrect = RRect::new_rect_radii(stroke_rect, &radii);
+                    canvas.draw_rrect(rrect, &paint);
+                }
+                None => {
+                    canvas.draw_rect(stroke_rect, &paint);
+                }
+            }
         }
     }
 }
@@ -62,7 +123,7 @@ fn draw_stroke_on_circle(
     // Draw the different kind of strokes for an oval is straightforward, we just need apply a stroke to:
     // - The same oval if it's a center stroke
     // - A bigger oval if it's an outer stroke
-    // - A smaller oval if it's an outer stroke
+    // - A smaller oval if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
 
@@ -70,7 +131,32 @@ fn draw_stroke_on_circle(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    canvas.draw_oval(stroke_rect, &paint);
+    // For inner/outer strokes, we need clipping to prevent stroke pattern
+    // (like dotted circles) from appearing in wrong areas
+    match stroke.kind {
+        StrokeKind::Inner => {
+            // Inner: clip to original rect to hide parts outside boundary
+            canvas.save();
+            let mut clip_path = skia::Path::new();
+            clip_path.add_oval(rect, None);
+            canvas.clip_path(&clip_path, skia::ClipOp::Intersect, antialias);
+            canvas.draw_oval(stroke_rect, &paint);
+            canvas.restore();
+        }
+        StrokeKind::Outer => {
+            // Outer: clip to exclude original rect to hide parts inside boundary
+            canvas.save();
+            let mut clip_path = skia::Path::new();
+            clip_path.add_oval(rect, None);
+            canvas.clip_path(&clip_path, skia::ClipOp::Difference, antialias);
+            canvas.draw_oval(stroke_rect, &paint);
+            canvas.restore();
+        }
+        StrokeKind::Center => {
+            // Center strokes don't need clipping
+            canvas.draw_oval(stroke_rect, &paint);
+        }
+    }
 }
 
 fn draw_outer_stroke_path(
