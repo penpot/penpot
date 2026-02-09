@@ -107,7 +107,7 @@ RUN set -eux; \
 
 ARG BUNDLE_PATH="./bundle-exporter/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
-COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot

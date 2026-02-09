@@ -34,6 +34,12 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
+## 2.13.1
+
+### :bug: Bugs fixed
+
+- Fix PDF Exporter outputs empty page when board has A4 format [Taiga #13181](https://tree.taiga.io/project/penpot/issue/13181)
+
 ## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
