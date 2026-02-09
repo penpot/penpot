@@ -88,9 +88,7 @@ export class ReplServer {
         return new Promise((resolve) => {
             this.server = this.app.listen(this.port, () => {
                 this.logger.info(`REPL server started on port ${this.port}`);
-                this.logger.info(
-                    `REPL interface URL: http://${this.pluginBridge.mcpServer.serverAddress}:${this.port}`
-                );
+                this.logger.info(`REPL interface URL: http://${this.pluginBridge.mcpServer.host}:${this.port}`);
                 resolve();
             });
         });
