@@ -911,17 +911,23 @@
 
 (def render-finish
   (letfn [(do-render [ts]
-            (perf/begin-measure "render-finish")
-            (h/call wasm/internal-module "_set_view_end")
-            (render ts)
-            (perf/end-measure "render-finish"))]
+            ;; Check if context is still initialized before executing
+            ;; to prevent errors when navigating quickly
+            (when wasm/context-initialized?
+              (perf/begin-measure "render-finish")
+              (h/call wasm/internal-module "_set_view_end")
+              (render ts)
+              (perf/end-measure "render-finish")))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (def render-pan
   (letfn [(do-render-pan [ts]
-            (perf/begin-measure "render-pan")
-            (render ts)
-            (perf/end-measure "render-pan"))]
+            ;; Check if context is still initialized before executing
+            ;; to prevent errors when navigating quickly
+            (when wasm/context-initialized?
+              (perf/begin-measure "render-pan")
+              (render ts)
+              (perf/end-measure "render-pan")))]
     (fns/throttle do-render-pan THROTTLE_DELAY_MS)))
 
 (defn set-view-box
@@ -1399,6 +1405,16 @@
   []
   (when wasm/context-initialized?
     (try
+      ;; Cancel any pending animation frame to prevent race conditions
+      (when wasm/internal-frame-id
+        (js/cancelAnimationFrame wasm/internal-frame-id)
+        (set! wasm/internal-frame-id nil))
+
+      ;; Reset render flags to prevent new renders from being scheduled
+      (reset! pending-render false)
+      (reset! shapes-loading? false)
+      (reset! deferred-render? false)
+
       ;; TODO: perform corresponding cleaning
       (set! wasm/context-initialized? false)
       (h/call wasm/internal-module "_clean_up")
