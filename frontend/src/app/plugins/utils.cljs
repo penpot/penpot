@@ -16,8 +16,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
-   [app.util.object :as obj]
-   [cuerdas.core :as str]))
+   [app.util.object :as obj]))
 
 (defn locate-file
   [id]
@@ -243,15 +242,6 @@
     (if-let [explain (explainer attrs)]
       (display-not-valid code (str hint " " (sm/humanize-explain explain)))
       attrs)))
-
-(defn coerce-1
-  "Checks a single javascript value against schema. If schema validation fails,
-   displays a not-valid message with the code and hint provided and returns nil."
-  [value schema code hint]
-  (let [errors (sm/validation-errors value schema)]
-    (if (d/not-empty? errors)
-      (display-not-valid code (str hint " " (str/join ", " errors)))
-      value)))
 
 (defn mixed-value
   [values]

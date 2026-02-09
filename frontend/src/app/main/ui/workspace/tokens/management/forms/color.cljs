@@ -14,13 +14,17 @@
 
 (mf/defc form*
   [{:keys [token token-type] :as props}]
-  (let [props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1 token-type)
+  (let [initial
+        (mf/with-memo [token]
+          {:type token-type
+           :name (:name token "")
+           :value (:value token "")
+           :description (:description token "")
+           :color-result ""})
+
+        props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1 token-type)
                                                         (sm/dissoc-key :id)
                                                         (sm/assoc-key :color-result :string))
-                                      :initial {:type token-type
-                                                :name (:name token "")
-                                                :value (:value token "")
-                                                :description (:description token "")
-                                                :color-result ""}
+                                      :initial initial
                                       :input-component token.controls/color-input*})]
     [:> generic/form* props]))

@@ -102,7 +102,7 @@
           (make-schema tokens-tree-in-selected-set active-tab))
 
         initial
-        (mf/with-memo [token]
+        (mf/with-memo [token initial]
           (or initial
               {:type token-type
                :name (:name token "")

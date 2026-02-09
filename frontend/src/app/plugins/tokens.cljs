@@ -322,15 +322,15 @@
 
     :addSet
     {:schema [:tuple [:fn token-set-proxy?]]
-     :fn (fn [tokenSet]
+     :fn (fn [token-set]
            (let [theme (u/locate-token-theme file-id id)]
-             (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme (obj/get tokenSet :name))))))}
+             (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme (obj/get token-set :name))))))}
 
     :removeSet
     {:schema [:tuple [:fn token-set-proxy?]]
-     :fn (fn [tokenSet]
+     :fn (fn [token-set]
            (let [theme (u/locate-token-theme file-id id)]
-             (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme (obj/get tokenSet :name))))))}
+             (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme (obj/get token-set :name))))))}
 
     :duplicate
     (fn []
