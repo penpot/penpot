@@ -361,7 +361,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/colors-to-tokens-plugin",
+            "outputPath": {
+              "base": "dist/apps/colors-to-tokens-plugin",
+              "browser": ""
+            },
             "index": "apps/colors-to-tokens-plugin/src/index.html",
             "browser": "apps/colors-to-tokens-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -369,6 +372,7 @@
             "assets": [
               "apps/colors-to-tokens-plugin/src/_headers",
               "apps/colors-to-tokens-plugin/src/favicon.ico",
+              "apps/colors-to-tokens-plugin/src/manifest.json",
               "apps/colors-to-tokens-plugin/src/assets"
             ],
             "styles": [
