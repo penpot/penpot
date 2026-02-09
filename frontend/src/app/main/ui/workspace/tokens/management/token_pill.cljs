@@ -10,7 +10,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.path-names :as cpn]
    [app.common.types.token :as ctt]
    [app.config :as cf]
@@ -157,9 +157,9 @@
 
 (defn- applied-all-attributes?
   [token selected-shapes attributes]
-  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cfo/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids         (into #{} xf:map-id selected-shapes)]
-    (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
+    (cfo/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (defn attributes-match-selection?
   [selected-shapes attrs & {:keys [selected-inside-layout?]}]
@@ -181,7 +181,7 @@
         resolved-token (get active-theme-tokens (:name token))
 
         has-selected?  (pos? (count selected-shapes))
-        is-reference?  (cft/is-reference? token)
+        is-reference?  (cfo/is-reference? token)
         contains-path? (str/includes? name ".")
 
         attributes (as-> (get dwta/token-properties type) $
@@ -194,7 +194,7 @@
 
         applied?
         (if has-selected?
-          (cft/shapes-token-applied? token selected-shapes attributes)
+          (cfo/shapes-token-applied? token selected-shapes attributes)
           false)
 
         half-applied?
@@ -224,7 +224,7 @@
             no-valid-value)
 
         color
-        (when (cft/color-token? token)
+        (when (cfo/color-token? token)
           (or (dwtc/resolved-token-bullet-color resolved-token)
               (dwtc/resolved-token-bullet-color token)))
 

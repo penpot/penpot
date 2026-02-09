@@ -8,7 +8,7 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -85,7 +85,7 @@
   [value]
   (let [number? (or (number? value)
                     (numeric-string? value))
-        parsed-value  (cft/parse-token-value value)
+        parsed-value  (cfo/parse-token-value value)
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
 
@@ -111,7 +111,7 @@
   "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (cft/parse-token-value value)
+  (let [parsed-value  (cfo/parse-token-value value)
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -129,7 +129,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
   (let [missing-references? (seq (cto/find-token-value-references value))
-        parsed-value (cft/parse-token-value value)
+        parsed-value (cfo/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (cto/find-token-value-references value))]
     (cond (and parsed-value (not out-of-scope))
@@ -153,7 +153,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
   (let [missing-references? (seq (cto/find-token-value-references value))
-        parsed-value (cft/parse-token-value value)
+        parsed-value (cfo/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)]
     (cond
       (and parsed-value (not out-of-scope))
@@ -251,7 +251,7 @@
            :font-size-value font-size-value})]
     (or error
         (try
-          (when-let [{:keys [unit value]} (cft/parse-token-value line-height-value)]
+          (when-let [{:keys [unit value]} (cfo/parse-token-value line-height-value)]
             (case unit
               "%" (/ value 100)
               "px" (/ value font-size-value)

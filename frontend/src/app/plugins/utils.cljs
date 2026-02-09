@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.json :as json]
+   [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
@@ -61,17 +63,20 @@
 (defn locate-token-theme
   [file-id id]
   (let [tokens-lib (locate-tokens-lib file-id)]
-    (ctob/get-theme tokens-lib id)))
+    (when (some? tokens-lib)
+      (ctob/get-theme tokens-lib id))))
 
 (defn locate-token-set
   [file-id set-id]
   (let [tokens-lib (locate-tokens-lib file-id)]
-    (ctob/get-set tokens-lib set-id)))
+    (when (some? tokens-lib)
+      (ctob/get-set tokens-lib set-id))))
 
 (defn locate-token
   [file-id set-id token-id]
   (let [tokens-lib (locate-tokens-lib file-id)]
-    (ctob/get-token tokens-lib set-id token-id)))
+    (when (some? tokens-lib)
+      (ctob/get-token tokens-lib set-id token-id))))
 
 (defn locate-presence
   [session-id]
@@ -218,7 +223,8 @@
 
 (defn display-not-valid
   [code value]
-  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
+  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code))
+  nil)
 
 (defn reject-not-valid
   [reject code value]
@@ -226,7 +232,35 @@
     (.error js/console msg)
     (reject msg)))
 
+(defn coerce
+  "Decodes a javascript object into clj and check against schema. If schema validation fails,
+   displays a not-valid message with the code and hint provided and returns nil."
+  [attrs schema code hint]
+  (let [decoder   (sm/decoder schema sm/json-transformer)
+        explainer (sm/explainer schema)
+        attrs     (-> attrs json/->clj decoder)]
+    (if-let [explain (explainer attrs)]
+      (display-not-valid code (str hint " " (sm/humanize-explain explain)))
+      attrs)))
+
 (defn mixed-value
   [values]
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
+
+(defn wrap-errors
+  "Function wrapper to be used in plugin proxies methods to handle errors.
+   When an exception is thrown, a readable error message is output to the console
+   and the exception is captured."
+  [f]
+  (fn []
+    (let [args (js-arguments)]
+      (try
+        (.apply f nil args)
+        (catch :default cause
+          (display-not-valid (ex-message cause) (obj/stringify args))
+          (if-let [explain (-> cause ex-data ::sm/explain)]
+            (println (sm/humanize-explain explain))
+            (js/console.log (ex-data cause)))
+          (js/console.log (.-stack cause))
+          nil)))))

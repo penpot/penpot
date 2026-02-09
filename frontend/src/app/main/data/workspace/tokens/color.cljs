@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.tokens.color
   (:require
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.config :as cf]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.tokenscript :as ts]))
@@ -22,5 +22,5 @@
   (if (contains? cf/flags :tokenscript)
     (when (and resolved-value (ts/color-symbol? resolved-value))
       (ts/color-symbol->penpot-color resolved-value))
-    (when (and resolved-value (cft/color-token? token))
+    (when (and resolved-value (cfo/color-token? token))
       (color-bullet-color resolved-value))))
