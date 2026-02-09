@@ -15,7 +15,7 @@
 (mf/defc form*
   [{:keys [token token-type] :as props}]
   (let [initial
-        (mf/with-memo [token]
+        (mf/with-memo [token-type token]
           {:type token-type
            :name (:name token "")
            :value (:value token "")
