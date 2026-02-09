@@ -298,8 +298,17 @@ initial_instructions: |
     * `penpotUtils.getTokenSet(token: Token): TokenSet | null`: Gets the token set that contains the given token
 
   Applying tokens:
-    * `shape.applyToken(token)` - Apply to shape
-    * `token.applyToShapes(shapes)` or `token.applyToSelected()` - Apply from token
+    * `shape.applyToken(token, properties: undefined | TokenProperty[])` - Apply a token to a shape for one or more properties
+      (if properties is undefined, use a default property based on the token type - not usually recommended).
+      `TokenProperty` is a union type; here are some of the possible values:
+      - "all": applies the token to all properties it can control
+      - TokenBorderRadiusProps: "r1", "r2", "r3", "r4"
+      - TokenColorProps: "fill", "stroke"
+      - TokenDimensionProps: "x", "y", "stroke-width"
+      - TokenNumberProps: "rotation", "line-height"
+      - TokenSizingProps: "width", "height", "layout-item-min-w", "layout-item-max-w", "layout-item-min-h", "layout-item-max-h"
+      - TokenSpacingProps: "row-gap", "column-gap", "p1", "p2", "p3", "p4", "m1", "m2", "m3", "m4"
+    * `token.applyToShapes(shapes, properties)` - Apply from token
     * Application is **asynchronous** (wait for ~100ms to see the effects)
     * After application:
        - `shape.tokens` returns a mapping `{ propertyName: "token.name" }`
