@@ -8,6 +8,8 @@
 
 ### :heart: Community contributions (Thank you!)
 
+- Copy as image to clipboard (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
+
 ### :sparkles: New features & Enhancements
 
 - Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
