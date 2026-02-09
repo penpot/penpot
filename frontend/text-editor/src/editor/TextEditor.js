@@ -326,7 +326,9 @@ export class TextEditor extends EventTarget {
    * @param {FocusEvent} e
    */
   #onBlur = (e) => {
-    this.#changeController.notifyImmediately();
+    if (!this.isEmpty) {
+      this.#changeController.notifyImmediately();
+    }
     this.#selectionController.saveSelection();
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
@@ -683,11 +685,24 @@ export function createRootFromString(string) {
  * Returns true if the passed object is a TextEditor
  * instance.
  *
- * @param {*} instance
+ * @param {TextEditor} instance
  * @returns {boolean}
  */
 export function isTextEditor(instance) {
   return instance instanceof TextEditor;
+}
+
+/**
+ * Returns true if the TextEditor is empty.
+ *
+ * @param {TextEditor} instance
+ * @returns {boolean}
+ */
+export function isEmpty(instance) {
+  if (isTextEditor(instance)) {
+    return instance.isEmpty;
+  }
+  throw new TypeError('Instance is not a TextEditor');
 }
 
 /**
@@ -701,7 +716,7 @@ export function getRoot(instance) {
   if (isTextEditor(instance)) {
     return instance.root;
   }
-  return null;
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -714,9 +729,9 @@ export function getRoot(instance) {
 export function setRoot(instance, root) {
   if (isTextEditor(instance)) {
     instance.root = root;
+    return instance;
   }
-
-  return instance;
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -741,7 +756,7 @@ export function getCurrentStyle(instance) {
   if (isTextEditor(instance)) {
     return instance.currentStyle;
   }
-  return null;
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -756,7 +771,7 @@ export function applyStylesToSelection(instance, styles) {
   if (isTextEditor(instance)) {
     return instance.applyStylesToSelection(styles);
   }
-  return null;
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 /**
@@ -770,7 +785,7 @@ export function dispose(instance) {
   if (isTextEditor(instance)) {
     return instance.dispose();
   }
-  return null;
+  throw new TypeError("Instance is not a TextEditor");
 }
 
 export default TextEditor;
