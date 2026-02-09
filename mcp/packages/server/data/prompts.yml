@@ -16,7 +16,7 @@ initial_instructions: |
 
   VERY IMPORTANT: When writing code, NEVER LOG INFORMATION YOU ARE ALSO RETURNING. It would duplicate the information you receive!
 
-  To execute code correctly, you need to understand the Penpot Plugin API. You can retrieve API documentation via 
+  To execute code correctly, you need to understand the Penpot Plugin API. You can retrieve API documentation via
   the `penpot_api_info` tool.
 
   This is the full list of types/interfaces in the Penpot API: $api_types
@@ -26,7 +26,7 @@ initial_instructions: |
 
   # The Structure of Penpot Designs
 
-  A Penpot design ultimately consists of shapes. 
+  A Penpot design ultimately consists of shapes.
   The type `Shape` is a union type, which encompasses both containers and low-level shapes.
   Shapes in a Penpot design are organized hierarchically.
   At the top level, a design project contains one or more `Page` objects.
@@ -38,7 +38,7 @@ initial_instructions: |
 
   # Core Shape Properties and Methods
 
-  **Type**: 
+  **Type**:
       Any given shape contains information on the concrete type via its `type` field.
 
   **Position and Dimensions**:
@@ -77,9 +77,11 @@ initial_instructions: |
       - Automatically removes the shape from its old parent
       - Absolute x/y positions are preserved (use `penpotUtils.setParentXY` to adjust relative position)
 
+  Cloning: Use `shape.clone(): Shape` to create an exact duplicate (including all properties and children) of a shape; same position as original.
+
   # Images
 
-  The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an 
+  The `Image` type is a legacy type. Images are now typically embedded in a `Fill`, with `fillImage` set to an
   `ImageData` object, i.e. the `fills` property of of a shape (e.g. a `Rectangle`) will contain a fill where `fillImage` is set.
   Use the `export_shape` and `import_image` tools to export and import images.
 
@@ -94,14 +96,14 @@ initial_instructions: |
       - sizing (`verticalSizing`, `horizontalSizing`: "fill" | "auto" | "fix")
       - min/max sizes (`minWidth`, `maxWidth`, `minHeight`, `maxHeight`)
       - `zIndex: number` (higher numbers on top)
-      
+
     * **Flex Layout**: A flexbox-style layout system
       - Properties: `dir`, `rowGap`, `columnGap`, `alignItems`, `justifyContent`;
          - `dir`: "row" | "column" | "row-reverse" | "column-reverse"
          - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
          - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
            Optionally, adjust indivudual child margins via `child.layoutChild`.
-      - When a board has flex layout, 
+      - When a board has flex layout,
          - child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
            appending or inserting children automatically positions them according to the layout rules.
          - CRITICAL: For for dir="column" or dir="row", the order of the `children` array is reversed relative to the visual order!
@@ -110,22 +112,22 @@ initial_instructions: |
       - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
         they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`; it will insert at the front
         of the `children` array for dir="column" or dir="row", which is what you want. So call it in the order of visual appearance.
-        To insert at a specific index, use `board.insertChild(index, shape)`, bearing in mind the reversed order for dir="column" 
+        To insert at a specific index, use `board.insertChild(index, shape)`, bearing in mind the reversed order for dir="column"
         or dir="row".
       - Add to a board with `board.addFlexLayout(): FlexLayout`; instance then accessible via `board.flex`.
-        IMPORTANT: When adding a flex layout to a container that already has children, 
+        IMPORTANT: When adding a flex layout to a container that already has children,
         use `penpotUtils.addFlexLayout(container, dir)` instead! This preserves the existing visual order of children.
-        Otherwise, children will be arbitrarily reordered when the children order suddenly determines the display order. 
+        Otherwise, children will be arbitrarily reordered when the children order suddenly determines the display order.
       - Check with: `if (board.flex) { ... }`
-    
+
     * **Grid Layout**: A CSS grid-style layout system
       - Add to a board with `board.addGridLayout(): GridLayout`; instance then accessibly via `board.grid`;
         Check with: `if (board.grid) { ... }`
       - Properties: `rows`, `columns`, `rowGap`, `columnGap`
       - Children are positioned via 1-based row/column indices
-          - Add to grid via `board.flex.appendChild(shape, row, column)` 
+          - Add to grid via `board.flex.appendChild(shape, row, column)`
           - Modify grid positioning after the fact via `shape.layoutCell: LayoutCellProperties`
-    
+
     * When working with boards:
       - ALWAYS check if the board has a layout system before attempting to reposition children
       - Modify layout properties (gaps, padding) instead of trying to set child x/y positions directly
@@ -160,7 +162,7 @@ initial_instructions: |
     * getPageByName(name: string): Page | null
     * shapeStructure(shape: Shape, maxDepth: number | undefined = undefined): { id, name, type, children?, layout? }
       Generates an overview structure of the given shape.
-      - children: recursive, limited by maxDepth 
+      - children: recursive, limited by maxDepth
       - layout: present if shape has flex/grid layout, contains { type: "flex" | "grid", ... }
     * findShapeById(id: string): Shape | null
     * findShape(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape | null
@@ -168,7 +170,7 @@ initial_instructions: |
     * findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[]
     * isContainedIn(shape: Shape, container: Shape): boolean
       Returns true iff shape is fully within the container's geometric bounds.
-      Note that a shape's bounds may not always reflect its actual visual content - descendants can overflow; check using analyzeDescendants (see below). 
+      Note that a shape's bounds may not always reflect its actual visual content - descendants can overflow; check using analyzeDescendants (see below).
     * setParentXY(shape: Shape, parentX: number, parentY: number): void
       Sets shape position relative to its parent (since parentX/parentY are read-only)
     * analyzeDescendants<T>(root: Shape, evaluator: (root: Shape, descendant: Shape) => T | null | undefined, maxDepth?: number): Array<{ shape: Shape, result: T }>
@@ -178,7 +180,7 @@ initial_instructions: |
 
   General pointers for working with Penpot designs:
     * Prefer `penpotUtils` helper functions — avoid reimplementing shape searching.
-    * To get an overview of a single page, use `penpotUtils.shapeStructure(page.root, 3)`. 
+    * To get an overview of a single page, use `penpotUtils.shapeStructure(page.root, 3)`.
       Note that `penpot.root` refers to the current page only. When working across pages, first determine the relevant page(s).
     * Use `penpotUtils.findShapes()` or `penpotUtils.findShape()` with predicates to locate elements efficiently.
 
@@ -212,7 +214,7 @@ initial_instructions: |
 
   # Visual Inspection of Designs
 
-  For many tasks, it can be critical to visually inspect the design. Remember to use the `export_shape` tool for this purpose! 
+  For many tasks, it can be critical to visually inspect the design. Remember to use the `export_shape` tool for this purpose!
 
   # Revising Designs
 
@@ -224,34 +226,34 @@ initial_instructions: |
     Consider converting boards to flex layout when appropriate.
 
   # Asset Libraries
-    
-  Libraries in Penpot are collections of reusable design assets (components, colors, and typographies) that can be shared across files. 
+
+  Libraries in Penpot are collections of reusable design assets (components, colors, and typographies) that can be shared across files.
   They enable design systems and consistent styling across projects.
   Each Penpot file has its own local library and can connect to external shared libraries.
-    
+
   Accessing libraries: via `penpot.library` (type: `LibraryContext`):
     * `penpot.library.local` (type: `Library`) - The current file's own library
     * `penpot.library.connected` (type: `Library[]`) - Array of already-connected external libraries
     * `penpot.library.availableLibraries()` (returns: `Promise<LibrarySummary[]>`) - Libraries available to connect
     * `penpot.library.connectLibrary(libraryId: string)` (returns: `Promise<Library>`) - Connect a new library
-    
+
   Each `Library` object has:
     * `id: string`
     * `name: string`
     * `components: LibraryComponent[]` - Array of components
     * `colors: LibraryColor[]` - Array of colors
     * `typographies: LibraryTypography[]` - Array of typographies
-    
+
   Using library components:
     * find a component in the library by name:
         const component: LibraryComponent = library.components.find(comp => comp.name.includes('Button'));
-    * create a new instance of the component on the current page: 
+    * create a new instance of the component on the current page:
         const instance: Shape = component.instance();
       This returns a `Shape` (often a `Board` containing child elements).
       After instantiation, modify the instance's properties as desired.
     * get the reference to the main component shape:
         const mainShape: Shape = component.mainInstance();
-    
+
   Adding assets to a library:
     * const newColor: LibraryColor = penpot.library.local.createColor();
       newColor.name = 'Brand Primary';
