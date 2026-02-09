@@ -431,6 +431,7 @@ export class PenpotUtils {
      */
     public static findTokensByName(name: string): any[] {
         const tokens: any[] = [];
+        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -451,6 +452,7 @@ export class PenpotUtils {
      * @returns The first matching token, or null if not found
      */
     public static findTokenByName(name: string): any | null {
+        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -471,6 +473,7 @@ export class PenpotUtils {
      * @returns The TokenSet containing this token, or null if not found
      */
     public static getTokenSet(token: any): any | null {
+        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
@@ -490,6 +493,7 @@ export class PenpotUtils {
      */
     public static tokenOverview(): Record<string, Record<string, string[]>> {
         const overview: Record<string, Record<string, string[]>> = {};
+        // @ts-ignore
         const tokenCatalog = penpot.library.local.tokens;
 
         for (const set of tokenCatalog.sets) {
