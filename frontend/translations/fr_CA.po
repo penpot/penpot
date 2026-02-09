@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-08 17:09+0000\n"
+"PO-Revision-Date: 2026-02-09 21:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4284,7 +4284,7 @@ msgstr "Couper"
 
 #: src/app/main/ui/viewer/header.cljs:82, src/app/main/ui/workspace/right_header.cljs:82, src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
 msgid "shortcuts.decrease-zoom"
-msgstr "Zoom avant"
+msgstr "Zoom arrière"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:101
 msgid "shortcuts.delete"
@@ -4361,3 +4361,301 @@ msgstr "Augmenter la taille de la police"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:119
 msgid "shortcuts.go-to-drafts"
 msgstr "Accéder aux brouillons"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:120
+msgid "shortcuts.go-to-libs"
+msgstr "Accéder aux bibliothèques partagées"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:121
+msgid "shortcuts.go-to-search"
+msgstr "Recherche"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:122
+msgid "shortcuts.group"
+msgstr "Grouper"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
+msgid "shortcuts.h-distribute"
+msgstr "Distribuer horizontalement"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:124
+msgid "shortcuts.hide-ui"
+msgstr "Afficher / cacher l'interface utilisateur"
+
+#: src/app/main/ui/viewer/header.cljs:88, src/app/main/ui/workspace/right_header.cljs:87, src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
+msgid "shortcuts.increase-zoom"
+msgstr "Zoom avant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:126
+msgid "shortcuts.insert-image"
+msgstr "Insérer une image"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
+msgid "shortcuts.italic"
+msgstr "Basculer l'italique"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
+msgid "shortcuts.join-nodes"
+msgstr "Joindre des nœuds"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
+msgid "shortcuts.line-through"
+msgstr "Basculer la biffure"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
+msgid "shortcuts.make-corner"
+msgstr "Convertir en coin"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
+msgid "shortcuts.make-curve"
+msgstr "Convertir en courbe"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
+msgid "shortcuts.mask"
+msgstr "Masquer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:133
+msgid "shortcuts.merge-nodes"
+msgstr "Fusionner des nœuds"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:134
+msgid "shortcuts.move"
+msgstr "Déplacer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:135
+msgid "shortcuts.move-fast-down"
+msgstr "Grand déplacement vers le bas"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:136
+msgid "shortcuts.move-fast-left"
+msgstr "Grand déplacement vers la gauche"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:137
+msgid "shortcuts.move-fast-right"
+msgstr "Grand déplacement vers la droite"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:138
+msgid "shortcuts.move-fast-up"
+msgstr "Grand déplacement vers le haut"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+msgid "shortcuts.move-nodes"
+msgstr "Déplacer un nœud"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:140
+msgid "shortcuts.move-unit-down"
+msgstr "Déplacement vers le bas"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:141
+msgid "shortcuts.move-unit-left"
+msgstr "Déplacement vers la gauche"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:142
+msgid "shortcuts.move-unit-right"
+msgstr "Déplacement vers la droite"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+msgid "shortcuts.move-unit-up"
+msgstr "Déplacement vers le haut"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:144
+msgid "shortcuts.next-frame"
+msgstr "Tableau suivant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:513
+msgid "shortcuts.not-found"
+msgstr "Aucun raccourci trouvé"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:145
+msgid "shortcuts.opacity-0"
+msgstr "Opacité 100%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:146
+msgid "shortcuts.opacity-1"
+msgstr "Opacité 10%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:147
+msgid "shortcuts.opacity-2"
+msgstr "Opacité 20%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:148
+msgid "shortcuts.opacity-3"
+msgstr "Opacité 30%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:149
+msgid "shortcuts.opacity-4"
+msgstr "Opacité 40%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:150
+msgid "shortcuts.opacity-5"
+msgstr "Opacité 50%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:151
+msgid "shortcuts.opacity-6"
+msgstr "Opacité 60%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:152
+msgid "shortcuts.opacity-7"
+msgstr "Opacité 70%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:153
+msgid "shortcuts.opacity-8"
+msgstr "Opacité 80%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+msgid "shortcuts.opacity-9"
+msgstr "Opacité 90%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:155
+msgid "shortcuts.open-color-picker"
+msgstr "Sélecteur de couleurs"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:156
+msgid "shortcuts.open-comments"
+msgstr "Accéder aux commentaires visionneur"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+msgid "shortcuts.open-dashboard"
+msgstr "Accéder au tableau de bord"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:158
+msgid "shortcuts.open-inspect"
+msgstr "Accéder à l'inspection visionneur"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:159
+msgid "shortcuts.open-interactions"
+msgstr "Accéder aux intéractions visionneur"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:160
+msgid "shortcuts.open-viewer"
+msgstr "Accéder au mode visionneur"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:161
+msgid "shortcuts.open-workspace"
+msgstr "Accéder à l'espace de travail"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:255
+msgid "shortcuts.or"
+msgstr " ou "
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:162
+msgid "shortcuts.paste"
+msgstr "Coller"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "Coller les propriétés"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "Gestionnaire de plugiciels"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:163
+msgid "shortcuts.prev-frame"
+msgstr "Tableau précédent"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:164
+msgid "shortcuts.redo"
+msgstr "Rétablir"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.rename"
+msgstr "Renommer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
+msgid "shortcuts.reset-zoom"
+msgstr "Rétablir le zoom"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.scale"
+msgstr "Mettre à l'échelle"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:168
+msgid "shortcuts.search-placeholder"
+msgstr "Recherche de raccourcis"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:169
+msgid "shortcuts.select-all"
+msgstr "Tout sélectionner"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:170
+msgid "shortcuts.select-next"
+msgstr "Sélectionner le calque suivant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:171
+msgid "shortcuts.select-parent-layer"
+msgstr "Sélectionner le calque parent"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:172
+msgid "shortcuts.select-prev"
+msgstr "Sélectionner le calque précédent"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:173
+msgid "shortcuts.separate-nodes"
+msgstr "Séparer des nœuds"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:174
+msgid "shortcuts.show-pixel-grid"
+msgstr "Afficher / masquer la grille pixel"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:175
+msgid "shortcuts.show-shortcuts"
+msgstr "Afficher / masquer les raccourcis"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:176
+msgid "shortcuts.snap-nodes"
+msgstr "Accrochage de nœuds"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:177
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Accrochage à la grille pixel"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:178
+msgid "shortcuts.start-editing"
+msgstr "Commencer l'édition"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:179
+msgid "shortcuts.start-measure"
+msgstr "Commencer à mesurer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:180
+msgid "shortcuts.stop-measure"
+msgstr "Arrêter de mesurer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
+msgid "shortcuts.thumbnail-set"
+msgstr "Définir l'imagette"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:502
+msgid "shortcuts.title"
+msgstr "Raccourcis clavier"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
+msgid "shortcuts.toggle-alignment"
+msgstr "Basculer l'alignement dynamique"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
+msgid "shortcuts.toggle-assets"
+msgstr "Basculer les atouts"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Basculer la palette de couleurs"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Basculer le mode focus"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Basculer plein écran"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
+msgid "shortcuts.toggle-guides"
+msgstr "Afficher / masquer les guides"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
+msgid "shortcuts.toggle-history"
+msgstr "Basculer l'historique"
