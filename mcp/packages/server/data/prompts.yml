@@ -177,6 +177,7 @@ initial_instructions: |
       General-purpose utility for analyzing/validating descendants
       Calls evaluator on each descendant; collects non-null/undefined results
       Powerful pattern: evaluator can return corrector functions or diagnostic data
+    * Further functions for specific tasks (described in the sections below)
 
   General pointers for working with Penpot designs:
     * Prefer `penpotUtils` helper functions — avoid reimplementing shape searching.
@@ -291,19 +292,17 @@ initial_instructions: |
     * `type: TokenType`
 
   Discovering tokens:
-    ```javascript
-    for (const set of penpot.library.local.tokens.sets) {
-      const token = set.tokens.find(t => t.name === 'color.base.white');
-      if (token) { /* found it */ }
-    }
-    ```
+    * `penpotUtils.tokenOverview()`: Maps from token set name to a mapping from token type to list of token names
+    * `penpotUtils.findTokenByName(name: string): Token | null`: Finds the first applicable token matching the given name
+    * `penpotUtils.findTokensByName(name: string): Token[]`: Finds all tokens that match the given name across all token sets
+    * `penpotUtils.getTokenSet(token: Token): TokenSet | null`: Gets the token set that contains the given token
 
   Applying tokens:
     * `shape.applyToken(token)` - Apply to shape
     * `token.applyToShapes(shapes)` or `token.applyToSelected()` - Apply from token
     * Application is **asynchronous** (wait for ~100ms to see the effects)
     * After application:
-       - `shape.tokens` returns `{ propertyName: "token.name" }`
+       - `shape.tokens` returns a mapping `{ propertyName: "token.name" }`
        - The properties that the tokens control will reflect the token's resolved value.
 
   Removing tokens:
