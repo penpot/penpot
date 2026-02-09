@@ -51,6 +51,11 @@ services:
       - 4401:4401
       - 4402:4402
 
+      # Plugins
+      - 4200:4200
+      - 4201:4201
+      - 4202:4202
+
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
       # SMTP setup

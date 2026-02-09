@@ -64,7 +64,7 @@
             "development": {
               "buildTarget": "contrast-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4302
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"
@@ -132,7 +132,7 @@
             "development": {
               "buildTarget": "icons-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4303
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"
@@ -202,7 +202,7 @@
             "development": {
               "buildTarget": "lorem-ipsum-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4304
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"
@@ -270,7 +270,7 @@
             "development": {
               "buildTarget": "table-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4306
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"
@@ -340,7 +340,7 @@
             "development": {
               "buildTarget": "rename-layers-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4307
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"
@@ -410,7 +410,7 @@
             "development": {
               "buildTarget": "colors-to-tokens-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4308
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"
@@ -479,7 +479,7 @@
             "development": {
               "buildTarget": "poc-state-plugin:build:development",
               "host": "0.0.0.0",
-              "port": 4309
+              "port": 4202
             }
           },
           "defaultConfiguration": "development"

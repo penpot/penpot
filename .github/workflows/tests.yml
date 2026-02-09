@@ -87,7 +87,11 @@ jobs:
 
       - name: Build runtime
         working-directory: ./plugins
-        run: pnpm run build
+        run: pnpm run build:runtime
+
+      - name: Build doc
+        working-directory: ./plugins
+        run: pnpm run build:doc
 
       - name: Build plugins
         working-directory: ./plugins
