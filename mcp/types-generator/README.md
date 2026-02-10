@@ -45,4 +45,9 @@ run the `build:types` script in the parent directory, i.e.
     pnpm run build:types
 
 This will spawn a local HTTP server on port 9090 and run the `prepare_api_docs.py` script with the 
-URL `http://localhost:9090`.
+URL `http://localhost:9090`.  
+To run only the server without executing the script, run
+
+    cd ..
+    caddy file-server --root ../plugins/dist/doc/ --listen 127.0.0.1:9090
+
