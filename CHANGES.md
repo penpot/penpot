@@ -35,6 +35,13 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
+## 2.13.2
+
+### :bug: Bugs fixed
+
+- Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
+
+
 ## 2.13.1
 
 ### :bug: Bugs fixed

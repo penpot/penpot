@@ -274,3 +274,30 @@
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 3 (:delete res)))))))
+
+(t/deftest input-sanitization-1
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
+    (let [prof    (th/create-profile* 1 {:is-active true})
+          team-id (:default-team-id prof)
+          proj-id (:default-project-id prof)
+          font-id (uuid/custom 10 1)
+
+          ttfdata (-> (io/resource "backend_tests/test_files/font-1.ttf")
+                      (io/read*))
+
+          params  {::th/type :create-font-variant
+                   ::rpc/profile-id (:id prof)
+                   :team-id team-id
+                   :font-id font-id
+                   :font-family "somefont"
+                   :font-weight 400
+                   :font-style "normal"
+                   :data {"font/ttf" "/etc/passwd"}}
+          out     (th/command! params)]
+
+      (t/is (= 0 (:call-count @mock)))
+      ;; (th/print-result! out)
+
+      (let [error      (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))))))

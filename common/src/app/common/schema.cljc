@@ -1068,6 +1068,15 @@
      {:title "agent"
       :description "instance of clojure agent"}}))
 
+#?(:clj
+   (register!
+    {:type ::bytes
+     :pred bytes?
+     :type-properties
+     {:title "bytes"
+      :description "bytes array"}}))
+
+
 (register! ::any (mu/update-properties :any assoc :gen/gen sg/any))
 
 ;; ---- PREDICATES
