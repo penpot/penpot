@@ -218,13 +218,43 @@ impl Stroke {
                         StrokeKind::Center => self.width / 2.0,
                         StrokeKind::Outer => self.width,
                     };
-                    circle_path.add_circle((0.0, 0.0), width, None);
+
+                    // Experimental: usar exactamente media circunferencia:
+                    // - Inner: arco superior (mirando “hacia dentro”)
+                    // - Outer: arco inferior (mirando “hacia fuera”)
+                    // - Center: círculo completo como antes
+                    match self.kind {
+                        StrokeKind::Inner => {
+                            let rect = skia::Rect::from_xywh(
+                                -width,
+                                -width,
+                                width * 2.0,
+                                width * 2.0,
+                            );
+                            // De (width, 0) a (-width, 0) pasando por y > 0
+                            circle_path.add_arc(rect, 0.0, 180.0);
+                        }
+                        StrokeKind::Outer => {
+                            let rect = skia::Rect::from_xywh(
+                                -width,
+                                -width,
+                                width * 2.0,
+                                width * 2.0,
+                            );
+                            // De (width, 0) a (-width, 0) pasando por y < 0
+                            circle_path.add_arc(rect, 0.0, -180.0);
+                        }
+                        StrokeKind::Center => {
+                            circle_path.add_circle((0.0, 0.0), width, None);
+                        }
+                    }
+
                     let advance = self.width + 5.0;
                     skia::PathEffect::path_1d(
                         &circle_path,
                         advance,
                         0.0,
-                        skia::path_1d_path_effect::Style::Translate,
+                        skia::path_1d_path_effect::Style::Rotate,
                     )
                 }
                 StrokeStyle::Dashed => {

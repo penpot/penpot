@@ -1,7 +1,8 @@
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{
-    Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs, Type,
+    Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, StrokeStyle, SvgAttrs,
+    Type,
 };
 use skia_safe::{self as skia, ImageFilter, RRect};
 
@@ -29,80 +30,18 @@ fn draw_stroke_on_rect(
     // - A smaller rect if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
-
     // Apply both blur and shadow filters if present, composing them if necessary.
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    // For inner/outer strokes, we need clipping to prevent stroke pattern
-    // (like dotted circles) from appearing in wrong areas
-    match stroke.kind {
-        StrokeKind::Inner => {
-            // Inner: clip to original rect to hide parts outside boundary
-            canvas.save();
-            match corners {
-                Some(radii) => {
-                    let rrect = RRect::new_rect_radii(*rect, radii);
-                    canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
-                }
-                None => {
-                    canvas.clip_rect(*rect, skia::ClipOp::Intersect, antialias);
-                }
-            }
-
-            // Draw the stroke
-            match corners {
-                Some(radii) => {
-                    let radii = stroke.outer_corners(radii);
-                    let rrect = RRect::new_rect_radii(stroke_rect, &radii);
-                    canvas.draw_rrect(rrect, &paint);
-                }
-                None => {
-                    canvas.draw_rect(stroke_rect, &paint);
-                }
-            }
-
-            canvas.restore();
+    match corners {
+        Some(radii) => {
+            let radii = stroke.outer_corners(radii);
+            let rrect = RRect::new_rect_radii(stroke_rect, &radii);
+            canvas.draw_rrect(rrect, &paint);
         }
-        StrokeKind::Outer => {
-            // Outer: clip to exclude original rect to hide parts inside boundary
-            canvas.save();
-            match corners {
-                Some(radii) => {
-                    let rrect = RRect::new_rect_radii(*rect, radii);
-                    canvas.clip_rrect(rrect, skia::ClipOp::Difference, antialias);
-                }
-                None => {
-                    canvas.clip_rect(*rect, skia::ClipOp::Difference, antialias);
-                }
-            }
-
-            // Draw the stroke
-            match corners {
-                Some(radii) => {
-                    let radii = stroke.outer_corners(radii);
-                    let rrect = RRect::new_rect_radii(stroke_rect, &radii);
-                    canvas.draw_rrect(rrect, &paint);
-                }
-                None => {
-                    canvas.draw_rect(stroke_rect, &paint);
-                }
-            }
-
-            canvas.restore();
-        }
-        StrokeKind::Center => {
-            // Center strokes don't need clipping
-            match corners {
-                Some(radii) => {
-                    let radii = stroke.outer_corners(radii);
-                    let rrect = RRect::new_rect_radii(stroke_rect, &radii);
-                    canvas.draw_rrect(rrect, &paint);
-                }
-                None => {
-                    canvas.draw_rect(stroke_rect, &paint);
-                }
-            }
+        None => {
+            canvas.draw_rect(stroke_rect, &paint);
         }
     }
 }
@@ -126,12 +65,34 @@ fn draw_stroke_on_circle(
     // - A smaller oval if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
-
     // Apply both blur and shadow filters if present, composing them if necessary.
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    // For inner/outer strokes, we need clipping to prevent stroke pattern
+    // Helper to draw the stroke without any clipping logic.
+    let draw_simple = |canvas: &skia::Canvas| {
+        canvas.draw_oval(stroke_rect, &paint);
+    };
+
+    // Igual que en el caso de los rectángulos: con blur activo, el clipping
+    // introduce un corte visible en el blur. Para evitarlo, cuando hay blur
+    // volvemos al comportamiento sin clipping.
+    if blur.is_some() {
+        draw_simple(canvas);
+        return;
+    }
+
+    // Para la mayoría de estilos sin blur, basta con dibujar sin clipping.
+    // Solo mantenemos clipping para el caso problemático de dotted inner/outer
+    // (evitar ver “medios puntos” cruzando el borde).
+    if !matches!(stroke.style, StrokeStyle::Dotted)
+        || matches!(stroke.kind, StrokeKind::Center)
+    {
+        draw_simple(canvas);
+        return;
+    }
+
+    // For inner/outer dotted strokes, we need clipping to prevent stroke pattern
     // (like dotted circles) from appearing in wrong areas
     match stroke.kind {
         StrokeKind::Inner => {
