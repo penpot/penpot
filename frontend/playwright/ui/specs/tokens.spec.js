@@ -7,6 +7,9 @@ test.beforeEach(async ({ page }) => {
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
+// FIXME: Looks like we could benefit from splitting this large file into multiple
+// specs files, and have a TokensPage that extends WasmWorkspacePage to deal
+// with the shared code.
 const setupEmptyTokensFile = async (page, options = {}) => {
   const { flags = [] } = options;
 
@@ -220,7 +223,7 @@ async function testTokenCreationFlow(
   await submitButton.click();
 
   await expect(
-    tokensTabPanel.getByRole("button", { name: "my-token" }),
+    tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
   ).toBeEnabled();
 
   //
@@ -240,7 +243,7 @@ async function testTokenCreationFlow(
   await submitButton.click();
 
   await expect(
-    tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+    tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
   ).toBeEnabled();
 }
 
@@ -472,7 +475,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", {
+      tokensTabPanel.getByRole("checkbox", {
         name: "color.primary",
       }),
     ).toBeEnabled();
@@ -495,14 +498,14 @@ test.describe("Tokens: Tokens Tab", () => {
     await nameField.press("Enter");
 
     await expect(
-      tokensTabPanel.getByRole("button", {
+      tokensTabPanel.getByRole("checkbox", {
         name: "color.secondary",
       }),
     ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
     await expect(
-      tokensTabPanel.getByRole("button", { name: "#ff0000" }),
+      tokensTabPanel.getByRole("checkbox", { name: "#ff0000" }),
     ).toHaveCount(2);
 
     // Global set has been auto created and is active
@@ -643,7 +646,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -684,7 +687,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
 
     //
@@ -701,7 +704,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-3" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-3" }),
     ).toBeEnabled();
   });
 
@@ -797,7 +800,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -817,7 +820,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
 
     //
@@ -837,7 +840,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-3" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-3" }),
     ).toBeEnabled();
   });
 
@@ -933,7 +936,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -953,7 +956,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
@@ -1051,7 +1054,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1071,7 +1074,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
@@ -1079,7 +1082,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page, {flags: ["enable-token-shadow"]});
+      await setupEmptyTokensFile(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1215,7 +1218,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1252,15 +1255,15 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
-    test("User creates shadow token with negative spread", async ({ page }) => {
+  test("User creates shadow token with negative spread", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page, {flags: ["enable-token-shadow"]});
+      await setupEmptyTokensFile(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1390,8 +1393,8 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 0"),
     ).toBeVisible();
-  
-       await spreadField.fill("1 - 3");
+
+    await spreadField.fill("1 - 3");
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: -2"),
     ).toBeVisible();
@@ -1401,7 +1404,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1438,7 +1441,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
@@ -1645,7 +1648,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await submitButton.click();
 
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token" }),
     ).toBeEnabled();
 
     //
@@ -1686,7 +1689,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
     await expect(
-      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+      tokensTabPanel.getByRole("checkbox", { name: "my-token-2" }),
     ).toBeEnabled();
   });
 
@@ -1709,7 +1712,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
-    const colorToken = tokensSidebar.getByRole("button", {
+    const colorToken = tokensSidebar.getByRole("checkbox", {
       name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
@@ -1727,7 +1730,7 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-    const colorTokenChanged = tokensSidebar.getByRole("button", {
+    const colorTokenChanged = tokensSidebar.getByRole("checkbox", {
       name: "colors.blue.100.changed",
     });
     await expect(colorTokenChanged).toBeVisible();
@@ -1947,7 +1950,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
-    const colorToken = tokensSidebar.getByRole("button", {
+    const colorToken = tokensSidebar.getByRole("checkbox", {
       name: "colors.blue.100",
     });
 
@@ -1958,7 +1961,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokenContextMenuForToken).not.toBeVisible();
 
     await expect(
-      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
+      tokensSidebar.getByRole("checkbox", { name: "colors.blue.100-copy" }),
     ).toBeVisible();
   });
 
@@ -1975,7 +1978,7 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await tokensColorGroup.click();
 
-    const colorToken = tokensSidebar.getByRole("button", {
+    const colorToken = tokensSidebar.getByRole("checkbox", {
       name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
@@ -2000,7 +2003,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
-    const colorToken = tokensSidebar.getByRole("button", {
+    const colorToken = tokensSidebar.getByRole("checkbox", {
       name: "colors.blue.100",
     });
     await expect(colorToken).toBeVisible();
@@ -2410,7 +2413,7 @@ test.describe("Tokens: Apply token", () => {
       .click();
 
     await tokensSidebar
-      .getByRole("button", { name: "colors.black" })
+      .getByRole("checkbox", { name: "colors.black" })
       .click({ button: "right" });
     await tokenContextMenuForToken.getByText("Fill").click();
 
@@ -2438,7 +2441,7 @@ test.describe("Tokens: Apply token", () => {
       .filter({ hasText: "Typography" })
       .click();
 
-    await tokensSidebar.getByRole("button", { name: "Full" }).click();
+    await tokensSidebar.getByRole("checkbox", { name: "Full" }).click();
 
     const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
       name: "Font Size",
@@ -2459,7 +2462,7 @@ test.describe("Tokens: Apply token", () => {
       .click();
 
     // Open edit modal for "Full" typography token
-    const token = tokensSidebar.getByRole("button", { name: "Full" });
+    const token = tokensSidebar.getByRole("checkbox", { name: "Full" });
     await token.click({ button: "right" });
     await page.getByText("Edit token").click();
 
@@ -2620,7 +2623,7 @@ test.describe("Tokens: Apply token", () => {
 
     await expect(tokensUpdateCreateModal).not.toBeVisible();
 
-    const newToken = tokensSidebar.getByRole("button", {
+    const newToken = tokensSidebar.getByRole("checkbox", {
       name: newTokenTitle,
     });
 
@@ -2896,7 +2899,7 @@ test.describe("Tokens: Apply token", () => {
       await expect(tokensUpdateCreateModal).not.toBeVisible();
 
       // Verify token appears in sidebar
-      const shadowToken = tokensSidebar.getByRole("button", {
+      const shadowToken = tokensSidebar.getByRole("checkbox", {
         name: "shadow.primary",
       });
       await expect(shadowToken).toBeEnabled();
