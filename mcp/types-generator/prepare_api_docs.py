@@ -135,7 +135,7 @@ class YamlConverter:
 
 
 class PenpotAPIDocsProcessor:
-    def __init__(self, url=None):
+    def __init__(self, url: str):
         self.md_converter = PenpotAPIContentMarkdownConverter()
         self.base_url = url
         self.types: dict[str, TypeInfo] = {}
@@ -157,7 +157,7 @@ class PenpotAPIDocsProcessor:
                 type_name = href.split("/")[-1].replace(".html", "")
                 log.info("Processing page: %s", type_name)
                 type_info = self.process_page(href, type_name)
-                print(f"Adding '{type_name}' with {type_info}")
+                log.info(f"Adding '{type_name}' with {type_info}")
                 self.types[type_name] = type_info
 
         # add type reference information
@@ -247,25 +247,29 @@ class PenpotAPIDocsProcessor:
         )
 
 
-DEFAULT_API_DOCS_URL = "http://localhost:9090"
+LOCAL_API_DOCS_URL = "http://localhost:9090"
+PROD_API_DOCS_URL = "https://doc.plugins.penpot.app"
+DEFAULT_API_DOCS_URL = LOCAL_API_DOCS_URL
+
 
 def main():
     target_dir = Path(__file__).parent.parent / "packages" / "server" / "data"
     url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_API_DOCS_URL
 
-    print("Fetching plugin data from: {}".format(url))
+    log.info("Fetching plugin data from: {}".format(url))
     PenpotAPIDocsProcessor(url).run(target_dir=str(target_dir))
 
 
-def debug_type_conversion(rel_url: str):
+def debug_type_conversion(rel_url: str, base_url: str):
     """
     This function is for debugging purposes only.
     It processes a single type page and prints the converted markdown to the console.
 
+    :param base_url: base URL of the API docs (e.g., "http://localhost:9090")
     :param rel_url: relative URL of the type page (e.g., "interfaces/ShapeBase")
     """
-    type_name = rel_url.split("/")[-1]
-    processor = PenpotAPIDocsProcessor()
+    type_name = rel_url.split("/")[-1].replace(".html", "")
+    processor = PenpotAPIDocsProcessor(url=base_url)
     type_info = processor.process_page(rel_url, type_name)
     print(f"--- overview ---\n{type_info.overview}\n")
     for member_type, members in type_info.members.items():
@@ -275,5 +279,5 @@ def debug_type_conversion(rel_url: str):
 
 
 if __name__ == '__main__':
-    # debug_type_conversion("interfaces/LayoutChildProperties")
+    # debug_type_conversion("interfaces/Path.html", LOCAL_API_DOCS_URL)
     logging.run_main(main)
