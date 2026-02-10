@@ -3,7 +3,7 @@
   "version": "0.6.0",
   "type": "module",
   "license": "MIT",
-  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6",
+  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
   "scripts": {
     "start": "pnpm run start:app:runtime",
     "start:app:runtime": "concurrently --kill-others --names build,server \"pnpm --filter @penpot/plugins-runtime run build:watch\" \"pnpm --filter @penpot/plugins-runtime run preview\"",
@@ -50,6 +50,7 @@
     "@vitest/coverage-v8": "4.0.17",
     "@vitest/ui": "4.0.17",
     "concurrently": "^9.2.1",
+    "dotenv": "^17.2.4",
     "esbuild": "^0.27.2",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",

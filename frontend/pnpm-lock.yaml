@@ -187,6 +187,9 @@ importers:
       sax:
         specifier: ^1.4.1
         version: 1.4.4
+      scheduler:
+        specifier: ^0.27.0
+        version: 0.27.0
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
