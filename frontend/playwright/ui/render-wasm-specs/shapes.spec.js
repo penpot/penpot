@@ -340,3 +340,19 @@ test("Renders a file with solid, dotted, dashed and mixed stroke styles", async 
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders shapes with multiple fills and blur", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-fill-blend-blurs.json");
+
+  await workspace.goToWorkspace({
+    id: "b15901d7-d46d-8056-8007-8d5e34fc1f0c",
+    pageId: "b15901d7-d46d-8056-8007-8d5e34fc1f0d",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

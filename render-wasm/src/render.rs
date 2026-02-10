@@ -698,9 +698,7 @@ impl RenderState {
                 canvas.translate(translation);
             });
 
-            for fill in shape.fills().rev() {
-                fills::render(self, shape, fill, antialias, SurfaceId::Current);
-            }
+            fills::render(self, shape, &shape.fills, antialias, SurfaceId::Current);
 
             for stroke in shape.visible_strokes().rev() {
                 strokes::render(
@@ -1015,14 +1013,10 @@ impl RenderState {
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
-                        for fill in fills_to_render.iter() {
-                            fills::render(self, shape, fill, antialias, fills_surface_id);
-                        }
+                        fills::render(self, shape, &fills_to_render, antialias, fills_surface_id);
                     }
                 } else {
-                    for fill in shape.fills().rev() {
-                        fills::render(self, shape, fill, antialias, fills_surface_id);
-                    }
+                    fills::render(self, shape, &shape.fills, antialias, fills_surface_id);
                 }
 
                 // Skip stroke rendering for clipped frames - they are drawn in render_shape_exit
