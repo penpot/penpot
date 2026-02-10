@@ -201,11 +201,21 @@ class PenpotAPIDocsProcessor:
                     members_in_group = {}
                     members[members_type] = members_in_group
                     for member_tag in el.find_all(attrs={"class": "tsd-member"}):
+                        # determine member name
+                        member_name = None
                         member_anchor = member_tag.find("a", attrs={"class": "tsd-anchor"}, recursive=False)
-                        member_name = member_anchor.attrs["id"]
-                        member_heading = member_tag.find("h3")
+                        if member_anchor is not None:
+                            member_name = member_anchor.attrs["id"]
+                        else:
+                            member_h3 = member_tag.find("h3", recursive=False)
+                            if member_h3 is not None:
+                                h3_span = member_h3.find("span", recursive=False)
+                                if h3_span is not None:
+                                    member_name = h3_span.get_text().strip()
+                        assert member_name is not None, f"Could not determine member name for\n{member_tag}"
                         # extract tsd-tag info (e.g., "Readonly") from the heading and reinsert it into the signature,
                         # where we want to see it. The heading is removed, as it is redundant.
+                        member_heading = member_tag.find("h3")
                         if member_heading:
                             tags_in_heading = member_heading.find_all(attrs={"class": "tsd-tag"})
                             if tags_in_heading:
