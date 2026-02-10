@@ -4,7 +4,7 @@
 
 1. **Configure Environment Variables**
 
-   Create and populate the `.env` file with a valid user mail & password:
+   Create and populate the `apps/e2e/.env` file with a valid user mail & password:
 
    ```env
    E2E_LOGIN_EMAIL="test@penpot.app"
@@ -24,7 +24,7 @@
 
 1. **Adding Tests**
 
-   Place your test files in the `/apps/e2e/src/**/*.spec.ts` directory. Below is an example of a test file:
+   Place your test files in the `apps/e2e/src/**/*.spec.ts` directory. Below is an example of a test file:
 
    ```ts
    import testingPlugin from './plugins/create-board-text-rect';
