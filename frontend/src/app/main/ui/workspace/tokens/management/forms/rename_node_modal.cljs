@@ -40,17 +40,12 @@
         form (fm/use-form :schema schema
                           :initial initial)
 
-        submit (mf/use-fn
-                (mf/deps form on-submit node)
-                (fn []
-                  (let [name (get-in @form [:clean-data :name])
-                        old-path (str (d/name type) "." (:name node))
-                        new-path (str (d/name type) "." name)
-                        _ (prn {:old-path old-path :new-path new-path})]
-                    (prn "Submitting rename node form with name: " name " and path: " new-path)
-                    (if (not= old-path new-path)
-                      (on-submit {:name name})
-                      (on-close)))))
+        on-submit (mf/use-fn
+                   (mf/deps form on-submit node type)
+                   (fn []
+                     (let [name (get-in @form [:clean-data :name])]
+                       (on-submit {:new-name name}))))
+
         #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
             (when (and valid
                        (empty? extra-errors)
@@ -96,8 +91,8 @@
       (tr "workspace.tokens.rename-group")]
      [:> fc/form* {:class (stl/css :form-wrapper)
                    :form form
-                   :on-submit submit}
-      [:> fc/form-input* {:id (:name node)
+                   :on-submit on-submit}
+      [:> fc/form-input* {:id "kmscdkmcsdkmcvd"
                           :name :name
                           :label (tr "workspace.tokens.token-name")
                           :placeholder (tr "workspace.tokens.token-name")
@@ -113,6 +108,7 @@
                     :name "cancel"
                     :on-click on-close} (tr "labels.cancel")]
        [:> fc/form-submit* {:variant "primary"
+                            :disabled (not (:valid @form))
                             :name "rename"} (tr "labels.rename")]]]]))
 
 (mf/defc rename-node-modal*
@@ -124,6 +120,12 @@
         (mf/with-memo [tokens-in-active-set node]
           (-> (ctob/tokens-tree tokens-in-active-set)
               (d/dissoc-in (:name node))))
+
+        rename
+        (mf/use-fn
+         (mf/deps [])
+         (fn [new-name]
+           (prn "Renaming " node " to: " new-name " with type: " type)))
 
         close-modal
         (mf/use-fn
@@ -148,4 +150,5 @@
       [:> rename-node-form* {:node node
                              :type type
                              :tokens-tree tokens-tree-in-selected-set
-                             :on-close close-modal}]]]))
+                             :on-close close-modal
+                             :on-submit rename}]]]))

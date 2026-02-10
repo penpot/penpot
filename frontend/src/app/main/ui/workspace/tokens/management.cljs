@@ -165,15 +165,6 @@
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
                 (st/emit! (dwtl/toggle-token-path (name type)))))))
 
-        rename-node
-        (mf/use-fn
-         (mf/deps selected-token-set-tokens)
-         (fn [node type]
-           (prn "Open rename node modal")
-           (modal/show! :tokens/rename-node {:node node
-                                             :type type
-                                             :tokens-in-active-set selected-token-set-tokens})))
-
         delete-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
           (fn [node type]
@@ -187,7 +178,15 @@
               ;; Remove from unfolded tree path
               (if remaining-tokens?
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
-                (st/emit! (dwtl/toggle-token-path (name type)))))))]
+                (st/emit! (dwtl/toggle-token-path (name type)))))))
+
+        open-rename-node-modal
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens)
+         (fn [node type]
+           (modal/show! :tokens/rename-node {:node node
+                                             :type type
+                                             :tokens-in-active-set selected-token-set-tokens})))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -201,7 +200,7 @@
 
     [:*
      [:& token-context-menu {:on-delete-token delete-token}]
-     [:> token-node-context-menu* {:on-rename-node rename-node
+     [:> token-node-context-menu* {:on-rename-node open-rename-node-modal
                                    :on-delete-node delete-node}]
 
      [:> selected-set-info* {:tokens-lib tokens-lib
