@@ -55,3 +55,8 @@
     --opacity-button: 1;
   }
 }
+
+.button-tooltip {
+  inline-size: var($sz-28);
+  block-size: 100%;
+}

@@ -198,6 +198,13 @@ services:
       ## Valkey (or previously Redis) is used for the websockets notifications.
       PENPOT_REDIS_URI: redis://penpot-valkey/0
 
+  penpot-mcp:
+    image: penpotapp/mcp:${PENPOT_VERSION:-latest}
+    restart: always
+
+    networks:
+      - penpot
+
   penpot-postgres:
     image: "postgres:15"
     restart: always

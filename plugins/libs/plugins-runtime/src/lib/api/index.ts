@@ -85,6 +85,7 @@ export function createApi(
     utils: {
       geometry: {
         center(shapes: Shape[]) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (window as any).app.plugins.public_utils.centerShapes(shapes);
         },
       },

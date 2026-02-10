@@ -10,6 +10,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
 - Remap references when renaming tokens [Taiga #10202](https://tree.taiga.io/project/penpot/us/10202)
 - Tokens panel nested path view [Taiga #9966](https://tree.taiga.io/project/penpot/us/9966)
 - Improve usability of lock and hide buttons in the layer panel. [Taiga #12916](https://tree.taiga.io/project/penpot/issue/12916)
@@ -34,11 +35,20 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
-## 2.13.0 (Unreleased)
+## 2.13.2
 
-### :boom: Breaking changes & Deprecations
+### :bug: Bugs fixed
 
-### :rocket: Epics and highlights
+- Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
+
+
+## 2.13.1
+
+### :bug: Bugs fixed
+
+- Fix PDF Exporter outputs empty page when board has A4 format [Taiga #13181](https://tree.taiga.io/project/penpot/issue/13181)
+
+## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
 

@@ -275,7 +275,8 @@
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
    ::mgmt/routes
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool            (ig/ref ::db/pool)
+    ::setup/props        (ig/ref ::setup/props)}
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
@@ -337,7 +338,13 @@
     ::setup/props        (ig/ref ::setup/props)
 
     ::email/blacklist    (ig/ref ::email/blacklist)
-    ::email/whitelist    (ig/ref ::email/whitelist)}
+    ::email/whitelist    (ig/ref ::email/whitelist)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)
+
+    :app.loggers.mattermost/reporter
+    (ig/ref :app.loggers.mattermost/reporter)}
 
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)
@@ -363,6 +370,7 @@
     ;; FIXME: revisit if db/pool is necessary here
     ::db/pool                (ig/ref ::db/pool)
     ::session/manager        (ig/ref ::session/manager)
+    ::setup/props            (ig/ref ::setup/props)
     ::setup/shared-keys      (ig/ref ::setup/shared-keys)}
 
    ::wrk/registry

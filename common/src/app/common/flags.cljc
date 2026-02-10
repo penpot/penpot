@@ -124,6 +124,7 @@
     :token-base-font-size
     :token-color
     :token-shadow
+    :token-tokenscript
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.

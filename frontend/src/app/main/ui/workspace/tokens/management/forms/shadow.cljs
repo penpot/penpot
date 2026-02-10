@@ -8,9 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
@@ -51,7 +51,7 @@
     ;; Entering form without a value - show no error just resolve nil
     (nil? token-value) (rx/of nil)
     ;; Validate refrence string
-    (cto/shadow-composite-token-reference? token-value) (default-validate-token params)
+    (cto/composite-token-reference? token-value) (default-validate-token params)
     ;; Validate composite token
     :else
     (let [params (-> params
@@ -253,6 +253,7 @@
        [:> reference-form* {:token token
                             :tokens tokens}])]))
 
+;; TODO: use cfo/make-schema:token-value and extend it with shadow and reference fields
 (defn- make-schema
   [tokens-tree active-tab]
   (sm/schema
@@ -262,10 +263,10 @@
       [:and
        [:string {:min 1 :max 255
                  :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-       (sm/update-properties cto/token-name-ref assoc
+       (sm/update-properties cto/schema:token-name assoc
                              :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (cft/token-name-path-exists? % tokens-tree))]]]
+        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
 
      [:value
       [:map

@@ -283,7 +283,7 @@
            (if (or (string? value) (number? value))
              (do
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
-               (st/emit! (udw/update-position ids {attr value})))
+               (st/emit! (udw/update-positions ids {attr value})))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwta/toggle-token {:token (first value)
                                            :attrs #{attr}
@@ -319,8 +319,8 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -541,7 +541,8 @@
               :value (get values :rotation)}]
 
             [:div {:class (stl/css :rotation)
-                   :title (tr "workspace.options.rotation")}
+                   :title (tr "workspace.options.rotation")
+                   :data-testid "rotation"}
              [:span {:class (stl/css :icon)}  deprecated-icon/rotation]
              [:> deprecated-input/numeric-input*
               {:no-validate true

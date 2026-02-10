@@ -129,7 +129,13 @@ http {
             proxy_buffering off;
         }
 
+        location /plugins {
+            alias /var/www/app/plugins;
+            proxy_http_version 1.1;
+        }
+
         location /readyz {
+            access_log off;
             proxy_pass $PENPOT_BACKEND_URI$request_uri;
         }
 

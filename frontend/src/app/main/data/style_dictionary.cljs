@@ -8,13 +8,15 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
    [beicon.v2.core :as rx]
@@ -83,7 +85,7 @@
   [value]
   (let [number? (or (number? value)
                     (numeric-string? value))
-        parsed-value  (cft/parse-token-value value)
+        parsed-value  (cfo/parse-token-value value)
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
 
@@ -109,7 +111,7 @@
   "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [parsed-value  (cft/parse-token-value value)
+  (let [parsed-value  (cfo/parse-token-value value)
         out-of-bounds (or (>= (:value parsed-value) sm/max-safe-int)
                           (<= (:value parsed-value) sm/min-safe-int))]
     (if (and parsed-value (not out-of-bounds))
@@ -127,7 +129,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
   (let [missing-references? (seq (cto/find-token-value-references value))
-        parsed-value (cft/parse-token-value value)
+        parsed-value (cfo/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (cto/find-token-value-references value))]
     (cond (and parsed-value (not out-of-scope))
@@ -151,7 +153,7 @@
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
   (let [missing-references? (seq (cto/find-token-value-references value))
-        parsed-value (cft/parse-token-value value)
+        parsed-value (cfo/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)]
     (cond
       (and parsed-value (not out-of-scope))
@@ -249,7 +251,7 @@
            :font-size-value font-size-value})]
     (or error
         (try
-          (when-let [{:keys [unit value]} (cft/parse-token-value line-height-value)]
+          (when-let [{:keys [unit value]} (cfo/parse-token-value line-height-value)]
             (case unit
               "%" (/ value 100)
               "px" (/ value font-size-value)
@@ -586,22 +588,25 @@
     ;; FIXME: this with effect with trigger all the time because
     ;; `config` will be always a different instance
     (mf/with-effect [tokens config]
-      (let [cached (get @cache-atom tokens)]
-        (cond
-          (nil? tokens) nil
-          ;; The tokens are already processing somewhere
-          (rx/observable? cached) (rx/sub! cached #(reset! tokens-state %))
-          ;; Get the cached entry
-          (some? cached) (reset! tokens-state cached)
-          ;; No cached entry, start processing
-          :else (let [resolved-tokens-s (if interactive?
-                                          (resolve-tokens-interactive tokens)
-                                          (resolve-tokens tokens))]
-                  (swap! cache-atom assoc tokens resolved-tokens-s)
-                  (rx/sub! resolved-tokens-s (fn [resolved-tokens]
-                                               (swap! cache-atom assoc tokens resolved-tokens)
-                                               (reset! tokens-state resolved-tokens)))))))
-    @tokens-state))
+      (when-not (contains? cf/flags :tokenscript)
+        (let [cached (get @cache-atom tokens)]
+          (cond
+            (nil? tokens) nil
+            ;; The tokens are already processing somewhere
+            (rx/observable? cached) (rx/sub! cached #(reset! tokens-state %))
+            ;; Get the cached entry
+            (some? cached) (reset! tokens-state cached)
+            ;; No cached entry, start processing
+            :else (let [resolved-tokens-s (if interactive?
+                                            (resolve-tokens-interactive tokens)
+                                            (resolve-tokens tokens))]
+                    (swap! cache-atom assoc tokens resolved-tokens-s)
+                    (rx/sub! resolved-tokens-s (fn [resolved-tokens]
+                                                 (swap! cache-atom assoc tokens resolved-tokens)
+                                                 (reset! tokens-state resolved-tokens))))))))
+    (if (contains? cf/flags :tokenscript)
+      (ts/resolve-tokens tokens)
+      @tokens-state)))
 
 (defn use-resolved-tokens*
   "This hook will return the unresolved tokens as state until they are
@@ -612,16 +617,19 @@
   [tokens & {:keys [interactive?]}]
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
-      (if (seq tokens)
-        (let [tpoint  (ct/tpoint-ms)
-              tokens-s  (if interactive?
-                          (resolve-tokens-interactive tokens)
-                          (resolve-tokens tokens))]
+      (when-not (contains? cf/flags :tokenscript)
+        (if (seq tokens)
+          (let [tpoint  (ct/tpoint-ms)
+                tokens-s  (if interactive?
+                            (resolve-tokens-interactive tokens)
+                            (resolve-tokens tokens))]
 
-          (-> tokens-s
-              (rx/sub! (fn [resolved-tokens]
-                         (let [elapsed (tpoint)]
-                           (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
-                           (reset! state* resolved-tokens))))))
-        (reset! state* tokens)))
-    @state*))
+            (-> tokens-s
+                (rx/sub! (fn [resolved-tokens]
+                           (let [elapsed (tpoint)]
+                             (l/dbg :hint "use-resolved-tokens*" :elapsed elapsed)
+                             (reset! state* resolved-tokens))))))
+          (reset! state* tokens))))
+    (if (contains? cf/flags :tokenscript)
+      (ts/resolve-tokens tokens)
+      @state*)))

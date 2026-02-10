@@ -1,10 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+import { platform } from "os";
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 // require('dotenv').config();
+
+const userAgent = platform === 'darwin' ?
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" :
+  undefined;
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -43,12 +48,20 @@ export default defineConfig({
   projects: [
     {
       name: "default",
-      use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/specs",
       use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1080 }, // Add custom viewport size
         video: 'retain-on-failure',
         trace: 'retain-on-failure',
-      }
+        userAgent,
+      },
+      snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
+      expect: {
+        toHaveScreenshot: {
+          maxDiffPixelRatio: 0.001,
+        },
+      },
     },
     {
       name: "ds",

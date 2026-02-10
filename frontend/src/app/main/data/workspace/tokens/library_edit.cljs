@@ -62,6 +62,52 @@
       (watch [_ _ _]
         (rx/of (dwsh/update-shapes [id] #(merge % attrs)))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Toggle tree nodes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- remove-paths-recursively
+  [path paths]
+  (->> paths
+       (remove #(str/starts-with? % (str path)))
+       vec))
+
+(defn add-path
+  [path paths]
+  (let [split-path (cpn/split-path path :separator ".")
+        partial-paths (->> split-path
+                           (reduce
+                            (fn [acc segment]
+                              (let [new-acc (if (empty? acc)
+                                              segment
+                                              (str (last acc) "." segment))]
+                                (conj acc new-acc)))
+                            []))]
+    (->> paths
+         (into partial-paths)
+         distinct
+         vec)))
+
+(defn clear-tokens-paths
+  []
+  (ptk/reify ::clear-tokens-paths
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
+
+(defn toggle-token-path
+  [path]
+  (ptk/reify ::toggle-token-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-tokens :unfolded-token-paths]
+                 (fn [paths]
+                   (let [paths (or paths [])]
+                     (if (some #(= % path) paths)
+                       (remove-paths-recursively path paths)
+                       (add-path path paths))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -149,27 +195,30 @@
 
 (defn create-token-set
   [token-set]
+  (assert (ctob/token-set? token-set) "a token set is required") ;; TODO should check token-set-schema?
   (ptk/reify ::create-token-set
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Clear possible local state
-      (update state :workspace-tokens dissoc :token-set-new-path))
-
     ptk/WatchEvent
     (watch [it state _]
-      (let [data       (dsh/lookup-file-data state)
-            tokens-lib (get data :tokens-lib)
-            token-set  (ctob/rename token-set (ctob/normalize-set-name (ctob/get-name token-set)))]
-        (if (and tokens-lib (ctob/get-set-by-name tokens-lib (ctob/get-name token-set)))
-          (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
-                            :type :toast
-                            :level :error
-                            :timeout 9000}))
-          (let [changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/set-token-set (ctob/get-id token-set) token-set))]
-            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
-                   (dch/commit-changes changes))))))))
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/set-token-set (ctob/get-id token-set) token-set))]
+        (rx/of (set-selected-token-set-id (ctob/get-id token-set))
+               (dch/commit-changes changes))))))
+
+(defn rename-token-set
+  [token-set new-name]
+  (assert (ctob/token-set? token-set) "a token set is required") ;; TODO should check token-set-schema after renaming?
+  (assert (string? new-name) "a new name is required") ;; TODO should assert normalized-set-name?
+  (ptk/reify ::update-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/rename-token-set (ctob/get-id token-set) new-name))]
+        (rx/of (set-selected-token-set-id (ctob/get-id token-set))
+               (dch/commit-changes changes))))))
 
 (defn rename-token-set-group
   [set-group-path set-group-fname]
@@ -180,26 +229,6 @@
                         (pcb/rename-token-set-group set-group-path set-group-fname))]
         (rx/of
          (dch/commit-changes changes))))))
-
-(defn update-token-set
-  [token-set name]
-  (ptk/reify ::update-token-set
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [data       (dsh/lookup-file-data state)
-            name       (ctob/normalize-set-name name (ctob/get-name token-set))
-            tokens-lib (get data :tokens-lib)]
-
-        (if (ctob/get-set-by-name tokens-lib name)
-          (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
-                            :type :toast
-                            :level :error
-                            :timeout 9000}))
-          (let [changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/rename-token-set (ctob/get-id token-set) name))]
-            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
-                   (dch/commit-changes changes))))))))
 
 (defn duplicate-token-set
   [id]
@@ -245,8 +274,9 @@
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set-group
   [group-path]
@@ -257,6 +287,7 @@
             changes (-> (pcb/empty-changes)
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
+
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -474,7 +505,7 @@
                                            (ctob/get-id token-set)
                                            token-id)]
             (let [tokens (vals (ctob/get-tokens tokens-lib (ctob/get-id token-set)))
-                  unames (map :name tokens)
+                  unames (map :name tokens)     ;; TODO: add function duplicate-token in tokens-lib
                   suffix (tr "workspace.tokens.duplicate-suffix")
                   copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)
                   new-token (-> token
@@ -486,35 +517,7 @@
 ;; TOKEN UI OPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn clean-tokens-paths
-  []
-  (ptk/reify ::clean-tokens-paths
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-tokens :unfolded-token-paths] []))))
 
-(defn toggle-token-path
-  [path]
-  (ptk/reify ::toggle-token-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-tokens :unfolded-token-paths]
-                 (fn [paths]
-                   (let [paths (or paths [])]
-                     (if (some #(= % path) paths)
-                       (vec (remove #(or (= % path)
-                                         (str/starts-with? % (str path ".")))
-                                    paths))
-                       (let [split-path (cpn/split-path path :separator ".")
-                             partial-paths (reduce
-                                            (fn [acc segment]
-                                              (let [new-acc (if (empty? acc)
-                                                              segment
-                                                              (str (last acc) "." segment))]
-                                                (conj acc new-acc)))
-                                            []
-                                            split-path)]
-                         (into paths partial-paths)))))))))
 
 (defn assign-token-context-menu
   [{:keys [position] :as params}]

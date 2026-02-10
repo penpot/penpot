@@ -16,6 +16,8 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as-alias audit]
+   [app.loggers.database :as loggers.db]
+   [app.loggers.mattermost :as loggers.mm]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
@@ -36,52 +38,79 @@
    :context])
 
 (defn- event->row [event]
-  [(uuid/next)
-   (:name event)
-   (:source event)
-   (:type event)
-   (:timestamp event)
-   (:created-at event)
-   (:profile-id event)
-   (db/inet (:ip-addr event))
-   (db/tjson (:props event))
-   (db/tjson (d/without-nils (:context event)))])
+  [(::audit/id event)
+   (::audit/name event)
+   (::audit/source event)
+   (::audit/type event)
+   (::audit/tracked-at event)
+   (::audit/created-at event)
+   (::audit/profile-id event)
+   (db/inet (::audit/ip-addr event))
+   (db/tjson (::audit/props event))
+   (db/tjson (d/without-nils (::audit/context event)))])
 
 (defn- adjust-timestamp
-  [{:keys [timestamp created-at] :as event}]
-  (let [margin (inst-ms (ct/diff timestamp created-at))]
+  [{:keys [::audit/tracked-at ::audit/created-at] :as event}]
+  (let [margin (inst-ms (ct/diff tracked-at created-at))]
     (if (or (neg? margin)
             (> margin 3600000))
       ;; If event is in future or lags more than 1 hour, we reasign
-      ;; timestamp to the server creation date
+      ;; tracked-at to the server creation date
       (-> event
-          (assoc :timestamp created-at)
-          (update :context assoc :original-timestamp timestamp))
+          (assoc ::audit/tracked-at created-at)
+          (update ::audit/context assoc :original-tracked-at tracked-at))
       event)))
 
-(defn- handle-events
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
+(defn- exception-event?
+  [{:keys [::audit/type ::audit/name] :as ev}]
+  (and (= "action" type)
+       (or (= "unhandled-exception" name)
+           (= "exception-page" name))))
+
+(def ^:private xf:map-event-row
+  (comp
+   (map adjust-timestamp)
+   (map event->row)))
+
+(defn- get-events
+  [{:keys [::rpc/request-at ::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
         ip-addr (inet/parse-request request)
-        tnow    (ct/now)
-        xform   (comp
-                 (map (fn [event]
-                        (-> event
-                            (assoc :created-at tnow)
-                            (assoc :profile-id profile-id)
-                            (assoc :ip-addr ip-addr)
-                            (assoc :source "frontend"))))
-                 (filter :profile-id)
-                 (map adjust-timestamp)
-                 (map event->row))
-        events  (sequence xform events)]
-    (when (seq events)
-      (db/insert-many! pool :audit-log event-columns events))))
 
-(def valid-event-types
+        xform   (map (fn [event]
+                       {::audit/id (uuid/next)
+                        ::audit/type (:type event)
+                        ::audit/name (:name event)
+                        ::audit/props (:props event)
+                        ::audit/context (:context event)
+                        ::audit/profile-id profile-id
+                        ::audit/ip-addr ip-addr
+                        ::audit/source "frontend"
+                        ::audit/tracked-at (:timestamp event)
+                        ::audit/created-at request-at}))]
+
+    (sequence xform events)))
+
+(defn- handle-events
+  [{:keys [::db/pool] :as cfg} params]
+  (let [events (get-events params)]
+
+    ;; Look for error reports and save them on internal reports table
+    (when-let [events (->> events
+                           (sequence (filter exception-event?))
+                           (not-empty))]
+      (run! (partial loggers.db/emit cfg) events)
+      (run! (partial loggers.mm/emit cfg) events))
+
+    ;; Process and save events
+    (when (seq events)
+      (let [rows (sequence xf:map-event-row events)]
+        (db/insert-many! pool :audit-log event-columns rows)))))
+
+(def ^:private valid-event-types
   #{"action" "identify" "trigger"})
 
-(def schema:event
+(def ^:private schema:frontend-event
   [:map {:title "Event"}
    [:name
     [:and {:gen/elements ["update-file", "get-profile"]}
@@ -93,12 +122,13 @@
      [::sm/one-of {:format "string"} valid-event-types]]]
    [:props
     [:map-of :keyword ::sm/any]]
+   [:timestamp ::ct/inst]
    [:context {:optional true}
     [:map-of :keyword ::sm/any]]])
 
-(def schema:push-audit-events
+(def ^:private schema:push-audit-events
   [:map {:title "push-audit-events"}
-   [:events [:vector schema:event]]])
+   [:events [:vector schema:frontend-event]]])
 
 (sv/defmethod ::push-audit-events
   {::climit/id :submit-audit-events/by-profile

@@ -78,13 +78,15 @@
          (fn []
            (close-modals)
            ;; FIXME: move set-mode to uri?
-           (st/emit! (dw/set-options-mode :design)
+           (st/emit! :interrupt
+                     (dw/set-options-mode :design)
                      (dcm/go-to-dashboard-recent))))
 
         nav-to-project
         (mf/use-fn
          (mf/deps project-id)
-         #(st/emit! (dcm/go-to-dashboard-files ::rt/new-window true :project-id project-id)))]
+         #(st/emit! :interrupt
+                    (dcm/go-to-dashboard-files ::rt/new-window true :project-id project-id)))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?

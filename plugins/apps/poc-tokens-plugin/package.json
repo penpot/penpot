@@ -1,0 +1,13 @@
+{
+  "name": "poc-tokens-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "ng build poc-tokens-plugin",
+    "build:dev": "ng build poc-tokens-plugin --configuration development",
+    "serve": "ng serve poc-tokens-plugin",
+    "lint": "eslint .",
+    "test": "exit 0"
+  }
+}

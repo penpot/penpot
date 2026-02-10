@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.tokens.application
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
@@ -18,11 +18,13 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -627,7 +629,9 @@
           (when-let [tokens (some-> (dsh/lookup-file-data state)
                                     (get :tokens-lib)
                                     (ctob/get-tokens-in-active-sets))]
-            (->> (sd/resolve-tokens tokens)
+            (->> (if (contains? cf/flags :tokenscript)
+                   (rx/of (ts/resolve-tokens tokens))
+                   (sd/resolve-tokens tokens))
                  (rx/mapcat
                   (fn [resolved-tokens]
                     (let [undo-id (js/Symbol)
@@ -644,8 +648,11 @@
                           shape-ids (d/nilv (keys shapes)  [])
                           any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
-                          resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                          tokenized-attributes (cft/attributes-map attributes token)
+                          resolved-value (get-in resolved-tokens [(cfo/token-identifier token) :resolved-value])
+                          resolved-value (if (contains? cf/flags :tokenscript)
+                                           (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                           resolved-value)
+                          tokenized-attributes (cfo/attributes-map attributes token)
                           type (:type token)]
                       (rx/concat
                        (rx/of
@@ -699,16 +706,17 @@
   "Removes `attributes` that match `token` for `shape-ids`.
 
   Doesn't update shape attributes."
-  [{:keys [attributes token shape-ids] :as _props}]
+  [{:keys [attributes token-name shape-ids] :as _props}]
   (ptk/reify ::unapply-token
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
+       (let [remove-token #(when % (cfo/remove-attributes-for-token attributes token-name %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
+
 
 (defn toggle-token
   [{:keys [token attrs shape-ids expand-with-children]}]
@@ -732,14 +740,14 @@
             (get token-properties (:type token))
 
             unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
 
             shape-ids (map :id shapes)]
 
         (if unapply-tokens?
           (rx/of
            (unapply-token {:attributes (or attrs all-attributes attributes)
-                           :token token
+                           :token-name (:name token)
                            :shape-ids shape-ids}))
           (rx/of
            (cond

@@ -171,9 +171,9 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attrs]
-           (st/emit! (dwta/unapply-token {:attributes attrs
-                                          :token token
+         (fn [token-name attrs]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes attrs
                                           :shape-ids ids}))))]
 
     [:section {:class (stl/css :stroke-section)

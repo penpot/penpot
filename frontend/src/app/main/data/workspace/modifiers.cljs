@@ -179,6 +179,56 @@
          (map #(get objects %))
          (reduce get-ignore-tree nil))))
 
+(defn calculate-ignore-tree-wasm
+  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
+  [transforms objects]
+
+  (letfn [(get-ignore-tree
+            ([ignore-tree shape]
+             (let [shape-id (dm/get-prop shape :id)
+                   transformed-shape (gsh/apply-transform shape (get transforms shape-id))
+
+                   root
+                   (if (:component-root shape)
+                     shape
+                     (ctn/get-component-shape objects shape {:allow-main? true}))
+
+                   transformed-root
+                   (if (:component-root shape)
+                     transformed-shape
+                     (gsh/apply-transform root (get transforms (:id root))))]
+
+               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
+
+            ([ignore-tree shape root transformed-root]
+             (let [shape-id (dm/get-prop shape :id)
+                   transformed-shape (gsh/apply-transform shape (get transforms shape-id))]
+               (get-ignore-tree ignore-tree shape transformed-shape root transformed-root)))
+
+            ([ignore-tree shape transformed-shape root transformed-root]
+             (let [shape-id (dm/get-prop shape :id)
+
+                   ignore-tree
+                   (cond-> ignore-tree
+                     (and (some? root) (ctk/in-component-copy? shape))
+                     (assoc
+                      shape-id
+                      (check-delta shape root transformed-shape transformed-root)))
+
+                   set-child
+                   (fn [ignore-tree child]
+                     (get-ignore-tree ignore-tree child root transformed-root))]
+
+               (->> (:shapes shape)
+                    (map (d/getf objects))
+                    (reduce set-child ignore-tree)))))]
+
+    ;; we check twice because we want only to search parents of components but once the
+    ;; tree is traversed we only want to process the objects in components
+    (->> (keys transforms)
+         (map #(get objects %))
+         (reduce get-ignore-tree nil))))
+
 (defn assoc-position-data
   [shape position-data old-shape]
   (let [deltav (gpt/to-vec (gpt/point (:selrect old-shape))
@@ -625,17 +675,6 @@
 
       (let [objects          (dsh/lookup-page-objects state)
 
-            ignore-tree
-            (calculate-ignore-tree modif-tree objects)
-
-            options
-            (-> params
-                (assoc :reg-objects? true)
-                (assoc :ignore-tree ignore-tree)
-                ;; Attributes that can change in the transform. This
-                ;; way we don't have to check all the attributes
-                (assoc :attrs transform-attrs))
-
             geometry-entries
             (parse-geometry-modifiers modif-tree)
 
@@ -644,6 +683,17 @@
 
             transforms
             (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
+
+            ignore-tree
+            (calculate-ignore-tree-wasm transforms objects)
+
+            options
+            (-> params
+                (assoc :reg-objects? true)
+                (assoc :ignore-tree ignore-tree)
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
+                (assoc :attrs transform-attrs))
 
             modif-tree
             (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))

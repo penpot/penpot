@@ -10,9 +10,10 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.path-names :as cpn]
    [app.common.types.token :as ctt]
+   [app.config :as cf]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.data.workspace.tokens.format :as dwtf]
@@ -156,9 +157,9 @@
 
 (defn- applied-all-attributes?
   [token selected-shapes attributes]
-  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cfo/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids         (into #{} xf:map-id selected-shapes)]
-    (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
+    (cfo/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (defn attributes-match-selection?
   [selected-shapes attrs & {:keys [selected-inside-layout?]}]
@@ -177,8 +178,10 @@
   [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
   (let [{:keys [name value errors type]} token
 
+        resolved-token (get active-theme-tokens (:name token))
+
         has-selected?  (pos? (count selected-shapes))
-        is-reference?  (cft/is-reference? token)
+        is-reference?  (cfo/is-reference? token)
         contains-path? (str/includes? name ".")
 
         attributes (as-> (get dwta/token-properties type) $
@@ -191,7 +194,7 @@
 
         applied?
         (if has-selected?
-          (cft/shapes-token-applied? token selected-shapes attributes)
+          (cfo/shapes-token-applied? token selected-shapes attributes)
           false)
 
         half-applied?
@@ -209,8 +212,10 @@
         is-viewer? (not can-edit?)
 
         ref-not-in-active-set
-        (and is-reference?
-             (not (contains-reference-value? value active-theme-tokens)))
+        (if (contains? cf/flags :tokenscript)
+          (seq (:errors resolved-token))
+          (and is-reference?
+               (not (contains-reference-value? value active-theme-tokens))))
 
         no-valid-value (seq errors)
 
@@ -219,10 +224,9 @@
             no-valid-value)
 
         color
-        (when (cft/color-token? token)
-          (let [theme-token (get active-theme-tokens name)]
-            (or (dwtc/resolved-token-bullet-color theme-token)
-                (dwtc/resolved-token-bullet-color token))))
+        (when (cfo/color-token? token)
+          (or (dwtc/resolved-token-bullet-color resolved-token)
+              (dwtc/resolved-token-bullet-color token)))
 
         status-icon? (contains? token-types-with-status-icon type)
 

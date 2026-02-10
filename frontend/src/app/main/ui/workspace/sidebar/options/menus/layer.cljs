@@ -72,8 +72,8 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -229,13 +229,13 @@
          :property (tr "workspace.options.opacity")
          :applied-token (get applied-tokens :opacity)
          :placeholder (if (or (= :multiple (get applied-tokens :opacity))
-                              (= :multiple (or (get values name) 1)))
+                              (= :multiple (or (get values :opacity) 1)))
                         (tr "settings.multiple")
                         "--")
          :align :right
          :class (stl/css :numeric-input-wrapper)
          :value (* 100
-                   (or (get values name) 1))}]
+                   (or (get values :opacity) 1))}]
 
        [:div {:class (stl/css :input)
               :title (tr "workspace.options.opacity")}
@@ -247,7 +247,6 @@
           :min 0
           :max 100
           :className (stl/css :numeric-input)}]])
-
 
      [:div {:class (stl/css :actions)}
       (cond

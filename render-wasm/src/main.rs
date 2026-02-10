@@ -347,6 +347,14 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
+pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) {
+    with_state_mut!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        state.touch_shape(shape_id);
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);

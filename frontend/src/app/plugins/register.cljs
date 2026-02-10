@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.types.plugins :as ctp]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -37,6 +38,7 @@
         desc (obj/get manifest "description")
         code (obj/get manifest "code")
         icon (obj/get manifest "icon")
+        vers (d/nilv (obj/get manifest "version") 1)
 
         permissions (into #{} (obj/get manifest "permissions" []))
         permissions
@@ -50,7 +52,17 @@
           (contains? permissions "comment:write")
           (conj "comment:read"))
 
-        origin (obj/get (js/URL. plugin-url) "origin")
+        plugin-url
+        (u/uri plugin-url)
+
+        origin
+        (if (= vers 1)
+          (-> plugin-url
+              (assoc :path "/")
+              (str))
+          (-> plugin-url
+              (u/join ".")
+              (str)))
 
         prev-plugin
         (->> (:data @registry)
@@ -59,12 +71,13 @@
                        (and (= name (:name plugin))
                             (= origin (:host plugin))))))
 
-        plugin-id (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
+        plugin-id
+        (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
 
         manifest
         (d/without-nils
          {:plugin-id plugin-id
-          :url plugin-url
+          :url (str plugin-url)
           :name name
           :description desc
           :host origin

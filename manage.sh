@@ -7,7 +7,7 @@ export DEVENV_PNAME="penpotdev";
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
-export IMAGEMAGICK_VERSION=7.1.2-0
+export IMAGEMAGICK_VERSION=7.1.2-13
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true
@@ -215,6 +215,23 @@ function build-frontend-bundle {
     echo ">> bundle frontend end";
 }
 
+function build-mcp-bundle {
+    echo ">> bundle mcp start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/mcp";
+
+    build "mcp";
+
+    rm -rf $bundle_dir;
+    mv ./mcp/dist $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle mcp end";
+}
+
+
 function build-backend-bundle {
     echo ">> bundle backend start";
 
@@ -309,6 +326,16 @@ function build-exporter-docker-image {
     popd;
 }
 
+function build-mcp-docker-image {
+    rsync -avr --delete ./bundles/mcp/ ./docker/images/bundle-mcp/;
+    pushd ./docker/images;
+    docker build \
+        -t penpotapp/mcp:$CURRENT_BRANCH -t penpotapp/mcp:latest \
+        --build-arg BUNDLE_PATH="./bundle-mcp/" \
+        -f Dockerfile.mcp .;
+    popd;
+}
+
 function build-storybook-docker-image {
     rsync -avr --delete ./bundles/storybook/ ./docker/images/bundle-storybook/;
     pushd ./docker/images;
@@ -335,17 +362,19 @@ function usage {
     echo "- isolated-shell                   Starts a bash shell in a new devenv container."
     echo "- log-devenv                       Show logs of the running devenv docker compose service."
     echo ""
-    echo "- build-bundle                     Build all bundles (frontend, backend and exporter)."
+    echo "- build-bundle                     Build all bundles (frontend, backend, exporter, storybook and mcp)."
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
     echo "- build-storybook-bundle           Build storybook bundle."
+    echo "- build-mcp-bundle                 Build mcp bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
     echo "- build-frontend-docker-image      Build frontend docker images."
     echo "- build-backend-docker-image       Build backend docker images."
     echo "- build-exporter-docker-image      Build exporter docker images."
+    echo "- build-mcp-docker-image           Build exporter docker images."
     echo "- build-storybook-docker-image     Build storybook docker images."
     echo ""
     echo "- version                          Show penpot's version."
@@ -397,6 +426,7 @@ case $1 in
     ## production builds
     build-bundle)
         build-frontend-bundle;
+        build-mcp-bundle;
         build-backend-bundle;
         build-exporter-bundle;
         build-storybook-bundle;
@@ -406,6 +436,10 @@ case $1 in
         build-frontend-bundle;
         ;;
 
+    build-mcp-bundle)
+        build-mcp-bundle;
+        ;;
+
     build-backend-bundle)
         build-backend-bundle;
         ;;
@@ -413,7 +447,7 @@ case $1 in
     build-exporter-bundle)
         build-exporter-bundle;
         ;;
-    
+
     build-storybook-bundle)
         build-storybook-bundle;
         ;;
@@ -431,6 +465,7 @@ case $1 in
         build-frontend-docker-image
         build-backend-docker-image
         build-exporter-docker-image
+        build-mcp-docker-image
         build-storybook-docker-image
         ;;
 
@@ -445,7 +480,11 @@ case $1 in
     build-exporter-docker-image)
         build-exporter-docker-image
         ;;
- 
+
+    build-mcp-docker-image)
+        build-mcp-docker-image
+        ;;
+
     build-storybook-docker-image)
         build-storybook-docker-image
         ;;
