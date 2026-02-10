@@ -25,7 +25,6 @@ export class PenpotUtils {
             id: shape.id,
             name: shape.name,
             type: shape.type,
-            children: children,
         };
 
         // add layout information if present
@@ -47,6 +46,23 @@ export class PenpotUtils {
                 columnGap: grid.columnGap,
             };
         }
+
+        // add component instance information if present
+        if (shape.isComponentInstance()) {
+            result.componentInstance = {};
+            const component = shape.component();
+            if (component) {
+                result.componentInstance.componentId = component.id;
+                result.componentInstance.componentName = component.name;
+                const mainInstance = component.mainInstance();
+                if (mainInstance) {
+                    result.componentInstance.mainInstanceId = mainInstance.id;
+                }
+            }
+        }
+
+        // finally, add children (last for more readable nesting order)
+        result.children = children;
 
         return result;
     }
