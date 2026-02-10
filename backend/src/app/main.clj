@@ -275,7 +275,8 @@
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
    ::mgmt/routes
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool            (ig/ref ::db/pool)
+    ::setup/props        (ig/ref ::setup/props)}
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
