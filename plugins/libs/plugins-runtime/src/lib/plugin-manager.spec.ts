@@ -72,7 +72,9 @@ describe('createPluginManager', () => {
     vi.mocked(loadManifestCode).mockResolvedValue(
       'console.log("Plugin loaded");',
     );
-    vi.mocked(getValidUrl).mockReturnValue(new URL('https://example.com/plugin'));
+    vi.mocked(getValidUrl).mockReturnValue(
+      new URL('https://example.com/plugin'),
+    );
     vi.mocked(prepareUrl).mockReturnValue('https://example.com/plugin');
   });
 
@@ -112,7 +114,9 @@ describe('createPluginManager', () => {
       height: 300,
     });
 
-    expect(prepareUrl).toHaveBeenCalledWith(manifest, '/test-url', {theme: 'light'});
+    expect(prepareUrl).toHaveBeenCalledWith(manifest, '/test-url', {
+      theme: 'light',
+    });
     expect(openUIApi).toHaveBeenCalledWith(
       'Test Modal',
       'https://example.com/plugin',
