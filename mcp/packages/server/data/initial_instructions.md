@@ -296,19 +296,29 @@ Discovering tokens:
 Applying tokens:
   * `shape.applyToken(token, properties: undefined | TokenProperty[])` - Apply a token to a shape for one or more properties
     (if properties is undefined, use a default property based on the token type - not usually recommended).
-    `TokenProperty` is a union type; here are some of the possible values:
+    `TokenProperty` is a union type; possible values are:
     - "all": applies the token to all properties it can control
     - TokenBorderRadiusProps: "r1", "r2", "r3", "r4"
-    - TokenColorProps: "fill", "stroke"
+    - TokenShadowProps: "shadow"
+    - TokenColorProps: "fill", "stroke-color"
     - TokenDimensionProps: "x", "y", "stroke-width"
+    - TokenFontFamiliesProps: "font-families"
+    - TokenFontSizesProps: "font-size"
+    - TokenFontWeightProps: "font-weight"
+    - TokenLetterSpacingProps: "letter-spacing"
     - TokenNumberProps: "rotation", "line-height"
+    - TokenOpacityProps: "opacity"
     - TokenSizingProps: "width", "height", "layout-item-min-w", "layout-item-max-w", "layout-item-min-h", "layout-item-max-h"
     - TokenSpacingProps: "row-gap", "column-gap", "p1", "p2", "p3", "p4", "m1", "m2", "m3", "m4"
+    - TokenBorderWidthProps: "stroke-width"
+    - TokenTextCaseProps: "text-case"
+    - TokenTextDecorationProps: "text-decoration"
+    - TokenTypographyProps: "typography"
   * `token.applyToShapes(shapes, properties)` - Apply from token
   * Application is **asynchronous** (wait for ~100ms to see the effects)
   * After application:
-     - `shape.tokens` returns a mapping `{ propertyName: "token.name" }`
-     - The properties that the tokens control will reflect the token's resolved value.
+     - `shape.tokens` returns a mapping `{ propertyName: "token.name" }` from `TokenProperty` to token name
+     - The actual shape properties that the tokens control will reflect the token's resolved value.
 
 Removing tokens:
   Simply set the respective property directly - token binding is automatically removed, e.g.
