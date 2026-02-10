@@ -5,7 +5,11 @@ export function getValidUrl(host: string, path: string): URL {
   return new URL(path, host);
 }
 
-export function prepareUrl(manifest: Manifest, url: string, params: object): string {
+export function prepareUrl(
+  manifest: Manifest,
+  url: string,
+  params: object,
+): string {
   const result = getValidUrl(manifest.host, url);
   for (const [k, v] of Object.entries(params)) {
     if (!result.searchParams.has(k)) {

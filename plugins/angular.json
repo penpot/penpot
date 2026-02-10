@@ -12,7 +12,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/contrast-plugin",
+            "outputPath": {
+              "base": "dist/apps/contrast-plugin",
+              "browser": ""
+            },
             "index": "apps/contrast-plugin/src/index.html",
             "browser": "apps/contrast-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -20,6 +23,7 @@
             "assets": [
               "apps/contrast-plugin/src/_headers",
               "apps/contrast-plugin/src/favicon.ico",
+              "apps/contrast-plugin/src/manifest.json",
               "apps/contrast-plugin/src/assets"
             ],
             "styles": [
