@@ -24,6 +24,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.timers :as tm]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -259,11 +261,14 @@
 (mf/defc installed-font-context-menu
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [is-open on-close on-edit on-delete]}]
-  (let [options (mf/with-memo [on-edit on-delete]
+  [{:keys [is-open on-close on-edit on-download on-delete]}]
+  (let [options (mf/with-memo [on-edit on-download on-delete]
                   [{:name    (tr "labels.edit")
                     :id      "font-edit"
                     :handler on-edit}
+                   {:name    (tr "labels.download-simple")
+                    :id      "font-download"
+                    :handler on-download}
                    {:name    (tr "labels.delete")
                     :id      "font-delete"
                     :handler on-delete}])]
@@ -345,6 +350,34 @@
                                          (st/emit! (df/delete-font font-id)))}]
              (st/emit! (modal/show options)))))
 
+        on-download
+        (mf/use-fn
+         (mf/deps variants)
+         (fn [_event]
+           (let [variant (first variants)
+                 variant-id (:id variant)
+                 multiple? (> (count variants) 1)
+                 cmd (if multiple? :download-font-family :download-font)
+                 params (if multiple? {:font-id font-id} {:id variant-id})]
+             (->> (rp/cmd! cmd params)
+                  (rx/subs! (fn [font-data]
+                              ;; font-data is base64-encoded or a map {:data :mtype}
+                              (let [b64 (if (string? font-data) font-data (:data font-data))
+                                    default-mtype "application/octet-stream"
+                                    mtype (if (string? font-data) default-mtype (or (:mtype font-data) default-mtype))
+                                    binary-str (js/atob b64)
+                                    bytes (js/Uint8Array.
+                                           (for [i (range (.-length binary-str))]
+                                             (.charCodeAt binary-str i)))
+                                    blob (wapi/create-blob bytes mtype)
+                                    uri (wapi/create-uri blob)
+                                    name (:font-family font)]
+                                (dom/trigger-download-uri name mtype uri)
+                                (tm/schedule-on-idle #(wapi/revoke-uri uri))))
+                            (fn [error]
+                              (js/console.error "error downloading font" error)
+                              (st/emit! (ntf/error (tr "errors.download-font")))))))))
+
         on-delete-variant
         (mf/use-fn
          (fn [event]
@@ -407,6 +440,7 @@
            {:on-close on-menu-close
             :is-open menu-open?
             :on-delete on-delete-font
+            :on-download on-download
             :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts*
