@@ -485,6 +485,76 @@
           "defaultConfiguration": "development"
         }
       }
+    },
+    "poc-tokens-plugin": {
+      "projectType": "application",
+      "root": "apps/poc-tokens-plugin",
+      "sourceRoot": "apps/poc-tokens-plugin/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/apps/poc-tokens-plugin",
+            "index": "apps/poc-tokens-plugin/src/index.html",
+            "browser": "apps/poc-tokens-plugin/src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "apps/poc-tokens-plugin/tsconfig.app.json",
+            "assets": [
+              "apps/poc-tokens-plugin/src/_headers",
+              "apps/poc-tokens-plugin/src/favicon.ico",
+              "apps/poc-tokens-plugin/src/assets"
+            ],
+            "styles": [
+              "libs/plugins-styles/src/lib/styles.css",
+              "apps/poc-tokens-plugin/src/styles.css"
+            ],
+            "scripts": [],
+            "optimization": {
+              "scripts": true,
+              "styles": true,
+              "fonts": false
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "poc-tokens-plugin:build:production"
+            },
+            "development": {
+              "buildTarget": "poc-tokens-plugin:build:development",
+              "host": "0.0.0.0",
+              "port": 4202
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
     }
   },
   "cli": {

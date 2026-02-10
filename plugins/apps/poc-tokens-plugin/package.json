@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build colors-to-tokens-plugin",
-    "build:dev": "ng build colors-to-tokens-plugin --configuration development",
-    "serve": "ng serve colors-to-tokens-plugin",
+    "build": "ng build poc-tokens-plugin",
+    "build:dev": "ng build poc-tokens-plugin --configuration development",
+    "serve": "ng serve poc-tokens-plugin",
     "lint": "eslint .",
     "test": "exit 0"
   }

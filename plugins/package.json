@@ -16,7 +16,7 @@
     "start:plugin:table": "pnpm --filter table-plugin serve",
     "start:plugin:renamelayers": "pnpm --filter rename-layers-plugin serve",
     "start:plugin:colors-to-tokens": "pnpm --filter colors-to-tokens-plugin serve",
-    "start:plugin:poc-tokens": "pnpm --filter poc-tokens serve",
+    "start:plugin:poc-tokens": "pnpm --filter poc-tokens-plugin serve",
     "build:runtime": "pnpm --filter @penpot/plugins-runtime build",
     "build:plugins": "pnpm --filter './apps/*-plugin' --filter '!poc-state-plugin' build",
     "build:styles-example": "pnpm --filter example-styles build",
