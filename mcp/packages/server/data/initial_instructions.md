@@ -61,7 +61,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 **Modification Methods**:
   * `resize(width, height)` - Change dimensions (required for width/height since they're read-only)
   * `rotate(angle, center?)` - Rotate shape
-  * `remove()` - Permanently destroy the shape (use only for deletion, NOT for reparenting)
+  * `remove()` - Permanently destroy the shape (use only for deletion, NOT for reparenting).
+    Exception: When the shape is a descendant of a board that is a component (asset), the shape will not be removed but instead be made invisible.
 
 **Hierarchical Structure**:
   * `parent` - The parent shape (null for root shapes)
@@ -261,6 +262,10 @@ Adding assets to a library:
   * const shapes: Shape[] = [shape1, shape2]; // shapes to include
     const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
     newComponent.name = 'My Button';
+
+Detaching:
+  * When creating new design elements based on a component instance/copy, use `shape.detach()` to break the link to the main component, allowing independent modification.
+  * Without detaching, some manipulations will have no effect; e.g. child/descendant removal will not work.
 
 # Design Tokens
 
