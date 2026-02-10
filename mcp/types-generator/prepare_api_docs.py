@@ -80,6 +80,25 @@ class PenpotAPIContentMarkdownConverter(MarkdownConverter):
             # return as code block
             return f"\n```\n{soup.get_text()}\n```\n\n"
 
+        # check for <ul> tag with a single <li>: move the <li> content a <div> and process it as normal,
+        # to avoid single list items with superfluous bullet points and indentations.
+        # This happens frequently, especially in new versions of the docs generator, e.g. for methods:
+        #   <ul class="tsd-signatures tsd-is-inherited">
+        #     <li class="tsd-is-inherited">
+        #       <div class="tsd-signature tsd-anchor-link" id="remove-1">...</div>
+        #     </li>
+        #   </ul>
+        if node.name == "ul" and "class" in node.attrs and "tsd-signatures" in node.attrs["class"]:
+            soup_ul = soup.find("ul")
+            if soup_ul is not None:
+                li_children = soup_ul.find_all("li", recursive=False)
+                if len(li_children) == 1:
+                    # create a new div with the content of the single li
+                    new_div = soup.new_tag("div")
+                    for child in list(li_children[0].contents):
+                        new_div.append(child)
+                    return self.process_tag(new_div, parent_tags=parent_tags)
+
         # other cases: use the default processing
         return super().process_tag(node, parent_tags=parent_tags)
 
