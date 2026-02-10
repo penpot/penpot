@@ -51,15 +51,18 @@
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
-
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
 
 (def ^:const UUID-U8-SIZE 16)
 (def ^:const UUID-U32-SIZE (/ UUID-U8-SIZE 4))
 
+;; FIXME: Migrate this as we adjust the DTO structure in wasm
 (def ^:const MODIFIER-U8-SIZE 40)
 (def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
 (def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
+(def ^:const INPUT-MODIFIER-U8-SIZE 44)
+(def ^:const INPUT-MODIFIER-U32-SIZE (/ INPUT-MODIFIER-U8-SIZE 4))
+
 
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
@@ -1278,13 +1281,16 @@
   (when-not ^boolean (empty? entries)
     (let [heapf32 (mem/get-heap-f32)
           heapu32 (mem/get-heap-u32)
-          size    (mem/get-alloc-size entries MODIFIER-U8-SIZE)
+          size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
           offset  (mem/alloc->offset-32 size)]
 
-      (reduce (fn [offset [id transform]]
-                (-> offset
-                    (mem.h32/write-uuid heapu32 id)
-                    (mem.h32/write-matrix heapf32 transform)))
+      (reduce (fn [offset [id data]]
+                (let [transform (:transform data)
+                      kind (:kind data)]
+                  (-> offset
+                      (mem.h32/write-uuid heapu32 id)
+                      (mem.h32/write-matrix heapf32 transform)
+                      (mem.h32/write-u32 heapu32 (sr/translate-transform-entry-kind kind)))))
               offset
               entries)
 
