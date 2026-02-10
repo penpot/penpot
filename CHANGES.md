@@ -1,5 +1,13 @@
 # CHANGELOG
 
+
+## 2.13.2
+
+### :bug: Bugs fixed
+
+- Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
+
+
 ## 2.13.1
 
 ### :bug: Bugs fixed

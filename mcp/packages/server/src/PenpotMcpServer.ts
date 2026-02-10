@@ -55,8 +55,8 @@ export class PenpotMcpServer {
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
-        this.listenAddress = process.env.PENPOT_MCP_SERVER_LISTEN_ADDRESS ?? "localhost";
-        this.serverAddress = process.env.PENPOT_MCP_SERVER_ADDRESS ?? "localhost";
+        this.listenAddress = process.env.PENPOT_MCP_SERVER_LISTEN_ADDRESS ?? "0.0.0.0";
+        this.serverAddress = process.env.PENPOT_MCP_SERVER_ADDRESS ?? "0.0.0.0";
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();

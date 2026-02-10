@@ -89,7 +89,8 @@
 (def ^:private schema:create-font-variant
   [:map {:title "create-font-variant"}
    [:team-id ::sm/uuid]
-   [:data [:map-of ::sm/text ::sm/any]]
+   [:data [:map-of ::sm/text [:or ::sm/bytes
+                              [::sm/vec ::sm/bytes]]]]
    [:font-id ::sm/uuid]
    [:font-family ::sm/text]
    [:font-weight [::sm/one-of {:format "number"} valid-weight]]
