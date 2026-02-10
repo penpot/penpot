@@ -7,6 +7,7 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
+   [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -44,7 +45,8 @@
                    (mf/deps form on-submit node type)
                    (fn []
                      (let [name (get-in @form [:clean-data :name])]
-                       (on-submit {:new-name name}))))
+                       (when (and (get-in @form [:touched :name]) (not= name (:name node)))
+                         (on-submit {:new-name name})))))
 
         #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
             (when (and valid
@@ -52,38 +54,7 @@
                        (empty? async-errors))
               (on-submit clean-data)))]
 
-    ;;    (fn []
-    ;;  ;; Call shared remapping logic
-    ;;  (let [old-token-name (:old-token-name remap-modal)
-    ;;        new-token-name (:new-token-name remap-modal)]
-    ;;    (st/emit! [:tokens/remap-tokens old-token-name new-token-name]))
-    ;;  (when (fn? on-remap)
-    ;;    (on-remap))))
 
-
-
-    ;; remap (mf/use-fn
-    ;;        (mf/deps form on-submit)
-    ;;        (fn []
-    ;;          (let [name (get-in @form [:clean-data :name])
-    ;;                path (str (d/name type) "." name)]
-    ;;            (prn "Submitting rename node form with name: " name " and path: " path))
-    ;;          #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
-    ;;              (when (and valid
-    ;;                         (empty? extra-errors)
-    ;;                         (empty? async-errors))
-    ;;                (on-submit clean-data)))))
-
-    ;; submit (mf/use-fn
-    ;;         (mf/deps form on-submit)
-    ;;         (fn [_ event]
-    ;;           (let [event   (dom/event->native-event event)
-    ;;                 submitter (dom/get-event-submitter event)
-    ;;                 handler (.-name submitter)
-    ;;                 handlerKey (keyword handler)]
-    ;;             (if (= handlerKey :rename)
-    ;;               (rename)
-    ;;               (remap)))))]
     [:div
      [:> heading* {:level 2
                    :typography "headline-medium"
@@ -102,8 +73,6 @@
                           :hint-message (tr "workspace.tokens.rename-group-name-hint")
                           :auto-focus true}]
       [:div {:class (stl/css :form-actions)}
-       #_[:> fc/form-submit* {:variant "secondary"
-                              :name "rename"} "rename"]
        [:> button* {:variant "secondary"
                     :name "cancel"
                     :on-click on-close} (tr "labels.cancel")]
@@ -114,24 +83,30 @@
 (mf/defc rename-node-modal*
   {::mf/register modal/components
    ::mf/register-as :tokens/rename-node}
-  [{:keys [node type tokens-in-active-set]}]
+  [{:keys [node type tokens-in-active-set on-remap on-rename]}]
 
   (let [tokens-tree-in-selected-set
         (mf/with-memo [tokens-in-active-set node]
           (-> (ctob/tokens-tree tokens-in-active-set)
               (d/dissoc-in (:name node))))
 
-        rename
-        (mf/use-fn
-         (mf/deps [])
-         (fn [new-name]
-           (prn "Renaming " node " to: " new-name " with type: " type)))
-
         close-modal
         (mf/use-fn
          (mf/deps [])
          (fn []
            (modal/hide!)))
+
+        rename
+        (mf/use-fn
+         (mf/deps [node type on-remap on-rename])
+         (fn [new-name]
+           (prn "Renaming " node " to: " new-name " with type: " type)
+           (modal/hide!)
+           (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name (:name node)
+                                                                 :new-token-name new-name
+                                                                 :on-remap on-remap
+                                                                 :on-rename on-rename}))
+           (prn "Emitted remapping confirmation modal")))
 
         on-key-down
         (mf/use-fn
@@ -152,3 +127,37 @@
                              :tokens-tree tokens-tree-in-selected-set
                              :on-close close-modal
                              :on-submit rename}]]]))
+
+
+;;    (fn []
+;;  ;; Call shared remapping logic
+;;  (let [old-token-name (:old-token-name remap-modal)
+;;        new-token-name (:new-token-name remap-modal)]
+;;    (st/emit! [:tokens/remap-tokens old-token-name new-token-name]))
+;;  (when (fn? on-remap)
+;;    (on-remap))))
+
+
+
+;; remap (mf/use-fn
+;;        (mf/deps form on-submit)
+;;        (fn []
+;;          (let [name (get-in @form [:clean-data :name])
+;;                path (str (d/name type) "." name)]
+;;            (prn "Submitting rename node form with name: " name " and path: " path))
+;;          #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
+;;              (when (and valid
+;;                         (empty? extra-errors)
+;;                         (empty? async-errors))
+;;                (on-submit clean-data)))))
+
+;; submit (mf/use-fn
+;;         (mf/deps form on-submit)
+;;         (fn [_ event]
+;;           (let [event   (dom/event->native-event event)
+;;                 submitter (dom/get-event-submitter event)
+;;                 handler (.-name submitter)
+;;                 handlerKey (keyword handler)]
+;;             (if (= handlerKey :rename)
+;;               (rename)
+;;               (remap)))))]
