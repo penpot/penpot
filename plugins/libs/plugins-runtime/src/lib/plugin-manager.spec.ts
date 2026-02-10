@@ -1,6 +1,6 @@
 import { describe, it, vi, expect, beforeEach, afterEach } from 'vitest';
 import { createPluginManager } from './plugin-manager';
-import { loadManifestCode, getValidUrl } from './parse-manifest.js';
+import { loadManifestCode, getValidUrl, prepareUrl } from './parse-manifest.js';
 import { PluginModalElement } from './modal/plugin-modal.js';
 import { openUIApi } from './api/openUI.api.js';
 import type { Context, Theme } from '@penpot/plugin-types';
@@ -9,6 +9,7 @@ import type { Manifest } from './models/manifest.model.js';
 vi.mock('./parse-manifest.js', () => ({
   loadManifestCode: vi.fn(),
   getValidUrl: vi.fn(),
+  prepareUrl: vi.fn(),
 }));
 
 vi.mock('./api/openUI.api.js', () => ({
@@ -71,7 +72,8 @@ describe('createPluginManager', () => {
     vi.mocked(loadManifestCode).mockResolvedValue(
       'console.log("Plugin loaded");',
     );
-    vi.mocked(getValidUrl).mockReturnValue('https://example.com/plugin');
+    vi.mocked(getValidUrl).mockReturnValue(new URL('https://example.com/plugin'));
+    vi.mocked(prepareUrl).mockReturnValue('https://example.com/plugin');
   });
 
   afterEach(() => {
@@ -110,7 +112,7 @@ describe('createPluginManager', () => {
       height: 300,
     });
 
-    expect(getValidUrl).toHaveBeenCalledWith(manifest.host, '/test-url');
+    expect(prepareUrl).toHaveBeenCalledWith(manifest, '/test-url', {theme: 'light'});
     expect(openUIApi).toHaveBeenCalledWith(
       'Test Modal',
       'https://example.com/plugin',

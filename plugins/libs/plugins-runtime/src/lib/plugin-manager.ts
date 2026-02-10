@@ -1,6 +1,6 @@
 import type { Context, Theme } from '@penpot/plugin-types';
 
-import { getValidUrl, loadManifestCode } from './parse-manifest.js';
+import { prepareUrl, loadManifestCode } from './parse-manifest.js';
 import { Manifest } from './models/manifest.model.js';
 import { PluginModalElement } from './modal/plugin-modal.js';
 import { openUIApi } from './api/openUI.api.js';
@@ -80,9 +80,8 @@ export async function createPluginManager(
   };
 
   const openModal = (name: string, url: string, options?: OpenUIOptions) => {
-    const theme = context.theme as 'light' | 'dark';
-
-    const modalUrl = getValidUrl(manifest.host, url);
+    const theme = context.theme as Theme;
+    const modalUrl = prepareUrl(manifest, url, {theme});
 
     if (modal?.getAttribute('iframe-src') === modalUrl) {
       return;
