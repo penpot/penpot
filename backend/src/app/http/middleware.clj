@@ -213,14 +213,14 @@
       (assoc "access-control-allow-origin" origin)
       (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
       (assoc "access-control-allow-credentials" "true")
-      (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
-      (assoc "access-control-allow-headers" "x-frontend-version, content-type, accept, x-requested-width")))
+      (assoc "access-control-expose-headers" "content-type, set-cookie")
+      (assoc "access-control-allow-headers" "x-frontend-version, x-client, x-requested-width, content-type, accept, cookie")))
 
 (defn wrap-cors
   [handler]
   (fn [request]
     (let [response (if (= (yreq/method request) :options)
-                     {::yres/status 200}
+                     {::yres/status 204}
                      (handler request))
           origin   (yreq/get-header request "origin")]
       (update response ::yres/headers with-cors-headers origin))))

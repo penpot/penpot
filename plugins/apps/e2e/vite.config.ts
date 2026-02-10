@@ -14,6 +14,6 @@ export default defineConfig({
       reportsDirectory: '../coverage/e2e',
       provider: 'v8',
     },
-    setupFiles: ['dotenv/config'],
+    setupFiles: ['dotenv/config', 'vitest.setup.ts']
   },
 });

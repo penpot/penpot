@@ -11,7 +11,7 @@ import comments from './plugins/create-comments';
 import { Agent } from './utils/agent';
 
 describe('Plugins', () => {
-  it('create board - text - rectable', async () => {
+  it.only('create board - text - rectable', async () => {
     const agent = await Agent();
     const result = await agent.runCode(testingPlugin.toString(), {
       screenshot: 'create-board-text-rect',

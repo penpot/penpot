@@ -10,6 +10,7 @@ export async function PenpotApi() {
   const resultLoginRequest = await fetch(
     `${apiUrl}/api/rpc/command/login-with-password`,
     {
+      credentials: 'include',
       method: 'POST',
       headers: {
         'Content-Type': 'application/transit+json',
@@ -21,7 +22,15 @@ export async function PenpotApi() {
     },
   );
 
+  console.log("AAAAAAAAAAAA", 1, apiUrl)
+  // console.log("AAAAAAAAAAAA", 2, resultLoginRequest);
+
+  console.dir(resultLoginRequest.headers, {depth:20});
+  console.log('Document Cookies:', window.document.cookie);
+
   const loginData = await resultLoginRequest.json();
+
+
   const authToken = resultLoginRequest.headers
     .get('set-cookie')
     ?.split(';')
