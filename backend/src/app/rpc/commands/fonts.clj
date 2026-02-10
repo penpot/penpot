@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.media :as cmedia]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -31,10 +32,13 @@
    [app.util.services :as sv]
    [datoteka.io :as io])
   (:import
+   java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
    java.io.SequenceInputStream
-   java.util.Collections))
+   java.util.Collections
+   java.util.zip.ZipEntry
+   java.util.zip.ZipOutputStream))
 
 (set! *warn-on-reflection* true)
 
@@ -295,3 +299,93 @@
     (rph/with-meta (rph/wrap)
       {::audit/props {:font-family (:font-family variant)
                       :font-id (:font-id variant)}})))
+
+;; --- DOWNLOAD FONT
+
+(def ^:private schema:download-font
+  [:map {:title "download-font"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::download-font
+  {::doc/added "1.18"
+   ::sm/params schema:download-font}
+  [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
+  (dm/with-open [conn (db/open pool)]
+    (let [variant (db/get conn :team-font-variant
+                          {:id id
+                           :deleted-at nil})]
+      (when-not variant
+        (ex/raise :type :not-found
+                  :code :object-not-found))
+
+      (teams/check-read-permissions! conn profile-id (:team-id variant))
+
+      ;; Try to get the best available font format (prefer TTF for broader compatibility).
+      (let [file-id (or (:ttf-file-id variant)
+                        (:otf-file-id variant)
+                        (:woff2-file-id variant)
+                        (:woff1-file-id variant))]
+        (when-not file-id
+          (ex/raise :type :not-found
+                    :code :font-file-not-found))
+
+        (let [font-obj (sto/get-object storage file-id)
+              font-bytes (sto/get-object-bytes storage font-obj)]
+          (when-not font-obj
+            (ex/raise :type :not-found
+                      :code :font-file-not-found))
+
+          ;; Return base64-encoded string and mime-type for transit serialization.
+          (let [data  (.encodeToString (java.util.Base64/getEncoder) font-bytes)
+                mtype (or (:content-type font-obj) (-> font-obj meta :content-type) "application/octet-stream")]
+            {:data data :mtype mtype}))))))
+
+(def ^:private schema:download-font-family
+  [:map {:title "download-font-family"}
+   [:font-id ::sm/uuid]])
+
+(sv/defmethod ::download-font-family
+  {::doc/added "1.18"
+   ::sm/params schema:download-font-family}
+  [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [::rpc/profile-id font-id]}]
+  (dm/with-open [conn (db/open pool)]
+    (let [variants (db/query conn :team-font-variant
+                             {:font-id font-id
+                              :deleted-at nil})]
+      (when-not (seq variants)
+        (ex/raise :type :not-found
+                  :code :object-not-found))
+
+      (teams/check-read-permissions! conn profile-id (:team-id (first variants)))
+
+      (let [entries
+            (->> variants
+                 (map (fn [v]
+                        (let [file-id (or (:ttf-file-id v)
+                                          (:otf-file-id v)
+                                          (:woff2-file-id v)
+                                          (:woff1-file-id v))]
+                          (when-not file-id
+                            (ex/raise :type :not-found :code :font-file-not-found))
+
+                          (let [sobj (sto/get-object storage file-id)
+                                bytes (sto/get-object-bytes storage sobj)
+                                mtype (or (:content-type sobj) (-> sobj meta :content-type) "application/octet-stream")
+                                ext (cmedia/mtype->extension mtype)
+                                name (str (:font-family v) "-" (:font-weight v)
+                                          (when-not (= "normal" (:font-style v)) (str "-" (:font-style v)))
+                                          (or ext ""))]
+                            {:name name :bytes bytes})))))]
+
+        ;; Build zip in memory.
+        (let [baos (ByteArrayOutputStream.)
+              zos  (ZipOutputStream. baos)]
+          (doseq [{:keys [name bytes]} entries]
+            (let [entry (ZipEntry. name)]
+              (.putNextEntry zos entry)
+              (.write zos ^bytes bytes)
+              (.closeEntry zos)))
+          (.close zos)
+          (let [zip-bytes (.toByteArray baos)
+                data (.encodeToString (java.util.Base64/getEncoder) zip-bytes)]
+            {:data data :mtype "application/zip"}))))))

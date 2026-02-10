@@ -2314,6 +2314,9 @@ msgstr "Descartar"
 msgid "labels.download"
 msgstr "Descargar %s"
 
+msgid "labels.download-simple"
+msgstr "Descargar"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
 msgid "labels.drafts"
 msgstr "Borradores"

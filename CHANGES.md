@@ -8,6 +8,8 @@
 
 ### :heart: Community contributions (Thank you!)
 
+- Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
+
 ### :sparkles: New features & Enhancements
 
 - Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
