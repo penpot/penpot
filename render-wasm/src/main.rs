@@ -698,21 +698,6 @@ pub extern "C" fn clean_modifiers() {
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::try_from(data).unwrap())
-        .collect();
-
-    with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
-        mem::write_vec(result)
-    })
-}
-
-#[no_mangle]
 pub extern "C" fn set_modifiers() {
     let bytes = mem::bytes();
 

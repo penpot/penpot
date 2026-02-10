@@ -274,3 +274,8 @@
     :edge 3
     :unknown 4
     4))
+
+(defn translate-transform-entry-kind [kind]
+  (let [values (unchecked-get wasm/serializers "transform-entry-kind")
+        default (unchecked-get values "parent")]
+    (d/nilv (unchecked-get values (d/name kind)) default)))

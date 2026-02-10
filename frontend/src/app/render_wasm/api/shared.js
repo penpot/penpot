@@ -249,3 +249,8 @@ export const CursorDirection = {
   "line-end": 5,
 };
 
+export const RawTransformEntryKind = {
+  "parent": 0,
+  "child": 1,
+};
+
