@@ -10,6 +10,41 @@ use super::{filters, RenderState, SurfaceId};
 use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
+fn point_on_rect_perimeter(rect: &Rect, mut distance: f32) -> Point {
+    let width = rect.width();
+    let height = rect.height();
+    let perimeter = 2.0 * (width + height);
+
+    if perimeter <= 0.0 {
+        return Point::new(rect.left, rect.top);
+    }
+
+    // Envuelve la distancia dentro del perímetro
+    distance = distance % perimeter;
+
+    let left = rect.left;
+    let top = rect.top;
+    let right = rect.right;
+    let bottom = rect.bottom;
+
+    if distance <= width {
+        return Point::new(left + distance, top);
+    }
+
+    if distance <= width + height {
+        let d = distance - width;
+        return Point::new(right, top + d);
+    }
+
+    if distance <= width + height + width {
+        let d = distance - width - height;
+        return Point::new(right - d, bottom);
+    }
+
+    let d = distance - width - height - width;
+    Point::new(left, bottom - d)
+}
+
 // FIXME: See if we can simplify these arguments
 #[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_rect(
@@ -29,6 +64,148 @@ fn draw_stroke_on_rect(
     // - A bigger rect if it's an outer stroke
     // - A smaller rect if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
+
+    // Para estilos sólidos seguimos usando el path/stroke normal.
+    // Para estilos no sólidos (dotted/dashed/mixed) empezamos a
+    // personalizar la lógica por forma. Empezamos por los rectángulos
+    // sin esquinas redondeadas con estilo dotted.
+    if matches!(stroke.style, StrokeStyle::Dotted) && corners.is_none() {
+        let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
+        // Queremos dibujar círculos rellenos, no un stroke con path effect.
+        paint.set_style(skia::PaintStyle::Fill);
+        paint.set_path_effect(None);
+
+        // Aplicamos blur y shadow igual que antes.
+        let filter = compose_filters(blur, shadow);
+        paint.set_image_filter(filter);
+
+        // Rect base donde colocamos los puntos. Para dotted inner/outer,
+        // outer_rect ya está ajustado para que el path esté en el borde
+        // original de la forma.
+        let border_rect = stroke.outer_rect(rect);
+        let radius = stroke.width / 2.0;
+        let advance = stroke.width + 5.0;
+
+        if border_rect.width() <= 0.0 || border_rect.height() <= 0.0 || radius <= 0.0 {
+            return;
+        }
+
+        let width = border_rect.width();
+        let height = border_rect.height();
+        let left = border_rect.left;
+        let top = border_rect.top;
+        let right = border_rect.right;
+        let bottom = border_rect.bottom;
+
+        let mut draw_dots = |canvas: &skia::Canvas| {
+            // 1) Círculos completos en cada vértice
+            let corner_points = [
+                Point::new(left, top),
+                Point::new(right, top),
+                Point::new(right, bottom),
+                Point::new(left, bottom),
+            ];
+            for p in &corner_points {
+                canvas.draw_circle((p.x, p.y), radius, &paint);
+            }
+
+            // Helper para dibujar media circunferencia orientada según lado/kind
+            let mut draw_half_circle =
+                |canvas: &skia::Canvas, center: Point, side: u8, kind: StrokeKind| {
+                    if matches!(kind, StrokeKind::Center) {
+                        canvas.draw_circle((center.x, center.y), radius, &paint);
+                        return;
+                    }
+
+                    // Path base: media circunferencia con normal hacia +Y (abajo)
+                    let mut path = skia::Path::new();
+                    let rect = skia::Rect::from_xywh(
+                        -radius,
+                        -radius,
+                        radius * 2.0,
+                        radius * 2.0,
+                    );
+                    path.add_arc(rect, 0.0, 180.0);
+
+                    // Ángulo de la normal "hacia dentro" según el lado
+                    let inward_normal_angle = match side {
+                        // top: interior hacia abajo
+                        0 => 90.0,
+                        // right: interior hacia la izquierda
+                        1 => 180.0,
+                        // bottom: interior hacia arriba
+                        2 => 270.0,
+                        // left: interior hacia la derecha
+                        _ => 0.0,
+                    };
+
+                    // La normal del path base apunta a +Y
+                    let base_normal_angle = 90.0;
+
+                    // Para inner usamos la normal hacia dentro;
+                    // para outer la invertimos (180 grados).
+                    let mut normal_angle = inward_normal_angle;
+                    if matches!(kind, StrokeKind::Outer) {
+                        normal_angle += 180.0;
+                    }
+
+                    let angle = normal_angle - base_normal_angle;
+
+                    let mut matrix = Matrix::new_identity();
+                    matrix.pre_rotate(angle, Point::new(0.0, 0.0));
+                    matrix.post_translate(center);
+                    path.transform(&matrix);
+
+                    canvas.draw_path(&path, &paint);
+                };
+
+            // 2) Entre vértices, puntos intermedios por cada lado
+            // Lado 0: top (left -> right)
+            if width > advance {
+                let mut t = advance;
+                while t < width {
+                    let p = Point::new(left + t, top);
+                    draw_half_circle(canvas, p, 0, stroke.kind);
+                    t += advance;
+                }
+            }
+
+            // Lado 1: right (top -> bottom)
+            if height > advance {
+                let mut t = advance;
+                while t < height {
+                    let p = Point::new(right, top + t);
+                    draw_half_circle(canvas, p, 1, stroke.kind);
+                    t += advance;
+                }
+            }
+
+            // Lado 2: bottom (right -> left)
+            if width > advance {
+                let mut t = advance;
+                while t < width {
+                    let p = Point::new(right - t, bottom);
+                    draw_half_circle(canvas, p, 2, stroke.kind);
+                    t += advance;
+                }
+            }
+
+            // Lado 3: left (bottom -> top)
+            if height > advance {
+                let mut t = advance;
+                while t < height {
+                    let p = Point::new(left, bottom - t);
+                    draw_half_circle(canvas, p, 3, stroke.kind);
+                    t += advance;
+                }
+            }
+        };
+
+        draw_dots(canvas);
+
+        return;
+    }
+
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
     // Apply both blur and shadow filters if present, composing them if necessary.
     let filter = compose_filters(blur, shadow);

@@ -213,39 +213,30 @@ impl Stroke {
             let path_effect = match self.style {
                 StrokeStyle::Dotted => {
                     let mut circle_path = skia::Path::new();
-                    let width = match self.kind {
-                        StrokeKind::Inner => self.width,
-                        StrokeKind::Center => self.width / 2.0,
-                        StrokeKind::Outer => self.width,
-                    };
+                    // Radio base para el patrón de puntos
+                    let radius = self.width / 2.0;
 
-                    // Experimental: usar exactamente media circunferencia:
-                    // - Inner: arco superior (mirando “hacia dentro”)
-                    // - Outer: arco inferior (mirando “hacia fuera”)
+                    // Usar media circunferencia que viva solo “después” del
+                    // origen del path (x >= 0) para que no haya nada del
+                    // patrón antes de que empiece el trazo.
+                    // - Inner: arco superior (y > 0)
+                    // - Outer: arco inferior (y < 0)
                     // - Center: círculo completo como antes
                     match self.kind {
                         StrokeKind::Inner => {
-                            let rect = skia::Rect::from_xywh(
-                                -width,
-                                -width,
-                                width * 2.0,
-                                width * 2.0,
-                            );
-                            // De (width, 0) a (-width, 0) pasando por y > 0
-                            circle_path.add_arc(rect, 0.0, 180.0);
+                            let rect =
+                                skia::Rect::from_xywh(0.0, -radius, radius * 2.0, radius * 2.0);
+                            // De (0, 0) a (2r, 0) pasando por y > 0
+                            circle_path.add_arc(rect, 180.0, 180.0);
                         }
                         StrokeKind::Outer => {
-                            let rect = skia::Rect::from_xywh(
-                                -width,
-                                -width,
-                                width * 2.0,
-                                width * 2.0,
-                            );
-                            // De (width, 0) a (-width, 0) pasando por y < 0
-                            circle_path.add_arc(rect, 0.0, -180.0);
+                            let rect =
+                                skia::Rect::from_xywh(0.0, -radius, radius * 2.0, radius * 2.0);
+                            // De (0, 0) a (2r, 0) pasando por y < 0
+                            circle_path.add_arc(rect, 180.0, -180.0);
                         }
                         StrokeKind::Center => {
-                            circle_path.add_circle((0.0, 0.0), width, None);
+                            circle_path.add_circle((0.0, 0.0), radius, None);
                         }
                     }
 
