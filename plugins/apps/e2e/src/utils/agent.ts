@@ -60,6 +60,9 @@ export async function Agent() {
   const page = await browser.newPage();
 
   await page.setViewport({ width: 1920, height: 1080 });
+  await page.setExtraHTTPHeaders({
+    'X-Client': 'plugins/e2e:puppeter',
+  });
 
   console.log('Setting authentication cookie...');
   page.setCookie({
