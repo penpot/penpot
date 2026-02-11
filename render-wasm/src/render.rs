@@ -33,8 +33,9 @@ use crate::wapi;
 pub use fonts::*;
 pub use images::*;
 
-// This is the extra are used for tile rendering.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
+// This is the extra area used for tile rendering (tiles beyond viewport).
+// Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 
@@ -2097,8 +2098,13 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
+                    // Only allow stopping (yielding) if the current tile is NOT visible.
+                    // This ensures all visible tiles render synchronously before showing,
+                    // eliminating empty squares during zoom. Interest-area tiles can still yield.
+                    let tile_is_visible = self.tile_viewbox.is_visible(&current_tile);
+                    let can_stop = allow_stop && !tile_is_visible;
                     let (is_empty, early_return) =
-                        self.render_shape_tree_partial_uncached(tree, timestamp, allow_stop)?;
+                        self.render_shape_tree_partial_uncached(tree, timestamp, can_stop)?;
 
                     if early_return {
                         return Ok(());
@@ -2223,17 +2229,20 @@ impl RenderState {
      * Given a shape, check the indexes and update it's location in the tile set
      * returns the tiles that have changed in the process.
      */
-    pub fn update_shape_tiles(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Vec<tiles::Tile> {
+    pub fn update_shape_tiles(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+    ) -> HashSet<tiles::Tile> {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
 
-        let old_tiles = self
+        // Collect old tiles to avoid borrow conflict with remove_shape_at
+        let old_tiles: Vec<_> = self
             .tiles
             .get_tiles_of(shape.id)
-            .map_or(Vec::new(), |tiles| tiles.iter().copied().collect());
+            .map_or(Vec::new(), |t| t.iter().copied().collect());
 
-        let new_tiles = (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)));
-
-        let mut result = HashSet::<tiles::Tile>::new();
+        let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
@@ -2242,12 +2251,66 @@ impl RenderState {
         }
 
         // Then, add the shape to the new tiles
-        for tile in new_tiles {
+        for tile in (rsx..=rex).flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y))) {
             self.tiles.add_shape_at(tile, shape.id);
             result.insert(tile);
         }
 
-        result.iter().copied().collect()
+        result
+    }
+
+    /*
+     * Incremental version of update_shape_tiles for pan/zoom operations.
+     * Updates the tile index and returns ONLY tiles that need cache invalidation.
+     *
+     * During pan operations, shapes don't move in world coordinates. The interest
+     * area (viewport) moves, which changes which tiles we track in the index, but
+     * tiles that were already cached don't need re-rendering just because the
+     * viewport moved.
+     *
+     * This function:
+     * 1. Updates the tile index (adds/removes shapes from tiles based on interest area)
+     * 2. Returns empty vec for cache invalidation (pan doesn't change tile content)
+     *
+     * Tile cache invalidation only happens when shapes actually move or change,
+     * which is handled by rebuild_touched_tiles, not during pan/zoom.
+     */
+    pub fn update_shape_tiles_incremental(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+    ) -> Vec<tiles::Tile> {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
+
+        let old_tiles: HashSet<tiles::Tile> = self
+            .tiles
+            .get_tiles_of(shape.id)
+            .map_or(HashSet::new(), |tiles| tiles.iter().copied().collect());
+
+        let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
+            .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile::from(x, y)))
+            .collect();
+
+        // Tiles where shape is being removed from index (left interest area)
+        let removed: Vec<_> = old_tiles.difference(&new_tiles).copied().collect();
+        // Tiles where shape is being added to index (entered interest area)
+        let added: Vec<_> = new_tiles.difference(&old_tiles).copied().collect();
+
+        // Update the index: remove from old tiles
+        for tile in &removed {
+            self.tiles.remove_shape_at(*tile, shape.id);
+        }
+
+        // Update the index: add to new tiles
+        for tile in &added {
+            self.tiles.add_shape_at(*tile, shape.id);
+        }
+
+        // Don't invalidate cache for pan/zoom - the tile content hasn't changed,
+        // only the interest area moved. Tiles that were cached are still valid.
+        // New tiles that entered the interest area will be rendered fresh since
+        // they weren't in the cache anyway.
+        Vec::new()
     }
 
     /*
@@ -2273,12 +2336,22 @@ impl RenderState {
     pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
 
-        let mut all_tiles = HashSet::<tiles::Tile>::new();
+        // Check if zoom changed - if so, we need full cache invalidation
+        // because tiles are rendered at specific zoom levels
+        let zoom_changed = self.zoom_changed();
+
+        let mut tiles_to_invalidate = HashSet::<tiles::Tile>::new();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    all_tiles.extend(self.update_shape_tiles(shape, tree));
+                    if zoom_changed {
+                        // Zoom changed: use full update that tracks all affected tiles
+                        tiles_to_invalidate.extend(self.update_shape_tiles(shape, tree));
+                    } else {
+                        // Pan only: use incremental update that preserves valid cached tiles
+                        self.update_shape_tiles_incremental(shape, tree);
+                    }
                 } else {
                     // We only need to rebuild tiles from the first level.
                     for child_id in shape.children_ids_iter(false) {
@@ -2288,11 +2361,11 @@ impl RenderState {
             }
         }
 
-        // Invalidate changed tiles - old content stays visible until new tiles render
-        self.surfaces.remove_cached_tiles(self.background_color);
-        for tile in all_tiles {
-            self.remove_cached_tile(tile);
+        if zoom_changed {
+            // Zoom changed: clear all cached tiles since they're at wrong zoom level
+            self.surfaces.remove_cached_tiles(self.background_color);
         }
+        // Pan only: no cache invalidation needed - tiles content unchanged
 
         performance::end_measure!("rebuild_tiles_shallow");
     }
@@ -2341,7 +2414,7 @@ impl RenderState {
 
         let mut all_tiles = HashSet::<tiles::Tile>::new();
 
-        let ids = self.touched_ids.clone();
+        let ids = std::mem::take(&mut self.touched_ids);
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {
@@ -2355,8 +2428,6 @@ impl RenderState {
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
-
-        self.clean_touched();
 
         performance::end_measure!("rebuild_touched_tiles");
     }
@@ -2414,6 +2485,7 @@ impl RenderState {
         self.touched_ids.insert(uuid);
     }
 
+    #[allow(dead_code)]
     pub fn clean_touched(&mut self) {
         self.touched_ids.clear();
     }

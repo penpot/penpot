@@ -300,7 +300,20 @@ fn propagate_reflow(
         Type::Frame(Frame {
             layout: Some(_), ..
         }) => {
-            layout_reflows.insert(*id);
+            let mut skip_reflow = false;
+            if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
+                if let Some(parent_id) = shape.parent_id {
+                    if parent_id != Uuid::nil() && !reflown.contains(&parent_id) {
+                        // If this is a fill layout but the parent has not been reflown yet
+                        // we wait for the next iteration for reflow
+                        skip_reflow = true;
+                    }
+                }
+            }
+
+            if !skip_reflow {
+                layout_reflows.insert(*id);
+            }
         }
         Type::Group(Group { masked: true }) => {
             let children_ids = shape.children_ids(true);
@@ -417,28 +430,26 @@ pub fn propagate_modifiers(
                 }
             }
         }
-
-        let mut layout_reflows_vec: Vec<Uuid> = layout_reflows.into_iter().collect();
-
-        // We sort the reflows so they are process first the ones that are more
-        // deep in the tree structure. This way we can be sure that the children layouts
-        // are already reflowed.
+        // We sort the reflows so they are processed deepest-first in the
+        // tree structure. This way we can be sure that the children layouts
+        // are already reflowed before their parents.
+        let mut layout_reflows_vec: Vec<Uuid> =
+            std::mem::take(&mut layout_reflows).into_iter().collect();
         layout_reflows_vec.sort_unstable_by(|id_a, id_b| {
             let da = shapes.get_depth(id_a);
             let db = shapes.get_depth(id_b);
             db.cmp(&da)
         });
 
-        let mut bounds_temp = bounds.clone();
-        for id in layout_reflows_vec.iter() {
+        for id in &layout_reflows_vec {
             if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp);
+            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds);
         }
-        layout_reflows = HashSet::new();
     }
 
+    #[allow(dead_code)]
     modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))
