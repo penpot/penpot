@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-11 01:09+0000\n"
+"PO-Revision-Date: 2026-02-12 14:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4911,3 +4911,48 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:293
 msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "Sauter pour l'instant et commencer la période d'essai"
+
+#: src/app/main/ui/settings/subscription.cljs:203
+msgid "subscription.settings.management-dialog.step-2-title"
+msgstr "Aide-nous à croitre et à rendre ton essai plus facile"
+
+#: src/app/main/ui/settings/subscription.cljs:209
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] ""
+"Actuellement, tu as %s personne à travers tes équipes qui peuvent éditer."
+msgstr[1] ""
+"Actuellement, tu as %s personnes à travers tes équipes qui peuvent éditer."
+
+#: src/app/main/ui/settings/subscription.cljs:230
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr ""
+"Attention : changer vers un forfait inférieur signifie moins de stockage et "
+"une durée plus courte des copies de sécurité et de l'historique des versions."
+
+#: src/app/main/ui/settings/subscription.cljs:211
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Éditeurs"
+
+#: src/app/main/ui/settings/subscription.cljs:218
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr ""
+"(Propriétaires, admins et éditeurs. Les visionneurs ne comptent pas comme "
+"éditeurs.)"
+
+#: src/app/main/ui/settings/subscription.cljs:263
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Tu ne peux pas réduire le nombre d'éditeurs. Dans les paramètres d'équipe, "
+"change le rôle (éditeur / admin à visionneur) pour les gens qui n'éditent "
+"pas les fichiers."
+
+#: src/app/main/ui/settings/subscription.cljs:259
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr ""
+"Facturé après l'essai. Aucune carte de crédit n'est requise pour l'instant."
+
+#: src/app/main/ui/settings/subscription.cljs:252, src/app/main/ui/settings/subscription.cljs:256
+#, markdown
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "**%s $** / mois"
