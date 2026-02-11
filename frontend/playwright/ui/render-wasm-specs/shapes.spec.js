@@ -165,6 +165,7 @@ test("Updates canvas background", async ({ page }) => {
   });
   await canvasBackgroundInput.fill("FABADA");
   await workspace.page.keyboard.press("Enter");
+  await workspace.waitForFirstRenderWithoutUI();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
@@ -318,6 +319,22 @@ test("Renders a clipped frame with a large blur drop shadow", async ({
   await workspace.goToWorkspace({
     id: "b4133204-a015-80ed-8007-192a65398b0c",
     pageId: "b4133204-a015-80ed-8007-192a65398b0d",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with solid, dotted, dashed and mixed stroke styles", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-stroke-styles.json");
+
+  await workspace.goToWorkspace({
+    id: "b888b894-3697-80d3-8006-51cc8a55c200",
+    pageId: "b888b894-3697-80d3-8006-51cc8a55c210",
   });
   await workspace.waitForFirstRenderWithoutUI();
 

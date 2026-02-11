@@ -26,7 +26,7 @@ fn draw_stroke_on_rect(
     // Draw the different kind of strokes for a rect is straightforward, we just need apply a stroke to:
     // - The same rect if it's a center stroke
     // - A bigger rect if it's an outer stroke
-    // - A smaller rect if it's an outer stroke
+    // - A smaller rect if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
 
@@ -34,7 +34,9 @@ fn draw_stroke_on_rect(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    match corners {
+    // By default just draw the rect. Only dotted inner/outer strokes need
+    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    let draw_stroke = || match corners {
         Some(radii) => {
             let radii = stroke.outer_corners(radii);
             let rrect = RRect::new_rect_radii(stroke_rect, &radii);
@@ -43,6 +45,24 @@ fn draw_stroke_on_rect(
         None => {
             canvas.draw_rect(stroke_rect, &paint);
         }
+    };
+
+    if let Some(clip_op) = stroke.clip_op() {
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        canvas.save_layer(&layer_rec);
+        match corners {
+            Some(radii) => {
+                let rrect = RRect::new_rect_radii(*rect, radii);
+                canvas.clip_rrect(rrect, clip_op, antialias);
+            }
+            None => {
+                canvas.clip_rect(*rect, clip_op, antialias);
+            }
+        }
+        draw_stroke();
+        canvas.restore();
+    } else {
+        draw_stroke();
     }
 }
 
@@ -62,7 +82,7 @@ fn draw_stroke_on_circle(
     // Draw the different kind of strokes for an oval is straightforward, we just need apply a stroke to:
     // - The same oval if it's a center stroke
     // - A bigger oval if it's an outer stroke
-    // - A smaller oval if it's an outer stroke
+    // - A smaller oval if it's an inner stroke
     let stroke_rect = stroke.aligned_rect(rect, scale);
     let mut paint = stroke.to_paint(selrect, svg_attrs, antialias);
 
@@ -70,7 +90,19 @@ fn draw_stroke_on_circle(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
-    canvas.draw_oval(stroke_rect, &paint);
+    // By default just draw the circle. Only dotted inner/outer strokes need
+    // clipping to prevent the dotted pattern from appearing in wrong areas.
+    if let Some(clip_op) = stroke.clip_op() {
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        canvas.save_layer(&layer_rec);
+        let mut clip_path = skia::Path::new();
+        clip_path.add_oval(rect, None);
+        canvas.clip_path(&clip_path, clip_op, antialias);
+        canvas.draw_oval(stroke_rect, &paint);
+        canvas.restore();
+    } else {
+        canvas.draw_oval(stroke_rect, &paint);
+    }
 }
 
 fn draw_outer_stroke_path(
