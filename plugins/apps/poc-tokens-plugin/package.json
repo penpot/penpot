@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build poc-tokens-plugin",
+    "build": "ng build poc-tokens-plugin && pnpm run build:plugin",
     "build:dev": "ng build poc-tokens-plugin --configuration development",
+    "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=poc-tokens-plugin",
+    "build:plugin:watch": "node ../../tools/scripts/build-plugin.mjs --plugin=poc-tokens-plugin --watch",
     "serve": "ng serve poc-tokens-plugin",
+    "init": "concurrently --kill-others --names plugin,serve \"pnpm run build:plugin:watch\" \"pnpm run serve\"",
     "lint": "eslint .",
     "test": "exit 0"
   }

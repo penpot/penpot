@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:watch": "vite build --watch --mode development",
     "preview": "vite preview",
+    "init": "concurrently --kill-others --names build,serve \"pnpm run build:watch\" \"pnpm run preview\"",
     "lint": "eslint .",
     "test": "vitest"
   }

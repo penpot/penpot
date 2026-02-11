@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "ng build contrast-plugin",
+    "build": "ng build contrast-plugin && pnpm run build:plugin",
     "build:dev": "ng build contrast-plugin --configuration development",
+    "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=contrast-plugin",
+    "build:plugin:watch": "node ../../tools/scripts/build-plugin.mjs --plugin=contrast-plugin --watch",
     "serve": "ng serve contrast-plugin",
+    "init": "concurrently --kill-others --names plugin,serve \"pnpm run build:plugin:watch\" \"pnpm run serve\"",
     "lint": "eslint .",
     "test": "vitest"
   }
