@@ -165,6 +165,7 @@ test("Updates canvas background", async ({ page }) => {
   });
   await canvasBackgroundInput.fill("FABADA");
   await workspace.page.keyboard.press("Enter");
+  await workspace.waitForFirstRenderWithoutUI();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
