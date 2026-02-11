@@ -409,7 +409,7 @@
              modif-tree (dwm/build-modif-tree ids objects get-modifier)]
 
          (if (features/active-feature? state "render-wasm/v1")
-           (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree (assoc options :ignore-snap-pixel true)))
 
            (let [modif-tree (gm/set-objects-modifiers modif-tree objects)]
              (rx/of (dwm/apply-modifiers* objects modif-tree nil options)))))))))
