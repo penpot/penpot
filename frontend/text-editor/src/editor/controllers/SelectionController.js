@@ -1961,7 +1961,8 @@ export class SelectionController extends EventTarget {
         this.setSelection(newTextSpan.firstChild, 0, newTextSpan.firstChild, 0);
       }
       // The styles are applied to the paragraph
-      else {
+      else
+      {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
         // Apply styles to child text spans.

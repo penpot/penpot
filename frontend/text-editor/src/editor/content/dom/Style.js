@@ -336,20 +336,22 @@ export function getStyle(element, styleName, styleUnit) {
  * @returns {HTMLElement}
  */
 export function setStylesFromObject(element, allowedStyles, styleObject) {
-  if (element.tagName === "SPAN")
-    for (const [styleName, styleUnit] of allowedStyles) {
-      if (!(styleName in styleObject)) {
-        continue;
-      }
-      let styleValue = styleObject[styleName];
-      if (!styleValue) continue;
-
-      if (styleName === "font-family") {
-        styleValue = sanitizeFontFamily(styleValue);
-      }
-
-      setStyle(element, styleName, styleValue, styleUnit);
+  for (const [styleName, styleUnit] of allowedStyles) {
+    if (!(styleName in styleObject)) {
+      continue;
     }
+
+    let styleValue = styleObject[styleName];
+    if (!styleValue) {
+      continue;
+    }
+
+    if (styleName === "font-family") {
+      styleValue = sanitizeFontFamily(styleValue);
+    }
+
+    setStyle(element, styleName, styleValue, styleUnit);
+  }
   return element;
 }
 
