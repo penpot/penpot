@@ -71,9 +71,9 @@ export class PenpotUtils {
      * Finds all shapes that matches the given predicate in the given shape tree.
      *
      * @param predicate - A function that takes a shape and returns true if it matches the criteria
-     * @param root - The root shape to start the search from (defaults to penpot.root)
+     * @param root - The root shape to start the search from (if null, searches all pages)
      */
-    public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = penpot.root): Shape[] {
+    public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[] {
         let result = new Array<Shape>();
 
         let find = function (shape: Shape | null) {
@@ -90,7 +90,16 @@ export class PenpotUtils {
             }
         };
 
-        find(root);
+        if (root === null) {
+            const pages = penpot.currentFile?.pages;
+            if (pages) {
+                for (let page of pages) {
+                    find(page.root);
+                }
+            }
+        } else {
+            find(root);
+        }
         return result;
     }
 
