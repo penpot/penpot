@@ -620,6 +620,7 @@ impl Shape {
         (added, removed)
     }
 
+    #[allow(dead_code)]
     pub fn fills(&self) -> std::slice::Iter<'_, Fill> {
         self.fills.iter()
     }
