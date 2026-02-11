@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-09 21:09+0000\n"
+"PO-Revision-Date: 2026-02-11 01:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4659,3 +4659,255 @@ msgstr "Afficher / masquer les guides"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
 msgid "shortcuts.toggle-history"
 msgstr "Basculer l'historique"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:189
+msgid "shortcuts.toggle-layers"
+msgstr "Basculer les calques"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:190
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Ajouter / retirer mise en page flex"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Ajouter / retirer mise en page grille"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
+msgid "shortcuts.toggle-lock"
+msgstr "Verrouiller / déverrouiller"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:193
+msgid "shortcuts.toggle-lock-size"
+msgstr "Verrouiller les proportions"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:194
+msgid "shortcuts.toggle-rulers"
+msgstr "Afficher / masquer les règles"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:195
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Accrochage aux guides"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:196
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "S'accrocher aux règles"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:197
+msgid "shortcuts.toggle-textpalette"
+msgstr "Basculer la palette de texte"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:198
+msgid "shortcuts.toggle-theme"
+msgstr "Changer de thème"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:199
+msgid "shortcuts.toggle-visibility"
+msgstr "Afficher / masquer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Basculer le style de zoom"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
+msgid "shortcuts.underline"
+msgstr "Basculer le souligné"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:202
+msgid "shortcuts.undo"
+msgstr "Annuler"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:203
+msgid "shortcuts.ungroup"
+msgstr "Dégrouper"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:204
+msgid "shortcuts.unmask"
+msgstr "Démasquer"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:205
+msgid "shortcuts.v-distribute"
+msgstr "Distribuer verticalement"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:206
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Lentille zoom avant"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:207
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Lentille zoom arrière"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:208
+msgid "shortcuts.zoom-selected"
+msgstr "Zoomer à la sélection"
+
+#: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/dashboard/subscription.cljs:162
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "Forfait entreprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:109
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Forfait entreprise (essai)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:84
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Allons-y !"
+
+#: src/app/main/ui/dashboard/subscription.cljs:83
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr ""
+"Obtiens du stockage additionnel, le recouvrement de fichiers et encore plus "
+"pour tes équipes."
+
+#: src/app/main/ui/dashboard/subscription.cljs:82
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "Forfait professionnel"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+#, unused
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "S'abonner"
+
+#: src/app/main/ui/dashboard/subscription.cljs:94
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr ""
+"L'essai fait ton affaire? Débloque l'accès complet pour toujours. [Abonne-"
+"toi|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:93
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "Forfait illimité (essai)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:100, src/app/main/ui/dashboard/subscription.cljs:161
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "Plan illimité"
+
+#: src/app/main/ui/dashboard/subscription.cljs:101
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Obtiens du stockage illimité, recouvrement illimité de fichiers et éditeurs "
+"illimités pour toutes tes équipes à un prix fixe. [Voir le forfait "
+"enterprise.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "Jeter un coup d'œil"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr ""
+"Éditeurs en plus, stockage, versions enregistrées automatiquement, copies de "
+"sécurité des fichier et bien plus encore."
+
+#: src/app/main/ui/dashboard/subscription.cljs:81, src/app/main/ui/dashboard/subscription.cljs:92, src/app/main/ui/dashboard/subscription.cljs:99, src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/dashboard/subscription.cljs:113
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Ton abonnement :"
+
+#: src/app/main/ui/dashboard/subscription.cljs:196
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Il y a %s éditeurs dans toutes tes équipes mais ton forfait en inclut "
+"jusqu'à 8."
+
+#: src/app/main/ui/dashboard/subscription.cljs:204
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Bonifie ton forfait maintenant à illimité ou entreprise pour obtenir plus "
+"d'éditeurs, du stockage et le recouvrement de fichiers. [Abonne-toi "
+"maintenant.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:137
+msgid "subscription.dashboard.team-plan"
+msgstr "Forfait de l'équipe"
+
+#: src/app/main/ui/dashboard/subscription.cljs:199
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Ton équipe grandit! Ton forfait illimité permet jusqu'à %s éditeurs, mais "
+"maintenant tu en as %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:207
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Merci de mettre à niveau pour accorder le nombre actuel d'éditeurs. "
+"[S'abonner maintenant.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Seul les nouveaux éditeurs à travers tes équipes comptent pour la "
+"facturation future. Un taux fixe de 175 $ / mois s'applique pour 25 éditeurs "
+"et plus."
+
+#: src/app/main/ui/dashboard/subscription.cljs:180
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Inviter des gens sur le forfait illimité"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:979
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "Allons-y"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
+msgid "subscription.labels"
+msgstr "Abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:484, src/app/main/ui/settings/subscription.cljs:508
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Ajoute une méthode de paiement pour continuer après la période d'essai"
+
+#: src/app/main/ui/settings/subscription.cljs:478, src/app/main/ui/settings/subscription.cljs:554
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "Tous les bénéfices du forfait professionnel et :"
+
+#: src/app/main/ui/settings/subscription.cljs:490, src/app/main/ui/settings/subscription.cljs:502, src/app/main/ui/settings/subscription.cljs:512, src/app/main/ui/settings/subscription.cljs:570
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "Tous les bénéfices du forfait illimité et :"
+
+#: src/app/main/ui/settings/subscription.cljs:53
+msgid "subscription.settings.editors"
+msgstr "(x %s éditeurs)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:145, src/app/main/ui/settings/subscription.cljs:104, src/app/main/ui/settings/subscription.cljs:457, src/app/main/ui/settings/subscription.cljs:510, src/app/main/ui/settings/subscription.cljs:566
+msgid "subscription.settings.enterprise"
+msgstr "Entreprise"
+
+#: src/app/main/ui/settings/subscription.cljs:100, src/app/main/ui/settings/subscription.cljs:456, src/app/main/ui/settings/subscription.cljs:500
+msgid "subscription.settings.enterprise-trial"
+msgstr "Entreprise (essai)"
+
+#: src/app/main/ui/settings/subscription.cljs:504, src/app/main/ui/settings/subscription.cljs:514, src/app/main/ui/settings/subscription.cljs:572
+msgid "subscription.settings.enterprise.autosave"
+msgstr ""
+"Sauvegarde automatique des versions et recouvrement de fichiers de 90 jours"
+
+#: src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:515, src/app/main/ui/settings/subscription.cljs:573
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Taux fixe mensuel"
+
+#: src/app/main/ui/settings/subscription.cljs:503, src/app/main/ui/settings/subscription.cljs:513, src/app/main/ui/settings/subscription.cljs:571
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Stockage illimité"
+
+#: src/app/main/ui/dashboard/subscription.cljs:150, src/app/main/ui/settings/subscription.cljs:482, src/app/main/ui/settings/subscription.cljs:494, src/app/main/ui/settings/subscription.cljs:506, src/app/main/ui/settings/subscription.cljs:516
+msgid "subscription.settings.manage-your-subscription"
+msgstr "Gérer l'abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:298
+msgid "subscription.settings.management-dialog.step-2-add-payment-button"
+msgstr "Ajouter les informations de paiement"
+
+#: src/app/main/ui/settings/subscription.cljs:285
+msgid "subscription.settings.management-dialog.step-2-description"
+msgstr ""
+"Ajoute tes infos de paiement maintenant pour conserver ton forfait après "
+"l'essai et continue d'encourager notre projet à code source ouvert. Tu ne "
+"seras pas facturé pour l'instant."
+
+#: src/app/main/ui/settings/subscription.cljs:293
+msgid "subscription.settings.management-dialog.step-2-skip-button"
+msgstr "Sauter pour l'instant et commencer la période d'essai"
