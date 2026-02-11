@@ -14,7 +14,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
-   [app.main.ui.workspace.tokens.management.forms.rename-node-modal :refer [rename-node-modal*]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
    [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
@@ -180,13 +179,32 @@
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
                 (st/emit! (dwtl/toggle-token-path (name type)))))))
 
+        on-rename-node
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens selected-token-set-id)
+         (fn [node type new-name]
+           (prn "Renaming node: " node " with type: " type " to new name: " new-name)
+           ;;  (let [path (:path node)
+           ;;        tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+           ;;        tokens-filtered-by-type (get tokens-by-type type)
+           ;;        tokens-in-path-ids (filter-tokens-by-path-ids type path)]
+           ;;    ;; Rename tokens in path
+           ;;    (st/emit! (dwtl/bulk-rename-tokens selected-token-set-id tokens-in-path-ids new-name))
+           ;;    ;; Remove from unfolded tree path
+           ;;    (st/emit! (dwtl/toggle-token-path (str (name type) "." path))))
+           ))
+
         open-rename-node-modal
         (mf/use-fn
-         (mf/deps selected-token-set-tokens)
+         (mf/deps selected-token-set-tokens on-rename-node)
          (fn [node type]
-           (modal/show! :tokens/rename-node {:node node
-                                             :type type
-                                             :tokens-in-active-set selected-token-set-tokens})))]
+           (let [_ (prn "RENAME")
+                 on-rename-node-handler #(on-rename-node node type %)]
+
+
+             (st/emit! (modal/show :tokens/rename-node {:node node
+                                                        :tokens-in-active-set selected-token-set-tokens
+                                                        :on-rename on-rename-node-handler})))))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib

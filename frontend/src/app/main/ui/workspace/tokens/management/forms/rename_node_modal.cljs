@@ -30,7 +30,7 @@
        #(not (cft/token-name-path-exists? % tokens-tree))]]]]))
 
 (mf/defc rename-node-form*
-  [{:keys [node type tokens-tree on-close on-submit]}]
+  [{:keys [node tokens-tree on-close on-submit]}]
   (let [schema
         (mf/with-memo [tokens-tree]
           (make-schema tokens-tree))
@@ -42,11 +42,16 @@
                           :initial initial)
 
         on-submit (mf/use-fn
-                   (mf/deps form on-submit node type)
+                   (mf/deps form on-submit)
                    (fn []
                      (let [name (get-in @form [:clean-data :name])]
                        (when (and (get-in @form [:touched :name]) (not= name (:name node)))
                          (on-submit {:new-name name})))))
+
+        is-disabled? (or (not (:valid @form))
+                         (not (get-in @form [:touched :name]))
+                         (= (get-in @form [:clean-data :name]) (:name node)))
+
 
         #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
             (when (and valid
@@ -77,15 +82,19 @@
                     :name "cancel"
                     :on-click on-close} (tr "labels.cancel")]
        [:> fc/form-submit* {:variant "primary"
-                            :disabled (not (:valid @form))
+                            :disabled is-disabled?
                             :name "rename"} (tr "labels.rename")]]]]))
 
 (mf/defc rename-node-modal*
   {::mf/register modal/components
    ::mf/register-as :tokens/rename-node}
-  [{:keys [node type tokens-in-active-set on-remap on-rename]}]
+  [{:keys [node tokens-in-active-set on-rename]}]
 
-  (let [tokens-tree-in-selected-set
+
+
+  (let [_ (prn "patata") ;;nil
+
+        tokens-tree-in-selected-set
         (mf/with-memo [tokens-in-active-set node]
           (-> (ctob/tokens-tree tokens-in-active-set)
               (d/dissoc-in (:name node))))
@@ -98,15 +107,15 @@
 
         rename
         (mf/use-fn
-         (mf/deps [node type on-remap on-rename])
+         (mf/deps on-rename)
          (fn [new-name]
-           (prn "Renaming " node " to: " new-name " with type: " type)
-           (modal/hide!)
-           (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name (:name node)
-                                                                 :new-token-name new-name
-                                                                 :on-remap on-remap
-                                                                 :on-rename on-rename}))
-           (prn "Emitted remapping confirmation modal")))
+           (prn "Emitted remapping confirmation modal")
+           (on-rename {:new-name new-name})
+           ;;  (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name (:name node)
+           ;;                                                        :new-token-name new-name
+           ;;                                                        :on-remap on-remap
+           ;;                                                        :on-rename on-rename}))
+           ))
 
         on-key-down
         (mf/use-fn
@@ -123,7 +132,6 @@
                         :variant "ghost"
                         :icon i/close}]
       [:> rename-node-form* {:node node
-                             :type type
                              :tokens-tree tokens-tree-in-selected-set
                              :on-close close-modal
                              :on-submit rename}]]]))
