@@ -508,12 +508,12 @@
      ptk/EffectEvent
      (effect [_ state _]
        (when (features/active-feature? state "text-editor/v2")
-         (let [instance (:workspace-editor state)
-               styles   (some-> (editor.v2/getCurrentStyle instance)
-                                (styles/get-styles-from-style-declaration :removed-mixed true)
-                                ((comp update-node-fn migrate-node))
-                                (styles/attrs->styles))]
-           (editor.v2/applyStylesToSelection instance styles)))))))
+         (when-let [instance (:workspace-editor state)]
+           (let [styles   (some-> (editor.v2/getCurrentStyle instance)
+                                  (styles/get-styles-from-style-declaration :removed-mixed true)
+                                  ((comp update-node-fn migrate-node))
+                                  (styles/attrs->styles))]
+             (editor.v2/applyStylesToSelection instance styles))))))))
 
 ;; --- RESIZE UTILS
 
@@ -782,12 +782,12 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
-        (let [instance (:workspace-editor state)
-              attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
-                                        (styles/get-styles-from-style-declaration))
-              overriden-attrs (merge attrs-to-override attrs)
-              styles  (styles/attrs->styles overriden-attrs)]
-          (editor.v2/applyStylesToSelection instance styles))))))
+        (when-let [instance (:workspace-editor state)]
+          (let [attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
+                                          (styles/get-styles-from-style-declaration))
+                overriden-attrs (merge attrs-to-override attrs)
+                styles  (styles/attrs->styles overriden-attrs)]
+            (editor.v2/applyStylesToSelection instance styles)))))))
 
 (defn update-all-attrs
   [ids attrs]
