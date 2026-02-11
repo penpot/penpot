@@ -260,8 +260,8 @@ importers:
   packages/tokenscript:
     dependencies:
       '@tokens-studio/tokenscript-interpreter':
-        specifier: ^0.23.1
-        version: 0.23.1
+        specifier: ^0.26.0
+        version: 0.26.0
 
   packages/ui:
     dependencies:
@@ -1720,8 +1720,8 @@ packages:
     peerDependencies:
       style-dictionary: '>=4.3.0 < 6'
 
-  '@tokens-studio/tokenscript-interpreter@0.23.1':
-    resolution: {integrity: sha512-aIcJprCkHIyckl0Knn78Sn7ef3U3IXLjNv9MOePdNR0Mz3Z4PleerldtfLmr1DdXUXiroVSyJROyJrO3TfB2Gg==}
+  '@tokens-studio/tokenscript-interpreter@0.26.0':
+    resolution: {integrity: sha512-dGjvUJnXRspWYp98FZw43l4cN+0ey/cF5sEJjL3coKc5C7DY7MsKgkmOONizmaZqf13GUIzklTEas3gt3jvrOQ==}
     engines: {node: '>=16.0.0'}
     hasBin: true
 
@@ -6715,7 +6715,7 @@ snapshots:
       is-mergeable-object: 1.1.1
       style-dictionary: 5.0.0-rc.1(tslib@2.8.1)
 
-  '@tokens-studio/tokenscript-interpreter@0.23.1':
+  '@tokens-studio/tokenscript-interpreter@0.26.0':
     dependencies:
       arktype: 2.1.29
       commander: 14.0.3
