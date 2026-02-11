@@ -8,6 +8,6 @@
   "author": "Andrey Antukh",
   "license": "MPL-2.0",
   "dependencies": {
-    "@tokens-studio/tokenscript-interpreter": "^0.23.1"
+    "@tokens-studio/tokenscript-interpreter": "^0.26.0"
   }
 }
