@@ -151,20 +151,22 @@
                          uuid/zero)
 
         props        (-> (or (::replace-props resultm)
-                             (-> params
-                                 (merge (::props resultm))
-                                 (dissoc :profile-id)
-                                 (dissoc :type)))
+                             (merge params (::props resultm)))
                          (clean-props))
 
         context      (merge (::context resultm)
                             (prepare-context-from-request request))
-        ip-addr      (inet/parse-request request)]
+        ip-addr      (inet/parse-request request)
+        module       (get cfg ::rpc/module)]
 
     {::type (or (::type resultm)
                 (::rpc/type cfg))
      ::name (or (::name resultm)
-                (::sv/name mdata))
+                (let [sname (::sv/name mdata)]
+                  (if (not= module "main")
+                    (str module "-" sname)
+                    sname)))
+
      ::profile-id profile-id
      ::ip-addr ip-addr
      ::props props

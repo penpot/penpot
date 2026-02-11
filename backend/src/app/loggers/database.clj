@@ -15,6 +15,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
+   [app.rpc.rlimit :as-alias rlimit]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px]
@@ -41,7 +42,7 @@
   (or (instance? java.util.concurrent.CompletionException cause)
       (instance? java.util.concurrent.ExecutionException cause)))
 
-(defn record->report
+(defn- log-record->report
   [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
   (assert (l/valid-record? record) "expectd valid log record")
   (let [data (if (concurrent-exception? cause)
@@ -86,16 +87,16 @@
   [{:keys [::db/pool]} {:keys [::l/id] :as record}]
   (try
     (let [uri    (cf/get :public-uri)
-          report (-> record record->report d/without-nils)]
+          report (-> record log-record->report d/without-nils)]
       (l/dbg :hint "registering error on database"
-             :id id
+             :id (str id)
              :src "logging"
              :uri (str uri "/dbg/error/" id))
       (persist-on-database! pool id 3 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
-(defn- event->report
+(defn- audit-event->report
   [{:keys [::audit/context ::audit/props ::audit/ip-addr] :as record}]
   (let [context
         (reduce-kv (fn [context k v]
@@ -125,12 +126,48 @@
   [{:keys [::db/pool]} {:keys [::audit/id] :as event}]
   (try
     (let [uri    (cf/get :public-uri)
-          report (-> event event->report d/without-nils)]
+          report (-> event audit-event->report d/without-nils)]
       (l/dbg :hint "registering error on database"
-             :id id
+             :id (str id)
              :src "audit-log"
              :uri (str uri "/dbg/error/" id))
       (persist-on-database! pool id 4 report))
+    (catch Throwable cause
+      (l/warn :hint "unexpected exception on database error logger" :cause cause))))
+
+(defn- rlimit-event->report
+  [event]
+  (let [context
+        (-> {}
+            (assoc :rlimit/uid (::rlimit/uid event))
+            (assoc :rlimit/method (::rlimit/method event))
+            (assoc :backend/tenant (cf/get :tenant))
+            (assoc :backend/host (cf/get :host))
+            (assoc :backend/public-uri (str (cf/get :public-uri)))
+            (assoc :backend/version (:full cf/version)))
+
+        result
+        (->> (::rlimit/results event)
+             (mapv (fn [result]
+                     (-> (into (sorted-map) result)
+                         (dissoc ::rlimit/method)))))]
+
+    {:hint    (str "Rate Limit Rejection: " (::rlimit/method event) " for " (::rlimit/uid event))
+     :context (-> (into (sorted-map) context)
+                  (pp/pprint-str :length 50))
+     :result  (pp/pprint-str result :length 50)}))
+
+(defn- handle-rlimit-event
+  "Convert the log record into a report object and persist it on the database"
+  [{:keys [::db/pool]} {:keys [::rlimit/id] :as event}]
+  (try
+    (let [uri    (cf/get :public-uri)
+          report (-> event rlimit-event->report d/without-nils)]
+      (l/dbg :hint "registering rate limit rejection"
+             :id (str id)
+             :src "rlimit"
+             :uri (str uri "/dbg/error/" id))
+      (persist-on-database! pool id 5 report))
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
@@ -153,6 +190,9 @@
 
                          (::audit/id item)
                          (handle-audit-event cfg item)
+
+                         (::rlimit/id item)
+                         (handle-rlimit-event cfg item)
 
                          :else
                          (l/warn :hint "received unexpected item" :item item))

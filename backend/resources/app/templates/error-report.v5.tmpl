@@ -1,0 +1,40 @@
+ {% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+Report: {{hint|abbreviate:150}} - {{id}} - Penpot Rate Limit Report
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div>[<a href="/dbg/error?version={{version}}">⮜</a>]</div>
+  <div>[<a href="#head">head</a>]</div>
+  <div>[<a href="#context">context</a>]</div>
+  <div>[<a href="#result">result</a>]</div>
+</nav>
+<main>
+  <div class="table">
+    <div class="table-row multiline">
+      <div id="head" class="table-key">HEAD:</div>
+      <div class="table-val">
+        <h1><span class="not-important">Hint:</span> <br/> {{hint}}</h1>
+        <h2><span class="not-important">Reported at:</span> <br/> {{created-at}}</h2>
+        <h2><span class="not-important">Report ID:</span> <br/> {{id}}</h2>
+      </div>
+    </div>
+
+    <div class="table-row multiline">
+      <div id="context" class="table-key">CONTEXT: </div>
+      <div class="table-val">
+        <pre>{{context}}</pre>
+      </div>
+    </div>
+
+    <div class="table-row multiline">
+      <div id="context" class="table-key">RESULT: </div>
+      <div class="table-val">
+        <pre>{{result}}</pre>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

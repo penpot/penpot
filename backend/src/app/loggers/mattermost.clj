@@ -9,10 +9,12 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.pprint :as pp]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
    [app.loggers.audit :as audit]
+   [app.rpc.rlimit :as-alias rlimit]
    [app.util.json :as json]
    [integrant.core :as ig]
    [promesa.exec :as px]
@@ -22,21 +24,28 @@
 
 (defn- send-mattermost-notification!
   [cfg {:keys [id] :as report}]
+  (let [type (get report :type)
+        text (str "#" type " | " (get report :hint) "\n"
+                  (when id
+                    (str (u/join (cf/get :public-uri) "/dbg/error/" id) " "))
 
-
-  (let [url  (u/join (cf/get :public-uri) "/dbg/error/" id)
-
-        text (str "Exception: " url " "
                   (when-let [pid (:profile-id report)]
-                    (str "(pid: #uuid-" pid ")"))
+                    (if (uuid? pid)
+                      (str "(pid: #uuid-" pid ")")
+                      (str "(pid: #ip-" pid ")")))
                   "\n"
                   "- host: #" (:host report) "\n"
                   "- tenant: #" (:tenant report) "\n"
                   "- origin: #" (:origin report) "\n"
-                  "- href: `" (:href report) "`\n"
-                  "- frontend-version: `" (:frontend-version report) "`\n"
-                  "- backend-version: `" (:backend-version report) "`\n"
+                  (when-let [href (get report :href)]
+                    (str "- href: `" href "`\n"))
+                  (when-let [version (get report :frontend-version)]
+                    (str "- frontend-version: `" version "`\n"))
+                  (when-let [version (get report :backend-version)]
+                    (str "- backend-version: `" version "`\n"))
                   "\n"
+                  (when-let [info (:info report)]
+                    (str "```\n" info "```"))
                   (when-let [trace (:trace report)]
                     (str "```\n"
                          "Trace:\n"
@@ -54,13 +63,15 @@
       (l/warn :hint "error on sending data"
               :response (pr-str resp)))))
 
-(defn- record->report
-  [{:keys [::l/context ::l/id ::l/cause] :as record}]
+(defn- log-record->report
+  [{:keys [::l/context ::l/id ::l/cause ::l/message] :as record}]
   (assert (l/valid-record? record) "expectd valid log record")
 
   (let [public-uri (cf/get :public-uri)]
     {:id               id
+     :type             "exception"
      :origin           "logging"
+     :hint             (or (some-> cause ex-message) @message)
      :tenant           (cf/get :tenant)
      :host             (cf/get :host)
      :backend-version  (:full cf/version)
@@ -74,7 +85,9 @@
 (defn- audit-event->report
   [{:keys [::audit/context ::audit/props ::audit/id] :as event}]
   {:id               id
+   :type             "exception"
    :origin           "audit-log"
+   :hint             (get props :hint)
    :tenant           (cf/get :tenant)
    :host             (cf/get :host)
    :backend-version  (:full cf/version)
@@ -82,18 +95,35 @@
    :profile-id       (:audit/profile-id event)
    :href             (get props :href)})
 
-(defn- handle-log-record
-  [cfg record]
-  (try
-    (let [report (record->report record)]
-      (send-mattermost-notification! cfg report))
-    (catch Throwable cause
-      (l/warn :hint "unhandled error" :cause cause))))
+(defn- rlimit-event->report
+  [event]
+  {:id               (::rlimit/id event)
+   :type             "notification"
+   :origin           "rlimit"
+   :hint             (str "rlimit reject of "
+                          (::rlimit/method event)
+                          " for "
+                          (::rlimit/uid event))
+   :tenant           (cf/get :tenant)
+   :host             (cf/get :host)
+   :backend-version  (:full cf/version)
+   :profile-id       (::rlimit/profile-id event)
+   :info             (with-out-str
+                       (println "Rejected by:")
+                       (println "------------")
+                       (println "Method:        " (::rlimit/method event))
+                       (println "Limit Name:    " (::rlimit/name event))
+                       (println "Limit Strategy:" (::rlimit/strategy event))
+                       (println)
+                       (println "Results & Config:")
+                       (println "-----------------")
+                       (doseq [result (::rlimit/results event)]
+                         (pp/pprint (into (sorted-map) result))))})
 
-(defn- handle-audit-event
-  [cfg record]
+(defn- handle-event
+  [cfg event event->report]
   (try
-    (let [report (audit-event->report record)]
+    (let [report (event->report event)]
       (send-mattermost-notification! cfg report))
     (catch Throwable cause
       (l/warn :hint "unhandled error" :cause cause))))
@@ -116,10 +146,13 @@
                          (when @enabled
                            (cond
                              (::l/id item)
-                             (handle-log-record cfg item)
+                             (handle-event cfg item log-record->report)
 
                              (::audit/id item)
-                             (handle-audit-event cfg item)
+                             (handle-event cfg item audit-event->report)
+
+                             (::rlimit/id item)
+                             (handle-event cfg item rlimit-event->report)
 
                              :else
                              (l/warn :hint "received unexpected item" :item item)))
