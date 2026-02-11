@@ -290,6 +290,24 @@ test("Renders a file with nested clipping frames", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders clipped frames with strokes correctly (no double painting)", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-frame-strokes-opacity.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "3144ac7c-a5cc-80e8-8007-8bbb29a4e56e",
+    pageId: "3144ac7c-a5cc-80e8-8007-8bbb29a510ac",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a clipped frame with a large blur drop shadow", async ({
   page,
 }) => {
