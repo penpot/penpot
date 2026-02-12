@@ -290,7 +290,7 @@ The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
 `Token`:
   * `name: string` - Token name (may include group path like "color.base.white")
   * `value: string | TokenValueString` - Raw value (may be direct value or reference to another token like "{color.primary}")
-  * `resolvedValue` - Computed final value (follows references)
+  * `resolvedValue` - Computed final value (follows references) - currently NOT working, do not use!
   * `type: TokenType`
 
 Discovering tokens:
