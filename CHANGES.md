@@ -6,6 +6,7 @@
 ### :bug: Bugs fixed
 
 - Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
+- Fix allow creating negative border radius tokens [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
 
 
 ## 2.13.1

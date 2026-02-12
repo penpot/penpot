@@ -7976,6 +7976,10 @@ msgstr "El valor de blur no puede ser negativo"
 msgid "workspace.tokens.shadow-token-spread-value-error"
 msgstr "El valor de spread no puede ser negativo"
 
+#: src/app/main/ui/workspace/tokens/management/forms/border_radius.cljs
+msgid "workspace.tokens.border-radius-token-value-error"
+msgstr "El valor de Border radius no puede ser negativo"
+
 #: src/app/main/ui/workspace/tokens/management/create/border_radius.cljs:42, src/app/main/ui/workspace/tokens/management/create/form.cljs:68
 msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "El nombre debería ser de al menos 1 caracter"

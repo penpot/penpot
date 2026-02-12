@@ -160,7 +160,8 @@
          (sd/resolve-tokens-interactive)
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                  _ (prn "token" token)]
               (if resolved-value
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
@@ -230,9 +231,16 @@
                                         (do
                                           (swap! form assoc-in [:extra-errors input-name] {:message error})
                                           (reset! hint* {:message error :type "error"}))
-                                        (let [message (tr "workspace.tokens.resolved-value" value)]
-                                          (swap! form update :extra-errors dissoc input-name)
-                                          (reset! hint* {:message message :type "hint"}))))))))]
+                                        ;; This is needed because, SD allows to create br token with negative values
+                                        (if (and
+                                             (< value 0)
+                                             (= :border-radius (:type token)))
+                                          (do
+                                            (swap! form assoc-in [:extra-errors input-name] {:message (tr "workspace.tokens.border-radius-token-value-error")})
+                                            (reset! hint* {:message (tr "workspace.tokens.border-radius-token-value-error") :type "error"}))
+                                          (let [message (tr "workspace.tokens.resolved-value" value)]
+                                            (swap! form update :extra-errors dissoc input-name)
+                                            (reset! hint* {:message message :type "hint"})))))))))]
 
         (fn []
           (rx/dispose! subs))))
