@@ -16,7 +16,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-  ;;  [app.plugins.shape :as shape]
+   ;; [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -118,12 +118,12 @@
               ;;        should be fixed to keep the original proxy objects coming from the plugin.
               ;; [:vector [:fn shape/shape-proxy?]]
               [:vector [:map [:id ::sm/uuid]]]
-              [:maybe [:set ::sm/keyword]]]
+              [:maybe [:set [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]]
      :fn (fn [shapes attrs]
            (apply-token-to-shapes file-id set-id id (map :id shapes) attrs))}
 
     :applyToSelected
-    {:schema [:tuple [:maybe [:set ::sm/keyword]]]
+    {:schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
              (apply-token-to-shapes file-id set-id id selected attrs)))}))

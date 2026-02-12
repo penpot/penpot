@@ -3744,7 +3744,7 @@ export interface ShapeBase extends PluginData {
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
    */
-  readonly tokens: { [property: string]: string };
+  readonly tokens: { [property in TokenProperty]: string };
 
   /**
    * @return Returns true if the current shape is inside a component instance
@@ -5221,7 +5221,7 @@ type TokenDimensionProps =
   | 'y'
 
   // Stroke width
-  | 'stroke-width';
+  | 'strokeWidth';
 
 /**
  * The properties that a FontFamilies token can be applied to.
