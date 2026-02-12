@@ -49,26 +49,27 @@
   ([value shape-ids attributes] (update-shape-radius-all value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (when (number? value)
-     (dwsh/update-shapes shape-ids
-                         (fn [shape]
-                           (ctsr/set-radius-to-all-corners shape value))
-                         {:reg-objects? true
-                          :ignore-touched true
-                          :page-id page-id
-                          :attrs ctt/border-radius-keys}))))
+     (let [value (max 0 value)]
+       (dwsh/update-shapes shape-ids
+                           (fn [shape]
+                             (ctsr/set-radius-to-all-corners shape value))
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs ctt/border-radius-keys})))))
 
 (defn update-shape-radius-for-corners
   ([value shape-ids attributes] (update-shape-radius-for-corners value shape-ids attributes nil))
   ([value shape-ids attributes page-id]
    (when (number? value)
-     (dwsh/update-shapes shape-ids
-                         (fn [shape]
-                           (ctsr/set-radius-for-corners shape attributes value))
-                         {:reg-objects? true
-                          :ignore-touched true
-                          :page-id page-id
-                          :attrs ctt/border-radius-keys}))))
-
+     (let [value (max 0 value)]
+       (dwsh/update-shapes shape-ids
+                           (fn [shape]
+                             (ctsr/set-radius-for-corners shape attributes value))
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs ctt/border-radius-keys})))))
 (defn update-opacity
   ([value shape-ids attributes] (update-opacity value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
