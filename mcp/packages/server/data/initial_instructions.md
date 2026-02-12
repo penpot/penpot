@@ -99,11 +99,11 @@ Boards can have layout systems that automatically control the positioning and sp
        - `dir`: "row" | "column" | "row-reverse" | "column-reverse"
        - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
        - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
-         Optionally, adjust indivudual child margins via `child.layoutChild`.
+         Optionally, adjust individual child margins via `child.layoutChild`.
     - When a board has flex layout,
        - child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
          appending or inserting children automatically positions them according to the layout rules.
-       - CRITICAL: For for dir="column" or dir="row", the order of the `children` array is reversed relative to the visual order!
+       - CRITICAL: For dir="column" or dir="row", the order of the `children` array is reversed relative to the visual order!
          Therefore, the element that appears first in the array, appears visually at the end (bottom/right) and vice versa.
          ALWAYS BEAR IN MIND THAT THE CHILDREN ARRAY ORDER IS REVERSED FOR dir="column" OR dir="row"!
     - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
