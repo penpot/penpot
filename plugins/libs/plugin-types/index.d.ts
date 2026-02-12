@@ -23,7 +23,7 @@ export interface Penpot extends Omit<
     open: (
       name: string,
       url: string,
-      options?: { width: number; height: number },
+      options?: { width: number; height: number; hidden: boolean },
     ) => void;
 
     size: {
