@@ -1961,7 +1961,8 @@ export class SelectionController extends EventTarget {
         this.setSelection(newTextSpan.firstChild, 0, newTextSpan.firstChild, 0);
       }
       // The styles are applied to the paragraph
-      else {
+      else
+      {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
         // Apply styles to child text spans.
@@ -1969,11 +1970,9 @@ export class SelectionController extends EventTarget {
           setTextSpanStyles(textSpan, newStyles);
         }
       }
-      return this.#notifyStyleChange();
-
-      // If the startContainer and endContainer are different
-      // then we need to iterate through those nodes to apply
-      // the styles.
+    // If the startContainer and endContainer are different
+    // then we need to iterate through those nodes to apply
+    // the styles.
     } else if (startNode !== endNode) {
       const safeGuard = new SafeGuard("applyStylesTo");
       safeGuard.start();
@@ -2022,12 +2021,12 @@ export class SelectionController extends EventTarget {
         }
 
         // We've reached the final node so we can return safely.
-        if (this.#textNodeIterator.currentNode === expectedEndNode) return;
+        if (this.#textNodeIterator.currentNode === expectedEndNode)
+          break;
 
         this.#textNodeIterator.nextNode();
       } while (this.#textNodeIterator.currentNode);
     }
-
     return this.#notifyStyleChange();
   }
 

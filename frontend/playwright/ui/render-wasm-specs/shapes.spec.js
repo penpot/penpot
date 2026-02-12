@@ -165,6 +165,7 @@ test("Updates canvas background", async ({ page }) => {
   });
   await canvasBackgroundInput.fill("FABADA");
   await workspace.page.keyboard.press("Enter");
+  await workspace.waitForFirstRenderWithoutUI();
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
@@ -196,7 +197,7 @@ test("Renders a file with blurs applied to any kind of shape", async ({
 
 test("Renders a file with shadows applied to any kind of shape", async ({
   page,
-}) => {
+}) => { 
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-shadows.json");
@@ -290,6 +291,24 @@ test("Renders a file with nested clipping frames", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders clipped frames with strokes correctly (no double painting)", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-frame-strokes-opacity.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "3144ac7c-a5cc-80e8-8007-8bbb29a4e56e",
+    pageId: "3144ac7c-a5cc-80e8-8007-8bbb29a510ac",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a clipped frame with a large blur drop shadow", async ({
   page,
 }) => {
@@ -300,6 +319,38 @@ test("Renders a clipped frame with a large blur drop shadow", async ({
   await workspace.goToWorkspace({
     id: "b4133204-a015-80ed-8007-192a65398b0c",
     pageId: "b4133204-a015-80ed-8007-192a65398b0d",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with solid, dotted, dashed and mixed stroke styles", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-stroke-styles.json");
+
+  await workspace.goToWorkspace({
+    id: "b888b894-3697-80d3-8006-51cc8a55c200",
+    pageId: "b888b894-3697-80d3-8006-51cc8a55c210",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders shapes with multiple fills and blur", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-fill-blend-blurs.json");
+
+  await workspace.goToWorkspace({
+    id: "b15901d7-d46d-8056-8007-8d5e34fc1f0c",
+    pageId: "b15901d7-d46d-8056-8007-8d5e34fc1f0d",
   });
   await workspace.waitForFirstRenderWithoutUI();
 

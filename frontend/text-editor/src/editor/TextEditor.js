@@ -326,9 +326,7 @@ export class TextEditor extends EventTarget {
    * @param {FocusEvent} e
    */
   #onBlur = (e) => {
-    if (!this.isEmpty) {
-      this.#changeController.notifyImmediately();
-    }
+    this.#changeController.notifyImmediately();
     this.#selectionController.saveSelection();
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
@@ -685,7 +683,7 @@ export function createRootFromString(string) {
  * Returns true if the passed object is a TextEditor
  * instance.
  *
- * @param {TextEditor} instance
+ * @param {*} instance
  * @returns {boolean}
  */
 export function isTextEditor(instance) {
@@ -716,7 +714,7 @@ export function getRoot(instance) {
   if (isTextEditor(instance)) {
     return instance.root;
   }
-  throw new TypeError("Instance is not a TextEditor");
+  return null;
 }
 
 /**
@@ -756,7 +754,7 @@ export function getCurrentStyle(instance) {
   if (isTextEditor(instance)) {
     return instance.currentStyle;
   }
-  throw new TypeError("Instance is not a TextEditor");
+  throw new TypeError('Instance is not a TextEditor');
 }
 
 /**
@@ -771,7 +769,7 @@ export function applyStylesToSelection(instance, styles) {
   if (isTextEditor(instance)) {
     return instance.applyStylesToSelection(styles);
   }
-  throw new TypeError("Instance is not a TextEditor");
+  throw new TypeError('Instance is not a TextEditor');
 }
 
 /**
@@ -785,7 +783,7 @@ export function dispose(instance) {
   if (isTextEditor(instance)) {
     return instance.dispose();
   }
-  throw new TypeError("Instance is not a TextEditor");
+  throw new TypeError('Instance is not a TextEditor');
 }
 
 export default TextEditor;

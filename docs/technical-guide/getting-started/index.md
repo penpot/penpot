@@ -8,9 +8,7 @@ desc: Customize your Penpot instance today. Learn how to install with Elestio, D
 This guide explains how to get your own Penpot instance, running on a machine you control,
 to test it, use it by you or your team, or even customize and extend it any way you like.
 
-If you need more context you can look at the <a
-href="https://community.penpot.app/t/self-hosting-penpot-i/2336" target="_blank">post
-about self-hosting</a> in Penpot community.
+For additional context, see the post <a href="https://penpot.app/blog/how-to-self-host-penpot/" target="_blank">How to self-host Penpot: A technical implementation guide</a> on the Penpot blog.
 
 <strong>The experience stays the same, whether you use
 Penpot <a href="https://design.penpot.app" target="_blank">in the cloud</a>

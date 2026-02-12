@@ -32,6 +32,7 @@
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.router :as rt]
+   [app.render-wasm.api :as wasm.api]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -508,12 +509,12 @@
      ptk/EffectEvent
      (effect [_ state _]
        (when (features/active-feature? state "text-editor/v2")
-         (let [instance (:workspace-editor state)
-               styles   (some-> (editor.v2/getCurrentStyle instance)
-                                (styles/get-styles-from-style-declaration :removed-mixed true)
-                                ((comp update-node-fn migrate-node))
-                                (styles/attrs->styles))]
-           (editor.v2/applyStylesToSelection instance styles)))))))
+         (when-let [instance (:workspace-editor state)]
+           (let [styles   (some-> (editor.v2/getCurrentStyle instance)
+                                  (styles/get-styles-from-style-declaration :removed-mixed true)
+                                  ((comp update-node-fn migrate-node))
+                                  (styles/attrs->styles))]
+             (editor.v2/applyStylesToSelection instance styles))))))))
 
 ;; --- RESIZE UTILS
 
@@ -777,17 +778,30 @@
              (rx/of (v2-update-text-editor-styles id attrs)))
 
            (when (features/active-feature? state "render-wasm/v1")
-             (rx/of (dwwt/resize-wasm-text-debounce id)))))))
+             (rx/concat
+              ;; Apply style to selected spans and sync content
+              (when (wasm.api/text-editor-is-active?)
+                (let [span-attrs (select-keys attrs txt/text-node-attrs)]
+                  (when (not (empty? span-attrs))
+                    (let [result (wasm.api/apply-style-to-selection span-attrs)]
+                      (when result
+                        (rx/of (v2-update-text-shape-content
+                                (:shape-id result) (:content result)
+                                :update-name? true)))))))
+              ;; Resize (with delay for font-id changes)
+              (cond->> (rx/of (dwwt/resize-wasm-text id))
+                (contains? attrs :font-id)
+                (rx/delay 200))))))))
 
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
-        (let [instance (:workspace-editor state)
-              attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
-                                        (styles/get-styles-from-style-declaration))
-              overriden-attrs (merge attrs-to-override attrs)
-              styles  (styles/attrs->styles overriden-attrs)]
-          (editor.v2/applyStylesToSelection instance styles))))))
+        (when-let [instance (:workspace-editor state)]
+          (let [attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
+                                          (styles/get-styles-from-style-declaration))
+                overriden-attrs (merge attrs-to-override attrs)
+                styles  (styles/attrs->styles overriden-attrs)]
+            (editor.v2/applyStylesToSelection instance styles)))))))
 
 (defn update-all-attrs
   [ids attrs]

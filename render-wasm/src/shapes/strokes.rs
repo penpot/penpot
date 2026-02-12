@@ -119,6 +119,19 @@ impl Stroke {
         self.width *= value;
     }
 
+    /// Returns the clip operation for dotted inner/outer strokes.
+    /// Returns `None` when no clipping is needed (center or non-dotted).
+    pub fn clip_op(&self) -> Option<skia::ClipOp> {
+        if self.style != StrokeStyle::Dotted || self.kind == StrokeKind::Center {
+            return None;
+        }
+        match self.kind {
+            StrokeKind::Inner => Some(skia::ClipOp::Intersect),
+            StrokeKind::Outer => Some(skia::ClipOp::Difference),
+            StrokeKind::Center => None,
+        }
+    }
+
     pub fn delta(&self) -> f32 {
         match self.kind {
             StrokeKind::Inner => 0.,
@@ -128,20 +141,28 @@ impl Stroke {
     }
 
     pub fn outer_rect(&self, rect: &Rect) -> Rect {
-        match self.kind {
-            StrokeKind::Inner => Rect::from_xywh(
-                rect.left + (self.width / 2.),
-                rect.top + (self.width / 2.),
-                rect.width() - self.width,
-                rect.height() - self.width,
-            ),
-            StrokeKind::Center => Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height()),
-            StrokeKind::Outer => Rect::from_xywh(
-                rect.left - (self.width / 2.),
-                rect.top - (self.width / 2.),
-                rect.width() + self.width,
-                rect.height() + self.width,
-            ),
+        match (self.kind, self.style) {
+            (StrokeKind::Inner, StrokeStyle::Dotted) | (StrokeKind::Outer, StrokeStyle::Dotted) => {
+                // Boundary so circles center on it and semicircles match after clipping
+                *rect
+            }
+            _ => match self.kind {
+                StrokeKind::Inner => Rect::from_xywh(
+                    rect.left + (self.width / 2.),
+                    rect.top + (self.width / 2.),
+                    rect.width() - self.width,
+                    rect.height() - self.width,
+                ),
+                StrokeKind::Center => {
+                    Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height())
+                }
+                StrokeKind::Outer => Rect::from_xywh(
+                    rect.left - (self.width / 2.),
+                    rect.top - (self.width / 2.),
+                    rect.width() + self.width,
+                    rect.height() + self.width,
+                ),
+            },
         }
     }
 
@@ -155,6 +176,11 @@ impl Stroke {
     }
 
     pub fn outer_corners(&self, corners: &Corners) -> Corners {
+        if matches!(self.style, StrokeStyle::Dotted | StrokeStyle::Dashed) {
+            // Path at boundary so no corner offset
+            return *corners;
+        }
+
         let offset = match self.kind {
             StrokeKind::Center => 0.0,
             StrokeKind::Inner => -self.width / 2.0,

@@ -82,6 +82,26 @@ The `TextEditor` contains a series of references to DOM elements, one of them is
 
 `ChangeController` is called by the `TextEditor` instance everytime a change is performed on the content of the `contenteditable` element.
 
+### Best practices
+
+#### Use `isType` functions
+
+Instead of handling elements by their properties like this:
+
+```javascript
+if (element.tagName === "SPAN") {
+  ...
+}
+```
+
+Use functions like `isParagraph`, `isTextSpan` or `isLineBreak`:
+
+```javascript
+if (isTextSpan(element)) {
+  ...
+}
+```
+
 ### Events
 
 - `change`: This event is dispatched every time a change is made in the editor. All changes are debounced to prevent dispatching too many change events. This event is also dispatched when there are pending change events and the user blurs the textarea element.

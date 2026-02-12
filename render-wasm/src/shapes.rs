@@ -620,6 +620,7 @@ impl Shape {
         (added, removed)
     }
 
+    #[allow(dead_code)]
     pub fn fills(&self) -> std::slice::Iter<'_, Fill> {
         self.fills.iter()
     }
@@ -1116,6 +1117,28 @@ impl Shape {
             }
         } else {
             Box::new(self.children.iter().rev())
+        }
+    }
+
+    /// Returns children in forward (non-reversed) order - useful for layout calculations
+    pub fn children_ids_iter_forward(
+        &self,
+        include_hidden: bool,
+    ) -> Box<dyn Iterator<Item = &Uuid> + '_> {
+        if include_hidden {
+            return Box::new(self.children.iter());
+        }
+
+        if let Type::Bool(_) = self.shape_type {
+            Box::new([].iter())
+        } else if let Type::Group(group) = self.shape_type {
+            if group.masked {
+                Box::new(self.children.iter().skip(1))
+            } else {
+                Box::new(self.children.iter())
+            }
+        } else {
+            Box::new(self.children.iter())
         }
     }
 

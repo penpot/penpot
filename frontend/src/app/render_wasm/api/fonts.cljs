@@ -320,7 +320,7 @@
      :style-name style
      :weight weight
      :emoji? emoji?
-     :fallbck? fallback?
+     :fallback? fallback?
      :asset-id asset-id}))
 
 (defn store-font
