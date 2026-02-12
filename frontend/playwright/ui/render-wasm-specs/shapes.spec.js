@@ -197,7 +197,7 @@ test("Renders a file with blurs applied to any kind of shape", async ({
 
 test("Renders a file with shadows applied to any kind of shape", async ({
   page,
-}) => {
+}) => { 
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-shadows.json");

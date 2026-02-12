@@ -22,7 +22,7 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Type,
+    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -700,16 +700,15 @@ impl RenderState {
 
             fills::render(self, shape, &shape.fills, antialias, SurfaceId::Current);
 
-            for stroke in shape.visible_strokes().rev() {
-                strokes::render(
-                    self,
-                    shape,
-                    stroke,
-                    Some(SurfaceId::Current),
-                    None,
-                    antialias,
-                );
-            }
+            // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+            let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+            strokes::render(
+                self,
+                shape,
+                &visible_strokes,
+                Some(SurfaceId::Current),
+                antialias,
+            );
 
             self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
                 s.canvas().restore();
@@ -1023,16 +1022,17 @@ impl RenderState {
                 // over the children. Drawing twice would cause incorrect opacity blending.
                 let skip_strokes = matches!(shape.shape_type, Type::Frame(_)) && shape.clip_content;
                 if !skip_strokes {
-                    for stroke in shape.visible_strokes().rev() {
-                        strokes::render(
-                            self,
-                            shape,
-                            stroke,
-                            Some(strokes_surface_id),
-                            None,
-                            antialias,
-                        );
-                        if !fast_mode {
+                    // Pass strokes in natural order; stroke merging handles top-most ordering internally.
+                    let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
+                    strokes::render(
+                        self,
+                        shape,
+                        &visible_strokes,
+                        Some(strokes_surface_id),
+                        antialias,
+                    );
+                    if !fast_mode {
+                        for stroke in &visible_strokes {
                             shadows::render_stroke_inner_shadows(
                                 self,
                                 shape,
@@ -2355,11 +2355,8 @@ impl RenderState {
             }
         }
 
-        if zoom_changed {
-            // Zoom changed: clear all cached tiles since they're at wrong zoom level
-            self.surfaces.remove_cached_tiles(self.background_color);
-        }
-        // Pan only: no cache invalidation needed - tiles content unchanged
+        // Invalidate changed tiles - old content stays visible until new tiles render
+        self.surfaces.remove_cached_tiles(self.background_color);
 
         performance::end_measure!("rebuild_tiles_shallow");
     }
