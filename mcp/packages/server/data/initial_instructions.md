@@ -283,13 +283,14 @@ The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
   * `tokens: Token[]` - All tokens in set
   * `addToken(type: TokenType, name: string, value: TokenValueString): Token` - Creates a token, adding it to the set.
      - `TokenType`: "color" | "dimension" | "spacing" | "typography" | "shadow" | "opacity" | "borderRadius" | "borderWidth" | "fontWeights" | "fontSizes" | "fontFamilies" | "letterSpacing" | "textDecoration" | "textCase"
+     - `value`: depends on the type of token (inspect `Token` and related types)
      - Examples:
        const token = set.addToken("color", "color.primary", "#0066FF"); // direct value
        const token2 = set.addToken("color", "color.accent", "{color.primary}"); // reference to another token
 
-`Token`:
-  * `name: string` - Token name (may include group path like "color.base.white")
-  * `value: string | TokenValueString` - Raw value (may be direct value or reference to another token like "{color.primary}")
+`Token`: union type encompassing various token types, with common properties:
+  * `name: string` - Token name (typically structured, e.g. "color.base.white")
+  * `value` - Raw value (direct value or reference to another token like "{color.primary}")
   * `resolvedValue` - Computed final value (follows references) - currently NOT working, do not use!
   * `type: TokenType`
 
