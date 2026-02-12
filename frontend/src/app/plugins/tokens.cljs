@@ -16,7 +16,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.plugins.shape :as shape]
+  ;;  [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -113,7 +113,11 @@
 
     :applyToShapes
     {:schema [:tuple
-              [:vector [:fn shape/shape-proxy?]]
+              ;; FIXME: the schema decoder is interpreting the array of shape-proxys and converting
+              ;;        them to plain maps. For now we adapt the schema to accept it, but the decoder
+              ;;        should be fixed to keep the original proxy objects coming from the plugin.
+              ;; [:vector [:fn shape/shape-proxy?]]
+              [:vector [:map [:id ::sm/uuid]]]
               [:maybe [:set ::sm/keyword]]]
      :fn (fn [shapes attrs]
            (apply-token-to-shapes file-id set-id id (map :id shapes) attrs))}
