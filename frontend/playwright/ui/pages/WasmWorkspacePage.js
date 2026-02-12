@@ -10,7 +10,7 @@ export const WASM_FLAGS = [
 export class WasmWorkspacePage extends WorkspacePage {
   static async init(page) {
     await super.init(page);
-    await WorkspacePage.mockConfigFlags(page, WASM_FLAGS);
+    await WasmWorkspacePage.mockConfigFlags(page, WASM_FLAGS);
 
     await page.addInitScript(() => {
       document.addEventListener("penpot:wasm:loaded", () => {
@@ -25,6 +25,14 @@ export class WasmWorkspacePage extends WorkspacePage {
         window.wasmSetObjectsFinished = true;
       });
     });
+  }
+
+  static async mockConfigFlags(page, flags) {
+    await super.mockConfigFlags(page, [...WASM_FLAGS, ...flags]);
+  }
+
+  async mockConfigFlags(flags) {
+    return WasmWorkspacePage.mockConfigFlags(this.page, flags);
   }
 
   constructor(page) {
