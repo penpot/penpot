@@ -25,7 +25,6 @@ export class PenpotUtils {
             id: shape.id,
             name: shape.name,
             type: shape.type,
-            children: children,
         };
 
         // add layout information if present
@@ -48,6 +47,23 @@ export class PenpotUtils {
             };
         }
 
+        // add component instance information if present
+        if (shape.isComponentInstance()) {
+            result.componentInstance = {};
+            const component = shape.component();
+            if (component) {
+                result.componentInstance.componentId = component.id;
+                result.componentInstance.componentName = component.name;
+                const mainInstance = component.mainInstance();
+                if (mainInstance) {
+                    result.componentInstance.mainInstanceId = mainInstance.id;
+                }
+            }
+        }
+
+        // finally, add children (last for more readable nesting order)
+        result.children = children;
+
         return result;
     }
 
@@ -55,9 +71,9 @@ export class PenpotUtils {
      * Finds all shapes that matches the given predicate in the given shape tree.
      *
      * @param predicate - A function that takes a shape and returns true if it matches the criteria
-     * @param root - The root shape to start the search from (defaults to penpot.root)
+     * @param root - The root shape to start the search from (if null, searches all pages)
      */
-    public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = penpot.root): Shape[] {
+    public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[] {
         let result = new Array<Shape>();
 
         let find = function (shape: Shape | null) {
@@ -74,7 +90,16 @@ export class PenpotUtils {
             }
         };
 
-        find(root);
+        if (root === null) {
+            const pages = penpot.currentFile?.pages;
+            if (pages) {
+                for (let page of pages) {
+                    find(page.root);
+                }
+            }
+        } else {
+            find(root);
+        }
         return result;
     }
 
@@ -421,5 +446,95 @@ export class PenpotUtils {
             default:
                 throw new Error(`Unsupported export mode: ${mode}`);
         }
+    }
+
+    /**
+     * Finds all tokens that match the given name across all token sets.
+     *
+     * @param name - The name of the token to search for (case-sensitive exact match)
+     * @returns An array of all matching tokens (may be empty)
+     */
+    public static findTokensByName(name: string): any[] {
+        const tokens: any[] = [];
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            for (const token of set.tokens) {
+                if (token.name === name) {
+                    tokens.push(token);
+                }
+            }
+        }
+
+        return tokens;
+    }
+
+    /**
+     * Finds the first token that matches the given name across all token sets.
+     *
+     * @param name - The name of the token to search for (case-sensitive exact match)
+     * @returns The first matching token, or null if not found
+     */
+    public static findTokenByName(name: string): any | null {
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            for (const token of set.tokens) {
+                if (token.name === name) {
+                    return token;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the token set that contains the given token.
+     *
+     * @param token - The token whose set to find
+     * @returns The TokenSet containing this token, or null if not found
+     */
+    public static getTokenSet(token: any): any | null {
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            if (set.tokens.includes(token)) {
+                return set;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Generates an overview of all tokens organized by token set name, token type, and token name.
+     * The result is a nested object structure: {tokenSetName: {tokenType: [tokenName, ...]}}.
+     *
+     * @returns An object mapping token set names to objects that map token types to arrays of token names
+     */
+    public static tokenOverview(): Record<string, Record<string, string[]>> {
+        const overview: Record<string, Record<string, string[]>> = {};
+        // @ts-ignore
+        const tokenCatalog = penpot.library.local.tokens;
+
+        for (const set of tokenCatalog.sets) {
+            const setOverview: Record<string, string[]> = {};
+
+            for (const token of set.tokens) {
+                const tokenType = token.type;
+                if (!setOverview[tokenType]) {
+                    setOverview[tokenType] = [];
+                }
+                setOverview[tokenType].push(token.name);
+            }
+
+            overview[set.name] = setOverview;
+        }
+
+        return overview;
     }
 }

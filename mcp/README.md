@@ -90,32 +90,6 @@ This bootstrap command will:
   * build all components (`pnpm -r run build`)
   * start all components (`pnpm -r --parallel run start`)
 
-If you want to have types scrapped from a remote repository, the best
-approach is executing the following:
-
-```shell
-PENPOT_PLUGINS_API_DOC_URL=https://doc.plugins.penpot.app pnpm run build:types
-pnpm run bootstrap
-```
-
-Or this, if you want skip build step bacause you have already have all
-build artifacts ready (per example from previous `bootstrap` command):
-
-```
-PENPOT_PLUGINS_API_DOC_URL=https://doc.plugins.penpot.app pnpm run build:types
-pnpm run start
-```
-
-If you want just to update the types definitions with the plugins api doc from the
-current branch:
-
-```shell
-pnpm run build:types
-```
-
-(That command will build plugins doc locally and will generate the types yaml from
-the locally build documentation)
-
 ### 2. Load the Plugin in Penpot and Establish the Connection
 
 > [!NOTE]
