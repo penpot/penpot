@@ -35,7 +35,7 @@
   [::sm/text {:error/fn token-value-empty-fn}])
 
 (def schema:token-value-font-family
-  [:vector :string])
+  [:vector ::sm/text])
 
 (def schema:token-value-typography-map
   [:map
