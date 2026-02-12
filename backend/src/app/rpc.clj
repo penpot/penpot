@@ -73,9 +73,13 @@
                                      (if (nil? result)
                                        204
                                        200))
-                         headers (cond-> (::http/headers mdata {})
-                                   (yres/stream-body? result)
+
+                         headers (::http/headers mdata {})
+                         headers (cond-> headers
+                                   (and (yres/stream-body? result)
+                                        (not (contains? headers "content-type")))
                                    (assoc "content-type" "application/octet-stream"))]
+
                      {::yres/status  status
                       ::yres/headers headers
                       ::yres/body    result}))]

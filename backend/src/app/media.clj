@@ -54,7 +54,7 @@
    [:path ::fs/path]
    [:mtype {:optional true} ::sm/text]])
 
-(def ^:private check-input
+(def check-input
   (sm/check-fn schema:input))
 
 (defn validate-media-type!

@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.fonts
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
@@ -22,10 +23,9 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.timers :as tm]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -354,26 +354,18 @@
         (mf/use-fn
          (mf/deps variants)
          (fn [_event]
-           (let [variant (first variants)
+           (let [variant    (first variants)
                  variant-id (:id variant)
-                 multiple? (> (count variants) 1)
-                 cmd (if multiple? :download-font-family :download-font)
-                 params (if multiple? {:font-id font-id} {:id variant-id})]
+                 multiple?  (> (count variants) 1)
+                 cmd        (if multiple? :download-font-family :download-font)
+                 params     (if multiple? {:font-id font-id} {:id variant-id})]
              (->> (rp/cmd! cmd params)
-                  (rx/subs! (fn [font-data]
-                              ;; font-data is base64-encoded or a map {:data :mtype}
-                              (let [b64 (if (string? font-data) font-data (:data font-data))
-                                    default-mtype "application/octet-stream"
-                                    mtype (if (string? font-data) default-mtype (or (:mtype font-data) default-mtype))
-                                    binary-str (js/atob b64)
-                                    bytes (js/Uint8Array.
-                                           (for [i (range (.-length binary-str))]
-                                             (.charCodeAt binary-str i)))
-                                    blob (wapi/create-blob bytes mtype)
-                                    uri (wapi/create-uri blob)
-                                    name (:font-family font)]
-                                (dom/trigger-download-uri name mtype uri)
-                                (tm/schedule-on-idle #(wapi/revoke-uri uri))))
+                  (rx/mapcat (fn [{:keys [name uri]}]
+                               (->> (http/send! {:uri uri :method :get :response-type :blob})
+                                    (rx/map :body)
+                                    (rx/map (fn [blob] (d/vec2 name blob))))))
+                  (rx/subs! (fn [[filename blob]]
+                              (dom/trigger-download filename blob))
                             (fn [error]
                               (js/console.error "error downloading font" error)
                               (st/emit! (ntf/error (tr "errors.download-font")))))))))

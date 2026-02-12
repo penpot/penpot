@@ -16,6 +16,7 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.logical-deletion :as ldel]
+   [app.http :as-alias http]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -32,7 +33,6 @@
    [app.util.services :as sv]
    [datoteka.io :as io])
   (:import
-   java.io.ByteArrayOutputStream
    java.io.InputStream
    java.io.OutputStream
    java.io.SequenceInputStream
@@ -303,90 +303,95 @@
 
 ;; --- DOWNLOAD FONT
 
+(defn- make-temporal-storage-object
+  [cfg profile-id content]
+  (let [storage (sto/resolve cfg)
+        content (media/check-input content)
+        hash    (sto/calculate-hash (:path content))
+        data    (-> (sto/content (:path content))
+                    (sto/wrap-with-hash hash))
+        mtype   (:mtype content "application/octet-stream")
+        content {::sto/content data
+                 ::sto/deduplicate? true
+                 ::sto/touched-at (ct/in-future {:minutes 30})
+                 :profile-id profile-id
+                 :content-type mtype
+                 :bucket "tempfile"}]
+
+    (sto/put-object! storage content)))
+
+(defn- make-variant-filename
+  [v mtype]
+  (str (:font-family v) "-" (:font-weight v)
+       (when-not (= "normal" (:font-style v)) (str "-" (:font-style v)))
+       (cmedia/mtype->extension mtype)))
+
 (def ^:private schema:download-font
   [:map {:title "download-font"}
    [:id ::sm/uuid]])
 
 (sv/defmethod ::download-font
-  {::doc/added "1.18"
+  "Download the font file. Returns a http redirect to the asset resource uri."
+  {::doc/added "2.15"
    ::sm/params schema:download-font}
   [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
-  (dm/with-open [conn (db/open pool)]
-    (let [variant (db/get conn :team-font-variant
-                          {:id id
-                           :deleted-at nil})]
-      (when-not variant
-        (ex/raise :type :not-found
-                  :code :object-not-found))
+  (let [variant (db/get pool :team-font-variant {:id id})]
+    (teams/check-read-permissions! pool profile-id (:team-id variant))
 
-      (teams/check-read-permissions! conn profile-id (:team-id variant))
+    ;; Try to get the best available font format (prefer TTF for broader compatibility).
+    (let [media-id (or (:ttf-file-id variant)
+                       (:otf-file-id variant)
+                       (:woff2-file-id variant)
+                       (:woff1-file-id variant))
+          sobj     (sto/get-object storage media-id)
+          mtype    (-> sobj meta :content-type)]
 
-      ;; Try to get the best available font format (prefer TTF for broader compatibility).
-      (let [file-id (or (:ttf-file-id variant)
-                        (:otf-file-id variant)
-                        (:woff2-file-id variant)
-                        (:woff1-file-id variant))]
-        (when-not file-id
-          (ex/raise :type :not-found
-                    :code :font-file-not-found))
-
-        (let [font-obj (sto/get-object storage file-id)
-              font-bytes (sto/get-object-bytes storage font-obj)]
-          (when-not font-obj
-            (ex/raise :type :not-found
-                      :code :font-file-not-found))
-
-          ;; Return base64-encoded string and mime-type for transit serialization.
-          (let [data  (.encodeToString (java.util.Base64/getEncoder) font-bytes)
-                mtype (or (:content-type font-obj) (-> font-obj meta :content-type) "application/octet-stream")]
-            {:data data :mtype mtype}))))))
+      {:id (:id sobj)
+       :uri (files/resolve-public-uri (:id sobj))
+       :name (make-variant-filename variant mtype)})))
 
 (def ^:private schema:download-font-family
   [:map {:title "download-font-family"}
    [:font-id ::sm/uuid]])
 
 (sv/defmethod ::download-font-family
-  {::doc/added "1.18"
+  "Download the entire font family as a zip file. Returns the zip
+  bytes on the body, without encoding it on transit or json."
+  {::doc/added "2.15"
    ::sm/params schema:download-font-family}
   [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [::rpc/profile-id font-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (let [variants (db/query conn :team-font-variant
-                             {:font-id font-id
-                              :deleted-at nil})]
-      (when-not (seq variants)
-        (ex/raise :type :not-found
-                  :code :object-not-found))
+  (let [variants (db/query pool :team-font-variant
+                           {:font-id font-id
+                            :deleted-at nil})]
 
-      (teams/check-read-permissions! conn profile-id (:team-id (first variants)))
+    (when-not (seq variants)
+      (ex/raise :type :not-found
+                :code :object-not-found))
 
-      (let [entries
-            (->> variants
-                 (map (fn [v]
-                        (let [file-id (or (:ttf-file-id v)
-                                          (:otf-file-id v)
-                                          (:woff2-file-id v)
-                                          (:woff1-file-id v))]
-                          (when-not file-id
-                            (ex/raise :type :not-found :code :font-file-not-found))
+    (teams/check-read-permissions! pool profile-id (:team-id (first variants)))
 
-                          (let [sobj (sto/get-object storage file-id)
-                                bytes (sto/get-object-bytes storage sobj)
-                                mtype (or (:content-type sobj) (-> sobj meta :content-type) "application/octet-stream")
-                                ext (cmedia/mtype->extension mtype)
-                                name (str (:font-family v) "-" (:font-weight v)
-                                          (when-not (= "normal" (:font-style v)) (str "-" (:font-style v)))
-                                          (or ext ""))]
-                            {:name name :bytes bytes})))))]
+    (let [tempfile (tmp/tempfile :suffix ".zip")
+          ffamily  (-> variants first :font-family)]
 
-        ;; Build zip in memory.
-        (let [baos (ByteArrayOutputStream.)
-              zos  (ZipOutputStream. baos)]
-          (doseq [{:keys [name bytes]} entries]
-            (let [entry (ZipEntry. name)]
-              (.putNextEntry zos entry)
-              (.write zos ^bytes bytes)
-              (.closeEntry zos)))
-          (.close zos)
-          (let [zip-bytes (.toByteArray baos)
-                data (.encodeToString (java.util.Base64/getEncoder) zip-bytes)]
-            {:data data :mtype "application/zip"}))))))
+      (with-open [^OutputStream output (io/output-stream tempfile)
+                  ^OutputStream output (ZipOutputStream. output)]
+        (doseq [v variants]
+          (let [media-id (or (:ttf-file-id v)
+                             (:otf-file-id v)
+                             (:woff2-file-id v)
+                             (:woff1-file-id v))
+                sobj     (sto/get-object storage media-id)
+                mtype    (-> sobj meta :content-type)
+                name     (make-variant-filename v mtype)]
+
+            (with-open [input (sto/get-object-data storage sobj)]
+              (.putNextEntry ^ZipOutputStream output (ZipEntry. ^String name))
+              (io/copy input output :size (:size sobj))
+              (.closeEntry ^ZipOutputStream output)))))
+
+      (let [{:keys [id] :as sobj} (make-temporal-storage-object cfg profile-id
+                                                                {:mtype "application/zip"
+                                                                 :path tempfile})]
+        {:id id
+         :uri (files/resolve-public-uri id)
+         :name (str ffamily ".zip")}))))

@@ -53,6 +53,7 @@
      ::yres/status 200
      ::yres/body (yres/stream-body
                   (fn [_ output]
+
                     (let [channel  (sp/chan :buf buf :xf (keep encode))
                           listener (events/spawn-listener
                                     channel
