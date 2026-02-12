@@ -100,6 +100,7 @@ Boards can have layout systems that automatically control the positioning and sp
        - Padding: `topPadding`, `rightPadding`, `bottomPadding`, `leftPadding`, or combined `verticalPadding`, `horizontalPadding`
        - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
          Optionally, adjust individual child margins via `child.layoutChild`.
+       - Sizing: `verticalSizing` and `horizontalSizing` are NOT functional. You need to size manually for the time being.
     - When a board has flex layout,
        - child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
          appending or inserting children automatically positions them according to the layout rules.
