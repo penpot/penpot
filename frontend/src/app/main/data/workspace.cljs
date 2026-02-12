@@ -52,6 +52,7 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.path :as dwdp]
@@ -212,7 +213,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dp/check-open-plugin)
-             (fdf/fix-deleted-fonts-for-local-library file-id)))))
+             (fdf/fix-deleted-fonts-for-local-library file-id)
+             (mcp/init-mcp-connexion)))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
