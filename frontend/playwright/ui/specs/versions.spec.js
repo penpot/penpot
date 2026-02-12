@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 import { presenceFixture } from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
-  const workspacePage = new WorkspacePage(page);
+  await WasmWorkspacePage.init(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 });
 
 test("Save and restore version", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
 
   await workspacePage.mockRPC(/get\-file\?/, "workspace/versions-init.json");
   await workspacePage.mockRPC(
@@ -97,7 +97,7 @@ test("Save and restore version", async ({ page }) => {
 });
 
 test("BUG 11006 - Fix history panel shortcut", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.mockRPC(/get\-file\?/, "workspace/versions-init.json");
   await workspacePage.mockRPC(
     "get-file-snapshots?file-id=*",
