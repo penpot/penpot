@@ -950,14 +950,11 @@
                  new-shape))
              {:save-undo? save-undo? :undo-group (when new-shape? id)})
 
-            (if (and (not= :fixed (:grow-type shape)) finalize?)
-              (dwm/apply-wasm-modifiers
-               (dwwt/resize-wasm-text-modifiers shape content)
-               {:undo-group (when new-shape? id)})
-
-              (dwm/set-wasm-modifiers
-               (dwwt/resize-wasm-text-modifiers shape content)
-               {:undo-group (when new-shape? id)})))
+            (let [modifiers (dwwt/resize-wasm-text-modifiers shape content)
+                  options {:undo-group (when new-shape? id)}]
+              (if (and (not= :fixed (:grow-type shape)) finalize?)
+                (dwm/apply-wasm-modifiers modifiers options)
+                (dwm/set-wasm-modifiers modifiers options))))
 
            (when finalize?
              (rx/concat
