@@ -6,6 +6,7 @@
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.modal :as modal]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
@@ -114,6 +115,26 @@
           :top-description (tr "subscription.dashboard.power-up.enterprise-plan")
           :has-dropdown false
           :is-highlighted false}]))))
+
+(mf/defc nitrate-sidebar*
+  []
+  (let [handle-click
+        (mf/use-fn
+         (fn []
+           (st/emit! (modal/show :nitrate-form {}))))]
+
+    ;; TODO add translations for this texts when we have the definitive ones
+    [:div {:class (stl/css :nitrate-banner :highlighted)}
+
+     [:div {:class (stl/css :nitrate-content)}
+      [:span {:class (stl/css :nitrate-title)} "Unlock Nitrate features"]]
+     [:div {:class (stl/css :nitrate-content)}
+
+      [:span {:class (stl/css :nitrate-info)} "Some further information and explanation."]
+      [:> button* {:variant "primary"
+                   :type "button"
+                   :class (stl/css :cta-bottom-button)
+                   :on-click handle-click} "UPGRADE TO NITRATE"]]]))
 
 (mf/defc team*
   [{:keys [is-owner team]}]
