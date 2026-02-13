@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage  } from "../pages/WorkspacePage";
+import { WasmWorkspacePage  } from "../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../pages/BaseWebSocketPage";
 import { Clipboard } from "../../helpers/Clipboard";
 
 test.beforeEach(async ({ page, context }) => {
   await Clipboard.enable(context, Clipboard.Permission.ALL);
 
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-variants.json");
 });
 
@@ -127,7 +127,7 @@ const validateVariant = async (variant) => {
 };
 
 test("User creates a variant", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   await workspacePage.clickLeafLayer("Rectangle");
@@ -154,7 +154,7 @@ test("User creates a variant", async ({ page }) => {
 });
 
 test("User duplicates a variant container", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -177,7 +177,7 @@ test("User duplicates a variant container", async ({ page }) => {
 });
 
 test("User copy paste a variant container", async ({ page, context }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   // Access to the read/write clipboard necesary for this functionality
   await setupVariantsFileWithVariant(workspacePage);
   await workspacePage.mockRPC(
@@ -212,7 +212,7 @@ test("User copy paste a variant container", async ({ page, context }) => {
 });
 
 test("User cut paste a variant container", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -240,7 +240,7 @@ test("User cut paste a variant container", async ({ page }) => {
 test("User cut paste a variant container into a board, and undo twice", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -283,7 +283,7 @@ test("User cut paste a variant container into a board, and undo twice", async ({
 });
 
 test("User copy paste a variant", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -308,7 +308,7 @@ test("User copy paste a variant", async ({ page }) => {
 });
 
 test("User cut paste a variant outside the container", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -333,7 +333,7 @@ test("User cut paste a variant outside the container", async ({ page }) => {
 });
 
 test("User drag and drop a variant outside the container", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -347,7 +347,7 @@ test("User drag and drop a variant outside the container", async ({ page }) => {
 });
 
 test("User cut paste a component inside a variant", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -378,7 +378,7 @@ test("User cut paste a component inside a variant", async ({ page }) => {
 test("User cut paste a component with path inside a variant", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = await findVariant(workspacePage, 0);
@@ -417,7 +417,7 @@ test("User cut paste a component with path inside a variant", async ({
 test("User drag and drop a component with path inside a variant", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   const variant = findVariantNoWait(workspacePage, 0);
@@ -450,7 +450,7 @@ test("User drag and drop a component with path inside a variant", async ({
 });
 
 test("User cut paste a variant into another container", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await setupVariantsFileWithVariant(workspacePage);
 
   // Create anothe variant
