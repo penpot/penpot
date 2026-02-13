@@ -317,7 +317,13 @@
     ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
-   {::wrk/executor (ig/ref ::wrk/netty-executor)}
+   {::wrk/executor (ig/ref ::wrk/netty-executor)
+
+    :app.loggers.mattermost/reporter
+    (ig/ref :app.loggers.mattermost/reporter)
+
+    :app.loggers.database/reporter
+    (ig/ref :app.loggers.database/reporter)}
 
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
