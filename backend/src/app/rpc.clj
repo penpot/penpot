@@ -228,7 +228,7 @@
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]
-  (l/wrn :hint "add method" :module (::module cfg) :type (::type cfg) :name (::sv/name mdata))
+  (l/trc :hint "add method" :module (::module cfg) :type (::type cfg) :name (::sv/name mdata))
   (let [f (wrap-fn cfg f mdata)
         k (keyword (::sv/name mdata))]
     [k [mdata (partial f cfg)]]))
