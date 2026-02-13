@@ -369,7 +369,7 @@ msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
 msgid "dashboard.create-new-org"
-msgstr "Crear nueva organización"
+msgstr "+ Crear org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
