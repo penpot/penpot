@@ -84,6 +84,8 @@
             :on-click on-select-shape
             :on-context-menu on-context-menu
             :data-testid "layer-row"
+            :role "checkbox"
+            :aria-checked selected?
             :class (stl/css-case
                     :layer-row true
                     :highlight highlighted?

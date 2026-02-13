@@ -35,45 +35,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     }
 
     async waitForEditor() {
-      return this.page.waitForSelector('[data-itype="editor"]');
-    }
-
-    async waitForRoot() {
-      return this.page.waitForSelector('[data-itype="root"]');
-    }
-
-    async waitForParagraph(nth) {
-      if (!nth) {
-        return this.page.waitForSelector('[data-itype="paragraph"]');
-      }
-      return this.page.waitForSelector(
-        `[data-itype="paragraph"]:nth-child(${nth})`,
-      );
-    }
-
-    async waitForParagraphStyle(nth, styleName) {
-      const paragraph = await this.waitForParagraph(nth);
-      return this.waitForStyle(paragraph, styleName);
-    }
-
-    async waitForTextSpan(nth = 0) {
-      if (!nth) {
-        return this.page.waitForSelector('[data-itype="span"]');
-      }
-      return this.page.waitForSelector(
-        `[data-itype="span"]:nth-child(${nth})`,
-      );
-    }
-
-    async waitForTextSpanContent(nth = 0) {
-      const textSpan = await this.waitForTextSpan(nth);
-      const textContent = await textSpan.textContent();
-      return textContent;
-    }
-
-    async waitForTextSpanStyle(nth, styleName) {
-      const textSpan = await this.waitForTextSpan(nth);
-      return this.waitForStyle(textSpan, styleName);
+      const typographyInput =
+        this.workspacePage.rightSidebar.getByLabel("Font Size");
+      await expect(typographyInput).toBeVisible();
     }
 
     async startEditing() {
@@ -98,7 +62,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     }
 
     async moveFromStart(offset = 0) {
-      await this.page.keyboard.press("ArrowLeft");
+      await this.page.keyboard.press("Home");
       await this.moveToRight(offset);
     }
 
@@ -125,7 +89,7 @@ export class WorkspacePage extends BaseWebSocketPage {
       await expect(locator).toBeVisible();
       await locator.focus();
       await locator.fill(`${newValue}`);
-      await locator.blur();
+      await this.page.keyboard.press("Enter");
     }
 
     changeFontSize(newValue) {
@@ -391,10 +355,12 @@ export class WorkspacePage extends BaseWebSocketPage {
     const timeToWait = options?.timeToWait ?? 100;
     await this.page.keyboard.press("T");
     await this.page.waitForTimeout(timeToWait);
+
+    const layersCountBefore = await this.layers.getByTestId("layer-row").count();
     await this.clickAndMove(x1, y1, x2, y2);
-    await expect(this.page.getByTestId("text-editor")).toBeVisible();
 
     if (initialText) {
+      await this.waitForSelectedShapeName("Text");
       await this.page.keyboard.type(initialText);
     }
   }
@@ -494,10 +460,23 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async expectSelectedLayer(name) {
     await expect(
-      this.layers
-        .getByTestId("layer-row")
-        .filter({ has: this.page.getByText(name) }),
-    ).toHaveClass(/selected/);
+      this.layers.getByRole("checkbox", { name, checked: true }),
+    ).toBeVisible();
+  }
+
+  async getSelectedShapeName() {
+    const selectedLayer = this.layers
+      .getByRole("checkbox", { checked: true })
+      .first();
+    await selectedLayer.waitFor({ state: "visible" });
+    return (await selectedLayer.innerText()).trim();
+  }
+
+  async waitForSelectedShapeName(expectedName) {
+    const selectedLayer = this.layers
+      .getByRole("checkbox", { checked: true })
+      .first();
+    await expect(selectedLayer).toHaveText(expectedName);
   }
 
   async expectHiddenToolbarOptions() {
