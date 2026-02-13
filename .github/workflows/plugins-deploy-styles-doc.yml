@@ -78,7 +78,7 @@ jobs:
       - name: Build styles
         working-directory: plugins
         shell: bash
-        run: npx nx run example-styles:build
+        run: pnpm run build:styles-example
 
       - name: Select Worker name
         run: |
