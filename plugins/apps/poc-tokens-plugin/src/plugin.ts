@@ -251,7 +251,14 @@ function applyToken(
     token.applyToSelected(properties);
   }
 
-  // Alternatve way
+  // Alternative way
+  //
+  // const selection = penpot.selection;
+  // if (token && selection) {
+  //   token.applyToShapes(selection, properties);
+  // }
+
+  // Other alternative way
   //
   // const selection = penpot.selection;
   // if (token && selection) {

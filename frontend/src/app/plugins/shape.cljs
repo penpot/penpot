@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.json :as json]
    [app.common.path-names :as cpn]
    [app.common.record :as crc]
    [app.common.schema :as sm]
@@ -1295,7 +1296,7 @@
                         (get :applied-tokens))]
                 (reduce
                  (fn [acc [prop name]]
-                   (obj/set! acc (d/name prop) name))
+                   (obj/set! acc (json/write-camel-key prop) name))
                  #js {}
                  tokens)))}
 
