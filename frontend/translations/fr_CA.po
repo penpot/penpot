@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-12 14:09+0000\n"
+"PO-Revision-Date: 2026-02-14 14:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4956,3 +4956,38 @@ msgstr ""
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**%s $** / mois"
+
+#: src/app/main/ui/settings/subscription.cljs:204
+msgid "subscription.settings.management.dialog.title"
+msgstr "Activer le forfait %s pour tes équipes"
+
+#: src/app/main/ui/settings/subscription.cljs:266
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Astuce : tu peux augmenter le nombre de sièges pour devancer les "
+"invitations. Avec plus de 25 éditeurs à travers tes équipes, tu peux "
+"profiter d'un tarif fixe de 175 $ / mois."
+
+#: src/app/main/ui/settings/subscription.cljs:533
+msgid "subscription.settings.member-since"
+msgstr "Membre Penpot depuis : %s"
+
+#: src/app/main/ui/settings/subscription.cljs:546, src/app/main/ui/settings/subscription.cljs:560, src/app/main/ui/settings/subscription.cljs:576
+msgid "subscription.settings.more-information"
+msgstr "En savoir plus"
+
+#: src/app/main/ui/settings/subscription.cljs:536
+msgid "subscription.settings.other-plans"
+msgstr "Autres forfaits Penpot"
+
+#: src/app/main/ui/settings/subscription.cljs:540, src/app/main/ui/settings/subscription.cljs:553
+msgid "subscription.settings.price-editor-month"
+msgstr "éditeur par mois"
+
+#: src/app/main/ui/settings/subscription.cljs:569
+msgid "subscription.settings.price-organization-month"
+msgstr "organisation par mois"
+
+#: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
+msgid "subscription.settings.professional"
+msgstr "Professionnel"
