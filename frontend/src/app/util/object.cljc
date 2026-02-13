@@ -425,6 +425,13 @@
      (let [o (get o type-symbol)]
        (= o t))))
 
+#?(:cljs
+   (def Proxy
+     (app.util.object/class
+      :name "Proxy"
+      :extends js/Object
+      :constructor (constantly nil))))
+
 (defmacro reify
   "A domain specific variation of reify that creates anonymous objects
   on demand with the ability to assign protocol implementations and
@@ -442,7 +449,7 @@
         obj-sym
         (gensym "obj-")]
 
-    `(let [~obj-sym (cljs.core/js-obj)
+    `(let [~obj-sym (new Proxy)
            ~f-sym   (fn [] ~type-name)]
        (add-properties! ~obj-sym
                         {:name ~'js/Symbol.toStringTag
