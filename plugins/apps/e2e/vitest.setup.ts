@@ -1,3 +1,1 @@
-// import { vi } from 'vitest';
-
-window.location.href = 'https://localhost:3449';
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';

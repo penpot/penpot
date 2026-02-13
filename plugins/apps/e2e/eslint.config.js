@@ -28,5 +28,5 @@ export default [
     files: ['**/*.js', '**/*.jsx'],
     rules: {},
   },
-  { ignores: ['vite.config.ts'] },
+  { ignores: ['vite.config.ts', 'vitest.setup.ts'] },
 ];
