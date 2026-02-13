@@ -434,7 +434,7 @@ msgid "dashboard.create-new-team"
 msgstr "Create new team"
 
 msgid "dashboard.create-new-org"
-msgstr "Create new org"
+msgstr "+ Create org"
 
 #: src/app/main/ui/workspace/main_menu.cljs:661
 msgid "dashboard.create-version-menu"

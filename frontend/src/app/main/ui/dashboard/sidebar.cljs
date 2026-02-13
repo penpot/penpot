@@ -33,7 +33,9 @@
                                                show-subscription-dashboard-banner?
                                                subscription-sidebar*]]
    [app.main.ui.dashboard.team-form]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
@@ -73,6 +75,8 @@
 
 (def ^:private exit-icon
   (deprecated-icon/icon-xref :exit (stl/css :exit-icon)))
+
+(def ^:private ^:svg-id penpot-logo-icon "penpot-logo-icon")
 
 (mf/defc sidebar-project*
   {::mf/private true}
@@ -497,18 +501,23 @@
 
 (mf/defc sidebar-org-switch*
   [{:keys [team profile]}]
-  (let [teams (->> (mf/deref refs/teams)
-                   vals
-                   (group-by :organization-id)
-                   (map (fn [[_group entries]] (first entries)))
-                   vec
-                   (d/index-by :id))
+  (let [teams (mf/deref refs/teams)
+        orgs  (mf/with-memo [teams]
+                (let [orgs (->> teams
+                                vals
+                                (group-by :organization-id)
+                                (map (fn [[_group entries]] (first entries)))
+                                vec
+                                (d/index-by :id))]
+                  (update-vals orgs
+                               (fn [t]
+                                 (assoc t :name (str "ORG: " (:organization-name t)))))))
 
-        teams (update-vals teams
-                           (fn [t]
-                             (assoc t :name (str "ORG: " (:organization-name t)))))
+        empty? (= (count orgs) 1)
 
-        team (assoc team :name (str "ORG: " (:organization-name team)))
+
+        current-org (mf/with-memo [team]
+                      (assoc team :name (str "ORG: " (:organization-name team))))
 
         show-teams-menu*
         (mf/use-state false)
@@ -532,34 +541,51 @@
              (some-> (dom/get-current-target event)
                      (dom/click!)))))
         close-teams-menu
-        (mf/use-fn #(reset! show-teams-menu* false))]
+        (mf/use-fn #(reset! show-teams-menu* false))
 
-    [:div {:class (stl/css :sidebar-team-switch)}
-     [:div {:class (stl/css :switch-content)}
-      [:button {:class (stl/css :current-team)
-                :on-click on-show-teams-click
-                :on-key-down on-show-teams-keydown}
+        on-create-org-click
+        (mf/use-fn
+         (fn []
+           (if (:nitrate-licence profile)
+             ;; TODO update when org creation route is ready
+             (dom/open-new-window "/control-center/org/create")
+             (st/emit! (modal/show :nitrate-form {})))))]
+    (if empty?
+      [:div {:class (stl/css :nitrate-orgs-empty)}
+       [:span {:class (stl/css :nitrate-penpot-icon)}
+        [:> raw-svg* {:id penpot-logo-icon}]]
+       "Penpot"
+       [:> button* {:variant "ghost"
+                    :type "button"
+                    :class (stl/css :nitrate-create-org)
+                    :on-click on-create-org-click} (tr "dashboard.create-new-org")]]
 
-       [:div {:class (stl/css :team-name)}
-        [:img {:src (cf/resolve-team-photo-url team)
-               :class (stl/css :team-picture)
-               :alt (:name team)}]
-        [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]]
+      [:div {:class (stl/css :sidebar-team-switch)}
+       [:div {:class (stl/css :switch-content)}
+        [:button {:class (stl/css :current-team)
+                  :on-click on-show-teams-click
+                  :on-key-down on-show-teams-keydown}
 
-       arrow-icon]]
+         [:div {:class (stl/css :team-name)}
+          [:img {:src (cf/resolve-team-photo-url current-org)
+                 :class (stl/css :team-picture)
+                 :alt (:name current-org)}]
+          [:span {:class (stl/css :team-text) :title (:name current-org)} (:name current-org)]]
 
-     ;; Teams Dropdown
+         arrow-icon]]
 
-     [:> teams-selector-dropdown* {:show show-teams-menu?
-                                   :on-close close-teams-menu
-                                   :id "organizations-list"
-                                   :class (stl/css :dropdown :teams-dropdown)
-                                   :team team
-                                   :profile profile
-                                   :teams teams
-                                   :show-default-team false
-                                   :allow-create-teams false
-                                   :allow-create-org true}]]))
+       ;; Teams Dropdown
+
+       [:> teams-selector-dropdown* {:show show-teams-menu?
+                                     :on-close close-teams-menu
+                                     :id "organizations-list"
+                                     :class (stl/css :dropdown :teams-dropdown)
+                                     :team current-org
+                                     :profile profile
+                                     :teams orgs
+                                     :show-default-team false
+                                     :allow-create-teams false
+                                     :allow-create-org true}]])))
 
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
@@ -705,6 +731,8 @@
         overflow*   (mf/use-state false)
         overflow?   (deref overflow*)
 
+        nitrate?    (contains? cf/flags :nitrate)
+
         go-projects
         (mf/use-fn #(st/emit! (dcm/go-to-dashboard-recent)))
 
@@ -793,70 +821,71 @@
         (reset! overflow* (> scroll-height client-height))))
 
     [:*
-     [:div {:class (stl/css-case :sidebar-content true)
-            :ref container}
-      (when (contains? cf/flags :nitrate)
-        [:> sidebar-org-switch* {:team team :profile profile}])
-      [:> sidebar-team-switch* {:team team :profile profile}]
+     [:div {:ref container}
+      (when nitrate?
+        [:div {:class (stl/css :nitrate-orgs-container)}
+         [:> sidebar-org-switch* {:team team :profile profile}]])
+      [:div {:class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
+       [:> sidebar-team-switch* {:team team :profile profile}]
 
-      [:> sidebar-search* {:search-term search-term
-                           :team-id (:id team)}]
+       [:> sidebar-search* {:search-term search-term
+                            :team-id (:id team)}]
 
-      [:div {:class (stl/css :sidebar-content-section)}
-       [:ul {:class (stl/css :sidebar-nav)}
-        [:li {:class (stl/css-case :recent-projects true
-                                   :sidebar-nav-item true
-                                   :current projects?)}
-         [:& link {:action go-projects
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-projects-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
+       [:div {:class (stl/css :sidebar-content-section)}
+        [:ul {:class (stl/css :sidebar-nav)}
+         [:li {:class (stl/css-case :recent-projects true
+                                    :sidebar-nav-item true
+                                    :current projects?)}
+          [:& link {:action go-projects
+                    :class (stl/css :sidebar-link)
+                    :keyboard-action go-projects-with-key}
+           [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
 
-        [:li {:class (stl/css-case :current drafts?
-                                   :sidebar-nav-item true)}
-         [:& link {:action go-drafts
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-drafts-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
-
-
-      [:div {:class (stl/css :sidebar-content-section)}
-       [:div {:class (stl/css :sidebar-section-title)}
-        (tr "labels.sources")]
-       [:ul {:class (stl/css :sidebar-nav)}
-        [:li {:class (stl/css-case :sidebar-nav-item true
-                                   :current fonts?)}
-         [:& link {:action go-fonts
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-fonts-with-key
-                   :data-testid "fonts"}
-          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
-        [:li {:class (stl/css-case :current libs?
-                                   :sidebar-nav-item true)}
-         [:& link {:action go-libs
-                   :data-testid "libs-link-sidebar"
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-libs-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
+         [:li {:class (stl/css-case :current drafts?
+                                    :sidebar-nav-item true)}
+          [:& link {:action go-drafts
+                    :class (stl/css :sidebar-link)
+                    :keyboard-action go-drafts-with-key}
+           [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
-      [:div {:class (stl/css :sidebar-content-section)
-             :data-testid "pinned-projects"}
-       [:div {:class (stl/css :sidebar-section-title)}
-        (tr "labels.pinned-projects")]
-       (if (some? pinned-projects)
-         [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
-          (for [item pinned-projects]
-            [:> sidebar-project*
-             {:item item
-              :key (dm/str (:id item))
-              :id (:id item)
-              :team-id (:id team)
-              :is-selected (= (:id item) (:id project))}])]
-         [:div {:class (stl/css :sidebar-empty-placeholder)}
-          pin-icon
-          [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
-     [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
+       [:div {:class (stl/css :sidebar-content-section)}
+        [:div {:class (stl/css :sidebar-section-title)}
+         (tr "labels.sources")]
+        [:ul {:class (stl/css :sidebar-nav)}
+         [:li {:class (stl/css-case :sidebar-nav-item true
+                                    :current fonts?)}
+          [:& link {:action go-fonts
+                    :class (stl/css :sidebar-link)
+                    :keyboard-action go-fonts-with-key
+                    :data-testid "fonts"}
+           [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
+         [:li {:class (stl/css-case :current libs?
+                                    :sidebar-nav-item true)}
+          [:& link {:action go-libs
+                    :data-testid "libs-link-sidebar"
+                    :class (stl/css :sidebar-link)
+                    :keyboard-action go-libs-with-key}
+           [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
+
+
+       [:div {:class (stl/css :sidebar-content-section)
+              :data-testid "pinned-projects"}
+        [:div {:class (stl/css :sidebar-section-title)}
+         (tr "labels.pinned-projects")]
+        (if (some? pinned-projects)
+          [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
+           (for [item pinned-projects]
+             [:> sidebar-project*
+              {:item item
+               :key (dm/str (:id item))
+               :id (:id item)
+               :team-id (:id team)
+               :is-selected (= (:id item) (:id project))}])]
+          [:div {:class (stl/css :sidebar-empty-placeholder)}
+           pin-icon
+           [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
+      [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]]))
 
 (mf/defc help-learning-menu*
   {::mf/props :obj

@@ -443,7 +443,7 @@ msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
 msgid "dashboard.create-new-org"
-msgstr "Crear nueva organización"
+msgstr "+ Crear org"
 
 #: src/app/main/ui/workspace/main_menu.cljs:661
 msgid "dashboard.create-version-menu"
