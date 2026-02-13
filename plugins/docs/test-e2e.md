@@ -9,7 +9,10 @@
    ```env
    E2E_LOGIN_EMAIL="test@penpot.app"
    E2E_LOGIN_PASSWORD="123123123"
-   E2E_SCREENSHOTS= "true"
+   E2E_SCREENSHOTS="true"              # Enable/disable screenshots (default: false)
+   E2E_HEADLESS="false"                # Run browser in headless mode (default: true)
+   E2E_CLOSE_BROWSER="true"            # Close browser after tests (default: true)
+   E2E_WAIT_API_RESPONSE="false"       # Wait for update-file API response (default: false)
    ```
 
 2. **Run E2E Tests**
@@ -77,5 +80,5 @@
    If you need to refresh all the snapshopts run the test with the update option:
 
    ```bash
-   pnpm run test:e2e -- --update
+   pnpm run test:e2e --update
    ```

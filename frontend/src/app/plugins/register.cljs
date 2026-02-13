@@ -126,6 +126,6 @@
 
 (defn check-permission
   [plugin-id permission]
-  (or (= plugin-id "TEST")
+  (or (= plugin-id "00000000-0000-0000-0000-000000000000")
       (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
         (contains? permissions permission))))

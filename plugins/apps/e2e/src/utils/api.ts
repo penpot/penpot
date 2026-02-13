@@ -1,5 +1,4 @@
 import { FileRpc } from '../models/file-rpc.model';
-
 const apiUrl = 'https://localhost:3449';
 
 export async function PenpotApi() {
@@ -8,8 +7,8 @@ export async function PenpotApi() {
   }
 
   const body = JSON.stringify({
-    'email': process.env['E2E_LOGIN_EMAIL'],
-    'password': process.env['E2E_LOGIN_PASSWORD'],
+    email: process.env['E2E_LOGIN_EMAIL'],
+    password: process.env['E2E_LOGIN_PASSWORD'],
   });
 
   const resultLoginRequest = await fetch(
@@ -18,25 +17,18 @@ export async function PenpotApi() {
       credentials: 'include',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: body
+      body: body,
     },
   );
 
-  console.log("AAAAAAAAAAAA", 1, apiUrl)
-  // console.log("AAAAAAAAAAAA", 2, resultLoginRequest);
-
-  console.dir(resultLoginRequest.headers, {depth:20});
-  console.log('Document Cookies:', window.document.cookie);
-
   const loginData = await resultLoginRequest.json();
 
-
   const authToken = resultLoginRequest.headers
-    .get('set-cookie')
-    ?.split(';')
-    .at(0);
+    .getSetCookie()
+    .find((cookie: string) => cookie.startsWith('auth-token='))
+    ?.split(';')[0];
 
   if (!authToken) {
     throw new Error('Login failed');
@@ -62,6 +54,9 @@ export async function PenpotApi() {
                 'fdata/objects-map',
                 'fdata/pointer-map',
                 'fdata/shape-data-type',
+                'fdata/path-data',
+                'design-tokens/v1',
+                'variants/v1',
                 'components/v2',
                 'styles/v2',
                 'layout/grid',
@@ -72,7 +67,9 @@ export async function PenpotApi() {
         },
       );
 
-      return (await createFileRequest.json()) as FileRpc;
+      const fileData = (await createFileRequest.json()) as FileRpc;
+      console.log('File data received:', fileData);
+      return fileData;
     },
     deleteFile: async (fileId: string) => {
       const deleteFileRequest = await fetch(
