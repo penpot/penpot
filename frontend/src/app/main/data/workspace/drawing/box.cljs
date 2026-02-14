@@ -45,24 +45,22 @@
 
 (defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod? snap-pixel?]
   (if (and (some? x) (some? y) (some? width) (some? height))
-    (let [draw-rect (cond-> (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
+    (let [adjusted-point (cond-> point lock? (adjust-ratio initial))
+          [p1 p2] (if mod?
+                    [(gpt/point (- (* 2 (:x initial)) (:x adjusted-point))
+                                (- (* 2 (:y initial)) (:y adjusted-point)))
+                     adjusted-point]
+                    [initial adjusted-point])
+          draw-rect (cond-> (grc/make-rect p1 p2)
                       snap-pixel?
                       (-> (update :width max 1)
                           (update :height max 1)))
-
           shape-rect (grc/make-rect x y width height)
-
-          scalev     (gpt/point (/ (:width draw-rect)
-                                   (:width shape-rect))
-                                (/ (:height draw-rect)
-                                   (:height shape-rect)))
-
-          movev      (gpt/to-vec (gpt/point shape-rect)
-                                 (gpt/point draw-rect))]
-
+          scalev     (gpt/point (/ (:width draw-rect) (:width shape-rect))
+                                (/ (:height draw-rect) (:height shape-rect)))
+          movev      (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
       (-> shape
           (assoc :click-draw? false)
-          (vary-meta merge {:mod? mod?})
           (gsh/transform-shape (-> (ctm/empty)
                                    (ctm/resize scalev (gpt/point x y))
                                    (ctm/move movev)))))
@@ -128,7 +126,7 @@
                     ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
                     ;; and its a problem for fast moving drawing
                     (rx/take-until stopper)
-                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-mod)
+                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                     (rx/switch-map
                      (fn [[point :as current]]
                        (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)
