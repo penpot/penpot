@@ -48,6 +48,8 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 **Other Writable Properties**:
   * `name` - Shape name
   * `fills`, `strokes` - Styling properties
+    IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them, e.g.
+    `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]` to set a single red fill.
   * `rotation`, `opacity`, `blocked`, `hidden`, `visible`
 
 **Z-Order**:
