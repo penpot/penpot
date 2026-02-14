@@ -17,6 +17,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
+
 
 ## 2.14.0 (Unreleased)
 
