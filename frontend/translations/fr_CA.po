@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-15 20:09+0000\n"
+"PO-Revision-Date: 2026-02-16 08:15+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -5369,3 +5369,98 @@ msgstr "Gérer la bibliothèque"
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:307
 msgid "workspace.assets.not-found"
 msgstr "Aucun atout trouvé"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:113
+msgid "workspace.assets.open-library"
+msgstr "Ouvrir fichier bibliothèque"
+
+#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
+msgid "workspace.assets.rename"
+msgstr "Renommer"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:142
+msgid "workspace.assets.rename-group"
+msgstr "Renommer le groupe"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:181
+msgid "workspace.assets.search"
+msgstr "Recherche d'atout"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s élément sélectionné"
+msgstr[1] "%s éléments sélectionnés"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.shared-library"
+msgstr "Bibliothèque partagée"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 composant"
+msgstr[1] "%s composants"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:201
+msgid "workspace.assets.sort"
+msgstr "Ordonner"
+
+#: src/app/main/ui/dashboard/grid.cljs:165, src/app/main/ui/dashboard/grid.cljs:220, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:161
+msgid "workspace.assets.typography"
+msgstr "Typographies"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
+msgid "workspace.assets.typography.add-typography"
+msgstr "Ajouter typographie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
+msgid "workspace.assets.typography.font-id"
+msgstr "Police de caractères"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
+msgid "workspace.assets.typography.font-size"
+msgstr "Taille"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
+msgid "workspace.assets.typography.font-style"
+msgstr "Style de police"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:544
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "Accéder au fichier de la bibliothèque du style pour éditer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "Interlettrage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
+msgid "workspace.assets.typography.line-height"
+msgstr "Interligne"
+
+#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:485, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:510, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:617, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:637
+msgid "workspace.assets.typography.sample"
+msgstr "Ag"
+
+#, unused
+msgid "workspace.assets.typography.text-styles"
+msgstr "Styles de texte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
+msgid "workspace.assets.typography.text-transform"
+msgstr "Transformation du texte"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:70
+msgid "workspace.assets.ungroup"
+msgstr "Dégrouper"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:428, src/app/main/ui/workspace/colorpicker.cljs:441
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Tokens de couleur"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "Pipette de couleur"
