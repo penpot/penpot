@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-14 14:09+0000\n"
+"PO-Revision-Date: 2026-02-15 20:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4991,3 +4991,381 @@ msgstr "organisation par mois"
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"
 msgstr "Professionnel"
+
+#: src/app/main/ui/settings/subscription.cljs:471, src/app/main/ui/settings/subscription.cljs:542
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "7 jours de sauvegarde de versions et recouvrement de fichier"
+
+#: src/app/main/ui/settings/subscription.cljs:470, src/app/main/ui/settings/subscription.cljs:541
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10 Go de stockage"
+
+#: src/app/main/ui/settings/subscription.cljs:472, src/app/main/ui/settings/subscription.cljs:543
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "Équipes illimitées. Jusqu'à 8 éditeurs à travers tes équipes."
+
+#: src/app/main/ui/settings/subscription.cljs:50
+msgid "subscription.settings.recommended"
+msgstr "Recommandé"
+
+#: src/app/main/ui/settings/subscription.cljs:466
+msgid "subscription.settings.section-plan"
+msgstr "Ton abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:313
+msgid "subscription.settings.start-trial"
+msgstr "Commencer l'essai gratuit"
+
+#: src/app/main/ui/settings/subscription.cljs:278, src/app/main/ui/settings/subscription.cljs:544, src/app/main/ui/settings/subscription.cljs:558, src/app/main/ui/settings/subscription.cljs:574
+msgid "subscription.settings.subscribe"
+msgstr "S'abonner"
+
+#: src/app/main/ui/settings/subscription.cljs:345
+msgid "subscription.settings.success.dialog.description"
+msgstr ""
+"Tu peux changer de forfait en tout temps à partir de la page « Abonnement » "
+"de ton compte."
+
+#: src/app/main/ui/settings/subscription.cljs:343
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Merci d'avoir choisi le forfait Penpot %s!"
+
+#: src/app/main/ui/settings/subscription.cljs:347
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "Profite bien de ton forfait!"
+
+#: src/app/main/ui/settings/subscription.cljs:340
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "Tu es %s!"
+
+#: src/app/main/ui/settings/subscription.cljs:526
+msgid "subscription.settings.support-us-since"
+msgstr "Tu nous encourages avec ce forfait depuis : %s"
+
+#: src/app/main/ui/settings/subscription.cljs:558, src/app/main/ui/settings/subscription.cljs:574
+msgid "subscription.settings.try-it-free"
+msgstr "Essaye gratuitement pour 14 jours"
+
+#: src/app/main/ui/dashboard/subscription.cljs:143, src/app/main/ui/settings/subscription.cljs:103, src/app/main/ui/settings/subscription.cljs:454, src/app/main/ui/settings/subscription.cljs:488, src/app/main/ui/settings/subscription.cljs:550
+msgid "subscription.settings.unlimited"
+msgstr "Illimité"
+
+#: src/app/main/ui/dashboard/subscription.cljs:142, src/app/main/ui/settings/subscription.cljs:99, src/app/main/ui/settings/subscription.cljs:453, src/app/main/ui/settings/subscription.cljs:476
+msgid "subscription.settings.unlimited-trial"
+msgstr "Illimité (essai)"
+
+#: src/app/main/ui/settings/subscription.cljs:480, src/app/main/ui/settings/subscription.cljs:492, src/app/main/ui/settings/subscription.cljs:556
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "30 jours de sauvegarde de versions et recouvrement de fichier"
+
+#: src/app/main/ui/settings/subscription.cljs:481, src/app/main/ui/settings/subscription.cljs:493, src/app/main/ui/settings/subscription.cljs:557
+msgid "subscription.settings.unlimited.bill"
+msgstr "Tarif mensuel fixe de 175 $"
+
+#: src/app/main/ui/settings/subscription.cljs:479, src/app/main/ui/settings/subscription.cljs:491, src/app/main/ui/settings/subscription.cljs:555
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25 Go de stockage"
+
+#: src/app/main/ui/dashboard/subscription.cljs:175, src/app/main/ui/workspace/main_menu.cljs:945
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Bonifie ton abonnement"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:57
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "Si tu aimerais augmenter cette limite, écris-nous au [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:59
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"Si tu aimerais augmenter cette limite, contacte le propriétaire d'équipe : "
+"[%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Si tu aimerais augmenter cette limite, [bonifie ton forfait|target:self](%s)"
+
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 invitation sélectionnée"
+msgstr[1] "%s invitations sélectionnées"
+
+#: src/app/main/ui/dashboard/files.cljs:181
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs:46
+msgid "title.dashboard.font-providers"
+msgstr "Fournisseurs de polices - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs:45
+msgid "title.dashboard.fonts"
+msgstr "Polices - %s - Penpot"
+
+#: src/app/main/ui/dashboard/projects.cljs:357
+msgid "title.dashboard.projects"
+msgstr "Projets - %s - Penpot"
+
+#: src/app/main/ui/dashboard/search.cljs:50
+msgid "title.dashboard.search"
+msgstr "Recherche - %s - Penpot"
+
+#: src/app/main/ui/dashboard/libraries.cljs:58
+msgid "title.dashboard.shared-libraries"
+msgstr "Bibliothèques partagées - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+msgid "title.default"
+msgstr "Penpot - Design libre pour les équipes"
+
+#: src/app/main/ui/settings/access_tokens.cljs:278
+msgid "title.settings.access-tokens"
+msgstr "Profile - Jetons d'accès"
+
+#: src/app/main/ui/settings/feedback.cljs:161
+msgid "title.settings.feedback"
+msgstr "Faire une rétroaction - Penpot"
+
+#: src/app/main/ui/settings/notifications.cljs:45
+msgid "title.settings.notifications"
+msgstr "Notifications - Penpot"
+
+#: src/app/main/ui/settings/options.cljs:83
+msgid "title.settings.options"
+msgstr "Paramètres - Penpot"
+
+#: src/app/main/ui/settings/password.cljs:105
+msgid "title.settings.password"
+msgstr "Mot de passe - Penpot"
+
+#: src/app/main/ui/settings/profile.cljs:124
+msgid "title.settings.profile"
+msgstr "Profile - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:981
+msgid "title.team-invitations"
+msgstr "Invitations - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:535
+msgid "title.team-members"
+msgstr "Membres - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:1296
+msgid "title.team-settings"
+msgstr "Paramètres - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:1249
+msgid "title.team-webhooks"
+msgstr "Liens de rappel HTTP - %s - Penpot"
+
+#: src/app/main/ui/viewer.cljs:423
+msgid "title.viewer"
+msgstr "%s - Mode visionnement - Penpot"
+
+#: src/app/main/ui/workspace.cljs:233
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui.cljs:138
+#, unused
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Ce lien de partage n'est plus valide. En créer un nouveau ou demander au "
+"propriétaire d'en créer un."
+
+#: src/app/main/ui.cljs:137
+#, unused
+msgid "viewer.breaking-change.message"
+msgstr "Désolé!"
+
+#: src/app/main/ui/viewer.cljs:573
+msgid "viewer.empty-state"
+msgstr "Aucun tableau sur cette page."
+
+#: src/app/main/ui/viewer.cljs:578
+msgid "viewer.frame-not-found"
+msgstr "Aucun tableau trouvé."
+
+#: src/app/main/ui/viewer/header.cljs:336
+msgid "viewer.header.comments-section"
+msgstr "Commentaires (%s)"
+
+#: src/app/main/ui/viewer/interactions.cljs:298
+msgid "viewer.header.dont-show-interactions"
+msgstr "Ne pas afficher les interactions"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "Éditer dans l'espace de travail"
+
+#: src/app/main/ui/viewer/header.cljs:193
+msgid "viewer.header.fullscreen"
+msgstr "Plein écran"
+
+#: src/app/main/ui/viewer/header.cljs:346
+msgid "viewer.header.inspect-section"
+msgstr "Inspecter (%s)"
+
+#: src/app/main/ui/viewer/interactions.cljs:288
+msgid "viewer.header.interactions"
+msgstr "Interactions"
+
+#: src/app/main/ui/viewer/header.cljs:327
+msgid "viewer.header.interactions-section"
+msgstr "Interactions (%s)"
+
+#: src/app/main/ui/viewer/share_link.cljs:193
+msgid "viewer.header.share.copy-link"
+msgstr "Copier le lien"
+
+#: src/app/main/ui/viewer/interactions.cljs:306
+msgid "viewer.header.show-interactions"
+msgstr "Afficher les interactions"
+
+#: src/app/main/ui/viewer/interactions.cljs:317
+msgid "viewer.header.show-interactions-on-click"
+msgstr "Afficher les interactions au clic"
+
+#: src/app/main/ui/viewer/header.cljs:233
+msgid "viewer.header.sitemap"
+msgstr "Plan de site"
+
+#: src/app/main/ui/dashboard/team.cljs:1203
+msgid "webhooks.last-delivery.success"
+msgstr "Le dernier envoi a réussi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:55
+msgid "workspace.align.hcenter"
+msgstr "Aligner horizontalement au centre (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:69
+msgid "workspace.align.hdistribute"
+msgstr "Distribuer l'espace horizontalement (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:48
+msgid "workspace.align.hleft"
+msgstr "Aligner à gauche (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:62
+msgid "workspace.align.hright"
+msgstr "Aligner à droite (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
+msgid "workspace.align.vbottom"
+msgstr "Aligner en bas (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
+msgid "workspace.align.vcenter"
+msgstr "Aligner verticalement au centre (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:98
+msgid "workspace.align.vdistribute"
+msgstr "Distribuer l'espace verticalement (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:77
+msgid "workspace.align.vtop"
+msgstr "Aligner en haut (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:172
+msgid "workspace.assets.add-library"
+msgstr "Ajouter une bibliothèque"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.assets"
+msgstr "Atouts"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:152
+msgid "workspace.assets.box-filter-all"
+msgstr "Tous les atouts"
+
+#: src/app/main/ui/dashboard/grid.cljs:161, src/app/main/ui/dashboard/grid.cljs:193, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
+msgid "workspace.assets.colors"
+msgstr "Couleurs"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:497
+msgid "workspace.assets.colors.add-color"
+msgstr "Ajouter couleur"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
+msgid "workspace.assets.component-group-options"
+msgstr "Options du groupe de composants"
+
+#: src/app/main/ui/dashboard/grid.cljs:157, src/app/main/ui/dashboard/grid.cljs:172, src/app/main/ui/workspace/sidebar/assets/components.cljs:559, src/app/main/ui/workspace/sidebar/assets.cljs:155
+msgid "workspace.assets.components"
+msgstr "Composants"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:580
+msgid "workspace.assets.components.add-component"
+msgstr "Ajouter un composant"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:602
+msgid "workspace.assets.components.num-variants"
+msgstr "%s variants"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:141
+msgid "workspace.assets.create-group"
+msgstr "Créer un groupe"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:152
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Les éléments seront renommés « nom de groupe / nom d'élément » "
+"automatiquement"
+
+#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+msgid "workspace.assets.delete"
+msgstr "Supprimer"
+
+#: src/app/main/ui/workspace/context_menu.cljs:688
+msgid "workspace.assets.duplicate"
+msgstr "Dupliquer"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:619
+msgid "workspace.assets.duplicate-main"
+msgstr "Dupliquer composant principal"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:438
+msgid "workspace.assets.edit"
+msgstr "Éditer"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:186
+msgid "workspace.assets.filter"
+msgstr "Filtrer"
+
+#: src/app/main/ui/workspace/sidebar/assets/graphics.cljs:386, src/app/main/ui/workspace/sidebar/assets.cljs:152
+#, unused
+msgid "workspace.assets.graphics"
+msgstr "Graphismes"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:189, src/app/main/ui/workspace/sidebar/assets/components.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:806
+msgid "workspace.assets.grid-view"
+msgstr "Vue grille"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:624, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
+msgid "workspace.assets.group"
+msgstr "Grouper"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:151
+msgid "workspace.assets.group-name"
+msgstr "Nom du groupe"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:190, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802
+msgid "workspace.assets.list-view"
+msgstr "Vue liste"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:686
+msgid "workspace.assets.local-library"
+msgstr "bibliothèque locale"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.manage-library"
+msgstr "Gérer la bibliothèque"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:307
+msgid "workspace.assets.not-found"
+msgstr "Aucun atout trouvé"
