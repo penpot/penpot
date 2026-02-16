@@ -10,6 +10,7 @@
   (:refer-clojure :exclude [set! new get merge clone contains? array? into-array reify class])
   #?(:cljs (:require-macros [app.util.object]))
   (:require
+   [app.common.data :as d]
    [app.common.json :as json]
    [app.common.schema :as sm]
    [clojure.core :as c]
@@ -156,6 +157,7 @@
 
            this-sym   (with-meta (gensym (str rsym "-this-")) {:tag 'js})
            target-sym (with-meta (gensym (str rsym "-target-")) {:tag 'js})
+           cause-sym  (gensym "cause-")
 
            make-sym
            (fn [pname prefix]
@@ -176,6 +178,7 @@
                                 wrap          (c/get params :wrap)
                                 schema-1      (c/get params :schema-1)
                                 this?         (c/get params :this false)
+                                on-error      (c/get params :on-error)
 
                                 decode-expr
                                 (c/get params :decode/fn)
@@ -214,7 +217,16 @@
                                     (with-meta {:tag 'function}))
 
                                 val-sym
-                                (gensym (str "val-" (str/slug pname) "-"))]
+                                (gensym (str "val-" (str/slug pname) "-"))
+
+                                wrap-error-handling
+                                (if on-error
+                                  (fn [expr]
+                                    `(try
+                                       ~expr
+                                       (catch :default ~cause-sym
+                                         (~on-error ~cause-sym))))
+                                  identity)]
 
                             (concat
                              (when wrap
@@ -226,8 +238,13 @@
                                   `(fn []
                                      (let [~this-sym (~'js* "this")
                                            ~fn-sym ~get-expr]
-                                       (.call ~fn-sym ~this-sym ~this-sym)))
-                                  get-expr)])
+                                       ~(wrap-error-handling
+                                         `(.call ~fn-sym ~this-sym ~this-sym))))
+                                  `(fn []
+                                     (let [~this-sym (~'js* "this")
+                                           ~fn-sym ~get-expr]
+                                       ~(wrap-error-handling
+                                         `(.call ~fn-sym ~this-sym)))))])
 
                              (when set-expr
                                [schema-sym  schema-n
@@ -241,28 +258,35 @@
 
                                 (make-sym pname "set-fn")
                                 `(fn [~val-sym]
-                                   (let [~this-sym (~'js* "this")
-                                         ~fn-sym   ~set-expr
+                                   ~(wrap-error-handling
+                                     `(let [~this-sym (~'js* "this")
+                                            ~fn-sym   ~set-expr
 
-                                         ;; We only emit schema and coercer bindings if
-                                         ;; schema-n is provided
-                                         ~@(if (some? schema-n)
-                                             [schema-sym  `(if (fn? ~schema-sym)
-                                                             (~schema-sym ~val-sym)
-                                                             ~schema-sym)
+                                            ;; We only emit schema and coercer bindings if
+                                            ;; schema-n is provided
+                                            ~@(if (some? schema-n)
+                                                [schema-sym
+                                                 `(if (fn? ~schema-sym)
+                                                    (~schema-sym ~val-sym)
+                                                    ~schema-sym)
 
-                                              coercer-sym `(if (nil? ~coercer-sym)
-                                                             (sm/coercer ~schema-sym)
-                                                             ~coercer-sym)
-                                              val-sym     (if (not= decode-expr 'app.common.json/->clj)
-                                                            `(~decode-sym ~val-sym)
-                                                            `(~decode-sym ~val-sym ~decode-options))
-                                              val-sym     `(~coercer-sym ~val-sym)]
-                                             [])]
+                                                 coercer-sym
+                                                 `(if (nil? ~coercer-sym)
+                                                    (sm/coercer ~schema-sym)
+                                                    ~coercer-sym)
 
-                                     ~(if this?
-                                        `(.call ~fn-sym ~this-sym ~this-sym ~val-sym)
-                                        `(.call ~fn-sym ~this-sym ~val-sym))))])
+                                                 val-sym
+                                                 (if (not= decode-expr 'app.common.json/->clj)
+                                                   `(~decode-sym ~val-sym)
+                                                   `(~decode-sym ~val-sym ~decode-options))
+
+                                                 val-sym
+                                                 `(~coercer-sym ~val-sym)]
+                                                [])]
+
+                                        ~(if this?
+                                           `(.call ~fn-sym ~this-sym ~this-sym ~val-sym)
+                                           `(.call ~fn-sym ~this-sym ~val-sym)))))])
 
                              (when fn-expr
                                [schema-sym  (or schema-n schema-1)
@@ -275,7 +299,12 @@
                                 (make-sym pname "get-fn")
                                 `(fn []
                                    (let [~this-sym (~'js* "this")
-                                         ~fn-sym   ~fn-expr
+                                         ~fn-sym   ~(if (and (list? fn-expr)
+                                                             (= 'fn (first fn-expr)))
+                                                      (let [[sa sb & sother] fn-expr]
+                                                        `(~sa ~sb ~(wrap-error-handling `(do ~@sother))))
+                                                      fn-expr)
+
                                          ~fn-sym   ~(if this?
                                                       `(.bind ~fn-sym ~this-sym ~this-sym)
                                                       `(.bind ~fn-sym ~this-sym))
@@ -284,25 +313,31 @@
                                          ;; schema-n or schema-1 is provided
                                          ~@(if (or schema-n schema-1)
                                              [fn-sym `(fn* [~@(if schema-1 [val-sym] [])]
-                                                           (let [~@(if schema-n
-                                                                     [val-sym `(into-array (cljs.core/js-arguments))]
-                                                                     [])
-                                                                 ~val-sym     ~(if (not= decode-expr 'app.common.json/->clj)
-                                                                                 `(~decode-sym ~val-sym)
-                                                                                 `(~decode-sym ~val-sym ~decode-options))
+                                                           ~(wrap-error-handling
+                                                             `(let [~@(if schema-n
+                                                                        [val-sym `(into-array (cljs.core/js-arguments))]
+                                                                        [])
+                                                                    ~val-sym
+                                                                    ~(if (not= decode-expr 'app.common.json/->clj)
+                                                                       `(~decode-sym ~val-sym)
+                                                                       `(~decode-sym ~val-sym ~decode-options))
 
-                                                                 ~schema-sym  (if (fn? ~schema-sym)
-                                                                                (~schema-sym ~val-sym)
-                                                                                ~schema-sym)
+                                                                    ~schema-sym
+                                                                    (if (fn? ~schema-sym)
+                                                                      (~schema-sym ~val-sym)
+                                                                      ~schema-sym)
 
-                                                                 ~coercer-sym (if (nil? ~coercer-sym)
-                                                                                (sm/coercer ~schema-sym)
-                                                                                ~coercer-sym)
+                                                                    ~coercer-sym
+                                                                    (if (nil? ~coercer-sym)
+                                                                      (sm/coercer ~schema-sym)
+                                                                      ~coercer-sym)
 
-                                                                 ~val-sym     (~coercer-sym ~val-sym)]
-                                                             ~(if schema-1
-                                                                `(~fn-sym ~val-sym)
-                                                                `(apply ~fn-sym ~val-sym))))]
+                                                                    ~val-sym
+                                                                    (~coercer-sym ~val-sym)]
+
+                                                                ~(if schema-1
+                                                                   `(~fn-sym ~val-sym)
+                                                                   `(apply ~fn-sym ~val-sym)))))]
                                              [])]
                                      ~(if wrap
                                         `(~wrap-sym ~fn-sym)
@@ -373,14 +408,19 @@
 
         (= :property curr)
         (let [definition (first params)]
+          (prn definition (meta definition))
           (if (some? definition)
             (let [definition (if (map? definition)
-                               (c/merge {:wrap (:wrap tmeta)} definition)
+                               (c/merge {:wrap (:wrap tmeta)
+                                         :on-error (:on-error tmeta)}
+                                        definition)
                                (-> {:enumerable false}
                                    (c/merge (meta definition))
                                    (assoc :wrap (:wrap tmeta))
+                                   (assoc :on-error (:on-error tmeta))
                                    (assoc :fn definition)
-                                   (dissoc :get :set)))
+                                   (dissoc :get :set :line :column)
+                                   (d/without-nils)))
                   definition (assoc definition :name (name ckey))]
 
               (recur (rest params)
@@ -425,6 +465,13 @@
      (let [o (get o type-symbol)]
        (= o t))))
 
+#?(:cljs
+   (def Proxy
+     (app.util.object/class
+      :name "Proxy"
+      :extends js/Object
+      :constructor (constantly nil))))
+
 (defmacro reify
   "A domain specific variation of reify that creates anonymous objects
   on demand with the ability to assign protocol implementations and
@@ -442,7 +489,7 @@
         obj-sym
         (gensym "obj-")]
 
-    `(let [~obj-sym (cljs.core/js-obj)
+    `(let [~obj-sym (new Proxy)
            ~f-sym   (fn [] ~type-name)]
        (add-properties! ~obj-sym
                         {:name ~'js/Symbol.toStringTag

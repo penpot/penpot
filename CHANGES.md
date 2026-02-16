@@ -8,7 +8,8 @@
 
 ### :heart: Community contributions (Thank you!)
 
-- Copy as image to clipboard (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
+- Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
+- Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 
 ### :sparkles: New features & Enhancements
 
@@ -36,6 +37,7 @@
 - Fix boolean operators in menu for boards [Taiga #13174](https://tree.taiga.io/project/penpot/issue/13174)
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
+- Fix unable to finish the create account form using keyboard [Taiga #11333](https://tree.taiga.io/project/penpot/issue/11333)
 
 ## 2.13.2
 

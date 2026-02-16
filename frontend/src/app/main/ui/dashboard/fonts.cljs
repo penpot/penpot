@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.fonts
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
@@ -22,6 +23,7 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
@@ -259,11 +261,14 @@
 (mf/defc installed-font-context-menu
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [is-open on-close on-edit on-delete]}]
-  (let [options (mf/with-memo [on-edit on-delete]
+  [{:keys [is-open on-close on-edit on-download on-delete]}]
+  (let [options (mf/with-memo [on-edit on-download on-delete]
                   [{:name    (tr "labels.edit")
                     :id      "font-edit"
                     :handler on-edit}
+                   {:name    (tr "labels.download-simple")
+                    :id      "font-download"
+                    :handler on-download}
                    {:name    (tr "labels.delete")
                     :id      "font-delete"
                     :handler on-delete}])]
@@ -345,6 +350,26 @@
                                          (st/emit! (df/delete-font font-id)))}]
              (st/emit! (modal/show options)))))
 
+        on-download
+        (mf/use-fn
+         (mf/deps variants)
+         (fn [_event]
+           (let [variant    (first variants)
+                 variant-id (:id variant)
+                 multiple?  (> (count variants) 1)
+                 cmd        (if multiple? :download-font-family :download-font)
+                 params     (if multiple? {:font-id font-id} {:id variant-id})]
+             (->> (rp/cmd! cmd params)
+                  (rx/mapcat (fn [{:keys [name uri]}]
+                               (->> (http/send! {:uri uri :method :get :response-type :blob})
+                                    (rx/map :body)
+                                    (rx/map (fn [blob] (d/vec2 name blob))))))
+                  (rx/subs! (fn [[filename blob]]
+                              (dom/trigger-download filename blob))
+                            (fn [error]
+                              (js/console.error "error downloading font" error)
+                              (st/emit! (ntf/error (tr "errors.download-font")))))))))
+
         on-delete-variant
         (mf/use-fn
          (fn [event]
@@ -407,6 +432,7 @@
            {:on-close on-menu-close
             :is-open menu-open?
             :on-delete on-delete-font
+            :on-download on-download
             :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts*

@@ -30,6 +30,7 @@
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
                                                menu-team-icon*
+                                               nitrate-sidebar*
                                                show-subscription-dashboard-banner?
                                                subscription-sidebar*]]
    [app.main.ui.dashboard.team-form]
@@ -530,7 +531,7 @@
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (some-> (dom/get-current-target event)
-                     (dom/click!)))))
+                     (dom/click)))))
         close-teams-menu
         (mf/use-fn #(reset! show-teams-menu* false))]
 
@@ -601,7 +602,7 @@
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (some-> (dom/get-current-target event)
-                     (dom/click!)))))
+                     (dom/click)))))
 
         close-team-options-menu
         (mf/use-fn #(reset! show-team-options-menu* false))
@@ -621,7 +622,7 @@
              (dom/stop-propagation event)
 
              (some-> (dom/get-current-target event)
-                     (dom/click!)))))
+                     (dom/click)))))
 
         close-teams-menu
         (mf/use-fn #(reset! show-teams-menu* false))]
@@ -1056,10 +1057,13 @@
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
-     (when (contains? cf/flags :subscriptions)
-       (if (show-subscription-dashboard-banner? profile)
-         [:> dashboard-cta* {:profile profile}]
-         [:> subscription-sidebar* {:profile profile}]))
+     (if (contains? cf/flags :nitrate)
+       (when-not (:nitrate-licence profile)
+         [:> nitrate-sidebar* {:profile profile}])
+       (when (contains? cf/flags :subscriptions)
+         (if (show-subscription-dashboard-banner? profile)
+           [:> dashboard-cta* {:profile profile}]
+           [:> subscription-sidebar* {:profile profile}])))
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)
