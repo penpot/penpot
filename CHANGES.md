@@ -35,12 +35,18 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
+## 2.13.3
+
+### :bug: Bugs fixed
+
+- Revert yetti (http server) update, because that caused a regression on multipart uploads
+
 ## 2.13.2
 
 ### :bug: Bugs fixed
 
 - Fix modifying shapes by apply negative tokens to border radius [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
-- Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
+- Fix arbitrary file read security issue on create-font-variant rpc method (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)
 
 
 ## 2.13.1
