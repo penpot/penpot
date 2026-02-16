@@ -84,6 +84,7 @@
                   :on-click on-icon-click}])
      (if aria-label
        [:> tooltip* {:content aria-label
+                     :class (stl/css :tooltip-wrapper)
                      :id tooltip-id}
         [:> "input" props]]
        [:> "input" props])
