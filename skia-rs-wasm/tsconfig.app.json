@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "types": [
+      "vite/client"
+    ],
+    "skipLibCheck": true,
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    /* Library build */
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "emitDeclarationOnly": false,
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@penpot-exporter/transformers": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers"],
+      "@penpot-exporter/transformers/*": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers/*"],
+      "@penpot-exporter/types": ["./packages/penpot-exporter-figma-plugin/ui-src/types"],
+      "@penpot-exporter/types/*": ["./packages/penpot-exporter-figma-plugin/ui-src/types/*"],
+      "@penpot-exporter/lib/types/*": ["./packages/penpot-exporter-figma-plugin/ui-src/lib/types/*"],
+      "@penpot-exporter/common/*": ["./packages/penpot-exporter-figma-plugin/common/*"]
+    }
+  },
+  "include": [
+    "src",
+    "dev/node-factory.ts",
+    "public/wasm"
+  ]
+}

@@ -91,6 +91,17 @@ function copy_artifacts {
         --global-name=WasmModule;
 }
 
+function copy_artifacts_to_skia_rs_wasm {
+    DEST="../skia-rs-wasm/public/wasm";
+
+    mkdir -p $DEST;
+
+    cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.js $DEST/$BUILD_NAME.js;
+    cp target/wasm32-unknown-emscripten/$BUILD_MODE/render_wasm.wasm $DEST/$BUILD_NAME.wasm;
+
+    sed -i "s/render_wasm.wasm/$BUILD_NAME.wasm?version=$VERSION_TAG/g" $DEST/$BUILD_NAME.js;
+}
+
 function copy_shared_artifact {
     SHARED_FILE=$(find target/wasm32-unknown-emscripten -name render_wasm_shared.js | head -n 1);
     cp $SHARED_FILE ../frontend/src/app/render_wasm/api/shared.js;

@@ -8,6 +8,7 @@ pushd $_SCRIPT_DIR;
 set -x
 build;
 copy_artifacts "../frontend/resources/public/js";
+copy_artifacts_to_skia_rs_wasm;
 copy_shared_artifact;
 
 pushd $_SCRIPT_DIR;

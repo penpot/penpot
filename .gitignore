@@ -84,3 +84,4 @@ node_modules
 /render-wasm/target/
 /**/.yarn/*
 /.pnpm-store
+.cursor/

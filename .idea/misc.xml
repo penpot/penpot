@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="KtfmtSettings">
+    <option name="customTrailingCommaManagementStrategy" value="None" />
+    <option name="enableKtfmt" value="Enabled" />
+    <option name="uiFormatterStyle" value="Kotlinlang" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectRootManager" version="2">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>

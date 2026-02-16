@@ -1,0 +1,6 @@
+[submodule "penpot-exporter-figma-plugin"]
+	path = penpot-exporter-figma-plugin
+	url = https://github.com/ux-plugin/penpot-exporter-figma-plugin.git
+[submodule "skia-rs-wasm/packages/penpot-exporter-figma-plugin"]
+	path = skia-rs-wasm/packages/penpot-exporter-figma-plugin
+	url = https://github.com/ux-plugin/penpot-exporter-figma-plugin.git
