@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"PO-Revision-Date: 2026-02-16 08:35+0000\n"
 "Last-Translator: AlexTECPlayz <alextecplayz@vantainteractive.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 5.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -6416,18 +6416,22 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opțiuni avansate"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Înălțime maximă"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Lățime maximă"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Înălțime minimă"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Lățime minimă"
 
