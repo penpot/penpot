@@ -7541,6 +7541,18 @@ msgstr "Pegar"
 msgid "workspace.shape.menu.paste-props"
 msgstr "Pegar propiedades"
 
+msgid "workspace.shape.menu.copy-as-image"
+msgstr "Copiar como imagen"
+
+msgid "workspace.clipboard.copying"
+msgstr "Copiando imagen…"
+
+msgid "workspace.clipboard.image-copied"
+msgstr "Imagen copiada al portapapeles"
+
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Error al copiar la imagen"
+
 #: src/app/main/ui/workspace/context_menu.cljs:443
 msgid "workspace.shape.menu.path"
 msgstr "Ruta"
