@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-30 05:01+0000\n"
-"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"PO-Revision-Date: 2026-02-16 08:35+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -6438,18 +6438,22 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "אפשרויות מתקדמות"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "גובה מר.‏"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "רוחב מר.‏"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "גובה מז.‏"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "רוחב מז.‏"
 
