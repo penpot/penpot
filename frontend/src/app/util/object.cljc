@@ -408,7 +408,6 @@
 
         (= :property curr)
         (let [definition (first params)]
-          (prn definition (meta definition))
           (if (some? definition)
             (let [definition (if (map? definition)
                                (c/merge {:wrap (:wrap tmeta)
