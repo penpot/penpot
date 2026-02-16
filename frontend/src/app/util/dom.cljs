@@ -230,12 +230,6 @@
 
 (def get-target-scroll (comp get-scroll-position get-target))
 
-(defn click
-  "Click a node"
-  [^js node]
-  (when (some? node)
-    (.click node)))
-
 (defn get-files
   "Extract the files from dom node."
   [^js node]
@@ -476,7 +470,7 @@
   (when (some? node)
     (.focus node)))
 
-(defn click!
+(defn click
   [^js node]
   (when (some? node)
     (.click node)))

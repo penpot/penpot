@@ -530,7 +530,7 @@
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (some-> (dom/get-current-target event)
-                     (dom/click!)))))
+                     (dom/click)))))
         close-teams-menu
         (mf/use-fn #(reset! show-teams-menu* false))]
 
@@ -601,7 +601,7 @@
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (some-> (dom/get-current-target event)
-                     (dom/click!)))))
+                     (dom/click)))))
 
         close-team-options-menu
         (mf/use-fn #(reset! show-team-options-menu* false))
@@ -621,7 +621,7 @@
              (dom/stop-propagation event)
 
              (some-> (dom/get-current-target event)
-                     (dom/click!)))))
+                     (dom/click)))))
 
         close-teams-menu
         (mf/use-fn #(reset! show-teams-menu* false))]
