@@ -571,11 +571,13 @@
               nil
 
               (ctm/has-geometry? (:modifiers data))
-              (d/vec2 id (ctm/modifiers->transform (:modifiers data)))
+              (let [parent (:geometry-parent (:modifiers data))
+                    kind (if (d/not-empty? parent) :parent :child)]
+                (d/vec2 id {:transform (ctm/modifiers->transform (:modifiers data)) :kind kind}))
 
               ;; Unit matrix is used for reflowing
               :else
-              (d/vec2 id default-transform))))))
+              (d/vec2 id {:transform default-transform :kind :parent}))))))
 
 (defn- parse-geometry-modifiers
   [modif-tree]

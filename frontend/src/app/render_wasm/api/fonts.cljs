@@ -31,9 +31,17 @@
 (def ^:private default-letter-spacing 0.0)
 
 (defn- google-font-id->uuid
+  "Returns the UUID for a Google Font ID. Uses uuid/zero as fallback when the
+  font is not found in fontsdb. uuid/zero maps to the default font (Source 
+  Sans Pro) in WASM.
+  A font id may not exist for different reasons:
+  - the gfonts.json catalog was updated and fonts were renamed or removed,
+  - the file was imported from another Penpot instance with different fonts,
+  ..."
   [font-id]
-  (let [font (fonts/get-font-data font-id)]
-    (:uuid font)))
+  (let [font (fonts/get-font-data font-id)
+        result (:uuid font)]
+    (or result uuid/zero)))
 
 (defn- custom-font-id->uuid
   [font-id]

@@ -338,9 +338,18 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickWithDragViewportAt(x, y, width, height) {
     await this.page.waitForTimeout(100);
-    await this.viewport.hover({ position: { x, y } });
+    const box = await this.viewport.boundingBox();
+    if (!box) throw new Error('Viewport not visible');
+
+    const startX = box.x + x;
+    const startY = box.y + y;
+    const endX = startX + width;
+    const endY = startY + height;
+
+    await this.page.mouse.move(startX, startY);
     await this.page.mouse.down();
-    await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    // Use steps so mouseup is properly processed (see Playwright issue #20254)
+    await this.page.mouse.move(endX, endY, { steps: 10 });
     await this.page.mouse.up();
   }
 

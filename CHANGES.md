@@ -39,6 +39,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix modifying shapes by apply negative tokens to border radius [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
 - Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
 
 
