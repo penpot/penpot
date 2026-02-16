@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-02-16 08:35+0000\n"
-"Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/penpot/frontend/"
 "pl/>\n"
 "Language: pl\n"
@@ -3869,10 +3869,12 @@ msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Maks.Szerokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Min.Wysokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Min.Szerokość"
 
