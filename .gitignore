@@ -82,3 +82,4 @@
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
+.cursor/

@@ -35,12 +35,16 @@ services:
       - 3449:3449
       - 3449:3449/udp
       - 3450:3450
+      - 5173:5173
+      - 5174:5174
+      - 5175:5175
       - 6006:6006
       - 6060:6060
       - 6061:6061
       - 6062:6062
       - 6063:6063
       - 6064:6064
+      - 7243:7243
       - 9000:9000
       - 9001:9001
       - 9090:9090
@@ -58,6 +62,7 @@ services:
       - 4202:4202
 
     environment:
+      - PENPOT_INTERNAL_RESOLVER=8.8.8.8
       - EXTERNAL_UID=${CURRENT_USER_ID}
       # SMTP setup
       - PENPOT_SMTP_ENABLED=true

@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Debug Vite App",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/skia-rs-wasm",
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/src/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///./~/*": "${webRoot}/node_modules/*"
+            },
+            "sourceMaps": true,
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "chrome",
+            "request": "attach",
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "webRoot": "${workspaceFolder}/skia-rs-wasm",
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/src/*",
+                "webpack:///./*": "${webRoot}/*"
+            }
+        }
+    ]
+}
