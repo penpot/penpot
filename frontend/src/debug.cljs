@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
@@ -390,7 +391,7 @@
             (group-by :code)
             (clj->js))
        (catch :default cause
-         (errors/print-error! cause))))))
+         (ex/print-throwable cause))))))
 
 (defn ^:export validate-schema
   []
@@ -398,7 +399,7 @@
     (let [file (dsh/lookup-file @st/state)]
       (cfv/validate-file-schema! file))
     (catch :default cause
-      (errors/print-error! cause))))
+      (ex/print-throwable cause))))
 
 (defn ^:export repair
   [reload?]
@@ -430,7 +431,7 @@
                           (when reload?
                             (dom/reload-current-window)))
                         (fn [cause]
-                          (errors/print-error! cause)))))))))
+                          (ex/print-throwable cause)))))))))
 
 (defn ^:export fix-orphan-shapes
   []
@@ -456,3 +457,8 @@
 (defn ^:export network-averages
   []
   (.log js/console (clj->js @http/network-averages)))
+
+
+(defn print-last-exception
+  []
+  (some-> errors/last-exception ex/print-throwable))

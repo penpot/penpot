@@ -31,7 +31,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v22.21.1 \
+ENV NODE_VERSION=v22.22.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -97,18 +97,19 @@ RUN set -eux; \
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.3.1577
+# https://clojure.org/releases/tools
+ENV CLOJURE_VERSION=1.12.4.1602
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='8c5321f16d9f1d8149f83e4e9ff8ca5d9e94320b92d205e6db42a604de3d1140'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_aarch64.tar.gz'; \
+         ESUM='9903c6b19183a33725ca1dfdae5b72400c9d00995c76fafc4a0d31c5152f33f7'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='471b3e62bdffaed27e37005d842d8639f10d244ccce1c7cdebf7abce06c8313e'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_x64.tar.gz'; \
+         ESUM='946ad9766d98fc6ab495a1a120072197db54997f6925fb96680f1ecd5591db4e'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.32.21-ca-jdk25.0.2-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -179,9 +180,10 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2025.07.28 \
+ENV CLJKONDO_VERSION=2026.01.19 \
     BABASHKA_VERSION=1.12.208 \
-    CLJFMT_VERSION=0.13.1
+    CLJFMT_VERSION=0.15.6 \
+    PIXI_VERSION=0.63.2
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -223,6 +225,26 @@ RUN set -ex; \
     cd /opt/utils/bin; \
     tar -xf /tmp/babashka.tar.gz; \
     rm -rf /tmp/babashka.tar.gz;
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/prefix-dev/pixi/releases/download/v$PIXI_VERSION/pixi-aarch64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/prefix-dev/pixi/releases/download/v$PIXI_VERSION/pixi-x86_64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/pixi.tar.gz ${BINARY_URL}; \
+    cd /opt/utils/bin; \
+    tar -xf /tmp/pixi.tar.gz; \
+    rm -rf /tmp/pixi.tar.gz;
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -375,7 +397,7 @@ ENV LANG='C.UTF-8' \
     RUSTUP_HOME="/opt/rustup" \
     PATH="/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
@@ -398,7 +420,6 @@ COPY files/Caddyfile           /home/
 COPY files/selfsigned.crt      /home/
 COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh
-COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
 COPY files/entrypoint.sh       /home/entrypoint.sh
 COPY files/init.sh             /home/init.sh
 

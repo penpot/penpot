@@ -36,7 +36,7 @@
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
     ["/subscriptions" :settings-subscription]
-    ["/access-tokens" :settings-access-tokens]
+    ["/integrations"  :settings-integrations]
     ["/notifications" :settings-notifications]]
 
    ["/frame-preview" :frame-preview]

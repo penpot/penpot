@@ -1,5 +1,0 @@
-#!/bin/bash
-
-if [ -z "$HUSKY_HOOK" ] || [ "$HUSKY_HOOK" = "pre-commit" ]; then
-    pnpm run lint:affected
-fi

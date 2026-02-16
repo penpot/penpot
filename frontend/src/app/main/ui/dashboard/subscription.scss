@@ -205,3 +205,28 @@
     overflow-wrap: break-word;
   }
 }
+
+.nitrate-banner {
+  display: flex;
+  border-radius: var(--sp-s);
+  flex-direction: column;
+  margin: var(--sp-m);
+  background: var(--color-background-quaternary);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  padding: var(--sp-l);
+}
+
+.nitrate-title {
+  @include t.use-typography("body-large");
+  color: var(--color-foreground-primary);
+}
+
+.nitrate-info {
+  @include t.use-typography("body-medium");
+  color: var(--color-foreground-secondary);
+}
+
+.nitrate-content {
+  display: flex;
+  flex-direction: column;
+}

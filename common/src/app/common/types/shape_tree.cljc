@@ -382,9 +382,9 @@
                  keep-ids? (:id shape)
                  :else (uuid/next))
 
-         ;; Assign the correct frame-id for the given parent. It's the parent-id (if parent is frame)
-         ;; or the parent's frame-id otherwise. Only for the first cloned shapes. In recursive calls
-         ;; this is not needed.
+        ;; Assign the correct frame-id for the given parent. It's the parent-id (if parent is frame)
+        ;; or the parent's frame-id otherwise. Only for the first cloned shapes. In recursive calls
+        ;; this is not needed.
         frame-id (cond
                    (and (nil? frame-id) (cfh/frame-shape? dest-objects parent-id))
                    parent-id

@@ -8,8 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cft]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.forms :as fc]
@@ -138,11 +142,27 @@
 ;; -----------------------------------------------------------------------------
 
 
+(defn- resolve-value-tokenscript
+  [tokens prev-token value]
+  (let [result (ts/update-token tokens (assoc prev-token :value value))
+        token-result (.-resolved result)]
+    (rx/of
+     (cond
+       (ts/processor-error? token-result) {:error (wte/error-with-value :error.style-dictionary/missing-reference (some->> (.-dependencyChain token-result)
+                                                                                                                           (seq)
+                                                                                                                           (rest)))}
+       (instance? js/Error token-result) {:error (wte/error-with-value :error.style-dictionary/invalid-token-value value)}
+       :else {:value token-result}))))
+
 (defn- resolve-value
   [tokens prev-token token-name value]
-  (let [token
+  (let [valid-token-name?
+        (and (string? token-name)
+             (re-matches  cto/token-name-validation-regex token-name))
+
+        token
         {:value value
-         :name (if (str/blank? token-name)
+         :name (if (or (not valid-token-name?) (str/blank? token-name))
                  "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
                  token-name)}
         tokens
@@ -211,7 +231,10 @@
 
     (mf/with-effect [resolve-stream tokens token input-name token-name]
 
-      (let [subs (->> resolve-stream
+      (let [resolve-value (if (contains? cf/flags :tokenscript)
+                            resolve-value-tokenscript
+                            resolve-value)
+            subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]

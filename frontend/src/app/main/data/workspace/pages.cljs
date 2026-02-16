@@ -105,9 +105,15 @@
       (if (dsh/lookup-page state file-id page-id)
         (rx/concat
          (rx/of (initialize-page* file-id page-id)
-                (fdf/fix-deleted-fonts-for-page file-id page-id)
-                (dwth/watch-state-changes file-id page-id)
-                (dwl/watch-component-changes))
+                (fdf/fix-deleted-fonts-for-page file-id page-id))
+
+         ;; Disable thumbnail generation in wasm renderer
+         (if (features/active-feature? state "render-wasm/v1")
+           (rx/empty)
+           (rx/of (dwth/watch-state-changes file-id page-id)))
+
+         (rx/of (dwl/watch-component-changes))
+
          (let [profile (:profile state)
                props   (get profile :props)]
            (when (not (:workspace-visited props))

@@ -1,0 +1,144 @@
+<div class="container">
+  <p class="title-l">Design tokens plugin POC</p>
+
+  <div class="columns">
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-heading">
+          <p class="headline-m">THEMES</p>
+          <button
+            type="button"
+            data-appearance="secondary"
+            (click)="addTheme()"
+          >
+            +
+          </button>
+        </div>
+
+        <ul data-handler="themes-list">
+          @for (theme of themes; track theme.id) {
+            <li class="body-m panel-item theme-item">
+              <span>{{ theme.group }} / {{ theme.name }}</span>
+              <button
+                type="button"
+                data-appearance="secondary"
+                (click)="renameTheme(theme.id, theme.name)"
+              >
+                🖊️
+              </button>
+              <button
+                type="button"
+                data-appearance="secondary"
+                (click)="deleteTheme(theme.id)"
+              >
+                ❌
+              </button>
+              <div class="checkbox-container">
+                <input
+                  class="checkbox-input"
+                  type="checkbox"
+                  id="checkbox1"
+                  [checked]="isThemeActive(theme.id)"
+                  (change)="toggleTheme(theme.id)"
+                />
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <p class="headline-m">SETS</p>
+          <button type="button" data-appearance="secondary" (click)="addSet()">
+            +
+          </button>
+        </div>
+
+        <ul data-handler="sets-list">
+          @for (set of sets; track set.id) {
+            <li
+              class="body-m panel-item set-item"
+              [class.selected]="set.id === currentSetId"
+            >
+              <span (click)="loadTokens(set.id)">
+                {{ set.name }}
+              </span>
+              <button
+                type="button"
+                data-appearance="secondary"
+                (click)="renameSet(set.id, set.name)"
+              >
+                🖊️
+              </button>
+              <button
+                type="button"
+                data-appearance="secondary"
+                (click)="deleteSet(set.id)"
+              >
+                ❌
+              </button>
+              <div class="checkbox-container">
+                <input
+                  class="checkbox-input"
+                  type="checkbox"
+                  id="checkbox1"
+                  [checked]="isSetActive(set.id)"
+                  (change)="toggleSet(set.id)"
+                />
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <p class="headline-m">TOKENS</p>
+
+        <ul data-handler="tokens-list">
+          @for (group of tokenGroups; track group[0]) {
+            <li class="body-m token-group">
+              <span>{{ group[0] }}</span>
+              <button
+                type="button"
+                data-appearance="secondary"
+                (click)="addToken(group[0])"
+              >
+                +
+              </button>
+            </li>
+            @for (token of group[1]; track token.id) {
+              <li
+                class="body-m panel-item token-item"
+                (click)="applyToken(token.id)"
+              >
+                <span>{{ token.name }}</span>
+                <button
+                  type="button"
+                  data-appearance="secondary"
+                  (click)="renameToken(token.id, token.name)"
+                >
+                  🖊️
+                </button>
+                <button
+                  type="button"
+                  data-appearance="secondary"
+                  (click)="deleteToken(token.id)"
+                >
+                  ❌
+                </button>
+              </li>
+            }
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button type="button" data-appearance="primary" (click)="loadLibrary()">
+      Load
+    </button>
+  </div>
+</div>

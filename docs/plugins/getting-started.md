@@ -69,12 +69,13 @@ You need to provide the plugin's manifest URL for the installation. If there are
 
 | Name          | URL                                                                 |
 | ------------- | ------------------------------------------------------------------- |
-| Lorem Ipsum   | https://lorem-ipsum-penpot-plugin.pages.dev/assets/manifest.json    |
-| Contrast      | https://contrast-penpot-plugin.pages.dev/assets/manifest.json       |
-| Feather icons | https://icons-penpot-plugin.pages.dev/assets/manifest.json          |
-| Tables        | https://table-penpot-plugin.pages.dev/assets/manifest.json          |
-| Color palette | https://create-palette-penpot-plugin.pages.dev/assets/manifest.json |
-| Rename layers | https://rename-layers-penpot-plugin.pages.dev/assets/manifest.json  |
+| Color palette |	https://create-palette.plugins.penpot.app/assets/manifest.json      |
+| Contrast	    | https://contrast.plugins.penpot.app/assets/manifest.json            |
+| Feather icons	| https://icons.plugins.penpot.app/assets/manifest.json               |
+| Lorem ipsum	  | https://lorem-ipsum.plugins.penpot.app/assets/manifest.json         |
+| Rename layers |	https://rename-layers.plugins.penpot.app/assets/manifest.json       |
+| Tables	      | https://table.plugins.penpot.app/assets/manifest.json               |
+
 
 ## 1.4. Plugin's basics
 

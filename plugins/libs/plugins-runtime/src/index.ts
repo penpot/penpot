@@ -21,13 +21,16 @@ repairIntrinsics({
   unhandledRejectionTrapping: 'none',
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const globalThisAny$ = globalThis as any;
 
 export const initPluginsRuntime = (contextBuilder: (id: string) => Context) => {
   try {
     console.log('%c[PLUGINS] Initialize runtime', 'color: #008d7c');
     setContextBuilder(contextBuilder);
-    globalThisAny$.ɵcontext = contextBuilder('TEST');
+    globalThisAny$.ɵcontext = contextBuilder(
+      '00000000-0000-0000-0000-000000000000',
+    );
     globalThis.ɵloadPlugin = ɵloadPlugin;
     globalThis.ɵloadPluginByUrl = ɵloadPluginByUrl;
     globalThis.ɵunloadPlugin = ɵunloadPlugin;

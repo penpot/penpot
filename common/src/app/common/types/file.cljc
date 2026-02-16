@@ -775,9 +775,9 @@
         file-data         (cond-> file-data
                             (d/not-empty? used-components)
                             (absorb-components used-components library-data))
-                            ;; Note that absorbed components may also be using colors
-                            ;; and typographies. This is the reason of doing this first
-                            ;; and accumulating file data for the next ones.
+        ;; Note that absorbed components may also be using colors
+        ;; and typographies. This is the reason of doing this first
+        ;; and accumulating file data for the next ones.
 
         used-colors       (find-asset-type-usages file-data library-data :color)
         file-data         (cond-> file-data
@@ -1017,7 +1017,7 @@
                                           libs-to-show
                                           (-> libs-to-show
                                               (add-component library-id component-id))))))
-                                              ;; (find-used-components-cumulative page root)
+                                  ;; (find-used-components-cumulative page root)
 
                                   libs-to-show
                                   components))

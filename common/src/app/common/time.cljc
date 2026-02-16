@@ -64,7 +64,32 @@
       java.time.temporal.TemporalAmount
       java.time.temporal.TemporalUnit)))
 
+(declare inst)
+
 #?(:clj (def ^:dynamic *clock* (Clock/systemDefaultZone)))
+
+#?(:clj
+   (defn clock?
+     [o]
+     (instance? Clock o)))
+
+#?(:clj
+   (defn get-system-clock
+     []
+     (Clock/systemDefaultZone)))
+
+#?(:clj
+   (defn offset-clock
+     [offset]
+     (Clock/offset ^Clock (Clock/systemDefaultZone) ^Duration offset)))
+
+#?(:clj
+   (defn fixed-clock
+     [instant]
+     (Clock/fixed ^Instant (inst instant)
+                  ^ZoneId (ZoneId/of "Z"))))
+
+
 
 (defn now
   []

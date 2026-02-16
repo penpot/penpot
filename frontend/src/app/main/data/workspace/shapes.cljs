@@ -439,7 +439,7 @@
             add-new-variant? (and
                               ;; The parent is a variant container
                               (-> parent-id objects ctc/is-variant-container?)
-                               ;; Any of the shapes is a main instance
+                              ;; Any of the shapes is a main instance
                               (some (comp ctc/main-instance? objects) ids))
 
             undo-id (js/Symbol)]

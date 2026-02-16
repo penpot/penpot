@@ -171,8 +171,8 @@
                  :fillOpacity opacity}
         [:path {:d "M 3 0 L 6 3 L 3 6 L 0 3 z"}]])
 
-      ;; If the user wants line caps but different in each end,
-      ;; simulate it with markers.
+     ;; If the user wants line caps but different in each end,
+     ;; simulate it with markers.
      (when (and (or (= cap-start :round)
                     (= cap-end :round))
                 (not= cap-start cap-end))

@@ -133,7 +133,7 @@
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         (if (and (map? (:content shape))
-                ;;  tspan shouldn't be contained in a group or have svg defs
+                 ;;  tspan shouldn't be contained in a group or have svg defs
                  (not= :tspan (get-in shape [:content :tag]))
                  (or (= :svg (get-in shape [:content :tag]))
                      (contains? shape :svg-attrs)))

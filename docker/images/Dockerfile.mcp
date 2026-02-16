@@ -1,0 +1,58 @@
+FROM ubuntu:24.04
+LABEL maintainer="Penpot <docker@penpot.app>"
+
+ENV LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    NODE_VERSION=v22.21.1 \
+    DEBIAN_FRONTEND=noninteractive \
+    PATH=/opt/node/bin:$PATH
+
+RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
+    mkdir -p /etc/resolvconf/resolv.conf.d; \
+    echo "nameserver 127.0.0.11" > /etc/resolvconf/resolv.conf.d/tail; \
+    apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install \
+      curl \
+      tzdata \
+      locales \
+      ca-certificates \
+    ; \
+    rm -rf /var/lib/apt/lists/*; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen; \
+    find /usr/share/i18n/locales/ -type f ! -name "en_US" ! -name "POSIX" ! -name "C" -delete;
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
+    mkdir -p /opt/node; \
+    cd /opt/node; \
+    tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
+    chown -R root /opt/node; \
+    rm -rf /tmp/nodejs.tar.gz; \
+    corepack enable; \
+    mkdir -p /opt/penpot; \
+    chown -R penpot:penpot /opt/penpot;
+
+ARG BUNDLE_PATH="./bundle-mcp/"
+COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/mcp/
+
+WORKDIR /opt/penpot/mcp
+USER penpot:penpot
+
+RUN ./setup
+
+CMD ["node", "index.js", "--multi-user"]

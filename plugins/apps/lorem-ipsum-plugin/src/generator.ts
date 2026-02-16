@@ -101,7 +101,7 @@ export function generateCharacters(count: number, startWithLorem = true) {
 }
 
 export function generateWords(count: number, startWithLorem = true) {
-  let words = [];
+  const words = [];
 
   if (startWithLorem) {
     words.push(...lorem.split(' ').slice(0, count));
@@ -115,9 +115,9 @@ export function generateWords(count: number, startWithLorem = true) {
 }
 
 export function generateSentences(count: number, startWithLorem = true) {
-  let sentences = [];
+  const sentences = [];
   for (let i = 0; i < count; i++) {
-    let sentenceLength = Math.floor(Math.random() * 10) + 3; // between 3 and 12 words per sentence
+    const sentenceLength = Math.floor(Math.random() * 10) + 3; // between 3 and 12 words per sentence
     let sentence = generateWords(sentenceLength, false);
 
     if (startWithLorem && i === 0) {
@@ -131,9 +131,9 @@ export function generateSentences(count: number, startWithLorem = true) {
 }
 
 export function generateParagraphs(count: number, startWithLorem = true) {
-  let paragraphs = [];
+  const paragraphs = [];
   for (let i = 0; i < count; i++) {
-    let paragraphLength = Math.floor(Math.random() * 5) + 3; // between 3 and 7 sentences per paragraph
+    const paragraphLength = Math.floor(Math.random() * 5) + 3; // between 3 and 7 sentences per paragraph
     paragraphs.push(
       generateSentences(paragraphLength, startWithLorem && i === 0),
     );

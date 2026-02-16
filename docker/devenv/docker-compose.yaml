@@ -50,6 +50,16 @@ services:
       - 9090:9090
       - 9091:9091
 
+      # MCP
+      - 4400:4400
+      - 4401:4401
+      - 4402:4402
+
+      # Plugins
+      - 4200:4200
+      - 4201:4201
+      - 4202:4202
+
     environment:
       - PENPOT_INTERNAL_RESOLVER=8.8.8.8
       - EXTERNAL_UID=${CURRENT_USER_ID}

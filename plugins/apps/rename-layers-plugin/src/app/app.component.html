@@ -38,107 +38,125 @@
     </button>
   </div>
 
-  <div *ngIf="tab === 'add'" class="form">
-    <p class="explanation body-s">
-      Select layers to rename (otherwise it will apply to all layers) and enter
-      the text you want to add.
-    </p>
-    <div class="form-group">
-      <label class="input-label-hidden" for="search">Add text</label>
-      <input
-        #addElement
-        [(ngModel)]="addText"
-        class="input"
-        type="text"
-        placeholder="[Original layer name]"
-        id="addText"
-        (keydown.enter)="updateText()"
-      />
+  @if (tab === 'add') {
+    <div class="form">
+      <p class="explanation body-s">
+        Select layers to rename (otherwise it will apply to all layers) and
+        enter the text you want to add.
+      </p>
+      <div class="form-group">
+        <label class="input-label-hidden" for="search">Add text</label>
+        <input
+          #addElement
+          [(ngModel)]="addText"
+          class="input"
+          type="text"
+          placeholder="[Original layer name]"
+          id="addText"
+          (keydown.enter)="updateText()"
+        />
+      </div>
+      <button
+        type="button"
+        data-appearance="primary"
+        [class.btn-feedback]="btnFeedback"
+        [disabled]="addText === '[Original layer name]' || !addText"
+        (click)="updateText()"
+      >
+        @if (!btnFeedback) {
+          <span class="text-btn">Add</span>
+        }
+        @if (btnFeedback) {
+          <span class="icon icon-btn">
+            <svg viewBox="0 0 16 16" fill="none">
+              <path d="M13.333 4 6 11.333 2.667 8" class="stroke" />
+            </svg>
+          </span>
+        }
+      </button>
+      <p class="body-s preview">Previsualization:</p>
+      <ul class="preview-list">
+        @for (preview of previewList(); track preview) {
+          <li class="preview-item">
+            <span class="original" [title]="preview.name">{{
+              preview.name
+            }}</span>
+            <ng-template *ngTemplateOutlet="iconArrowRight"></ng-template>
+            <span class="result" [title]="resultAddText(preview)">{{
+              resultAddText(preview)
+            }}</span>
+          </li>
+        }
+      </ul>
     </div>
-    <button
-      type="button"
-      data-appearance="primary"
-      [class.btn-feedback]="btnFeedback"
-      [disabled]="addText === '[Original layer name]' || !addText"
-      (click)="updateText()"
-    >
-      <span *ngIf="!btnFeedback" class="text-btn">Add</span>
-      <span *ngIf="btnFeedback" class="icon icon-btn">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M13.333 4 6 11.333 2.667 8" class="stroke" />
-        </svg>
-      </span>
-    </button>
-    <p class="body-s preview">Previsualization:</p>
-    <ul class="preview-list">
-      <li class="preview-item" *ngFor="let preview of previewList()">
-        <span class="original" [title]="preview.name">{{ preview.name }}</span>
-        <ng-template *ngTemplateOutlet="iconArrowRight"></ng-template>
-        <span class="result" [title]="resultAddText(preview)">{{
-          resultAddText(preview)
-        }}</span>
-      </li>
-    </ul>
-  </div>
+  }
 
-  <div *ngIf="tab === 'replace'" class="form">
-    <p class="explanation body-s">
-      Select layers to rename (otherwise it will apply to all layers) and enter
-      the replacement text.
-    </p>
-    <div class="form-group">
-      <label class="input-label-hidden" for="search">Search</label>
-      <input
-        [(ngModel)]="textToReplace.search"
-        class="input"
-        type="text"
-        placeholder="Search"
-        id="search"
-        #searchElement
-        (keydown)="previewReplace()"
-      />
+  @if (tab === 'replace') {
+    <div class="form">
+      <p class="explanation body-s">
+        Select layers to rename (otherwise it will apply to all layers) and
+        enter the replacement text.
+      </p>
+      <div class="form-group">
+        <label class="input-label-hidden" for="search">Search</label>
+        <input
+          [(ngModel)]="textToReplace.search"
+          class="input"
+          type="text"
+          placeholder="Search"
+          id="search"
+          #searchElement
+          (keydown)="previewReplace()"
+        />
+      </div>
+      <div class="form-group">
+        <label class="input-label-hidden" for="replace">Replace</label>
+        <input
+          [(ngModel)]="textToReplace.replace"
+          class="input"
+          type="text"
+          placeholder="Write the new text"
+          id="replace"
+          (keydown.enter)="updateText()"
+        />
+      </div>
+      <button
+        type="button"
+        data-appearance="primary"
+        (click)="updateText()"
+        [class.btn-feedback]="btnFeedback"
+        [disabled]="!textToReplace.search"
+      >
+        @if (!btnFeedback) {
+          <span class="text-btn">Replace</span>
+        }
+        @if (btnFeedback) {
+          <span class="icon icon-btn icon-tick">
+            <svg width="16" height="16" fill="none">
+              <path d="M13.333 4 6 11.333 2.667 8" class="stroke" />
+            </svg>
+          </span>
+        }
+      </button>
+      <p class="body-s preview">Previsualization:</p>
+      <ul class="preview-list replace">
+        @if (previewList().length === 0) {
+          <li class="no-match">No matches found</li>
+        }
+        @for (preview of previewList(); track preview) {
+          <li class="preview-item">
+            <span
+              class="original"
+              [innerHTML]="highlightMatch(preview.name)"
+              [title]="preview.name"
+            ></span>
+            <ng-template *ngTemplateOutlet="iconArrowRight"></ng-template>
+            <span class="result" [title]="resultReplaceText(preview.name)">{{
+              resultReplaceText(preview.name)
+            }}</span>
+          </li>
+        }
+      </ul>
     </div>
-    <div class="form-group">
-      <label class="input-label-hidden" for="replace">Replace</label>
-      <input
-        [(ngModel)]="textToReplace.replace"
-        class="input"
-        type="text"
-        placeholder="Write the new text"
-        id="replace"
-        (keydown.enter)="updateText()"
-      />
-    </div>
-    <button
-      type="button"
-      data-appearance="primary"
-      (click)="updateText()"
-      [class.btn-feedback]="btnFeedback"
-      [disabled]="!textToReplace.search"
-    >
-      <span *ngIf="!btnFeedback" class="text-btn">Replace</span>
-      <span *ngIf="btnFeedback" class="icon icon-btn icon-tick">
-        <svg width="16" height="16" fill="none">
-          <path d="M13.333 4 6 11.333 2.667 8" class="stroke" />
-        </svg>
-      </span>
-    </button>
-    <p class="body-s preview">Previsualization:</p>
-    <ul class="preview-list replace">
-      <li *ngIf="previewList().length === 0" class="no-match">
-        No matches found
-      </li>
-      <li class="preview-item" *ngFor="let preview of previewList()">
-        <span
-          class="original"
-          [innerHTML]="highlightMatch(preview.name)"
-          [title]="preview.name"
-        ></span>
-        <ng-template *ngTemplateOutlet="iconArrowRight"></ng-template>
-        <span class="result" [title]="resultReplaceText(preview.name)">{{
-          resultReplaceText(preview.name)
-        }}</span>
-      </li>
-    </ul>
-  </div>
+  }
 </div>

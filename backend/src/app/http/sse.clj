@@ -6,7 +6,6 @@
 
 (ns app.http.sse
   "SSE (server sent events) helpers"
-  (:refer-clojure :exclude [tap])
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
@@ -54,6 +53,7 @@
      ::yres/status 200
      ::yres/body (yres/stream-body
                   (fn [_ output]
+
                     (let [channel  (sp/chan :buf buf :xf (keep encode))
                           listener (events/spawn-listener
                                     channel

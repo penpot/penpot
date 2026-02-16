@@ -24,6 +24,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -75,6 +76,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
+   [app.util.perf :as perf]
    [app.util.storage :as storage]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -195,7 +197,7 @@
                        (rx/of (check-libraries-synchronization file-id libraries))))))
 
               ;; This events marks that all the libraries have been resolved
-              (rx/of (ptk/data-event ::all-libraries-resolved)))
+              (rx/of (ptk/data-event ::all-libraries-resolved {:file-id file-id})))
              (rx/take-until stopper-s))))))
 
 (defn- workspace-initialized
@@ -348,10 +350,11 @@
                                              :file-id file-id}))))))
 
               ;; Install dev perf observers once the workspace is ready
-              (->> stream
-                   (rx/filter (ptk/type? ::workspace-initialized))
-                   (rx/take 1)
-                   (rx/map (fn [_] (ev/init!))))
+              (when (contains? cf/flags :perf-logs)
+                (->> stream
+                     (rx/filter (ptk/type? ::workspace-initialized))
+                     (rx/take 1)
+                     (rx/tap (fn [_] (perf/setup)))))
 
               (->> stream
                    (rx/filter (ptk/type? ::dps/persistence-notification))
@@ -1407,6 +1410,7 @@
 (dm/export dwt/start-move-selected)
 (dm/export dwt/move-selected)
 (dm/export dwt/update-position)
+(dm/export dwt/update-positions)
 (dm/export dwt/flip-horizontal-selected)
 (dm/export dwt/flip-vertical-selected)
 (dm/export dwly/set-opacity)
@@ -1430,6 +1434,7 @@
 (dm/export dwcp/paste-shapes)
 (dm/export dwcp/paste-data-valid?)
 (dm/export dwcp/copy-link-to-clipboard)
+(dm/export dwcp/copy-as-image)
 
 ;; Drawing
 (dm/export dwd/select-for-drawing)

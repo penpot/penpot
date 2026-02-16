@@ -97,7 +97,7 @@
           state
           (update state :workspace-local
                   (fn [{:keys [vport] :as local}]
-                    (let [srect (gal/adjust-to-viewport vport srect {:padding 160})
+                    (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
                           zoom  (/ (:width vport) (:width srect))]
                       (-> local
                           (assoc :zoom zoom)
@@ -118,7 +118,7 @@
                              (gsh/shapes->rect))]
             (update state :workspace-local
                     (fn [{:keys [vport] :as local}]
-                      (let [srect (gal/adjust-to-viewport vport srect {:padding 40})
+                      (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
                             zoom  (/ (:width vport) (:width srect))]
                         (-> local
                             (assoc :zoom zoom)
@@ -142,7 +142,7 @@
                   (fn [{:keys [vport] :as local}]
                     (let [srect (gal/adjust-to-viewport
                                  vport srect
-                                 {:padding 40})
+                                 {:padding 40 :min-zoom 0.01})
                           zoom  (/ (:width vport)
                                    (:width srect))]
                       (-> local

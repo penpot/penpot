@@ -1,6 +1,7 @@
 name: _STAGING RENDER
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '36 5-20 * * 1-5'
 

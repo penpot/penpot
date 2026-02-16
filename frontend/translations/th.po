@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 5.10-dev\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "มีบัญชีแล้ว?"
 
@@ -50,7 +50,7 @@ msgstr "ชื่อเต็ม"
 msgid "auth.login-account-title"
 msgstr "ลงชื่อเข้าใช้บัญชีของฉัน"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:161, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "ลงชื่อเข้าใช้ที่นี่"
 
@@ -127,7 +127,7 @@ msgstr "ลืมรหัสผ่าน?"
 msgid "auth.recovery-submit"
 msgstr "เปลี่ยนรหัสผ่านของคุณ"
 
-#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "ยังไม่มีบัญชี?"
 
@@ -139,7 +139,7 @@ msgstr "เราควรเรียกคุณในแดชบอร์ด
 msgid "auth.register-account-title"
 msgstr "ชื่อของคุณ"
 
-#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:148, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "สร้างบัญชี"
 
@@ -165,7 +165,7 @@ msgstr "โซลูชันโอเพนซอร์สสำหรับก
 msgid "auth.terms-and-privacy-agreement"
 msgstr "ฉันยอมรับ [ข้อกำหนดการให้บริการ](%s)และ[นโยบายความเป็นส่วนตัว](%s)"
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:979, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "เงื่อนไขการให้บริการ"
 
@@ -340,23 +340,23 @@ msgstr "โทเคนนี้ไม่มีวันหมดอายุ"
 msgid "dashboard.change-email"
 msgstr "เปลี่ยนอีเมล"
 
-#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:330, src/app/main/data/dashboard.cljs:565, src/app/main/data/workspace/pages.cljs:198
 msgid "dashboard.copy-suffix"
 msgstr "(คัดลอก)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:329
+#: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
 msgstr "สร้างทีมใหม่"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:638
 msgid "dashboard.default-team-name"
 msgstr "Penpot ของคุณ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:477
+#: src/app/main/ui/dashboard/sidebar.cljs:495
 msgid "dashboard.delete-team"
 msgstr "ลบทีม"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
 msgstr "ดาวน์โหลดไฟล์ Penpot (.penpot)"
 
@@ -405,7 +405,7 @@ msgstr "ไลบรารีที่เพิ่มลงในโปรเจ
 msgid "dashboard.empty-placeholder-libraries-title"
 msgstr "ยังไม่มีไลบรารี"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:282
+#: src/app/main/ui/dashboard/file_menu.cljs:280
 msgid "dashboard.export-binary-multi"
 msgstr "ดาวน์โหลด %s ไฟล์ Penpot (.penpot)"
 
@@ -514,7 +514,7 @@ msgstr "กำลังอัปโหลดข้อมูลไปยังเ
 msgid "dashboard.import.progress.upload-media"
 msgstr "กำลังอัปโหลดไฟล์: %s"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
+#: src/app/main/ui/dashboard/sidebar.cljs:477, src/app/main/ui/dashboard/sidebar.cljs:484, src/app/main/ui/dashboard/sidebar.cljs:489, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "ออกจากทีม"
 
@@ -538,15 +538,15 @@ msgstr "กำลังโหลดไฟล์ของคุณ…"
 msgid "dashboard.loading-fonts"
 msgstr "กำลังโหลดฟอนต์ของคุณ…"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:312, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "ย้ายไปยัง"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278
+#: src/app/main/ui/dashboard/file_menu.cljs:276
 msgid "dashboard.move-to-multi"
 msgstr "ย้าน %s ไฟล์ไปยัง"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:250
+#: src/app/main/ui/dashboard/file_menu.cljs:248
 msgid "dashboard.move-to-other-team"
 msgstr "ย้ายไปยังทีมอื่น"
 
@@ -554,7 +554,7 @@ msgstr "ย้ายไปยังทีมอื่น"
 msgid "dashboard.new-file"
 msgstr "+ สร้างไฟล์ใหม่"
 
-#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
+#: src/app/main/data/dashboard.cljs:536, src/app/main/data/dashboard.cljs:648
 msgid "dashboard.new-file-prefix"
 msgstr "สร้างไฟล์ใหม่"
 
@@ -562,7 +562,7 @@ msgstr "สร้างไฟล์ใหม่"
 msgid "dashboard.new-project"
 msgstr "+ สร้างโปรเจกต์ใหม่"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
+#: src/app/main/data/dashboard.cljs:289, src/app/main/data/dashboard.cljs:651
 msgid "dashboard.new-project-prefix"
 msgstr "สร้างโปรเจกต์ใหม่"
 
@@ -574,7 +574,7 @@ msgstr "อัปเดตอีเมลสำเร็จแล้ว"
 msgid "dashboard.notifications.password-saved"
 msgstr "บันทึกรหัสผ่านแล้ว"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:297
+#: src/app/main/ui/dashboard/file_menu.cljs:295
 msgid "dashboard.open-in-new-tab"
 msgstr "เปิดไฟล์ในแท็บใหม่"
 
@@ -602,7 +602,7 @@ msgstr "คุณเป็นเจ้าของในทีมนี้แล
 msgid "dashboard.save-settings"
 msgstr "บันทึกการตั้งค่า"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
+#: src/app/main/ui/dashboard/sidebar.cljs:259, src/app/main/ui/dashboard/sidebar.cljs:260
 msgid "dashboard.search-placeholder"
 msgstr "ค้นหา…"
 
@@ -670,7 +670,7 @@ msgstr "อีเมล"
 msgid "dashboard.your-name"
 msgstr "ชื่อของคุณ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:312, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Penpot ของคุณ"
 
@@ -743,7 +743,7 @@ msgstr "ความกว้าง"
 msgid "inspect.attributes.typography.font-size"
 msgstr "ขนาดฟอนต์"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:406
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:397, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "ระยะห่างระหว่างตัวอักษร"
 
@@ -759,7 +759,7 @@ msgstr "SVG"
 msgid "labels.code"
 msgstr "โคด"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:841, src/app/main/ui/workspace/main_menu.cljs:144
+#: src/app/main/ui/dashboard/sidebar.cljs:935, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "ชุมชน"
 
@@ -799,7 +799,7 @@ msgstr "ส่งออก"
 msgid "labels.figma"
 msgstr "Figma"
 
-#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:739
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:833
 msgid "labels.fonts"
 msgstr "ฟอนต์"
 
@@ -819,7 +819,7 @@ msgstr "ไลบรารีและเทมเพลต"
 msgid "labels.loading"
 msgstr "กำลังโหลด…"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1054
+#: src/app/main/ui/dashboard/sidebar.cljs:1148
 msgid "labels.logout"
 msgstr "ลงชื่อออก"
 
@@ -827,7 +827,7 @@ msgstr "ลงชื่อออก"
 msgid "labels.member"
 msgstr "สมาชิก"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:432, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108
+#: src/app/main/ui/dashboard/sidebar.cljs:450, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108
 msgid "labels.members"
 msgstr "สมาชิก"
 
@@ -855,6 +855,6 @@ msgstr "รหัสผ่าน"
 msgid "labels.profile"
 msgstr "โปรไฟล์"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:719
+#: src/app/main/ui/dashboard/sidebar.cljs:813
 msgid "labels.projects"
 msgstr "โปรเจกต์"

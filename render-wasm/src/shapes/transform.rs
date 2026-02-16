@@ -8,7 +8,7 @@ use skia::Matrix;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Modifier {
     Transform(TransformEntry),
-    Reflow(Uuid),
+    Reflow(Uuid, bool),
 }
 
 impl Modifier {
@@ -18,8 +18,8 @@ impl Modifier {
     pub fn parent(id: Uuid, transform: Matrix) -> Self {
         Modifier::Transform(TransformEntry::parent(id, transform))
     }
-    pub fn reflow(id: Uuid) -> Self {
-        Modifier::Reflow(id)
+    pub fn reflow(id: Uuid, force_reflow: bool) -> Self {
+        Modifier::Reflow(id, force_reflow)
     }
 }
 
@@ -39,6 +39,7 @@ pub struct TransformEntry {
 }
 
 impl TransformEntry {
+    // FIXME: We should be able to refactor code so we don't need these from_* methods
     pub fn from_input(id: Uuid, transform: Matrix) -> Self {
         TransformEntry {
             id,
@@ -47,6 +48,8 @@ impl TransformEntry {
             propagate: true,
         }
     }
+
+    // FIXME: We should be able to refactor code so we don't need these from_* methods
     pub fn from_propagate(id: Uuid, transform: Matrix) -> Self {
         TransformEntry {
             id,
@@ -119,6 +122,7 @@ impl From<TransformEntry> for [u8; 40] {
     }
 }
 
+// FIXME: Use a DTO for this
 impl SerializableResult for TransformEntry {
     type BytesType = [u8; 40];
 

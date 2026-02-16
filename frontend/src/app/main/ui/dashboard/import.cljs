@@ -9,12 +9,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.errors :as errors]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
@@ -360,7 +360,7 @@
                  on-error
                  (fn [cause]
                    (reset! status* :error)
-                   (errors/print-error! cause)
+                   (ex/print-throwable cause)
                    (rx/of (modal/hide)
                           (ntf/error (tr "dashboard.libraries-and-templates.import-error"))))
 

@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import WorkspacePage from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
-  await WorkspacePage.mockConfigFlags(page, [
+  await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, [
     "enable-subscriptions",
     "disable-onboarding",
   ]);
@@ -13,16 +13,16 @@ test.describe("Subscriptions: workspace", () => {
   test("Unlimited team should have 'Power up your plan' link in main menu", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-unlimited-subscription.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-subscription-usage",
       "subscription/get-subscription-usage.json",
@@ -41,16 +41,16 @@ test.describe("Subscriptions: workspace", () => {
   test("Enterprise team should not have 'Power up your plan' link in main menu", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-enterprise-subscription.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-subscription-usage",
       "subscription/get-subscription-usage.json",
@@ -69,16 +69,16 @@ test.describe("Subscriptions: workspace", () => {
   test("Professional team should have 7 days autosaved versions", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-enterprise-subscription.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-subscription-usage",
       "subscription/get-subscription-usage.json",
@@ -105,22 +105,22 @@ test.describe("Subscriptions: workspace", () => {
   test("Unlimited team should have 30 days autosaved versions", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-unlimited-subscription.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-subscription-usage",
       "subscription/get-subscription-usage.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-teams",
       "subscription/get-teams-unlimited-one-team.json",
@@ -147,22 +147,22 @@ test.describe("Subscriptions: workspace", () => {
   test("Unlimited team should have 90 days autosaved versions", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
+    const workspacePage = new WasmWorkspacePage(page);
     await workspacePage.setupEmptyFile();
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-enterprise-subscription.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-subscription-usage",
       "subscription/get-subscription-usage.json",
     );
 
-    await WorkspacePage.mockRPC(
+    await WasmWorkspacePage.mockRPC(
       page,
       "get-teams",
       "subscription/get-teams-enterprise-one-team.json",

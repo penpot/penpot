@@ -1,31 +1,34 @@
 import { FileRpc } from '../models/file-rpc.model';
-
-const apiUrl = 'http://localhost:3449';
+const apiUrl = 'https://localhost:3449';
 
 export async function PenpotApi() {
   if (!process.env['E2E_LOGIN_EMAIL']) {
     throw new Error('E2E_LOGIN_EMAIL not set');
   }
 
+  const body = JSON.stringify({
+    email: process.env['E2E_LOGIN_EMAIL'],
+    password: process.env['E2E_LOGIN_PASSWORD'],
+  });
+
   const resultLoginRequest = await fetch(
-    `${apiUrl}/api/rpc/command/login-with-password`,
+    `${apiUrl}/api/main/methods/login-with-password`,
     {
+      credentials: 'include',
       method: 'POST',
       headers: {
-        'Content-Type': 'application/transit+json',
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        '~:email': process.env['E2E_LOGIN_EMAIL'],
-        '~:password': process.env['E2E_LOGIN_PASSWORD'],
-      }),
+      body: body,
     },
   );
 
   const loginData = await resultLoginRequest.json();
+
   const authToken = resultLoginRequest.headers
-    .get('set-cookie')
-    ?.split(';')
-    .at(0);
+    .getSetCookie()
+    .find((cookie: string) => cookie.startsWith('auth-token='))
+    ?.split(';')[0];
 
   if (!authToken) {
     throw new Error('Login failed');
@@ -35,7 +38,7 @@ export async function PenpotApi() {
     getAuth: () => authToken,
     createFile: async () => {
       const createFileRequest = await fetch(
-        `${apiUrl}/api/rpc/command/create-file`,
+        `${apiUrl}/api/main/methods/create-file`,
         {
           method: 'POST',
           headers: {
@@ -51,6 +54,9 @@ export async function PenpotApi() {
                 'fdata/objects-map',
                 'fdata/pointer-map',
                 'fdata/shape-data-type',
+                'fdata/path-data',
+                'design-tokens/v1',
+                'variants/v1',
                 'components/v2',
                 'styles/v2',
                 'layout/grid',
@@ -61,11 +67,13 @@ export async function PenpotApi() {
         },
       );
 
-      return (await createFileRequest.json()) as FileRpc;
+      const fileData = (await createFileRequest.json()) as FileRpc;
+      console.log('File data received:', fileData);
+      return fileData;
     },
     deleteFile: async (fileId: string) => {
       const deleteFileRequest = await fetch(
-        `${apiUrl}/api/rpc/command/delete-file`,
+        `${apiUrl}/api/main/methods/delete-file`,
         {
           method: 'POST',
           headers: {

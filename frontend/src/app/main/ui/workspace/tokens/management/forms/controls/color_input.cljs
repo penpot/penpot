@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as cl]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
@@ -51,12 +52,15 @@
 ;; Both variants provide identical color-picker and text-input behavior, but
 ;; differ in how they persist the value within the form’s nested structure.
 
-
 (defn- resolve-value
   [tokens prev-token token-name value]
-  (let [token
+  (let [valid-token-name?
+        (and (string? token-name)
+             (re-matches  cto/token-name-validation-regex token-name))
+
+        token
         {:value value
-         :name (if (str/blank? token-name)
+         :name (if (or (not valid-token-name?) (str/blank? token-name))
                  "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
                  token-name)}
 
@@ -152,7 +156,6 @@
         color-resolved
         (get-in @form [:data :color-result] "")
 
-
         valid-color (or (tinycolor/valid-color value)
                         (tinycolor/valid-color color-resolved))
 
@@ -211,7 +214,7 @@
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
                  prev-input-color (some-> value
                                           (tinycolor/valid-color))
-                  ;; If the input is a reference we will take the format from the computed value
+                 ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
                                        (some-> value (tinycolor/valid-color)))
                  prev-format (some-> (or prev-input-color prev-computed-color)
@@ -380,7 +383,7 @@
            (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
                  prev-input-color (some-> value
                                           (tinycolor/valid-color))
-                  ;; If the input is a reference we will take the format from the computed value
+                 ;; If the input is a reference we will take the format from the computed value
                  prev-computed-color (when-not prev-input-color
                                        (some-> value (tinycolor/valid-color)))
                  prev-format (some-> (or prev-input-color prev-computed-color)

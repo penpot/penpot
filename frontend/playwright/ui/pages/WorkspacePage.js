@@ -58,10 +58,10 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     async waitForTextSpan(nth = 0) {
       if (!nth) {
-        return this.page.waitForSelector('[data-itype="inline"]');
+        return this.page.waitForSelector('[data-itype="span"]');
       }
       return this.page.waitForSelector(
-        `[data-itype="inline"]:nth-child(${nth})`,
+        `[data-itype="span"]:nth-child(${nth})`,
       );
     }
 
@@ -253,7 +253,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness() {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText("Page 1");
+    await expect(this.pageName).toHaveText("Page 1", { timeout: 30000 })
   }
 
   async sendPresenceMessage(fixture) {
@@ -338,9 +338,18 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickWithDragViewportAt(x, y, width, height) {
     await this.page.waitForTimeout(100);
-    await this.viewport.hover({ position: { x, y } });
+    const box = await this.viewport.boundingBox();
+    if (!box) throw new Error('Viewport not visible');
+
+    const startX = box.x + x;
+    const startY = box.y + y;
+    const endX = startX + width;
+    const endY = startY + height;
+
+    await this.page.mouse.move(startX, startY);
     await this.page.mouse.down();
-    await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    // Use steps so mouseup is properly processed (see Playwright issue #20254)
+    await this.page.mouse.move(endX, endY, { steps: 10 });
     await this.page.mouse.up();
   }
 
@@ -383,19 +392,46 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.keyboard.press("T");
     await this.page.waitForTimeout(timeToWait);
     await this.clickAndMove(x1, y1, x2, y2);
-    await this.page.waitForTimeout(timeToWait);
+    await expect(this.page.getByTestId("text-editor")).toBeVisible();
+
     if (initialText) {
       await this.page.keyboard.type(initialText);
     }
   }
 
   /**
-   * Copies the selected element into the clipboard.
+   * Copies the selected element into the clipboard, or copy the
+   * content of the locator into the clipboard.
    *
    * @returns {Promise<void>}
    */
-  async copy() {
-    return this.page.keyboard.press("Control+C");
+  async copy(kind = "keyboard", locator = undefined) {
+    if (kind === "context-menu" && locator) {
+      await locator.click({ button: "right" });
+      await this.page.getByText("Copy", { exact: true }).click();
+    } else {
+      await this.page.keyboard.press("ControlOrMeta+C");
+    }
+    // wait for the clipboard to be updated
+    await this.page.waitForFunction(async () => {
+      const content = await navigator.clipboard.readText()
+      return content !== "";
+    }, { timeout: 1000 });
+  }
+
+  async cut(kind = "keyboard", locator = undefined) {
+    if (kind === "context-menu" && locator) {
+      await locator.click({ button: "right" });
+      await this.page.getByText("Cut", { exact: true }).click();
+    } else {
+      await this.page.keyboard.press("ControlOrMeta+X");
+    }
+    // wait for the clipboard to be updated
+    await this.page.waitForFunction(async () => {
+      const content = await navigator.clipboard.readText()
+      return content !== "";
+    }, { timeout: 1000 });
+
   }
 
   /**
@@ -407,9 +443,9 @@ export class WorkspacePage extends BaseWebSocketPage {
   async paste(kind = "keyboard") {
     if (kind === "context-menu") {
       await this.viewport.click({ button: "right" });
-      return this.page.getByText("PasteCtrlV").click();
+      return this.page.getByText("Paste", { exact: true }).click();
     }
-    return this.page.keyboard.press("Control+V");
+    return this.page.keyboard.press("ControlOrMeta+V");
   }
 
   async panOnViewportAt(x, y, width, height) {
@@ -432,8 +468,8 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.up();
   }
 
-  async clickLeafLayer(name, clickOptions = {}) {
-    const layer = this.layers.getByText(name).first();
+  async clickLeafLayer(name, clickOptions = {}, index = 0) {
+    const layer = this.layers.getByText(name).nth(index);
     await layer.waitFor();
     await layer.click(clickOptions);
     await this.page.waitForTimeout(500);
@@ -444,15 +480,16 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.clickLeafLayer(name, clickOptions);
   }
 
-  async clickToggableLayer(name, clickOptions = {}) {
+  async clickToggableLayer(name, clickOptions = {}, index = 0) {
     const layer = this.layers
       .getByTestId("layer-row")
-      .filter({ hasText: name });
-    const button = layer.getByRole("button");
+      .filter({ hasText: name })
+      .nth(index);
+    const button = layer.getByTestId("toggle-content");
 
-    await button.waitFor();
+    await expect(button).toBeVisible();
     await button.click(clickOptions);
-    await this.page.waitForTimeout(500);
+    await button.waitFor({ ariaExpanded: true });
   }
 
   async expectSelectedLayer(name) {
@@ -495,13 +532,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickColorPalette(clickOptions = {}) {
     await this.palette
-      .getByRole("button", { name: "Color Palette (Alt+P)" })
-      .click(clickOptions);
-  }
-
-  async clickColorPalette(clickOptions = {}) {
-    await this.palette
-      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .getByRole("button", { name: /Color Palette/ })
       .click(clickOptions);
   }
 

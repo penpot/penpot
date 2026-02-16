@@ -54,6 +54,7 @@ jobs:
   test-plugins:
     name: Plugins Runtime Linter & Tests
     runs-on: penpot-runner-02
+    container: penpotapp/devenv:latest
 
     steps:
       - uses: actions/checkout@v4
@@ -86,7 +87,11 @@ jobs:
 
       - name: Build runtime
         working-directory: ./plugins
-        run: pnpm run build
+        run: pnpm run build:runtime
+
+      - name: Build doc
+        working-directory: ./plugins
+        run: pnpm run build:doc
 
       - name: Build plugins
         working-directory: ./plugins

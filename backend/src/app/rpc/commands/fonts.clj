@@ -9,12 +9,14 @@
    [app.binfile.common :as bfc]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.media :as cmedia]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.logical-deletion :as ldel]
+   [app.http :as-alias http]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -27,7 +29,19 @@
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
-   [app.util.services :as sv]))
+   [app.storage.tmp :as tmp]
+   [app.util.services :as sv]
+   [datoteka.io :as io])
+  (:import
+   java.io.InputStream
+   java.io.OutputStream
+   java.io.SequenceInputStream
+   java.util.Collections
+   java.util.zip.ZipEntry
+   java.util.zip.ZipOutputStream))
+
+(set! *warn-on-reflection* true)
+
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
@@ -79,7 +93,8 @@
 (def ^:private schema:create-font-variant
   [:map {:title "create-font-variant"}
    [:team-id ::sm/uuid]
-   [:data [:map-of ::sm/text ::sm/any]]
+   [:data [:map-of ::sm/text [:or ::sm/bytes
+                              [::sm/vec ::sm/bytes]]]]
    [:font-id ::sm/uuid]
    [:font-family ::sm/text]
    [:font-weight [::sm/one-of {:format "number"} valid-weight]]
@@ -105,7 +120,7 @@
 
 (defn create-font-variant
   [{:keys [::sto/storage ::db/conn]} {:keys [data] :as params}]
-  (letfn [(generate-missing! [data]
+  (letfn [(generate-missing [data]
             (let [data (media/run {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
                          (not (contains? data "font/ttf"))
@@ -116,8 +131,26 @@
                           :hint "invalid font upload, unable to generate missing font assets"))
               data))
 
+          (process-chunks [chunks]
+            (let [tmp     (tmp/tempfile :prefix "penpot.tempfont." :suffix "")
+                  streams (map io/input-stream chunks)
+                  streams (Collections/enumeration streams)]
+              (with-open [^OutputStream output (io/output-stream tmp)
+                          ^InputStream input (SequenceInputStream. streams)]
+                (io/copy input output))
+              tmp))
+
+          (join-chunks [data]
+            (reduce-kv (fn [data mtype content]
+                         (if (vector? content)
+                           (assoc data mtype (process-chunks content))
+                           data))
+                       data
+                       data))
+
           (prepare-font [data mtype]
             (when-let [resource (get data mtype)]
+
               (let [hash    (sto/calculate-hash resource)
                     content (-> (sto/content resource)
                                 (sto/wrap-with-hash hash))]
@@ -156,7 +189,8 @@
                          :otf-file-id (:id otf)
                          :ttf-file-id (:id ttf)}))]
 
-    (let [data   (generate-missing! data)
+    (let [data   (join-chunks data)
+          data   (generate-missing data)
           assets (persist-fonts-files! data)
           result (insert-font-variant! assets)]
       (vary-meta result assoc ::audit/replace-props (update params :data (comp vec keys))))))
@@ -266,3 +300,98 @@
     (rph/with-meta (rph/wrap)
       {::audit/props {:font-family (:font-family variant)
                       :font-id (:font-id variant)}})))
+
+;; --- DOWNLOAD FONT
+
+(defn- make-temporal-storage-object
+  [cfg profile-id content]
+  (let [storage (sto/resolve cfg)
+        content (media/check-input content)
+        hash    (sto/calculate-hash (:path content))
+        data    (-> (sto/content (:path content))
+                    (sto/wrap-with-hash hash))
+        mtype   (:mtype content "application/octet-stream")
+        content {::sto/content data
+                 ::sto/deduplicate? true
+                 ::sto/touched-at (ct/in-future {:minutes 30})
+                 :profile-id profile-id
+                 :content-type mtype
+                 :bucket "tempfile"}]
+
+    (sto/put-object! storage content)))
+
+(defn- make-variant-filename
+  [v mtype]
+  (str (:font-family v) "-" (:font-weight v)
+       (when-not (= "normal" (:font-style v)) (str "-" (:font-style v)))
+       (cmedia/mtype->extension mtype)))
+
+(def ^:private schema:download-font
+  [:map {:title "download-font"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::download-font
+  "Download the font file. Returns a http redirect to the asset resource uri."
+  {::doc/added "2.15"
+   ::sm/params schema:download-font}
+  [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
+  (let [variant (db/get pool :team-font-variant {:id id})]
+    (teams/check-read-permissions! pool profile-id (:team-id variant))
+
+    ;; Try to get the best available font format (prefer TTF for broader compatibility).
+    (let [media-id (or (:ttf-file-id variant)
+                       (:otf-file-id variant)
+                       (:woff2-file-id variant)
+                       (:woff1-file-id variant))
+          sobj     (sto/get-object storage media-id)
+          mtype    (-> sobj meta :content-type)]
+
+      {:id (:id sobj)
+       :uri (files/resolve-public-uri (:id sobj))
+       :name (make-variant-filename variant mtype)})))
+
+(def ^:private schema:download-font-family
+  [:map {:title "download-font-family"}
+   [:font-id ::sm/uuid]])
+
+(sv/defmethod ::download-font-family
+  "Download the entire font family as a zip file. Returns the zip
+  bytes on the body, without encoding it on transit or json."
+  {::doc/added "2.15"
+   ::sm/params schema:download-font-family}
+  [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [::rpc/profile-id font-id]}]
+  (let [variants (db/query pool :team-font-variant
+                           {:font-id font-id
+                            :deleted-at nil})]
+
+    (when-not (seq variants)
+      (ex/raise :type :not-found
+                :code :object-not-found))
+
+    (teams/check-read-permissions! pool profile-id (:team-id (first variants)))
+
+    (let [tempfile (tmp/tempfile :suffix ".zip")
+          ffamily  (-> variants first :font-family)]
+
+      (with-open [^OutputStream output (io/output-stream tempfile)
+                  ^OutputStream output (ZipOutputStream. output)]
+        (doseq [v variants]
+          (let [media-id (or (:ttf-file-id v)
+                             (:otf-file-id v)
+                             (:woff2-file-id v)
+                             (:woff1-file-id v))
+                sobj     (sto/get-object storage media-id)
+                mtype    (-> sobj meta :content-type)
+                name     (make-variant-filename v mtype)]
+
+            (with-open [input (sto/get-object-data storage sobj)]
+              (.putNextEntry ^ZipOutputStream output (ZipEntry. ^String name))
+              (io/copy input output :size (:size sobj))
+              (.closeEntry ^ZipOutputStream output)))))
+
+      (let [{:keys [id] :as sobj} (make-temporal-storage-object cfg profile-id
+                                                                {:mtype "application/zip"
+                                                                 :path tempfile})]
+        {:id id
+         :uri (files/resolve-public-uri id)
+         :name (str ffamily ".zip")}))))

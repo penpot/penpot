@@ -95,10 +95,10 @@
   []
 
   (let [plugins-state* (mf/use-state #(preg/plugins-list))
-        plugins-state @plugins-state*
+        plugins-state  (deref plugins-state*)
 
-        plugin-url* (mf/use-state "")
-        plugin-url  @plugin-url*
+        plugin-url*    (mf/use-state "")
+        plugin-url     (deref plugin-url*)
 
         fetching-manifest? (mf/use-state false)
 

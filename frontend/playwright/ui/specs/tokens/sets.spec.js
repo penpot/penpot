@@ -216,4 +216,32 @@ test.describe("Tokens: Sets Tab", () => {
     await expect(tokenSetItems.nth(1)).toHaveAttribute("aria-checked", "false");
     await expect(tokenSetItems.nth(2)).toHaveAttribute("aria-checked", "true");
   });
+
+  test("Display active set and verify if is enabled", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenSetItems } =
+      await setupTokensFile(page);
+
+    // Create set
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+    await changeSetInput(tokenThemesSetsSidebar, "Inactive set");
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Inactive set" })
+      .click();
+    let activeSetTitle = await tokensSidebar.getByTestId(
+      "active-token-set-title",
+    );
+    await expect(activeSetTitle).toHaveText("TOKENS - Inactive set");
+    const inactiveSetInfo = await tokensSidebar.getByTitle(
+      "This set is not active.",
+    );
+    await expect(inactiveSetInfo).toBeVisible();
+
+    // Switch active set
+
+    await tokenThemesSetsSidebar.getByRole("button", { name: "theme" }).click();
+    await expect(activeSetTitle).toHaveText("TOKENS - theme");
+    await expect(inactiveSetInfo).not.toBeVisible();
+  });
 });

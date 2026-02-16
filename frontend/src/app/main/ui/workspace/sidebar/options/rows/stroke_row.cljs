@@ -10,13 +10,15 @@
    [app.common.data :as d]
    [app.common.types.color :as ctc]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -45,7 +47,10 @@
            select-on-focus
            ids]}]
 
-  (let [on-drop
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        on-drop
         (mf/use-fn
          (mf/deps on-reorder index)
          (fn [relative-pos data]
@@ -88,7 +93,13 @@
         on-width-change
         (mf/use-fn
          (mf/deps index on-stroke-width-change)
-         #(on-stroke-width-change index %))
+         (fn [value]
+           (if (or (string? value) (int? value))
+             (on-stroke-width-change index value)
+             (do
+               (st/emit! (dwta/toggle-token {:token (first value)
+                                             :attrs #{:stroke-width}
+                                             :shape-ids ids}))))))
 
         stroke-alignment (or (:stroke-alignment stroke) :center)
 
@@ -149,6 +160,12 @@
          (fn [token]
            (on-detach-token token #{:stroke-color})))
 
+        on-detach-token-width
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (on-detach-token (first token) #{:stroke-width})))
+
         stroke-caps-options
         [{:value nil :label (tr "workspace.options.stroke-cap.none")}
          :separator
@@ -169,7 +186,8 @@
     [:div {:class (stl/css-case
                    :stroke-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))}
+                   :dnd-over-bot (= (:over dprops) :bot))
+           :aria-label (str "stroke-row-" index)}
 
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
@@ -195,17 +213,30 @@
 
      ;; Stroke Width, Alignment & Style
      [:div {:class (stl/css :stroke-options)}
-      [:div {:class (stl/css :stroke-width-input)
-             :title (tr "workspace.options.stroke-width")}
-       [:> icon* {:icon-id i/stroke-size
-                  :size "s"}]
-       [:> numeric-input* {:value stroke-width
-                           :min 0
-                           :placeholder (tr "settings.multiple")
-                           :on-change on-width-change
-                           :on-focus on-focus
-                           :select-on-focus select-on-focus
-                           :on-blur on-blur}]]
+      (if token-numeric-inputs
+        [:> numeric-input-wrapper* {:on-change on-width-change
+                                    :on-detach on-detach-token-width
+                                    :icon i/stroke-size
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-width
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-width")
+                                    :applied-token (get applied-tokens :stroke-width)
+                                    :value stroke-width}]
+
+        [:div {:class (stl/css :stroke-width-input)
+               :title (tr "workspace.options.stroke-width")}
+         [:> icon* {:icon-id i/stroke-size
+                    :size "s"}]
+         [:> deprecated-input/numeric-input* {:value stroke-width
+                                              :min 0
+                                              :placeholder (tr "settings.multiple")
+                                              :on-change on-width-change
+                                              :on-focus on-focus
+                                              :select-on-focus select-on-focus
+                                              :on-blur on-blur}]])
 
       [:div {:class (stl/css :stroke-alignment-select)
              :data-testid "stroke.alignment"}
@@ -220,7 +251,7 @@
                      :options stroke-style-options
                      :on-change on-style-change}]])]
 
-           ;; Stroke Caps
+     ;; Stroke Caps
      (when show-caps
        [:div {:class (stl/css :stroke-caps-options)}
         [:& select {:default-value (:stroke-cap-start stroke)

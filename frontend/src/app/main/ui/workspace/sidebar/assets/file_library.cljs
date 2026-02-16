@@ -106,7 +106,7 @@
                      :title          (if is-local
                                        (mf/html [:div {:class (stl/css :special-title)}
                                                  (tr "workspace.assets.local-library")])
-                                      ;; Do we need to add shared info here?
+                                       ;; Do we need to add shared info here?
                                        (mf/html [:div {:class (stl/css :special-title)}
                                                  file-name]))}
       (when-not ^boolean is-local

@@ -18,7 +18,7 @@
   (let [;; ==== Setup
         store   (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
 
-        ^js context (api/create-context "TEST")
+        ^js context (api/create-context "00000000-0000-0000-0000-000000000000")
 
         _       (set! st/state store)
 

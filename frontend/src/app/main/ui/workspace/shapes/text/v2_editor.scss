@@ -29,6 +29,23 @@
 
   color: transparent;
 
+  // Match Skia's text layout precision: prevent browser text-size
+  // adjustments and ensure consistent kerning across browsers.
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  font-kerning: normal;
+
+  &::selection,
+  *::selection {
+    color: transparent;
+    -webkit-text-fill-color: transparent; // WebKit/Safari
+  }
+
+  &::-moz-selection,
+  *::-moz-selection {
+    color: transparent;
+  }
+
   [data-itype="paragraph"] {
     line-height: inherit;
     user-select: text;

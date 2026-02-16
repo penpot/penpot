@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
@@ -289,34 +288,34 @@
 
 (declare stop-path-edit)
 
+
 (defn start-path-edit
   [id]
   (ptk/reify ::start-path-edit
     ptk/UpdateEvent
     (update [_ state]
       (let [objects   (dsh/lookup-page-objects state)
-            edit-path (dm/get-in state [:workspace-local :edit-path id])
-            content   (st/get-path state :content)
-            state     (cond-> state
-                        (cfh/path-shape? objects id)
-                        (st/set-content (path/close-subpaths content)))]
+            shape     (get objects id)]
 
-        (cond-> state
-          (or (not edit-path)
-              (= :draw (:edit-mode edit-path)))
-          (assoc-in [:workspace-local :edit-path id] {:edit-mode :move
-                                                      :selected #{}
-                                                      :snap-toggled false})
-          (and (some? edit-path)
-               (= :move (:edit-mode edit-path)))
-          (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
+        (-> state
+            (st/set-content (path/close-subpaths (:content shape)))
+            (update-in [:workspace-local :edit-path id]
+                       (fn [state]
+                         (let [state (if state
+                                       (if (= :move (:edit-mode state))
+                                         (assoc state :edit-mode :draw)
+                                         state)
+                                       {:edit-mode :move
+                                        :selected #{}
+                                        :snap-toggled false})]
+                           (assoc state :old-content (:content shape))))))))
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (->> stream
-                         (rx/filter #(let [type (ptk/type %)]
-                                       (= type ::dwe/clear-edition-mode)
-                                       (= type ::start-path-edit))))]
+      (let [stopper (rx/filter #(let [type (ptk/type %)]
+                                  (= type ::dwe/clear-edition-mode)
+                                  (= type ::start-path-edit))
+                               stream)]
         (rx/concat
          (rx/of (undo/start-path-undo))
          (->> stream
@@ -325,7 +324,8 @@
               (rx/map #(stop-path-edit id))
               (rx/take-until stopper)))))))
 
-(defn stop-path-edit [id]
+(defn stop-path-edit
+  [id]
   (ptk/reify ::stop-path-edit
     ptk/UpdateEvent
     (update [_ state]
@@ -335,13 +335,12 @@
     (watch [_ _ _]
       (rx/of (ptk/data-event :layout/update {:ids [id]})))))
 
-(defn split-segments
-  [{:keys [from-p to-p t]}]
+(defn- split-segments
+  [id {:keys [from-p to-p t]}]
   (ptk/reify ::split-segments
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (st/get-path-id state)
-            content (st/get-path state :content)]
+      (let [content (st/get-path state :content)]
         (-> state
             (assoc-in [:workspace-local :edit-path id :old-content] content)
             (st/set-content (-> content
@@ -353,10 +352,10 @@
       (rx/of (changes/save-path-content {:preserve-move-to true})))))
 
 (defn create-node-at-position
-  [event]
+  [params]
   (ptk/reify ::create-node-at-position
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (st/get-path-id state)]
         (rx/of (dwsh/update-shapes [id] path/convert-to-path)
-               (split-segments event))))))
+               (split-segments id params))))))

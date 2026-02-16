@@ -123,7 +123,7 @@
                         :aria-label (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
                         :tooltip-placement "bottom"
                         :on-click on-select-draw-mode}]
-       ;; Edit mode
+      ;; Edit mode
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :topbar-btn)
                         :icon i/move

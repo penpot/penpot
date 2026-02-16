@@ -85,7 +85,7 @@
       (t/is (map? (:result out))))
 
     ;; run the task again
-    (let [res (binding [ct/*clock* (clock/fixed (ct/in-future {:minutes 31}))]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 31}))]
                 (th/run-task! "storage-gc-touched" {}))]
       (t/is (= 2 (:freeze res))))
 
@@ -136,7 +136,7 @@
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
       ;; run the task again
-      (let [res (binding [ct/*clock* (clock/fixed (ct/in-future {:minutes 31}))]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 31}))]
                   (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:delete res)))
         (t/is (= 0 (:freeze res))))
@@ -147,7 +147,7 @@
 
       ;; Run the storage gc deleted task, it should permanently delete
       ;; all storage objects related to the deleted thumbnails
-      (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
         (let [res (th/run-task! :storage-gc-deleted {})]
           (t/is (= 1 (:deleted res)))))
 
@@ -247,7 +247,7 @@
 
       ;; Run the storage gc deleted task, it should permanently delete
       ;; all storage objects related to the deleted thumbnails
-      (binding [ct/*clock* (clock/fixed (ct/in-future {:days 8}))]
+      (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
         (let [result (th/run-task! :storage-gc-deleted {})]
           (t/is (= 1 (:deleted result)))))
 

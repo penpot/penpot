@@ -70,7 +70,7 @@
 
         on-click
         (mf/use-fn
-         (mf/deps id)
+         (mf/deps id current-page-id)
          (fn []
            ;; For the wasm renderer, apply a blur effect to the viewport canvas
            ;; when we navigate to a different page.

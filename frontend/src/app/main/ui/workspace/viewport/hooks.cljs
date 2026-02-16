@@ -164,7 +164,6 @@
                         ;; for the release of the z key
                         (when-not ^boolean value
                           (reset! z* false))))
-
     (hooks/use-stream kbd-zoom-s
                       (fn [kevent]
                         (dom/prevent-default kevent)
@@ -316,7 +315,7 @@
                                 (and (cfh/group-shape? objects %)
                                      (not (contains? child-parent? %)))
                                 (and (features/active-feature? @st/state "render-wasm/v1")
-                                     (cfh/text-shape? objects %)
+                                     (cfh/text-shape? (get objects %))
                                      (not (wasm.api/intersect-position-in-shape % @last-point-ref)))))))
 
                remove-measure-xf

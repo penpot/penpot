@@ -14,7 +14,7 @@ Keep in mind that database size doesn't grow strictly proportionally with user c
 
 # About Valkey / Redis requirements
 
-"Valkey is mainly used for coordinating websocket notifications and, since Penpot 2.11, as a cache. Therefore, disk storage will not be necessary as it will use the instance's RAM.
+Valkey is mainly used for coordinating websocket notifications and, since Penpot 2.11, as a cache. Therefore, disk storage will not be necessary as it will use the instance's RAM.
 
 To prevent the cache from hogging all the system's RAM usage, it is recommended to use two configuration parameters which, both in the docker-compose.yaml provided by Penpot and in the official Helm Chart, come with default parameters that should be sufficient for most deployments:
 

@@ -1,18 +1,7 @@
 {
   "name": "plugins-styles",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "plugins-styles/src",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plugins-styles/src",
   "projectType": "library",
-  "targets": {
-    "build": {
-      "command": "node tools/scripts/build-css.mjs",
-      "options": {
-        "outputPath": "dist/plugins-styles"
-      }
-    },
-    "lint": {
-      "command": "echo 0"
-    }
-  },
-  "tags": ["type:ui"]
+  "targets": {}
 }

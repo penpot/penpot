@@ -82,7 +82,7 @@
               :style #js {"--bullet-size" "16px"}}
         [:& cb/color-bullet {:color color
                              :mini true}]]
-      ;;  REMOVE this conditional when :inspect-styles flag is removed
+       ;;  REMOVE this conditional when :inspect-styles flag is removed
        (if (contains? cf/flags :inspect-styles)
          [:div {:class (stl/css :global/attr-label)} property]
          [:div {:class (stl/css :format-wrapper)}

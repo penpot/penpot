@@ -7,5 +7,5 @@
   [hex opacity]
   (let [rgb (js/parseInt (subs hex 1) 16)
         a (mth/floor (* (or opacity 1) 0xff))]
-        ;; rgba >>> 0 so we have an unsigned representation
+    ;; rgba >>> 0 so we have an unsigned representation
     (unsigned-bit-shift-right (bit-or (bit-shift-left a 24) rgb) 0)))

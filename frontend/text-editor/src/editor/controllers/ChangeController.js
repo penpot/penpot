@@ -54,8 +54,12 @@ export class ChangeController extends EventTarget {
     return this.#hasPendingChanges;
   }
 
+  /**
+   * Handles timeout.
+   */
   #onTimeout = () => {
     this.dispatchEvent(new Event("change"));
+    this.#hasPendingChanges = false;
   };
 
   /**

@@ -1,0 +1,10 @@
+@import "@penpot/plugin-styles/styles.css";
+
+body {
+    line-height: 1.5;
+    padding: 10px;
+}
+
+p {
+    margin-block-end: 0.75rem;
+}

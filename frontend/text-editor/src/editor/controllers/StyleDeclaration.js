@@ -48,7 +48,7 @@ export class StyleDeclaration {
   }
 
   item(index) {
-    return Array.from(this.#items).at(index).name;
+    return Array.from(this.#items.keys()).at(index);
   }
 
   removeProperty(name) {

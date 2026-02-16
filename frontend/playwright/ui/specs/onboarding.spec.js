@@ -15,6 +15,8 @@ test("User can complete the onboarding", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   const onboardingPage = new OnboardingPage(page);
 
+  await dashboardPage.mockConfigFlags(["enable-onboarding"]);
+
   await dashboardPage.goToDashboard();
   await expect(
     page.getByRole("heading", { name: "Help us get to know you" }),

@@ -1,0 +1,14 @@
+{
+  "name": "Design tokens plugin POC",
+  "description": "This is a plugin to try Design Tokens in Penpot API",
+  "code": "/assets/plugin.js",
+  "permissions": [
+    "page:read",
+    "content:read",
+    "file:read",
+    "selection:read",
+    "content:write",
+    "library:read",
+    "library:write"
+  ]
+}

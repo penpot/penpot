@@ -2,6 +2,11 @@
  :remove-multiple-non-indenting-spaces? false
  :remove-surrounding-whitespace? true
  :remove-consecutive-blank-lines? false
+ :indent-line-comments? true
+ :parallel? true
+ :align-form-columns? false
+ ;; :align-map-columns? false
+ ;; :align-single-column-lines? false
  :extra-indents {rumext.v2/fnc [[:inner 0]]
                  cljs.test/async [[:inner 0]]
                  promesa.exec/thread [[:inner 0]]

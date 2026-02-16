@@ -1,3 +1,4 @@
+use crate::math::is_close_to;
 use crate::shapes::fills::{Fill, SolidColor};
 use skia_safe::{self as skia, Rect};
 
@@ -118,6 +119,19 @@ impl Stroke {
         self.width *= value;
     }
 
+    /// Returns the clip operation for dotted inner/outer strokes.
+    /// Returns `None` when no clipping is needed (center or non-dotted).
+    pub fn clip_op(&self) -> Option<skia::ClipOp> {
+        if self.style != StrokeStyle::Dotted || self.kind == StrokeKind::Center {
+            return None;
+        }
+        match self.kind {
+            StrokeKind::Inner => Some(skia::ClipOp::Intersect),
+            StrokeKind::Outer => Some(skia::ClipOp::Difference),
+            StrokeKind::Center => None,
+        }
+    }
+
     pub fn delta(&self) -> f32 {
         match self.kind {
             StrokeKind::Inner => 0.,
@@ -127,24 +141,46 @@ impl Stroke {
     }
 
     pub fn outer_rect(&self, rect: &Rect) -> Rect {
-        match self.kind {
-            StrokeKind::Inner => Rect::from_xywh(
-                rect.left + (self.width / 2.),
-                rect.top + (self.width / 2.),
-                rect.width() - self.width,
-                rect.height() - self.width,
-            ),
-            StrokeKind::Center => Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height()),
-            StrokeKind::Outer => Rect::from_xywh(
-                rect.left - (self.width / 2.),
-                rect.top - (self.width / 2.),
-                rect.width() + self.width,
-                rect.height() + self.width,
-            ),
+        match (self.kind, self.style) {
+            (StrokeKind::Inner, StrokeStyle::Dotted) | (StrokeKind::Outer, StrokeStyle::Dotted) => {
+                // Boundary so circles center on it and semicircles match after clipping
+                *rect
+            }
+            _ => match self.kind {
+                StrokeKind::Inner => Rect::from_xywh(
+                    rect.left + (self.width / 2.),
+                    rect.top + (self.width / 2.),
+                    rect.width() - self.width,
+                    rect.height() - self.width,
+                ),
+                StrokeKind::Center => {
+                    Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height())
+                }
+                StrokeKind::Outer => Rect::from_xywh(
+                    rect.left - (self.width / 2.),
+                    rect.top - (self.width / 2.),
+                    rect.width() + self.width,
+                    rect.height() + self.width,
+                ),
+            },
         }
     }
 
+    pub fn aligned_rect(&self, rect: &Rect, scale: f32) -> Rect {
+        let stroke_rect = self.outer_rect(rect);
+        if self.kind != StrokeKind::Center {
+            return stroke_rect;
+        }
+
+        align_rect_to_half_pixel(&stroke_rect, self.width, scale)
+    }
+
     pub fn outer_corners(&self, corners: &Corners) -> Corners {
+        if matches!(self.style, StrokeStyle::Dotted | StrokeStyle::Dashed) {
+            // Path at boundary so no corner offset
+            return *corners;
+        }
+
         let offset = match self.kind {
             StrokeKind::Center => 0.0,
             StrokeKind::Inner => -self.width / 2.0,
@@ -162,7 +198,6 @@ impl Stroke {
         &self,
         rect: &Rect,
         svg_attrs: Option<&SvgAttrs>,
-        scale: f32,
         antialias: bool,
     ) -> skia::Paint {
         let mut paint = self.fill.to_paint(rect, antialias);
@@ -171,7 +206,7 @@ impl Stroke {
         let width = match self.kind {
             StrokeKind::Inner => self.width,
             StrokeKind::Center => self.width,
-            StrokeKind::Outer => self.width + (1. / scale),
+            StrokeKind::Outer => self.width,
         };
 
         paint.set_stroke_width(width);
@@ -230,10 +265,9 @@ impl Stroke {
         is_open: bool,
         rect: &Rect,
         svg_attrs: Option<&SvgAttrs>,
-        scale: f32,
         antialias: bool,
     ) -> skia::Paint {
-        let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
+        let mut paint = self.to_paint(rect, svg_attrs, antialias);
         match self.render_kind(is_open) {
             StrokeKind::Inner => {
                 paint.set_stroke_width(2. * paint.stroke_width());
@@ -254,10 +288,9 @@ impl Stroke {
         is_open: bool,
         rect: &Rect,
         svg_attrs: Option<&SvgAttrs>,
-        scale: f32,
         antialias: bool,
     ) -> skia::Paint {
-        let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
+        let mut paint = self.to_paint(rect, svg_attrs, antialias);
         match self.render_kind(is_open) {
             StrokeKind::Inner => {
                 paint.set_stroke_width(2. * paint.stroke_width());
@@ -284,6 +317,38 @@ impl Stroke {
     }
 }
 
+fn align_rect_to_half_pixel(rect: &Rect, stroke_width: f32, scale: f32) -> Rect {
+    if scale <= 0.0 {
+        return *rect;
+    }
+
+    let stroke_pixels = stroke_width * scale;
+    let stroke_pixels_rounded = stroke_pixels.round();
+    if !is_close_to(stroke_pixels, stroke_pixels_rounded) {
+        return *rect;
+    }
+
+    if (stroke_pixels_rounded as i32) % 2 == 0 {
+        return *rect;
+    }
+
+    let left_px = rect.left * scale;
+    let top_px = rect.top * scale;
+    let target_frac = 0.5;
+    let dx_px = target_frac - (left_px - left_px.floor());
+    let dy_px = target_frac - (top_px - top_px.floor());
+
+    if is_close_to(dx_px, 0.0) && is_close_to(dy_px, 0.0) {
+        return *rect;
+    }
+
+    Rect::from_xywh(
+        rect.left + (dx_px / scale),
+        rect.top + (dy_px / scale),
+        rect.width(),
+        rect.height(),
+    )
+}
 fn cap_margin_for_cap(cap: Option<StrokeCap>, width: f32) -> f32 {
     match cap {
         Some(StrokeCap::LineArrow)

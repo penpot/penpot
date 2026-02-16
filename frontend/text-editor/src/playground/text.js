@@ -51,7 +51,6 @@ export class TextSpan {
       elementStyle.getPropertyValue("letter-spacing"),
     );
     const fontFamily = elementStyle.getPropertyValue("font-family");
-    console.log("fontFamily", fontFamily);
     const fontStyles = fontManager.fonts.get(fontFamily);
     const textDecoration = TextDecoration.fromStyle(
       elementStyle.getPropertyValue("text-decoration"),
@@ -62,7 +61,6 @@ export class TextSpan {
     const textDirection = TextDirection.fromStyle(
       elementStyle.getPropertyValue("text-direction"),
     );
-    console.log(fontWeight, fontStyle);
     const font = fontStyles.find(
       (currentFontStyle) =>
         currentFontStyle.weightAsNumber === fontWeight &&

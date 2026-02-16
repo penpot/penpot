@@ -1,0 +1,54 @@
+{
+  "name": "mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Penpot integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build:server": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:js-yaml --external:sharp",
+    "build": "pnpm run build:server && cp -r src/static dist/static && cp -r data dist/data",
+    "build:multi-user": "pnpm run build",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
+    "start": "node dist/index.js",
+    "start:multi-user": "node dist/index.js --multi-user",
+    "start:dev": "node --import ts-node/register src/index.ts",
+    "start:dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user",
+    "types:check": "tsc --noEmit",
+    "clean": "rm -rf dist/"
+  },
+  "keywords": [
+    "mcp",
+    "penpot",
+    "server"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.24.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "express": "^5.1.0",
+    "js-yaml": "^4.1.1",
+    "penpot-mcp": "file:..",
+    "pino": "^9.10.0",
+    "pino-pretty": "^13.1.1",
+    "reflect-metadata": "^0.1.13",
+    "sharp": "^0.34.5",
+    "ws": "^8.18.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@penpot/mcp-common": "workspace:../common",
+    "@types/express": "^4.17.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.10",
+    "esbuild": "^0.25.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  },
+  "ts-node": {
+    "esm": true
+  }
+}

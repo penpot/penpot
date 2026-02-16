@@ -306,7 +306,7 @@
 
      (-write-to [_ heap offset]
        (let [buffer' (.-buffer ^js/DataView dbuffer)
-            ;; Calculate byte size: 4 bytes header + (size * FILL-U8-SIZE)
+             ;; Calculate byte size: 4 bytes header + (size * FILL-U8-SIZE)
              byte-size (+ 4 (* size FILL-U8-SIZE))
              ;; Create Uint32Array with exact size needed (convert bytes to u32 elements)
              u32-array (js/Uint32Array. buffer' 0 (/ byte-size 4))]

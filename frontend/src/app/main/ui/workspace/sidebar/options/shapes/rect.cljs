@@ -112,6 +112,7 @@
          :values layout-item-values
          :is-layout-child? true
          :is-flex-parent? is-flex-parent?
+         :applied-tokens applied-tokens
          :is-grid-parent? is-grid-parent?
          :shape shape}])
 

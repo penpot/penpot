@@ -21,7 +21,7 @@
 (def ^:private schema:properties-row
   [:map
    [:term :string]
-   [:detail :string]
+   [:detail {:optional true} [:maybe :string]]
    [:property {:optional true} :string] ;; CSS valid property
    [:token {:optional true} :any] ;; resolved token object
    [:copiable {:optional true} :boolean]])

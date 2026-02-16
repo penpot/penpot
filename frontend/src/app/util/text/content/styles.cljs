@@ -32,7 +32,8 @@
   "This function adds units to style values"
   [k v]
   (cond
-    (and (or (= k :font-size)
+    (and (keyword? k)
+         (or (= k :font-size)
              (= k :letter-spacing))
          (not= (str/slice v -2) "px"))
     (str v "px")

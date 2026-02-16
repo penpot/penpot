@@ -43,9 +43,13 @@
       (> dy dx)
       (assoc :x (- (:x point) (* sx (- dy dx)))))))
 
-(defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod?]
+(defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod? snap-pixel?]
   (if (and (some? x) (some? y) (some? width) (some? height))
-    (let [draw-rect  (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
+    (let [draw-rect (cond-> (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
+                      snap-pixel?
+                      (-> (update :width max 1)
+                          (update :height max 1)))
+
           shape-rect (grc/make-rect x y width height)
 
           scalev     (gpt/point (/ (:width draw-rect)
@@ -64,8 +68,8 @@
                                    (ctm/move movev)))))
     shape))
 
-(defn update-drawing [state initial point lock? mod?]
-  (update-in state [:workspace-drawing :object] resize-shape initial point lock? mod?))
+(defn- update-drawing [state initial point lock? mod? snap-pixel?]
+  (update-in state [:workspace-drawing :object] resize-shape initial point lock? mod? snap-pixel?))
 
 (defn move-drawing
   [{:keys [x y]}]
@@ -120,7 +124,7 @@
                     (rx/map move-drawing))
 
                (->> ms/mouse-position
-                    (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
+                    (rx/filter #(> (* (gpt/distance % initial) zoom) 10))
                     ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
                     ;; and its a problem for fast moving drawing
                     (rx/take-until stopper)
@@ -131,7 +135,7 @@
                             (rx/map (partial array/conj current)))))
                     (rx/map
                      (fn [[_ shift? mod? point]]
-                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step 1)) shift? mod?))))))
+                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step 1)) shift? mod? snap-pixel?))))))
 
          (->> (rx/of (common/handle-finish-drawing))
               (rx/delay 100)))))))

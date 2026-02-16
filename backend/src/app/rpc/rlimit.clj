@@ -52,6 +52,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.http :as-alias http]
+   [app.loggers.database :as loggers.db]
+   [app.loggers.mattermost :as loggers.mm]
    [app.redis :as rds]
    [app.redis.script :as-alias rscript]
    [app.rpc :as-alias rpc]
@@ -171,9 +173,9 @@
               :hint (str/ffmt "looks like '%' does not have a valid format" opts))))
 
 (defmethod process-limit :bucket
-  [rconn profile-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
+  [rconn profile-id now {:keys [::key ::params ::method ::capacity ::interval ::rate] :as limit}]
   (let [script    (-> bucket-rate-limit-script
-                      (assoc ::rscript/keys [(str key "." service "." profile-id)])
+                      (assoc ::rscript/keys [(str key "." method "." profile-id)])
                       (assoc ::rscript/vals (conj params (->seconds now))))
         result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
@@ -181,7 +183,7 @@
         reset     (* (/ (inst-ms interval) rate)
                      (- capacity remaining))]
     (l/trace :hint "limit processed"
-             :service service
+             :method method
              :limit (name (::name limit))
              :strategy (name (::strategy limit))
              :opts (::opts limit)
@@ -193,17 +195,17 @@
         (assoc ::lresult/remaining remaining))))
 
 (defmethod process-limit :window
-  [rconn profile-id now {:keys [::permits ::unit ::key ::service] :as limit}]
+  [rconn uid now {:keys [::permits ::unit ::key ::method] :as limit}]
   (let [ts        (ct/truncate now unit)
         ttl       (ct/diff now (ct/plus ts {unit 1}))
         script    (-> window-rate-limit-script
-                      (assoc ::rscript/keys [(str key "." service "." profile-id "." (ct/format-inst ts))])
+                      (assoc ::rscript/keys [(str key "." method "." uid "." (ct/format-inst ts))])
                       (assoc ::rscript/vals [permits (->seconds ttl)]))
         result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)]
     (l/trace :hint "limit processed"
-             :service service
+             :method method
              :name (name (::name limit))
              :strategy (name (::strategy limit))
              :opts (::opts limit)
@@ -211,12 +213,13 @@
              :remaining remaining)
     (-> limit
         (assoc ::lresult/allowed allowed?)
+        (assoc ::lresult/timestamp ts)
         (assoc ::lresult/remaining remaining)
         (assoc ::lresult/reset (ct/plus ts {unit 1})))))
 
 (defn- process-limits
-  [rconn profile-id limits now]
-  (let [results   (into [] (map (partial process-limit rconn profile-id now)) limits)
+  [{:keys [::rds/conn] :as cfg} uid limits now]
+  (let [results   (into [] (map (partial process-limit conn uid now)) limits)
         remaining (->> results
                        (d/index-by ::name ::lresult/remaining)
                        (uri/map->query-string))
@@ -227,11 +230,22 @@
         rejected  (d/seek (complement ::lresult/allowed) results)]
 
     (when rejected
-      (l/warn :hint "rejected rate limit"
-              :profile-id (str profile-id)
-              :limit-service (-> rejected ::service name)
-              :limit-name (-> rejected ::name name)
-              :limit-strategy (-> rejected ::strategy name)))
+      (let [event {::id (uuid/next)
+                   ::uid uid
+                   ::method (-> rejected ::method name)
+                   ::name (-> rejected ::name name)
+                   ::strategy (-> rejected ::strategy name)
+                   ::results results}]
+
+        (l/warn :hint "rejected rate limit"
+                :method (-> rejected ::method name)
+                :name (-> rejected ::name name)
+                :strategy (-> rejected ::strategy name)
+                :uid (str uid)
+                :report-id (:id event))
+
+        (loggers.mm/emit cfg event)
+        (loggers.db/emit cfg event)))
 
     {::enabled true
      ::allowed (not (some? rejected))
@@ -244,7 +258,7 @@
   [state skey sname]
   (when-let [limits (or (get-in @state [::limits skey])
                         (get-in @state [::limits :default]))]
-    (into [] (map #(assoc % ::service sname)) limits)))
+    (into [] (map #(assoc % ::method sname)) limits)))
 
 (defn- get-uid
   [{:keys [::rpc/profile-id] :as params}]
@@ -254,10 +268,10 @@
         uuid/zero)))
 
 (defn- process-request'
-  [{:keys [::rds/conn] :as cfg} limits params]
+  [cfg limits params]
   (try
     (let [uid    (get-uid params)
-          result (process-limits conn uid limits (ct/now))]
+          result (process-limits cfg uid limits (ct/now))]
       (if (contains? cf/flags :soft-rpc-rlimit)
         {::enabled false}
         result))
@@ -275,8 +289,8 @@
   (assert (or (nil? rlimit) (valid-rlimit-instance? rlimit)) "expected a valid rlimit instance")
 
   (if rlimit
-    (let [skey  (keyword (::rpc/type cfg) (->> mdata ::sv/spec name))
-          sname (str (::rpc/type cfg) "." (->> mdata ::sv/spec name))
+    (let [skey  (keyword (::rpc/module cfg) (->> mdata ::sv/spec name))
+          sname (str (::rpc/module cfg) "." (->> mdata ::sv/spec name))
           cfg   (-> cfg
                     (assoc ::skey skey)
                     (assoc ::sname sname))]

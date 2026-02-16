@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.text.text-edition-outline
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -18,14 +19,19 @@
 (mf/defc text-edition-outline
   [{:keys [shape zoom modifiers]}]
   (if (features/active-feature? @st/state "render-wasm/v1")
-    (let [{:keys [width height]} (wasm.api/get-text-dimensions (:id shape))
-          selrect-transform (mf/deref refs/workspace-selrect)
-          [selrect transform] (dsh/get-selrect selrect-transform shape)]
+    (let [selrect-transform (mf/deref refs/workspace-selrect)
+          [selrect transform] (dsh/get-selrect selrect-transform shape)
+
+          [sr-width sr-height]
+          (if (or (mth/close? (:width selrect) 0.01) (mth/close? (:height selrect) 0.01))
+            (let [{:keys [width height]} (wasm.api/get-text-dimensions (:id shape))]
+              [width height])
+            [(:width selrect) (:height selrect)])]
       [:rect.main.viewport-selrect
        {:x (:x selrect)
         :y (:y selrect)
-        :width (max width (:width selrect))
-        :height (max height (:height selrect))
+        :width sr-width
+        :height sr-height
         :transform transform
         :style {:stroke "var(--color-accent-tertiary)"
                 :stroke-width (/ 1 zoom)

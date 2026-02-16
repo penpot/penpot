@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.tokens.management.forms.font-family
   (:require
+   [app.common.files.tokens :as cfo]
+   [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
@@ -35,6 +37,11 @@
             {:type token-type}))
         props (mf/spread-props props {:token token
                                       :token-type token-type
+                                      :make-schema #(-> (cfo/make-token-schema %1 token-type)
+                                                        (sm/dissoc-key :id)
+                                                        ;; The value as edited in the form is a simple stirng.
+                                                        ;; It's converted to vector in the validator.
+                                                        (sm/assoc-key :value cfo/schema:token-value-generic))
                                       :validator validate-font-family-token
                                       :input-component token.controls/fonts-combobox*})]
     [:> generic/form* props]))

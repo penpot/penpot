@@ -20,6 +20,7 @@
    [app.http.session.tasks :as-alias tasks]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
+   [app.setup.clock :as clock]
    [app.tokens :as tokens]
    [integrant.core :as ig]
    [yetti.request :as yreq]
@@ -229,18 +230,22 @@
     (let [{:keys [type token claims metadata]} (get request ::http/auth-data)]
       (cond
         (= type :cookie)
-        (let [session (case (:ver metadata)
-                        ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
-                        0 (read-session manager token)
-                        1 (some->> (:sid claims) (read-session manager))
-                        nil)
+        (let [session
+              (case (:ver metadata)
+                ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
+                0 (read-session manager token)
+                1 (some->> (:sid claims) (read-session manager))
+                nil)
 
-              request (cond-> request
-                        (some? session)
-                        (-> (assoc ::profile-id (:profile-id session))
-                            (assoc ::session session)))
+              request
+              (cond-> request
+                (some? session)
+                (-> (assoc ::profile-id (:profile-id session))
+                    (assoc ::session session)))
 
-              response (handler request)]
+              response
+              (binding [ct/*clock* (clock/get-clock (:profile-id session))]
+                (handler request))]
 
           (if (and session (renew-session? session))
             (let [session (->> session

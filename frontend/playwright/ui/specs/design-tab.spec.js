@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 const multipleConstraintsFileId = `03bff843-920f-81a1-8004-756365e1eb6a`;
@@ -42,7 +42,7 @@ test.describe("Constraints", () => {
   test("Constraint dropdown shows 'Mixed' when multiple layers are selected with different constraints", async ({
     page,
   }) => {
-    const workspace = new WorkspacePage(page);
+    const workspace = new WasmWorkspacePage(page);
     await setupFileWithMultipeConstraints(workspace);
     await workspace.goToWorkspace({
       fileId: multipleConstraintsFileId,
@@ -70,7 +70,7 @@ test.describe("Shape attributes", () => {
   test("Cannot add a new fill when the limit has been reached", async ({
     page,
   }) => {
-    const workspace = new WorkspacePage(page);
+    const workspace = new WasmWorkspacePage(page);
     await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
@@ -94,7 +94,7 @@ test.describe("Shape attributes", () => {
   test.skip("Cannot add a new text fill when the limit has been reached", async ({
     page,
   }) => {
-    const workspace = new WorkspacePage(page);
+    const workspace = new WasmWorkspacePage(page);
     await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(
@@ -128,7 +128,7 @@ test.describe("Multiple shapes attributes", () => {
   test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({
     page,
   }) => {
-    const workspace = new WorkspacePage(page);
+    const workspace = new WasmWorkspacePage(page);
     await setupFileWithMultipeConstraints(workspace);
     await workspace.goToWorkspace({
       fileId: multipleConstraintsFileId,
@@ -148,7 +148,7 @@ test.describe("Multiple shapes attributes", () => {
   test("User selects multiple shapes with different fills, strokes, shadows and blur", async ({
     page,
   }) => {
-    const workspace = new WorkspacePage(page);
+    const workspace = new WasmWorkspacePage(page);
     await setupFileWithMultipeAttributes(workspace);
     await workspace.goToWorkspace({
       fileId: multipleAttributesFileId,
@@ -168,7 +168,7 @@ test.describe("Multiple shapes attributes", () => {
 test("BUG 7760 - Layout losing properties when changing parents", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
   await workspacePage.mockRPC(
@@ -205,7 +205,7 @@ test("BUG 7760 - Layout losing properties when changing parents", async ({
 test("BUG 9061 - Group blur visibility toggle icon not updating", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-9061.json");
   await workspace.mockRPC(
@@ -234,7 +234,7 @@ test("BUG 9061 - Group blur visibility toggle icon not updating", async ({
 test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-9543.json");
   await workspace.mockRPC(
@@ -267,7 +267,7 @@ test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async (
 test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-11177.json");
 
@@ -288,7 +288,7 @@ test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
 test("BUG 12287 Fix identical text fills not being added/removed", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-12287.json");
 
@@ -323,7 +323,7 @@ test("BUG 12287 Fix identical text fills not being added/removed", async ({
 });
 
 test("BUG 12384 - Export crashing when exporting a board", async ({ page }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-12384.json");
 

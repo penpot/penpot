@@ -447,7 +447,7 @@
     (mf/use-effect
      (mf/deps nav-scroll)
      (fn []
-        ;; Set scroll position after navigate
+       ;; Set scroll position after navigate
        (when (number? nav-scroll)
          (let [viewer-section (dom/get-element "viewer-section")]
            (st/emit! (dv/reset-nav-scroll))
@@ -481,8 +481,8 @@
          :fit  (st/emit! dv/zoom-to-fit)
          :fill (st/emit! dv/zoom-to-fill)
          nil)
-        ;; Navigate animation needs to be started after navigation
-        ;; is complete, and we have the next page index.
+       ;; Navigate animation needs to be started after navigation
+       ;; is complete, and we have the next page index.
        (let [nav-animation (d/seek #(= (:kind %) :go-to-frame) (vals current-animations))]
          (when nav-animation
            (let [orig-viewport    (mf/ref-val orig-viewport-ref)
@@ -498,7 +498,7 @@
     (mf/use-effect
      (mf/deps current-animations)
      (fn []
-        ;; Overlay animations may be started when needed.
+       ;; Overlay animations may be started when needed.
        (when current-animations
          (doseq [[overlay-frame-id animation-vals] current-animations]
            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id animation-vals))))

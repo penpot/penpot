@@ -116,6 +116,7 @@ impl TextContentSize {
 pub struct TextPositionWithAffinity {
     pub position_with_affinity: PositionWithAffinity,
     pub paragraph: i32,
+    #[allow(dead_code)]
     pub span: i32,
     pub offset: i32,
 }
@@ -316,6 +317,10 @@ impl TextContent {
         &self.paragraphs
     }
 
+    pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
+        &mut self.paragraphs
+    }
+
     pub fn width(&self) -> f32 {
         self.size.width
     }
@@ -428,8 +433,16 @@ impl TextContent {
             let end_y = offset_y + layout_paragraph.height();
 
             // We only test against paragraphs that can contain the current y
-            // coordinate.
-            if point.y > start_y && point.y < end_y {
+            // coordinate. Use >= for start and handle zero-height paragraphs.
+            let paragraph_height = layout_paragraph.height();
+            let matches = if paragraph_height > 0.0 {
+                point.y >= start_y && point.y < end_y
+            } else {
+                // For zero-height paragraphs (empty lines), match if we're at the start position
+                point.y >= start_y && point.y <= start_y + 1.0
+            };
+
+            if matches {
                 let position_with_affinity =
                     layout_paragraph.get_glyph_position_at_coordinate(*point);
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index as usize) {
@@ -438,18 +451,37 @@ impl TextContent {
                     // in which span we are.
                     let mut computed_position = 0;
                     let mut span_offset = 0;
-                    for span in paragraph.children() {
-                        span_index += 1;
-                        let length = span.text.len();
-                        let start_position = computed_position;
-                        let end_position = computed_position + length;
-                        let current_position = position_with_affinity.position as usize;
-                        if start_position <= current_position && end_position >= current_position {
-                            span_offset = position_with_affinity.position - start_position as i32;
-                            break;
+
+                    // If paragraph has no spans, default to span 0, offset 0
+                    if paragraph.children().is_empty() {
+                        span_index = 0;
+                        span_offset = 0;
+                    } else {
+                        for span in paragraph.children() {
+                            span_index += 1;
+                            let length = span.text.chars().count();
+                            let start_position = computed_position;
+                            let end_position = computed_position + length;
+                            let current_position = position_with_affinity.position as usize;
+
+                            // Handle empty spans: if the span is empty and current position
+                            // matches the start, this is the right span
+                            if length == 0 && current_position == start_position {
+                                span_offset = 0;
+                                break;
+                            }
+
+                            if start_position <= current_position
+                                && end_position >= current_position
+                            {
+                                span_offset =
+                                    position_with_affinity.position - start_position as i32;
+                                break;
+                            }
+                            computed_position += length;
                         }
-                        computed_position += length;
                     }
+
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
                         paragraph_index,
@@ -460,6 +492,26 @@ impl TextContent {
             }
             offset_y += layout_paragraph.height();
         }
+
+        // Handle completely empty text shapes: if there are no paragraphs or all paragraphs
+        // are empty, and the click is within the text shape bounds, return a default position
+        if (self.paragraphs().is_empty() || self.layout.paragraphs.is_empty())
+            && self.bounds.contains(*point)
+        {
+            // Create a default position at the start of the text
+            use skia_safe::textlayout::Affinity;
+            let default_position = PositionWithAffinity {
+                position: 0,
+                affinity: Affinity::Downstream,
+            };
+            return Some(TextPositionWithAffinity::new(
+                default_position,
+                0, // paragraph 0
+                0, // span 0
+                0, // offset 0
+            ));
+        }
+
         None
     }
 
@@ -838,6 +890,10 @@ impl Paragraph {
         &self.children
     }
 
+    pub fn children_mut(&mut self) -> &mut Vec<TextSpan> {
+        &mut self.children
+    }
+
     #[allow(dead_code)]
     fn add_span(&mut self, span: TextSpan) {
         self.children.push(span);
@@ -845,6 +901,26 @@ impl Paragraph {
 
     pub fn line_height(&self) -> f32 {
         self.line_height
+    }
+
+    pub fn letter_spacing(&self) -> f32 {
+        self.letter_spacing
+    }
+
+    pub fn text_align(&self) -> TextAlign {
+        self.text_align
+    }
+
+    pub fn text_direction(&self) -> TextDirection {
+        self.text_direction
+    }
+
+    pub fn text_decoration(&self) -> Option<TextDecoration> {
+        self.text_decoration
+    }
+
+    pub fn text_transform(&self) -> Option<TextTransform> {
+        self.text_transform
     }
 
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
@@ -1228,14 +1304,21 @@ pub fn calculate_text_layout_data(
             let current_y = para_layout.y;
             let text_paragraph = text_paragraphs.get(paragraph_index);
             if let Some(text_para) = text_paragraph {
-                let mut span_ranges: Vec<(usize, usize, usize)> = vec![];
+                let mut span_ranges: Vec<(usize, usize, usize, String, String)> = vec![];
                 let mut cur = 0;
                 for (span_index, span) in text_para.children().iter().enumerate() {
-                    let text: String = span.apply_text_transform();
-                    span_ranges.push((cur, cur + text.len(), span_index));
-                    cur += text.len();
+                    let transformed_text: String = span.apply_text_transform();
+                    let original_text = span.text.clone();
+                    let text = transformed_text.clone();
+                    let text_len = text.len();
+                    span_ranges.push((cur, cur + text_len, span_index, text, original_text));
+                    cur += text_len;
                 }
-                for (start, end, span_index) in span_ranges {
+                for (start, end, span_index, transformed_text, original_text) in span_ranges {
+                    // Skip empty spans to avoid invalid rect calculations
+                    if start >= end {
+                        continue;
+                    }
                     let rects = para_layout.paragraph.get_rects_for_range(
                         start..end,
                         RectHeightStyle::Tight,
@@ -1245,22 +1328,43 @@ pub fn calculate_text_layout_data(
                         let direction = textbox.direct;
                         let mut rect = textbox.rect;
                         let cy = rect.top + rect.height() / 2.0;
-                        let start_pos = para_layout
+
+                        // Get byte positions from Skia's transformed text layout
+                        let glyph_start = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.left + 0.1, cy))
                             .position as usize;
-                        let end_pos = para_layout
+                        let glyph_end = para_layout
                             .paragraph
                             .get_glyph_position_at_coordinate((rect.right - 0.1, cy))
                             .position as usize;
-                        let start_pos = start_pos.saturating_sub(start);
-                        let end_pos = end_pos.saturating_sub(start);
+
+                        // Convert to byte positions relative to this span
+                        let byte_start = glyph_start.saturating_sub(start);
+                        let byte_end = glyph_end.saturating_sub(start);
+
+                        // Convert byte positions to character positions in ORIGINAL text
+                        // This handles multi-byte UTF-8 and text transform differences
+                        let char_start = transformed_text
+                            .char_indices()
+                            .position(|(i, _)| i >= byte_start)
+                            .unwrap_or(0);
+                        let char_end = transformed_text
+                            .char_indices()
+                            .position(|(i, _)| i >= byte_end)
+                            .unwrap_or_else(|| transformed_text.chars().count());
+
+                        // Clamp to original text length for safety
+                        let original_char_count = original_text.chars().count();
+                        let final_start = char_start.min(original_char_count);
+                        let final_end = char_end.min(original_char_count);
+
                         rect.offset((x, current_y));
                         position_data.push(PositionData {
                             paragraph: paragraph_index as u32,
                             span: span_index as u32,
-                            start_pos: start_pos as u32,
-                            end_pos: end_pos as u32,
+                            start_pos: final_start as u32,
+                            end_pos: final_end as u32,
                             x: rect.x(),
                             y: rect.y(),
                             width: rect.width(),

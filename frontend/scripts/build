@@ -4,8 +4,6 @@
 
 set -ex
 
-export INCLUDE_STORYBOOK=${BUILD_STORYBOOK:-no};
-export INCLUDE_WASM=${BUILD_WASM:-yes};
 export EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
 
 export BUILD_DATE=$(date -R);
@@ -18,6 +16,8 @@ export VERSION_TAG="${VERSION}-${BUILD_TS}";
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
 
+rm -rf node_modules;
+
 corepack enable;
 corepack install;
 pnpm install;
@@ -28,9 +28,16 @@ rm -rf resources/public;
 mkdir -p resources/public;
 mkdir -p target/dist;
 
+# Build render wasm binary
 pushd ../render-wasm;
 ./build
 popd
+
+pushd ../mcp;
+rm -rf node_modules;
+./scripts/setup
+WS_URI="/mcp/ws" pnpm run --filter "mcp-plugin" build:multi-user
+popd;
 
 pnpm run build:app:main $EXTRA_PARAMS;
 pnpm run build:app:libs;
@@ -40,8 +47,6 @@ sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js
 
 rsync -avr resources/public/ target/dist/
 
-if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
-    # build storybook
-    pnpm run build:storybook || exit 1;
-    rsync -avr storybook-static/ target/dist/storybook-static;
-fi
+# Include the MCP plugin on the bundle
+mkdir -p target/dist/plugins/mcp/;
+rsync -avr ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/

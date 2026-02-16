@@ -8,6 +8,7 @@
   "React error boundary components"
   (:require
    ["react-error-boundary" :as reb]
+   [app.common.exceptions :as ex]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [goog.functions :as gfn]
@@ -34,7 +35,8 @@
           ;; very small amount of time, so we debounce for 100ms for
           ;; avoid duplicate and redundant reports
           (gfn/debounce (fn [error info]
-                          (js/console.log "Cause stack: \n" (.-stack error))
+                          (set! errors/last-exception error)
+                          (ex/print-throwable error)
                           (js/console.error
                            "Component trace: \n"
                            (unchecked-get info "componentStack")

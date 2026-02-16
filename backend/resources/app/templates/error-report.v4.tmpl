@@ -1,0 +1,46 @@
+ {% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+Report: {{hint|abbreviate:150}} - {{id}} - Penpot Error Report (v4)
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div>[<a href="/dbg/error?version={{version}}">⮜</a>]</div>
+  <div>[<a href="#head">head</a>]</div>
+  <!-- <div>[<a href="#props">props</a>]</div> -->
+  <div>[<a href="#context">context</a>]</div>
+  {% if report %}
+  <div>[<a href="#report">report</a>]</div>
+  {% endif %}
+</nav>
+<main>
+  <div class="table">
+    <div class="table-row multiline">
+      <div id="head" class="table-key">HEAD</div>
+      <div class="table-val">
+        <h1><span class="not-important">Hint:</span> <br/> {{hint}}</h1>
+        <h2><span class="not-important">Reported at:</span> <br/> {{created-at}}</h2>
+        <h2><span class="not-important">Report ID:</span> <br/> {{id}}</h2>
+      </div>
+    </div>
+
+    <div class="table-row multiline">
+      <div id="context" class="table-key">CONTEXT: </div>
+
+      <div class="table-val">
+        <pre>{{context}}</pre>
+      </div>
+    </div>
+
+    {% if report %}
+    <div class="table-row multiline">
+      <div id="report" class="table-key">REPORT:</div>
+      <div class="table-val">
+        <pre>{{report}}</pre>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

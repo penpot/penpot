@@ -384,6 +384,7 @@ pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
         if let Some(shape) = state.shapes.get_mut(&shape_id) {
             update_text_layout(shape);
         }
+        state.touch_shape(shape_id);
     });
 }
 

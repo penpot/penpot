@@ -8,6 +8,7 @@
   (:require
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.keyboard :as k]
@@ -16,7 +17,7 @@
 (def context (mf/create-context nil))
 
 (mf/defc form-input*
-  [{:keys [name] :rest props}]
+  [{:keys [name trim] :rest props}]
 
   (let [form       (mf/use-ctx context)
         input-name name
@@ -33,7 +34,7 @@
          (mf/deps input-name)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-input-value)]
-             (fm/on-input-change form input-name value true))))
+             (fm/on-input-change form input-name value trim))))
 
         props
         (mf/spread-props props {:on-change on-change
@@ -47,9 +48,25 @@
 
     [:> input* props]))
 
+(mf/defc form-select*
+  [{:keys [name] :as props}]
+  (let [select-name name
+        form        (mf/use-ctx context)
+        value       (get-in @form [:data select-name] "")
+
+        handle-change
+        (fn [event]
+          (let [value (if (string? event) event (dom/get-target-val event))]
+            (fm/on-input-change form select-name value)))
+
+        props
+        (mf/spread-props props {:on-change handle-change
+                                :value value})]
+
+    [:> select* props]))
+
 (mf/defc form-submit*
   [{:keys [disabled on-submit] :rest props}]
-
   (let [form      (mf/use-ctx context)
         disabled? (or (and (some? form)
                            (or (not (:valid @form))

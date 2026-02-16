@@ -2,5 +2,9 @@
   "name": "@penpot/plugin-types",
   "version": "1.4.2",
   "typings": "./index.d.ts",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "build": "node ../../tools/scripts/build-types.mjs",
+    "lint": "tsc -p . --noEmit"
+  }
 }

@@ -1,46 +1,33 @@
 import baseConfig from '../../eslint.config.js';
-import { compat } from '../../eslint.base.config.js';
+import angular from '@angular-eslint/eslint-plugin';
+import angularTemplate from '@angular-eslint/eslint-plugin-template';
+import angularTemplateParser from '@angular-eslint/template-parser';
 
 export default [
   ...baseConfig,
-  ...compat
-    .config({
-      extends: [
-        'plugin:@nx/angular',
-        'plugin:@angular-eslint/template/process-inline-templates',
-      ],
-    })
-    .map((config) => ({
-      ...config,
-      files: ['**/*.ts'],
-      rules: {
-        '@angular-eslint/directive-selector': [
-          'error',
-          {
-            type: 'attribute',
-            prefix: 'app',
-            style: 'camelCase',
-          },
-        ],
-        '@angular-eslint/component-selector': [
-          'error',
-          {
-            type: 'element',
-            prefix: 'app',
-            style: 'kebab-case',
-          },
-        ],
-      },
-    })),
-  ...compat
-    .config({ extends: ['plugin:@nx/angular-template'] })
-    .map((config) => ({
-      ...config,
-      files: ['**/*.html'],
-      rules: {},
-    })),
-  { ignores: ['**/assets/*.js'] },
   {
+    files: ['**/*.ts'],
+    plugins: {
+      '@angular-eslint': angular,
+    },
+    rules: {
+      '@angular-eslint/directive-selector': [
+        'error',
+        {
+          type: 'attribute',
+          prefix: 'app',
+          style: 'camelCase',
+        },
+      ],
+      '@angular-eslint/component-selector': [
+        'error',
+        {
+          type: 'element',
+          prefix: 'app',
+          style: 'kebab-case',
+        },
+      ],
+    },
     languageOptions: {
       parserOptions: {
         project: './tsconfig.*?.json',
@@ -48,4 +35,16 @@ export default [
       },
     },
   },
+  {
+    files: ['**/*.html'],
+    plugins: {
+      '@angular-eslint/template': angularTemplate,
+    },
+    languageOptions: {
+      parser: angularTemplateParser,
+    },
+    processor: '@angular-eslint/template/extract-inline-html',
+    rules: {},
+  },
+  { ignores: ['**/assets/*.js'] },
 ];

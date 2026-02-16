@@ -54,6 +54,7 @@
        :text-direction shared/RawTextDirection
        :text-decoration shared/RawTextDecoration
        :text-transform shared/RawTextTransform
+       :transform-entry-kind shared/RawTransformEntryKind
        :segment-data shared/RawSegmentData
        :stroke-linecap shared/RawStrokeLineCap
        :stroke-linejoin shared/RawStrokeLineJoin

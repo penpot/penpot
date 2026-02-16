@@ -16,6 +16,7 @@
 (def ^:private schema:icon-button
   [:map
    [:class {:optional true} :string]
+   [:tooltip-class {:optional true} [:maybe :string]]
    [:icon-class {:optional true} :string]
    [:icon
     [:and :string [:fn #(contains? icon-list %)]]]
@@ -28,7 +29,7 @@
 (mf/defc icon-button*
   {::mf/schema schema:icon-button
    ::mf/memo true}
-  [{:keys [class icon icon-class variant aria-label children tooltip-placement] :rest props}]
+  [{:keys [class icon icon-class variant aria-label children tooltip-placement tooltip-class] :rest props}]
   (let [variant
         (d/nilv variant "primary")
 
@@ -49,6 +50,7 @@
                           :aria-labelledby tooltip-id})]
 
     [:> tooltip* {:content aria-label
+                  :class tooltip-class
                   :placement tooltip-placement
                   :id tooltip-id}
      [:> :button props

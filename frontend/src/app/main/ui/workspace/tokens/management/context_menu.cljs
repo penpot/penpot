@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
    [app.main.data.modal :as modal]
@@ -47,9 +47,9 @@
 ;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
-  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cfo/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids (into #{} (map :id selected-shapes))]
-    {:all-selected? (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)
+    {:all-selected? (cfo/shapes-applied-all? ids-by-attributes shape-ids attributes)
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
@@ -64,14 +64,17 @@
            (let [selected? (selected-pred attribute)
                  props {:attributes #{attribute}
                         :token token
-                        :shape-ids shape-ids}]
+                        :shape-ids shape-ids}
+                 unnaply-props {:token-name (:name token)
+                                :attributes #{attribute}
+                                :shape-ids shape-ids}]
 
              {:title title
               :hint hint
               :selected? selected?
               :action (fn []
                         (if selected?
-                          (st/emit! (dwta/unapply-token props))
+                          (st/emit! (dwta/unapply-token unnaply-props))
                           (st/emit! (dwta/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
          allowed-attributes)))
 
@@ -82,12 +85,15 @@
           {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
           all-action (let [props {:attributes attributes
                                   :token token
-                                  :shape-ids shape-ids}]
+                                  :shape-ids shape-ids}
+                           unnaply-props {:token-name (:name token)
+                                          :attributes attributes
+                                          :shape-ids shape-ids}]
                        {:title (tr "labels.all")
                         :selected? all-selected?
                         :hint hint
                         :action #(if all-selected?
-                                   (st/emit! (dwta/unapply-token props))
+                                   (st/emit! (dwta/unapply-token unnaply-props))
                                    (st/emit! (dwta/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
           single-actions (map (fn [[attr title]]
                                 (let [selected? (selected-pred attr)]
@@ -96,10 +102,13 @@
                                    :action #(let [props {:attributes #{attr}
                                                          :token token
                                                          :shape-ids shape-ids}
+                                                  unnaply-props {:token-name (:name token)
+                                                                 :attributes  #{attr}
+                                                                 :shape-ids shape-ids}
                                                   event (cond
                                                           all-selected? (-> (assoc props :attributes-to-remove attributes)
                                                                             (dwta/apply-token))
-                                                          selected? (dwta/unapply-token props)
+                                                          selected? (dwta/unapply-token unnaply-props)
                                                           :else (-> (assoc props :on-update-shape on-update-shape)
                                                                     (dwta/apply-token)))]
                                               (st/emit! event))}))
@@ -123,9 +132,12 @@
                       :action (fn []
                                 (let [props {:attributes attrs
                                              :token token
-                                             :shape-ids shape-ids}]
+                                             :shape-ids shape-ids}
+                                      unnaply-props {:token-name (:name token)
+                                                     :attributes  attrs
+                                                     :shape-ids shape-ids}]
                                   (if all-selected?
-                                    (st/emit! (dwta/unapply-token props))
+                                    (st/emit! (dwta/unapply-token unnaply-props))
                                     (st/emit! (dwta/apply-token (assoc props :on-update-shape on-update-shape))))))}
                      {:title "Horizontal"
                       :selected? horizontal-selected?
@@ -165,10 +177,13 @@
                                :action #(let [props {:attributes #{attr}
                                                      :token token
                                                      :shape-ids shape-ids}
+                                              unnaply-props {:token-name (:name token)
+                                                             :attributes  #{attr}
+                                                             :shape-ids shape-ids}
                                               event (cond
                                                       all-selected? (-> (assoc props :attributes-to-remove attrs)
                                                                         (dwta/apply-token))
-                                                      selected? (dwta/unapply-token props)
+                                                      selected? (dwta/unapply-token unnaply-props)
                                                       :else (-> (assoc props :on-update-shape on-update-shape)
                                                                 (dwta/apply-token)))]
                                           (st/emit! event))}))
@@ -223,7 +238,7 @@
         gap-items (all-or-separate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                :row-gap "Row Gap"}
                                             :hint (tr "workspace.tokens.gaps")
-                                            :on-update-shape dwta/update-layout-spacing}
+                                            :on-update-shape dwta/update-layout-gap}
                                            context-data)]
     (->> (concat
           gap-items
@@ -239,7 +254,7 @@
     (all-or-separate-actions {:attribute-labels {:width "Width"
                                                  :height "Height"}
                               :hint (tr "workspace.tokens.size")
-                              :on-update-shape dwta/update-shape-dimensions}
+                              :on-update-shape dwta/apply-dimensions-token}
                              context-data)
     [:separator]
     (all-or-separate-actions {:attribute-labels {:layout-item-min-w "Min Width"
@@ -316,8 +331,9 @@
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
                        (clean-separators)))}))
 
-(defn default-actions [{:keys [token selected-token-set-id]}]
-  (let [{:keys [modal]} (dwta/get-token-properties token)]
+(defn default-actions [{:keys [token selected-token-set-id on-delete-token]}]
+  (let [{:keys [modal]} (dwta/get-token-properties token)
+        on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
     [{:title (tr "workspace.tokens.edit")
       :no-selectable true
       :action (fn [event]
@@ -333,12 +349,10 @@
                                              :token token}))))}
      {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
-      :action #(st/emit! (dwtl/duplicate-token (:id token)))}
+      :action on-duplicate-token}
      {:title (tr "workspace.tokens.delete")
       :no-selectable true
-      :action #(st/emit! (dwtl/delete-token
-                          selected-token-set-id
-                          (:id token)))}]))
+      :action #(on-delete-token token)}]))
 
 (defn- allowed-shape-attributes [shapes]
   (reduce into #{} (map #(ctt/shape-type->attributes (:type %) (:layout %)) shapes)))
@@ -464,7 +478,7 @@
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree
-  [{:keys [width errors] :as mdata}]
+  [{:keys [width errors on-delete-token] :as mdata}]
   (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
 
@@ -488,10 +502,11 @@
                     :errors errors
                     :selected-token-set-id selected-token-set-id
                     :selected-shapes selected-shapes
-                    :is-selected-inside-layout is-selected-inside-layout}]]))
+                    :is-selected-inside-layout is-selected-inside-layout
+                    :on-delete-token on-delete-token}]]))
 
 (mf/defc token-context-menu
-  []
+  [{:keys [on-delete-token]}]
   (let [mdata               (mf/deref tokens-menu-ref)
         is-open?            (boolean mdata)
         width               (mf/use-state 0)
@@ -538,5 +553,5 @@
                         :left (dm/str left "px")}
                 :on-context-menu prevent-default}
           (when mdata
-            [:& token-context-menu-tree (assoc mdata :width @width)])]])
+            [:& token-context-menu-tree (assoc mdata :width @width :on-delete-token on-delete-token)])]])
        (dom/get-body)))))

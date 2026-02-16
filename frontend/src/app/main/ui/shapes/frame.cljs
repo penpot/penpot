@@ -100,14 +100,14 @@
        [:& filters/filters {:shape (dissoc shape :blur) :filter-id filter-id-shadows}]
        [:& filters/filters {:shape (assoc shape :shadow []) :filter-id filter-id-blur}]]
 
-     ;; This need to be separated in two layers so the clip doesn't affect the shadow filters
-     ;; otherwise the shadow will be clipped and not visible
+      ;; This need to be separated in two layers so the clip doesn't affect the shadow filters
+      ;; otherwise the shadow will be clipped and not visible
       [:g.frame-container-shadows {:filter filter-str-shadows}
        [:g {:clip-path (when-not ^boolean show-content? (frame-clip-url shape render-id))
-        ;; A frame sets back normal fill behavior (default
-        ;; transparent). It may have been changed to default black
-        ;; if a shape coming from an imported SVG file is
-        ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
+            ;; A frame sets back normal fill behavior (default
+            ;; transparent). It may have been changed to default black
+            ;; if a shape coming from an imported SVG file is
+            ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
             :fill "none"}
 
         [:& shape-fills {:shape shape}

@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.token :as tk]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -17,10 +16,9 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.render-wasm.api :as wasm.api]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -62,36 +60,6 @@
          (identical? (get old-values :hidden)
                      (get new-values :hidden)))))
 
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        tokens (mf/with-memo [tokens name]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input name))
-                       (not-empty))))
-
-        on-detach-attr (mf/use-fn
-                        (mf/deps on-detach name)
-                        #(on-detach % name))
-
-        applied-token (get applied-tokens name)
-        opacity-value (or (get values name) 1)
-
-        props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple opacity-value))
-                                                (tr "settings.multiple")
-                                                "--")
-                                 :applied-token applied-token
-                                 :tokens (if (delay? tokens) @tokens tokens)
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :name name
-                                 :value (* 100 opacity-value)})]
-    [:> numeric-input* props]))
-
 (mf/defc layer-menu*
   {::mf/wrap [#(mf/memo' % check-layer-menu-props)]}
   [{:keys [ids values applied-tokens]}]
@@ -104,8 +72,8 @@
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -250,22 +218,24 @@
         :on-pointer-enter-option handle-blend-mode-enter
         :on-pointer-leave-option handle-blend-mode-leave}]]
 
-
-
      (if token-numeric-inputs
-
        [:> numeric-input-wrapper*
         {:on-change on-opacity-change
          :on-detach on-detach-token
          :icon i/percentage
          :min 0
          :max 100
-         :name :opacity
+         :attr :opacity
          :property (tr "workspace.options.opacity")
-         :applied-tokens applied-tokens
+         :applied-token (get applied-tokens :opacity)
+         :placeholder (if (or (= :multiple (get applied-tokens :opacity))
+                              (= :multiple (or (get values :opacity) 1)))
+                        (tr "settings.multiple")
+                        "--")
          :align :right
          :class (stl/css :numeric-input-wrapper)
-         :values values}]
+         :value (* 100
+                   (or (get values :opacity) 1))}]
 
        [:div {:class (stl/css :input)
               :title (tr "workspace.options.opacity")}
@@ -277,7 +247,6 @@
           :min 0
           :max 100
           :className (stl/css :numeric-input)}]])
-
 
      [:div {:class (stl/css :actions)}
       (cond

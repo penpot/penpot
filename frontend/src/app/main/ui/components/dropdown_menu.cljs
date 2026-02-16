@@ -78,7 +78,7 @@
                 (kbd/enter? event)
                 (let [selected (dom/get-active)]
                   (dom/prevent-default event)
-                  (dom/click! selected))
+                  (dom/click selected))
 
                 (kbd/tab? event)
                 (on-close)))))]

@@ -106,17 +106,20 @@
 
 (defn stop-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopPropagation event)))
     (.stopPropagation event)))
 
 (defn stop-immediate-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopImmediatePropagation event)))
     (.stopImmediatePropagation event)))
 
 (defn prevent-default
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-preventDefault event)))
     (.preventDefault event)))
 
 (defn get-target
@@ -226,12 +229,6 @@
 (def get-target-val (comp get-value get-target))
 
 (def get-target-scroll (comp get-scroll-position get-target))
-
-(defn click
-  "Click a node"
-  [^js node]
-  (when (some? node)
-    (.click node)))
 
 (defn get-files
   "Extract the files from dom node."
@@ -473,7 +470,7 @@
   (when (some? node)
     (.focus node)))
 
-(defn click!
+(defn click
   [^js node]
   (when (some? node)
     (.click node)))
@@ -745,7 +742,11 @@
 
 (defn trigger-download
   [filename blob]
-  (trigger-download-uri filename (.-type ^js blob) (wapi/create-uri blob)))
+  (let [uri (wapi/create-uri blob)]
+    (try
+      (trigger-download-uri filename (.-type ^js blob) uri)
+      (finally
+        (wapi/revoke-uri uri)))))
 
 (defn event
   "Create an instance of DOM Event"
@@ -802,9 +803,10 @@
   ([uri name]
    (open-new-window uri name "noopener,noreferrer"))
   ([uri name features]
-   (let [new-window (.open js/window (str uri) name features)]
+   (when-let [new-window (.open js/window (str uri) name features)]
      (when (not= name "_blank")
-       (.reload (.-location new-window))))))
+       (when-let [location (.-location new-window)]
+         (.reload location))))))
 
 (defn browser-back
   []

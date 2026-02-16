@@ -18,7 +18,7 @@ import { createLineBreak } from "./LineBreak.js";
 describe("TextSpan", () => {
   test("createTextSpan should throw when passed an invalid child", () => {
     expect(() => createTextSpan("Hello, World!")).toThrowError(
-      "Invalid textSpan child",
+      "Invalid text span child",
     );
   });
 
@@ -98,7 +98,7 @@ describe("TextSpan", () => {
 
   test("getTextSpanLength throws when the passed node is not an textSpan", () => {
     const textSpan = document.createElement("div");
-    expect(() => getTextSpanLength(textSpan)).toThrowError("Invalid textSpan");
+    expect(() => getTextSpanLength(textSpan)).toThrowError("Invalid text span");
   });
 
   test("getTextSpanLength returns the length of the textSpan content", () => {

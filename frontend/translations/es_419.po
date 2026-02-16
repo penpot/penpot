@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.15.1\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "¿Ya tienes una cuenta?"
 
@@ -49,7 +49,7 @@ msgstr "¿Has olvidado tu contraseña?"
 msgid "auth.fullname"
 msgstr "Nombre completo"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:161, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Inicie sesión aquí"
 
@@ -128,11 +128,11 @@ msgstr "¿Has olvidado tu contraseña?"
 msgid "auth.recovery-submit"
 msgstr "cambia tu contraseña"
 
-#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "¿No tienes cuenta aún?"
 
-#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:148, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Crea una cuenta"
 
@@ -145,7 +145,7 @@ msgstr "Crea una cuenta"
 msgid "auth.sidebar-tagline"
 msgstr "La solución de código abierto para diseño y creación de prototipos."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:979, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Términos de servicio"
 
@@ -357,7 +357,7 @@ msgstr "El token caducará el %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "El token no tiene fecha de vencimiento"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
+#: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "Agregar como biblioteca compartida"
 
@@ -365,23 +365,23 @@ msgstr "Agregar como biblioteca compartida"
 msgid "dashboard.change-email"
 msgstr "Cambiar el correo electrónico"
 
-#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:330, src/app/main/data/dashboard.cljs:565, src/app/main/data/workspace/pages.cljs:198
 msgid "dashboard.copy-suffix"
 msgstr "(copiar)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:329
+#: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:638
 msgid "dashboard.default-team-name"
 msgstr "Tu Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:477
+#: src/app/main/ui/dashboard/sidebar.cljs:495
 msgid "dashboard.delete-team"
 msgstr "Eliminar equipo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
 msgstr "Descargar el archivo Penpot (.penpot)"
 
@@ -390,15 +390,15 @@ msgstr "Descargar el archivo Penpot (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Descargar archivo estándar (.svg + .json)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Duplicar"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:273
+#: src/app/main/ui/dashboard/file_menu.cljs:271
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicar %s archivos"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:282
+#: src/app/main/ui/dashboard/file_menu.cljs:280
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
@@ -468,7 +468,7 @@ msgstr "Subiendo archivo: %s"
 msgid "dashboard.invite-profile"
 msgstr "Invitar a la gente"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
+#: src/app/main/ui/dashboard/sidebar.cljs:477, src/app/main/ui/dashboard/sidebar.cljs:484, src/app/main/ui/dashboard/sidebar.cljs:489, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "dejar el equipo"
 
@@ -496,15 +496,15 @@ msgstr "cargando tus archivos…"
 msgid "dashboard.loading-fonts"
 msgstr "cargando tus fuentes…"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:312, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Mover a"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278
+#: src/app/main/ui/dashboard/file_menu.cljs:276
 msgid "dashboard.move-to-multi"
 msgstr "Mover %s archivos a"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:250
+#: src/app/main/ui/dashboard/file_menu.cljs:248
 msgid "dashboard.move-to-other-team"
 msgstr "Pasar a otro equipo"
 
@@ -512,7 +512,7 @@ msgstr "Pasar a otro equipo"
 msgid "dashboard.new-file"
 msgstr "+ Nuevo archivo"
 
-#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
+#: src/app/main/data/dashboard.cljs:536, src/app/main/data/dashboard.cljs:648
 msgid "dashboard.new-file-prefix"
 msgstr "Archivo nuevo"
 
@@ -520,7 +520,7 @@ msgstr "Archivo nuevo"
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
+#: src/app/main/data/dashboard.cljs:289, src/app/main/data/dashboard.cljs:651
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo proyecto"
 
@@ -528,7 +528,7 @@ msgstr "Nuevo proyecto"
 msgid "dashboard.no-matches-for"
 msgstr "No se encontraron coincidencias para \"%s\""
 
-#: src/app/main/ui/dashboard/sidebar.cljs:764
+#: src/app/main/ui/dashboard/sidebar.cljs:858
 msgid "dashboard.no-projects-placeholder"
 msgstr "Los proyectos fijados aparecerán aquí"
 
@@ -536,7 +536,7 @@ msgstr "Los proyectos fijados aparecerán aquí"
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Su dirección de correo electrónico se ha actualizado correctamente"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:77, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:296, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:240
 msgid "errors.field-max-length"
 msgstr "El nombre debe contener como máximo %s caracteres."
 

@@ -1,0 +1,23 @@
+/* @import "@penpot/plugin-styles/styles.css"; */
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  line-height: 1.5;
+  padding: 10px;
+}
+
+ul {
+  margin-block-start: var(--spacing-12);
+}
+
+.title-l {
+  text-align: center;
+}
+
+.headline-l {
+  margin-block-start: var(--spacing-8);
+}

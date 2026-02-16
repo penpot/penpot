@@ -342,6 +342,7 @@ impl Shape {
         )
     }
 
+    #[allow(dead_code)]
     pub fn is_flex(&self) -> bool {
         matches!(
             self.shape_type,
@@ -456,7 +457,7 @@ impl Shape {
         min_w: Option<f32>,
         align_self: Option<AlignSelf>,
         is_absolute: bool,
-        z_index: i32,
+        z_index: Option<i32>,
     ) {
         self.layout_item = Some(LayoutItem {
             margin_top,
@@ -619,6 +620,7 @@ impl Shape {
         (added, removed)
     }
 
+    #[allow(dead_code)]
     pub fn fills(&self) -> std::slice::Iter<'_, Fill> {
         self.fills.iter()
     }
@@ -1073,6 +1075,10 @@ impl Shape {
         self.children.first()
     }
 
+    pub fn children_count(&self) -> usize {
+        self.children_ids_iter(false).count()
+    }
+
     pub fn children_ids(&self, include_hidden: bool) -> Vec<Uuid> {
         if include_hidden {
             return self.children.iter().rev().copied().collect();
@@ -1111,6 +1117,28 @@ impl Shape {
             }
         } else {
             Box::new(self.children.iter().rev())
+        }
+    }
+
+    /// Returns children in forward (non-reversed) order - useful for layout calculations
+    pub fn children_ids_iter_forward(
+        &self,
+        include_hidden: bool,
+    ) -> Box<dyn Iterator<Item = &Uuid> + '_> {
+        if include_hidden {
+            return Box::new(self.children.iter());
+        }
+
+        if let Type::Bool(_) = self.shape_type {
+            Box::new([].iter())
+        } else if let Type::Group(group) = self.shape_type {
+            if group.masked {
+                Box::new(self.children.iter().skip(1))
+            } else {
+                Box::new(self.children.iter())
+            }
+        } else {
+            Box::new(self.children.iter())
         }
     }
 
@@ -1401,9 +1429,21 @@ impl Shape {
 
     pub fn z_index(&self) -> i32 {
         match &self.layout_item {
-            Some(LayoutItem { z_index, .. }) => *z_index,
+            Some(LayoutItem {
+                z_index: Some(z), ..
+            }) => *z,
             _ => 0,
         }
+    }
+
+    pub fn has_z_index(&self) -> bool {
+        matches!(
+            &self.layout_item,
+            Some(LayoutItem {
+                z_index: Some(_),
+                ..
+            })
+        )
     }
 
     pub fn is_layout_vertical_auto(&self) -> bool {

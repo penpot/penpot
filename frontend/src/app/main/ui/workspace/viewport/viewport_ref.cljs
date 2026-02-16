@@ -66,6 +66,14 @@
             (gpt/divide zoom)
             (gpt/add box))))))
 
+(defn point->viewport-relative
+  "Convert client coordinates to viewport-relative coordinates.
+   Unlike point->viewport, this does NOT convert to canvas coordinates -
+   it just subtracts the viewport's bounding rect offset."
+  [pt]
+  (when (some? @viewport-brect)
+    (gpt/subtract pt @viewport-brect)))
+
 (defn inside-viewport?
   [target]
   (dom/is-child? @viewport-ref target))

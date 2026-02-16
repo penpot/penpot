@@ -70,20 +70,22 @@
                               (= (-> content last :command) :move-to))
                        (into [] (take (dec (count content)) content))
                        content)]
-         (-> state
-             (st/set-content content))))
+         (st/set-content state content)))
 
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id     (:current-page-id state)
-             objects     (dsh/lookup-page-objects state page-id)
-             id          (dm/get-in state [:workspace-local :edition])
-             old-content (dm/get-in state [:workspace-local :edit-path id :old-content])
-             shape       (st/get-path state)]
+             local       (get state :workspace-local)
+             id          (get local :edition)
+             objects     (dsh/lookup-page-objects state page-id)]
 
-         (if (and (some? old-content) (some? (:id shape)))
-           (let [changes (generate-path-changes it objects page-id shape old-content (:content shape))]
-             (rx/of (dch/commit-changes changes)))
-           (rx/empty)))))))
+         ;; NOTE: we proceed only if the shape is present on the
+         ;; objects, if shape is a ephimeral drawing shape, we should
+         ;; do nothing
+         (when-let [shape (get objects id)]
+           (when-let [old-content (dm/get-in local [:edit-path id :old-content])]
+             (let [new-content (get shape :content)
+                   changes     (generate-path-changes it objects page-id shape old-content new-content)]
+               (rx/of (dch/commit-changes changes))))))))))
 
 

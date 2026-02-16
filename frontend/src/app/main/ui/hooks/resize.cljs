@@ -71,11 +71,11 @@
          start-size-ref (mf/use-ref nil)
          start-ref      (mf/use-ref nil)
 
-        ;;  Since Penpot is not responsive designed, this value will only refer to vertical axis.
+         ;;  Since Penpot is not responsive designed, this value will only refer to vertical axis.
          window-height* (mf/use-state #(dom/get-window-height))
          window-height (deref window-height*)
 
-        ;;  In case max-val is a string, we need to parse it as a double.
+         ;;  In case max-val is a string, we need to parse it as a double.
          max-val (mf/with-memo [max-val window-height]
                    (let [parsed-max-val (when (string? max-val) (d/parse-double max-val))]
                      (if parsed-max-val

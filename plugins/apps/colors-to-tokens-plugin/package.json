@@ -1,0 +1,16 @@
+{
+  "name": "colors-to-tokens-plugin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "ng build colors-to-tokens-plugin && pnpm run build:plugin",
+    "build:dev": "ng build colors-to-tokens-plugin --configuration development",
+    "build:plugin": "node ../../tools/scripts/build-plugin.mjs --plugin=colors-to-tokens-plugin",
+    "build:plugin:watch": "node ../../tools/scripts/build-plugin.mjs --plugin=colors-to-tokens-plugin --watch",
+    "serve": "ng serve colors-to-tokens-plugin",
+    "init": "concurrently --kill-others --names plugin,serve \"pnpm run build:plugin:watch\" \"pnpm run serve\"",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
+}

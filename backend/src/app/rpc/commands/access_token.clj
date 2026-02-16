@@ -23,7 +23,7 @@
   (dissoc row :perms))
 
 (defn create-access-token
-  [{:keys [::db/conn] :as cfg} profile-id name expiration]
+  [{:keys [::db/conn] :as cfg} profile-id name expiration type]
   (let [token-id   (uuid/next)
         expires-at (some-> expiration (ct/in-future))
         created-at (ct/now)
@@ -36,6 +36,7 @@
                                {:id token-id
                                 :name name
                                 :token token
+                                :type type
                                 :profile-id profile-id
                                 :created-at created-at
                                 :updated-at created-at
@@ -50,17 +51,18 @@
 (def ^:private schema:create-access-token
   [:map {:title "create-access-token"}
    [:name [:string {:max 250 :min 1}]]
-   [:expiration {:optional true} ::ct/duration]])
+   [:expiration {:optional true} ::ct/duration]
+   [:type {:optional true} :string]])
 
 (sv/defmethod ::create-access-token
   {::doc/added "1.18"
    ::sm/params schema:create-access-token}
-  [cfg {:keys [::rpc/profile-id name expiration]}]
+  [cfg {:keys [::rpc/profile-id name expiration type]}]
 
   (quotes/check! cfg {::quotes/id ::quotes/access-tokens-per-profile
                       ::quotes/profile-id profile-id})
 
-  (db/tx-run! cfg create-access-token profile-id name expiration))
+  (db/tx-run! cfg create-access-token profile-id name expiration type))
 
 (def ^:private schema:delete-access-token
   [:map {:title "delete-access-token"}
@@ -83,5 +85,5 @@
   (->> (db/query pool :access-token
                  {:profile-id profile-id}
                  {:order-by [[:expires-at :asc] [:created-at :asc]]
-                  :columns [:id :name :perms :created-at :updated-at :expires-at]})
+                  :columns [:id :name :perms :type :created-at :updated-at :expires-at]})
        (mapv decode-row)))

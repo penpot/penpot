@@ -18,8 +18,8 @@ vi.mock('./api/openUI.api.js', () => ({
 describe('createPluginManager', () => {
   let mockContext: Context;
   let manifest: Manifest;
-  let onCloseCallback: ReturnType<typeof vi.fn>;
-  let onReloadModal: ReturnType<typeof vi.fn>;
+  let onCloseCallback: () => void;
+  let onReloadModal: () => void;
   let mockModal: {
     setTheme: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;

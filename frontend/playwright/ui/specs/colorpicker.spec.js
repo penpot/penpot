@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/7549
 test("Bug 7549 - User clicks on color swatch to display the color picker next to it", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.goToWorkspace();
@@ -25,7 +25,7 @@ test("Bug 7549 - User clicks on color swatch to display the color picker next to
 });
 
 test("Create a LINEAR gradient", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,
@@ -99,7 +99,7 @@ test("Create a LINEAR gradient", async ({ page }) => {
 });
 
 test("Create a RADIAL gradient", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,
@@ -183,7 +183,7 @@ test("Create a RADIAL gradient", async ({ page }) => {
 });
 
 test("Gradient stops limit", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.mockConfigFlags(["enable-feature-render-wasm"]);
   await workspacePage.setupEmptyFile(page);
 
@@ -215,7 +215,7 @@ test("Gradient stops limit", async ({ page }) => {
 test("Bug 9900 - Color picker has no inputs for HSV values", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.goToWorkspace();
@@ -232,7 +232,7 @@ test("Bug 9900 - Color picker has no inputs for HSV values", async ({
 });
 
 test("Bug 10089 - Cannot change alpha", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,

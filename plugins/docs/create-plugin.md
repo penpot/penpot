@@ -10,15 +10,50 @@ Let's dive in.
 
 ### Step 1: Initialize the Plugin
 
-First, you need to create the scaffolding for your plugin. Use the following command, replacing `example-plugin` with the name of your plugin:
+First, you need to create the scaffolding for your plugin. Create a new folder for your plugin:
 
 ```sh
-pnpx nx g @nx/web:application example-plugin --directory=apps/example-plugin
+mkdir -p apps/example-plugin/src apps/example-plugin/public
 ```
 
-### Step 2: Migrate eslint to ESM
+Create a basic `package.json` in `apps/example-plugin`:
 
-Replace `module.exports = [` with `export default [` and const `baseConfig = require('../../eslint.base.config.js');` with `import baseConfig from '../../eslint.config.js';`.
+```json
+{
+  "name": "example-plugin",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts"
+  }
+}
+```
+
+Create a `vite.config.ts` file (see `apps/create-palette-plugin/vite.config.ts` for reference).
+
+### Step 2: Create ESLint Config
+
+Create an `eslint.config.js` file:
+
+```js
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
+
+export default tseslint.config(
+  ...tseslint.configs.recommended,
+  eslintConfigPrettier,
+  {
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.*?.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+);
+```
 
 ### Step 3: Configure the Manifest
 
@@ -73,25 +108,16 @@ Update your `tsconfig.app.json` to include the necessary TypeScript files for yo
 To preview your plugin, start a static server by running:
 
 ```sh
-pnpx nx run example-plugin:build --watch & pnpx nx run example-plugin:preview
+pnpm --filter example-plugin dev
 ```
 
-### Step 7: Add TS parser to eslint
+Or for production preview:
 
-Add these options to the end of the `eslint.config.js` file to allow linting with type information:
-
-```js
-  {
-    languageOptions: {
-      parserOptions: {
-        project: './tsconfig.*?.json',
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
+```sh
+pnpm --filter example-plugin build && pnpm --filter example-plugin preview
 ```
 
-### Step 8: Load the Plugin in Penpot
+### Step 7: Load the Plugin in Penpot
 
 To load your plugin into Penpot you can use the shortcut `Ctrl + Alt + P` to directly open the Plugin manager modal. There you need to provide the plugin's manifest URL (example: `http://plugin.example/manifest.json`) for the installation. If there's no issues the plugin will be installed and then you would be able to open it whenever you like.
 

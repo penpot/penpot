@@ -1,5 +1,5 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.12.2"}
+ {org.clojure/clojure {:mvn/version "1.12.4"}
   org.clojure/data.json {:mvn/version "2.5.1"}
   org.clojure/tools.cli {:mvn/version "1.1.230"}
   org.clojure/test.check {:mvn/version "1.1.1"}
@@ -9,15 +9,15 @@
   org.apache.commons/commons-pool2 {:mvn/version "2.12.1"}
 
   ;; Logging
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.25.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.25.1"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.25.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.25.1"}
-  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.25.1"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.25.3"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.25.3"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.25.3"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.25.3"}
+  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.25.3"}
   org.slf4j/slf4j-api {:mvn/version "2.0.17"}
-  pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.40"}
+  pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.41"}
 
-  selmer/selmer {:mvn/version "1.12.69"}
+  selmer/selmer {:mvn/version "1.12.70"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.13"}
@@ -27,7 +27,7 @@
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
   com.cognitect/transit-cljs {:mvn/version "0.8.280"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
-  integrant/integrant {:mvn/version "1.0.0"}
+  integrant/integrant {:mvn/version "1.0.1"}
 
   funcool/cuerdas {:mvn/version "2026.415"}
   funcool/promesa

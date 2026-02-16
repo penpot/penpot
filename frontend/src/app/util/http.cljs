@@ -190,6 +190,11 @@
   [{:keys [status]}]
   (<= 400 status 499))
 
+(defn blob?
+  [^js v]
+  (when (some? v)
+    (instance? js/Blob v)))
+
 (defn as-promise
   [observable]
   (p/create

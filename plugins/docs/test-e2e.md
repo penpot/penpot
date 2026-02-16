@@ -4,12 +4,15 @@
 
 1. **Configure Environment Variables**
 
-   Create and populate the `.env` file with a valid user mail & password:
+   Create and populate the `apps/e2e/.env` file with a valid user mail & password:
 
    ```env
    E2E_LOGIN_EMAIL="test@penpot.app"
    E2E_LOGIN_PASSWORD="123123123"
-   E2E_SCREENSHOTS= "true"
+   E2E_SCREENSHOTS="true"              # Enable/disable screenshots (default: false)
+   E2E_HEADLESS="false"                # Run browser in headless mode (default: true)
+   E2E_CLOSE_BROWSER="true"            # Close browser after tests (default: true)
+   E2E_WAIT_API_RESPONSE="false"       # Wait for update-file API response (default: false)
    ```
 
 2. **Run E2E Tests**
@@ -24,7 +27,7 @@
 
 1. **Adding Tests**
 
-   Place your test files in the `/apps/e2e/src/**/*.spec.ts` directory. Below is an example of a test file:
+   Place your test files in the `apps/e2e/src/**/*.spec.ts` directory. Below is an example of a test file:
 
    ```ts
    import testingPlugin from './plugins/create-board-text-rect';
@@ -77,5 +80,5 @@
    If you need to refresh all the snapshopts run the test with the update option:
 
    ```bash
-   pnpm run test:e2e -- --update
+   pnpm run test:e2e --update
    ```

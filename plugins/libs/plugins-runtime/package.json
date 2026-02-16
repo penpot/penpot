@@ -8,5 +8,12 @@
   },
   "module": "./index.mjs",
   "typings": "./index.d.ts",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:watch": "vite build --watch --mode development",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest"
+  }
 }

@@ -6,5 +6,5 @@ export function getFileUrl(file: FileRpc) {
   const fileId = cleanId(file['~:id']);
   const pageId = cleanId(file['~:data']['~:pages'][0]);
 
-  return `http://localhost:3449/#/workspace/${projectId}/${fileId}?page-id=${pageId}`;
+  return `https://localhost:3449/#/workspace/${projectId}/${fileId}?page-id=${pageId}`;
 }

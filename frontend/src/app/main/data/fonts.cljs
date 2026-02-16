@@ -24,6 +24,20 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
+(def ^:const default-chunk-size
+  (* 1024 1024 4)) ;; 4MiB
+
+(defn- chunk-array
+  [data chunk-size]
+  (let [total-size (alength data)]
+    (loop [offset 0
+           chunks []]
+      (if (< offset total-size)
+        (let [end   (min (+ offset chunk-size) total-size)
+              chunk (.subarray ^js data offset end)]
+          (recur end (conj chunks chunk)))
+        chunks))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General purpose events & IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -90,15 +104,15 @@
                   variant         (or (.getEnglishName ^js font "preferredSubfamily")
                                       (.getEnglishName ^js font "fontSubfamily"))
 
-                 ;; Vertical metrics determine the baseline in a text and the space between lines of
-                 ;; text. For historical reasons, there are three pairs of ascender/descender
-                 ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
-                 ;; system and application a different set will be used to render text on the
-                 ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
-                 ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
-                 ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
-                 ;; table. On Windows, all browsers use the usWin metrics, but respect the
-                 ;; useTypoMetrics setting and if set will use the OS/2 values.
+                  ;; Vertical metrics determine the baseline in a text and the space between lines of
+                  ;; text. For historical reasons, there are three pairs of ascender/descender
+                  ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+                  ;; system and application a different set will be used to render text on the
+                  ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+                  ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+                  ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+                  ;; table. On Windows, all browsers use the usWin metrics, but respect the
+                  ;; useTypoMetrics setting and if set will use the OS/2 values.
 
                   hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
                   hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
@@ -116,9 +130,9 @@
                                       (not= hhea-descender win-descent)
                                       (and f-selection (or
                                                         (not= hhea-ascender os2-ascent)
-                                                        (not= hhea-descender os2-descent))))]
-
-              {:content {:data (js/Uint8Array. data)
+                                                        (not= hhea-descender os2-descent))))
+                  data            (js/Uint8Array. data)]
+              {:content {:data (chunk-array data default-chunk-size)
                          :name name
                          :type type}
                :font-family (or family "")

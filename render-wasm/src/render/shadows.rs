@@ -40,7 +40,7 @@ pub fn render_stroke_inner_shadows(
     if !shape.has_fills() {
         for shadow in shape.inner_shadows_visible() {
             let filter = shadow.get_inner_shadow_filter();
-            strokes::render(
+            strokes::render_single(
                 render_state,
                 shape,
                 stroke,

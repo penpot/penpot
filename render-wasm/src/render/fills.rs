@@ -2,7 +2,7 @@ use skia_safe::{self as skia, Paint, RRect};
 
 use super::{filters, RenderState, SurfaceId};
 use crate::render::get_source_rect;
-use crate::shapes::{Fill, Frame, ImageFill, Rect, Shape, Type};
+use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
 fn draw_image_fill(
     render_state: &mut RenderState,
@@ -94,6 +94,76 @@ fn draw_image_fill(
 pub fn render(
     render_state: &mut RenderState,
     shape: &Shape,
+    fills: &[Fill],
+    antialias: bool,
+    surface_id: SurfaceId,
+) {
+    if fills.is_empty() {
+        return;
+    }
+
+    // Image fills use draw_image_fill which needs render_state for GPU images
+    // and sampling options that get_fill_shader (used by merge_fills) lacks.
+    let has_image_fills = fills.iter().any(|f| matches!(f, Fill::Image(_)));
+    if has_image_fills {
+        for fill in fills.iter().rev() {
+            render_single_fill(render_state, shape, fill, antialias, surface_id);
+        }
+        return;
+    }
+
+    let mut paint = merge_fills(fills, shape.selrect);
+    paint.set_anti_alias(antialias);
+
+    if let Some(image_filter) = shape.image_filter(1.) {
+        let bounds = image_filter.compute_fast_bounds(shape.selrect);
+        if filters::render_with_filter_surface(
+            render_state,
+            bounds,
+            surface_id,
+            |state, temp_surface| {
+                let mut filtered_paint = paint.clone();
+                filtered_paint.set_image_filter(image_filter.clone());
+                draw_fill_to_surface(state, shape, temp_surface, &filtered_paint);
+            },
+        ) {
+            return;
+        } else {
+            paint.set_image_filter(image_filter);
+        }
+    }
+
+    draw_fill_to_surface(render_state, shape, surface_id, &paint);
+}
+
+/// Draws a single paint (with a merged shader) to the appropriate surface
+/// based on the shape type.
+fn draw_fill_to_surface(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    surface_id: SurfaceId,
+    paint: &Paint,
+) {
+    match &shape.shape_type {
+        Type::Rect(_) | Type::Frame(_) => {
+            render_state.surfaces.draw_rect_to(surface_id, shape, paint);
+        }
+        Type::Circle => {
+            render_state
+                .surfaces
+                .draw_circle_to(surface_id, shape, paint);
+        }
+        Type::Path(_) | Type::Bool(_) => {
+            render_state.surfaces.draw_path_to(surface_id, shape, paint);
+        }
+        Type::Group(_) => {}
+        _ => unreachable!("This shape should not have fills"),
+    }
+}
+
+fn render_single_fill(
+    render_state: &mut RenderState,
+    shape: &Shape,
     fill: &Fill,
     antialias: bool,
     surface_id: SurfaceId,
@@ -108,7 +178,14 @@ pub fn render(
             |state, temp_surface| {
                 let mut filtered_paint = paint.clone();
                 filtered_paint.set_image_filter(image_filter.clone());
-                draw_fill_to_surface(state, shape, fill, antialias, temp_surface, &filtered_paint);
+                draw_single_fill_to_surface(
+                    state,
+                    shape,
+                    fill,
+                    antialias,
+                    temp_surface,
+                    &filtered_paint,
+                );
             },
         ) {
             return;
@@ -117,10 +194,10 @@ pub fn render(
         }
     }
 
-    draw_fill_to_surface(render_state, shape, fill, antialias, surface_id, &paint);
+    draw_single_fill_to_surface(render_state, shape, fill, antialias, surface_id, &paint);
 }
 
-fn draw_fill_to_surface(
+fn draw_single_fill_to_surface(
     render_state: &mut RenderState,
     shape: &Shape,
     fill: &Fill,
@@ -153,8 +230,6 @@ fn draw_fill_to_surface(
         (_, Type::Group(_)) => {
             // Groups can have fills but they propagate them to their children
         }
-        (_, _) => {
-            unreachable!("This shape should not have fills")
-        }
+        _ => unreachable!("This shape should not have fills"),
     }
 }

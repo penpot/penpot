@@ -1,0 +1,7 @@
+*.md
+*.json
+python-scripts/
+.serena/
+
+# auto-generated files
+mcp-server/data/api_types.yml

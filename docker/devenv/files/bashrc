@@ -6,7 +6,8 @@ export PATH="/home/penpot/.cargo/bin:/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bi
 export CARGO_HOME="/home/penpot/.cargo"
 
 alias l='ls --color -GFlh'
-alias rm='rm -r'
+alias ll='ls --color -GFlh'
+alias rm='rm -rf'
 alias ls='ls --color -F'
 alias lsd='ls -d *(/)'
 alias lsf='ls -h *(.)'

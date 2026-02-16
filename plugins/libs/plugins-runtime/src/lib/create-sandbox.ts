@@ -117,7 +117,7 @@ export function createSandbox(
 
     // Window properties
     console: ses.harden(window.console),
-    devicePixelRatio: ses.harden(window.devicePixelRatio),
+    devicePixelRatio: window.devicePixelRatio,
     atob: ses.harden(window.atob.bind(null)),
     btoa: ses.harden(window.btoa.bind(null)),
     structuredClone: ses.harden(window.structuredClone),

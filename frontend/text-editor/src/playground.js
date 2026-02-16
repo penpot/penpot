@@ -462,8 +462,6 @@ class TextEditorPlayground {
         // Number of text leaves in the paragraph.
         view.setUint32(0, paragraph.leaves.length, true);
 
-        console.log("lineHeight", paragraph.lineHeight);
-
         // Serialize paragraph attributes
         view.setUint8(4, paragraph.textAlign, true); // text-align: left
         view.setUint8(5, paragraph.textDirection, true); // text-direction: LTR
