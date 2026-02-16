@@ -2,17 +2,17 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-02-16 08:35+0000\n"
 "Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
-"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
-"lv/>\n"
+"Language-Team: Latvian "
+"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
-"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
+"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.16-dev\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Jau ir konts?"
 
@@ -58,7 +58,7 @@ msgstr "Pilns vārds"
 msgid "auth.login-account-title"
 msgstr "Pieteikties manā kontā"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:162, src/app/main/ui/viewer/login.cljs:103
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:161, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Pieteikties šeit."
 
@@ -141,7 +141,7 @@ msgstr "Aizmirsta parole?"
 msgid "auth.recovery-submit"
 msgstr "Nomainīt paroli"
 
-#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:89
+#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "Vēl nav konta?"
 
@@ -155,7 +155,7 @@ msgstr ""
 msgid "auth.register-account-title"
 msgstr "Tavs vārds"
 
-#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:149, src/app/main/ui/viewer/login.cljs:93
+#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:148, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Izveidot kontu"
 
@@ -181,7 +181,7 @@ msgstr "Atvērtā pirmkoda risinājums dizaina izstrādei un modelēšanai."
 msgid "auth.terms-and-privacy-agreement"
 msgstr "Piekrītu [pakalpojuma noteiktumiem](%s) un [privātuma nosacījumiem](%s)."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:885, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:979, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Pakalpojumu sniegšanas noteikumi"
 
@@ -412,7 +412,7 @@ msgstr "Pilnvarai nav derīguma beigu datuma"
 msgid "dashboard.add-file"
 msgstr "Pievienot datni"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:650
+#: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "Pievienot kā koplietojamu bibliotēku"
 
@@ -420,11 +420,11 @@ msgstr "Pievienot kā koplietojamu bibliotēku"
 msgid "dashboard.change-email"
 msgstr "Mainīt e-pasta adresi"
 
-#: src/app/main/data/dashboard.cljs:329, src/app/main/data/dashboard.cljs:564, src/app/main/data/workspace/pages.cljs:192
+#: src/app/main/data/dashboard.cljs:330, src/app/main/data/dashboard.cljs:565, src/app/main/data/workspace/pages.cljs:198
 msgid "dashboard.copy-suffix"
 msgstr "(kopija)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:329
+#: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
 msgstr "Izveidot jaunu komandu"
 
@@ -432,15 +432,23 @@ msgstr "Izveidot jaunu komandu"
 msgid "dashboard.create-version-menu"
 msgstr "Piespraust šo versiju"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:549
+#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:638
 msgid "dashboard.default-team-name"
 msgstr "Mans Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:477
+#: src/app/main/ui/dashboard/sidebar.cljs:495
 msgid "dashboard.delete-team"
 msgstr "Dzēst komandu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:330, src/app/main/ui/workspace/main_menu.cljs:690
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Atkritne ir tukša. Izdzēstās datnes un projekti parādīsies šeit."
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "Tiks izdzēsts %s"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:690
 msgid "dashboard.download-binary-file"
 msgstr "Lejupielādēt Penpot datni (.penpot)"
 
@@ -449,11 +457,11 @@ msgstr "Lejupielādēt Penpot datni (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Lejupielādēt standarta datni (.svg + .json)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Divkāršot"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:273
+#: src/app/main/ui/dashboard/file_menu.cljs:271
 msgid "dashboard.duplicate-multi"
 msgstr "Divkāršot %s datnes"
 
@@ -525,7 +533,7 @@ msgstr "Ievietot .penpot datni"
 msgid "dashboard.empty-project.start"
 msgstr "Sākt veidot apbrīnojamas lietas"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:282
+#: src/app/main/ui/dashboard/file_menu.cljs:280
 msgid "dashboard.export-binary-multi"
 msgstr "Lejupielādēt %s Penpot datnes (.penpot)"
 
@@ -578,6 +586,20 @@ msgid "dashboard.export.explain"
 msgstr ""
 "Viena vai vairākas lejupielādējamās datnes izmanto koplietojamas "
 "bibliotēkas. Ko iesākt ar to līdzekļiem*?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:266
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Izdzēst datnes"
+msgstr[1] "Izdzēst datni"
+msgstr[2] "Izdzēst datnes"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:263
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Atjaunot datnes"
+msgstr[1] "Atjaunot datni"
+msgstr[2] "Atjaunot datnes"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
 msgid "dashboard.fonts.deleted-placeholder"
@@ -742,7 +764,7 @@ msgstr "Atkārtoti nosūtīt uzaicinājumus"
 msgid "dashboard.invite-profile"
 msgstr "Uzaicināt personas"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
+#: src/app/main/ui/dashboard/sidebar.cljs:477, src/app/main/ui/dashboard/sidebar.cljs:484, src/app/main/ui/dashboard/sidebar.cljs:489, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "Atstāt komandu"
 
@@ -778,15 +800,15 @@ msgstr "notiek fontu ielāde …"
 msgid "dashboard.mark-all-as-read.success"
 msgstr "Visi paziņojumi atzīmēti kā izlasīti"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:314, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:312, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Pārvietot uz"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278
+#: src/app/main/ui/dashboard/file_menu.cljs:276
 msgid "dashboard.move-to-multi"
 msgstr "Pārvietot %s datnes uz"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:250
+#: src/app/main/ui/dashboard/file_menu.cljs:248
 msgid "dashboard.move-to-other-team"
 msgstr "Pārvietot uz citu komandu"
 
@@ -794,7 +816,7 @@ msgstr "Pārvietot uz citu komandu"
 msgid "dashboard.new-file"
 msgstr "+ Jauna datne"
 
-#: src/app/main/data/dashboard.cljs:535, src/app/main/data/dashboard.cljs:647
+#: src/app/main/data/dashboard.cljs:536, src/app/main/data/dashboard.cljs:648
 msgid "dashboard.new-file-prefix"
 msgstr "Jauna datne"
 
@@ -802,7 +824,7 @@ msgstr "Jauna datne"
 msgid "dashboard.new-project"
 msgstr "+ Jauns projekts"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:650
+#: src/app/main/data/dashboard.cljs:289, src/app/main/data/dashboard.cljs:651
 msgid "dashboard.new-project-prefix"
 msgstr "Jauns projekts"
 
@@ -810,7 +832,7 @@ msgstr "Jauns projekts"
 msgid "dashboard.no-matches-for"
 msgstr "“%s” nav atrasta neviena atbilstība"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:764
+#: src/app/main/ui/dashboard/sidebar.cljs:858
 msgid "dashboard.no-projects-placeholder"
 msgstr "Šeit būs redzami piespraustie projekti"
 
@@ -842,7 +864,7 @@ msgstr "Apskatīt paziņojumus"
 msgid "dashboard.num-of-members"
 msgstr "Dalībieki: %s"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:297
+#: src/app/main/ui/dashboard/file_menu.cljs:295
 msgid "dashboard.open-in-new-tab"
 msgstr "Atvērt datni jaunā cilnē"
 
@@ -915,7 +937,7 @@ msgstr "Tu vairs neesi daļa no komandas \"%s\"."
 msgid "dashboard.save-settings"
 msgstr "Saglabāt iestatījumus"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
+#: src/app/main/ui/dashboard/sidebar.cljs:259, src/app/main/ui/dashboard/sidebar.cljs:260
 msgid "dashboard.search-placeholder"
 msgstr "Meklēt…"
 
@@ -1033,7 +1055,7 @@ msgstr[2] "Datnes tika sekmīgi divkāršotas"
 msgid "dashboard.success-duplicate-project"
 msgstr "Projekts tika veiksmīgi divkāršots"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:165
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:634, src/app/main/ui/dashboard/sidebar.cljs:166
 msgid "dashboard.success-move-file"
 msgstr "Datne tika sekmīgi pārvietota"
 
@@ -1073,7 +1095,7 @@ msgstr "Meklēšanas rezultāti"
 msgid "dashboard.type-something"
 msgstr "Jāievada, lai meklētu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:642
+#: src/app/main/ui/dashboard/file_menu.cljs:319, src/app/main/ui/workspace/main_menu.cljs:642
 msgid "dashboard.unpublish-shared"
 msgstr "Atcelt bibliotēkas publicēšanu"
 
@@ -1081,11 +1103,11 @@ msgstr "Atcelt bibliotēkas publicēšanu"
 msgid "dashboard.update-settings"
 msgstr "Atjaunināt iestatījumus"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:977
+#: src/app/main/ui/dashboard/sidebar.cljs:1071
 msgid "dashboard.upgrade-plan.no-limits"
 msgstr "Nav ierobežojumu radošumam"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:975
+#: src/app/main/ui/dashboard/sidebar.cljs:1069
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Bezmaksas Penpot"
 
@@ -1144,7 +1166,7 @@ msgstr "E-pasta adrese"
 msgid "dashboard.your-name"
 msgstr "Vārds"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:56, src/app/main/ui/dashboard/projects.cljs:355, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:312, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Mans Penpot"
 
@@ -1176,23 +1198,23 @@ msgstr "Labi"
 msgid "ds.confirm-title"
 msgstr "Vai esat pārliecināti?"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
 msgid "ds.inputs.numeric-input.no-applicable-tokens"
 msgstr "Aktīvajās kopās vai izskatos nav pielietojamu tekstvienību."
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:100
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
 msgid "ds.inputs.numeric-input.no-matches"
 msgstr "Netika atrasts nekas atbilstošs."
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:650, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141
+#: src/app/main/ui/ds/controls/numeric_input.cljs:652, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Atvērt tekstvienību sarakstu"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:91, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
 msgid "ds.inputs.token-field.detach-token"
 msgstr "Atdalīt tekstvienību"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:41, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Šī tekstvienība nav nevienā aktīvajā kopā vai tai ir nederīga vērtība."
 
@@ -1204,15 +1226,15 @@ msgstr "Autentificēšanās nodrošinātājs nav atļauts šim profilam"
 msgid "errors.auth-provider-not-configured"
 msgstr "Autentificēšanāš nodrošinātājs nav konfigurēts."
 
-#: src/app/main/errors.cljs:119
+#: src/app/main/errors.cljs:126
 msgid "errors.auth.unable-to-login"
 msgstr "Šķiet, ka neesi autentificējies vai ir beidzies sesijas derīgums."
 
-#: src/app/main/data/fonts.cljs:192, src/app/main/ui/dashboard/fonts.cljs:120
+#: src/app/main/data/fonts.cljs:206, src/app/main/ui/dashboard/fonts.cljs:120
 msgid "errors.bad-font"
 msgstr "Fontu %s nevarēja ielādēt"
 
-#: src/app/main/data/fonts.cljs:191
+#: src/app/main/data/fonts.cljs:205
 msgid "errors.bad-font-plural"
 msgstr "Fontus %s nevarēja ielādēt"
 
@@ -1228,29 +1250,29 @@ msgstr "Pārsniegts rakstzīmju skaita ierobežojums"
 msgid "errors.clipboard-not-implemented"
 msgstr "Izmantotais pārlūks nevar veikt šo darbību"
 
-#: src/app/main/errors.cljs:238
+#: src/app/main/errors.cljs:235
 msgid "errors.comment-error"
 msgstr "Bija kļūda saistībā ar piebildi"
 
-#: src/app/main/errors.cljs:307
+#: src/app/main/errors.cljs:302
 msgid "errors.deprecated"
 msgstr ""
 "Atvainojamies! Šī ir veca datne, kas izmanto novecojušu Penpot līdzekļu "
 "veidu, un to nevar atvērt."
 
-#: src/app/main/errors.cljs:310
+#: src/app/main/errors.cljs:305
 msgid "errors.deprecated.contact.after"
 msgstr "lai mēs varētu palīdzēt."
 
-#: src/app/main/errors.cljs:308
+#: src/app/main/errors.cljs:303
 msgid "errors.deprecated.contact.before"
 msgstr "Lai arī Penpot vairs neatbalsta šo līdzekļu veidu, Tu vari"
 
-#: src/app/main/errors.cljs:309
+#: src/app/main/errors.cljs:304
 msgid "errors.deprecated.contact.text"
 msgstr "sazināties ar mums,"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:307
+#: src/app/main/data/workspace/tokens/library_edit.cljs:338
 msgid "errors.drop-token-set-parent-to-child"
 msgstr "Nevar nomest vecāka kopu paša bērna ceļā."
 
@@ -1282,17 +1304,17 @@ msgstr "E-pastam “%s” ir daudz pastāvīgu atlēcienu atskaišu."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "E-pasta adrese “%s” ir atzīmēta surogātpasts vai pastāvīgi saņem atlēcienu."
 
-#: src/app/main/errors.cljs:284
+#: src/app/main/errors.cljs:279
 msgid "errors.feature-mismatch"
 msgstr ""
 "Šķiet, ka tiek atvērta datne, kurā ir iespējota iespēja '%s', bet "
 "pašreizējā Penpot versija to neatbalsta vai tā ir atspējota."
 
-#: src/app/main/errors.cljs:288, src/app/main/errors.cljs:302
+#: src/app/main/errors.cljs:283, src/app/main/errors.cljs:297
 msgid "errors.feature-not-supported"
 msgstr "Līdzeklis '%s' netiek atbalstīts."
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:41, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:77, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:239
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:296, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:240
 msgid "errors.field-max-length"
 msgstr "Jāsatur ne vairāk par %s rakstzīmēm."
 
@@ -1309,7 +1331,7 @@ msgstr "Tukšs lauks"
 msgid "errors.field-not-all-whitespace"
 msgstr "Nosaukumam jāsatur kādu citu rakstzīmi bez atstarpes."
 
-#: src/app/main/errors.cljs:280
+#: src/app/main/errors.cljs:275
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Izskatās, ka ir nesaderība starp iespējotajām iespējām un iespējām datnē, "
@@ -1321,10 +1343,11 @@ msgid "errors.generic"
 msgstr "Noticis kaut kas nelāgs."
 
 #: src/app/main/errors.cljs:200
+#, unused
 msgid "errors.internal-assertion-error"
 msgstr "Iekšēja apgalvojuma kļūda"
 
-#: src/app/main/errors.cljs:216
+#: src/app/main/errors.cljs:214
 msgid "errors.internal-worker-error"
 msgstr "Kaut kas nogāja greizi ar tīmekļa strādni."
 
@@ -1354,11 +1377,11 @@ msgstr "Atkopes tekstvienība nav derīga."
 msgid "errors.invalid-text"
 msgstr "Nederīgs teksts"
 
-#: src/app/main/ui/static.cljs:75
+#: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
 msgstr "Nederīgs ielūgums"
 
-#: src/app/main/ui/static.cljs:76
+#: src/app/main/ui/static.cljs:75
 msgid "errors.invite-invalid.info"
 msgstr "Iespējams, ka šis uzaicinājums ir atcelts vai ir beidzies tā derīgums."
 
@@ -1366,7 +1389,7 @@ msgstr "Iespējams, ka šis uzaicinājums ir atcelts vai ir beidzies tā derīgu
 msgid "errors.ldap-disabled"
 msgstr "LDAP autentifikācija ir atspējota."
 
-#: src/app/main/errors.cljs:296, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
+#: src/app/main/errors.cljs:291, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
 msgid "errors.max-quota-reached"
 msgstr "Ir sasniegts '%s' ierobežojums. Jāsazinās ar atbalstu."
 
@@ -1394,15 +1417,15 @@ msgstr ""
 "Uzaicinātajam profilam ir apklusināta e-pasta saņemšana (ziņojumi par "
 "surogātpastu vai daudz atlēcienu)."
 
-#: src/app/main/errors.cljs:270
+#: src/app/main/errors.cljs:265
 msgid "errors.migration-in-progress"
 msgstr "Notiek pārcelšana"
 
-#: src/app/main/errors.cljs:167
+#: src/app/main/errors.cljs:174
 msgid "errors.only-creator-can-lock"
 msgstr "Tikai versijas izveidotājs var to aizslēgt"
 
-#: src/app/main/errors.cljs:175
+#: src/app/main/errors.cljs:182
 msgid "errors.only-creator-can-unlock"
 msgstr "Tikai versijas izveidotājs var to atslēgt"
 
@@ -1416,7 +1439,7 @@ msgstr "Apstiprinājuma parolei ir jāsakrīt"
 msgid "errors.password-too-short"
 msgstr "Parolē ir jābūt vismaz 8 rakstzīmēm"
 
-#: src/app/main/errors.cljs:148
+#: src/app/main/errors.cljs:155
 msgid "errors.paste-data-validation"
 msgstr "Starpliktuvē ir nederīgi dati"
 
@@ -1434,29 +1457,29 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "Reģistrācija pašlaik ir atspējota."
 
-#: src/app/main/errors.cljs:229
+#: src/app/main/errors.cljs:226
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG ir nederīgs vai bojāts"
 
-#: src/app/main/errors.cljs:275
+#: src/app/main/errors.cljs:270
 msgid "errors.team-feature-mismatch"
 msgstr "Noteikta nesaderīga iespēja '%s'"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:355, src/app/main/ui/dashboard/team.cljs:393
+#: src/app/main/ui/dashboard/sidebar.cljs:373, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
 "Komandā ir nepietiekams dalībnieku skaits, lai to pamestu. Iespējams, ka to "
 "ir vēlams izdzēst."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:358, src/app/main/ui/dashboard/team.cljs:396
+#: src/app/main/ui/dashboard/sidebar.cljs:376, src/app/main/ui/dashboard/team.cljs:396
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "Dalībnieks, kuru mēģināt piešķirt, nepastāv."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:361, src/app/main/ui/dashboard/team.cljs:399
+#: src/app/main/ui/dashboard/sidebar.cljs:379, src/app/main/ui/dashboard/team.cljs:399
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "Īpašnieks nevar pamest komandu, ir jāpiešķir īpašnieka loma citam."
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:164, src/app/main/data/workspace/tokens/library_edit.cljs:194
+#: src/app/main/ui/workspace/tokens/sets/helpers.cljs:26, src/app/main/ui/workspace/tokens/sets/helpers.cljs:45
 msgid "errors.token-set-already-exists"
 msgstr "Jau pastāv kopa ar tādu pašu nosaukumu"
 
@@ -1465,11 +1488,11 @@ msgstr "Jau pastāv kopa ar tādu pašu nosaukumu"
 msgid "errors.token-set-doesnt-exists"
 msgstr "Nevar pavairot nezināmu kopu"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:306
+#: src/app/main/data/workspace/tokens/library_edit.cljs:337
 msgid "errors.token-set-exists-on-drop"
 msgstr "Nevar pabeigt nomešanu, ceļā jau pastāv kopa ar tādu pašu nosaukumu."
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:79, src/app/main/data/workspace/tokens/library_edit.cljs:98
+#: src/app/main/data/workspace/tokens/library_edit.cljs:125, src/app/main/data/workspace/tokens/library_edit.cljs:144
 msgid "errors.token-theme-already-exists"
 msgstr "Pastāv izskata iespēja ar tādu pašu nosaukumu"
 
@@ -1485,15 +1508,15 @@ msgstr "Nezināma tekstvienība"
 msgid "errors.validation"
 msgstr "Pārbaudes kļūda"
 
-#: src/app/main/errors.cljs:183
+#: src/app/main/errors.cljs:190
 msgid "errors.version-already-locked"
 msgstr "Šī versija jau ir aizslēgta"
 
-#: src/app/main/errors.cljs:159
+#: src/app/main/errors.cljs:166
 msgid "errors.version-locked"
 msgstr "Šī versija ir aizslēgta, un citi to nevar izdzēst"
 
-#: src/app/main/errors.cljs:292
+#: src/app/main/errors.cljs:287
 msgid "errors.version-not-supported"
 msgstr "Datnei ir nesaderīgs versijas numurs"
 
@@ -1781,11 +1804,11 @@ msgstr "Fonta stils"
 msgid "inspect.attributes.typography.font-weight"
 msgstr "Fonta Treknums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:406
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:397, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Burtu atstarpes"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:387
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389
 msgid "inspect.attributes.typography.line-height"
 msgstr "Līnijas augstums"
 
@@ -1811,11 +1834,11 @@ msgstr "Pasvītrojums"
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Teksta transformācija"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:435
+#: src/app/main/ui/inspect/attributes/text.cljs:125, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:437
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Virsraksta stils"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:439
+#: src/app/main/ui/inspect/attributes/text.cljs:123, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:441
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Mazie burti"
 
@@ -1827,7 +1850,7 @@ msgstr "Nav"
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Atiestatīt"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:126, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:431
+#: src/app/main/ui/inspect/attributes/text.cljs:126, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Lielie burti"
 
@@ -1946,7 +1969,7 @@ msgstr "Piekļuves pilnvaras"
 msgid "labels.active"
 msgstr "Aktīvs"
 
-#: src/app/main/ui/workspace/libraries.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1035
+#: src/app/main/ui/workspace/libraries.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1040
 msgid "labels.add"
 msgstr "Pievienot"
 
@@ -1966,7 +1989,7 @@ msgstr "Pārvaldnieks"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:86, src/app/main/ui/workspace/tokens/management/context_menu.cljs:120, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:92, src/app/main/ui/workspace/tokens/management/context_menu.cljs:129, src/app/main/ui/workspace/tokens/management/token_pill.cljs:117
 msgid "labels.all"
 msgstr "Visi"
 
@@ -1979,17 +2002,17 @@ msgstr "un"
 msgid "labels.back"
 msgstr "Atpakaļ"
 
-#: src/app/main/ui/static.cljs:298
+#: src/app/main/ui/static.cljs:297
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
 "Izskatās, ka mazliet jāuzgaida un jāmēģina vēlreiz; mēs veicam nelielus "
 "mūsu serveru uzturēšanas darbus."
 
-#: src/app/main/ui/static.cljs:297
+#: src/app/main/ui/static.cljs:296
 msgid "labels.bad-gateway.main-message"
 msgstr "Nepareiza vārteja"
 
-#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/remapping_modal.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:265
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:38, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:168, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:297, src/app/main/ui/workspace/tokens/settings/menu.cljs:105, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:245
 msgid "labels.cancel"
 msgstr "Atcelt"
 
@@ -1997,7 +2020,7 @@ msgstr "Atcelt"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/delete_shared.cljs:105, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:179, src/app/main/ui/workspace/comments.cljs:130, src/app/main/ui/workspace/libraries.cljs:643, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:259, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:185, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:479
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/delete_shared.cljs:105, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:186, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:353, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:179, src/app/main/ui/workspace/libraries.cljs:643, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:264, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/remapping_modal.cljs:79, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:147, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:461
 msgid "labels.close"
 msgstr "Aizvērt"
 
@@ -2021,7 +2044,7 @@ msgstr "Atzīmēt kā atrisinātu"
 msgid "labels.comments"
 msgstr "Komentāri"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:841, src/app/main/ui/workspace/main_menu.cljs:144
+#: src/app/main/ui/dashboard/sidebar.cljs:935, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "Kopiena"
 
@@ -2033,7 +2056,7 @@ msgstr "Aprēķinātās"
 msgid "labels.confirm-password"
 msgstr "Apstiprināt paroli"
 
-#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
+#: src/app/main/ui/auth/login.cljs:204, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:275, src/app/main/ui/dashboard/file_menu.cljs:209, src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:173, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:279, src/app/main/ui/settings/subscription.cljs:313
 msgid "labels.continue"
 msgstr "Turpināt"
 
@@ -2077,7 +2100,7 @@ msgstr "Pielāgotie fonti"
 msgid "labels.dashboard"
 msgstr "Pārskata panelis"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:338, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:291, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:399
+#: src/app/main/ui/dashboard/file_menu.cljs:336, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:223, src/app/main/ui/workspace/sidebar/versions.cljs:216, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:290, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:82, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:381
 msgid "labels.delete"
 msgstr "Dzēst"
 
@@ -2093,7 +2116,7 @@ msgstr "Dzēst pavedienu"
 msgid "labels.delete-invitation"
 msgstr "Dzēst uzaicinājumu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:293
+#: src/app/main/ui/dashboard/file_menu.cljs:291
 msgid "labels.delete-multi-files"
 msgstr "Izdzēst %s datnes"
 
@@ -2110,7 +2133,7 @@ msgstr "Direktors"
 msgid "labels.discard"
 msgstr "Atmest"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:726
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:80, src/app/main/ui/dashboard/files.cljs:179, src/app/main/ui/dashboard/projects.cljs:229, src/app/main/ui/dashboard/projects.cljs:233, src/app/main/ui/dashboard/sidebar.cljs:820
 msgid "labels.drafts"
 msgstr "Melnraksti"
 
@@ -2175,7 +2198,7 @@ msgstr "Fontu nodrošinātāji"
 msgid "labels.font-variants"
 msgstr "Stili"
 
-#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:739
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:833
 msgid "labels.fonts"
 msgstr "Fonti"
 
@@ -2189,15 +2212,15 @@ msgstr "Dibinātājs/viceprezidents"
 msgid "labels.freelancer"
 msgstr "Esmu ārštātnieks(-ce)/Pašnodarbināts(-ā)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:835, src/app/main/ui/workspace/main_menu.cljs:176
+#: src/app/main/ui/dashboard/sidebar.cljs:929, src/app/main/ui/workspace/main_menu.cljs:176
 msgid "labels.github-repo"
 msgstr "GitHub repozitorijs"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:810, src/app/main/ui/workspace/main_menu.cljs:205
+#: src/app/main/ui/dashboard/sidebar.cljs:904, src/app/main/ui/workspace/main_menu.cljs:205
 msgid "labels.give-feedback"
 msgstr "Sniegt atsauksmi"
 
-#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:176, src/app/main/ui/viewer/login.cljs:113
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:175, src/app/main/ui/viewer/login.cljs:113
 msgid "labels.go-back"
 msgstr "Atpakaļ"
 
@@ -2205,7 +2228,7 @@ msgstr "Atpakaļ"
 msgid "labels.graphic-design"
 msgstr "Grafiskais dizains"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:793, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1312, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1528
+#: src/app/main/ui/dashboard/sidebar.cljs:887, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1317, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1345, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1533
 msgid "labels.help-center"
 msgstr "Palīdzības centrs"
 
@@ -2233,7 +2256,7 @@ msgstr "Infomācija"
 msgid "labels.installed-fonts"
 msgstr "Instalētie fonti"
 
-#: src/app/main/ui/static.cljs:393
+#: src/app/main/ui/static.cljs:402
 msgid "labels.internal-error.main-message"
 msgstr "Iekšēja kļūda"
 
@@ -2241,7 +2264,7 @@ msgstr "Iekšēja kļūda"
 msgid "labels.invision"
 msgstr "InVision"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:436, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:110, src/app/main/ui/dashboard/team.cljs:944
+#: src/app/main/ui/dashboard/sidebar.cljs:454, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:110, src/app/main/ui/dashboard/team.cljs:944
 msgid "labels.invitations"
 msgstr "Uzaicinājumi"
 
@@ -2265,11 +2288,11 @@ msgstr "Aizslēgt"
 msgid "labels.log-or-sign"
 msgstr "Pieteikties vai reģistrēties"
 
-#: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:138
+#: src/app/main/ui/static.cljs:61, src/app/main/ui/static.cljs:137
 msgid "labels.login"
 msgstr "Pieteikties"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1054
+#: src/app/main/ui/dashboard/sidebar.cljs:1148
 msgid "labels.logout"
 msgstr "Atteikties"
 
@@ -2281,7 +2304,7 @@ msgstr "Tirgvedība"
 msgid "labels.member"
 msgstr "Dalībnieks"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:432, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108
+#: src/app/main/ui/dashboard/sidebar.cljs:450, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108
 msgid "labels.members"
 msgstr "Dalībnieki"
 
@@ -2289,7 +2312,7 @@ msgstr "Dalībnieki"
 msgid "labels.mention"
 msgstr "Pieminēt"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:628
+#: src/app/main/ui/ds/controls/numeric_input.cljs:631
 msgid "labels.mixed-values"
 msgstr "Jauktās"
 
@@ -2301,7 +2324,7 @@ msgstr "Jaunā parole"
 msgid "labels.next"
 msgstr "Nākamais"
 
-#: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:165
+#: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "Jūs esat pieķerti! Šeit tiks parādīti jaunu komentāru paziņojumi."
 
@@ -2318,7 +2341,7 @@ msgstr "Sapulcē savus cilvēkus, un kopā radiet lieliskas lietas!"
 msgid "labels.not-found.desc-message"
 msgstr "Šī lapa, iespējams, nepastāv, vai arī nav atļauju tai piekļūt."
 
-#: src/app/main/ui/static.cljs:287
+#: src/app/main/ui/static.cljs:286
 msgid "labels.not-found.main-message"
 msgstr "Ups!"
 
@@ -2360,7 +2383,7 @@ msgstr "Vecā parole"
 msgid "labels.only-yours"
 msgstr "Tikai mans"
 
-#: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1026, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:315, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:344, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
+#: src/app/main/ui/comments.cljs:911, src/app/main/ui/comments.cljs:976, src/app/main/ui/workspace/palette.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:906, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1031, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:316, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/shadow_row.cljs:146
 msgid "labels.options"
 msgstr "Iespējas"
 
@@ -2388,7 +2411,7 @@ msgstr "Parole"
 msgid "labels.pending-invitation"
 msgstr "Gaidīšana"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:752
+#: src/app/main/ui/dashboard/sidebar.cljs:846
 msgid "labels.pinned-projects"
 msgstr "Piepsraustie projekti"
 
@@ -2412,7 +2435,7 @@ msgstr "Produktu vadība"
 msgid "labels.profile"
 msgstr "Profils"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:719
+#: src/app/main/ui/dashboard/sidebar.cljs:813
 msgid "labels.projects"
 msgstr "Projekti"
 
@@ -2437,7 +2460,7 @@ msgstr "Noņemt"
 msgid "labels.remove-member"
 msgstr "Noņemt dalībnieku"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:453, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:192, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:299, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:192, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Pārdēvēt"
 
@@ -2473,7 +2496,7 @@ msgstr "Nosūtīt uzaicinājumu vēlreiz"
 msgid "labels.restore"
 msgstr "Atjaunot"
 
-#: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:300, src/app/main/ui/static.cljs:309, src/app/main/ui/static.cljs:410
+#: src/app/main/ui/components/progress.cljs:80, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:308, src/app/main/ui/static.cljs:419
 msgid "labels.retry"
 msgstr "Pamēģināt vēlreiz"
 
@@ -2481,7 +2504,7 @@ msgstr "Pamēģināt vēlreiz"
 msgid "labels.role"
 msgstr "Loma"
 
-#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:302, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
+#: src/app/main/ui/dashboard/fonts.cljs:395, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:204, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:301, src/app/main/ui/workspace/tokens/settings/menu.cljs:110
 msgid "labels.save"
 msgstr "Saglabāt"
 
@@ -2505,11 +2528,11 @@ msgstr "Nosūtīt"
 msgid "labels.sending"
 msgstr "Nosūtīšana…"
 
-#: src/app/main/ui/static.cljs:307
+#: src/app/main/ui/static.cljs:306
 msgid "labels.service-unavailable.desc-message"
 msgstr "Mēs esam ieplānotos sistēmu uzturēšanas darbos."
 
-#: src/app/main/ui/static.cljs:306
+#: src/app/main/ui/static.cljs:305
 msgid "labels.service-unavailable.main-message"
 msgstr "Pakalpojums nav pieejams"
 
@@ -2517,7 +2540,7 @@ msgstr "Pakalpojums nav pieejams"
 msgid "labels.sets"
 msgstr "Kopas"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:446, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:115, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
+#: src/app/main/ui/dashboard/sidebar.cljs:464, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:115, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
 msgid "labels.settings"
 msgstr "Iestatījumi"
 
@@ -2529,7 +2552,7 @@ msgstr "Kopīgot"
 msgid "labels.share-prototype"
 msgstr "Kopīgot prototipu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:746
+#: src/app/main/ui/dashboard/sidebar.cljs:840
 msgid "labels.shared-libraries"
 msgstr "Bibliotēkas"
 
@@ -2537,7 +2560,7 @@ msgstr "Bibliotēkas"
 msgid "labels.show"
 msgstr "Parādīt"
 
-#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:139
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:57, src/app/main/ui/workspace/comments.cljs:136
 msgid "labels.show-all-comments"
 msgstr "Rādīt visus komentārus"
 
@@ -2545,11 +2568,11 @@ msgstr "Rādīt visus komentārus"
 msgid "labels.show-comments-list"
 msgstr "Rādīt komentāru sarakstu"
 
-#: src/app/main/ui/workspace/comments.cljs:69, src/app/main/ui/workspace/comments.cljs:141
+#: src/app/main/ui/workspace/comments.cljs:69, src/app/main/ui/workspace/comments.cljs:138
 msgid "labels.show-mentions"
 msgstr "Rādīt tikai manas pieminēšanas"
 
-#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:140
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:63, src/app/main/ui/workspace/comments.cljs:137
 msgid "labels.show-your-comments"
 msgstr "Rādīt tikai manas piebildes"
 
@@ -2557,7 +2580,7 @@ msgstr "Rādīt tikai manas piebildes"
 msgid "labels.sketch"
 msgstr "Sketch"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:731
+#: src/app/main/ui/dashboard/sidebar.cljs:825
 msgid "labels.sources"
 msgstr "Avoti"
 
@@ -2599,7 +2622,7 @@ msgstr "Nezināma kļūda"
 msgid "labels.unlock"
 msgstr "Atslēgt"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:287
+#: src/app/main/ui/dashboard/file_menu.cljs:285
 msgid "labels.unpublish-multi-files"
 msgstr "Atcelt %s datņu publicēšanu"
 
@@ -2623,7 +2646,7 @@ msgstr "Augšupielādēt pielāgotos fontus"
 msgid "labels.uploading"
 msgstr "Augšupielādē…"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:271
 msgid "labels.view-only"
 msgstr "TIKAI SKATĪT"
 
@@ -2631,7 +2654,7 @@ msgstr "TIKAI SKATĪT"
 msgid "labels.viewer"
 msgstr "Pārlūks"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:441, src/app/main/ui/dashboard/team.cljs:103, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/dashboard/team.cljs:1134
+#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/team.cljs:103, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/dashboard/team.cljs:1134
 msgid "labels.webhooks"
 msgstr "Tīmekļa aizķeres"
 
@@ -2643,7 +2666,7 @@ msgstr "Rakstīt jaunu komentāru"
 msgid "labels.you"
 msgstr "(Jūs)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1007
+#: src/app/main/ui/dashboard/sidebar.cljs:1101
 msgid "labels.your-account"
 msgstr "Mans konts"
 
@@ -2744,7 +2767,7 @@ msgstr "Izvēlēties attēlu"
 msgid "media.gradient"
 msgstr "Pāreja"
 
-#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:407
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:45, src/app/main/ui/ds/utilities/swatch.cljs:58, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:402
 msgid "media.image"
 msgstr "Attēls"
 
@@ -2951,11 +2974,11 @@ msgstr "Vai tiešām izdzēst šo fontu? Tas netiks ielādēts, ja tiek izmantot
 msgid "modals.delete-font.title"
 msgstr "Fonta dzēšana"
 
-#: src/app/main/ui/workspace/context_menu.cljs:674, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
+#: src/app/main/ui/workspace/context_menu.cljs:675, src/app/main/ui/workspace/sidebar/sitemap.cljs:95
 msgid "modals.delete-page.body"
 msgstr "Vai tiešām izdzēst šo lapu?"
 
-#: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:674, src/app/main/ui/workspace/sidebar/sitemap.cljs:94
 msgid "modals.delete-page.title"
 msgstr "Dzēst lapu"
 
@@ -3006,17 +3029,17 @@ msgstr[0] "Nav izdzēšamu datņu"
 msgstr[1] "Izdzēš datni"
 msgstr[2] "Izdzēš datnes"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:425
+#: src/app/main/ui/dashboard/sidebar.cljs:443
 msgid "modals.delete-team-confirm.accept"
 msgstr "Dzēst komandu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:424
+#: src/app/main/ui/dashboard/sidebar.cljs:442
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "Vai tiešām izdzēst šo komandu? Visi ar komandu saistītie projekti un datnes "
 "tiks neatgriezeniski izdzēstas."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:423
+#: src/app/main/ui/dashboard/sidebar.cljs:441
 msgid "modals.delete-team-confirm.title"
 msgstr "Notiek komandas dzēšana"
 
@@ -3087,13 +3110,13 @@ msgstr ""
 msgid "modals.invite-team-member.title"
 msgstr "Uzaicināt dalībniekus uz komandu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:427
+#: src/app/main/ui/dashboard/sidebar.cljs:431, src/app/main/ui/dashboard/team.cljs:427
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "Tā kā esi šīs komandas vienīgais dalībnieks, tā tiks izdzēsta līdz ar tās "
 "projektiem un datnēm."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:412, src/app/main/ui/dashboard/team.cljs:426
+#: src/app/main/ui/dashboard/sidebar.cljs:430, src/app/main/ui/dashboard/team.cljs:426
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Vai tiešām pamest komandu %s?"
 
@@ -3121,15 +3144,15 @@ msgstr "Atlasīt dalībnieku, ko nozīmēt"
 msgid "modals.leave-and-reassign.title"
 msgstr "Pirms pamešanas"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:392, src/app/main/ui/dashboard/sidebar.cljs:414, src/app/main/ui/dashboard/team.cljs:428, src/app/main/ui/dashboard/team.cljs:450
+#: src/app/main/ui/dashboard/sidebar.cljs:410, src/app/main/ui/dashboard/sidebar.cljs:432, src/app/main/ui/dashboard/team.cljs:428, src/app/main/ui/dashboard/team.cljs:450
 msgid "modals.leave-confirm.accept"
 msgstr "Pamest komandu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/team.cljs:449
+#: src/app/main/ui/dashboard/sidebar.cljs:409, src/app/main/ui/dashboard/team.cljs:449
 msgid "modals.leave-confirm.message"
 msgstr "Vai tiešām pamest šo komandu?"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
+#: src/app/main/ui/dashboard/sidebar.cljs:408, src/app/main/ui/dashboard/sidebar.cljs:429, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.title"
 msgstr "Komandas pamešana"
 
@@ -3262,15 +3285,15 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Atjaunināt sastāvdaļu koplietojamā bibliotēkā"
 
-#: src/app/main/ui/static.cljs:289
+#: src/app/main/ui/static.cljs:288
 msgid "not-found.desc-message.doesnt-exist"
 msgstr "Šī lapa nepastāv"
 
-#: src/app/main/ui/static.cljs:288
+#: src/app/main/ui/static.cljs:287
 msgid "not-found.desc-message.error"
 msgstr "404 kļūda"
 
-#: src/app/main/ui/static.cljs:139
+#: src/app/main/ui/static.cljs:138
 msgid "not-found.login.free"
 msgstr ""
 "Penpot ir bezmaksas un atvērta pirmkoda dizainēšanas rīks sadarbībai starp "
@@ -3286,79 +3309,79 @@ msgstr ""
 "Jāpārbauda savs e-pasts un jāklikšķina uz saites, lai izveidotu jaunu "
 "paroli."
 
-#: src/app/main/ui/static.cljs:153
+#: src/app/main/ui/static.cljs:152
 msgid "not-found.login.signup-free"
 msgstr "Reģistrēties bez maksas"
 
-#: src/app/main/ui/static.cljs:154
+#: src/app/main/ui/static.cljs:153
 msgid "not-found.login.start-using"
 msgstr "un sāc izmantot Penpot dažu sekunžu laikā!"
 
-#: src/app/main/ui/static.cljs:70
+#: src/app/main/ui/static.cljs:69
 msgid "not-found.made-with-love"
 msgstr "Izstrādāts ar MĪLESTĪBU un atvērta pirmkoda"
 
-#: src/app/main/ui/static.cljs:249
+#: src/app/main/ui/static.cljs:248
 msgid "not-found.no-permission.already-requested.file"
 msgstr "Jau ir pieprasīta piekļuve šai datnei."
 
-#: src/app/main/ui/static.cljs:250
+#: src/app/main/ui/static.cljs:249
 msgid "not-found.no-permission.already-requested.or-others.file"
 msgstr ""
 "Jau ir pieprasīta piekļuve šai datnei vai šīs komandas citām datnēm vai "
 "projektiem."
 
-#: src/app/main/ui/static.cljs:256
+#: src/app/main/ui/static.cljs:255
 msgid "not-found.no-permission.already-requested.or-others.project"
 msgstr ""
 "Tu jau pieprasīji piekļuvi šim projektam vai šīs komandas citiem projektiem "
 "vai datnēm."
 
-#: src/app/main/ui/static.cljs:255
+#: src/app/main/ui/static.cljs:254
 msgid "not-found.no-permission.already-requested.project"
 msgstr "Tu jau pieprasīji piekļuvi šim projektam."
 
-#: src/app/main/ui/static.cljs:270, src/app/main/ui/static.cljs:279
+#: src/app/main/ui/static.cljs:269, src/app/main/ui/static.cljs:278
 msgid "not-found.no-permission.ask"
 msgstr "PIEPRASĪT PIEKĻUVI"
 
-#: src/app/main/ui/static.cljs:262
+#: src/app/main/ui/static.cljs:261
 msgid "not-found.no-permission.done.remember"
 msgstr "Jāatceras, ka, ja īpašnieks to ļauj, tiksi uzaicināts pievienoties komandai."
 
-#: src/app/main/ui/static.cljs:261
+#: src/app/main/ui/static.cljs:260
 msgid "not-found.no-permission.done.success"
 msgstr "Pieprasījums tika veiksmīgi nosūtīts."
 
-#: src/app/main/ui/static.cljs:267
+#: src/app/main/ui/static.cljs:266
 msgid "not-found.no-permission.file"
 msgstr "Nav piekļuves šai datnei."
 
-#: src/app/main/ui/static.cljs:57, src/app/main/ui/static.cljs:245, src/app/main/ui/static.cljs:251, src/app/main/ui/static.cljs:257, src/app/main/ui/static.cljs:263, src/app/main/ui/static.cljs:272, src/app/main/ui/static.cljs:281
+#: src/app/main/ui/static.cljs:56, src/app/main/ui/static.cljs:244, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:262, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:280
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Doties uz savu Penpot"
 
-#: src/app/main/ui/static.cljs:269, src/app/main/ui/static.cljs:278
+#: src/app/main/ui/static.cljs:268, src/app/main/ui/static.cljs:277
 msgid "not-found.no-permission.if-approves"
 msgstr "Ja īpašnieks to ļauj, tiksi uzaicināts pievienoties komandai."
 
-#: src/app/main/ui/static.cljs:484, src/app/main/ui/static.cljs:497
+#: src/app/main/ui/static.cljs:496, src/app/main/ui/static.cljs:509
 msgid "not-found.no-permission.penpot-file"
 msgstr "Penpot datne"
 
-#: src/app/main/ui/static.cljs:244, src/app/main/ui/static.cljs:276
+#: src/app/main/ui/static.cljs:243, src/app/main/ui/static.cljs:275
 msgid "not-found.no-permission.project"
 msgstr "Nav piekļuves šim projektam."
 
-#: src/app/main/ui/static.cljs:483, src/app/main/ui/static.cljs:495
+#: src/app/main/ui/static.cljs:495, src/app/main/ui/static.cljs:507
 msgid "not-found.no-permission.project-name"
 msgstr "PROJEKTS"
 
-#: src/app/main/ui/static.cljs:268
+#: src/app/main/ui/static.cljs:267
 msgid "not-found.no-permission.you-can-ask.file"
 msgstr "Lai piekļūtu šai datnei, jāvaicā komandas īpašniekam."
 
-#: src/app/main/ui/static.cljs:277
+#: src/app/main/ui/static.cljs:276
 msgid "not-found.no-permission.you-can-ask.project"
 msgstr "Lai piekļūtu šim projektam, jāvaicā komandas īpašniekam."
 
@@ -3749,19 +3772,19 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Doties uz pieteikšanos"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:378
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:373
 msgid "settings.detach"
 msgstr "Atdalīt"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:105, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:79, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:500, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:511, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:555, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:427, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:213, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:215, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:240, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:260, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:342, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1062, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1302, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:28, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:233, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:385, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:422, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:432, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:520, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:554, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:587, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:621, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:763, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:801, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:424, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:447, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:486, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:499, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:508, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:540, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:552, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:391, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:410, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:422, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:235
 msgid "settings.multiple"
 msgstr "Jaukts"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:436
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:431
 msgid "settings.remove-color"
 msgstr "Noņemt krāsu"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:441
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:436
 msgid "settings.select-this-color"
 msgstr "Atlasīt vienumus, kas izmanto šo stilu"
 
@@ -4132,7 +4155,7 @@ msgstr "Pārvietot uz augšu"
 msgid "shortcuts.next-frame"
 msgstr "Nākamā plātne"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:513
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:509
 msgid "shortcuts.not-found"
 msgstr "Saīsnes nav atrastas"
 
@@ -4298,7 +4321,7 @@ msgstr "Beigt mērīšanu"
 msgid "shortcuts.thumbnail-set"
 msgstr "Iestatīt sīktēlus"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:502
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Īsinājumtaustiņi"
 
@@ -4476,7 +4499,7 @@ msgstr ""
 msgid "subscription.dashboard.team-plan"
 msgstr "Komandas plāns"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:979
+#: src/app/main/ui/dashboard/sidebar.cljs:1073
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Iedarbināt"
 
@@ -4714,7 +4737,7 @@ msgstr "Tīmekļa aizķeres - %s - Penpot"
 msgid "title.viewer"
 msgstr "%s - skatīšana - Penpot"
 
-#: src/app/main/ui/workspace.cljs:233
+#: src/app/main/ui/workspace.cljs:237
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
@@ -4853,11 +4876,11 @@ msgstr "Izveidot kopu"
 msgid "workspace.assets.create-group-hint"
 msgstr "Vienumi tiks automātiski nosaukti kā “kopas nosaukums/vienuma nosaukums”"
 
-#: src/app/main/ui/workspace/context_menu.cljs:683, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+#: src/app/main/ui/workspace/context_menu.cljs:684, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:640, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
 msgid "workspace.assets.delete"
 msgstr "Dzēst"
 
-#: src/app/main/ui/workspace/context_menu.cljs:688
+#: src/app/main/ui/workspace/context_menu.cljs:689
 msgid "workspace.assets.duplicate"
 msgstr "Divkāršot"
 
@@ -4910,7 +4933,7 @@ msgstr "Līdzekļi nav atrasti"
 msgid "workspace.assets.open-library"
 msgstr "Atvērt bibliotēkas datni"
 
-#: src/app/main/ui/workspace/context_menu.cljs:686, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
+#: src/app/main/ui/workspace/context_menu.cljs:687, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:615, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
 msgid "workspace.assets.rename"
 msgstr "Pārdēvēt"
 
@@ -4959,27 +4982,27 @@ msgstr "Pievienot tipogrāfiju"
 msgid "workspace.assets.typography.font-id"
 msgstr "Fonti"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:528
 msgid "workspace.assets.typography.font-size"
 msgstr "Izmērs"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:524
 msgid "workspace.assets.typography.font-style"
 msgstr "Fonta stils"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:544
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:546
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Doties uz stilu bibliotēkas datni, lai labotu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:536
 msgid "workspace.assets.typography.letter-spacing"
 msgstr "Burtstarpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:532
 msgid "workspace.assets.typography.line-height"
 msgstr "Rindas augstums"
 
-#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:485, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:510, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:617, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:637
+#: src/app/main/ui/dashboard/grid.cljs:230, src/app/main/ui/workspace/libraries.cljs:566, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:487, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:619, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:639
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -4987,7 +5010,7 @@ msgstr "Ag"
 msgid "workspace.assets.typography.text-styles"
 msgstr "Teksta stili"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:538
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.text-transform"
 msgstr "Teksta pārveide"
 
@@ -4995,55 +5018,55 @@ msgstr "Teksta pārveide"
 msgid "workspace.assets.ungroup"
 msgstr "Atapkopot"
 
-#: src/app/main/ui/workspace/context_menu.cljs:795
+#: src/app/main/ui/workspace/context_menu.cljs:796
 msgid "workspace.context-menu.grid-cells.area"
 msgstr "Izveidot laukumu"
 
-#: src/app/main/ui/workspace/context_menu.cljs:798
+#: src/app/main/ui/workspace/context_menu.cljs:799
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Izveidot plātni"
 
-#: src/app/main/ui/workspace/context_menu.cljs:790
+#: src/app/main/ui/workspace/context_menu.cljs:791
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Apvienot šūnas"
 
-#: src/app/main/ui/workspace/context_menu.cljs:753
+#: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Pievienot 1 sleju pa labi"
 
-#: src/app/main/ui/workspace/context_menu.cljs:752
+#: src/app/main/ui/workspace/context_menu.cljs:753
 msgid "workspace.context-menu.grid-track.column.add-before"
 msgstr "Pievienot 1 sleju pa kreisi"
 
-#: src/app/main/ui/workspace/context_menu.cljs:754
+#: src/app/main/ui/workspace/context_menu.cljs:755
 msgid "workspace.context-menu.grid-track.column.delete"
 msgstr "Izdzēst sleju"
 
-#: src/app/main/ui/workspace/context_menu.cljs:755
+#: src/app/main/ui/workspace/context_menu.cljs:756
 msgid "workspace.context-menu.grid-track.column.delete-shapes"
 msgstr "Izdzēst slejas un apveidus"
 
-#: src/app/main/ui/workspace/context_menu.cljs:751
+#: src/app/main/ui/workspace/context_menu.cljs:752
 msgid "workspace.context-menu.grid-track.column.duplicate"
 msgstr "Divkāršota sleja"
 
-#: src/app/main/ui/workspace/context_menu.cljs:760
+#: src/app/main/ui/workspace/context_menu.cljs:761
 msgid "workspace.context-menu.grid-track.row.add-after"
 msgstr "Pievienot 1 rindu zem"
 
-#: src/app/main/ui/workspace/context_menu.cljs:759
+#: src/app/main/ui/workspace/context_menu.cljs:760
 msgid "workspace.context-menu.grid-track.row.add-before"
 msgstr "Pievienot 1 rindu virs"
 
-#: src/app/main/ui/workspace/context_menu.cljs:761
+#: src/app/main/ui/workspace/context_menu.cljs:762
 msgid "workspace.context-menu.grid-track.row.delete"
 msgstr "Izdzēst rindu"
 
-#: src/app/main/ui/workspace/context_menu.cljs:762
+#: src/app/main/ui/workspace/context_menu.cljs:763
 msgid "workspace.context-menu.grid-track.row.delete-shapes"
 msgstr "Izdzēst rindu un apveidus"
 
-#: src/app/main/ui/workspace/context_menu.cljs:758
+#: src/app/main/ui/workspace/context_menu.cljs:759
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "Divkāršot rindu"
 
@@ -5051,7 +5074,7 @@ msgstr "Divkāršot rindu"
 msgid "workspace.focus.focus-mode"
 msgstr "Fokusa režīms"
 
-#: src/app/main/ui/workspace/context_menu.cljs:396, src/app/main/ui/workspace/context_menu.cljs:710
+#: src/app/main/ui/workspace/context_menu.cljs:396, src/app/main/ui/workspace/context_menu.cljs:711
 msgid "workspace.focus.focus-off"
 msgstr "Izslēgt fokusu"
 
@@ -5222,15 +5245,15 @@ msgstr "Atsaukt"
 msgid "workspace.header.reset-zoom"
 msgstr "Atiestatīt"
 
-#: src/app/main/ui/workspace/left_header.cljs:126
+#: src/app/main/ui/workspace/left_header.cljs:128
 msgid "workspace.header.save-error"
 msgstr "Saglabāšanas kļūda"
 
-#: src/app/main/ui/workspace/left_header.cljs:125
+#: src/app/main/ui/workspace/left_header.cljs:127
 msgid "workspace.header.saved"
 msgstr "Saglabāts"
 
-#: src/app/main/ui/workspace/left_header.cljs:123, src/app/main/ui/workspace/left_header.cljs:124
+#: src/app/main/ui/workspace/left_header.cljs:125, src/app/main/ui/workspace/left_header.cljs:126
 msgid "workspace.header.saving"
 msgstr "Saglabāšana"
 
@@ -5271,39 +5294,39 @@ msgstr "Pilnekrāns"
 msgid "workspace.header.zoom-selected"
 msgstr "Tālummainīt uz atlasi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:854
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Labot režģi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1534
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1539
 msgid "workspace.layout-grid.editor.options.exit"
 msgstr "Iziet"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:598, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:603, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:609
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:593, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:599
 msgid "workspace.layout-grid.editor.padding.bottom"
 msgstr "Apakšējā atbīde"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:674
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:669
 msgid "workspace.layout-grid.editor.padding.expand"
 msgstr "Rādīt četrpusējas atbīdes iespējas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:455, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:461
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:416, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:427, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:433
 msgid "workspace.layout-grid.editor.padding.horizontal"
 msgstr "Līmeniskā atbīde"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:632, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:638
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:633
 msgid "workspace.layout-grid.editor.padding.left"
 msgstr "Kreisā atbīde"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:570, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:575, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:581
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:551, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:560, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:566
 msgid "workspace.layout-grid.editor.padding.right"
 msgstr "Labā atbīde"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:541, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:546, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:552
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:517, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:526, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:532
 msgid "workspace.layout-grid.editor.padding.top"
 msgstr "Augšējā atbīde"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:419, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:431
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:391, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:397
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "Stateniskā atbīde"
 
@@ -5319,15 +5342,15 @@ msgstr "Darīts"
 msgid "workspace.layout-grid.editor.top-bar.locate"
 msgstr "Noteikt atrašanās vietu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1560
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Norādīt režģa izkārtojumu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:266
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
 msgid "workspace.layout-item.height-100"
 msgstr "100% augstums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:239
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
 msgid "workspace.layout-item.width-100"
 msgstr "100% platums"
 
@@ -5457,11 +5480,11 @@ msgstr "KOPLIETOJAMĀS BIBLIOTĒKAS"
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Savienot bibliotēku"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:331
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Vairāki burtu stili un veidi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:334
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Atsaistīt visus burtu stilus un veidus"
 
@@ -5524,7 +5547,7 @@ msgstr "Pārslēgt aizmiglojumu"
 msgid "workspace.options.canvas-background"
 msgstr "Kanvas fons"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:613
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
 msgstr "Apcirpt saturu"
 
@@ -5700,7 +5723,7 @@ msgstr "Augša"
 msgid "workspace.options.constraints.topbottom"
 msgstr "Augša un apakša"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:181
+#: src/app/main/ui/workspace/sidebar/options.cljs:197
 msgid "workspace.options.design"
 msgstr "Dizains"
 
@@ -5748,11 +5771,11 @@ msgstr "Izgūšana neizdevās"
 msgid "workspace.options.exporting-object-slow"
 msgstr "Izgūšana ir neparedzēti lēna"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
 msgid "workspace.options.fill"
 msgstr "Aizpildīšana"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:209
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.add-fill"
 msgstr "Pievienot aizpildījumu"
 
@@ -5760,7 +5783,7 @@ msgstr "Pievienot aizpildījumu"
 msgid "workspace.options.fill.remove-fill"
 msgstr "Noņemt aizpildījumu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:461
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:405
 msgid "workspace.options.fit-content"
 msgstr "Mainīt paneļa izmēru, lai ietilpinātu saturu"
 
@@ -5878,7 +5901,7 @@ msgstr "Rindas"
 msgid "workspace.options.grid.square"
 msgstr "Kvadrāts"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:106
 msgid "workspace.options.group-fill"
 msgstr "Kopas aizpildījums"
 
@@ -5902,11 +5925,11 @@ msgstr "Vadotnes"
 msgid "workspace.options.guides.toggle-guide"
 msgstr "Pārslēgt vadlīniju"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:488, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:507
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:454
 msgid "workspace.options.height"
 msgstr "Augstums"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:185
+#: src/app/main/ui/workspace/sidebar/options.cljs:201
 msgid "workspace.options.inspect"
 msgstr "Apskatīt"
 
@@ -6161,67 +6184,67 @@ msgstr "Pievienot mijiedarbību"
 msgid "workspace.options.interactions.remove-interaction"
 msgstr "Noņemt mijiedarbību"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:168
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "Krāsa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:186
 msgid "workspace.options.layer-options.blend-mode.color-burn"
 msgstr "Krāsas izbalēšana"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:189
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
 msgstr "Krāsas izcēlums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:184
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "Aptumšot"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:164
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:193
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "Starpība"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:194
 msgid "workspace.options.layer-options.blend-mode.exclusion"
 msgstr "Izslēgšana"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:163
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:192
 msgid "workspace.options.layer-options.blend-mode.hard-light"
 msgstr "Konturgaisma"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:166
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:195
 msgid "workspace.options.layer-options.blend-mode.hue"
 msgstr "Nokrāsa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:187
 msgid "workspace.options.layer-options.blend-mode.lighten"
 msgstr "Izgaismot"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:169
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:198
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "Spožums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:185
 msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "Vairot"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:154
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:183
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "Normāls"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:190
 msgid "workspace.options.layer-options.blend-mode.overlay"
 msgstr "Pārklājums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:167
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:196
 msgid "workspace.options.layer-options.blend-mode.saturation"
 msgstr "Piesātinājums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:188
 msgid "workspace.options.layer-options.blend-mode.screen"
 msgstr "Ekrāns"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:162
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191
 msgid "workspace.options.layer-options.blend-mode.soft-light"
 msgstr "Izkliedgaisma"
 
@@ -6240,7 +6263,7 @@ msgstr "Apkopot slāņus"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Atlasītie slāņi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:206, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:212
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:255, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:261
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Pārslēgt slāņa redzamību"
 
@@ -6249,23 +6272,19 @@ msgstr "Pārslēgt slāņa redzamību"
 msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Papildu opcijas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:686, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:693
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Maks.augstums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:624, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:631
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Maks.platums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:655, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:663
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Min.augstums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:591, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Min.platums"
 
@@ -6387,15 +6406,15 @@ msgstr "Vairāk krāsu"
 msgid "workspace.options.more-lib-colors"
 msgstr "Vairāk bibliotēkas krāsu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Caurspīdīgums"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:457
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
 msgid "workspace.options.orientation.horizontal"
 msgstr "Līmeniski"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:453
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
 msgid "workspace.options.orientation.vertical"
 msgstr "Stateniski"
 
@@ -6404,35 +6423,35 @@ msgstr "Stateniski"
 msgid "workspace.options.position"
 msgstr "Novietojums"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:183
+#: src/app/main/ui/workspace/sidebar/options.cljs:199
 msgid "workspace.options.prototype"
 msgstr "Prototips"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:98
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:206
 msgid "workspace.options.radius"
 msgstr "Rādiuss"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:135
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:323
 msgid "workspace.options.radius-bottom-left"
 msgstr "Apakšā pa kreisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:143
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:290, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:331
 msgid "workspace.options.radius-bottom-right"
 msgstr "Apakšā pa labi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:234, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:307
 msgid "workspace.options.radius-top-left"
 msgstr "Augšā pa kreisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:127
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:253, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:315
 msgid "workspace.options.radius-top-right"
 msgstr "Augšā pa labi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:340
 msgid "workspace.options.radius.hide-all-corners"
 msgstr "Sakļaut neatkarīgu rādiusu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:341
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Rādīt neatkarīgu rādiusu"
 
@@ -6444,7 +6463,7 @@ msgstr "Pēdējie"
 msgid "workspace.options.retry"
 msgstr "Atkārtot"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:583, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:588
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:536, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:544
 msgid "workspace.options.rotation"
 msgstr "Pagriešana"
 
@@ -6460,7 +6479,7 @@ msgstr "Jāatlasa apveids, plātne vai kopa, lai vilktu savienojumu uz citu plā
 msgid "workspace.options.selection-color"
 msgstr "Atlasītās krāsas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:106
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:105
 msgid "workspace.options.selection-fill"
 msgstr "Atlases aizpildījums"
 
@@ -6524,7 +6543,7 @@ msgstr "Pārslēgt ēnu"
 msgid "workspace.options.show-fill-on-export"
 msgstr "Rādīt izguvēs"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:620
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:574
 msgid "workspace.options.show-in-viewer"
 msgstr "Rādīt skatītājā"
 
@@ -6532,15 +6551,15 @@ msgstr "Rādīt skatītājā"
 msgid "workspace.options.size"
 msgstr "Izmērs"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:420
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:71, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:364
 msgid "workspace.options.size-presets"
 msgstr "Izmēra standarti"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:522
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
 msgid "workspace.options.size.lock"
 msgstr "Paturēt malu attiecību"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:522
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469
 msgid "workspace.options.size.unlock"
 msgstr "Nepaturēt malu attiecību"
 
@@ -6554,7 +6573,7 @@ msgstr "Vilkums"
 msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Apļa marķieris"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:158
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:175
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "Aplis"
 
@@ -6563,7 +6582,7 @@ msgstr "Aplis"
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Rombveida marķieris"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:176
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "Dimants"
 
@@ -6572,19 +6591,19 @@ msgstr "Dimants"
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Līnijas bulta"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "Bulta"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:170
 msgid "workspace.options.stroke-cap.none"
 msgstr "Nav"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:178
 msgid "workspace.options.stroke-cap.round"
 msgstr "Apaļš"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:162
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:179
 msgid "workspace.options.stroke-cap.square"
 msgstr "Kvadrāts"
 
@@ -6593,7 +6612,7 @@ msgstr "Kvadrāts"
 msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Kvadrāta marķieris"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:157
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:174
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "Taisnstūris"
 
@@ -6602,91 +6621,91 @@ msgstr "Taisnstūris"
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Trīsstūra bulta"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "Trijstūris"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:209
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:210
 msgid "workspace.options.stroke-color"
 msgstr "Vilkuma krāsa"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:199
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:225, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
 msgid "workspace.options.stroke-width"
 msgstr "Vilkuma biezums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:188
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:189
 msgid "workspace.options.stroke.add-stroke"
 msgstr "Pievienot vilkuma krāsu"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:100
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:111
 msgid "workspace.options.stroke.center"
 msgstr "Centrs"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:128
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:139
 msgid "workspace.options.stroke.dashed"
 msgstr "Pārtraukts"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:127
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
 msgid "workspace.options.stroke.dotted"
 msgstr "Punktots"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:101
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:112
 msgid "workspace.options.stroke.inner"
 msgstr "Iekšā"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:129
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:140
 msgid "workspace.options.stroke.mixed"
 msgstr "Jaukts"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:102
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:113
 msgid "workspace.options.stroke.outer"
 msgstr "Ārā"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:201
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:202
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Noņemt vilkumu"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
 msgid "workspace.options.stroke.solid"
 msgstr "Blīvs"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:126
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:127
 msgid "workspace.options.text-options.align-bottom"
 msgstr "Līdzināt pie apakšas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:122
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:123
 msgid "workspace.options.text-options.align-middle"
 msgstr "Līdzināt vidū (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:119
 msgid "workspace.options.text-options.align-top"
 msgstr "Līdzināt pie augšas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:92
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "No kreisās uz labo pusi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:95
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:96
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "No labās uz kreiso pusi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:164
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:165
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "Automātiskais augstums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:161
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "Automātiskais platums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:157
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Fiksēts"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:398
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "Burtu atstarpes"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:379
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:381
 msgid "workspace.options.text-options.line-height"
 msgstr "Rindas augstums"
 
@@ -6700,35 +6719,35 @@ msgstr "Mazie burti"
 msgid "workspace.options.text-options.none"
 msgstr "Nav"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:191
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:192
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Pārsvītrots (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:60
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:61
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Līdzināt vidū"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:68
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:69
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Izlīdzināt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:56
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:57
 msgid "workspace.options.text-options.text-align-left"
 msgstr "Līdzināt pa kreisi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:64
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:65
 msgid "workspace.options.text-options.text-align-right"
 msgstr "Līdzināt pa labi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:204
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:205
 msgid "workspace.options.text-options.title"
 msgstr "Teksts"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:203
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:204
 msgid "workspace.options.text-options.title-group"
 msgstr "Kopas teksts"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:202
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:203
 msgid "workspace.options.text-options.title-selection"
 msgstr "Atlases teksts"
 
@@ -6737,7 +6756,7 @@ msgstr "Atlases teksts"
 msgid "workspace.options.text-options.titlecase"
 msgstr "Virsraksta stils"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:188
 msgid "workspace.options.text-options.underline"
 msgstr "Pasvītrojums (%s)"
 
@@ -6750,15 +6769,15 @@ msgstr "Lielie burti"
 msgid "workspace.options.use-play-button"
 msgstr "Jāizmanto atskaņosanas poga galvenē, lai palaistu prototipa skatu."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:476, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:495
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:420, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:442
 msgid "workspace.options.width"
 msgstr "Platums"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:535, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:552
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:482, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:505
 msgid "workspace.options.x"
 msgstr "X ass"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:545, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:563
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:495, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516
 msgid "workspace.options.y"
 msgstr "Y ass"
 
@@ -6819,7 +6838,7 @@ msgstr "Vēl nav uzstādīts neviens spraudnis"
 msgid "workspace.plugins.error.manifest"
 msgstr "Spraudņa deklarācija ir nepareiza."
 
-#: src/app/main/data/plugins.cljs:89, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
+#: src/app/main/data/plugins.cljs:105, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
 msgid "workspace.plugins.error.need-editor"
 msgstr "Jābūt redaktoram, lai izmantotu šo spraudni"
 
@@ -6936,19 +6955,19 @@ msgstr "SPRAUDNIS \"%s\" IR UZSTĀDĪTS."
 msgid "workspace.plugins.try-out.try"
 msgstr "IZMĒĢINĀT SPRAUDNI"
 
-#: src/app/main/ui/workspace/context_menu.cljs:558
+#: src/app/main/ui/workspace/context_menu.cljs:559
 msgid "workspace.shape.menu.add-flex"
 msgstr "Pievienot elastīgo izkārtojumu"
 
-#: src/app/main/ui/workspace/context_menu.cljs:562
+#: src/app/main/ui/workspace/context_menu.cljs:563
 msgid "workspace.shape.menu.add-grid"
 msgstr "Pievienot režģa izkārtojumu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1243, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1267
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1248, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1272
 msgid "workspace.shape.menu.add-layout"
 msgstr "Pievienot izkārtojumu"
 
-#: src/app/main/ui/workspace/context_menu.cljs:611, src/app/main/ui/workspace/sidebar/assets/common.cljs:508, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1051, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1219, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1293
+#: src/app/main/ui/workspace/context_menu.cljs:612, src/app/main/ui/workspace/sidebar/assets/common.cljs:508, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1051, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1219, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1293
 msgid "workspace.shape.menu.add-variant"
 msgstr "Izveidot variantu"
 
@@ -7004,11 +7023,11 @@ msgstr "Izveidot piezīmi"
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Atlase uz plātni"
 
-#: src/app/main/ui/workspace/context_menu.cljs:591
+#: src/app/main/ui/workspace/context_menu.cljs:592
 msgid "workspace.shape.menu.create-component"
 msgstr "Izveidot sastāvdaļu"
 
-#: src/app/main/ui/workspace/context_menu.cljs:595
+#: src/app/main/ui/workspace/context_menu.cljs:596
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Izveidot vairākas sastāvdaļas"
 
@@ -7016,11 +7035,11 @@ msgstr "Izveidot vairākas sastāvdaļas"
 msgid "workspace.shape.menu.cut"
 msgstr "Izgriezt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:628, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:996, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1285
+#: src/app/main/ui/workspace/context_menu.cljs:629, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1001, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1290
 msgid "workspace.shape.menu.delete"
 msgstr "Dzēst"
 
-#: src/app/main/ui/workspace/context_menu.cljs:505
+#: src/app/main/ui/workspace/context_menu.cljs:506
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Izdzēst plūsmas sākumu"
 
@@ -7032,7 +7051,7 @@ msgstr "Atvienot instanci"
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Atvienot instances"
 
-#: src/app/main/ui/workspace/context_menu.cljs:446, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
+#: src/app/main/ui/workspace/context_menu.cljs:447, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
 msgid "workspace.shape.menu.difference"
 msgstr "Starpība"
 
@@ -7044,11 +7063,11 @@ msgstr "Divkāršot"
 msgid "workspace.shape.menu.edit"
 msgstr "Labot"
 
-#: src/app/main/ui/workspace/context_menu.cljs:452, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
+#: src/app/main/ui/workspace/context_menu.cljs:453, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
 msgid "workspace.shape.menu.exclude"
 msgstr "Izslēgt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:437, src/app/main/ui/workspace/context_menu.cljs:459, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:104
+#: src/app/main/ui/workspace/context_menu.cljs:437, src/app/main/ui/workspace/context_menu.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:104
 msgid "workspace.shape.menu.flatten"
 msgstr "Izklāt"
 
@@ -7060,7 +7079,7 @@ msgstr "Apvērst līmeniski"
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Apvērst stateniski"
 
-#: src/app/main/ui/workspace/context_menu.cljs:507
+#: src/app/main/ui/workspace/context_menu.cljs:508
 msgid "workspace.shape.menu.flow-start"
 msgstr "Plūsmas sākums"
 
@@ -7081,19 +7100,19 @@ msgstr "Doties uz galvenās sastāvdaļas datni"
 msgid "workspace.shape.menu.group"
 msgstr "Kopa"
 
-#: src/app/main/ui/workspace/context_menu.cljs:476, src/app/main/ui/workspace/sidebar/layer_item.cljs:155
+#: src/app/main/ui/workspace/context_menu.cljs:477, src/app/main/ui/workspace/sidebar/layer_item.cljs:172
 msgid "workspace.shape.menu.hide"
 msgstr "Slēpt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:705, src/app/main/ui/workspace/main_menu.cljs:448
+#: src/app/main/ui/workspace/context_menu.cljs:706, src/app/main/ui/workspace/main_menu.cljs:448
 msgid "workspace.shape.menu.hide-ui"
 msgstr "Rādīt/paslēpt UI"
 
-#: src/app/main/ui/workspace/context_menu.cljs:449, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
+#: src/app/main/ui/workspace/context_menu.cljs:450, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
 msgid "workspace.shape.menu.intersection"
 msgstr "Šķēlums"
 
-#: src/app/main/ui/workspace/context_menu.cljs:484, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:219
+#: src/app/main/ui/workspace/context_menu.cljs:485, src/app/main/ui/workspace/sidebar/layer_item.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:268
 msgid "workspace.shape.menu.lock"
 msgstr "Slēgt"
 
@@ -7101,7 +7120,7 @@ msgstr "Slēgt"
 msgid "workspace.shape.menu.mask"
 msgstr "Maska"
 
-#: src/app/main/ui/workspace/context_menu.cljs:209, src/app/main/ui/workspace/context_menu.cljs:702
+#: src/app/main/ui/workspace/context_menu.cljs:209, src/app/main/ui/workspace/context_menu.cljs:703
 msgid "workspace.shape.menu.paste"
 msgstr "Ielīmēt"
 
@@ -7109,19 +7128,19 @@ msgstr "Ielīmēt"
 msgid "workspace.shape.menu.paste-props"
 msgstr "Ielīmēt īpašības"
 
-#: src/app/main/ui/workspace/context_menu.cljs:442
+#: src/app/main/ui/workspace/context_menu.cljs:443
 msgid "workspace.shape.menu.path"
 msgstr "Ceļš"
 
-#: src/app/main/ui/workspace/context_menu.cljs:548
+#: src/app/main/ui/workspace/context_menu.cljs:549
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Noņemt elastīgo izkārtojumu"
 
-#: src/app/main/ui/workspace/context_menu.cljs:551
+#: src/app/main/ui/workspace/context_menu.cljs:552
 msgid "workspace.shape.menu.remove-grid"
 msgstr "Noņemt režģa izkārtojumu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1261
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1266
 msgid "workspace.shape.menu.remove-layout"
 msgstr "Noņemt izkārtojumu"
 
@@ -7149,7 +7168,7 @@ msgstr "Atjaunot variantu"
 msgid "workspace.shape.menu.select-layer"
 msgstr "Atlasīt slāni"
 
-#: src/app/main/ui/workspace/context_menu.cljs:473, src/app/main/ui/workspace/sidebar/layer_item.cljs:154
+#: src/app/main/ui/workspace/context_menu.cljs:474, src/app/main/ui/workspace/sidebar/layer_item.cljs:171
 msgid "workspace.shape.menu.show"
 msgstr "Pāradīt"
 
@@ -7178,11 +7197,11 @@ msgstr "Transformēt par ceļu"
 msgid "workspace.shape.menu.ungroup"
 msgstr "Atapkopot"
 
-#: src/app/main/ui/workspace/context_menu.cljs:443, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
+#: src/app/main/ui/workspace/context_menu.cljs:444, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
 msgid "workspace.shape.menu.union"
 msgstr "Apvienot"
 
-#: src/app/main/ui/workspace/context_menu.cljs:481, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:225
+#: src/app/main/ui/workspace/context_menu.cljs:482, src/app/main/ui/workspace/sidebar/layer_item.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:274
 msgid "workspace.shape.menu.unlock"
 msgstr "Atslēgt"
 
@@ -7199,11 +7218,11 @@ msgstr "Atjaunināt galvenās sastāvdaļas"
 msgid "workspace.shape.menu.update-main"
 msgstr "Atjaunināt galveno sastāvdaļu"
 
-#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:57
+#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:62
 msgid "workspace.sidebar.collapse"
 msgstr "Sakļaut sānjoslu"
 
-#: src/app/main/ui/workspace/sidebar.cljs:68, src/app/main/ui/workspace/sidebar.cljs:72
+#: src/app/main/ui/workspace/sidebar.cljs:73, src/app/main/ui/workspace/sidebar.cljs:77
 msgid "workspace.sidebar.expand"
 msgstr "Izvērst sānjoslu"
 
@@ -7211,7 +7230,7 @@ msgstr "Izvērst sānjoslu"
 msgid "workspace.sidebar.history"
 msgstr "Vēsture"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:149, src/app/main/ui/workspace/sidebar.cljs:152, src/app/main/ui/workspace/sidebar.cljs:159
+#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:154, src/app/main/ui/workspace/sidebar.cljs:157, src/app/main/ui/workspace/sidebar.cljs:164
 msgid "workspace.sidebar.layers"
 msgstr "Slāņi"
 
@@ -7255,15 +7274,15 @@ msgstr "Teksti"
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Ievietotie SVG atribūti"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:239
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:264
 msgid "workspace.sidebar.sitemap"
 msgstr "Lapas"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:274
 msgid "workspace.sidebar.sitemap.add-page"
 msgstr "Pievienot lapu"
 
-#: src/app/main/ui/workspace/left_header.cljs:96
+#: src/app/main/ui/workspace/left_header.cljs:98
 msgid "workspace.sitemap"
 msgstr "Vietnes karte"
 
@@ -7276,7 +7295,7 @@ msgstr "%s aktīvi izskati"
 msgid "workspace.tokens.add set"
 msgstr "Pievienot kopu"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:86, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:189, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:366
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:151, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:347
 msgid "workspace.tokens.add-new-theme"
 msgstr "Pievienot jaunu izskatu"
 
@@ -7284,19 +7303,19 @@ msgstr "Pievienot jaunu izskatu"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "Pievienot kopu šai grupai"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:147
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:156
 msgid "workspace.tokens.add-token"
 msgstr "Pievienot tekstvienību: %s"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
 msgid "workspace.tokens.applied-to"
 msgstr "Pielietota"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:315
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:330
 msgid "workspace.tokens.axis"
 msgstr "Ass"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:375
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:356
 msgid "workspace.tokens.back-to-themes"
 msgstr "Atpakaļ uz izskatu sarakstu"
 
@@ -7318,11 +7337,11 @@ msgstr "Izvēlēties datni"
 msgid "workspace.tokens.choose-folder"
 msgstr "Izvēlēties mapi"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:284, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:299, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
 msgid "workspace.tokens.color"
 msgstr "Krāsa"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:77
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:57
 msgid "workspace.tokens.create-new-theme"
 msgstr "Tagad izveido savu pirmo izskatu!"
 
@@ -7330,31 +7349,31 @@ msgstr "Tagad izveido savu pirmo izskatu!"
 msgid "workspace.tokens.create-one"
 msgstr "Izveidot kādu."
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:237
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:235
 msgid "workspace.tokens.create-token"
 msgstr "Izveidot jaunu %s tekstvienību"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:353
 msgid "workspace.tokens.delete"
 msgstr "Izdzēst tekstvienību"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:178
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:140
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Izdzēst izskatu"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:334
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
 msgid "workspace.tokens.duplicate"
 msgstr "Pavairot tekstvienību"
 
-#: src/app/main/data/workspace/tokens/library_edit.cljs:211, src/app/main/data/workspace/tokens/library_edit.cljs:454
+#: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "dublējums"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:321
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.edit"
 msgstr "Labot tekstvienību"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:365
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:346
 msgid "workspace.tokens.edit-theme-title"
 msgstr "Labot izskatu"
 
@@ -7362,11 +7381,11 @@ msgstr "Labot izskatu"
 msgid "workspace.tokens.edit-themes"
 msgstr "Labot izskatus"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:41, src/app/main/ui/workspace/tokens/management/forms/color.cljs:22, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:43
+#: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "Tekstvienības vērtība nevar būt tukša"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:243
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
 msgid "workspace.tokens.enter-token-name"
 msgstr "Jāievada %s tekstvienības nosaukums"
 
@@ -7398,7 +7417,7 @@ msgstr "Priekšskatījums:"
 msgid "workspace.tokens.export.single-file"
 msgstr "Viena datne"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:225
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:240
 msgid "workspace.tokens.gaps"
 msgstr "Spraugas"
 
@@ -7407,7 +7426,7 @@ msgstr "Spraugas"
 msgid "workspace.tokens.generic-error"
 msgstr "Kļūda: "
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:128
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:93
 msgid "workspace.tokens.group-name"
 msgstr "Kopas nosaukums"
 
@@ -7447,11 +7466,11 @@ msgstr ""
 "Tekstvienību ievietošana aizvietos visas pašreizējāš tekstvienības, kopas "
 "un izskatus."
 
-#: src/app/main/ui/workspace/tokens/management.cljs:74
+#: src/app/main/ui/workspace/tokens/management.cljs:78
 msgid "workspace.tokens.inactive-set"
 msgstr "Neaktīva"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:65
+#: src/app/main/ui/workspace/tokens/management.cljs:70
 msgid "workspace.tokens.inactive-set-description"
 msgstr ""
 "Šī kopa nav aktīva. Jānomaina izskats vai jāaktivē šī kopa, lai skatlaukā "
@@ -7480,31 +7499,31 @@ msgstr ""
 msgid "workspace.tokens.invalid-value"
 msgstr "Nederīga tekstvienības vērtība: %s"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:226
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
 msgid "workspace.tokens.label.group"
 msgstr "Kopa"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:207
 msgid "workspace.tokens.label.group-placeholder"
 msgstr "Pievienot kopu (piem., \"Režīms\")"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:234
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:214
 msgid "workspace.tokens.label.theme"
 msgstr "Izskats"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:235
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:215
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Pievienot izskatu (piem., \"Gaišs\")"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:217
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:232
 msgid "workspace.tokens.margins"
 msgstr "Malas"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
 msgid "workspace.tokens.max-size"
 msgstr "Lielākais izmērs"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:247
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:262
 msgid "workspace.tokens.min-size"
 msgstr "Mazākais lielums"
 
@@ -7512,7 +7531,7 @@ msgstr "Mazākais lielums"
 msgid "workspace.tokens.missing-references"
 msgstr "Trūkst tekstvienību atsauces: "
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:173
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:135
 msgid "workspace.tokens.no-active-sets"
 msgstr "Nav spēkā esošu kopu"
 
@@ -7528,7 +7547,7 @@ msgstr "Nepieciešams būt redaktoram, lai aktivētu kopas vai atceltu to aktiv�
 msgid "workspace.tokens.no-permission-themes"
 msgstr "Jābūt redaktoram, lai izmantotu izskatus"
 
-#: src/app/main/ui/workspace/tokens/sets/lists.cljs:483
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:485
 msgid "workspace.tokens.no-sets-create"
 msgstr "Vēl nav nevienas kopas. Vispirms ir jāizveido kāda."
 
@@ -7540,11 +7559,11 @@ msgstr "Šeit vēl nav nevienas kopas."
 msgid "workspace.tokens.no-themes"
 msgstr "Šeit nav izskatu."
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:73
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Pašlaik nav izskatu."
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:172
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s spēkā esošas kopas"
 
@@ -7556,20 +7575,20 @@ msgstr "Nederīga tekstvienības vērtība. Aprēķinātā vērtība ir pārāk 
 msgid "workspace.tokens.opacity-range"
 msgstr "Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 #, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Sākotnējā vērtība: %s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:201
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:216
 msgid "workspace.tokens.paddings"
 msgstr "Atbīdes"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:277
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:292
 msgid "workspace.tokens.radius"
 msgstr "Rādiuss"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:128
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:129
 msgid "workspace.tokens.ref-not-valid"
 msgstr "Atsauce nav derīga vai tā nav nevienā aktīvā kopā"
 
@@ -7578,12 +7597,12 @@ msgstr "Atsauce nav derīga vai tā nav nevienā aktīvā kopā"
 msgid "workspace.tokens.reference-error"
 msgstr "Atsauču kļūdas: "
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:285, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:459, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:311, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:251, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:364, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:465, src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
 #, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Atrisinātā vērtība: %s"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:271
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:251
 msgid "workspace.tokens.save-theme"
 msgstr "Saglabāt izskatu"
 
@@ -7591,7 +7610,7 @@ msgstr "Saglabāt izskatu"
 msgid "workspace.tokens.select-set"
 msgstr "Atlasīt kopu."
 
-#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/color.cljs:44, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:80, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
 msgid "workspace.tokens.self-reference"
 msgstr "Tekstvienībai ir atsauce uz sevi"
 
@@ -7599,7 +7618,7 @@ msgstr "Tekstvienībai ir atsauce uz sevi"
 msgid "workspace.tokens.set-edit-placeholder"
 msgstr "Ievadīt nosaukumu (jāizmanto \"/\" kopām)"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:380
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
 msgid "workspace.tokens.set-selection-theme"
 msgstr ""
 "Noteikt, kuras tekstvienību kopas vajadzētu izmantot kā daļu no šīs izskata "
@@ -7610,7 +7629,7 @@ msgstr ""
 msgid "workspace.tokens.set.not-active"
 msgstr "Tekstvienību kopa nav aktīva"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:167
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:129
 msgid "workspace.tokens.sets-hint"
 msgstr "Labot izskatu un pārvaldīt kopas"
 
@@ -7635,7 +7654,7 @@ msgstr "X"
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:241
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
 msgid "workspace.tokens.size"
 msgstr "Izmērs"
 
@@ -7644,37 +7663,40 @@ msgid "workspace.tokens.stroke-width-range"
 msgstr "Vilkuma platumam ir jābūt vienādam vai lielākam par 0."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
+#, unused
 msgid "workspace.tokens.theme-name"
 msgstr "Izskats \"%s\""
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+#, unused
 msgid "workspace.tokens.theme.disable"
 msgstr "Atspējot"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#, unused
 msgid "workspace.tokens.theme.enable"
 msgstr "Iespējot"
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:120
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:85
 msgid "workspace.tokens.themes-description"
 msgstr ""
 "Šeit var pārvaldīt savus izskatus, iespējot/atspējot tos un konfigurēt to "
 "spēkā esošās kopas."
 
-#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:69, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:118
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83
 msgid "workspace.tokens.themes-list"
 msgstr "Izskatu saraksts"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:277
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:275, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276
 #, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Apraksts"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:242
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:240
 msgid "workspace.tokens.token-name"
 msgstr "Nosaukums"
 
-#: src/app/main/ui/workspace/tokens/management/forms/color.cljs:32, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:70, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:266, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:221, src/app/main/ui/workspace/tokens/management/forms/validators.cljs:103
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 " nav derīgs tekstvienības nosaukums.\n"
@@ -7686,15 +7708,15 @@ msgstr ""
 msgid "workspace.tokens.token-not-resolved"
 msgstr "Nevarēja atrisināt atsauces tekstvienību ar šādu nosaukumu: %s"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:268
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267
 msgid "workspace.tokens.token-value"
 msgstr "Vērtība"
 
-#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:266, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
 msgid "workspace.tokens.token-value-enter"
 msgstr "Jāievada vērtība vai aizstājvārds ar {aizstājvārds}"
 
-#: src/app/main/ui/workspace/tokens/management.cljs:64
+#: src/app/main/ui/workspace/tokens/management.cljs:67
 msgid "workspace.tokens.tokens-section-title"
 msgstr "TEKSTVIENĪBAS -  %s"
 
@@ -7706,7 +7728,7 @@ msgstr "Rīki"
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Veids \"%s\" nav atbalstīts (%s)\n"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
 msgid "workspace.tokens.value-not-valid"
 msgstr "Vērtība nav derīga"
 
@@ -7714,7 +7736,7 @@ msgstr "Vērtība nav derīga"
 msgid "workspace.tokens.value-with-units"
 msgstr "Nederīga vērtība: mērvienības nav atļautas."
 
-#: src/app/main/ui/workspace/sidebar.cljs:154, src/app/main/ui/workspace/sidebar.cljs:161
+#: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Līdzekļi"
 
@@ -7933,19 +7955,19 @@ msgstr "Darbība ar %s"
 msgid "workspace.undo.title"
 msgstr "Vēsture"
 
-#: src/app/main/data/workspace/libraries.cljs:1233, src/app/main/ui/workspace/sidebar/versions.cljs:85
+#: src/app/main/data/workspace/libraries.cljs:1247, src/app/main/ui/workspace/sidebar/versions.cljs:85
 msgid "workspace.updates.dismiss"
 msgstr "Izlaist"
 
-#: src/app/main/data/workspace/libraries.cljs:1231
+#: src/app/main/data/workspace/libraries.cljs:1245
 msgid "workspace.updates.more-info"
 msgstr "Vairāk informācijas"
 
-#: src/app/main/data/workspace/libraries.cljs:1229
+#: src/app/main/data/workspace/libraries.cljs:1243
 msgid "workspace.updates.there-are-updates"
 msgstr "Koplietojamajās bibliotēkās ir atjauninājumi"
 
-#: src/app/main/data/workspace/libraries.cljs:1235
+#: src/app/main/data/workspace/libraries.cljs:1249
 msgid "workspace.updates.update"
 msgstr "Atjaunināt"
 
@@ -8005,11 +8027,11 @@ msgstr "Vai atjaunot šo versiju?"
 msgid "workspace.versions.snapshot-menu"
 msgstr "Atvērt momentuzņēmumu izvēlni"
 
-#: src/app/main/ui/workspace/sidebar.cljs:252
+#: src/app/main/ui/workspace/sidebar.cljs:257
 msgid "workspace.versions.tab.actions"
 msgstr "Darbības"
 
-#: src/app/main/ui/workspace/sidebar.cljs:250
+#: src/app/main/ui/workspace/sidebar.cljs:255
 msgid "workspace.versions.tab.history"
 msgstr "Vēsture"
 
@@ -8031,25 +8053,3 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:265
-msgid "dashboard.file-menu.restore-files-option"
-msgid_plural "dashboard.file-menu.restore-files-option"
-msgstr[0] "Atjaunot datnes"
-msgstr[1] "Atjaunot datni"
-msgstr[2] "Atjaunot datnes"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:268
-msgid "dashboard.file-menu.delete-files-permanently-option"
-msgid_plural "dashboard.file-menu.delete-files-permanently-option"
-msgstr[0] "Izdzēst datnes"
-msgstr[1] "Izdzēst datni"
-msgstr[2] "Izdzēst datnes"
-
-#: src/app/main/ui/dashboard/deleted.cljs:327
-msgid "dashboard.deleted.empty-state-description"
-msgstr "Atkritne ir tukša. Izdzēstās datnes un projekti parādīsies šeit."
-
-#: src/app/main/ui/dashboard/grid.cljs:248
-msgid "dashboard.deleted.will-be-deleted-at"
-msgstr "Tiks izdzēsts %s"
