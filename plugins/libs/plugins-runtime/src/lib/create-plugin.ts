@@ -7,7 +7,7 @@ export async function createPlugin(
   context: Context,
   manifest: Manifest,
   onCloseCallback: () => void,
-  apiExtensions?: Object,
+  apiExtensions?: object,
 ) {
   const evaluateSandbox = async () => {
     try {

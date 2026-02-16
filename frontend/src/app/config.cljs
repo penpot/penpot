@@ -120,8 +120,8 @@
                      (obj/get location "origin"))))
 
 (def mcp-ws-uri
-  (normalize-uri (or (obj/get global "penpotMcpServerURI")
-                     (str "ws://" (obj/get location "hostname")":4402" ))))
+  (or (some-> (obj/get global "penpotMcpServerURI") u/uri)
+      (u/join public-uri "mcp/ws")))
 
 (def rasterizer-uri
   (or (some-> (obj/get global "penpotRasterizerURI") normalize-uri)

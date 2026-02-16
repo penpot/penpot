@@ -17,7 +17,7 @@ penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}&multiUser=${isMultiU
     width: 158,
     height: 200,
     hidden: !!mcp,
-});
+} as any);
 
 // Handle messages
 penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
@@ -29,7 +29,7 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
             token: mcp?.getToken(),
         });
     } else if (typeof message === "object" && message.type === "update-connection-status") {
-        mcp?.setMcpStatus(message.status);
+        mcp?.setMcpStatus(message.status || "unknown");
     } else if (typeof message === "object" && message.task && message.id) {
         handlePluginTaskRequest(message).catch((error) => {
             console.error("Error in handlePluginTaskRequest:", error);

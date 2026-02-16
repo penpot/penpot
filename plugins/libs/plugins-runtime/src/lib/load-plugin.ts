@@ -19,7 +19,8 @@ export const getPlugins = () => plugins;
 
 const closeAllPlugins = () => {
   plugins.forEach((pluginApi) => {
-    if (!(pluginApi.manifest as any).allowBackground) {
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
+    if (!(pluginApi.manifest as any)?.allowBackground) {
       pluginApi.plugin.close();
     }
   });
@@ -40,7 +41,7 @@ window.addEventListener('message', (event) => {
 export const loadPlugin = async function (
   manifest: Manifest,
   closeCallback?: () => void,
-  apiExtensions?: Object,
+  apiExtensions?: object,
 ) {
   try {
     const context = contextBuilder && contextBuilder(manifest.pluginId);
@@ -74,7 +75,7 @@ export const loadPlugin = async function (
 export const ɵloadPlugin = async function (
   manifest: Manifest,
   closeCallback?: () => void,
-  apiExtensions?: Object,
+  apiExtensions?: object,
 ) {
   loadPlugin(manifest, closeCallback, apiExtensions);
 };

@@ -93,15 +93,14 @@
   [:map {:title "get-current-mcp-token"}])
 
 (sv/defmethod ::get-current-mcp-token
-  {::doc/added "2.25"
+  {::doc/added "2.15"
    ::sm/params schema:get-current-mcp-token}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
-  (let [now (ct/now)]
-    (->> (db/query pool :access-token
-                   {:profile-id profile-id
-                    :type "mcp"}
-                   {:order-by [[:expires-at :asc] [:created-at :asc]]
-                    :columns [:token :expires-at]})
-         (remove #(ct/is-after? (:expires-at %) now))
-         (map decode-row)
-         (first))))
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id ::rpc/request-at]}]
+  (->> (db/query pool :access-token
+                 {:profile-id profile-id
+                  :type "mcp"}
+                 {:order-by [[:expires-at :asc] [:created-at :asc]]
+                  :columns [:token :expires-at]})
+       (remove #(ct/is-after? (:expires-at %) request-at))
+       (map decode-row)
+       (first)))

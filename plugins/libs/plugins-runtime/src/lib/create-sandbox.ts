@@ -5,7 +5,7 @@ import { ses } from './ses.js';
 
 export function createSandbox(
   plugin: Awaited<ReturnType<typeof createPluginManager>>,
-  apiExtensions?: Object,
+  apiExtensions?: object,
 ) {
   ses.hardenIntrinsics();
 

@@ -16,9 +16,10 @@
 
 (log/set-level! :info)
 
-(def default-manifest
+(def ^:private default-manifest
   {:code "plugin.js"
    :name "Penpot MCP Plugin"
+   :version 2
    :plugin-id "96dfa740-005d-8020-8007-55ede24a2bae"
    :description "This plugin enables interaction with the Penpot MCP server"
    :allow-background true
@@ -40,12 +41,12 @@
              ;; API extension for MCP server
              #js {:mcp
                   #js
-                  {:getToken (constantly token)
-                   :getServerUrl #(str cf/mcp-ws-uri)
-                   :setMcpStatus
-                   (fn [status]
-                     ;; TODO: Visual feedback
-                     (log/info :hint "MCP STATUS" :status status))}}))))))
+                   {:getToken (constantly token)
+                    :getServerUrl #(str cf/mcp-ws-uri)
+                    :setMcpStatus
+                    (fn [status]
+                      ;; TODO: Visual feedback
+                      (log/info :hint "MCP STATUS" :status status))}}))))))
 
 (defn init-mcp-connexion
   []
