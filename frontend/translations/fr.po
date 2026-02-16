@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-23 10:01+0000\n"
-"Last-Translator: Louis Chance <contact@louischance.com>\n"
+"PO-Revision-Date: 2026-02-16 08:35+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -6432,18 +6432,22 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Options avancées"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Hauteur max"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Largeur max"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Hauteur min"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Largeur min"
 
