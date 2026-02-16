@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-13 14:01+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
+"PO-Revision-Date: 2026-02-16 08:35+0000\n"
+"Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.15.2-dev\n"
+"X-Generator: Weblate 5.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -6250,18 +6250,22 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Papildu opcijas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Maks.augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Maks.platums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Min.augstums"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Min.platums"
 
