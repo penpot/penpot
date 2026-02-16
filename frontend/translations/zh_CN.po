@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
-"Last-Translator: bingling_sama <bingling_sama@qq.com>\n"
-"Language-Team: Chinese (Simplified Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2026-02-16 08:35+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 5.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -5854,18 +5854,22 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "高级选项"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "最大高度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:510
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "最大宽度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:527
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "最小高度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:494
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "最小宽度"
 
