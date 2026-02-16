@@ -24,3 +24,34 @@ test("BUG 13305 - Fix resize board to fit content", async ({ page }) => {
   await expect(workspacePage.rightSidebar.getByTitle("X axis").getByRole("textbox")).toHaveValue("110");
   await expect(workspacePage.rightSidebar.getByTitle("Y axis").getByRole("textbox")).toHaveValue("110");
 });
+
+test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13382.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13382-fragment.json",
+  );
+
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "52c4e771-3853-8190-8007-9506c70e8100",
+    pageId: "ecb0cfd0-0f0b-81f7-8007-950628f9665b",
+  });
+
+  await workspacePage.clickToggableLayer("A");
+  await workspacePage.clickToggableLayer("B");
+  await workspacePage.clickToggableLayer("C");
+  await workspacePage.clickLeafLayer("R2");
+
+  const heightText = workspacePage.rightSidebar.getByTitle("Height").getByPlaceholder('--');
+  await heightText.fill("200");
+  await heightText.press("Enter");
+
+  await workspacePage.clickLeafLayer("B");
+  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("340");
+
+});
