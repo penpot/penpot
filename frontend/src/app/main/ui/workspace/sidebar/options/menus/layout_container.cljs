@@ -867,15 +867,15 @@
                         :on-change on-change
                         :name (dm/str "flex-align-items-" type)
                         :options [{:id (dm/str "align-items-start-" type)
-                                   :icon (get-layout-flex-icon :align-items :start is-column)
+                                   :icon (get-layout-grid-icon :align-items :start is-column)
                                    :label "Align items start"
                                    :value "start"}
                                   {:id (dm/str "align-items-center-" type)
-                                   :icon (get-layout-flex-icon :align-items :center is-column)
+                                   :icon (get-layout-grid-icon :align-items :center is-column)
                                    :label "Align items center"
                                    :value "center"}
                                   {:id (dm/str "align-items-end-" type)
-                                   :icon (get-layout-flex-icon :align-items :end is-column)
+                                   :icon (get-layout-grid-icon :align-items :end is-column)
                                    :label "Align items end"
                                    :value "end"}]}]))
 
