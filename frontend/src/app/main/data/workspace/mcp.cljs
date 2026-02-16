@@ -30,7 +30,7 @@
   []
   (->> (rp/cmd! :get-current-mcp-token)
        (rx/subs!
-        (fn [token]
+        (fn [{:keys [token]}]
           (when token
             (dp/start-plugin!
              (assoc default-manifest
@@ -40,7 +40,7 @@
              ;; API extension for MCP server
              #js {:mcp
                   #js
-                  {:getToken (fn [] token)
+                  {:getToken (constantly token)
                    :getServerUrl #(str cf/mcp-ws-uri)
                    :setMcpStatus
                    (fn [status]

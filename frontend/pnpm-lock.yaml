@@ -20,8 +20,8 @@ importers:
         specifier: workspace:./packages/mousetrap
         version: link:packages/mousetrap
       '@penpot/plugins-runtime':
-        specifier: 1.4.2
-        version: 1.4.2
+        specifier: link:../plugins/dist/plugins-runtime
+        version: link:../plugins/dist/plugins-runtime
       '@penpot/svgo':
         specifier: penpot/svgo#v3.2
         version: svgo@https://codeload.github.com/penpot/svgo/tar.gz/8c9b0e32e9cb5f106085260bd9375f3c91a5010b
@@ -580,15 +580,6 @@ packages:
 
   '@dabh/diagnostics@2.0.8':
     resolution: {integrity: sha512-R4MSXTVnuMzGD7bzHdW2ZhhdPC/igELENcq5IjEverBvq5hn1SXCWcsi6eSsdWP0/Ur+SItRRjAktmdoX/8R/Q==}
-
-  '@endo/cache-map@1.1.0':
-    resolution: {integrity: sha512-owFGshs/97PDw9oguZqU/px8Lv1d0KjAUtDUiPwKHNXRVUE/jyettEbRoTbNJR1OaI8biMn6bHr9kVJsOh6dXw==}
-
-  '@endo/env-options@1.1.11':
-    resolution: {integrity: sha512-p9OnAPsdqoX4YJsE98e3NBVhIr2iW9gNZxHhAI2/Ul5TdRfoOViItzHzTqrgUVopw6XxA1u1uS6CykLMDUxarA==}
-
-  '@endo/immutable-arraybuffer@1.1.2':
-    resolution: {integrity: sha512-u+NaYB2aqEugQ3u7w3c5QNkPogf8q/xGgsPaqdY6pUiGWtYiTiFspKFcha6+oeZhWXWQ23rf0KrUq0kfuzqYyQ==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -1257,12 +1248,6 @@ packages:
   '@parcel/watcher@2.5.6':
     resolution: {integrity: sha512-tmmZ3lQxAe/k/+rNnXQRawJ4NjxO2hqiOLTHvWchtGZULp4RyFeh6aU4XdOYBFe2KE1oShQTv4AblOs2iOrNnQ==}
     engines: {node: '>= 10.0.0'}
-
-  '@penpot/plugin-types@1.4.2':
-    resolution: {integrity: sha512-O8wU6RSYE8bIVU7g8cSTYi32ppxs3R13dq7X3Nn9tmDaJjBOKOBpVLuoRPIp3fJC65fv8/7om0sdrtFoL5v19g==}
-
-  '@penpot/plugins-runtime@1.4.2':
-    resolution: {integrity: sha512-y9TDZOnb96JBW9E33dHKpmTMeAPXLtHDIZruUVjtM8hBJWZK7RCv+vAGDGxeoZJC/OB2YAHrCZG+mukePBzcuQ==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -4636,9 +4621,6 @@ packages:
     resolution: {integrity: sha512-xRXBn0pPqQTVQiC8wyQrKs2MOlX24zQ0POGaj0kultvoOCstBQM5yvOhAVSUwOMjQtTvsPWoNCHfPGwaaQJhTw==}
     engines: {node: '>= 18'}
 
-  ses@1.14.0:
-    resolution: {integrity: sha512-T07hNgOfVRTLZGwSS50RnhqrG3foWP+rM+Q5Du4KUQyMLFI3A8YA4RKl0jjZzhihC1ZvDGrWi/JMn4vqbgr/Jg==}
-
   set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
     engines: {node: '>= 0.4'}
@@ -5499,9 +5481,6 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
@@ -5774,12 +5753,6 @@ snapshots:
       '@so-ric/colorspace': 1.1.6
       enabled: 2.0.0
       kuler: 2.0.0
-
-  '@endo/cache-map@1.1.0': {}
-
-  '@endo/env-options@1.1.11': {}
-
-  '@endo/immutable-arraybuffer@1.1.2': {}
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
@@ -6296,14 +6269,6 @@ snapshots:
       '@parcel/watcher-win32-ia32': 2.5.6
       '@parcel/watcher-win32-x64': 2.5.6
     optional: true
-
-  '@penpot/plugin-types@1.4.2': {}
-
-  '@penpot/plugins-runtime@1.4.2':
-    dependencies:
-      '@penpot/plugin-types': 1.4.2
-      ses: 1.14.0
-      zod: 3.25.76
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -10000,12 +9965,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ses@1.14.0:
-    dependencies:
-      '@endo/cache-map': 1.1.0
-      '@endo/env-options': 1.1.11
-      '@endo/immutable-arraybuffer': 1.1.2
-
   set-function-length@1.2.2:
     dependencies:
       define-data-property: 1.1.4
@@ -10973,7 +10932,5 @@ snapshots:
   zod-validation-error@4.0.2(zod@4.3.6):
     dependencies:
       zod: 4.3.6
-
-  zod@3.25.76: {}
 
   zod@4.3.6: {}

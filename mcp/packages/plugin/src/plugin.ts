@@ -1,6 +1,8 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 
+mcp?.setMcpStatus("connecting");
+
 /**
  * Registry of all available task handlers.
  */
@@ -11,12 +13,24 @@ declare const IS_MULTI_USER_MODE: boolean;
 const isMultiUserMode = typeof IS_MULTI_USER_MODE !== "undefined" ? IS_MULTI_USER_MODE : false;
 
 // Open the plugin UI (main.ts)
-penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}&multiUser=${isMultiUserMode}`, { width: 158, height: 200 });
+penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}&multiUser=${isMultiUserMode}`, {
+    width: 158,
+    height: 200,
+    hidden: !!mcp,
+});
 
 // Handle messages
-penpot.ui.onMessage<string | { id: string; task: string; params: any }>((message) => {
+penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
     // Handle plugin task requests
-    if (typeof message === "object" && message.task && message.id) {
+    if (mcp && typeof message === "object" && message.type === "ui-initialized") {
+        penpot.ui.sendMessage({
+            type: "start-server",
+            url: mcp?.getServerUrl(),
+            token: mcp?.getToken(),
+        });
+    } else if (typeof message === "object" && message.type === "update-connection-status") {
+        mcp?.setMcpStatus(message.status);
+    } else if (typeof message === "object" && message.task && message.id) {
         handlePluginTaskRequest(message).catch((error) => {
             console.error("Error in handlePluginTaskRequest:", error);
         });
