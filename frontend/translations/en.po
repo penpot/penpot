@@ -2204,11 +2204,11 @@ msgstr "This is the server url you'll need to configure your MCP client in order
 
 #: src/app/main/ui/settings/integrations.cljs:387
 msgid "integrations.mcp-server.mcp-keys.regenerate"
-msgstr "Regenerate MCP keys"
+msgstr "Regenerate MCP key"
 
 #: src/app/main/ui/settings/integrations.cljs:381
 msgid "integrations.mcp-server.mcp-keys.title"
-msgstr "MCP keys"
+msgstr "MCP key"
 
 #: src/app/main/ui/settings/integrations.cljs:388
 msgid "integrations.mcp-server.mcp-keys.tootip"
