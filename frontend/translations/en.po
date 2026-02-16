@@ -7600,6 +7600,18 @@ msgstr "Paste"
 msgid "workspace.shape.menu.paste-props"
 msgstr "Paste properties"
 
+msgid "workspace.shape.menu.copy-as-image"
+msgstr "Copy as image"
+
+msgid "workspace.clipboard.copying"
+msgstr "Copying image…"
+
+msgid "workspace.clipboard.image-copied"
+msgstr "Image copied to the clipboard"
+
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Error copying image"
+
 #: src/app/main/ui/workspace/context_menu.cljs:443
 msgid "workspace.shape.menu.path"
 msgstr "Path"

@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
+- Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 
 ### :sparkles: New features & Enhancements
 

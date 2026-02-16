@@ -150,7 +150,9 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [shapes]}]
-  (let [do-copy           #(st/emit! (dw/copy-selected))
+  (let [multiple?         (> (count shapes) 1)
+
+        do-copy           #(st/emit! (dw/copy-selected))
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
 
         do-cut            #(st/emit! (dw/copy-selected)
@@ -177,6 +179,9 @@
 
         handle-copy-text
         (mf/use-callback #(st/emit! (dw/copy-selected-text)))
+
+        handle-copy-as-image
+        (mf/use-callback #(st/emit! (dw/copy-as-image)))
 
         handle-hover-copy-paste
         (mf/use-callback
@@ -222,6 +227,11 @@
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-svg")
                        :on-click handle-copy-svg}]
 
+      (when (some cfh/frame-shape? shapes)
+        [:> menu-entry* {:title (tr "workspace.shape.menu.copy-as-image")
+                         :disabled multiple?
+                         :on-click handle-copy-as-image}])
+
       [:> menu-separator* {}]
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-text")
@@ -229,7 +239,7 @@
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-props")
                        :shortcut (sc/get-tooltip :copy-props)
-                       :disabled (> (count shapes) 1)
+                       :disabled multiple?
                        :on-click handle-copy-props}]
       [:> menu-entry* {:title (tr "workspace.shape.menu.paste-props")
                        :shortcut (sc/get-tooltip :paste-props)
