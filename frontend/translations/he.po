@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:35+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"PO-Revision-Date: 2026-02-17 10:09+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.16\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -409,7 +409,7 @@ msgstr "הוספת קובץ"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
-msgstr "הוספת ספריה משותפת"
+msgstr "הוספת ספרייה משותפת"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
@@ -6452,19 +6452,19 @@ msgstr "אפשרויות מתקדמות"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:686, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:693
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "גובה מר.‏"
+msgstr "גובה מרבי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:624, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:631
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "רוחב מר.‏"
+msgstr "רוחב מרבי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:655, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:663
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "גובה מז.‏"
+msgstr "גובה מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:591, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "רוחב מז.‏"
+msgstr "רוחב מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
@@ -8392,3 +8392,122 @@ msgstr "גרסאות שנשמרו אוטומטית תישמרנה למשך %s י
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "יצירת ארגון חדש"
+
+#: src/app/main/ui/dashboard/deleted.cljs:262
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "למחוק את כל המיזמים והקבצים שלך לצמיתות? זאת פעולה בלתי הפיכה."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:221
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "למחוק את %s לצמיתות? זאת פעולה בלתי הפיכה."
+
+#: src/app/main/data/dashboard.cljs:778
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s קבצים נמחקו בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:261, src/app/main/ui/dashboard/deleted.cljs:263, src/app/main/ui/dashboard/file_menu.cljs:220, src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "מחיקה לצמיתות"
+
+#: src/app/main/ui/dashboard/deleted.cljs:85
+msgid "dashboard.delete-project-button"
+msgstr "מחיקת מיזם"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"למחוק את המיזם %s לצמיתות? הפעולה הזאת תמחק לצמיתות את כל הקבצים שבו. זאת "
+"פעולה בלתי הפיכה."
+
+#: src/app/main/data/dashboard.cljs:777, src/app/main/data/dashboard.cljs:811
+msgid "dashboard.delete-success-notification"
+msgstr "%s נמחק בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:327
+msgid "dashboard.deleted.empty-state-description"
+msgstr "האשפה שלך ריקה. קבצים ומיזמים שנמחקו יופיעו כאן."
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "%s יימחק"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "אירעה שגיאה במחיקת הקובץ %s."
+
+#: src/app/main/data/dashboard.cljs:781
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "אירעה שגיאה במחיקת הקבצים."
+
+#: src/app/main/data/dashboard.cljs:814
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "אירעה שגיאה במחיקת המיזם %s."
+
+#: src/app/main/data/dashboard.cljs:909, src/app/main/ui/dashboard/file_menu.cljs:201
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "אירעה שגיאה בשחזור הקובץ %s."
+
+#: src/app/main/data/dashboard.cljs:910
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "אירעה שגיאה בשחזור הקבצים."
+
+#: src/app/main/data/dashboard.cljs:942
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "אירעה שגיאה בשחזור המיזם %s עם הקבצים שלו."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:266
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "מחיקת קובץ"
+msgstr[1] "מחיקת קבצים"
+msgstr[2] "מחיקת קבצים"
+msgstr[3] "מחיקת קבצים"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:263
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "שחזור קובץ"
+msgstr[1] "שחזור קבצים"
+msgstr[2] "שחזור קבצים"
+msgstr[3] "שחזור קבצים"
+
+#: src/app/main/data/dashboard.cljs:722
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "קבצים נמחקים…"
+
+#: src/app/main/data/dashboard.cljs:843
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "קבצים משוחזרים…"
+
+#: src/app/main/data/dashboard.cljs:723
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "המחיקה איטית להחריד"
+
+#: src/app/main/data/dashboard.cljs:844
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "השחזור איטי להחריד"
+
+#: src/app/main/ui/dashboard/deleted.cljs:274
+msgid "dashboard.restore-all-confirmation.description"
+msgstr ""
+"הפעולה הזאת תשחזר את כל המיזמים והקבצים שלך. זאת פעולה שיכולה לארוך זמן מה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:273
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "שחזור כל המיזמים והקבצים"
+
+#: src/app/main/ui/dashboard/deleted.cljs:308
+msgid "dashboard.restore-all-deleted-button"
+msgstr "לשחזר הכול"
+
+#: src/app/main/data/dashboard.cljs:903
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s קבצים שוחזרו בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:82
+msgid "dashboard.restore-project-button"
+msgstr "שחזור מיזם"
