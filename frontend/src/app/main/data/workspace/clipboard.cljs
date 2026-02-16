@@ -1078,15 +1078,13 @@
 
          ;; Call exporter to get image URI, then fetch and copy blob.
          (->> (rp/cmd! :export params)
-              (rx/mapcat (fn [{:keys [uri mtype]}]
-                           (->> (http/send! {:method :get
-                                             :uri uri
-                                             :response-type :blob})
-                                (rx/map :body))))
-              (rx/map (fn [blob]
-                        (let [promise (js/Promise. (fn [resolve _] (resolve blob)))]
-                          (clipboard/to-clipboard-promise "image/png" promise)
-                          nil)))
+              (rx/mapcat (fn [{:keys [uri]}]
+                           (http/send! {:method :get
+                                        :uri uri
+                                        :response-type :blob})))
+              (rx/map :body)
+              (rx/tap (fn [blob]
+                        (clipboard/to-clipboard-promise "image/png" (p/resolved blob))))
               (rx/map (fn [_]
                         (ntf/success (tr "workspace.clipboard.image-copied"))))
               (rx/catch (fn [e]
