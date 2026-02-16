@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-01 16:01+0000\n"
-"Last-Translator: Sandy S Kuo <kuo.sandys@gmail.com>\n"
+"PO-Revision-Date: 2026-02-16 08:35+0000\n"
+"Last-Translator: im424 <424@live.hk>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -5164,6 +5164,7 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "進階選項"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:543
+#, fuzzy
 msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "最高"
 
