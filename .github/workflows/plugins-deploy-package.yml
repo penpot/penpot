@@ -80,7 +80,7 @@ jobs:
       - name: "Build package for ${{ inputs.plugin_name }}-plugin"
         working-directory: plugins
         shell: bash
-        run: npx nx build ${{ inputs.plugin_name }}-plugin
+        run: pnpm --filter ${{ inputs.plugin_name }}-plugin build
 
       - name: Select Worker name
         run: |
