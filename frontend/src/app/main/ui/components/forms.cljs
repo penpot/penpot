@@ -98,7 +98,7 @@
          (fn [e]
            (dom/prevent-default e)
            (when (kbd/space? e)
-             (dom/click! (mf/ref-val input-ref)))))
+             (dom/click (mf/ref-val input-ref)))))
 
         props (-> props
                   (dissoc :help-icon :form :trim :children :show-success? :auto-focus? :label)

@@ -470,10 +470,11 @@
   (when (some? node)
     (.focus node)))
 
-(defn click!
+(defn click
   [^js node]
   (when (some? node)
     (.click node)))
+
 (defn focus?
   [^js node]
   (and node
