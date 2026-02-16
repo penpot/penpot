@@ -48,6 +48,7 @@
 (def schema:props
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
+   [:mcp-status {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]

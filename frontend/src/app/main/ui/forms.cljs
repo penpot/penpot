@@ -8,6 +8,7 @@
   (:require
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.keyboard :as k]
@@ -46,6 +47,23 @@
           props)]
 
     [:> input* props]))
+
+(mf/defc form-select*
+  [{:keys [name] :as props}]
+  (let [select-name name
+        form        (mf/use-ctx context)
+        value       (get-in @form [:data select-name] "")
+
+        handle-change
+        (fn [event]
+          (let [value (if (string? event) event (dom/get-target-val event))]
+            (fm/on-input-change form select-name value)))
+
+        props
+        (mf/spread-props props {:on-change handle-change
+                                :value value})]
+
+    [:> select* props]))
 
 (mf/defc form-submit*
   [{:keys [disabled on-submit] :rest props}]
