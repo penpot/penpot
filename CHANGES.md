@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.13.2
+
+### :bug: Bugs fixed
+
+- Revert yetti (http server) update, because that caused a regression on multipart uploads
+
+
 ## 2.13.1
 
 ### :bug: Bugs fixed
