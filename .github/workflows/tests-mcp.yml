@@ -1,0 +1,45 @@
+name: "MCP CI"
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - staging
+      - main
+
+    types:
+      - opened
+      - synchronize
+
+    paths:
+      - 'mcp/**'
+
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+
+    paths:
+      - 'mcp/**'
+
+jobs:
+  test:
+    name: "Test"
+    runs-on: penpot-runner-02
+    container: penpotapp/devenv:latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup
+        working-directory: ./mcp
+        run: ./scripts/setup
+
+      - name: Check
+        working-directory: ./mcp
+        run: |
+          pnpm run fmt:check;
+          pnpm -r run build;
+          pnpm -r run types:check;

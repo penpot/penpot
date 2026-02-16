@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-ARG IMAGEMAGICK_VERSION=7.1.1-47
+ARG IMAGEMAGICK_VERSION=7.1.2-13
 
 RUN set -e; \
     apt-get -qq update; \
@@ -24,6 +24,7 @@ RUN set -e; \
         libltdl-dev \
         liblzma-dev \
         libopenexr-dev \
+        libxml2-dev \
         libpng-dev \
         librsvg2-dev \
         libtiff-dev \
@@ -52,6 +53,7 @@ RUN set -e; \
         libfftw3-dev \
         libheif-dev \
         libjpeg-dev \
+        libxml2-dev \
         liblcms2-dev \
         libltdl-dev \
         liblzma-dev \
@@ -77,6 +79,7 @@ RUN set -e; \
         libopenjp2-7 \
         libpng16-16 \
         librsvg2-2 \
+        libxml2 \
         libtiff6 \
         libwebp7 \
         libwebpdemux2 \

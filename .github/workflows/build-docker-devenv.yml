@@ -7,9 +7,14 @@ jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
     environment: release-admins
-    runs-on: ubuntu-24.04
+    runs-on: penpot-runner-02
 
     steps:
+      - name: Set common environment variables
+        run: |
+          # Each job execution will use its own docker configuration.
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4
 

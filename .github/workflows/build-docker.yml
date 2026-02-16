@@ -19,9 +19,14 @@ on:
 jobs:
   build-and-push:
     name: Build and Push Penpot Docker Images
-    runs-on: ubuntu-24.04-arm
+    runs-on: penpot-runner-02
 
     steps:
+      - name: Set common environment variables
+        run: |
+          # Each job execution will use its own docker configuration.
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -54,6 +59,7 @@ jobs:
           mv penpot/frontend bundle-frontend
           mv penpot/exporter bundle-exporter
           mv penpot/storybook bundle-storybook
+          mv penpot/mcp bundle-mcp
           popd
 
       - name: Set up Docker Buildx
@@ -66,6 +72,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # To avoid the “429 Too Many Requests” error when downloading
+      # images from DockerHub for unregistered users.
+      # https://docs.docker.com/docker-hub/usage/
+      - name: Login to DockerHub Registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -75,6 +90,7 @@ jobs:
             backend
             exporter
             storybook
+            mcp
           labels: |
             bundle_version=${{ steps.bundles.outputs.bundle_version }}
 
@@ -131,6 +147,21 @@ jobs:
         with:
           context: ./docker/images/
           file: ./docker/images/Dockerfile.storybook
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push MCP Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_IMAGE: 'mcp'
+          BUNDLE_PATH: './bundle-mcp'
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.mcp
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}

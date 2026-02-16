@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $0);
+URL=${PENPOT_PLUGINS_API_DOC_URL:-http://localhost:9090}
+
+pushd $SCRIPT_DIR;
+
+if [[ "$URL" = "http://localhost:9090" ]]; then
+    pushd ../../plugins
+    pnpm install
+    pnpm run build:doc
+    popd
+fi
+
+if [[ "$URL" = "http://localhost:9090" ]]; then
+    pnpx concurrently --kill-others-on-fail -s last -k \
+         "caddy file-server --root ../../plugins/dist/doc/ --listen :9090" \
+         "../types-generator/build $URL";
+else
+    ../types-generator/build $URL;
+fi
+
+popd

@@ -1,10 +1,12 @@
 # CHANGELOG
 
-## 2.13.0 (Unreleased)
+## 2.13.1
 
-### :boom: Breaking changes & Deprecations
+### :bug: Bugs fixed
 
-### :rocket: Epics and highlights
+- Fix PDF Exporter outputs empty page when board has A4 format [Taiga #13181](https://tree.taiga.io/project/penpot/issue/13181)
+
+## 2.13.0
 
 ### :heart: Community contributions (Thank you!)
 
