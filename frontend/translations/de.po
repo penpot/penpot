@@ -8338,10 +8338,6 @@ msgstr "Deaktivieren"
 msgid "workspace.tokens.shadow-spread"
 msgstr "Streuung"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
-msgid "workspace.tokens.rename-only"
-msgstr "Umbenennen"
-
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:284, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
 msgid "workspace.tokens.color"
 msgstr "Farbe"

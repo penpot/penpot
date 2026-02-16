@@ -8215,36 +8215,9 @@ msgstr "Voer een alias voor een schaduwtoken in"
 msgid "workspace.tokens.reference-error"
 msgstr "Referentie fouten: "
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
-msgid "workspace.tokens.references-found"
-msgstr "%s verwijzingen gevonden in je ontwerp"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
-msgid "workspace.tokens.remap-and-rename"
-msgstr "Toewijzen & Hernoemen"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
-#, unused
-msgid "workspace.tokens.remap-explanation"
-msgstr ""
-"Alle verwijzingen naar dit token worden automatisch bijgewerkt om de nieuwe "
-"naam te gebruiken."
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:78
-msgid "workspace.tokens.remap-token-references"
-msgstr "Token-referenties opnieuw toewijzen"
-
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
 msgid "workspace.tokens.remapping-in-progress"
 msgstr "Token-referenties opnieuw toewijzen…"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
-msgid "workspace.tokens.rename-only"
-msgstr "Hervormen"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:83
-msgid "workspace.tokens.renaming-token-from-to"
-msgstr "Token hernoemen van '%s' naar '%s'"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:271, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:445, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:169, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:304, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:225, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:332, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:432, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 msgid "workspace.tokens.resolved-value"
