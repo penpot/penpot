@@ -13,6 +13,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
@@ -33,6 +34,14 @@
                            :attrs attrs
                            :shape-ids shape-ids
                            :expand-with-children false})))))
+
+(defn- get-resolved-value
+  [token tokens-tree]
+  (let [resolved-tokens (ts/resolve-tokens tokens-tree)
+        resolved-value  (-> resolved-tokens
+                            (dm/get-in [(:name token) :resolved-value])
+                            (ts/tokenscript-symbols->penpot-unit))]
+    resolved-value))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
@@ -84,6 +93,26 @@
      :set
      (fn [_ value]
        (st/emit! (dwtl/update-token set-id id {:value value})))}
+
+    :resolvedValue
+    {:this true
+     :enumerable false
+     :get
+     (fn [_]
+       (let [token           (u/locate-token file-id set-id id)
+             tokens-lib      (u/locate-tokens-lib file-id)
+             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+         (get-resolved-value token tokens-tree)))}
+
+    :resolvedValueString
+    {:this true
+     :enumerable false
+     :get
+     (fn [_]
+       (let [token           (u/locate-token file-id set-id id)
+             tokens-lib      (u/locate-tokens-lib file-id)
+             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+         (str (get-resolved-value token tokens-tree))))}
 
     :description
     {:this true

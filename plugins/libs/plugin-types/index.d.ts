@@ -4346,6 +4346,15 @@ export interface TokenBase {
   remove(): void;
 
   /**
+   * The value calculated by finding all tokens with the same name in active sets
+   * and resolving the references.
+   *
+   * It's converted to string, regardless of the data type of the value depending
+   * on the token type. It can be undefined if no value has been found in active sets.
+   */
+  readonly resolvedValueString: string | undefined;
+
+  /**
    * Applies this token to one or more properties of the given shapes.
    * @param shapes is an array of shapes to apply it.
    * @param properties an optional list of property names. If omitted, the
