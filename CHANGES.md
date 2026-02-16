@@ -1,10 +1,17 @@
 # CHANGELOG
 
-## 2.13.2
+## 2.13.3
 
 ### :bug: Bugs fixed
 
 - Revert yetti (http server) update, because that caused a regression on multipart uploads
+
+
+## 2.13.2
+
+### :bug: Bugs fixed
+
+- Fix arbitrary file read security issue on create-font-variant rpc method (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)
 
 
 ## 2.13.1
