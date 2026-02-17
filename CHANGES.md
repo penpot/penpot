@@ -2,12 +2,6 @@
 
 ## 2.14.0 (Unreleased)
 
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
-
-### :heart: Community contributions (Thank you!)
-
 ### :sparkles: New features & Enhancements
 
 - Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
@@ -17,7 +11,6 @@
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
 - Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
 - Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
-- [Access Tokens] Look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 
 ### :bug: Bugs fixed
 
