@@ -148,13 +148,10 @@
      [:div {:class (stl/css :grid-title)}
       [:div {:class (stl/css-case :option-row true
                                   :hidden is-hidden?)}
-       [:> icon-button* {:variant "secondary"
-                         :icon i/menu
-                         :class (stl/css :show-options)
-                         :aria-pressed open?
-                         :aria-label (tr "labels.options")
-                         :on-click toggle-advanced-options
-                         :disabled is-hidden?}]
+       [:button {:class (stl/css-case :show-options true
+                                      :selected open?)
+                 :on-click toggle-advanced-options}
+        deprecated-icon/menu]
        [:div {:class (stl/css :type-select-wrapper)}
         [:& select
          {:class (stl/css :grid-type-select)
@@ -207,11 +204,10 @@
                             :origin :guides
                             :on-change handle-change-color
                             :on-detach handle-detach-color}]
-            [:> icon-button* {:variant "ghost"
-                              :icon i/menu
-                              :aria-pressed show-more-options?
-                              :aria-label (tr "labels.options")
-                              :on-click toggle-more-options}]]
+            [:button {:class (stl/css-case :show-more-options true
+                                           :selected show-more-options?)
+                      :on-click toggle-more-options}
+             deprecated-icon/menu]]
            (when show-more-options?
              [:div {:class (stl/css :second-row)}
               [:button {:class (stl/css-case :btn-options true
@@ -288,12 +284,11 @@
                                  :className (stl/css :numeric-input)
                                  :value (or (:margin params) 0)}]]
 
-            [:> icon-button* {:variant "ghost"
-                              :icon i/menu
-                              :aria-pressed show-more-options?
-                              :aria-label (tr "labels.options")
-                              :on-click toggle-more-options
-                              :disabled is-default}]
+            [:button {:class (stl/css-case :show-more-options true
+                                           :selected show-more-options?)
+                      :on-click toggle-more-options
+                      :disabled is-default}
+             deprecated-icon/menu]
             (when show-more-options?
               [:div {:class (stl/css :more-options)}
                [:button {:class (stl/css :option-btn)

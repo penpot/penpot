@@ -12,13 +12,11 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.errors :as wte]
-   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
-   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference
-                                                                     check-self-reference
-                                                                     default-validate-token]]
+   [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -187,17 +185,18 @@
   [:*
    [:div {:class (stl/css :title-bar)}
     [:div {:class (stl/css :title)} (tr "labels.typography")]
-    [:> radio-buttons* {:selected (d/name tab)
-                        :on-change handle-toggle
-                        :name "reference-composite-tab"
-                        :options [{:id "composite-opt"
-                                   :icon i/layers
-                                   :label (tr "workspace.tokens.individual-tokens")
-                                   :value "composite"}
-                                  {:id "reference-opt"
-                                   :icon i/tokens
-                                   :label (tr "workspace.tokens.use-reference")
-                                   :value "reference"}]}]]
+    [:& radio-buttons {:class (stl/css :listing-options)
+                       :selected (d/name tab)
+                       :on-change handle-toggle
+                       :name "reference-composite-tab"}
+     [:& radio-button {:icon i/layers
+                       :value "composite"
+                       :title (tr "workspace.tokens.individual-tokens")
+                       :id "composite-opt"}]
+     [:& radio-button {:icon i/tokens
+                       :value "reference"
+                       :title (tr "workspace.tokens.use-reference")
+                       :id "reference-opt"}]]]
    [:div {:class (stl/css :inputs-wrapper)}
     (if (= tab :composite)
       [:> composite-form* {:token token

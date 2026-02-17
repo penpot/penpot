@@ -853,9 +853,8 @@
 
     [:*
      [:> icon-button* {:variant "ghost"
-                       :aria-pressed show-menu?
                        :aria-label (tr "shortcut-subsection.main-menu")
-                       :on-click (if show-menu? close-all-menus open-menu)
+                       :on-click open-menu
                        :icon i/menu}]
 
      [:> dropdown-menu* {:show show-menu?

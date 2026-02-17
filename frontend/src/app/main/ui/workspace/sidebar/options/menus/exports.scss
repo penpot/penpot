@@ -27,7 +27,7 @@
 
 .multiple-exports {
   @include deprecated.flexRow;
-  grid-column: 1 / span 8;
+  grid-column: 1 / span 9;
   .label {
     @extend .mixed-bar;
   }
@@ -76,6 +76,8 @@
 }
 
 .export-btn {
-  grid-column: 1 / span 8;
-  justify-content: center;
+  @extend .button-secondary;
+  @include deprecated.uppercaseTitleTipography;
+  grid-column: 1 / span 9;
+  height: deprecated.$s-32;
 }
