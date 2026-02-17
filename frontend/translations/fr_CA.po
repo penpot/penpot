@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:15+0000\n"
+"PO-Revision-Date: 2026-02-17 10:10+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.16\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -5458,3 +5458,947 @@ msgstr "Tokens de couleur"
 #: src/app/main/ui/workspace/colorpicker.cljs:434
 msgid "workspace.colorpicker.get-color"
 msgstr "Pipette de couleur"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Oups! Le contexte du canevas a été perdu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "Crée une nouvelle organisation"
+
+#: src/app/main/errors.cljs:105
+msgid "errors.unexpected-exception"
+msgstr "Erreur inattendue : %s"
+
+#: src/app/main/ui/static.cljs:315
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL a arrêté de fonctionner. Recharger la page pour le réinitialiser"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "Recharger la page"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
+msgid "workspace.component.swap.loop-error"
+msgstr "Les composants ne peuvent pas être imbriqués dans eux-mêmes."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:505
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Certaines copies n'ont pu être interchangées. Les composants ne peuvent pas "
+"être imbriqués dans eux-mêmes."
+
+#: src/app/main/ui/workspace/context_menu.cljs:796
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Créer une zone"
+
+#: src/app/main/ui/workspace/context_menu.cljs:799
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Créer un tableau"
+
+#: src/app/main/ui/workspace/context_menu.cljs:791
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Fusionner les cellules"
+
+#: src/app/main/ui/workspace/context_menu.cljs:754
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Ajouter 1 colonne à droite"
+
+#: src/app/main/ui/workspace/context_menu.cljs:753
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Ajouter 1 colonne à gauche"
+
+#, unused
+msgid "workspace.focus.selection"
+msgstr "Sélection"
+
+#: src/app/main/ui/workspace/context_menu.cljs:755
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Supprimer la colonne"
+
+#: src/app/main/ui/workspace/context_menu.cljs:756
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Supprimer la colonne et les formes"
+
+#: src/app/main/ui/workspace/context_menu.cljs:752
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Dupliquer la colonne"
+
+#: src/app/main/ui/workspace/context_menu.cljs:761
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Ajouter 1 colonne dessous"
+
+#: src/app/main/ui/workspace/context_menu.cljs:760
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Ajouter 1 colonne dessus"
+
+#: src/app/main/ui/workspace/context_menu.cljs:762
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Supprimer la rangée"
+
+#: src/app/main/ui/workspace/context_menu.cljs:763
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Supprimer la rangée et les formes"
+
+#: src/app/main/ui/workspace/context_menu.cljs:759
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Dupliquer la rangée"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "Outils de débogage"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:512
+msgid "workspace.focus.focus-mode"
+msgstr "Mode focus"
+
+#: src/app/main/ui/workspace/context_menu.cljs:396, src/app/main/ui/workspace/context_menu.cljs:711
+msgid "workspace.focus.focus-off"
+msgstr "Désactiver mode focus"
+
+#: src/app/main/ui/workspace/context_menu.cljs:395
+msgid "workspace.focus.focus-on"
+msgstr "Activer mode focus"
+
+#: src/app/util/color.cljs:34
+msgid "workspace.gradients.linear"
+msgstr "Dégradé linéaire"
+
+#: src/app/util/color.cljs:35
+msgid "workspace.gradients.radial"
+msgstr "Dégradé radial"
+
+#: src/app/main/ui/workspace/main_menu.cljs:274
+msgid "workspace.header.menu.disable-dynamic-alignment"
+msgstr "Désactiver l'alignement dynamique"
+
+#: src/app/main/ui/workspace/main_menu.cljs:228
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Désactiver la mise à l'échelle proportionnelle"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Désactiver la mise à l'échelle du texte"
+
+#: src/app/main/ui/workspace/main_menu.cljs:259
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Désactiver l'accrochage aux guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:289
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Désactiver l'accrochage aux pixels"
+
+#: src/app/main/ui/workspace/main_menu.cljs:243
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Désactiver l'accrochage aux guides règles"
+
+#: src/app/main/ui/workspace/main_menu.cljs:275
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "Activer l'alignement dynamique"
+
+#: src/app/main/ui/workspace/main_menu.cljs:229
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Activer la mise à l'échelle proportionnelle"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Activer la mise à l'échelle du texte"
+
+#: src/app/main/ui/workspace/main_menu.cljs:260
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Accrochage aux guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:290
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activer l'accrochage aux pixels"
+
+#: src/app/main/ui/workspace/main_menu.cljs:244
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Accrochage aux règles guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:422
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Masquer le nom des tableaux"
+
+#: src/app/main/ui/workspace/main_menu.cljs:376
+msgid "workspace.header.menu.hide-guides"
+msgstr "Masquer les guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:393
+msgid "workspace.header.menu.hide-palette"
+msgstr "Masquer la palette de couleurs"
+
+#: src/app/main/ui/workspace/main_menu.cljs:434
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Masquer la grille pixel"
+
+#: src/app/main/ui/workspace/main_menu.cljs:360
+msgid "workspace.header.menu.hide-rules"
+msgstr "Masquer les règles"
+
+#: src/app/main/ui/workspace/main_menu.cljs:407
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Masquer la palette de polices"
+
+#: src/app/main/ui/workspace/main_menu.cljs:884
+msgid "workspace.header.menu.option.edit"
+msgstr "Éditer"
+
+#: src/app/main/ui/workspace/main_menu.cljs:873
+msgid "workspace.header.menu.option.file"
+msgstr "Fichier"
+
+#: src/app/main/ui/workspace/main_menu.cljs:930
+msgid "workspace.header.menu.option.help-info"
+msgstr "Aide et info"
+
+#: src/app/main/ui/workspace/main_menu.cljs:916
+#, unused
+msgid "workspace.header.menu.option.power-up"
+msgstr "Bonifier ton forfait"
+
+#: src/app/main/ui/workspace/main_menu.cljs:906
+msgid "workspace.header.menu.option.preferences"
+msgstr "Préférences"
+
+#: src/app/main/ui/workspace/main_menu.cljs:895
+msgid "workspace.header.menu.option.view"
+msgstr "Affichage"
+
+#: src/app/main/ui/workspace/main_menu.cljs:506
+msgid "workspace.header.menu.redo"
+msgstr "Rétablir"
+
+#: src/app/main/ui/workspace/main_menu.cljs:477
+msgid "workspace.header.menu.select-all"
+msgstr "Tout sélectionner"
+
+#: src/app/main/ui/workspace/main_menu.cljs:423
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Afficher le nom des tableaux"
+
+#: src/app/main/ui/workspace/main_menu.cljs:377
+msgid "workspace.header.menu.show-guides"
+msgstr "Afficher les guides"
+
+#: src/app/main/ui/workspace/main_menu.cljs:394
+msgid "workspace.header.menu.show-palette"
+msgstr "Afficher la palette de couleurs"
+
+#: src/app/main/ui/workspace/main_menu.cljs:435
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Afficher la grille pixel"
+
+#: src/app/main/ui/workspace/main_menu.cljs:361
+msgid "workspace.header.menu.show-rules"
+msgstr "Afficher les règles"
+
+#: src/app/main/ui/workspace/main_menu.cljs:408
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Afficher la palette des polices"
+
+#: src/app/main/ui/workspace/main_menu.cljs:316
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Basculer au mode sombre"
+
+#: src/app/main/ui/workspace/main_menu.cljs:314, src/app/main/ui/workspace/main_menu.cljs:317
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Basculer au mode clair"
+
+#: src/app/main/ui/workspace/main_menu.cljs:315
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Basculer au thème du système"
+
+#: src/app/main/ui/workspace/main_menu.cljs:492
+msgid "workspace.header.menu.undo"
+msgstr "Défaire"
+
+#: src/app/main/ui/viewer/header.cljs:93, src/app/main/ui/workspace/right_header.cljs:92
+msgid "workspace.header.reset-zoom"
+msgstr "Réinitialiser"
+
+#: src/app/main/ui/workspace/left_header.cljs:128
+msgid "workspace.header.save-error"
+msgstr "Erreur de sauvegarde"
+
+#: src/app/main/ui/workspace/left_header.cljs:127
+msgid "workspace.header.saved"
+msgstr "Sauvegardé"
+
+#: src/app/main/ui/workspace/left_header.cljs:125, src/app/main/ui/workspace/left_header.cljs:126
+msgid "workspace.header.saving"
+msgstr "Sauvegarde en cours"
+
+#: src/app/main/ui/workspace/right_header.cljs:232
+msgid "workspace.header.share"
+msgstr "Partager"
+
+#: src/app/main/ui/workspace/right_header.cljs:48, src/app/main/ui/workspace/right_header.cljs:53
+#, unused
+msgid "workspace.header.unsaved"
+msgstr "Changements non sauvegardés"
+
+#: src/app/main/ui/workspace/right_header.cljs:237
+msgid "workspace.header.viewer"
+msgstr "Mode visionnement (%s)"
+
+#: src/app/main/ui/viewer/header.cljs:74, src/app/main/ui/workspace/right_header.cljs:74
+msgid "workspace.header.zoom"
+msgstr "Zoom"
+
+#: src/app/main/ui/viewer/header.cljs:104
+msgid "workspace.header.zoom-fill"
+msgstr "Remplir l'écran"
+
+#: src/app/main/ui/viewer/header.cljs:97
+msgid "workspace.header.zoom-fit"
+msgstr "Ajuster aux dimensions"
+
+#: src/app/main/ui/workspace/right_header.cljs:96
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoom cadrant tout"
+
+#: src/app/main/ui/viewer/header.cljs:111
+msgid "workspace.header.zoom-full-screen"
+msgstr "Plein écran"
+
+#: src/app/main/ui/workspace/right_header.cljs:104
+msgid "workspace.header.zoom-selected"
+msgstr "Zoom à la sélection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
+msgid "workspace.layout-grid.editor.margin.expand"
+msgstr "Afficher la marge des 4 côtés"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
+msgid "workspace.layout-grid.editor.options.edit-grid"
+msgstr "Éditer la grille"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1539
+msgid "workspace.layout-grid.editor.options.exit"
+msgstr "Quitter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:584, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:593, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:599
+msgid "workspace.layout-grid.editor.padding.bottom"
+msgstr "Marge interne du bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:669
+msgid "workspace.layout-grid.editor.padding.expand"
+msgstr "Afficher la marge interne des 4 côtés"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:416, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:427, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:433
+msgid "workspace.layout-grid.editor.padding.horizontal"
+msgstr "Marge interne horizontale"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:618, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:633
+msgid "workspace.layout-grid.editor.padding.left"
+msgstr "Marge interne gauche"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:551, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:560, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:566
+msgid "workspace.layout-grid.editor.padding.right"
+msgstr "Marge interne droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:517, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:526, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:532
+msgid "workspace.layout-grid.editor.padding.top"
+msgstr "Marge interne du haut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:391, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:397
+msgid "workspace.layout-grid.editor.padding.vertical"
+msgstr "Marge interne verticale"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
+msgid "workspace.layout-grid.editor.title"
+msgstr "Édition de la grille"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:70
+msgid "workspace.layout-grid.editor.top-bar.done"
+msgstr "Terminé"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:66
+msgid "workspace.layout-grid.editor.top-bar.locate"
+msgstr "Situer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
+msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
+msgstr "Situer la mise en page grille"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "S'ajuster au contenu (horizontal)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "S'ajuster au contenu (vertical)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
+msgid "workspace.layout-item.fix-height"
+msgstr "Hauteur fixe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
+msgid "workspace.layout-item.fix-width"
+msgstr "Largeur fixe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
+msgid "workspace.layout-item.height-100"
+msgstr "Hauteur 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
+msgid "workspace.layout-item.width-100"
+msgstr "Largeur 100%"
+
+#: src/app/main/ui/workspace/libraries.cljs
+#, unused
+msgid "workspace.libraries.add"
+msgstr "Ajouter"
+
+#: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:126
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 couleur"
+msgstr[1] "%s couleurs"
+
+#: src/app/main/ui/workspace/color_palette.cljs:147
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Aucun style de couleur dans la bibliothèque"
+
+#: src/app/main/ui/workspace/text_palette.cljs:161
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Aucun style de typographie dans la bibliothèque"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
+msgid "workspace.libraries.colors.file-library"
+msgstr "Bibliothèque du fichier"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:111, src/app/main/ui/workspace/colorpicker/libraries.cljs:47
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "Couleurs récentes"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RVB complémentaire"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:355
+msgid "workspace.libraries.colors.rgba"
+msgstr "RVBA"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:555
+msgid "workspace.libraries.colors.save-color"
+msgstr "Enregistrer le style de couleur"
+
+#: src/app/main/ui/workspace/libraries.cljs:94, src/app/main/ui/workspace/libraries.cljs:118
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 composant"
+msgstr[1] "%s composants"
+
+#: src/app/main/ui/workspace/libraries.cljs:338
+msgid "workspace.libraries.connected-to"
+msgstr "Connecté à"
+
+#: src/app/main/ui/workspace/libraries.cljs:392
+msgid "workspace.libraries.empty.add-some"
+msgstr "Ou ajoute celles-ci pour tester :"
+
+#: src/app/main/ui/workspace/libraries.cljs:386
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Aucune bibliothèque partagée dans ton équipe, tu peux chercher"
+
+#: src/app/main/ui/workspace/libraries.cljs:390
+msgid "workspace.libraries.empty.some-templates"
+msgstr "des modèles ici"
+
+#: src/app/main/ui/workspace/libraries.cljs:313
+msgid "workspace.libraries.file-library"
+msgstr "Bibliothèque du fichier"
+
+#: src/app/main/ui/workspace/libraries.cljs:97, src/app/main/ui/workspace/libraries.cljs:122
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 graphisme"
+msgstr[1] "%s graphismes"
+
+#: src/app/main/ui/workspace/libraries.cljs:307
+msgid "workspace.libraries.in-this-file"
+msgstr "BIBLIOTHÈQUES DANS CE FICHIER"
+
+#: src/app/main/ui/workspace/libraries.cljs:628, src/app/main/ui/workspace/libraries.cljs:648
+msgid "workspace.libraries.libraries"
+msgstr "BIBLIOTHÈQUES"
+
+#: src/app/main/ui/workspace/libraries.cljs
+#, unused
+msgid "workspace.libraries.library"
+msgstr "BIBLIOTHÈQUE"
+
+#: src/app/main/ui/workspace/libraries.cljs:487
+msgid "workspace.libraries.library-updates"
+msgstr "MISES À JOUR DE BIBLIOTHÈQUES"
+
+#: src/app/main/ui/workspace/libraries.cljs:381
+msgid "workspace.libraries.loading"
+msgstr "Chargement…"
+
+#: src/app/main/ui/workspace/libraries.cljs:387
+#, unused
+msgid "workspace.libraries.more-templates"
+msgstr "Tu peux chercher "
+
+#: src/app/main/ui/workspace/libraries.cljs:485
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "Aucune bibliothèque partagée ne requiert de mise à jour"
+
+#: src/app/main/ui/workspace/libraries.cljs:399
+msgid "workspace.libraries.no-matches-for"
+msgstr "Aucun résultat trouvé pour « %s »"
+
+#: src/app/main/ui/workspace/libraries.cljs:356
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "Recherche des bibliothèques partagées"
+
+#: src/app/main/ui/workspace/libraries.cljs:352
+msgid "workspace.libraries.shared-libraries"
+msgstr "BIBLIOTHÈQUES PARTAGÉES"
+
+#: src/app/main/ui/workspace/libraries.cljs:372
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Connecter une bibliothèque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.multiple-typography"
+msgstr "Multiples typographies"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-typography-tooltip"
+msgstr "Délier toutes les typographies"
+
+#: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 typographie"
+msgstr[1] "%s typographies"
+
+#: src/app/main/ui/workspace/libraries.cljs:343
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Déconnecter la bibliothèque"
+
+#: src/app/main/ui/workspace/libraries.cljs:507
+msgid "workspace.libraries.update"
+msgstr "Mettre à jour"
+
+#: src/app/main/ui/workspace/libraries.cljs:583
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "voir tous les changements"
+
+#: src/app/main/ui/workspace/libraries.cljs:630
+msgid "workspace.libraries.updates"
+msgstr "MISES À JOUR"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:67, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:72
+msgid "workspace.notification-pill.detail"
+msgstr "Détails"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+msgid "workspace.options.add-interaction"
+msgstr "Cliquer le bouton + pour ajouter des interactions."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:96
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Ajouter un flou"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:119
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Supprimer le flou"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.title"
+msgstr "Flouter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.title.group"
+msgstr "Flou de groupe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
+msgid "workspace.options.blur-options.title.multiple"
+msgstr "Flou de la sélection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:115
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Basculer le flou"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
+msgid "workspace.options.canvas-background"
+msgstr "Arrière-plan du canevas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
+msgid "workspace.options.clip-content"
+msgstr "Rogner le contenu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1027, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1033, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1282
+msgid "workspace.options.component"
+msgstr "Composant"
+
+#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:194
+msgid "workspace.options.component.annotation"
+msgstr "Annotation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1041
+msgid "workspace.options.component.copy"
+msgstr "Copier"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:187
+msgid "workspace.options.component.create-annotation"
+msgstr "Créer une annotation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:186
+msgid "workspace.options.component.edit-annotation"
+msgstr "Éditer l'annotation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1040, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1286
+msgid "workspace.options.component.main"
+msgstr "Principal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:781
+msgid "workspace.options.component.swap"
+msgstr "Permuter composant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:820
+msgid "workspace.options.component.swap.empty"
+msgstr "Aucun atout dans cette bibliothèque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1066
+msgid "workspace.options.component.unlinked"
+msgstr "Non-lié"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:570
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Localiser les variants en conflit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:567
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Ce composant a des variants en conflit. Assure-toi que chaque variant "
+"possède des valeurs de propriétés uniques."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1341
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Localiser les doublons"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1338
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Certains variants ont des propriétés et valeurs identiques"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:267
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"Ces variants ont des propriétés et valeurs identiques. Ajuster les valeurs "
+"pour qu'elles puissent être trouvées."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:264
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"Ce variant a des propriétés et valeurs identiques à un autre variant. "
+"Ajuster les valeurs pour qu'elles puissent être trouvées."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:270
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"Certains variants ont des propriétés et valeurs identiques. Ajuster les "
+"valeurs pour qu'elles puissent être trouvées."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:557
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Ce composant a des variants avec des noms invalides. Chaque variant doit "
+"suivre la structure correcte."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1331
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "Localiser les variants invalides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1328
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "Certains variants ont des noms invalides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:560
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Localiser les variants invalides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:251
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "Ces variants ont des noms invalides."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:248
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "Ce variant a un nom invalide."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:254
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "Certains variants ont des noms invalides."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:433
+msgid "workspace.options.component.variant.malformed.structure.example"
+msgstr "[propriété]=[valeur], [propriété]=[valeur]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:431
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "Utilise la structure suivante :"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Pour maintenir les changements entre les variants, Penpot connecte les "
+"calques qui :"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"Chaque changement (ex. renommer ou grouper un calque) brise la connection. "
+"Défaire le changement va la restaurer."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Ont le même nom."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Sont du même type."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Les rectangles, ellipses, chemins et opérations booléennes comptent comme "
+"étant du même type."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "Ont le même niveau de hiérarchie."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Les groupes, tableaux et mises en page sont considérés équivalents."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1045, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1289, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Comment les variants demeurent connectés"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:164
+msgid "workspace.options.constraints"
+msgstr "Contraintes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
+msgid "workspace.options.constraints.bottom"
+msgstr "Bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+msgid "workspace.options.constraints.center"
+msgstr "Centre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:224
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Figer au défilement"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
+msgid "workspace.options.constraints.left"
+msgstr "Gauche"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141
+msgid "workspace.options.constraints.leftright"
+msgstr "Gauche et droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
+msgid "workspace.options.constraints.right"
+msgstr "Droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:143, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:154
+msgid "workspace.options.constraints.scale"
+msgstr "Redimensionner"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
+msgid "workspace.options.constraints.top"
+msgstr "Haut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
+msgid "workspace.options.constraints.topbottom"
+msgstr "Haut et bas"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:197
+msgid "workspace.options.design"
+msgstr "Design"
+
+#: src/app/main/ui/inspect/exports.cljs:140
+msgid "workspace.options.export"
+msgstr "Exporter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#, unused
+msgid "workspace.options.export-multiple"
+msgstr "Exporter la sélection"
+
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:273
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Exporter 1 élément"
+msgstr[1] "Exporter %s éléments"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:214
+msgid "workspace.options.export.add-export"
+msgstr "Ajouter une exportation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:261
+msgid "workspace.options.export.remove-export"
+msgstr "Supprimer l'exportation"
+
+#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:255
+msgid "workspace.options.export.suffix"
+msgstr "Suffixe"
+
+#: src/app/main/ui/exports/assets.cljs:250
+msgid "workspace.options.exporting-complete"
+msgstr "Exportation complétée"
+
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/exports/assets.cljs:251, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:272
+msgid "workspace.options.exporting-object"
+msgstr "En cours d'exportation…"
+
+#: src/app/main/ui/exports/assets.cljs:249
+msgid "workspace.options.exporting-object-error"
+msgstr "L'exportation a échoué"
+
+#: src/app/main/ui/exports/assets.cljs:252
+msgid "workspace.options.exporting-object-slow"
+msgstr "Exportation inopinément lente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:236
+msgid "workspace.options.fill"
+msgstr "Remplissage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
+msgid "workspace.options.fill.add-fill"
+msgstr "Ajouter un remplissage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223
+msgid "workspace.options.fill.remove-fill"
+msgstr "Supprimer le remplissage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:405
+msgid "workspace.options.fit-content"
+msgstr "Redimensionner le tableau au contenu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:704
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Ajouter un début de parcours"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:700
+msgid "workspace.options.flows.flow"
+msgstr "Parcours"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:164
+msgid "workspace.options.flows.flow-start"
+msgstr "Démarrer le parcours"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:672
+msgid "workspace.options.flows.flow-starts"
+msgstr "Départs de parcours"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:155
+#, unused
+msgid "workspace.options.flows.remove-flow"
+msgstr "Supprimer le parcours"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:32
+msgid "workspace.options.grid.auto"
+msgstr "Auto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:163
+msgid "workspace.options.grid.column"
+msgstr "Colonnes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.grid-title"
+msgstr "Grille"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:204, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
+msgid "workspace.options.grid.params.color"
+msgstr "Couleur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.columns"
+msgstr "Colonnes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
+msgid "workspace.options.grid.params.gutter"
+msgstr "Gouttière"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:257
+msgid "workspace.options.grid.params.height"
+msgstr "Hauteur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:281
+msgid "workspace.options.grid.params.margin"
+msgstr "Marge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.rows"
+msgstr "Rangées"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:226, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:302
+msgid "workspace.options.grid.params.set-default"
+msgstr "Définir par défaut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.size"
+msgstr "Taille"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.type"
+msgstr "Type"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:241
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "Bas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:239
+msgid "workspace.options.grid.params.type.center"
+msgstr "Centre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
+msgid "workspace.options.grid.params.type.left"
+msgstr "Gauche"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:242
+msgid "workspace.options.grid.params.type.right"
+msgstr "Droite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
+msgid "workspace.options.grid.params.type.stretch"
+msgstr "Étirer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
+msgid "workspace.options.grid.params.type.top"
+msgstr "Haut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:221, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:300
+msgid "workspace.options.grid.params.use-default"
+msgstr "Utiliser la valeur par défaut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:258
+msgid "workspace.options.grid.params.width"
+msgstr "Largeur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:164
+msgid "workspace.options.grid.row"
+msgstr "Rangées"
