@@ -1,10 +1,6 @@
 You have access to Penpot tools in order to interact with a Penpot design project directly.
 As a precondition, the user must connect the Penpot design project to the MCP server using the Penpot MCP Plugin.
 
-IMPORTANT: When transferring styles from a Penpot design to code, make sure that you strictly adhere to the design.
-  NEVER make assumptions about missing values and don't get overly creative (e.g. don't pick your own colours and stick to
-  non-creative defaults such as white/black if you are lacking information).
-
 # Executing Code
 
 One of your key tools is the `execute_code` tool, which allows you to run JavaScript code using the Penpot Plugin API
@@ -213,19 +209,6 @@ Common tasks - Quick Reference (ALWAYS use penpotUtils for these):
       });
       Always validate against the root container that is supposed to contain the shapes.
 
-# Visual Inspection of Designs
-
-For many tasks, it can be critical to visually inspect the design. Remember to use the `export_shape` tool for this purpose!
-
-# Revising Designs
-
-* Before applying design changes, ask: "Would a designer consider this appropriate?"
-* When dealing with containment issues, ask: Is the parent too small OR is the child too large?
-  Container sizes are usually intentional, check content first.
-* Check for reasonable font sizes and typefaces
-* The use of flex layouts is encouraged for cases where elements are arranged in rows or columns with consistent spacing/positioning.
-  Consider converting boards to flex layout when appropriate.
-
 # Asset Libraries
 
 Libraries in Penpot are collections of reusable design assets (components, colors, and typographies) that can be shared across files.
@@ -332,6 +315,25 @@ Applying tokens:
 Removing tokens:
   Simply set the respective property directly - token binding is automatically removed, e.g.
   shape.fills = [{ fillColor: "#000000", fillOpacity: 1 }]; // Removes fill token
+
+# Visual Inspection of Designs
+
+For many tasks, it can be critical to visually inspect the design. Remember to use the `export_shape` tool for this purpose!
+
+# Creating and Translating Designs
+
+* When transferring styles from a Penpot design to code, make sure that you strictly adhere to the design.
+  NEVER make assumptions about missing values and don't get overly creative (e.g. don't pick your own colours and stick to
+  non-creative defaults such as white/black if you are lacking information).
+
+# Revising Designs
+
+* Before applying design changes, ask: "Would a designer consider this appropriate?"
+* When dealing with containment issues, ask: Is the parent too small OR is the child too large?
+  Container sizes are usually intentional, check content first.
+* Check for reasonable font sizes and typefaces
+* The use of flex layouts is encouraged for cases where elements are arranged in rows or columns with consistent spacing/positioning.
+  Consider converting boards to flex layout when appropriate.
 
 --
 You have hereby read the 'Penpot High-Level Overview' and need not use a tool to read it again.
