@@ -13,10 +13,10 @@
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   ;; [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -35,13 +35,25 @@
                            :shape-ids shape-ids
                            :expand-with-children false})))))
 
+(defn- get-resolved-value
+  [token tokens-tree]
+  (let [resolved-tokens (ts/resolve-tokens tokens-tree)
+        resolved-value  (-> resolved-tokens
+                            (dm/get-in [(:name token) :resolved-value])
+                            (ts/tokenscript-symbols->penpot-unit))]
+    resolved-value))
+
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
+
+;; Cannot use shape/shape-proxy? here because of circular dependency in applyToken in shape proxy
+(defn shape-proxy? [s]
+  (obj/type-of? s "ShapeProxy"))
 
 (defn token-proxy
   [plugin-id file-id set-id id]
   (obj/reify {:name "TokenProxy"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$set-id {:enumerable false :get (constantly set-id)}
@@ -82,6 +94,26 @@
      (fn [_ value]
        (st/emit! (dwtl/update-token set-id id {:value value})))}
 
+    :resolvedValue
+    {:this true
+     :enumerable false
+     :get
+     (fn [_]
+       (let [token           (u/locate-token file-id set-id id)
+             tokens-lib      (u/locate-tokens-lib file-id)
+             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+         (get-resolved-value token tokens-tree)))}
+
+    :resolvedValueString
+    {:this true
+     :enumerable false
+     :get
+     (fn [_]
+       (let [token           (u/locate-token file-id set-id id)
+             tokens-lib      (u/locate-tokens-lib file-id)
+             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+         (str (get-resolved-value token tokens-tree))))}
+
     :description
     {:this true
      :get
@@ -113,14 +145,10 @@
 
     :applyToShapes
     {:schema [:tuple
-              ;; FIXME: the schema decoder is interpreting the array of shape-proxys and converting
-              ;;        them to plain maps. For now we adapt the schema to accept it, but the decoder
-              ;;        should be fixed to keep the original proxy objects coming from the plugin.
-              ;; [:vector [:fn shape/shape-proxy?]]
-              [:vector [:map [:id ::sm/uuid]]]
-              [:maybe [:set [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]]
+              [:vector [:fn shape-proxy?]]
+              [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
      :fn (fn [shapes attrs]
-           (apply-token-to-shapes file-id set-id id (map :id shapes) attrs))}
+           (apply-token-to-shapes file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
     {:schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
@@ -136,7 +164,7 @@
 (defn token-set-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -257,7 +285,7 @@
 (defn token-theme-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenThemeProxy"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
     :$id {:enumerable false :get (constantly id)}
@@ -352,7 +380,7 @@
 (defn tokens-catalog
   [plugin-id file-id]
   (obj/reify {:name "TokensCatalog"
-              :wrap u/wrap-errors}
+              :on-error u/handle-error}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly file-id)}
 

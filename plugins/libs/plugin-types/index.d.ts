@@ -4346,6 +4346,15 @@ export interface TokenBase {
   remove(): void;
 
   /**
+   * The value calculated by finding all tokens with the same name in active sets
+   * and resolving the references.
+   *
+   * It's converted to string, regardless of the data type of the value depending
+   * on the token type. It can be undefined if no value has been found in active sets.
+   */
+  readonly resolvedValueString: string | undefined;
+
+  /**
    * Applies this token to one or more properties of the given shapes.
    * @param shapes is an array of shapes to apply it.
    * @param properties an optional list of property names. If omitted, the
@@ -5226,27 +5235,27 @@ type TokenDimensionProps =
 /**
  * The properties that a FontFamilies token can be applied to.
  */
-type TokenFontFamiliesProps = 'font-families';
+type TokenFontFamiliesProps = 'fontFamilies';
 
 /**
  * The properties that a FontSizes token can be applied to.
  */
-type TokenFontSizesProps = 'font-size';
+type TokenFontSizesProps = 'fontSize';
 
 /**
  * The properties that a FontWeight token can be applied to.
  */
-type TokenFontWeightProps = 'font-weight';
+type TokenFontWeightProps = 'fontWeight';
 
 /**
  * The properties that a LetterSpacing token can be applied to.
  */
-type TokenLetterSpacingProps = 'letter-spacing';
+type TokenLetterSpacingProps = 'letterSpacing';
 
 /**
  * The properties that a Number token can be applied to.
  */
-type TokenNumberProps = 'rotation' | 'line-height';
+type TokenNumberProps = 'rotation';
 
 /**
  * The properties that an Opacity token can be applied to.
@@ -5262,18 +5271,18 @@ type TokenSizingProps =
   | 'height'
 
   // Layout
-  | 'layout-item-min-w'
-  | 'layout-item-max-w'
-  | 'layout-item-min-h'
-  | 'layout-item-max-h';
+  | 'layoutItemMinW'
+  | 'layoutItemMaxW'
+  | 'layoutItemMinH'
+  | 'layoutItemMaxH';
 
 /**
  * The properties that a Spacing token can be applied to.
  */
 type TokenSpacingProps =
   // Spacing / Gap
-  | 'row-gap'
-  | 'column-gap'
+  | 'rowGap'
+  | 'columnGap'
 
   // Spacing / Padding
   | 'p1'
@@ -5290,17 +5299,17 @@ type TokenSpacingProps =
 /**
  * The properties that a BorderWidth token can be applied to.
  */
-type TokenBorderWidthProps = 'stroke-width';
+type TokenBorderWidthProps = 'strokeWidth';
 
 /**
  * The properties that a TextCase token can be applied to.
  */
-type TokenTextCaseProps = 'text-case';
+type TokenTextCaseProps = 'textCase';
 
 /**
  * The properties that a TextDecoration token can be applied to.
  */
-type TokenTextDecorationProps = 'text-decoration';
+type TokenTextDecorationProps = 'textDecoration';
 
 /**
  * The properties that a Typography token can be applied to.

@@ -109,6 +109,7 @@ function loadTokens(setId: string) {
             id: token.id,
             name: token.name,
             description: token.description,
+            resolvedValueString: token.resolvedValueString,
           };
         }),
       ]);

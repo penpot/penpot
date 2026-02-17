@@ -17,6 +17,7 @@
 - Optimize sidebar performance for deeply nested shapes [Taiga #13017](https://tree.taiga.io/project/penpot/task/13017)
 - Remove tokens path node and bulk remove tokens [Taiga #13007](https://tree.taiga.io/project/penpot/us/13007)
 - Replace themes management modal radio buttons for switches [Taiga #9215](https://tree.taiga.io/project/penpot/us/9215)
+- [Access Tokens] Look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 
 ### :bug: Bugs fixed
 
@@ -35,12 +36,18 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 
+## 2.13.3
+
+### :bug: Bugs fixed
+
+- Revert yetti (http server) update, because that caused a regression on multipart uploads
+
 ## 2.13.2
 
 ### :bug: Bugs fixed
 
 - Fix modifying shapes by apply negative tokens to border radius [Taiga #13317](https://tree.taiga.io/project/penpot/issue/13317)
-- Fix security issue (Path Traversal Vulnerability) on fonts related RPC method
+- Fix arbitrary file read security issue on create-font-variant rpc method (https://github.com/penpot/penpot/security/advisories/GHSA-xp3f-g8rq-9px2)
 
 
 ## 2.13.1
