@@ -1703,7 +1703,13 @@ impl RenderState {
             );
 
             if !matches!(element.shape_type, Type::Bool(_)) {
-                for shadow_shape_id in element.children.iter() {
+                let shadow_children = if element.is_recursive() {
+                    get_simplified_children(tree, element)
+                } else {
+                    Vec::new()
+                };
+
+                for shadow_shape_id in shadow_children.iter() {
                     let Some(shadow_shape) = tree.get(shadow_shape_id) else {
                         continue;
                     };
