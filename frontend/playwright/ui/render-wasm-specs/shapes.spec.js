@@ -356,3 +356,39 @@ test("Renders shapes with multiple fills and blur", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Keeps component visible when focusing after creating it", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+  await workspace.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspace.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.clickLayers();
+  await workspace.clickLeafLayer("Rectangle");
+  await page.keyboard.press("ControlOrMeta+k");
+
+  const componentLayer = workspace.layers
+    .getByTestId("layer-row")
+    .filter({ has: page.getByTestId("icon-component") })
+    .first();
+  await expect(componentLayer).toBeVisible();
+  await componentLayer.click();
+
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});

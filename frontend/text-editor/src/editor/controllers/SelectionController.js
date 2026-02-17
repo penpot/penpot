@@ -642,13 +642,15 @@ export class SelectionController extends EventTarget {
     } else {
       this.#anchorNode = anchorNode;
       this.#anchorOffset = anchorOffset;
-      if (anchorNode === focusNode) {
-        this.#focusNode = this.#anchorNode;
-        this.#focusOffset = this.#anchorOffset;
+      this.#focusNode = focusNode;
+      this.#focusOffset = focusOffset;
+      // setPosition() collapses the selection to a single caret. We must only use it
+      // when anchorOffset === focusOffset. When both points are in the same node but
+      // offsets differ (e.g. selecting "hola" in "hola adios"), we need setBaseAndExtent()
+      // to preserve the range so we don't incorrectly collapse ranges and lose the selection.
+      if (anchorNode === focusNode && anchorOffset === focusOffset) {
         this.#selection.setPosition(anchorNode, anchorOffset);
       } else {
-        this.#focusNode = focusNode;
-        this.#focusOffset = focusOffset;
         this.#selection.setBaseAndExtent(
           anchorNode,
           anchorOffset,

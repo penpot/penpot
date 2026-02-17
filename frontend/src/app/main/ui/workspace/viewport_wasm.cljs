@@ -73,7 +73,7 @@
         objects)))
 
 (mf/defc viewport*
-  [{:keys [selected wglobal wlocal layout file page palete-size]}]
+  [{:keys [selected wglobal wlocal layout file page palete-size file-version-id]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -141,6 +141,7 @@
 
         canvas-ref        (mf/use-ref nil)
         text-editor-ref   (mf/use-ref nil)
+        last-file-version-id-ref (mf/use-ref nil)
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
@@ -344,11 +345,18 @@
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [@canvas-init? zoom vbox background]
-      (when (and @canvas-init? (not @initialized?))
-        (wasm.api/clear-canvas-pixels)
-        (wasm.api/initialize-viewport base-objects zoom vbox background)
-        (reset! initialized? true)))
+    (mf/with-effect [@canvas-init? file-version-id zoom vbox background]
+      (when @canvas-init?
+        (if (not @initialized?)
+          (do
+            (wasm.api/clear-canvas-pixels)
+            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (reset! initialized? true)
+            (mf/set-ref-val! last-file-version-id-ref file-version-id))
+          (when (and (some? file-version-id)
+                     (not= file-version-id (mf/ref-val last-file-version-id-ref)))
+            (wasm.api/initialize-viewport base-objects zoom vbox background)
+            (mf/set-ref-val! last-file-version-id-ref file-version-id)))))
 
     (mf/with-effect [focus]
       (when (and @canvas-init? @initialized?)

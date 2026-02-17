@@ -23,6 +23,7 @@ type Token = {
   id: string;
   name: string;
   description: string;
+  resolvedValueString: string;
 };
 
 type TokensGroup = [string, Token[]];

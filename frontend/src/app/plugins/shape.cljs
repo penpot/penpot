@@ -175,6 +175,10 @@
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
 
+;; Cannot use token/token-proxy? here because of circular dependency in applyToShapes in token proxy
+(defn token-proxy? [t]
+  (obj/type-of? t "TokenProxy"))
+
 (defn shape-proxy
   ([plugin-id id]
    (shape-proxy plugin-id (:current-file-id @st/state) (:current-page-id @st/state) id))
@@ -1301,16 +1305,19 @@
                  tokens)))}
 
            :applyToken
-           (fn [token attrs]
-             (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
-                   kw-attrs (into #{} (map keyword attrs))]
-               (if (some #(not (cto/token-attr? %)) kw-attrs)
-                 (u/display-not-valid :applyToken attrs)
-                 (st/emit!
-                  (dwta/toggle-token {:token token
-                                      :attrs kw-attrs
-                                      :shape-ids [id]
-                                      :expand-with-children false})))))
+           {:schema [:tuple
+                     [:fn token-proxy?]
+                     [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+            :fn (fn [token attrs]
+                  (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
+                        kw-attrs (into #{} (map keyword attrs))]
+                    (if (some #(not (cto/token-attr? %)) kw-attrs)
+                      (u/display-not-valid :applyToken attrs)
+                      (st/emit!
+                       (dwta/toggle-token {:token token
+                                           :attrs kw-attrs
+                                           :shape-ids [id]
+                                           :expand-with-children false})))))}
 
            :isVariantHead
            (fn []
