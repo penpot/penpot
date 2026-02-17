@@ -119,6 +119,10 @@
   (normalize-uri (or (obj/get global "penpotPublicURI")
                      (obj/get location "origin"))))
 
+(def mcp-ws-uri
+  (or (some-> (obj/get global "penpotMcpServerURI") u/uri)
+      (u/join public-uri "mcp/ws")))
+
 (def rasterizer-uri
   (or (some-> (obj/get global "penpotRasterizerURI") normalize-uri)
       public-uri))

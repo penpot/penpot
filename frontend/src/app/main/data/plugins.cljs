@@ -65,8 +65,23 @@
     (update [_ state]
       (update-in state [:workspace-local :open-plugins] (fnil disj #{}) id))))
 
+(defn start-plugin!
+  [{:keys [plugin-id name version description host code permissions allow-background]} ^js extensions]
+  (.ɵloadPlugin
+   ^js ug/global
+   #js {:pluginId plugin-id
+        :name name
+        :version version
+        :description description
+        :host host
+        :code code
+        :allowBackground (boolean allow-background)
+        :permissions (apply array permissions)}
+   nil
+   extensions))
+
 (defn- load-plugin!
-  [{:keys [plugin-id name description host code icon permissions]}]
+  [{:keys [plugin-id name description host code icon permissions] :as params}]
   (try
     (st/emit! (save-current-plugin plugin-id)
               (reset-plugin-flags plugin-id))
