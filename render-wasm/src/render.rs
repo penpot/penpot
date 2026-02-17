@@ -39,6 +39,7 @@ pub use images::*;
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
+const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -787,6 +788,25 @@ impl RenderState {
             shape.to_mut().set_blur(None);
         }
 
+        // For non-text, non-SVG shapes in the normal rendering path, apply blur
+        // via a single save_layer on each render surface
+        // Clip correctness is preserved
+        let blur_sigma_for_layers: Option<f32> = if !fast_mode
+            && apply_to_current_surface
+            && fills_surface_id == SurfaceId::Fills
+            && !matches!(shape.shape_type, Type::Text(_))
+            && !matches!(shape.shape_type, Type::SVGRaw(_))
+        {
+            if let Some(blur) = shape.blur.filter(|b| !b.hidden) {
+                shape.to_mut().set_blur(None);
+                Some(blur.value)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let center = shape.center();
         let mut matrix = shape.transform;
         matrix.post_translate(center);
@@ -1001,6 +1021,24 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
+                // Wrap ALL fill/stroke/shadow rendering so a single GPU blur pass calls
+                let blur_filter_for_layers: Option<skia::ImageFilter> = blur_sigma_for_layers
+                    .and_then(|sigma| skia::image_filters::blur((sigma, sigma), None, None, None));
+                if let Some(ref filter) = blur_filter_for_layers {
+                    let mut layer_paint = skia::Paint::default();
+                    layer_paint.set_image_filter(filter.clone());
+                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+                    self.surfaces
+                        .canvas(fills_surface_id)
+                        .save_layer(&layer_rec);
+                    self.surfaces
+                        .canvas(strokes_surface_id)
+                        .save_layer(&layer_rec);
+                    self.surfaces
+                        .canvas(innershadows_surface_id)
+                        .save_layer(&layer_rec);
+                }
+
                 let shape = &shape;
 
                 if shape.fills.is_empty()
@@ -1053,7 +1091,12 @@ impl RenderState {
                         innershadows_surface_id,
                     );
                 }
-                // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
+
+                if blur_filter_for_layers.is_some() {
+                    self.surfaces.canvas(innershadows_surface_id).restore();
+                    self.surfaces.canvas(strokes_surface_id).restore();
+                    self.surfaces.canvas(fills_surface_id).restore();
+                }
             }
         };
 
@@ -1145,12 +1188,19 @@ impl RenderState {
         let _start = performance::begin_timed_log!("render_preview");
         performance::begin_measure!("render_preview");
 
+        // Enable fast_mode during preview to skip expensive effects (blur, shadows).
+        // Restore the previous state afterward so the final render is full quality.
+        let current_fast_mode = self.options.is_fast_mode();
+        self.options.set_fast_mode(true);
+
         // Skip tile rebuilding during preview - we'll do it at the end
         // Just rebuild tiles for touched shapes and render synchronously
         self.rebuild_touched_tiles(tree);
 
         // Use the sync render path
         self.start_render_loop(None, tree, timestamp, true)?;
+
+        self.options.set_fast_mode(current_fast_mode);
 
         performance::end_measure!("render_preview");
         performance::end_timed_log!("render_preview", _start);
@@ -1322,11 +1372,16 @@ impl RenderState {
             paint.set_blend_mode(element.blend_mode().into());
             paint.set_alpha_f(element.opacity());
 
-            if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
-                let scale = self.get_scale();
-                let sigma = frame_blur.value * scale;
-                if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                    paint.set_image_filter(filter);
+            // Skip frame-level blur in fast mode (pan/zoom)
+            if !self.options.is_fast_mode() {
+                if let Some(frame_blur) = Self::frame_clip_layer_blur(element) {
+                    let scale = self.get_scale();
+                    let sigma = frame_blur.value * scale;
+                    if let Some(filter) =
+                        skia::image_filters::blur((sigma, sigma), None, None, None)
+                    {
+                        paint.set_image_filter(filter);
+                    }
                 }
             }
 
@@ -1513,9 +1568,7 @@ impl RenderState {
             Self::combine_blur_values(self.combined_layer_blur(shape.blur), extra_layer_blur);
         let blur_filter = combined_blur
             .and_then(|blur| skia::image_filters::blur((blur.value, blur.value), None, None, None));
-        // Legacy path is only stable up to 1.0 zoom: the canvas is scaled and the shadow
-        // filter is evaluated in that scaled space, so for scale > 1 it over-inflates blur/spread.
-        // We also disable it when combined layer blur is present to avoid incorrect composition.
+
         let use_low_zoom_path = scale <= 1.0 && combined_blur.is_none();
 
         if use_low_zoom_path {
@@ -1598,13 +1651,27 @@ impl RenderState {
             return;
         }
 
-        let filter_result =
-            filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
+        // Adaptive downscale for large blur values (lossless GPU optimization).
+        // Bounds above were computed from the original sigma so filter surface coverage is correct.
+        // Maximum downscale is 1/BLUR_DOWNSCALE_THRESHOLD (i.e. 8×): beyond that the
+        // filter surface becomes too small and quality degrades noticeably.
+        const MIN_BLUR_DOWNSCALE: f32 = 1.0 / BLUR_DOWNSCALE_THRESHOLD;
+        let blur_downscale = if shadow.blur > BLUR_DOWNSCALE_THRESHOLD {
+            (BLUR_DOWNSCALE_THRESHOLD / shadow.blur).max(MIN_BLUR_DOWNSCALE)
+        } else {
+            1.0
+        };
+
+        let filter_result = filters::render_into_filter_surface(
+            self,
+            bounds,
+            blur_downscale,
+            |state, temp_surface| {
                 {
                     let canvas = state.surfaces.canvas(temp_surface);
 
                     let mut shadow_paint = skia::Paint::default();
-                    shadow_paint.set_image_filter(drop_filter.clone());
+                    shadow_paint.set_image_filter(drop_filter);
                     shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
 
                     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
@@ -1629,7 +1696,8 @@ impl RenderState {
                     let canvas = state.surfaces.canvas(temp_surface);
                     canvas.restore();
                 }
-            });
+            },
+        );
 
         if let Some((mut surface, filter_scale)) = filter_result {
             let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
@@ -1716,6 +1784,7 @@ impl RenderState {
                     if shadow_shape.hidden {
                         continue;
                     }
+
                     let nested_clip_bounds =
                         node_render_state.get_nested_shadow_clip_bounds(element, shadow);
 
@@ -1776,7 +1845,6 @@ impl RenderState {
             self.surfaces
                 .canvas(SurfaceId::DropShadows)
                 .draw_paint(&paint);
-
             self.surfaces.canvas(SurfaceId::DropShadows).restore();
         }
 
