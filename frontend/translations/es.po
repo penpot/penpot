@@ -5510,10 +5510,6 @@ msgstr "Desagrupar"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Tokens de color"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434
-msgid "workspace.colorpicker.get-color"
-msgstr "Absorber color"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "workspace.component.swap.loop-error"
 msgstr "Los componentes no pueden anidarse dentro de sí mismos."
@@ -5799,12 +5795,8 @@ msgstr "Pantalla completa"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
-msgid "workspace.layout-grid.editor.margin.expand"
-msgstr "Mostrar el margen a 4 lados"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
-msgid "workspace.layout-grid.editor.options.edit-grid"
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
+msgid "workspace.layout_grid.editor.options.edit-grid"
 msgstr "Editar rejilla"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1539
@@ -5854,30 +5846,6 @@ msgstr "Mostrar"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Mostrar grid layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
-msgid "workspace.layout-item.fit-content-horizontal"
-msgstr "Ajustar contenido (horizontal)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
-msgid "workspace.layout-item.fit-content-vertical"
-msgstr "Ajustar contenido (vertical)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
-msgid "workspace.layout-item.fix-height"
-msgstr "Fijar altura"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
-msgid "workspace.layout-item.fix-width"
-msgstr "Fijar anchura"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "Altura 100%"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "Anchura 100%"
 
 #: src/app/main/ui/workspace/libraries.cljs
 #, unused
@@ -6443,30 +6411,6 @@ msgstr "Tiempo"
 msgid "workspace.options.interaction-animation"
 msgstr "Animación"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "Abajo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "Dentro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "Izquierda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "Fuera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "Derecha"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "Arriba"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Disolver"
@@ -6911,14 +6855,6 @@ msgstr "Más tokens de color"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Opacidad"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-msgid "workspace.options.orientation.horizontal"
-msgstr "Horizontal"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-msgid "workspace.options.orientation.vertical"
-msgstr "Vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, unused
@@ -7770,11 +7706,7 @@ msgstr "Capas"
 msgid "workspace.sidebar.layers.components"
 msgstr "Componentes"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:297
-msgid "workspace.sidebar.layers.filter"
-msgstr "Filtrar"
-
-#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
 msgid "workspace.sidebar.layers.frames"
 msgstr "Paneles"
 
@@ -8331,7 +8263,6 @@ msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "none | underline | strike-through o {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
-#, unused
 msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 

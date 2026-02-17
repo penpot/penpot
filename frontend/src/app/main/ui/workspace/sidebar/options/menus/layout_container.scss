@@ -42,7 +42,6 @@
 
 .flex-layout-menu {
   @include sidebar.option-grid-structure;
-  row-gap: var(--sp-s);
   margin-block-end: var(--sp-s);
 }
 
@@ -50,6 +49,8 @@
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: subgrid;
+  margin-block-end: var(--sp-m);
+  margin-block-start: var(--sp-xs);
 }
 
 .align-row {
@@ -60,11 +61,27 @@
   grid-column: span 4;
 }
 
-.middle-row {
-  grid-column: span 8;
-  display: flex;
-  flex-direction: column;
-  row-gap: var(--sp-xs);
+// TODO: Replace this buttons with DS buttons
+.wrap-button {
+  @extend .button-tertiary;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+  }
+  &.selected {
+    @extend .button-icon-selected;
+  }
+}
+
+.second-row,
+.third-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  margin-block-end: var(--sp-m);
 }
 
 .align-content-row,
@@ -72,7 +89,7 @@
   grid-column: span 6;
 }
 
-.last-row {
+.forth-row {
   display: grid;
   grid-template-columns:
     var(--grid-exception-input-width) /* first input block */
@@ -83,7 +100,9 @@
 }
 
 .help-button-wrapper {
+  grid-column: 1 / -1;
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
 }
 
@@ -130,10 +149,23 @@
   gap: var(--sp-xs);
 }
 
+// TODO: Replace this buttons with DS buttons
+.padding-toggle {
+  @extend .button-tertiary;
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+  }
+  &.selected {
+    @extend .button-icon-selected;
+  }
+}
+
 .grid-layout-menu {
   @include sidebar.option-grid-structure;
-  margin-top: var(--sp-xs);
-  row-gap: var(--sp-s);
 }
 
 .edit-grid-wrapper,
@@ -145,6 +177,7 @@
 }
 
 .first-row {
+  margin-block-end: var(--sp-s);
   display: grid;
   grid-template-columns: subgrid;
 }
@@ -169,12 +202,20 @@
   grid-column: span 5;
 }
 
+// TODO: Replace this buttons with DS buttons
 .edit-mode-btn {
-  justify-content: center;
+  @extend .button-secondary;
+  @include t.use-typography("headline-small");
+  inline-size: 100%;
+  padding: var(--sp-s);
   grid-column: span 7;
 }
 
+// TODO: Replace this buttons with DS buttons
 .exit-btn {
+  @extend .button-secondary;
+  @include t.use-typography("headline-small");
+  padding: var(--sp-s) var(--sp-xl);
   grid-column: span 2;
 }
 
@@ -186,11 +227,14 @@
   margin-block-start: var(--sp-xs);
 }
 
+.padding-section {
+  margin-block-start: var(--sp-s);
+}
+
 .grid-tracks-row {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
-  row-gap: var(--sp-s);
 }
 
 .edit-grid-wrapper {
@@ -249,6 +293,7 @@
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
+  margin-block-start: var(--sp-s);
 }
 
 .grid-track-header {
@@ -259,7 +304,7 @@
   border-radius: $br-8;
   overflow: hidden;
   background: var(--color-background-tertiary);
-  block-size: $sz-48;
+  block-size: px2rem(52);
   grid-column: 1 / -1;
 }
 
@@ -283,14 +328,44 @@
   color: var(--color-foreground-secondary);
 }
 
+// TODO: Replace this buttons with DS buttons
 .expand-icon {
-  block-size: $sz-48;
+  @extend .button-secondary;
+  block-size: px2rem(52);
+
   border-radius: $br-8 0 0 $br-8;
+  border-inline-end: $b-1 solid var(--color-background-primary);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+    fill: var(--color-foreground-secondary);
+  }
+  &:hover,
+  &:active {
+    svg {
+      stroke: var(--color-accent-primary);
+      fill: var(--color-accent-primary);
+    }
+  }
 }
 
+// TODO: Replace this buttons with DS buttons
 .add-column {
-  block-size: $sz-48;
-  border-radius: 0 $br-8 $br-8 0;
+  @extend .button-tertiary;
+  block-size: px2rem(52);
+
+  svg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: transparent;
+    fill: none;
+    stroke-width: px2rem(1);
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke: var(--color-foreground-secondary);
+    fill: var(--color-foreground-secondary);
+  }
 }
 
 .layout-options {

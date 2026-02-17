@@ -156,7 +156,8 @@ fn get_text_stroke_paints(
     paints
 }
 
-pub fn render(
+#[allow(clippy::too_many_arguments)]
+pub fn render_with_bounds_outset(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
@@ -164,12 +165,20 @@ pub fn render(
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
 ) {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
 
         if let Some(blur_filter) = blur {
-            let bounds = blur_filter.compute_fast_bounds(shape.selrect);
+            let mut text_bounds = shape
+                .get_text_content()
+                .calculate_bounds(shape, false)
+                .to_rect();
+            if stroke_bounds_outset > 0.0 {
+                text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
+            }
+            let bounds = blur_filter.compute_fast_bounds(text_bounds);
             if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
                 let blur_filter_clone = blur_filter.clone();
                 if filters::render_with_filter_surface(
@@ -200,6 +209,27 @@ pub fn render(
     if let Some(canvas) = canvas {
         render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
     }
+}
+
+pub fn render(
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
+    shape: &Shape,
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
+    surface_id: Option<SurfaceId>,
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
+) {
+    render_with_bounds_outset(
+        render_state,
+        canvas,
+        shape,
+        paragraph_builders,
+        surface_id,
+        shadow,
+        blur,
+        0.0,
+    );
 }
 
 fn render_text_on_canvas(

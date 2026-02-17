@@ -35,8 +35,8 @@ export class WasmWorkspacePage extends WorkspacePage {
     return WasmWorkspacePage.mockConfigFlags(this.page, flags);
   }
 
-  constructor(page) {
-    super(page);
+  constructor(page, options) {
+    super(page, options);
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
