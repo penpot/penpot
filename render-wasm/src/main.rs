@@ -412,6 +412,9 @@ fn set_children_set(entries: Vec<Uuid>) {
 
         for id in entries {
             state.touch_shape(id);
+            if let Some(children_shape) = state.shapes.get_mut(&id) {
+                children_shape.set_deleted(false);
+            }
         }
     });
 
