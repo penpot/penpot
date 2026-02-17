@@ -2,12 +2,6 @@
 
 ## 2.14.0 (Unreleased)
 
-### :boom: Breaking changes & Deprecations
-
-### :rocket: Epics and highlights
-
-### :heart: Community contributions (Thank you!)
-
 ### :sparkles: New features & Enhancements
 
 - Access to design tokens in Penpot Plugins [Taiga #8990](https://tree.taiga.io/project/penpot/us/8990)
