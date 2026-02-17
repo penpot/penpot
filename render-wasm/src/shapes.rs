@@ -196,6 +196,7 @@ pub struct Shape {
     pub extrect_cache: RefCell<Option<(math::Rect, u32)>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
+    deleted: bool,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -284,6 +285,7 @@ impl Shape {
             extrect_cache: RefCell::new(None),
             svg_transform: None,
             ignore_constraints: false,
+            deleted: false,
         }
     }
 
@@ -439,6 +441,14 @@ impl Shape {
 
     pub fn svg_transform(&self) -> Option<Matrix> {
         self.svg_transform
+    }
+
+    pub fn set_deleted(&mut self, value: bool) {
+        self.deleted = value;
+    }
+
+    pub fn deleted(&self) -> bool {
+        self.deleted
     }
 
     // FIXME: These arguments could be grouped or simplified
