@@ -3,7 +3,8 @@
  * Translated from frontend/src/app/worker/index.cljs
  */
 
-import type { WorkerState, IndexedPage, QueryParams, WorkerMessage } from './types'
+import type { WorkerState, IndexedPage, QueryParams, WorkerMessage, SerializedMessage } from './types'
+import type { WorkerUpdateTextRectPayload } from '../renderer/types'
 import type { PenpotNode, Point, Matrix, PenpotPage } from '@penpot-exporter/types'
 import { flattenPageToIndexed } from './types'
 import { handler, registerHandler } from './impl'
@@ -119,9 +120,8 @@ registerHandler('index/query-selection', (message: WorkerMessage) => {
 })
 
 registerHandler('index/update-text-rect', (message: WorkerMessage) => {
-  const pageId = message.payload?.pageId as string | undefined
-  const shapeId = message.payload?.shapeId as string | undefined
-  const dimensions = message.payload?.dimensions as { x?: number; y?: number; width?: number; height?: number } | undefined
+  const payload = message.payload as WorkerUpdateTextRectPayload | undefined
+  const { pageId, shapeId, dimensions } = payload ?? {}
 
   if (!pageId || !shapeId || !dimensions) {
     return null
@@ -226,7 +226,7 @@ registerHandler('index/update-text-rect', (message: WorkerMessage) => {
 // Main worker message handler
 self.addEventListener('message', (event: MessageEvent) => {
   console.log('Worker message received:', event.data)
-  const raw = event.data as any
+  const raw = event.data as SerializedMessage
   const replyTo = raw?.replyTo
   try {
     const message = decode(raw)

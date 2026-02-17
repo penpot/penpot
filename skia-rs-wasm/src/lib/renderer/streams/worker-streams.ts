@@ -5,25 +5,25 @@
 
 import { from, Observable } from 'rxjs'
 import { bufferTime, map, filter, switchMap } from 'rxjs/operators'
-import type { WorkerClient } from '../types'
+import type { WorkerClient, WorkerResponse, WorkerSendPayload } from '../types'
 
 export function askWorker$(
   workerClient: WorkerClient,
   cmd: string,
-  payload?: any
-): Observable<any> {
+  payload?: WorkerSendPayload
+): Observable<WorkerResponse> {
   return from(workerClient.sendMessage(cmd, payload))
 }
 
 export function askWorkerBuffered$(
   workerClient: WorkerClient,
   cmd: string,
-  payload$: Observable<any>
-): Observable<any> {
+  payload$: Observable<WorkerSendPayload>
+): Observable<WorkerResponse> {
   return payload$.pipe(
     bufferTime(100),
     map(buffer => buffer[buffer.length - 1]),
-    filter(val => val !== undefined),
+    filter((val): val is Exclude<WorkerSendPayload, undefined> => val !== undefined),
     switchMap(payload => askWorker$(workerClient, cmd, payload))
   )
 }

@@ -32,8 +32,6 @@ function App() {
       </div>
       <div className="canvas-container">
         <CanvasWrapper
-          width={800}
-          height={600}
           rendererOptions={rendererOptions}
           onError={handleError}
           style={{ border: '1px solid #ccc', cursor: 'grab' }}

@@ -2,6 +2,8 @@
  * Utility functions for UUID conversion, color conversion, and memory management
  */
 
+import type { WasmModule } from "src"
+
 /**
  * Converts a UUID string to a Uint32Array of 4 elements
  * UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -62,14 +64,14 @@ export function colorToU32ARGB(color: { color: string; opacity?: number }): numb
 /**
  * Allocates memory in WASM heap and returns the offset
  */
-export function allocBytes(module: any, size: number): number {
+export function allocBytes(module: WasmModule, size: number): number {
   return module._alloc_bytes(size)
 }
 
 /**
  * Frees allocated memory in WASM heap
  */
-export function freeBytes(module: any): void {
+export function freeBytes(module: WasmModule): void {
   module._free_bytes()
 }
 
@@ -175,7 +177,8 @@ export function isWebGL2Supported(canvas?: HTMLCanvasElement): boolean {
     })
     
     return gl !== null
-  } catch (e) {
+  } catch (e: unknown) {
+    console.error('Error checking WebGL2 support:', e)
     return false
   }
 }
@@ -264,7 +267,7 @@ type TypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
  * Simple debounce utility
  */
 
-export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+export function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
   return ((...args: Parameters<T>) => {
     if (timeoutId) {
@@ -280,7 +283,7 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, delay: numbe
  * Simple throttle utility
  */
 
-export function throttle<T extends (...args: any[]) => void>(fn: T, delay: number): T {
+export function throttle<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
   let lastExecTime = 0
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 

@@ -2,11 +2,13 @@
  * Hook to set up event listeners and update RxJS streams
  */
 
+import type { RefObject } from 'react'
 import { useEffect } from 'react'
 import { mousePosition$, mousePositionShift$, mousePositionAlt$, mousePositionMod$, keyboardSpace$ } from '../streams'
 
-export function useStreams(canvas: HTMLCanvasElement | null) {
+export function useStreams(canvasRef: RefObject<HTMLCanvasElement | null>) {
   useEffect(() => {
+    const canvas = canvasRef.current
     if (!canvas) return
     
     const handleMouseMove = (e: MouseEvent) => {
@@ -37,7 +39,7 @@ export function useStreams(canvas: HTMLCanvasElement | null) {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [canvas])
+  }, [canvasRef])
 }
 
 

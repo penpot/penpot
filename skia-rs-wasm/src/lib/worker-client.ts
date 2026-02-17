@@ -4,7 +4,12 @@
 
 import type { WorkerMessage, SerializedMessage } from './worker/types'
 import type { PenpotPage} from '@penpot-exporter/types'
-import type { WorkerClient as WorkerClientInterface } from './renderer/types'
+import type {
+  WorkerClient as WorkerClientInterface,
+  WorkerConfig,
+  WorkerResponse,
+  WorkerSendPayload,
+} from './renderer/types'
 import { encode, decode } from './worker/messages'
 
 /**
@@ -13,8 +18,11 @@ import { encode, decode } from './worker/messages'
 export class WorkerClient implements WorkerClientInterface {
   private worker: Worker
   private cleanup: () => void
-  private pendingRequests = new Map<string, { resolve: (value: any) => void; reject: (error: Error) => void }>()
-  private messageListeners = new Set<(message: any) => void>()
+  private pendingRequests = new Map<
+    string,
+    { resolve: (value: WorkerResponse) => void; reject: (error: Error) => void }
+  >()
+  private messageListeners = new Set<(message: WorkerMessage) => void>()
   private nextId = 0
 
   constructor(worker: Worker, cleanup: () => void) {
@@ -29,7 +37,7 @@ export class WorkerClient implements WorkerClientInterface {
   /**
    * Send a message to the worker and wait for response
    */
-  sendMessage(cmd: string, payload?: any): Promise<any> {
+  sendMessage(cmd: string, payload?: WorkerSendPayload): Promise<WorkerResponse> {
     return new Promise((resolve, reject) => {
       const replyTo = this.generateReplyTo()
 
@@ -57,7 +65,7 @@ export class WorkerClient implements WorkerClientInterface {
    * Register a message listener
    * @returns Unsubscribe function
    */
-  onMessage(callback: (message: any) => void): () => void {
+  onMessage(callback: (message: WorkerMessage) => void): () => void {
     this.messageListeners.add(callback)
     return () => {
       this.messageListeners.delete(callback)
@@ -67,7 +75,7 @@ export class WorkerClient implements WorkerClientInterface {
   /**
    * Configure the worker
    */
-  async configure(config: any): Promise<void> {
+  async configure(config: WorkerConfig): Promise<void> {
     await this.sendMessage('configure', { config })
   }
 
@@ -123,7 +131,7 @@ export class WorkerClient implements WorkerClientInterface {
         const pending = this.pendingRequests.get(decoded.replyTo)
         if (pending) {
           this.pendingRequests.delete(decoded.replyTo)
-          pending.resolve(decoded.payload)
+          pending.resolve(decoded.payload as WorkerResponse)
           return
         }
       }

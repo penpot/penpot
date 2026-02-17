@@ -43,12 +43,19 @@
 .canvas-container {
   margin: 2rem 0;
   text-align: center;
+  width: 100%;
+  height: 600px;
+  max-height: 80vh;
+}
+
+.canvas-container > div {
+  width: 100%;
+  height: 100%;
 }
 
 .canvas-container canvas {
   max-width: 100%;
-  height: auto;
-  max-height: 80vh;
+  max-height: 100%;
 }
 
 .info {

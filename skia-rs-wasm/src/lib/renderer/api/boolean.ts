@@ -15,7 +15,7 @@ import {
 import { translateBoolType } from './serializers'
 import { checkContext } from './context'
 import { UUID_U8_SIZE } from './constants'
-import { useShape } from './shape'
+import { moduleUseShape } from './shape'
 import { setObject } from './orchestration'
 import { pathFromBytes } from './path'
 
@@ -133,7 +133,7 @@ export function calculateBool(
  */
 export function shapeToPath(module: WasmModule, id: string): PathContent {
   checkContext(module)
-  useShape(module, id)
+  moduleUseShape(module, id)
   const offset = offset8To32(module._current_to_path())
   const heap = module.HEAPU32
   

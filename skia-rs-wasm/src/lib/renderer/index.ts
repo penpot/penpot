@@ -13,7 +13,7 @@ import { setViewBox, resizeViewbox, initializeViewport } from './api/viewport'
 import { getContextInitialized } from './api/context'
 import { processObject } from './api/orchestration'
 import { requestRender } from './api/rendering'
-import { useShape, setShapeChildren } from './api/shape'
+import { moduleUseShape, setShapeChildren } from './api/shape'
 
 function defaultOptions(options?: RendererOptions): Required<RendererOptions> {
   return {
@@ -222,7 +222,7 @@ export class Renderer {
     if (!getContextInitialized() || !this.module) {
       throw new Error('Renderer context not initialized. Call initPage() first.')
     }
-    useShape(this.module, parentId)
+    moduleUseShape(this.module, parentId)
     setShapeChildren(this.module, childIds)
     requestRender(this.module, 'updateParentChildren')
   }
@@ -241,10 +241,15 @@ export class Renderer {
 export { CanvasWrapper } from './canvas-wrapper'
 export { WorkerClient } from '../worker-client'
 export { createWorker } from '../worker-factory'
-export type { CanvasWrapperProps, InitializationState } from './types'
+export type { CanvasWrapperProps, InitializationState, ViewportShortcutsConfig, ViewportPanModifier } from './types'
 
 // Export Zustand store
 export { useWorkspaceStore, selectCurrentPageNodes } from './store/workspace-store'
+export {
+  useViewportShortcutsStore,
+  DEFAULT_VIEWPORT_SHORTCUTS,
+  getViewportShortcuts,
+} from './store/viewport-shortcuts-store'
 export { setDocument, addPage, updatePage, deletePage, addNode, updateNode, deleteNode, createNewDocument } from './store/page-crud'
 
 // Export renderer client lifecycle
@@ -254,6 +259,7 @@ export { initRendererClient, cleanupRendererClient, RendererClientManager } from
 export { useStreams } from './hooks/use-streams'
 export { useSelection } from './hooks/use-selection'
 export { useMove } from './hooks/use-move'
+export { useViewportShortcuts } from './hooks/use-viewport-shortcuts'
 
 // Export handlers
 export { handleAreaSelection } from './handlers/selection'
