@@ -20,9 +20,11 @@ export interface WorkspaceState {
   isSelecting: boolean
   isMoving: boolean
   viewport: Viewport | null
+  /** Bumped on pan/zoom so UI that reads viewport re-renders (viewport is mutated in place). */
+  viewportVersion: number
   renderer: Renderer | null
   workerClient: WorkerClient | null
-  
+
   // WASM Module state
   wasmModule: WasmModule | null
   isWasmModuleLoading: boolean
@@ -35,6 +37,8 @@ export interface WorkspaceState {
   setIsSelecting: (is: boolean) => void
   setIsMoving: (is: boolean) => void
   setViewport: (viewport: Viewport) => void
+  /** Call after mutating viewport in place to refresh UI (zoom/pan display). */
+  bumpViewportVersion: () => void
   setRenderer: (renderer: Renderer) => void
   setWorkerClient: (client: WorkerClient | null) => void
   clearSelection: () => void
@@ -54,6 +58,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   isSelecting: false,
   isMoving: false,
   viewport: null,
+  viewportVersion: 0,
   renderer: null,
   workerClient: null,
   wasmModule: null,
@@ -66,6 +71,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   setIsSelecting: (is) => set({ isSelecting: is }),
   setIsMoving: (is) => set({ isMoving: is }),
   setViewport: (viewport) => set({ viewport }),
+  bumpViewportVersion: () => set((s) => ({ viewportVersion: s.viewportVersion + 1 })),
   setRenderer: (renderer) => set({ renderer }),
   setWorkerClient: (client) => set({ workerClient: client }),
   clearSelection: () => set({ selectedIds: new Set(), selectionRect: null }),

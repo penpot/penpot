@@ -3,7 +3,7 @@
  * Uses only exporter types (camelCase); no backward compatibility layer.
  */
 
-import type { Matrix, PenpotDocument, PenpotPage } from '@penpot-exporter/types'
+import type { Matrix, PenpotPage } from '@penpot-exporter/types'
 
 /** Shape type values supported by the WASM renderer */
 export type ShapeType =

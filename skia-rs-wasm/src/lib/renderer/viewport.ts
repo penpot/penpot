@@ -63,19 +63,19 @@ export class Viewport {
   }
 
   /**
-   * Pan the viewport by screen-space deltas (matches WASM playground)
-   * We pass -panX to API; Rust: screen = zoom*world + pan. Drag right -> see content to right -> pan decreases
+   * Pan by screen-space deltas. Matches frontend: vbox is world-space visible top-left,
+   * so we subtract (delta/zoom) from pan (frontend: update-viewport-position {:x #(- % (/ (:x delta) zoom))}).
    * @param dx - Screen pixel delta (mouse movement)
    * @param dy - Screen pixel delta (mouse movement)
    */
   pan(dx: number, dy: number): void {
-    this._panX -= dx
-    this._panY -= dy
+    this._panX -= dx / this._zoom
+    this._panY -= dy / this._zoom
   }
 
   /**
-   * Zoom at a specific point, keeping that point fixed on screen
-   * Rust transform: world = (screen + pan) / zoom, so worldX = (point.x + panX) / zoom
+   * Zoom at a specific point, keeping that point fixed on screen.
+   * panX/panY are world-space visible top-left: world at screen (px,py) = (panX + px/zoom, panY + py/zoom).
    */
   zoomAt(point: Point, scale: number): void {
     const oldZoom = this._zoom
@@ -88,15 +88,13 @@ export class Viewport {
       return // Zoom limit reached
     }
 
-    // World under cursor: world = (screen + pan) / zoom (Rust viewbox transform)
-    const worldX = (point.x + this._panX) / oldZoom
-    const worldY = (point.y + this._panY) / oldZoom
+    const worldX = this._panX + point.x / oldZoom
+    const worldY = this._panY + point.y / oldZoom
 
     this._zoom = newZoom
 
-    // Keep world point at same screen position: point.x = newZoom * worldX - newPanX
-    this._panX = newZoom * worldX - point.x
-    this._panY = newZoom * worldY - point.y
+    this._panX = worldX - point.x / newZoom
+    this._panY = worldY - point.y / newZoom
   }
 
   /**
@@ -118,24 +116,23 @@ export class Viewport {
   }
 
   /**
-   * Convert screen coordinates to world coordinates
-   * Rust transform: world = (screen + pan) / zoom
+   * Convert screen coordinates to world coordinates.
+   * Visible top-left in world is (panX, panY), so world = (panX, panY) + screen/zoom.
    */
   screenToWorld(screenX: number, screenY: number): Point {
     return {
-      x: (screenX + this._panX) / this._zoom,
-      y: (screenY + this._panY) / this._zoom,
+      x: this._panX + screenX / this._zoom,
+      y: this._panY + screenY / this._zoom,
     }
   }
 
   /**
-   * Convert world coordinates to screen coordinates
-   * Rust transform: screen = zoom * world - pan
+   * Convert world coordinates to screen coordinates.
    */
   worldToScreen(worldX: number, worldY: number): Point {
     return {
-      x: worldX * this._zoom - this._panX,
-      y: worldY * this._zoom - this._panY,
+      x: (worldX - this._panX) * this._zoom,
+      y: (worldY - this._panY) * this._zoom,
     }
   }
 
