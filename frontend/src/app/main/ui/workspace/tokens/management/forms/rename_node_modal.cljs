@@ -85,14 +85,12 @@
                             :disabled is-disabled?
                             :name "rename"} (tr "labels.rename")]]]]))
 
-(mf/defc rename-node-modal*
+(mf/defc rename-node-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/rename-node}
   [{:keys [node tokens-in-active-set on-rename]}]
 
-
-
-  (let [_ (prn "patata") ;;nil
+  (let [_ (prn "patata" on-rename) ;;nil
 
         tokens-tree-in-selected-set
         (mf/with-memo [tokens-in-active-set node]
@@ -103,7 +101,7 @@
         (mf/use-fn
          (mf/deps [])
          (fn []
-           (modal/hide!)))
+           (st/emit! (modal/hide))))
 
         rename
         (mf/use-fn

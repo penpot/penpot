@@ -5,10 +5,12 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
+   [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
@@ -18,6 +20,7 @@
    [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
+   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -138,6 +141,14 @@
                         (let [[_ token-value] token]
                           (:id token-value)))))))
 
+        filter-tokens-by-path
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens)
+         (fn [tokens-filtered-by-type path]
+           (->> tokens-filtered-by-type
+                (filter (fn [token]
+                          (str/starts-with? (:name token) path))))))
+
         remaining-tokens-of-type-in-set?
         (mf/use-fn
          (fn [selected-token-set-tokens tokens-in-path-ids]
@@ -179,67 +190,91 @@
                 (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
                 (st/emit! (dwtl/toggle-token-path (name type)))))))
 
-        on-rename-node
-        (mf/use-fn
-         (mf/deps selected-token-set-tokens selected-token-set-id)
-         (fn [node type new-name]
-           (prn "Renaming node: " node " with type: " type " to new name: " new-name)
-           ;;  (let [path (:path node)
-           ;;        tokens-by-type (ctob/group-by-type selected-token-set-tokens)
-           ;;        tokens-filtered-by-type (get tokens-by-type type)
-           ;;        tokens-in-path-ids (filter-tokens-by-path-ids type path)]
-           ;;    ;; Rename tokens in path
-           ;;    (st/emit! (dwtl/bulk-rename-tokens selected-token-set-id tokens-in-path-ids new-name))
-           ;;    ;; Remove from unfolded tree path
-           ;;    (st/emit! (dwtl/toggle-token-path (str (name type) "." path))))
-           ))
+        bulk-rename-tokens-in-path
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
+          (fn [node type new-name]
+            (let [path (:path node)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  tokens-in-path (filter-tokens-by-path tokens-filtered-by-type path type)
+                  tokens-in-path-ids (mapv (fn [token] (:id token)) tokens-in-path)]
+              ;; Rename tokens in path
+              ;; (st/emit! (dwtl/bulk-rename-tokens selected-token-set-id tokens-in-path-ids new-name))
+              ;; Remove from unfolded tree path
+              ;; (st/emit! (dwtl/toggle-token-path (str (name type) "." path))))))
 
-        open-rename-node-modal
-        (mf/use-fn
-         (mf/deps selected-token-set-tokens on-rename-node)
-         (fn [node type]
-           (let [_ (prn "RENAME")
-                 on-rename-node-handler #(on-rename-node node type %)]
+                  on-rename-node
+                  (mf/with-memo [selected-token-set-tokens selected-token-set-id]
+                    (fn [node type new-name]
+                      (prn "Renaming node: " node " with type: " type " to new name: " new-name)
+                      (let [path (:path node)
+                            state @st/state
+                            file-data (dh/lookup-file-data state)
+                            tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                            tokens-filtered-by-type (get tokens-by-type type)
+                            tokens-in-current-path (filter-tokens-by-path tokens-filtered-by-type path type)
+                            token-references-count (reduce (fn [count token]
+                                                             (+ count (remap/count-token-references file-data (:name token))))
+                                                           0
+                                                           tokens-in-current-path)]
+                        (prn "Total references count=" token-references-count)
+                        (if (> token-references-count 0)
+                          (prn "Remap node modal")
+                          (bulk-rename-tokens-in-path node type new-name))
+                        #_(st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name old-name
+                                                                                :new-token-name name
+                                                                                :references-count references-count
+                                                                                :on-remap on-remap
+                                                                                :on-rename on-rename}))
+                        ;; Rename tokens in path
+                        ;; (st/emit! (dwtl/bulk-rename-tokens selected-token-set-id tokens-in-path-ids new-name))
+                        ;; Remove from unfolded tree path
+                        ;; (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                        )))
 
+                  open-rename-node-modal
+                  (mf/use-fn
+                   (mf/deps selected-token-set-tokens on-rename-node)
+                   (fn [node type]
+                     (let [on-rename-node-handler #(on-rename-node node type %)]
+                       (st/emit! (modal/show :tokens/rename-node {:node node
+                                                                  :tokens-in-active-set selected-token-set-tokens
+                                                                  :on-rename on-rename-node-handler})))))]
 
-             (st/emit! (modal/show :tokens/rename-node {:node node
-                                                        :tokens-in-active-set selected-token-set-tokens
-                                                        :on-rename on-rename-node-handler})))))]
+              (mf/with-effect [tokens-lib selected-token-set-id]
+                (when (and tokens-lib
+                           (or (nil? selected-token-set-id)
+                               (and selected-token-set-id
+                                    (not (ctob/get-set tokens-lib selected-token-set-id)))))
+                  (let [match (->> (ctob/get-sets tokens-lib)
+                                   (first))]
+                    (when match
+                      (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
-    (mf/with-effect [tokens-lib selected-token-set-id]
-      (when (and tokens-lib
-                 (or (nil? selected-token-set-id)
-                     (and selected-token-set-id
-                          (not (ctob/get-set tokens-lib selected-token-set-id)))))
-        (let [match (->> (ctob/get-sets tokens-lib)
-                         (first))]
-          (when match
-            (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
+              [:*
+               [:& token-context-menu {:on-delete-token delete-token}]
+               [:> token-node-context-menu* {:on-rename-node open-rename-node-modal
+                                             :on-delete-node delete-node}]
 
-    [:*
-     [:& token-context-menu {:on-delete-token delete-token}]
-     [:> token-node-context-menu* {:on-rename-node open-rename-node-modal
-                                   :on-delete-node delete-node}]
+               [:> selected-set-info* {:tokens-lib tokens-lib
+                                       :selected-token-set-id selected-token-set-id}]
 
-     [:> selected-set-info* {:tokens-lib tokens-lib
-                             :selected-token-set-id selected-token-set-id}]
+               (for [type filled-group]
+                 (let [tokens (get tokens-by-type type)]
+                   [:> token-group* {:key (name type)
+                                     :tokens tokens
+                                     :type type
+                                     :selected-ids selected
+                                     :selected-shapes selected-shapes
+                                     :is-selected-inside-layout is-selected-inside-layout
+                                     :active-theme-tokens resolved-active-tokens
+                                     :tokens-lib tokens-lib
+                                     :selected-token-set-id selected-token-set-id}]))
 
-     (for [type filled-group]
-       (let [tokens (get tokens-by-type type)]
-         [:> token-group* {:key (name type)
-                           :tokens tokens
-                           :type type
-                           :selected-ids selected
-                           :selected-shapes selected-shapes
-                           :is-selected-inside-layout is-selected-inside-layout
-                           :active-theme-tokens resolved-active-tokens
-                           :tokens-lib tokens-lib
-                           :selected-token-set-id selected-token-set-id}]))
-
-     (for [type empty-group]
-       [:> token-group* {:key (name type)
-                         :tokens []
-                         :type type
-                         :selected-shapes selected-shapes
-                         :is-selected-inside-layout is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens}])]))
+               (for [type empty-group]
+                 [:> token-group* {:key (name type)
+                                   :tokens []
+                                   :type type
+                                   :selected-shapes selected-shapes
+                                   :is-selected-inside-layout is-selected-inside-layout
+                                   :active-theme-tokens resolved-active-tokens}])]))

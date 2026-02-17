@@ -456,6 +456,24 @@
          (rx/of (dch/commit-changes changes)
                 (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type})))))))
 
+#_{:clj-kondo/ignore [:potok/reify-type]}
+#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
+(defn bulk-update-tokens
+  [set-id token-ids params]
+  (dm/assert! (uuid? set-id))
+  (dm/assert! (every? uuid? token-ids))
+  (ptk/reify ::bulk-update-tokens
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (reduce (fn [changes token-id]
+                              (pcb/update-token changes set-id token-id params))
+                            (-> (pcb/empty-changes it)
+                                (pcb/with-library-data data))
+                            token-ids)]
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens"}))))))
+
 (defn delete-token
   [set-id token-id]
   (dm/assert! (uuid? set-id))

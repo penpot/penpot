@@ -155,13 +155,13 @@
         on-remap-token
         (mf/use-fn
          (mf/deps token)
-         (fn [valid-token name old-name description]
+         (fn [valid-token new-name old-name description]
            (st/emit!
             (dwtl/update-token (:id token)
-                               {:name name
+                               {:name new-name
                                 :value (:value valid-token)
                                 :description description})
-            (remap/remap-tokens old-name name)
+            (remap/remap-tokens old-name new-name)
             (dwtp/propagate-workspace-tokens)
             (modal/hide!))))
 
@@ -198,11 +198,12 @@
                            is-rename (and (= action "edit") (not= name old-name))
                            references-count (remap/count-token-references file-data old-name)
                            on-remap #(on-remap-token valid-token name old-name description)
-                           on-rename #(on-rename-token valid-token name description)]
+                           on-rename #(on-rename-token valid-token name description)
+                           remap-data {:new-name name
+                                       :old-name old-name
+                                       :type "token"}]
                        (if (and is-rename (> references-count 0))
-                         (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name old-name
-                                                                               :new-token-name name
-                                                                               :references-count references-count
+                         (st/emit! (modal/show :tokens/remapping-confirmation {:remap-data remap-data
                                                                                :on-remap on-remap
                                                                                :on-rename on-rename}))
                          (st/emit!
