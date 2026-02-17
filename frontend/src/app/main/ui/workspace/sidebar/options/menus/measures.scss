@@ -145,6 +145,16 @@
   grid-column: 2/-1;
 }
 
+.lock-size-btn {
+  @extend .button-tertiary;
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+  &.selected {
+    @extend .button-icon-selected;
+  }
+}
+
 .lock-ratio-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);

@@ -17,10 +17,9 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.file-uploader :refer [file-uploader*]]
+   [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -28,7 +27,7 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc image-upload*
+(mf/defc image-upload
   {::mf/wrap [mf/memo]}
   []
   (let [ref            (mf/use-ref nil)
@@ -54,17 +53,18 @@
                          :position (gpt/point x y)}]
              (st/emit! (dwm/upload-media-workspace params)))))]
     [:li
-     [:> icon-button* {:variant "ghost"
-                       :class (stl/css :main-toolbar-options-button)
-                       :icon i/img
-                       :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
-                       :tooltip-placement "bottom"
-                       :on-click on-click}
-      [:> file-uploader* {:input-id "image-upload"
-                          :accept dwm/accept-image-types
-                          :multi true
-                          :ref ref
-                          :on-selected on-selected}]]]))
+     [:button
+      {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+       :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+       :on-click on-click
+       :class (stl/css :main-toolbar-options-button)}
+      deprecated-icon/img
+      [:& file-uploader
+       {:input-id "image-upload"
+        :accept dwm/accept-image-types
+        :multi true
+        :ref ref
+        :on-selected on-selected}]]]))
 
 (def ^:private toolbar-hidden-ref
   (l/derived (fn [state]
@@ -136,104 +136,98 @@
        [:ul {:class (stl/css :main-toolbar-options)
              :data-testid "toolbar-options"}
         [:li
-         [:> icon-button* {:variant "ghost"
-                           :class (stl/css :main-toolbar-options-button)
-                           :icon i/move
-                           :aria-pressed (and (nil? drawtool) (not edition))
-                           :aria-label (tr "workspace.toolbar.move" (sc/get-tooltip :move))
-                           :tooltip-placement "bottom"
-                           :on-click interrupt}]]
+         [:button
+          {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+           :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+           :class (stl/css-case :main-toolbar-options-button true
+                                :selected (and (nil? drawtool)
+                                               (not edition)))
+           :on-click interrupt}
+          deprecated-icon/move]]
         [:*
          [:li
-          [:> icon-button* {:variant "ghost"
-                            :class (stl/css :main-toolbar-options-button)
-                            :icon i/board
-                            :aria-pressed (= drawtool :frame)
-                            :aria-label test-tooltip-board-text
-                            :tooltip-placement "bottom"
-                            :on-click select-drawtool
-                            :data-tool "frame"
-                            :data-testid "artboard-btn"}]]
+          [:button
+           {:title test-tooltip-board-text
+            :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+            :class  (stl/css-case :main-toolbar-options-button true :selected (= drawtool :frame))
+            :on-click select-drawtool
+            :data-tool "frame"
+            :data-testid "artboard-btn"}
+           deprecated-icon/board]]
          [:li
-          [:> icon-button* {:variant "ghost"
-                            :class (stl/css :main-toolbar-options-button)
-                            :icon i/rectangle
-                            :aria-pressed (= drawtool :rect)
-                            :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
-                            :tooltip-placement "bottom"
-                            :on-click select-drawtool
-                            :data-tool "rect"
-                            :data-testid "rect-btn"}]]
+          [:button
+           {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :rect))
+            :on-click select-drawtool
+            :data-tool "rect"
+            :data-testid "rect-btn"}
+           deprecated-icon/rectangle]]
          [:li
-          [:> icon-button* {:variant "ghost"
-                            :class (stl/css :main-toolbar-options-button)
-                            :icon i/elipse
-                            :aria-pressed (= drawtool :circle)
-                            :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-                            :tooltip-placement "bottom"
-                            :on-click select-drawtool
-                            :data-tool "circle"
-                            :data-testid "ellipse-btn"}]]
+          [:button
+           {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :circle))
+            :on-click select-drawtool
+            :data-tool "circle"
+            :data-testid "ellipse-btn"}
+           deprecated-icon/elipse]]
          [:li
-          [:> icon-button* {:variant "ghost"
-                            :class (stl/css :main-toolbar-options-button)
-                            :icon i/text
-                            :aria-pressed (= drawtool :text)
-                            :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
-                            :tooltip-placement "bottom"
-                            :on-click select-drawtool
-                            :data-tool "text"
-                            :data-testid "text-btn"}]]
+          [:button
+           {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :text))
+            :on-click select-drawtool
+            :data-tool "text"}
+           deprecated-icon/text]]
 
-         [:> image-upload*]
+         [:& image-upload]
 
          [:li
-          [:> icon-button* {:variant "ghost"
-                            :class (stl/css :main-toolbar-options-button)
-                            :icon i/curve
-                            :aria-pressed (= drawtool :curve)
-                            :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
-                            :tooltip-placement "bottom"
-                            :on-click select-drawtool
-                            :data-tool "curve"
-                            :data-testid "curve-btn"}]]
+          [:button
+           {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :curve))
+            :on-click select-drawtool
+            :data-tool "curve"
+            :data-testid "curve-btn"}
+           deprecated-icon/curve]]
          [:li
-          [:> icon-button* {:variant "ghost"
-                            :class (stl/css :main-toolbar-options-button)
-                            :icon i/path
-                            :aria-pressed (= drawtool :path)
-                            :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
-                            :tooltip-placement "bottom"
-                            :on-click select-drawtool
-                            :data-tool "path"
-                            :data-testid "path-btn"}]]
+          [:button
+           {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :path))
+            :on-click select-drawtool
+            :data-tool "path"
+            :data-testid "path-btn"}
+           deprecated-icon/path]]
 
          (when (features/active-feature? @st/state "plugins/runtime")
            [:li
-            [:> icon-button* {:variant "ghost"
-                              :class (stl/css :main-toolbar-options-button)
-                              :icon i/puzzle
-                              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
-                              :tooltip-placement "bottom"
-                              :on-click #(st/emit!
-                                          (ptk/data-event ::ev/event {::ev/name "open-plugins-manager"
-                                                                      ::ev/origin "workspace:toolbar"})
-                                          (modal/show :plugin-management {}))
-                              :data-tool "plugins"
-                              :data-testid "plugins-btn"}]])
+            [:button
+             {:title (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :class (stl/css :main-toolbar-options-button)
+              :on-click #(st/emit!
+                          (ptk/data-event ::ev/event {::ev/name "open-plugins-manager"
+                                                      ::ev/origin "workspace:toolbar"})
+                          (modal/show :plugin-management {}))
+              :data-tool "plugins"
+              :data-testid "plugins-btn"}
+             deprecated-icon/puzzle]])
 
          (when *assert*
            [:li
-            [:> icon-button* {:variant "ghost"
-                              :class (stl/css :main-toolbar-options-button)
-                              :icon i/bug
-                              :aria-pressed (contains? layout :debug-panel)
-                              :aria-label (tr "workspace.toolbar.debug")
-                              :tooltip-placement "bottom"
-                              :on-click toggle-debug-panel}]])]]
+            [:button
+             {:title "Debugging tool"
+              :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
+              :on-click toggle-debug-panel}
+             deprecated-icon/bug]])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")
                  :class (stl/css :toolbar-handler)
                  :on-click toggle-toolbar}
         [:div {:class (stl/css :toolbar-handler-btn)}]]])))
+
+
