@@ -465,9 +465,17 @@
   (ptk/reify ::bulk-update-tokens
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (dsh/lookup-file-data state)
+      (let [token-set (if set-id
+                        (lookup-token-set state set-id)
+                        (lookup-token-set state))
+            data    (dsh/lookup-file-data state)
             changes (reduce (fn [changes token-id]
-                              (pcb/update-token changes set-id token-id params))
+                              (let [token     (-> (get-tokens-lib state)
+                                                  (ctob/get-token (ctob/get-id token-set) token-id))
+                                    token'    (->> (merge token params)
+                                                   (into {})
+                                                   (ctob/make-token))]
+                                (pcb/set-token changes (ctob/get-id token-set) token-id token')))
                             (-> (pcb/empty-changes it)
                                 (pcb/with-library-data data))
                             token-ids)]

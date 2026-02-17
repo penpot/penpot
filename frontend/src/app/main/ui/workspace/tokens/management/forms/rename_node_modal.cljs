@@ -50,14 +50,7 @@
 
         is-disabled? (or (not (:valid @form))
                          (not (get-in @form [:touched :name]))
-                         (= (get-in @form [:clean-data :name]) (:name node)))
-
-
-        #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
-            (when (and valid
-                       (empty? extra-errors)
-                       (empty? async-errors))
-              (on-submit clean-data)))]
+                         (= (get-in @form [:clean-data :name]) (:name node)))]
 
 
     [:div
@@ -90,9 +83,7 @@
    ::mf/register-as :tokens/rename-node}
   [{:keys [node tokens-in-active-set on-rename]}]
 
-  (let [_ (prn "patata" on-rename) ;;nil
-
-        tokens-tree-in-selected-set
+  (let [tokens-tree-in-selected-set
         (mf/with-memo [tokens-in-active-set node]
           (-> (ctob/tokens-tree tokens-in-active-set)
               (d/dissoc-in (:name node))))
@@ -107,13 +98,7 @@
         (mf/use-fn
          (mf/deps on-rename)
          (fn [new-name]
-           (prn "Emitted remapping confirmation modal")
-           (on-rename {:new-name new-name})
-           ;;  (st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name (:name node)
-           ;;                                                        :new-token-name new-name
-           ;;                                                        :on-remap on-remap
-           ;;                                                        :on-rename on-rename}))
-           ))
+           (on-rename {:new-name new-name})))
 
         on-key-down
         (mf/use-fn
