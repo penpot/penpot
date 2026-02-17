@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.14.0 (Unreleased)
+## 2.15.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
@@ -10,6 +10,15 @@
 
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
+
+### :sparkles: New features & Enhancements
+
+- [Access Tokens] Look & feel refinement [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
+
+### :bug: Bugs fixed
+
+
+## 2.14.0 (Unreleased)
 
 ### :sparkles: New features & Enhancements
 
