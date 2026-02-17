@@ -25,7 +25,7 @@ export function CanvasWrapper({
     console.log('[MOVE_DEBUG] CanvasWrapper mounted - skia-rs-wasm move handler is active')
     return () => console.log('[MOVE_DEBUG] CanvasWrapper unmounted')
   }, [])
-  const { workerClient, wasmModule } = useWorkspaceStore()
+  const { workerClient, wasmModule, renderer } = useWorkspaceStore()
 
   useEffect(() => {
     initWasmModule('/wasm/render-wasm.js').catch((error) => {
@@ -59,11 +59,39 @@ export function CanvasWrapper({
     }
   }, [workerClient, wasmModule, rendererOptions])
 
+  // Keep WASM viewbox in sync with canvas display size so pan/zoom scale matches cursor
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !renderer) return
+
+    const syncSize = () => {
+      const w = Math.round(canvas.clientWidth || canvas.width)
+      const h = Math.round(canvas.clientHeight || canvas.height)
+      if (w > 0 && h > 0) {
+        try {
+          renderer.resize(w, h)
+        } catch {
+          // Context not ready yet (e.g. before initPage)
+        }
+      }
+    }
+
+    syncSize()
+    const ro = new ResizeObserver(syncSize)
+    ro.observe(canvas)
+    return () => ro.disconnect()
+  }, [renderer])
+
   useStreams(canvasRef.current)
   useSelection()
   useMove()
   useViewportInteractions({
     canvasElement: canvasRef.current,
+    onViewportUpdate: () => {
+      const { viewport: vp, setViewport, bumpViewportVersion } = useWorkspaceStore.getState()
+      if (vp) setViewport(vp)
+      bumpViewportVersion()
+    },
   })
 
   return (

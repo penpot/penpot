@@ -143,10 +143,8 @@ export class Renderer {
   }
 
   /**
-   * Sets the viewport using a Viewport instance
-   * Rust render: scale(zoom) then translate(-area.left); area.left = -pan_x.
-   * Transform: screen = zoom * world + pan_x, so pan must be in screen space.
-   * API expects -panX (our screen-space pan), not -vbox.x (world-space).
+   * Sets the viewport using a Viewport instance.
+   * Matches frontend: vbox is world-space visible top-left; frontend calls _set_view(zoom, -vbox.x, -vbox.y).
    */
   applyViewport(viewport: Viewport): void {
     if (!getContextInitialized() || !this.module) {

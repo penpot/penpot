@@ -35,13 +35,16 @@ export function useViewportInteractions({
     e.preventDefault()
     e.stopPropagation()
 
-    // Get mouse position relative to canvas
+    // Get mouse position relative to canvas (use same coordinate space as viewport)
     const rect = canvasElement.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    // Calculate zoom factor (negative deltaY = zoom in)
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9
+    // Delta-based zoom: negative deltaY = zoom in, scale factor from wheel delta
+    const scalePerPixel = 0.002
+    const absDelta = Math.abs(e.deltaY) + Math.abs(e.deltaX)
+    const scale = 1 + scalePerPixel * absDelta
+    const zoomFactor = e.deltaY < 0 ? scale : 1 / scale
     viewport.zoomAt({ x, y }, zoomFactor)
     renderer.applyViewport(viewport)
     onViewportUpdate?.()
@@ -88,7 +91,7 @@ export function useViewportInteractions({
       // Update last position immediately
       lastPanPosRef.current = { x: e.clientX, y: e.clientY }
 
-      // Accumulate delta
+      // Accumulate delta (clientX/clientY are in CSS pixels per DOM spec)
       pendingPanDeltaRef.current.dx += dx
       pendingPanDeltaRef.current.dy += dy
 
@@ -104,7 +107,6 @@ export function useViewportInteractions({
               vp.pan(dx, dy)
               rdr.applyViewport(vp)
               onViewportUpdate?.()
-              // Reset accumulated delta
               pendingPanDeltaRef.current = { dx: 0, dy: 0 }
             }
           }
@@ -120,7 +122,6 @@ export function useViewportInteractions({
     if (isPanningRef.current) {
       isPanningRef.current = false
       lastPanPosRef.current = null
-      // Apply any pending pan delta before finishing
       if (pendingPanDeltaRef.current.dx !== 0 || pendingPanDeltaRef.current.dy !== 0) {
         if (viewport && renderer) {
           const { dx, dy } = pendingPanDeltaRef.current

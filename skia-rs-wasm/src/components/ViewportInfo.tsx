@@ -2,6 +2,7 @@ import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 
 export function ViewportInfo() {
   const viewport = useWorkspaceStore((state) => state.viewport)
+  useWorkspaceStore((state) => state.viewportVersion)
   const viewportInfo = viewport
     ? { zoom: viewport.zoom, panX: viewport.panX, panY: viewport.panY }
     : { zoom: 1, panX: 0, panY: 0 }
