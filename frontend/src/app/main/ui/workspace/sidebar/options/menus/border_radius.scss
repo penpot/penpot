@@ -36,6 +36,12 @@
   color: var(--color-accent-primary);
 }
 
+.selected {
+  border-color: var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--button-icon-foreground-color-selected);
+}
+
 .icon {
   margin-inline: var(--sp-xs);
 }

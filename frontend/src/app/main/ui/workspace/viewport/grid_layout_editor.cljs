@@ -28,7 +28,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
-   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
@@ -60,13 +59,11 @@
    [:div {:class (stl/css :grid-actions-container)}
     [:div {:class (stl/css :grid-actions-title)}
      (tr "workspace.layout-grid.editor.title")  " " [:span {:stl/css :board-name} (:name shape)]]
-    [:> button* {:variant "secondary"
-                 :class (stl/css :action-btn)
-                 :on-click #(st/emit! (dwge/locate-board (:id shape)))}
+    [:button {:class (stl/css :locate-btn)
+              :on-click #(st/emit! (dwge/locate-board (:id shape)))}
      (tr "workspace.layout-grid.editor.top-bar.locate")]
-    [:> button* {:variant "primary"
-                 :class (stl/css :action-btn)
-                 :on-click #(st/emit! (dw/clear-edition-mode))}
+    [:button {:class (stl/css :done-btn)
+              :on-click #(st/emit! (dw/clear-edition-mode))}
      (tr "workspace.layout-grid.editor.top-bar.done")]]])
 
 (mf/defc grid-editor-frame
