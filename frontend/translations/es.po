@@ -2179,7 +2179,7 @@ msgstr "Regenerar clave MCP"
 
 #: src/app/main/ui/settings/integrations.cljs:381
 msgid "integrations.mcp-server.mcp-keys.title"
-msgstr "Claves MCP"
+msgstr "Clave MCP"
 
 #: src/app/main/ui/settings/integrations.cljs:388
 msgid "integrations.mcp-server.mcp-keys.tootip"
