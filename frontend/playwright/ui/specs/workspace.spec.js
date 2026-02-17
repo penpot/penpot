@@ -492,3 +492,25 @@ test("Bug 8371 - Flatten option is not visible in context menu", async ({
       .filter({ visible: true }),
   ).toBeVisible();
 });
+
+test("BUG 13415 - Grid layout overlay is not removed when deleting a board", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockGetFile("workspace/get-file-13415.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-13415.json",
+  );
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.clickLeafLayer("Board");
+
+  const currentRenderCount = await workspacePage.getRenderCount();
+  await workspacePage.page.keyboard.press("Delete");
+
+  await workspacePage.waitForNextRender(currentRenderCount);
+  await workspacePage.hideUI();
+  await expect(workspacePage.canvas).toHaveScreenshot();
+});
