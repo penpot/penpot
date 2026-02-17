@@ -1896,10 +1896,12 @@ impl RenderState {
                 }
             }
 
+            let can_flatten = element.can_flatten() && !self.focus_mode.should_focus(&element.id);
+
             // Skip render_shape_enter/exit for flattened containers
             // If a container was flattened, it doesn't affect children visually, so we skip
             // the expensive enter/exit operations and process children directly
-            if !element.can_flatten() {
+            if !can_flatten {
                 // Enter focus early so shadow_before_layer can run (it needs focus_mode.is_active())
                 self.focus_mode.enter(&element.id);
 
@@ -1978,7 +1980,7 @@ impl RenderState {
 
             // Skip nested state updates for flattened containers
             // Flattened containers don't affect children, so we don't need to track their state
-            if !element.can_flatten() {
+            if !can_flatten {
                 match element.shape_type {
                     Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
                         self.nested_blurs.push(None);
@@ -2003,7 +2005,7 @@ impl RenderState {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, None);
 
-                let children_ids: Vec<_> = if element.can_flatten() {
+                let children_ids: Vec<_> = if can_flatten {
                     // Container was flattened: get simplified children (which skip this level)
                     get_simplified_children(tree, element)
                 } else {

@@ -54,6 +54,19 @@ export class WasmWorkspacePage extends WorkspacePage {
     await this.hideUI();
   }
 
+  async getRenderCount() {
+    return this.page.evaluate(() => window.wasmRenderCount || 0);
+  }
+
+  async waitForNextRender(previousCount = null) {
+    const baseCount =
+      previousCount === null ? await this.getRenderCount() : previousCount;
+    await this.page.waitForFunction(
+      (count) => (window.wasmRenderCount || 0) > count,
+      baseCount,
+    );
+  }
+
   async hideUI() {
     await this.page.keyboard.press("\\");
     await expect(this.pageName).not.toBeVisible();
