@@ -10,9 +10,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.variant :as cfv]
+   [app.common.json :as json]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
@@ -36,6 +38,7 @@
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.tokens.import-from-library]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [c tr]]
@@ -180,6 +183,13 @@
   [summary]
   (boolean (:is-empty summary)))
 
+(defn- has-tokens?
+  "Check if library has tokens to be imported"
+  [library]
+  (let [library-data (:data library)
+        tokens-data (get library-data :tokens-lib)]
+    (empty? tokens-data)))
+
 (mf/defc libraries-tab*
   {::mf/props :obj
    ::mf/private true}
@@ -267,6 +277,17 @@
              (st/emit! (dwl/unlink-file-from-library file-id library-id)
                        (dwl/sync-file file-id library-id)))))
 
+        import-tokens
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [event]
+           (let [library-id (some-> (dom/get-current-target event)
+                                    (dom/get-data "library-id")
+                                    (uuid/parse))]
+             (st/emit! (modal/show
+                        :tokens/import-from-library {:file-id file-id
+                                                     :library-id library-id})))))
+
         on-delete-accept
         (mf/use-fn
          (mf/deps file-id)
@@ -332,8 +353,10 @@
                    :on-click publish}])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
-         (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)]
-           [:div {:class (stl/css :section-list-item)
+         (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)
+               has-tokens (has-tokens? library)
+               import-token-display {:display "none"}]
+           [:div {:class (if has-tokens (stl/css :section-list-item-double-icon) (stl/css :section-list-item))
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
@@ -347,6 +370,15 @@
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
                     [:span ")"]])])]]
+
+            (when has-tokens
+              [:> icon-button*
+               {:type "button"
+                :aria-label (tr "workspace.libraries.import-tokens-btn")
+                :icon i/import-export
+                :data-library-id (dm/str id)
+                :variant "secondary"
+                :on-click import-tokens}])
 
             [:> icon-button* {:type "button"
                               :aria-label (tr "workspace.libraries.unlink-library-btn")
