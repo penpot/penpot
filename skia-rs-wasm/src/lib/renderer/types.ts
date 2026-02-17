@@ -4,6 +4,7 @@
  */
 
 import type { Matrix, PenpotPage } from '@penpot-exporter/types'
+import type { QueryParams, WorkerMessage } from '../worker/types'
 
 /** Shape type values supported by the WASM renderer */
 export type ShapeType =
@@ -31,7 +32,7 @@ export interface SelectionRectResult {
 }
 
 export interface PathContent {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**
@@ -40,14 +41,14 @@ export interface PathContent {
 export type SvgContent =
   | {
       tag: string
-      attrs?: Record<string, any>
+      attrs?: Record<string, unknown>
       content?: SvgContent[]
     }
   | string
 
 export function isSvgContentTree(
   content: SvgContent
-): content is { tag: string; attrs?: Record<string, any>; content?: SvgContent[] } {
+): content is { tag: string; attrs?: Record<string, unknown>; content?: SvgContent[] } {
   return typeof content === 'object' && content !== null && 'tag' in content
 }
 
@@ -56,7 +57,7 @@ export function isSvgContentString(content: SvgContent): content is string {
 }
 
 export function isSvgContent(
-  content: Record<string, any> | SvgContent | undefined
+  content: Record<string, unknown> | SvgContent | undefined
 ): content is SvgContent {
   if (content === undefined) {
     return false
@@ -118,21 +119,94 @@ export interface FontData {
   weight: number
 }
 
+/**
+ * Modifier key for triggering pan with left mouse button.
+ * Use null to disable modifier-triggered pan.
+ */
+export type ViewportPanModifier = 'shift' | 'alt' | 'ctrl' | 'meta' | null
+
+/**
+ * Full viewport shortcuts config (KeyboardEvent.code strings and mouse options).
+ * All fields are required in the resolved config; use Partial for overrides.
+ */
+export interface ViewportShortcutsConfig {
+  panLeft: string
+  panRight: string
+  panUp: string
+  panDown: string
+  panStep: number
+  zoomInKeys: string[]
+  zoomOutKeys: string[]
+  zoomInFactor: number
+  zoomOutFactor: number
+  resetKeys: string[]
+  panMouseButton: number
+  panWithModifier: ViewportPanModifier
+  wheelZoomEnabled: boolean
+  wheelScalePerPixel: number
+}
+
 export interface CanvasWrapperProps {
-  width?: number
-  height?: number
   className?: string
   style?: React.CSSProperties
   rendererOptions?: RendererOptions
   onError?: (error: Error) => void
+  /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */
+  viewportShortcuts?: Partial<ViewportShortcutsConfig>
 }
 
+/** Worker configuration (keys logged only; shape extensible). */
+export type WorkerConfig = Record<string, unknown>
+
+/** Dimensions for index/update-text-rect. */
+export interface WorkerTextRectDimensions {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+}
+
+/** Payload for configure command. */
+export interface WorkerConfigurePayload {
+  config: WorkerConfig
+}
+
+/** Payload for index/initialize command. */
+export interface WorkerIndexInitializePayload {
+  page: PenpotPage
+}
+
+/** Payload for index/update command. */
+export interface WorkerIndexUpdatePayload {
+  pageId: string
+  page: PenpotPage
+}
+
+/** Payload for index/update-text-rect command. */
+export interface WorkerUpdateTextRectPayload {
+  pageId: string
+  shapeId: string
+  dimensions: WorkerTextRectDimensions
+}
+
+/** Payload shapes for WorkerClient.sendMessage by command. */
+export type WorkerSendPayload =
+  | WorkerConfigurePayload
+  | WorkerIndexInitializePayload
+  | WorkerIndexUpdatePayload
+  | QueryParams
+  | WorkerUpdateTextRectPayload
+  | undefined
+
+/** Response from worker handlers (null or array of node ids for query-selection). */
+export type WorkerResponse = null | string[]
+
 export interface WorkerClient {
-  sendMessage(cmd: string, payload?: any): Promise<any>
-  configure(config: any): Promise<void>
+  sendMessage(cmd: string, payload?: WorkerSendPayload): Promise<WorkerResponse>
+  configure(config: WorkerConfig): Promise<void>
   addPage(page: PenpotPage): Promise<void>
   updatePage(pageId: string, page: PenpotPage): Promise<void>
-  onMessage(callback: (message: any) => void): () => void
+  onMessage(callback: (message: WorkerMessage) => void): () => void
   destroy(): void
 }
 

@@ -2,9 +2,10 @@
  * React component wrapper that initializes both worker and canvas renderer
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
+import { useViewportShortcutsStore } from './store/viewport-shortcuts-store'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
 import { useMove } from './hooks/use-move'
@@ -13,14 +14,27 @@ import { useSelection } from './hooks/use-selection'
 import { cleanupWorker, initWorker } from '../worker-init'
 import { initWasmModule } from '../wasm-init'
 
+const DEFAULT_WIDTH = 800
+const DEFAULT_HEIGHT = 600
+
 export function CanvasWrapper({
-  width = 800,
-  height = 600,
   className,
   style,
   rendererOptions,
+  viewportShortcuts: initialViewportShortcuts,
 }: CanvasWrapperProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [canvasSize, setCanvasSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT })
+  const setViewportShortcuts = useViewportShortcutsStore((state) => state.setViewportShortcuts)
+
+  // Apply initial shortcuts when provided (e.g. on mount or when prop changes)
+  useEffect(() => {
+    if (initialViewportShortcuts) {
+      setViewportShortcuts(initialViewportShortcuts)
+    }
+  }, [initialViewportShortcuts, setViewportShortcuts])
+
   useEffect(() => {
     console.log('[MOVE_DEBUG] CanvasWrapper mounted - skia-rs-wasm move handler is active')
     return () => console.log('[MOVE_DEBUG] CanvasWrapper unmounted')
@@ -59,17 +73,21 @@ export function CanvasWrapper({
     }
   }, [workerClient, wasmModule, rendererOptions])
 
-  // Keep WASM viewbox in sync with canvas display size so pan/zoom scale matches cursor
+  // Derive canvas size from container and keep WASM viewbox in sync
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !renderer) return
+    const container = containerRef.current
+    if (!container) return
 
     const syncSize = () => {
-      const w = Math.round(canvas.clientWidth || canvas.width)
-      const h = Math.round(canvas.clientHeight || canvas.height)
-      if (w > 0 && h > 0) {
+      const w = Math.round(container.clientWidth)
+      const h = Math.round(container.clientHeight)
+      const width = w > 0 ? w : DEFAULT_WIDTH
+      const height = h > 0 ? h : DEFAULT_HEIGHT
+      setCanvasSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }))
+      const { renderer: r } = useWorkspaceStore.getState()
+      if (r) {
         try {
-          renderer.resize(w, h)
+          r.resize(width, height)
         } catch {
           // Context not ready yet (e.g. before initPage)
         }
@@ -78,15 +96,26 @@ export function CanvasWrapper({
 
     syncSize()
     const ro = new ResizeObserver(syncSize)
-    ro.observe(canvas)
+    ro.observe(container)
     return () => ro.disconnect()
-  }, [renderer])
+  }, [])
 
-  useStreams(canvasRef.current)
+  // When renderer becomes available, resize to current canvas size
+  useEffect(() => {
+    if (!renderer) return
+    const { width, height } = canvasSize
+    try {
+      renderer.resize(width, height)
+    } catch {
+      // Context not ready yet
+    }
+  }, [renderer, canvasSize])
+
+  useStreams(canvasRef)
   useSelection()
   useMove()
   useViewportInteractions({
-    canvasElement: canvasRef.current,
+    canvasRef,
     onViewportUpdate: () => {
       const { viewport: vp, setViewport, bumpViewportVersion } = useWorkspaceStore.getState()
       if (vp) setViewport(vp)
@@ -95,13 +124,17 @@ export function CanvasWrapper({
   })
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      className={className}
-      style={{ ...style, display: 'block' }}
-    />
+    <div
+      ref={containerRef}
+      style={{ width: '100%', height: '100%', minWidth: 1, minHeight: 1 }}
+    >
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className={className}
+        style={{ ...style, display: 'block', width: '100%', height: '100%' }}
+      />
+    </div>
   )
 }
-

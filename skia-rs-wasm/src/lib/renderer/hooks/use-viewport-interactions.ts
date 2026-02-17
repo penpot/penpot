@@ -3,17 +3,31 @@
  * Manages event listeners for canvas and window interactions (wheel, mouse, keyboard)
  */
 
+import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
 import { useWorkspaceStore } from '../store/workspace-store'
+import { useViewportShortcutsStore } from '../store/viewport-shortcuts-store'
+import type { ViewportPanModifier } from '../types'
 import { mousePosition$ } from '../streams'
 
+function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
+  if (mod === null) return false
+  switch (mod) {
+    case 'shift': return e.shiftKey
+    case 'alt': return e.altKey
+    case 'ctrl': return e.ctrlKey
+    case 'meta': return e.metaKey
+    default: return false
+  }
+}
+
 interface UseViewportInteractionsParams {
-  canvasElement: HTMLCanvasElement | null
+  canvasRef: RefObject<HTMLCanvasElement | null>
   onViewportUpdate?: () => void
 }
 
 export function useViewportInteractions({
-  canvasElement,
+  canvasRef,
   onViewportUpdate,
 }: UseViewportInteractionsParams) {
   // Single state selectors (for useCallback deps)
@@ -22,6 +36,7 @@ export function useViewportInteractions({
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
+  const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
   const isPanningRef = useRef<boolean>(false)
   const lastPanPosRef = useRef<{ x: number; y: number } | null>(null)
@@ -30,7 +45,9 @@ export function useViewportInteractions({
 
   // Handle mouse wheel for zooming
   const handleWheel = useCallback((e: WheelEvent) => {
+    const canvasElement = canvasRef.current
     if (!viewport || !renderer || !canvasElement) return
+    if (!shortcuts.wheelZoomEnabled) return
 
     e.preventDefault()
     e.stopPropagation()
@@ -40,22 +57,23 @@ export function useViewportInteractions({
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    // Delta-based zoom: negative deltaY = zoom in, scale factor from wheel delta
-    const scalePerPixel = 0.002
+    const scalePerPixel = shortcuts.wheelScalePerPixel
     const absDelta = Math.abs(e.deltaY) + Math.abs(e.deltaX)
     const scale = 1 + scalePerPixel * absDelta
     const zoomFactor = e.deltaY < 0 ? scale : 1 / scale
     viewport.zoomAt({ x, y }, zoomFactor)
     renderer.applyViewport(viewport)
     onViewportUpdate?.()
-  }, [canvasElement, viewport, renderer, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts.wheelZoomEnabled, shortcuts.wheelScalePerPixel])
 
   // Handle mouse down
   const handleMouseDown = useCallback((e: MouseEvent) => {
+    const canvasElement = canvasRef.current
     if (!canvasElement) return
 
-    // Middle mouse button or shift+left click for panning
-    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+    const panWithButton = e.button === shortcuts.panMouseButton
+    const panWithMod = e.button === 0 && hasPanModifier(e, shortcuts.panWithModifier)
+    if (panWithButton || panWithMod) {
       e.preventDefault()
       isPanningRef.current = true
       lastPanPosRef.current = { x: e.clientX, y: e.clientY }
@@ -77,10 +95,11 @@ export function useViewportInteractions({
         setIsSelecting(true)
       }
     }
-  }, [canvasElement, selectedIds, setIsSelecting, setIsMoving])
+  }, [canvasRef, selectedIds, setIsSelecting, setIsMoving, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
   // Handle mouse move for panning
   const handleMouseMove = useCallback((e: MouseEvent) => {
+    const canvasElement = canvasRef.current
     if (!canvasElement) return
 
     if (isPanningRef.current && lastPanPosRef.current) {
@@ -114,11 +133,11 @@ export function useViewportInteractions({
         })
       }
     }
-  }, [canvasElement, viewport, renderer, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, onViewportUpdate])
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
-    const canvas = canvasElement
+    const canvas = canvasRef.current
     if (isPanningRef.current) {
       isPanningRef.current = false
       lastPanPosRef.current = null
@@ -139,72 +158,91 @@ export function useViewportInteractions({
     // End selection and moving
     setIsSelecting(false)
     setIsMoving(false)
-  }, [canvasElement, viewport, renderer, setIsSelecting, setIsMoving, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, setIsSelecting, setIsMoving, onViewportUpdate])
 
   // Handle mouse enter to show grab cursor
   const handleMouseEnter = useCallback(() => {
-    const canvas = canvasElement
+    const canvas = canvasRef.current
     if (canvas && !isPanningRef.current) {
       canvas.style.cursor = 'grab'
     }
-  }, [canvasElement])
+  }, [canvasRef])
 
   // Handle mouse leave to reset cursor
   const handleMouseLeave = useCallback(() => {
-    const canvas = canvasElement
+    const canvas = canvasRef.current
     if (canvas && !isPanningRef.current) {
       canvas.style.cursor = 'default'
     }
-  }, [canvasElement])
+  }, [canvasRef])
 
   // Handle keyboard for panning and zooming
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!viewport || !renderer) return
 
-    // Arrow keys for panning (step in screen pixels)
-    if (e.code.startsWith('Arrow')) {
+    const canvasElement = canvasRef.current
+    const step = shortcuts.panStep
+    if (e.code === shortcuts.panLeft) {
       e.preventDefault()
-      const step = 20
-      if (e.code === 'ArrowLeft') viewport.pan(step, 0)
-      if (e.code === 'ArrowRight') viewport.pan(-step, 0)
-      if (e.code === 'ArrowUp') viewport.pan(0, step)
-      if (e.code === 'ArrowDown') viewport.pan(0, -step)
+      viewport.pan(step, 0)
       renderer.applyViewport(viewport)
       onViewportUpdate?.()
+      return
+    }
+    if (e.code === shortcuts.panRight) {
+      e.preventDefault()
+      viewport.pan(-step, 0)
+      renderer.applyViewport(viewport)
+      onViewportUpdate?.()
+      return
+    }
+    if (e.code === shortcuts.panUp) {
+      e.preventDefault()
+      viewport.pan(0, step)
+      renderer.applyViewport(viewport)
+      onViewportUpdate?.()
+      return
+    }
+    if (e.code === shortcuts.panDown) {
+      e.preventDefault()
+      viewport.pan(0, -step)
+      renderer.applyViewport(viewport)
+      onViewportUpdate?.()
+      return
     }
 
-    // +/- keys for zooming
-    if (e.code === 'Equal' || e.code === 'NumpadAdd') {
+    if (shortcuts.zoomInKeys.includes(e.code)) {
       e.preventDefault()
       if (canvasElement) {
         const rect = canvasElement.getBoundingClientRect()
-        viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, 1.1)
+        viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, shortcuts.zoomInFactor)
         renderer.applyViewport(viewport)
         onViewportUpdate?.()
       }
+      return
     }
-    if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
+    if (shortcuts.zoomOutKeys.includes(e.code)) {
       e.preventDefault()
       if (canvasElement) {
         const rect = canvasElement.getBoundingClientRect()
-        viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, 0.9)
+        viewport.zoomAt({ x: rect.width / 2, y: rect.height / 2 }, shortcuts.zoomOutFactor)
         renderer.applyViewport(viewport)
         onViewportUpdate?.()
       }
+      return
     }
 
-    // Reset viewport with '0' key
-    if (e.code === 'Digit0' || e.code === 'Numpad0') {
+    if (shortcuts.resetKeys.includes(e.code)) {
       e.preventDefault()
       viewport.reset()
       renderer.applyViewport(viewport)
       onViewportUpdate?.()
     }
-  }, [canvasElement, viewport, renderer, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts])
 
-  // Set up event listeners
+  // Set up event listeners (read ref inside effect, not during render)
   useEffect(() => {
-    const canvas = canvasElement
+    const canvas = canvasRef.current
     if (!canvas) return
 
     canvas.addEventListener('wheel', handleWheel, { passive: false })
@@ -224,6 +262,6 @@ export function useViewportInteractions({
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [canvasElement, handleWheel, handleMouseDown, handleMouseEnter, handleMouseLeave, handleMouseMove, handleMouseUp, handleKeyDown])
+  }, [canvasRef, handleWheel, handleMouseDown, handleMouseEnter, handleMouseLeave, handleMouseMove, handleMouseUp, handleKeyDown])
 }
 

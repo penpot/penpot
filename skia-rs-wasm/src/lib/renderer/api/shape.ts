@@ -4,14 +4,8 @@
 
 import type { WasmModule } from '../wasm-types'
 import type {
-  ShapeType,
-  BlendMode,
-  ConstraintH,
-  ConstraintV,
   BoolType,
-  Blur,
-  Transform,
-  Selrect,
+  ShapeType,
 } from '../types'
 import {
   uuidToU32Tuple,
@@ -33,11 +27,12 @@ import {
 } from './serializers'
 import { checkContext } from './context'
 import { UUID_U8_SIZE } from './constants'
+import type { BlendMode, Blur, ConstraintH, ConstraintV, Matrix, Selrect } from '@penpot-exporter/types'
 
 /**
  * Set active shape
  */
-export function useShape(module: WasmModule, id: string): void {
+export function moduleUseShape(module: WasmModule, id: string): void {
   checkContext(module)
   const [a, b, c, d] = uuidToU32Tuple(id)
   module._use_shape(a, b, c, d)
@@ -88,7 +83,7 @@ export function setShapeSelrect(module: WasmModule, selrect: Selrect): void {
 /**
  * Set shape transform matrix
  */
-export function setShapeTransform(module: WasmModule, transform: Transform | undefined): void {
+export function setShapeTransform(module: WasmModule, transform: Matrix | undefined): void {
   checkContext(module)
   if (transform) {
     module._set_shape_transform(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f)

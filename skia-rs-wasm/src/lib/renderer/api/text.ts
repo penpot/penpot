@@ -30,7 +30,7 @@ import {
   ZERO_UUID,
 } from './constants'
 import { isImageFill, isColorFill, isLinearGradient, isRadialGradient } from './constants'
-import { useShape } from './shape'
+import { moduleUseShape } from './shape'
 import { setShapeVerticalAlign } from './shape'
 import { fetchImage } from './fills'
 import {
@@ -584,7 +584,7 @@ export function getTextDimensions(module: WasmModule, id?: string): {
 } {
   checkContext(module)
   if (id) {
-    useShape(module, id)
+    moduleUseShape(module, id)
   }
 
   const offset = offset8To32(module._get_text_dimensions())
@@ -812,7 +812,7 @@ export function updateTextLayouts(module: WasmModule, shapes: PenpotNode[]): voi
   
   for (const shape of shapes) {
     if (shape.type === 'text' && shape.id) {
-      useShape(module, shape.id)
+      moduleUseShape(module, shape.id)
       module._update_shape_text_layout()
     }
   }
@@ -861,7 +861,7 @@ export function calculatePositionData(module: WasmModule, shape: PenpotNode): Po
     return []
   }
 
-  useShape(module, shape.id)
+  moduleUseShape(module, shape.id)
   
   const offset = offset8To32(module._calculate_position_data())
   const heapU32 = module.HEAPU32

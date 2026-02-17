@@ -9,7 +9,7 @@ import { checkContext } from './context'
 import { requestRender } from './rendering'
 import { renderFinish } from './viewport'
 import {
-  useShape,
+  moduleUseShape,
   setParentId,
   setShapeType,
   setShapeClipContent,
@@ -97,7 +97,7 @@ export function setObject(
   ]
 
   // Set basic shape properties
-  useShape(module, id)
+  moduleUseShape(module, id)
   setParentId(module, parentId)
   setShapeType(module, type)
   setShapeClipContent(module, clipContent)
