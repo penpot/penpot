@@ -317,7 +317,6 @@ export class WorkspacePage extends BaseWebSocketPage {
         body,
       }),
     );
-    // await this.mockRPC(/get\-file\?/, jsonFile);
   }
 
   async mockGetAsset(regex, asset) {
