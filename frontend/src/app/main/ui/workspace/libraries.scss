@@ -116,6 +116,11 @@
   border-radius: $br-8;
 }
 
+.section-list-item-double-icon {
+  @extend .section-list-item;
+  grid-template-columns: 1fr auto auto;
+}
+
 .item-content {
   height: fit-content;
 }
