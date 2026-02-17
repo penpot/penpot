@@ -1493,10 +1493,8 @@ test.describe("Tokens - creation", () => {
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill(newTokenTitle);
 
-    const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
-      name: "Use a reference",
-    });
-    referenceTabButton.click();
+    const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
+    await referenceTabButton.click();
 
     const referenceField = tokensUpdateCreateModal.getByRole("textbox", {
       name: "Reference",
