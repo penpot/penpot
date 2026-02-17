@@ -831,6 +831,8 @@ impl RenderState {
 
                 let text_content = text_content.new_bounds(shape.selrect());
                 let count_inner_strokes = shape.count_visible_inner_strokes();
+                let text_stroke_blur_outset =
+                    Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
                 let mut stroke_paragraphs_list = shape
                     .visible_strokes()
@@ -858,7 +860,7 @@ impl RenderState {
                     );
 
                     for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
-                        text::render(
+                        text::render_with_bounds_outset(
                             Some(self),
                             None,
                             &shape,
@@ -866,6 +868,7 @@ impl RenderState {
                             Some(strokes_surface_id),
                             None,
                             None,
+                            text_stroke_blur_outset,
                         );
                     }
                 } else {
@@ -957,7 +960,7 @@ impl RenderState {
 
                         // 4. Stroke fills
                         for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
-                            text::render(
+                            text::render_with_bounds_outset(
                                 Some(self),
                                 None,
                                 &shape,
@@ -965,6 +968,7 @@ impl RenderState {
                                 Some(strokes_surface_id),
                                 None,
                                 blur_filter.as_ref(),
+                                text_stroke_blur_outset,
                             );
                         }
 
