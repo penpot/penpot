@@ -3723,7 +3723,7 @@ export interface ShapeBase extends PluginData {
   /**
    * Layout properties for cells in a grid layout.
    */
-  readonly layoutCell?: LayoutChildProperties;
+  readonly layoutCell?: LayoutCellProperties;
 
   /**
    * Changes the index inside the parent of the current shape.
