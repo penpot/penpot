@@ -8521,7 +8521,7 @@ msgstr "Rename Tokens Group"
 
 #: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs
 msgid "workspace.tokens.rename-group-name-hint"
-msgstr "Your tokens will automatically be renamed to (prefix).%s.(suffix).(tokenName)"
+msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"

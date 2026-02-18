@@ -456,8 +456,6 @@
          (rx/of (dch/commit-changes changes)
                 (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type})))))))
 
-#_{:clj-kondo/ignore [:potok/reify-type]}
-#_{:clojure-lsp/ignore [:clojure-lsp/unused-public-var]}
 (defn bulk-update-tokens
   [set-id token-ids type old-path new-path]
   (dm/assert! (uuid? set-id))
@@ -475,8 +473,7 @@
                                     new-name (str/replace (:name token) old-path new-path)
                                     token'    (->> (merge token {:name new-name})
                                                    (into {})
-                                                   (ctob/make-token))
-                                    _ (prn token')]
+                                                   (ctob/make-token))]
                                 (pcb/set-token changes (ctob/get-id token-set) token-id token')))
                             (-> (pcb/empty-changes it)
                                 (pcb/with-library-data data))
@@ -485,7 +482,7 @@
         (toggle-token-path (str (name type) "." old-path))
         (toggle-token-path (str (name type) "." new-path))
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens"}))))))
+               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type token-type}))))))
 
 (defn delete-token
   [set-id token-id]

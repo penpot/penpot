@@ -199,18 +199,11 @@
                   tokens-filtered-by-type (get tokens-by-type type)
                   tokens-in-path (filter-tokens-by-path tokens-filtered-by-type old-path type)
                   tokens-in-path-ids (mapv (fn [token] (:id token)) tokens-in-path)]
-              (prn {:path old-path
-                    :new-path new-path
-                    :type type})
-              ;; Rename tokens in path
-              (st/emit! (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path))
-              ;; Remove from unfolded tree path
-              #_(st/emit! (dwtl/toggle-token-path (str (name type) "." old-path))))))
+              (st/emit! (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)))))
 
         on-rename-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
           (fn [node type new-node-name]
-            (prn "Renaming node: " node " with type: " type " to new name: " new-node-name)
             (let [path (:path node)
                   state @st/state
                   file-data (dh/lookup-file-data state)
@@ -228,12 +221,7 @@
                                                                       :new-token-name name
                                                                       :references-count references-count
                                                                       :on-remap on-remap
-                                                                      :on-rename on-rename}))
-              ;; Rename tokens in path
-              ;; (st/emit! (dwtl/bulk-rename-tokens selected-token-set-id tokens-in-path-ids new-name))
-              ;; Remove from unfolded tree path
-              ;; (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
-              )))
+                                                                      :on-rename on-rename})))))
 
         open-rename-node-modal
         (mf/use-fn

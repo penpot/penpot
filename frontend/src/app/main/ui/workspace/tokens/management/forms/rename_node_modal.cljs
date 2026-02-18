@@ -116,37 +116,3 @@
                              :tokens-tree tokens-tree-in-selected-set
                              :on-close close-modal
                              :on-submit rename}]]]))
-
-
-;;    (fn []
-;;  ;; Call shared remapping logic
-;;  (let [old-token-name (:old-token-name remap-modal)
-;;        new-token-name (:new-token-name remap-modal)]
-;;    (st/emit! [:tokens/remap-tokens old-token-name new-token-name]))
-;;  (when (fn? on-remap)
-;;    (on-remap))))
-
-
-
-;; remap (mf/use-fn
-;;        (mf/deps form on-submit)
-;;        (fn []
-;;          (let [name (get-in @form [:clean-data :name])
-;;                path (str (d/name type) "." name)]
-;;            (prn "Submitting rename node form with name: " name " and path: " path))
-;;          #_(let [{:keys [clean-data valid extra-errors async-errors]} @form]
-;;              (when (and valid
-;;                         (empty? extra-errors)
-;;                         (empty? async-errors))
-;;                (on-submit clean-data)))))
-
-;; submit (mf/use-fn
-;;         (mf/deps form on-submit)
-;;         (fn [_ event]
-;;           (let [event   (dom/event->native-event event)
-;;                 submitter (dom/get-event-submitter event)
-;;                 handler (.-name submitter)
-;;                 handlerKey (keyword handler)]
-;;             (if (= handlerKey :rename)
-;;               (rename)
-;;               (remap)))))]
