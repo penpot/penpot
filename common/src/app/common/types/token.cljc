@@ -143,6 +143,15 @@
         :gen/gen sg/text}
    token-name-validation-regex])
 
+(def token-ref-validation-regex
+  #"^\{[a-zA-Z0-9_-][a-zA-Z0-9$_-]*(\.[a-zA-Z0-9$_-]+)*\}$")
+
+(def schema:token-ref
+  "A token reference is a token name enclosed in {}."
+  [:re {:title "TokenRef"
+        :gen/gen sg/text}
+   token-ref-validation-regex])
+
 (def schema:token-type
   [::sm/one-of {:decode/json (fn [type]
                                (if (string? type)

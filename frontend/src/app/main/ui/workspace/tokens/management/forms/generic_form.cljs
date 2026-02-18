@@ -36,9 +36,9 @@
    [rumext.v2 :as mf]))
 
 (defn get-value-for-validator
-  [active-tab value value-subfield form-type]
+  [active-tab value value-subfield value-type]
 
-  (case form-type
+  (case value-type
     :indexed
     (if (= active-tab :reference)
       (:reference value)
@@ -62,7 +62,7 @@
            make-schema
            input-component
            initial
-           type
+           value-type
            value-subfield
            input-value-placeholder] :as props}]
 
@@ -178,13 +178,13 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-token token tokens token-type value-subfield type active-tab on-remap-token on-rename-token is-create)
+         (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
          (fn [form _event]
            (let [name (get-in @form [:clean-data :name])
                  path (str (d/name token-type) "." name)
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
-                 value-for-validation (get-value-for-validator active-tab value value-subfield type)]
+                 value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -245,7 +245,7 @@
                            :auto-focus true}]]
 
       [:div {:class (stl/css :input-row)}
-       (case type
+       (case value-type
          :indexed
          [:> input-component
           {:token          token
