@@ -2,9 +2,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -16,22 +15,15 @@
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(defn- make-schema
-  [tokens-tree]
-  (sm/schema
-   [:map
-    [:name
-     [:and
-      [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-      (sm/update-properties cto/node-name-ref assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-      [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-       #(not (cft/token-name-path-exists? % tokens-tree))]]]]))
 
 (mf/defc rename-node-form*
   [{:keys [node tokens-tree on-close on-submit]}]
-  (let [schema
+  (let [make-schema  #(-> (cfo/make-node-token-schema %)
+                          (sm/dissoc-key :id))
+
+        schema
         (mf/with-memo [tokens-tree]
           (make-schema tokens-tree))
 
@@ -46,12 +38,17 @@
                    (fn []
                      (let [name (get-in @form [:clean-data :name])]
                        (when (and (get-in @form [:touched :name]) (not= name (:name node)))
-                         (on-submit {:new-name name})))))
+                         (on-submit name)))))
 
         is-disabled? (or (not (:valid @form))
                          (not (get-in @form [:touched :name]))
-                         (= (get-in @form [:clean-data :name]) (:name node)))]
+                         (= (get-in @form [:clean-data :name]) (:name node)))
 
+        new-path (mf/with-memo [@form node]
+                   (let [new-name (get-in @form [:clean-data :name])
+                         path (str (:path node))
+                         new-path (str/replace path (:name node) new-name)]
+                     new-path))]
 
     [:div
      [:> heading* {:level 2
@@ -68,7 +65,7 @@
                           :max-length 255
                           :variant "comfortable"
                           :hint-type "hint"
-                          :hint-message (tr "workspace.tokens.rename-group-name-hint")
+                          :hint-message (tr "workspace.tokens.rename-group-name-hint" new-path)
                           :auto-focus true}]
       [:div {:class (stl/css :form-actions)}
        [:> button* {:variant "secondary"
@@ -98,7 +95,8 @@
         (mf/use-fn
          (mf/deps on-rename)
          (fn [new-name]
-           (on-rename {:new-name new-name})))
+           (on-rename new-name)
+           (close-modal)))
 
         on-key-down
         (mf/use-fn

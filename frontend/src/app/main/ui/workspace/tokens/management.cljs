@@ -192,25 +192,25 @@
 
         bulk-rename-tokens-in-path
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
-          (fn [node type new-name]
-            (let [path (:path node)
-
+          (fn [node type new-node-name]
+            (let [old-path (:path node)
+                  new-path (str/replace old-path (:name node) new-node-name)
                   tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                   tokens-filtered-by-type (get tokens-by-type type)
-                  tokens-in-path (filter-tokens-by-path tokens-filtered-by-type path type)
+                  tokens-in-path (filter-tokens-by-path tokens-filtered-by-type old-path type)
                   tokens-in-path-ids (mapv (fn [token] (:id token)) tokens-in-path)]
-              (prn {:new-name new-name
-                    :path path
+              (prn {:path old-path
+                    :new-path new-path
                     :type type})
               ;; Rename tokens in path
-              #_(st/emit! (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids {:name new-name}))
+              (st/emit! (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path))
               ;; Remove from unfolded tree path
-              #_(st/emit! (dwtl/toggle-token-path (str (name type) "." path))))))
+              #_(st/emit! (dwtl/toggle-token-path (str (name type) "." old-path))))))
 
         on-rename-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
-          (fn [node type new-name]
-            (prn "Renaming node: " node " with type: " type " to new name: " new-name)
+          (fn [node type new-node-name]
+            (prn "Renaming node: " node " with type: " type " to new name: " new-node-name)
             (let [path (:path node)
                   state @st/state
                   file-data (dh/lookup-file-data state)
@@ -221,10 +221,9 @@
                                                    (+ count (remap/count-token-references file-data (:name token))))
                                                  0
                                                  tokens-in-current-path)]
-              (prn "Total references count=" token-references-count)
               (if (> token-references-count 0)
                 (prn "Remap node modal")
-                (bulk-rename-tokens-in-path node type new-name))
+                (bulk-rename-tokens-in-path node type new-node-name))
               #_(st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name old-name
                                                                       :new-token-name name
                                                                       :references-count references-count
