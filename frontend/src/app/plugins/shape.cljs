@@ -1305,7 +1305,8 @@
                  tokens)))}
 
            :applyToken
-           {:schema [:tuple
+           {:enumerable false
+            :schema [:tuple
                      [:fn token-proxy?]
                      [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
             :fn (fn [token attrs]
