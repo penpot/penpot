@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { CanvasWrapper } from './lib/renderer/canvas-wrapper'
 import { ViewportInfo } from './components/ViewportInfo'
+import { SelectionInfo } from './components/SelectionInfo'
 import { DevToolbar } from './dev/DevToolbar'
 import './App.css'
 
@@ -38,6 +39,7 @@ function App() {
         />
       </div>
       <ViewportInfo />
+      <SelectionInfo />
       <div className="info">
         <p>
           This example demonstrates how to use the WASM renderer with viewport pan and zoom.

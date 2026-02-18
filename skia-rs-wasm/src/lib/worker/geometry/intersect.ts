@@ -295,6 +295,23 @@ function overlapsText(shape: PenpotNode, rect: Selrect): boolean {
   return false
 }
 
+/** Get points from shape for overlap: use shape.points or derive from selrect (x1,y1,x2,y2 or x,y,width,height). */
+function getShapePointsForOverlap(shape: PenpotNode): Point[] {
+  if (shape.points && shape.points.length > 0) {
+    return shape.points
+  }
+  const sr = shape.selrect as (Selrect & { x1?: number; y1?: number; x2?: number; y2?: number }) | null | undefined
+  if (!sr) return []
+  const x = sr.x ?? sr.x1
+  const y = sr.y ?? sr.y1
+  const width = sr.width ?? (typeof sr.x2 === 'number' && typeof sr.x1 === 'number' ? sr.x2 - sr.x1 : 0)
+  const height = sr.height ?? (typeof sr.y2 === 'number' && typeof sr.y1 === 'number' ? sr.y2 - sr.y1 : 0)
+  if (typeof x !== 'number' || typeof y !== 'number' || width <= 0 || height <= 0) return []
+  const rect = makeSelrect(x, y, width, height)
+  const pts = rectToPoints(rect)
+  return pts ?? []
+}
+
 export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean = false): boolean {
   if (!shape) {
     return false
@@ -320,9 +337,7 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     const shapeType = shape.type
 
     if (shapeType === 'rect' || shapeType === 'circle') {
-      // For stroke-only shapes, check outer vs inner bounds
-      // Simplified implementation
-      return overlapsRectPoints(adjustedRect, shape.points || [])
+      return overlapsRectPoints(adjustedRect, getShapePointsForOverlap(shape))
     }
 
     if (shapeType === 'path' || shapeType === 'bool') {
@@ -340,7 +355,7 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
   }
 
   if (isCircleShape(shape)) {
-    const points = shape.points || []
+    const points = getShapePointsForOverlap(shape)
     return overlapsRectPoints(adjustedRect, points) && overlapsEllipse(shape, adjustedRect)
   }
 
@@ -348,8 +363,8 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     return overlapsText(shape, adjustedRect)
   }
 
-  // Default: check rect points overlap
-  const points = shape.points || []
-  return overlapsRectPoints(adjustedRect, points)
+  // Default: check rect points overlap (rect/circle etc. – use points or selrect-derived points)
+  const points = getShapePointsForOverlap(shape)
+  return points.length > 0 && overlapsRectPoints(adjustedRect, points)
 }
 

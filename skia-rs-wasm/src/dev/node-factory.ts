@@ -32,6 +32,16 @@ function createSelRect(x: number, y: number, width: number, height: number) {
   }
 }
 
+/** Corner points for a rect (used by worker selection/overlap). */
+function rectPoints(x: number, y: number, width: number, height: number) {
+  return [
+    { x, y },
+    { x: x + width, y },
+    { x: x + width, y: y + height },
+    { x, y: y + height },
+  ]
+}
+
 /**
  * Creates a rectangle node
  */
@@ -87,6 +97,7 @@ export function createRect(
     height,
     parentId: options.parentId ?? ROOT_UUID,
     selrect: createSelRect(x, y, width, height),
+    points: rectPoints(x, y, width, height),
     fills,
     strokes,
     opacity: options.opacity ?? 1,

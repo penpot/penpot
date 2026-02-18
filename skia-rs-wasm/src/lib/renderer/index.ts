@@ -244,7 +244,7 @@ export { createWorker } from '../worker-factory'
 export type { CanvasWrapperProps, InitializationState, ViewportShortcutsConfig, ViewportPanModifier } from './types'
 
 // Export Zustand store
-export { useWorkspaceStore, selectCurrentPageNodes } from './store/workspace-store'
+export { useWorkspaceStore, selectCurrentPageNodes, selectSelectedNodes } from './store/workspace-store'
 export {
   useViewportShortcutsStore,
   DEFAULT_VIEWPORT_SHORTCUTS,
