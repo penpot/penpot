@@ -24,32 +24,10 @@
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(defn- focusable-option?
-  [option]
-  (and (:id option)
-       (not= :group (:type option))
-       (not= :separator (:type option))))
-
-(defn- first-focusable-id
-  [options]
-  (some #(when (focusable-option? %) (:id %)) options))
-
-(defn next-focus-id
-  [options focused-id direction]
-  (let [focusable (filter focusable-option? options)
-        ids (map :id focusable)
-        idx (.indexOf (clj->js ids) focused-id)
-        next-idx (case direction
-                   :down (min (dec (count ids)) (inc (if (= idx -1) -1 idx)))
-                   :up   (max 0 (dec (if (= idx -1) 0 idx))))]
-    (nth ids next-idx nil)))
-
 
 (defn extract-partial-token
   [value cursor]
@@ -95,7 +73,6 @@
             (fn [options]
               (remove #(= (:id %) current-id) options)))))
 
-
 (defn- select-option-by-id
   [id options-ref input-node value]
   (let [cursor     (.-selectionStart input-node)
@@ -138,22 +115,23 @@
 
   (let [form              (mf/use-ctx fc/context)
 
-        input-name        name
         token-name        (get-in @form [:data :name] nil)
+        touched?
+        (and (contains? (:data @form) name)
+             (get-in @form [:touched name]))
+
+        error
+        (get-in @form [:errors name])
+
+        value
+        (get-in @form [:data name] "")
 
         is-open*          (mf/use-state false)
         is-open           (deref is-open*)
-        dropdown-pos*     (mf/use-state nil)
-        dropdown-pos      (deref dropdown-pos*)
-        dropdown-ready*   (mf/use-state false)
-        dropdown-ready    (deref dropdown-ready*)
 
         listbox-id        (mf/use-id)
         filter-term*      (mf/use-state "")
         filter-term       (deref filter-term*)
-
-        focused-id*       (mf/use-state nil)
-        focused-id        (deref focused-id*)
 
         options-ref       (mf/use-ref nil)
         dropdown-ref      (mf/use-ref nil)
@@ -162,16 +140,6 @@
         wrapper-ref       (mf/use-ref nil)
         icon-button-ref   (mf/use-ref nil)
         ref               (or ref internal-ref)
-
-        touched?
-        (and (contains? (:data @form) input-name)
-             (get-in @form [:touched input-name]))
-
-        error
-        (get-in @form [:errors input-name])
-
-        value
-        (get-in @form [:data input-name] "")
 
         raw-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
 
@@ -213,15 +181,35 @@
             (rx/behavior-subject (:value token))
             (rx/subject)))
 
+        on-option-enter
+        (mf/use-fn
+         (mf/deps value resolve-stream name)
+         (fn [id]
+           (let [input-node (mf/ref-val ref)
+                 final-val  (select-option-by-id id options-ref input-node value)]
+             (fm/on-input-change form name final-val true)
+             (rx/push! resolve-stream final-val)
+             (reset! filter-term* "")
+             (reset! is-open* false))))
+
+        {:keys [focused-id  on-key-down]}
+        (use-navigation
+         {:is-open is-open
+          :options-ref options-ref
+          :nodes-ref nodes-ref
+          :toggle-dropdown toggle-dropdown
+          :is-open* is-open*
+          :on-enter on-option-enter})
+
         on-change
         (mf/use-fn
-         (mf/deps resolve-stream input-name form)
+         (mf/deps resolve-stream name form)
          (fn [event]
            (let [node   (dom/get-target event)
                  value  (dom/get-input-value node)
                  token  (active-token value node)]
 
-             (fm/on-input-change form input-name value)
+             (fm/on-input-change form name value)
              (rx/push! resolve-stream value)
 
              (if token
@@ -234,14 +222,14 @@
 
         on-option-click
         (mf/use-fn
-         (mf/deps value resolve-stream ref)
+         (mf/deps value resolve-stream ref name)
          (fn [event]
            (let [input-node (mf/ref-val ref)
                  node       (dom/get-current-target event)
                  id         (dom/get-data node "id")
                  final-val  (select-option-by-id id options-ref input-node value)]
 
-             (fm/on-input-change form input-name final-val true)
+             (fm/on-input-change form name final-val true)
              (rx/push! resolve-stream final-val)
 
              (reset! filter-term* "")
@@ -251,68 +239,6 @@
              (let [new-cursor (+ (str/index-of final-val "}") 1)]
                (set! (.-selectionStart input-node) new-cursor)
                (set! (.-selectionEnd input-node) new-cursor)))))
-
-        on-option-enter
-        (mf/use-fn
-         (mf/deps focused-id value resolve-stream)
-         (fn [_]
-           (let [input-node (mf/ref-val ref)
-                 final-val  (select-option-by-id focused-id options-ref input-node value)]
-             (fm/on-input-change form input-name final-val true)
-             (rx/push! resolve-stream final-val)
-             (reset! filter-term* "")
-             (reset! is-open* false))))
-
-        on-key-down
-        (mf/use-fn
-         (mf/deps is-open focused-id)
-         (fn [event]
-           (let [up?            (kbd/up-arrow? event)
-                 down?          (kbd/down-arrow? event)
-                 enter?         (kbd/enter? event)
-                 esc?           (kbd/esc? event)
-                 open-dropdown  (kbd/is-key? event "{")
-                 close-dropdown (kbd/is-key? event "}")
-                 options        (mf/ref-val options-ref)
-                 options        (if (delay? options) @options options)]
-
-             (cond
-               open-dropdown
-               (reset! is-open* true)
-
-               close-dropdown
-               (reset! is-open* false)
-
-               down?
-               (do
-                 (dom/prevent-default event)
-                 (if is-open
-                   (let [next-id (next-focus-id options focused-id :down)]
-                     (reset! focused-id* next-id))
-                   (when (some? @filtered-tokens-by-type)
-                     (do
-                       (toggle-dropdown event)
-                       (reset! focused-id* (first-focusable-id options))))))
-
-               up?
-               (when is-open
-                 (dom/prevent-default event)
-                 (let [next-id (next-focus-id options focused-id :up)]
-                   (reset! focused-id* next-id)))
-
-               enter?
-               (do
-                 (dom/prevent-default event)
-                 (if is-open
-                   (on-option-enter event)
-                   (do
-                     (reset! focused-id* (first-focusable-id options))
-                     (toggle-dropdown event))))
-
-               esc?
-               (do
-                 (dom/prevent-default event)
-                 (reset! is-open* false))))))
 
         hint*
         (mf/use-state {})
@@ -349,9 +275,12 @@
         (if (and error touched?)
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message error)})
-          props)]
+          props)
 
-    (mf/with-effect [resolve-stream tokens token input-name token-name]
+
+        floating          (use-floating-dropdown is-open wrapper-ref dropdown-ref)]
+
+    (mf/with-effect [resolve-stream tokens token name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
@@ -360,14 +289,14 @@
                                                (fn [error]
                                                  ((:error/fn error) (:error/value error))))))
                       (rx/subs! (fn [{:keys [error value]}]
-                                  (let [touched? (get-in @form [:touched input-name])]
+                                  (let [touched? (get-in @form [:touched name])]
                                     (when touched?
                                       (if error
                                         (do
-                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                          (swap! form assoc-in [:extra-errors name] {:message error})
                                           (reset! hint* {:message error :type "error"}))
                                         (let [message (tr "workspace.tokens.resolved-value" value)]
-                                          (swap! form update :extra-errors dissoc input-name)
+                                          (swap! form update :extra-errors dissoc name)
                                           (reset! hint* {:message message :type "hint"}))))))))]
         (fn []
           (rx/dispose! subs))))
@@ -391,24 +320,6 @@
           (fn []
             (.removeEventListener js/document "mousedown" handler)))))
 
-
-    (mf/with-effect [is-open]
-      (when is-open
-        (let [options (mf/ref-val options-ref)
-              options (if (delay? options) @options options)
-
-              first-id (first-focusable-id options)]
-
-          (when first-id
-            (reset! focused-id* first-id)))))
-
-    (mf/with-effect [focused-id nodes-ref]
-      (when focused-id
-        (let [nodes (mf/ref-val nodes-ref)
-              node  (obj/get nodes focused-id)]
-          (when node
-            (dom/scroll-into-view-if-needed! node {:block "nearest"
-                                                   :inline "nearest"})))))
 
     [:div {:ref wrapper-ref}
      [:> ds/input* props]
