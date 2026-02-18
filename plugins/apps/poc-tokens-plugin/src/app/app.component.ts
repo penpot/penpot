@@ -10,6 +10,7 @@ type TokenTheme = {
   group: string;
   description: string;
   active: boolean;
+  activeSets: string;
 };
 
 type TokenSet = {

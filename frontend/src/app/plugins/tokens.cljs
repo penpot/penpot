@@ -354,7 +354,17 @@
       (st/emit! (dwtl/toggle-token-theme-active id)))
 
     :activeSets
-    {:this true :get (fn [_])}
+    {:this true
+     :get (fn [_]
+            (let [tokens-lib (u/locate-tokens-lib file-id)
+                  theme (u/locate-token-theme file-id id)]
+              (->> theme
+                   :sets
+                   (map #(->> %
+                              (ctob/get-set-by-name tokens-lib)
+                              (ctob/get-id)
+                              (token-set-proxy plugin-id file-id)))
+                   (apply array))))}
 
     :addSet
     {:enumerable false
