@@ -19,7 +19,7 @@ read_only: false
 
 # list of tool names to exclude. We recommend not excluding any tools, see the readme for more details.
 # Below is the complete list of tools for convenience.
-# To make sure you have the latest list of tools, and to view their descriptions, 
+# To make sure you have the latest list of tools, and to view their descriptions,
 # execute `uv run scripts/print_tool_overview.py`.
 #
 #  * `activate_project`: Activates a project by name.
@@ -62,16 +62,19 @@ excluded_tools: []
 # (contrary to the memories, which are loaded on demand).
 initial_prompt: |
   IMPORTANT: You use an idiomatic, object-oriented style.
-  In particular, this implies that, for any non-trivial interfaces, you use interfaces that expect explicitly typed abstractions 
+  In particular, this implies that, for any non-trivial interfaces, you use interfaces that expect explicitly typed abstractions
   rather than mere functions (i.e. use the strategy pattern, for example).
 
-  Comments: 
+  Always read the "project_overview" memory.
+
+  Comments:
   When describing parameters, methods/functions and classes, you use a precise style, where the initial (elliptical) phrase
   clearly defines *what* it is. Any details then follow in subsequent sentences.
 
   When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
-  the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is 
+  the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
   required for sentences).
+
 # the name by which the project can be referenced within Serena
 project_name: "penpot-mcp"
 
