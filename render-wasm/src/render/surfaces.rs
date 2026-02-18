@@ -74,7 +74,7 @@ impl Surfaces {
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
         let target = gpu_state.create_target_surface(width, height);
-        let filter = gpu_state.create_surface_with_dimensions("filter".to_string(), width, height);
+        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims);
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
         let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
         let drop_shadows =
@@ -355,24 +355,62 @@ impl Surfaces {
         ));
     }
 
-    pub fn draw_rect_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
+    pub fn draw_rect_to(
+        &mut self,
+        id: SurfaceId,
+        shape: &Shape,
+        paint: &Paint,
+        spread: Option<f32>,
+    ) {
+        let rect = if let Some(s) = spread.filter(|&s| s > 0.0) {
+            let mut r = shape.selrect;
+            r.outset((s, s));
+            r
+        } else {
+            shape.selrect
+        };
         if let Some(corners) = shape.shape_type.corners() {
-            let rrect = RRect::new_rect_radii(shape.selrect, &corners);
+            let rrect = RRect::new_rect_radii(rect, &corners);
             self.canvas_and_mark_dirty(id).draw_rrect(rrect, paint);
         } else {
-            self.canvas_and_mark_dirty(id)
-                .draw_rect(shape.selrect, paint);
+            self.canvas_and_mark_dirty(id).draw_rect(rect, paint);
         }
     }
 
-    pub fn draw_circle_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
-        self.canvas_and_mark_dirty(id)
-            .draw_oval(shape.selrect, paint);
+    pub fn draw_circle_to(
+        &mut self,
+        id: SurfaceId,
+        shape: &Shape,
+        paint: &Paint,
+        spread: Option<f32>,
+    ) {
+        let rect = if let Some(s) = spread.filter(|&s| s > 0.0) {
+            let mut r = shape.selrect;
+            r.outset((s, s));
+            r
+        } else {
+            shape.selrect
+        };
+        self.canvas_and_mark_dirty(id).draw_oval(rect, paint);
     }
 
-    pub fn draw_path_to(&mut self, id: SurfaceId, shape: &Shape, paint: &Paint) {
+    pub fn draw_path_to(
+        &mut self,
+        id: SurfaceId,
+        shape: &Shape,
+        paint: &Paint,
+        spread: Option<f32>,
+    ) {
         if let Some(path) = shape.get_skia_path() {
-            self.canvas_and_mark_dirty(id).draw_path(&path, paint);
+            let canvas = self.canvas_and_mark_dirty(id);
+            if let Some(s) = spread.filter(|&s| s > 0.0) {
+                // Draw path as a thick stroke to get outset (expanded) silhouette
+                let mut stroke_paint = paint.clone();
+                stroke_paint.set_stroke_width(s * 2.0);
+                canvas.draw_path(&path, &stroke_paint);
+            } else {
+                canvas.draw_path(&path, paint);
+            }
         }
     }
 
