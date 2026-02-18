@@ -143,8 +143,7 @@
            (let [token-ids (set tokens-in-path-ids)
                  remaining-tokens (filter (fn [token]
                                             (not (contains? token-ids (:id token))))
-                                          selected-token-set-tokens)
-                 _ (prn "Remaining tokens:" remaining-tokens)]
+                                          selected-token-set-tokens)]
              (seq remaining-tokens))))
 
         delete-token
