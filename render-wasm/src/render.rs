@@ -1573,16 +1573,22 @@ impl RenderState {
             return;
         }
 
-        if use_low_zoom_path {
-            let mut shadow_paint = skia::Paint::default();
-            shadow_paint.set_image_filter(drop_filter);
-            shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
-
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
-            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
-            drop_canvas.save_layer(&layer_rec);
-            drop_canvas.scale((scale, scale));
-            drop_canvas.translate(translation);
+        // Special-case: blur=0 and spread=0 shadows are just an offset silhouette.
+        //
+        // For zoom > 1.0, rendering via the offscreen filter surface and then compositing it back
+        // with sampling can introduce unintended resampling/softening. Drawing the offset geometry
+        // directly keeps edges crisp at any zoom level.
+        if scale > 1.0
+            && combined_blur.is_none()
+            && shadow.blur <= 0.0
+            && shadow.spread <= 0.0
+        {
+            {
+                let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+                drop_canvas.save();
+                drop_canvas.scale((scale, scale));
+                drop_canvas.translate(translation);
+            }
 
             self.with_nested_blurs_suppressed(|state| {
                 state.render_shape(
@@ -1602,13 +1608,66 @@ impl RenderState {
             return;
         }
 
+        if use_low_zoom_path {
+            // For low zoom, put offset in filter to avoid corner artifacts (like text shadows).
+            // transformed_shadow already has blur/spread scaled by scale, and offset needs to be
+            // scaled by scale to match the scaled canvas space.
+            let mut shadow_with_offset = transformed_shadow.clone();
+            shadow_with_offset.to_mut().offset = (world_offset.0 * scale, world_offset.1 * scale);
+            let Some(filter_with_offset) = shadow_with_offset.get_drop_shadow_filter() else {
+                return;
+            };
+
+            let mut shadow_paint = skia::Paint::default();
+            shadow_paint.set_image_filter(filter_with_offset);
+            shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+            let drop_canvas = self.surfaces.canvas(SurfaceId::DropShadows);
+            drop_canvas.save_layer(&layer_rec);
+            drop_canvas.scale((scale, scale));
+            drop_canvas.translate(translation);
+
+            self.with_nested_blurs_suppressed(|state| {
+                state.render_shape(
+                    &plain_shape,
+                    clip_bounds,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    SurfaceId::DropShadows,
+                    false,
+                    None,
+                    None,
+                );
+            });
+
+            self.surfaces.canvas(SurfaceId::DropShadows).restore();
+            return;
+        }
+
+        // For scale > 1.0 without combined_blur, put offset in filter to avoid corner artifacts.
+        // For combined_blur, use offset as transformation (needed for correct composition).
         let filter_result =
             filters::render_into_filter_surface(self, bounds, |state, temp_surface| {
                 {
                     let canvas = state.surfaces.canvas(temp_surface);
 
+                    // When scale > 1.0 and no combined_blur, put offset in filter to avoid artifacts.
+                    let filter_to_use = if scale > 1.0 && combined_blur.is_none() {
+                        let mut shadow_with_offset = transformed_shadow.clone();
+                        shadow_with_offset.to_mut().offset = world_offset;
+                        shadow_with_offset.get_drop_shadow_filter()
+                    } else {
+                        Some(drop_filter.clone())
+                    };
+
+                    let Some(filter) = filter_to_use else {
+                        return;
+                    };
+
                     let mut shadow_paint = skia::Paint::default();
-                    shadow_paint.set_image_filter(drop_filter.clone());
+                    shadow_paint.set_image_filter(filter);
                     shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
 
                     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
@@ -1624,7 +1683,7 @@ impl RenderState {
                         temp_surface,
                         temp_surface,
                         false,
-                        Some(shadow.offset),
+                        if scale > 1.0 && combined_blur.is_none() { None } else { Some(shadow.offset) },
                         None,
                     );
                 });
