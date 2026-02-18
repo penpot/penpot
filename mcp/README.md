@@ -276,3 +276,9 @@ you may set the following environment variables to configure the two servers
  * `PENPOT_MCP_SERVER_ADDRESS=<your-address>`: This sets the hostname or IP address
    where the MCP server can be reached. The Penpot MCP Plugin uses this to construct
    the WebSocket URL as `ws://<your-address>:<port>` (default port: `4402`).
+
+## Development
+
+* The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
+* Auto-formatting: Use `pnpm run fmt`
+* Generating API type data: See [types-generator/README.md](types-generator/README.md)
