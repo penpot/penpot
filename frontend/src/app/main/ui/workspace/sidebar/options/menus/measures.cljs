@@ -92,6 +92,19 @@
 (def ^:private xf:map-type (map :type))
 (def ^:private xf:mapcat-type-to-options (mapcat type->options))
 
+(defn fixed-decimal-value
+  "Fixes the amount of decimals that are kept"
+  ([value]
+   (fixed-decimal-value value 2))
+
+  ([value decimals]
+   (cond
+     (string? value)
+     (fixed-decimal-value (parse-double value) decimals)
+
+     (number? value)
+     (parse-double (.toFixed value decimals)))))
+
 (mf/defc measures-menu*
   [{:keys [ids values applied-tokens type shapes]}]
   (let [token-numeric-inputs
@@ -300,7 +313,7 @@
          (mf/deps ids)
          (fn [value]
            (if (or (string? value) (number? value))
-             (do
+             (let [value (fixed-decimal-value value)]
                (st/emit! (udw/trigger-bounding-box-cloaking ids))
                (st/emit! (udw/increase-rotation ids value)))
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
