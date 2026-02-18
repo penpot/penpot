@@ -19,6 +19,8 @@
    [app.main.ui.ds.controls.utilities.utils :as csu]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as fc]
+   [app.main.ui.workspace.tokens.management.forms.controls.floating :refer [use-floating-dropdown]]
+   [app.main.ui.workspace.tokens.management.forms.controls.navigation :refer [use-navigation]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -172,36 +174,6 @@
         (get-in @form [:data input-name] "")
 
         raw-tokens-by-type (mf/use-ctx muc/active-tokens-by-type)
-
-        calculate-position
-        (mf/use-fn
-         (mf/deps dropdown-ref)
-         (fn [node]
-           (let [combobox-rect (dom/get-bounding-rect node)
-                 dropdown-node (mf/ref-val dropdown-ref)
-                 dropdown-height (if dropdown-node
-                                   (->  (dom/get-bounding-rect dropdown-node)
-                                        (:height))
-                                   0)
-
-                 windows-height (-> (dom/get-window-size)
-                                    (:height))
-
-                 space-below (- windows-height (:bottom combobox-rect))
-                 space-above (:top combobox-rect)
-
-                 place-top? (< space-below dropdown-height)
-
-                 position (if place-top?
-                            {:top (str (- space-above dropdown-height -14) "px")
-                             :left (str (:left combobox-rect) "px")
-                             :width (str (:width combobox-rect) "px")
-                             :placement :top}
-                            {:top (str (+ (:bottom combobox-rect) 4) "px")
-                             :left (str (:left combobox-rect) "px")
-                             :width (str (:width combobox-rect) "px")
-                             :placement :bottom})]
-             (reset! dropdown-pos* position))))
 
         filtered-tokens-by-type
         (mf/with-memo [raw-tokens-by-type token-type]
@@ -438,28 +410,6 @@
             (dom/scroll-into-view-if-needed! node {:block "nearest"
                                                    :inline "nearest"})))))
 
-    (mf/with-effect [is-open  dropdown-ref wrapper-ref]
-      (when is-open
-        (let [handler (fn [event]
-                        (let [dropdown-node (mf/ref-val dropdown-ref)
-                              target (dom/get-target event)]
-                          (when (or (nil? dropdown-node)
-                                    (not (instance? js/Node target))
-                                    (not (.contains dropdown-node target)))
-                            (js/requestAnimationFrame
-                             (fn []
-                               (let [wrapper-node  (mf/ref-val wrapper-ref)]
-                                 (reset! dropdown-ready* true)
-                                 (calculate-position wrapper-node)))))))]
-          (handler nil)
-
-          (.addEventListener js/window "resize" handler)
-          (.addEventListener js/window "scroll" handler true)
-
-          (fn []
-            (.removeEventListener js/window "resize" handler)
-            (.removeEventListener js/window "scroll" handler true)))))
-
     [:div {:ref wrapper-ref}
      [:> ds/input* props]
      (when ^boolean is-open
@@ -468,10 +418,10 @@
           (mf/html
            [:> options-dropdown* {:on-click on-option-click
                                   :class (stl/css :dropdown)
-                                  :style {:visibility (if dropdown-ready "visible" "hidden")
-                                          :left (:left dropdown-pos)
-                                          :top (:top dropdown-pos)
-                                          :width (:width dropdown-pos)}
+                                  :style {:visibility (if (:ready? floating) "visible" "hidden")
+                                          :left (get-in floating [:style :left])
+                                          :top (get-in floating [:style :top])
+                                          :width (get-in floating [:style :width])}
                                   :id listbox-id
                                   :options options
                                   :focused focused-id
