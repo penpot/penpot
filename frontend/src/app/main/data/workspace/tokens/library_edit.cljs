@@ -482,7 +482,7 @@
         (toggle-token-path (str (name type) "." old-path))
         (toggle-token-path (str (name type) "." new-path))
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type token-type}))))))
+               (ptk/data-event ::ev/event {::ev/name "bulk-update-tokens" :type type}))))))
 
 (defn delete-token
   [set-id token-id]
