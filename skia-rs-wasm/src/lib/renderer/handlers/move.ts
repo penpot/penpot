@@ -24,6 +24,10 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   const stopper = dragStopper()
   const zoom = viewport.zoom
 
+  // Throttle to one update per frame using latest position (fix: smooth drag, node tracks cursor)
+  const latestWorldDeltaRef = { current: { x: 0, y: 0 } }
+  const rafScheduledRef = { current: false }
+
   // Store initial node positions to calculate deltas correctly
   const initialNodePositions = new Map<string, { x: number; y: number; width: number; height: number }>()
   nodes.forEach((node) => {
@@ -50,36 +54,43 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
       y: delta.y / zoom,
     })),
     tap((worldDelta) => {
-      const updatedNodes = nodes.map((node) => {
-        if (selectedIds.has(node.id)) {
-          const initialPos = initialNodePositions.get(node.id)!
-          const newX = initialPos.x + worldDelta.x
-          const newY = initialPos.y + worldDelta.y
-          const w = initialPos.width
-          const h = initialPos.height
-          // Update both selrect and points so logical position stays in sync with visual (frontend does the same)
-          const points = [
-            { x: newX, y: newY },
-            { x: newX + w, y: newY },
-            { x: newX + w, y: newY + h },
-            { x: newX, y: newY + h },
-          ]
-          return {
-            ...node,
-            x: newX,
-            y: newY,
-            selrect: {
-              x1: newX,
-              y1: newY,
-              x2: newX + w,
-              y2: newY + h,
-            },
-            points,
-          }
-        }
-        return node
-      })
-      updatePage({ ...page, pageId, children: updatedNodes }).catch(() => {})
+      latestWorldDeltaRef.current = worldDelta
+      if (!rafScheduledRef.current) {
+        rafScheduledRef.current = true
+        requestAnimationFrame(() => {
+          rafScheduledRef.current = false
+          const delta = latestWorldDeltaRef.current
+          const updatedNodes = nodes.map((node) => {
+            if (selectedIds.has(node.id)) {
+              const initialPos = initialNodePositions.get(node.id)!
+              const newX = initialPos.x + delta.x
+              const newY = initialPos.y + delta.y
+              const w = initialPos.width
+              const h = initialPos.height
+              const points = [
+                { x: newX, y: newY },
+                { x: newX + w, y: newY },
+                { x: newX + w, y: newY + h },
+                { x: newX, y: newY + h },
+              ]
+              return {
+                ...node,
+                x: newX,
+                y: newY,
+                selrect: {
+                  x1: newX,
+                  y1: newY,
+                  x2: newX + w,
+                  y2: newY + h,
+                },
+                points,
+              }
+            }
+            return node
+          })
+          updatePage({ ...page, pageId, children: updatedNodes }).catch(() => {})
+        })
+      }
     }),
     map(() => undefined),
     takeUntil(stopper)
