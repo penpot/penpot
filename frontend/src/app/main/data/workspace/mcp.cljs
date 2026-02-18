@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
+   [app.plugins.register :refer [mcp-plugin-id]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -20,12 +21,13 @@
   {:code "plugin.js"
    :name "Penpot MCP Plugin"
    :version 2
-   :plugin-id "96dfa740-005d-8020-8007-55ede24a2bae"
+   :plugin-id mcp-plugin-id
    :description "This plugin enables interaction with the Penpot MCP server"
    :allow-background true
    :permissions
-   #{"library:read" "library:write" "comment:read" "content:write" "comment:write"
-     "content:read"}})
+   #{"library:read" "library:write"
+     "comment:read" "comment:write"
+     "content:write" "content:read"}})
 
 (defn init-mcp!
   []
