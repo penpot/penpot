@@ -4128,6 +4128,12 @@ export interface Text extends ShapeBase {
   verticalAlign: 'top' | 'center' | 'bottom' | null;
 
   /**
+   * Return the bounding box for the text as a (x, y, width, height) rectangle
+   * This is the box that covers the text even if it overflows its selection rectangle.
+   */
+  readonly textBounds: { x: number; y: number; width: number; height: number };
+
+  /**
    * Gets a text range within the text shape.
    * @param start - The start index of the text range.
    * @param end - The end index of the text range.
