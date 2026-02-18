@@ -68,13 +68,38 @@ dependencies are already present and correctly setup. But nothing
 prevents you execute this outside of devenv if you satisfy the
 specified dependencies.
 
+### 0. Clone the Appropriate Branch of the Repository 
+
+> [!IMPORTANT]
+> The branches are subject to change in the future.  
+> Be sure to check the instructions for the latest information on which branch to use.
+
+Clone the Penpot repository, using the proper branch depending on the
+version of Penpot you want to use the MCP server with.
+
+  * For released versions of Penpot, use the `mcp-prod` branch:
+
+    ```shell
+    git clone https://github.com/penpot/penpot.git --branch mcp-prod --depth 1
+    ```
+
+  * For the latest development version of Penpot, use the `develop` branch:
+
+    ```shell
+    git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+    ```
+
+Then change into the `mcp` directory:
+
+```shell
+cd penpot/mcp
+```
 
 ### 1. Build & Launch the MCP Server and the Plugin Server
 
 If it's your first execution, install the required dependencies:
 
 ```shell
-cd mcp/
 ./scripts/setup
 ```
 
