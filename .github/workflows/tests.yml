@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check clojure code format
         run: |
@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run tests on JVM
         working-directory: ./common
@@ -57,7 +57,7 @@ jobs:
     container: penpotapp/devenv:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node
         id: setup-node
@@ -108,7 +108,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Unit Tests
         working-directory: ./frontend
@@ -129,7 +129,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Format
         working-directory: ./render-wasm
@@ -172,7 +172,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run tests
         working-directory: ./backend
@@ -192,7 +192,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run tests
         working-directory: ./library
@@ -206,7 +206,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build Bundle
         working-directory: ./frontend
@@ -214,7 +214,7 @@ jobs:
           ./scripts/build 0.0.0
 
       - name: Store Bundle Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: "integration-bundle-${{ github.sha }}"
           path: frontend/resources/public
@@ -228,7 +228,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
         uses: actions/cache/restore@v4
@@ -242,7 +242,7 @@ jobs:
           ./scripts/test-e2e --shard="1/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: integration-tests-result-1
@@ -258,7 +258,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
         uses: actions/cache/restore@v4
@@ -272,7 +272,7 @@ jobs:
           ./scripts/test-e2e --shard="2/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: integration-tests-result-2
@@ -288,7 +288,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
         uses: actions/cache/restore@v4
@@ -302,7 +302,7 @@ jobs:
           ./scripts/test-e2e --shard="3/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: integration-tests-result-3
@@ -318,7 +318,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Restore Cache
         uses: actions/cache/restore@v4
@@ -332,7 +332,7 @@ jobs:
           ./scripts/test-e2e --shard="4/4";
 
       - name: Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: integration-tests-result-4
