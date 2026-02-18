@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-17 10:09+0000\n"
+"PO-Revision-Date: 2026-02-18 14:09+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.16\n"
+"X-Generator: Weblate 5.16.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1902,7 +1902,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "ערכות עיצוב פעילות"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "העתקת קיצור CSS ללוח הגזירים"
 
@@ -4789,7 +4788,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "התוכנית שלך היא %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "תמכת בנו עם התוכנית הזאת מאז: %s"
 
@@ -7839,7 +7837,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "שקיפות צריכה להיות בין 0 ל־100% או 0 ו־1 (כלומר 50% או 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "ערך מקורי: %s"
 
@@ -8511,3 +8508,176 @@ msgstr "%s קבצים שוחזרו בהצלחה."
 #: src/app/main/ui/dashboard/deleted.cljs:82
 msgid "dashboard.restore-project-button"
 msgstr "שחזור מיזם"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
+msgid "workspace.layout-item.fix-height"
+msgstr "גובה קבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
+msgid "workspace.layout-item.fix-width"
+msgstr "רוחב קבוע"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
+msgid "workspace.layout-item.height-100"
+msgstr "גובה 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
+msgid "workspace.layout-item.width-100"
+msgstr "רוחב 100%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
+msgid "workspace.options.interaction-animation-direction-down"
+msgstr "למטה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
+msgid "workspace.options.interaction-animation-direction-in"
+msgstr "פנימה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
+msgid "workspace.options.interaction-animation-direction-left"
+msgstr "שמאלה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
+msgid "workspace.options.interaction-animation-direction-out"
+msgstr "החוצה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
+msgid "workspace.options.interaction-animation-direction-right"
+msgstr "ימינה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
+msgid "workspace.options.interaction-animation-direction-up"
+msgstr "למעלה"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
+msgid "workspace.options.orientation.horizontal"
+msgstr "אופקי"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
+msgid "workspace.options.orientation.vertical"
+msgstr "אנכי"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:297
+msgid "workspace.sidebar.layers.filter"
+msgstr "מסנן"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "הפניה חסרה"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:87
+#, unused
+msgid "workspace.tokens.no-references-found"
+msgstr "לא נמצאו הפניות"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr "האסימון (token) הזה לא בשימוש בעיצוב שלך, לא צריך מיפוי מחדש."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "לא למפות מחדש"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "מיפוי אסימונים מחדש"
+
+#: src/app/main/ui/dashboard/deleted.cljs:41
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "הפעולה הזאת תשחזר את המיזם %s ואת כל הקבצים שבו."
+
+#: src/app/main/ui/dashboard/deleted.cljs:40
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "שחזור מיזם"
+
+#: src/app/main/data/dashboard.cljs:875, src/app/main/data/dashboard.cljs:902, src/app/main/data/dashboard.cljs:939, src/app/main/ui/dashboard/file_menu.cljs:198
+msgid "dashboard.restore-success-notification"
+msgstr "%s שוחזר בהצלחה."
+
+#: src/app/main/ui/dashboard/deleted.cljs:298
+msgid "dashboard.trash-info-text-part1"
+msgstr "קבצים שנמחקו יישארו באשפה למשך"
+
+#: src/app/main/ui/dashboard/deleted.cljs:300
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s ימים. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:301
+msgid "dashboard.trash-info-text-part3"
+msgstr "לאחר מכן, הם יימחקו לצמיתות."
+
+#: src/app/main/ui/dashboard/deleted.cljs:303
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"אם התחרטת, אפשר לשחזר אותם או למחוק אותם לצמיתות מהתפריט של כל אחד מהקבצים."
+
+#: src/app/main/errors.cljs:105
+msgid "errors.unexpected-exception"
+msgstr "שגיאה מפתיעה: %s"
+
+#: src/app/main/ui/static.cljs:315
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL הפסיק לעבוד. נא לרענן את העמוד כדי לאפס אותו"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "אופס! הקשר לוח הציור אבד"
+
+#: src/app/main/ui/exports/files.cljs:124
+msgid "files-download-modal.title"
+msgstr "הורדת קבצים"
+
+#: src/app/main/ui/dashboard/deleted.cljs:215
+msgid "labels.deleted"
+msgstr "נמחקה"
+
+#: src/app/main/ui/dashboard/deleted.cljs:208
+msgid "labels.recent"
+msgstr "אחרונות"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "ריענון העמוד"
+
+#: src/app/main/ui/viewer/header.cljs:187
+msgid "viewer.header.edit-in-workspace"
+msgstr "עריכה במרחב העבודה"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:434
+msgid "workspace.colorpicker.get-color"
+msgstr "משיכת צבע"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "כלי ניפוי שגיאות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
+msgid "workspace.layout-grid.editor.margin.expand"
+msgstr "הצגת אפשרויות גבול מ־4 צדדים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
+msgid "workspace.layout-item.fit-content-horizontal"
+msgstr "התאמת תוכן (אופקית)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
+msgid "workspace.layout-item.fit-content-vertical"
+msgstr "התאמת תוכן (אנכית)"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "למפות את כל האסימונים שמשתמשים ב־`%s` ל־`%s`?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"הפעולה הזאת תשנה את כל השכבות וההפניות שמשתמשות בשם הישן של האסימון (token)."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "הפעולה הזאת עלולה לארוך זמן מה."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+#, unused
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "הפניות האסימון (token) ממופות מחדש…"
