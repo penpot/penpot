@@ -9,13 +9,12 @@
   (:require
    ["rxjs" :as rxjs]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -448,22 +447,22 @@
 
 (mf/defc exception-section*
   {::mf/private true}
-  [{:keys [data route] :as props}]
+  [{:keys [data] :as props}]
   (let [type   (get data :type)
-        report (mf/with-memo [data]
-                 (some-> data ::errors/instance errors/generate-report))
+        cause  (get data ::errors/instance)
+
+        report (mf/with-memo [cause]
+                 (when (ex/exception? cause)
+                   (errors/generate-report cause)))
+
         props  (mf/spread-props props {:report report})]
 
-    (mf/with-effect [data route report]
-      (let [params (:query-params route)
-            params (u/map->query-string params)]
-        (st/emit! (ev/event {::ev/name "exception-page"
-                             :type (get data :type :unknown)
-                             :href (rt/get-current-href)
-                             :hint (get data :hint)
-                             :path (get route :path)
-                             :report report
-                             :params params}))))
+    (mf/with-effect [report type cause]
+      (when (and (ex/exception? cause)
+                 (not (contains? #{:not-found :authentication} type)))
+        (errors/submit-report :event-name "exception-page"
+                              :report report
+                              :hint (ex/get-hint cause))))
 
     (case type
       :not-found
