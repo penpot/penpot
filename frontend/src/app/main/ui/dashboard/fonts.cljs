@@ -369,7 +369,7 @@
                               (dom/trigger-download filename blob))
                             (fn [error]
                               (js/console.error "error downloading font" error)
-                              (st/emit! (ntf/error (tr "errors.download-font")))))))))
+                              (st/emit! (ntf/error (tr "errors.generic")))))))))
 
         on-delete-variant
         (mf/use-fn
