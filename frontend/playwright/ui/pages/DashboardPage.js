@@ -3,50 +3,50 @@ import { BaseWebSocketPage } from "./BaseWebSocketPage";
 
 export class DashboardPage extends BaseWebSocketPage {
   static async init(page) {
-    await BaseWebSocketPage.initWebSockets(page);
+    await super.init(page);
 
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-teams",
       "logged-in-user/get-teams-default.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-font-variants?team-id=*",
       "workspace/get-font-variants-empty.json",
     );
 
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-projects?team-id=*",
       "logged-in-user/get-projects-default.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-team-members?team-id=*",
       "logged-in-user/get-team-members-your-penpot.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-team-users?team-id=*",
       "logged-in-user/get-team-users-single-user.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-unread-comment-threads?team-id=*",
       "logged-in-user/get-team-users-single-user.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-team-recent-files?team-id=*",
       "logged-in-user/get-team-recent-files-empty.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-profiles-for-file-comments",
       "workspace/get-profile-for-file-comments.json",
     );
-    await BaseWebSocketPage.mockRPC(
+    await super.mockRPC(
       page,
       "get-builtin-templates",
       "logged-in-user/get-built-in-templates-empty.json",

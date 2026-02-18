@@ -1,6 +1,10 @@
 import { BasePage } from "./BasePage";
 
 export class LoginPage extends BasePage {
+  static async init(page) {
+    await super.init(page);
+  }
+
   constructor(page) {
     super(page);
     this.loginButton = page.getByRole("button", { name: "Continue" });

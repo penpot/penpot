@@ -112,9 +112,9 @@ export class WorkspacePage extends BaseWebSocketPage {
    * @returns
    */
   static async init(page) {
-    await BaseWebSocketPage.initWebSockets(page);
+    await super.init(page);
 
-    await BaseWebSocketPage.mockRPCs(page, {
+    await super.mockRPCs(page, {
       "get-profile": "logged-in-user/get-profile-logged-in.json",
       "get-team-users?file-id=*":
         "logged-in-user/get-team-users-single-user.json",

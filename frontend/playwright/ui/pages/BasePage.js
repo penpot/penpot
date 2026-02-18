@@ -1,4 +1,8 @@
 export class BasePage {
+  static async init(page) {
+    await BasePage.mockConfigFlags(page, []);
+  }
+
   /**
    * Mocks multiple RPC calls in a single call.
    *

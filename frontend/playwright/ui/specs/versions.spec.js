@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
-import { presenceFixture } from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
