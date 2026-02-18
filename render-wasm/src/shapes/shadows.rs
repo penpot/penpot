@@ -48,6 +48,17 @@ impl Shadow {
     }
 
     pub fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
+        if self.blur <= 0.0 && self.spread <= 0.0 {
+            // Avoid Skia's DropShadowOnly path for hard shadows because it can
+            // introduce soft alpha on the contour even with zero blur.
+            let filter = image_filters::offset((self.offset.0, self.offset.1), None, None);
+            return image_filters::color_filter(
+                skia::color_filters::blend(self.color, skia::BlendMode::SrcIn).unwrap(),
+                filter,
+                None,
+            );
+        }
+
         let mut filter = image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1),
             (self.blur, self.blur),
