@@ -100,9 +100,9 @@ pnpm run bootstrap
 
 This bootstrap command will:
 
-  * install dependencies for all components (`pnpm -r run install`)
-  * build all components (`pnpm -r run build`)
-  * start all components (`pnpm -r --parallel run start`)
+  * install dependencies for all components
+  * build all components
+  * start all components
 
 ### 2. Load the Plugin in Penpot and Establish the Connection
 
