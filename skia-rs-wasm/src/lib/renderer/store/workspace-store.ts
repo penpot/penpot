@@ -19,6 +19,9 @@ export interface WorkspaceState {
   selectionRect: Selrect | null
   isSelecting: boolean
   isMoving: boolean
+  /** When starting area selection with modifier: append (shift) or remove (shift+mod). */
+  areaSelectionAppend: boolean
+  areaSelectionRemove: boolean
   viewport: Viewport | null
   /** Bumped on pan/zoom so UI that reads viewport re-renders (viewport is mutated in place). */
   viewportVersion: number
@@ -36,6 +39,7 @@ export interface WorkspaceState {
   setSelectionRect: (rect: Selrect | null) => void
   setIsSelecting: (is: boolean) => void
   setIsMoving: (is: boolean) => void
+  setAreaSelectionMode: (append: boolean, remove: boolean) => void
   setViewport: (viewport: Viewport) => void
   /** Call after mutating viewport in place to refresh UI (zoom/pan display). */
   bumpViewportVersion: () => void
@@ -57,6 +61,8 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   selectionRect: null,
   isSelecting: false,
   isMoving: false,
+  areaSelectionAppend: false,
+  areaSelectionRemove: false,
   viewport: null,
   viewportVersion: 0,
   renderer: null,
@@ -70,6 +76,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
   setSelectionRect: (rect) => set({ selectionRect: rect }),
   setIsSelecting: (is) => set({ isSelecting: is }),
   setIsMoving: (is) => set({ isMoving: is }),
+  setAreaSelectionMode: (append, remove) => set({ areaSelectionAppend: append, areaSelectionRemove: remove }),
   setViewport: (viewport) => set({ viewport }),
   bumpViewportVersion: () => set((s) => ({ viewportVersion: s.viewportVersion + 1 })),
   setRenderer: (renderer) => set({ renderer }),
@@ -82,5 +89,32 @@ export const useWorkspaceStore = create<WorkspaceState>()((set) => ({
 
 const EMPTY_NODES: PenpotNode[] = []
 
+/** Flatten page tree (children + nested children) into id -> node map. */
+export function flattenPageNodes(page: PenpotPage | null | undefined): Record<string, PenpotNode> {
+  const acc: Record<string, PenpotNode> = {}
+  if (!page?.children?.length) return acc
+  function walk(nodes: PenpotNode[]) {
+    for (const node of nodes) {
+      acc[node.id] = node
+      const childList = (node as { children?: PenpotNode[] }).children
+      if (childList?.length) walk(childList)
+    }
+  }
+  walk(page.children)
+  return acc
+}
+
 export const selectCurrentPageNodes = (state: WorkspaceState): PenpotNode[] =>
   state.pageMap.get(state.pageId ?? '')?.children ?? EMPTY_NODES
+
+/** Selected nodes array derived from selectedIds and current page. Order matches selectedIds iterator. */
+export const selectSelectedNodes = (state: WorkspaceState): PenpotNode[] => {
+  const page = state.pageMap.get(state.pageId ?? '')
+  const byId = flattenPageNodes(page)
+  const result: PenpotNode[] = []
+  for (const id of state.selectedIds) {
+    const node = byId[id]
+    if (node) result.push(node)
+  }
+  return result
+}

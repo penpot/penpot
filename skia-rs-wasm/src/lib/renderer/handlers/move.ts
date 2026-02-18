@@ -55,6 +55,15 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
           const initialPos = initialNodePositions.get(node.id)!
           const newX = initialPos.x + worldDelta.x
           const newY = initialPos.y + worldDelta.y
+          const w = initialPos.width
+          const h = initialPos.height
+          // Update both selrect and points so logical position stays in sync with visual (frontend does the same)
+          const points = [
+            { x: newX, y: newY },
+            { x: newX + w, y: newY },
+            { x: newX + w, y: newY + h },
+            { x: newX, y: newY + h },
+          ]
           return {
             ...node,
             x: newX,
@@ -62,9 +71,10 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
             selrect: {
               x1: newX,
               y1: newY,
-              x2: newX + initialPos.width,
-              y2: newY + initialPos.height,
+              x2: newX + w,
+              y2: newY + h,
             },
+            points,
           }
         }
         return node

@@ -9,6 +9,7 @@ import { useWorkspaceStore } from '../store/workspace-store'
 import { useViewportShortcutsStore } from '../store/viewport-shortcuts-store'
 import type { ViewportPanModifier } from '../types'
 import { mousePosition$ } from '../streams'
+import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
 
 function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
   if (mod === null) return false
@@ -33,9 +34,9 @@ export function useViewportInteractions({
   // Single state selectors (for useCallback deps)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const renderer = useWorkspaceStore((state) => state.renderer)
-  const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
+  const setSelectedIds = useWorkspaceStore((state) => state.setSelectedIds)
   const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
   const isPanningRef = useRef<boolean>(false)
@@ -85,17 +86,55 @@ export function useViewportInteractions({
     if (e.button === 0) {
       e.preventDefault()
 
-      // Check if clicking on selected shape (start move) or empty space (start selection)
-      const pos = mousePosition$.value
-      if (pos && selectedIds.size > 0) {
-        // Check if clicking on a selected shape (simplified - in real app would check bounds)
-        setIsMoving(true)
-      } else {
-        // Start selection
+      const rect = canvasElement.getBoundingClientRect()
+      const screenX = e.clientX - rect.left
+      const screenY = e.clientY - rect.top
+      mousePosition$.next({ x: screenX, y: screenY })
+
+      const mod = e.ctrlKey || e.metaKey
+      const shift = e.shiftKey
+      const store = useWorkspaceStore.getState()
+      const { workerClient, pageId, viewport, pageMap, selectedIds } = store
+
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-viewport-interactions.ts:handleMouseDown',message:'left click',data:{hasWorker:!!workerClient,hasViewport:!!viewport,pageId:pageId ?? null,hasPage:!!pageMap.get(pageId ?? ''),mod,shift},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
+
+      if (mod) {
+        store.setAreaSelectionMode(shift, shift && mod)
         setIsSelecting(true)
+        return
       }
+
+      if (!workerClient || !viewport || !pageId) {
+        setIsSelecting(true)
+        return
+      }
+
+      const page = pageMap.get(pageId)
+      queryNodesAtPoint(workerClient, pageId, viewport, screenX, screenY).then(
+        (ids) => {
+          const topId = pickTopmostNode(page, ids)
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-viewport-interactions.ts:queryNodesAtPoint.then',message:'query result',data:{idsLength:ids?.length??0,topId:topId??null,hasPage:!!page},timestamp:Date.now(),hypothesisId:'H2,H3'})}).catch(()=>{});
+          // #endregion
+          if (topId) {
+            if (shift) {
+              const next = new Set(selectedIds)
+              if (next.has(topId)) next.delete(topId)
+              else next.add(topId)
+              setSelectedIds(next)
+            } else {
+              setSelectedIds(new Set([topId]))
+            }
+            setIsMoving(true)
+          } else {
+            setIsSelecting(true)
+          }
+        }
+      )
     }
-  }, [canvasRef, selectedIds, setIsSelecting, setIsMoving, shortcuts.panMouseButton, shortcuts.panWithModifier])
+  }, [canvasRef, setIsSelecting, setIsMoving, setSelectedIds, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
   // Handle mouse move for panning
   const handleMouseMove = useCallback((e: MouseEvent) => {

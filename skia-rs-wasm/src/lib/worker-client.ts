@@ -103,6 +103,16 @@ export class WorkerClient implements WorkerClientInterface {
       let decoded: WorkerMessage
       let rawData = event.data as any
       
+      // Agent debug: worker can post { type: 'agent-debug', data } for ingest
+      if (rawData?.type === 'agent-debug' && rawData?.data) {
+        fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rawData.data),
+        }).catch(() => {})
+        return
+      }
+
       // Check if this is an error message sent directly (not encoded)
       if (rawData.cmd === 'error' && rawData.error !== undefined) {
         // Error message sent directly without encoding
