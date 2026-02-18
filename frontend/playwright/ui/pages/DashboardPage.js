@@ -5,6 +5,8 @@ export class DashboardPage extends BaseWebSocketPage {
   static async init(page) {
     await super.init(page);
 
+    await super.mockConfigFlags(page, ["disable-onboarding"]);
+
     await super.mockRPC(
       page,
       "get-teams",
@@ -50,6 +52,12 @@ export class DashboardPage extends BaseWebSocketPage {
       page,
       "get-builtin-templates",
       "logged-in-user/get-built-in-templates-empty.json",
+    );
+
+    await super.mockRPC(
+      page,
+      "get-profile",
+      "logged-in-user/get-profile-logged-in.json",
     );
   }
 
