@@ -1150,3 +1150,24 @@
   [changes]
   (::page-id (meta changes)))
 
+
+(defn set-text-content
+  [changes id content prev-content]
+  (assert-page-id! changes)
+  (let [page-id (::page-id (meta changes))
+
+        redo-change
+        {:type :mod-obj
+         :page-id page-id
+         :id id
+         :operations [{:type :set :attr :content :val content}]}
+
+        undo-change
+        {:type :mod-obj
+         :page-id page-id
+         :id id
+         :operations [{:type :set :attr :content :val prev-content}]}]
+
+    (-> changes
+        (update :redo-changes conj redo-change)
+        (update :undo-changes conj undo-change))))
