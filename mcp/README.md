@@ -50,23 +50,11 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22.x
-with corepack).
+The project requires [Node.js](https://nodejs.org/) (tested with v22.x).  
+Following the installation of Node.js, the tools `corepack` and `npx`
+should be available in your terminal.
 
-Following the installation of Node.js, the tools `pnpm` and `npx`
-should be available in your terminal. For ensure corepack installed
-and enabled correctly, just execute the `./scripts/setup`.
-
-It is also required to have `caddy` executeable in the path, it is
-used for start a local server for generate types documentation from
-the current branch. If you want to run it outside devenv where all
-dependencies are already provided, please download caddy from
-[here](https://caddyserver.com/download).
-
-You should probably be using penpot devenv, where all this
-dependencies are already present and correctly setup. But nothing
-prevents you execute this outside of devenv if you satisfy the
-specified dependencies.
+On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
 ### 0. Clone the Appropriate Branch of the Repository 
 
@@ -97,7 +85,8 @@ cd penpot/mcp
 
 ### 1. Build & Launch the MCP Server and the Plugin Server
 
-If it's your first execution, install the required dependencies:
+If it's your first execution, install the required dependencies.
+(If you are using the Penpot devenv, this step is not necessary, as dependencies are already installed.)
 
 ```shell
 ./scripts/setup
