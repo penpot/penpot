@@ -144,14 +144,16 @@
       (st/emit! (dwtl/delete-token set-id id)))
 
     :applyToShapes
-    {:schema [:tuple
+    {:enumerable false
+     :schema [:tuple
               [:vector [:fn shape-proxy?]]
               [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
      :fn (fn [shapes attrs]
            (apply-token-to-shapes file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
 
     :applyToSelected
-    {:schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
+    {:enumerable false
+     :schema [:tuple [:maybe [:set [:and ::sm/keyword [:fn cto/token-attr?]]]]]
      :fn (fn [attrs]
            (let [selected (get-in @st/state [:workspace-local :selected])]
              (apply-token-to-shapes file-id set-id id selected attrs)))}))
@@ -236,14 +238,16 @@
               (apply array))))}
 
     :getTokenById
-    {:schema [:tuple ::sm/uuid]
+    {:enumerable false
+     :schema [:tuple ::sm/uuid]
      :fn (fn [token-id]
            (let [token (u/locate-token file-id id token-id)]
              (when (some? token)
                (token-proxy plugin-id file-id id token-id))))}
 
     :addToken
-    {:schema (fn [args]
+    {:enumerable false
+     :schema (fn [args]
                [:tuple (-> (cfo/make-token-schema
                             (-> (u/locate-tokens-lib file-id) (ctob/get-tokens id))
                             (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
@@ -353,13 +357,15 @@
     {:this true :get (fn [_])}
 
     :addSet
-    {:schema [:tuple [:fn token-set-proxy?]]
+    {:enumerable false
+     :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
            (let [theme (u/locate-token-theme file-id id)]
              (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme (obj/get token-set :name))))))}
 
     :removeSet
-    {:schema [:tuple [:fn token-set-proxy?]]
+    {:enumerable false
+     :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
            (let [theme (u/locate-token-theme file-id id)]
              (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme (obj/get token-set :name))))))}
@@ -406,7 +412,8 @@
          (apply array (map #(token-set-proxy plugin-id file-id (ctob/get-id %)) sets))))}
 
     :addTheme
-    {:schema (fn [attrs]
+    {:enumerable false
+     :schema (fn [attrs]
                [:tuple (-> (sm/schema (cfo/make-token-theme-schema
                                        (u/locate-tokens-lib file-id)
                                        (or (obj/get attrs "group") "")
@@ -419,7 +426,8 @@
              (token-theme-proxy plugin-id file-id (:id theme))))}
 
     :addSet
-    {:schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
+    {:enumerable false
+     :schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
                                      (u/locate-tokens-lib file-id)
                                      nil))
                          (sm/dissoc-key :id))] ;; We don't allow plugins to set the id
@@ -431,14 +439,16 @@
              (token-set-proxy plugin-id file-id (ctob/get-id set))))}
 
     :getThemeById
-    {:schema [:tuple ::sm/uuid]
+    {:enumerable false
+     :schema [:tuple ::sm/uuid]
      :fn (fn [theme-id]
            (let [theme (u/locate-token-theme file-id theme-id)]
              (when (some? theme)
                (token-theme-proxy plugin-id file-id theme-id))))}
 
     :getSetById
-    {:schema [:tuple ::sm/uuid]
+    {:enumerable false
+     :schema [:tuple ::sm/uuid]
      :fn (fn [set-id]
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)
