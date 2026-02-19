@@ -10,8 +10,10 @@
    [rumext.v2 :as mf]))
 
 (defn use-floating-dropdown [is-open wrapper-ref dropdown-ref]
-  (let [pos*   (mf/use-state nil)
-        ready* (mf/use-state false)
+  (let [position*   (mf/use-state nil)
+        position    (deref position*)
+        ready*      (mf/use-state false)
+        ready       (deref ready*)
         calculate-position
         (fn [node]
           (let [combobox-rect (dom/get-bounding-rect node)
@@ -24,22 +26,23 @@
                 windows-height (-> (dom/get-window-size)
                                    (:height))
 
-                space-below (- windows-height (:bottom combobox-rect))
-                space-above (:top combobox-rect)
+                space-below (- windows-height (:bottom combobox-rect)) 
 
-                place-top? (< space-below dropdown-height)
+                open-up? (and dropdown-height
+                              (> dropdown-height space-below))
 
-                position (if place-top?
-                           {:top (str (- space-above dropdown-height -14) "px")
-                            :left (str (:left combobox-rect) "px")
-                            :width (str (:width combobox-rect) "px")
-                            :placement :top}
-                           {:top (str (+ (:bottom combobox-rect) 4) "px")
-                            :left (str (:left combobox-rect) "px")
-                            :width (str (:width combobox-rect) "px")
-                            :placement :bottom})]
+                position (if open-up?
+                             {:bottom (str (- windows-height (:top combobox-rect) 12) "px")
+                              :left   (str (:left combobox-rect) "px")
+                              :width  (str (:width combobox-rect) "px")
+                              :placement :top}
+                         
+                             {:top   (str (+ (:bottom combobox-rect) 4) "px")
+                              :left  (str (:left combobox-rect) "px")
+                              :width (str (:width combobox-rect) "px")
+                              :placement :bottom})]
             (reset! ready* true)
-            (reset! pos* position)))]
+            (reset! position* position)))]
 
     (mf/with-effect [is-open  dropdown-ref wrapper-ref]
       (when is-open
@@ -63,5 +66,6 @@
             (.removeEventListener js/window "resize" handler)
             (.removeEventListener js/window "scroll" handler true)))))
 
-    {:style @pos*
-     :ready? @ready*}))
+    {:style position
+     :ready? ready
+     :recalculate calculate-position}))
