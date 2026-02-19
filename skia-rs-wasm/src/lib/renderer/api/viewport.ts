@@ -34,7 +34,9 @@ const renderPan = throttle((module: WasmModule, timestamp: number) => {
 }, THROTTLE_DELAY_MS)
 
 /**
- * Set view box with pan and zoom
+ * Set view box with pan and zoom.
+ * Flush an immediate render so the canvas updates before the next interaction; hit-test uses
+ * lastAppliedViewport (updated next frame) so it matches the displayed frame.
  */
 export function setViewBox(
   module: WasmModule,
@@ -49,12 +51,18 @@ export function setViewBox(
   module._set_view(zoom, -vbox.x, -vbox.y)
 
   if (isPan) {
-    // Pan: throttle render
+    if (getContextInitialized() && !getContextLost()) {
+      module._set_view_end()
+      render(module, performance.now())
+    }
     renderPan(module, performance.now())
     renderFinish(module, performance.now())
   } else {
-    // Zoom: render from cache
     module._render_from_cache(0)
+    if (getContextInitialized() && !getContextLost()) {
+      module._set_view_end()
+      render(module, performance.now())
+    }
     renderFinish(module, performance.now())
   }
 }

@@ -1,58 +1,59 @@
 /**
  * Move handler
  * Ported from frontend/src/app/main/data/workspace/transforms.cljs start-move-selected
+ * Uses WASM modifiers for preview during drag; commits on pointer up. Shift constrains to one axis.
  */
 
-import { Observable, EMPTY } from 'rxjs'
-import { map, filter, takeUntil, tap } from 'rxjs/operators'
+import { Observable, EMPTY, merge } from 'rxjs'
+import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
-import { useWorkspaceStore, selectCurrentPageNodes } from '../store/workspace-store'
-import { updatePage } from '../store/page-crud'
+import { useWorkspaceStore } from '../store/workspace-store'
+import { getModifierKeys } from '../store/shortcuts-store'
+import { updatePage, applyMoveDeltaToPage } from '../store/page-crud'
 import type { Point } from '../viewport'
+import type { Matrix } from '@penpot-exporter/types'
+
+function translateMatrix(dx: number, dy: number): Matrix {
+  return { a: 1, b: 0, c: 0, d: 1, e: dx, f: dy }
+}
+
+function constrainDeltaByShift(delta: { x: number; y: number }): { x: number; y: number } {
+  const keys = getModifierKeys()
+  if (!keys.shift) return delta
+  const xDisp = Math.abs(delta.x) > Math.abs(delta.y)
+  if (xDisp) return { x: delta.x, y: 0 }
+  return { x: 0, y: delta.y }
+}
 
 export function startMoveSelected(initialPosition: Point): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds, pageId, pageMap } = state
-  const nodes = selectCurrentPageNodes(state)
+  const { renderer, viewport, selectedIds, pageId, documentModel } = state
 
   if (!renderer || !viewport || selectedIds.size === 0 || !pageId) return EMPTY
 
-  const page = pageMap.get(pageId)
+  const page = documentModel?.getPage(pageId)
   if (!page) return EMPTY
 
   const stopper = dragStopper()
   const zoom = viewport.zoom
 
-  // Throttle to one update per frame using latest position (fix: smooth drag, node tracks cursor)
   const latestWorldDeltaRef = { current: { x: 0, y: 0 } }
   const rafScheduledRef = { current: false }
+  const modifiersAppliedRef = { current: false }
 
-  // Store initial node positions to calculate deltas correctly
-  const initialNodePositions = new Map<string, { x: number; y: number; width: number; height: number }>()
-  nodes.forEach((node) => {
-    if (selectedIds.has(node.id)) {
-      initialNodePositions.set(node.id, {
-        x: node.x ?? 0,
-        y: node.y ?? 0,
-        width: node.width ?? 0,
-        height: node.height ?? 0,
-      })
-    }
-  })
-
-  return mousePosition$.pipe(
-    filter((pos) => pos !== null),
-    map((pos) => pos!),
+  const moveStream = mousePosition$.pipe(
+    filter((pos): pos is NonNullable<typeof pos> => pos !== null),
     map((pos) => ({
       x: pos.x - initialPosition.x,
       y: pos.y - initialPosition.y,
     })),
-    filter((delta) => Math.sqrt(delta.x ** 2 + delta.y ** 2) > 10 / zoom), // Minimum movement
+    filter((delta) => Math.sqrt(delta.x ** 2 + delta.y ** 2) > 10 / zoom),
     map((delta) => ({
       x: delta.x / zoom,
       y: delta.y / zoom,
     })),
+    map(constrainDeltaByShift),
     tap((worldDelta) => {
       latestWorldDeltaRef.current = worldDelta
       if (!rafScheduledRef.current) {
@@ -60,39 +61,32 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
         requestAnimationFrame(() => {
           rafScheduledRef.current = false
           const delta = latestWorldDeltaRef.current
-          const updatedNodes = nodes.map((node) => {
-            if (selectedIds.has(node.id)) {
-              const initialPos = initialNodePositions.get(node.id)!
-              const newX = initialPos.x + delta.x
-              const newY = initialPos.y + delta.y
-              const w = initialPos.width
-              const h = initialPos.height
-              const points = [
-                { x: newX, y: newY },
-                { x: newX + w, y: newY },
-                { x: newX + w, y: newY + h },
-                { x: newX, y: newY + h },
-              ]
-              return {
-                ...node,
-                x: newX,
-                y: newY,
-                selrect: {
-                  x1: newX,
-                  y1: newY,
-                  x2: newX + w,
-                  y2: newY + h,
-                },
-                points,
-              }
-            }
-            return node
+          modifiersAppliedRef.current = true
+          const entries: Array<[string, Matrix]> = []
+          selectedIds.forEach((id) => {
+            entries.push([id, translateMatrix(delta.x, delta.y)])
           })
-          updatePage({ ...page, pageId, children: updatedNodes }).catch(() => {})
+          renderer.setMoveModifiers(entries)
+          useWorkspaceStore.getState().setMovePreviewDelta(delta)
         })
       }
     }),
     map(() => undefined),
     takeUntil(stopper)
   )
+
+  const commitOnRelease = stopper.pipe(
+    take(1),
+    tap(() => {
+      useWorkspaceStore.getState().setMovePreviewDelta(null)
+      if (!modifiersAppliedRef.current) return
+      renderer.cleanModifiers()
+      const delta = latestWorldDeltaRef.current
+      const updatedPage = applyMoveDeltaToPage(page, selectedIds, delta)
+      updatePage({ ...updatedPage, pageId }).catch(() => {})
+    }),
+    map(() => undefined)
+  )
+
+  return merge(moveStream, commitOnRelease)
 }

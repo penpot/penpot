@@ -104,7 +104,10 @@ function createIndex(objects: Record<string, PenpotNode>): SelectionIndex {
   const parentsIndex = generateChildAllParentsIndex(objects)
   const clipIndex = createClipIndex(objects, parentsIndex)
   const rootShapes = getImmediateChildren(objects, ZERO_UUID)
-  const bounds = shapesToRect(rootShapes)
+  // Use bounds that encompass all objects so the quadtree covers content after pan/move (e.g. negative coords)
+  const contentBounds = objectsBounds(objects)
+  const rootBounds = shapesToRect(rootShapes)
+  const bounds = contentBounds ?? rootBounds
 
   if (!bounds) {
     // Fallback bounds
@@ -170,8 +173,24 @@ function updateIndex(
     }
   }
 
-  const parentsIndex = generateChildAllParentsIndex(newObjects, shapes)
-  const clipIndex = createClipIndex(newObjects, parentsIndex)
+  const partialParentsIndex = generateChildAllParentsIndex(newObjects, shapes)
+  const partialClipIndex = createClipIndex(newObjects, partialParentsIndex)
+
+  // Keep full indices: merge existing with partial for changed shapes, drop entries for removed shapes
+  const parentsIndex: Record<string, Set<string>> = {}
+  for (const [id, set] of Object.entries(data.parentsIndex)) {
+    if (id in newObjects) parentsIndex[id] = set
+  }
+  for (const [id, set] of Object.entries(partialParentsIndex)) {
+    parentsIndex[id] = set
+  }
+  const clipIndex: Record<string, PenpotNode[]> = {}
+  for (const [id, arr] of Object.entries(data.clipIndex)) {
+    if (id in newObjects) clipIndex[id] = arr
+  }
+  for (const [id, arr] of Object.entries(partialClipIndex)) {
+    clipIndex[id] = arr
+  }
 
   let index = quadtree.removeAll(data.index, changedIds)
   for (const shape of shapes) {

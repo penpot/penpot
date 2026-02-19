@@ -19,10 +19,6 @@ export function handleAreaSelection(
   const store = useWorkspaceStore.getState()
   const { workerClient, pageId, viewport } = store
 
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'selection.ts:handleAreaSelection',message:'area selection start',data:{hasWorker:!!workerClient,hasViewport:!!viewport,pageId:pageId??null},timestamp:Date.now(),hypothesisId:'H4,H5'})}).catch(()=>{});
-  // #endregion
-
   if (!workerClient || !viewport) return EMPTY
   
   const stopper = dragStopper()
@@ -32,11 +28,6 @@ export function handleAreaSelection(
   return mousePosition$.pipe(
     filter(pos => pos !== null),
     take(1),
-    tap(initialPosition => {
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'selection.ts:handleAreaSelection',message:'area selection got initial position',data:initialPosition?{x:initialPosition.x,y:initialPosition.y}:null,timestamp:Date.now(),hypothesisId:'H6'})}).catch(()=>{});
-      // #endregion
-    }),
     switchMap(initialPosition => {
       if (!initialPosition) return EMPTY
 
@@ -53,11 +44,6 @@ export function handleAreaSelection(
           return makeSelrect(x1, y1, x2 - x1, y2 - y1)
         }, makeSelrect(0, 0, 0, 0)),
         filter(rect => rect.width > 10 || rect.height > 10), // Minimum size
-        tap(rect => {
-          // #region agent log
-          fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'selection.ts:selrectStream',message:'area rect update',data:{w:rect?.width,h:rect?.height},timestamp:Date.now(),hypothesisId:'H6'})}).catch(()=>{});
-          // #endregion
-        }),
         takeUntil(stopper)
       )
       

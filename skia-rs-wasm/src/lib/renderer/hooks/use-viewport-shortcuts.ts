@@ -3,12 +3,12 @@
  * Returns the current full config and a setter that merges partial overrides.
  */
 
-import { useViewportShortcutsStore } from '../store/viewport-shortcuts-store'
-import type { ViewportShortcutsConfig } from '../types'
+import { useViewportShortcutsStore } from '../store/shortcuts-store'
+import type { ShortcutsConfig } from '../types'
 
 export function useViewportShortcuts(): [
-  ViewportShortcutsConfig,
-  (partial: Partial<ViewportShortcutsConfig>) => void
+  ShortcutsConfig,
+  (partial: Partial<ShortcutsConfig>) => void
 ] {
   const viewportShortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   const setViewportShortcuts = useViewportShortcutsStore((state) => state.setViewportShortcuts)

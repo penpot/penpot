@@ -129,7 +129,7 @@ export type ViewportPanModifier = 'shift' | 'alt' | 'ctrl' | 'meta' | null
  * Full viewport shortcuts config (KeyboardEvent.code strings and mouse options).
  * All fields are required in the resolved config; use Partial for overrides.
  */
-export interface ViewportShortcutsConfig {
+export interface ShortcutsConfig {
   panLeft: string
   panRight: string
   panUp: string
@@ -152,7 +152,7 @@ export interface CanvasWrapperProps {
   rendererOptions?: RendererOptions
   onError?: (error: Error) => void
   /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */
-  viewportShortcuts?: Partial<ViewportShortcutsConfig>
+  shortcuts?: Partial<ShortcutsConfig>
 }
 
 /** Worker configuration (keys logged only; shape extensible). */

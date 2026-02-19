@@ -6,6 +6,7 @@
 import type { WasmModule } from './wasm-types'
 import type { RendererOptions } from './types'
 import type { PenpotNode, PenpotPage } from '@penpot-exporter/types'
+import type { Matrix } from '@penpot-exporter/types'
 import { getDPR } from './utils'
 import { Viewport } from './viewport'
 import { initCanvasContext, setCanvasSize, setCanvasBackground, clearCanvas, clearCanvasPixels } from './api/canvas'
@@ -14,6 +15,7 @@ import { getContextInitialized } from './api/context'
 import { processObject } from './api/orchestration'
 import { requestRender } from './api/rendering'
 import { moduleUseShape, setShapeChildren } from './api/shape'
+import { setModifiers, cleanModifiers as cleanModifiersApi } from './api/modifiers'
 
 function defaultOptions(options?: RendererOptions): Required<RendererOptions> {
   return {
@@ -227,6 +229,23 @@ export class Renderer {
     requestRender(this.module, 'updateParentChildren')
   }
 
+  /**
+   * Set move (translate) modifiers for preview during drag. Each entry is [shapeId, translateMatrix].
+   * Use cleanModifiers() when drag ends.
+   */
+  setMoveModifiers(entries: Array<[string, Matrix]>): void {
+    if (!getContextInitialized() || !this.module) return
+    setModifiers(this.module, entries)
+  }
+
+  /**
+   * Clear modifiers (e.g. after move ends). Safe to call even if none were set.
+   */
+  cleanModifiers(): void {
+    if (!getContextInitialized() || !this.module) return
+    cleanModifiersApi(this.module)
+  }
+
   getModule(): WasmModule {
     return this.module
   }
@@ -241,15 +260,17 @@ export class Renderer {
 export { CanvasWrapper } from './canvas-wrapper'
 export { WorkerClient } from '../worker-client'
 export { createWorker } from '../worker-factory'
-export type { CanvasWrapperProps, InitializationState, ViewportShortcutsConfig, ViewportPanModifier } from './types'
+export type { CanvasWrapperProps, InitializationState, ShortcutsConfig, ViewportPanModifier } from './types'
 
 // Export Zustand store
-export { useWorkspaceStore, selectCurrentPageNodes, selectSelectedNodes } from './store/workspace-store'
+export { useWorkspaceStore, type IDocumentModel } from './store/workspace-store'
+export { useWorkspaceDevStore } from './store/workspace-dev-store'
 export {
   useViewportShortcutsStore,
-  DEFAULT_VIEWPORT_SHORTCUTS,
+  DEFAULT_SHORTCUTS as DEFAULT_VIEWPORT_SHORTCUTS,
   getViewportShortcuts,
-} from './store/viewport-shortcuts-store'
+  getModifierKeys,
+} from './store/shortcuts-store'
 export { setDocument, addPage, updatePage, deletePage, addNode, updateNode, deleteNode, createNewDocument } from './store/page-crud'
 
 // Export renderer client lifecycle

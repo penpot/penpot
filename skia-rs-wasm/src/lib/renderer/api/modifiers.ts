@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Transform } from '../types'
+import type { Matrix } from '@penpot-exporter/types'
 import {
   allocBytes,
   freeBytes,
@@ -25,7 +25,7 @@ import { requestRender } from './rendering'
 /**
  * Set modifiers
  */
-export function setModifiers(module: WasmModule, modifiers: Array<[string, Transform]>): void {
+export function setModifiers(module: WasmModule, modifiers: Array<[string, Matrix]>): void {
   checkContext(module)
   if (modifiers.length === 0) {
     return
@@ -51,9 +51,9 @@ export function setModifiers(module: WasmModule, modifiers: Array<[string, Trans
  */
 export function propagateModifiers(
   module: WasmModule,
-  entries: Array<[string, Transform]>,
+  entries: Array<[string, Matrix]>,
   pixelPrecision: number
-): Array<{ id: string; transform: Transform }> {
+): Array<{ id: string; transform: Matrix }> {
   checkContext(module)
   if (entries.length === 0) {
     return []
@@ -73,7 +73,7 @@ export function propagateModifiers(
   const length = heapU32[resultOffset]
   const maxOffset = resultOffset + 1 + length * MODIFIER_U32_SIZE
 
-  const result: Array<{ id: string; transform: Transform }> = []
+  const result: Array<{ id: string; transform: Matrix }> = []
   let readOffset = resultOffset + 1
 
   while (readOffset < maxOffset) {
@@ -86,7 +86,7 @@ export function propagateModifiers(
     readOffset += 4
 
     // Read transform
-    const transform: Transform = {
+    const transform: Matrix = {
       a: heapF32[readOffset],
       b: heapF32[readOffset + 1],
       c: heapF32[readOffset + 2],
