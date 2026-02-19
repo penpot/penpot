@@ -14,13 +14,13 @@
    [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :as ds]
-   [app.main.ui.ds.controls.select :refer [get-option]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.controls.utilities.utils :as csu]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls.floating :refer [use-floating-dropdown]]
    [app.main.ui.workspace.tokens.management.forms.controls.navigation :refer [use-navigation]]
+   [app.main.ui.workspace.tokens.management.forms.controls.token-parsing :as tp]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -28,61 +28,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(defn extract-partial-token
-  [value cursor]
-  (let [text-before (subs value 0 cursor)
-        last-open  (str/last-index-of text-before "{")
-        last-close (str/last-index-of text-before "}")]
-    (when (and last-open (or (nil? last-close) (> last-open last-close)))
-      {:start last-open
-       :partial (subs text-before (inc last-open))})))
-
-(defn replace-active-token
-  [value cursor new-name]
-
-  (let [before     (subs value 0 cursor)
-        last-open  (str/last-index-of before "{")
-        last-close (str/last-index-of before "}")]
-
-    (if (and last-open
-             (or (nil? last-close)
-                 (> last-open last-close)))
-
-      (let [after-start (subs value last-open)
-            close-pos   (str/index-of after-start "}")
-            end         (if close-pos
-                          (+ last-open close-pos 1)
-                          cursor)]
-        (str (subs value 0 last-open)
-             "{" new-name "}"
-             (subs value end)))
-      (str (subs value 0 cursor)
-           "{" new-name "}"
-           (subs value cursor)))))
-
-(defn active-token [value input-node]
-  (let [cursor (.-selectionStart input-node)]
-    (extract-partial-token value cursor)))
-
-(defn remove-self-token [filtered-options current-token]
-  (let [group (:type current-token)
-        current-id (:id current-token)
-        filtered-options (deref filtered-options)]
-    (update filtered-options group
-            (fn [options]
-              (remove #(= (:id %) current-id) options)))))
-
-(defn- select-option-by-id
-  [id options-ref input-node value]
-  (let [cursor     (.-selectionStart input-node)
-        options    (mf/ref-val options-ref)
-        options    (if (delay? options) @options options)
-
-        option     (get-option options id)
-        name       (:name option)
-        final-val  (replace-active-token value cursor name)]
-    final-val))
 
 (defn- resolve-value
   [tokens prev-token token-name value]
@@ -150,7 +95,7 @@
         visible-options
         (mf/with-memo [filtered-tokens-by-type token]
           (if token
-            (remove-self-token filtered-tokens-by-type token)
+            (tp/remove-self-token filtered-tokens-by-type token)
             filtered-tokens-by-type))
 
         dropdown-options
@@ -168,12 +113,12 @@
 
         toggle-dropdown
         (mf/use-fn
-         (mf/deps)
+         (mf/deps is-open)
          (fn [event]
            (dom/prevent-default event)
+           (swap! is-open* not)
            (let [input-node (mf/ref-val ref)]
-             (dom/focus! input-node))
-           (swap! is-open* not)))
+             (dom/focus! input-node))))
 
         resolve-stream
         (mf/with-memo [token]
@@ -186,7 +131,7 @@
          (mf/deps value resolve-stream name)
          (fn [id]
            (let [input-node (mf/ref-val ref)
-                 final-val  (select-option-by-id id options-ref input-node value)]
+                 final-val  (tp/select-option-by-id id options-ref input-node value)]
              (fm/on-input-change form name final-val true)
              (rx/push! resolve-stream final-val)
              (reset! filter-term* "")
@@ -207,7 +152,7 @@
          (fn [event]
            (let [node   (dom/get-target event)
                  value  (dom/get-input-value node)
-                 token  (active-token value node)]
+                 token  (tp/active-token value node)]
 
              (fm/on-input-change form name value)
              (rx/push! resolve-stream value)
@@ -227,7 +172,7 @@
            (let [input-node (mf/ref-val ref)
                  node       (dom/get-current-target event)
                  id         (dom/get-data node "id")
-                 final-val  (select-option-by-id id options-ref input-node value)]
+                 final-val  (tp/select-option-by-id id options-ref input-node value)]
 
              (fm/on-input-change form name final-val true)
              (rx/push! resolve-stream final-val)
@@ -278,7 +223,7 @@
           props)
 
 
-        floating          (use-floating-dropdown is-open wrapper-ref dropdown-ref)]
+        {:keys [style ready?]} (use-floating-dropdown is-open wrapper-ref dropdown-ref)]
 
     (mf/with-effect [resolve-stream tokens token name token-name]
       (let [subs (->> resolve-stream
@@ -304,41 +249,42 @@
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
 
-    (mf/with-effect [is-open* ref nodes-ref]
+    (mf/with-effect [is-open* ref wrapper-ref]
       (when is-open
         (let [handler (fn [event]
-                        (let [input-node    (mf/ref-val ref)
+                        (let [wrapper-node  (mf/ref-val wrapper-ref)
                               dropdown-node (mf/ref-val dropdown-ref)
                               target        (dom/get-target event)]
-                          (when (and input-node dropdown-node
-                                     (not (dom/child? target input-node))
+                          (when (and wrapper-node dropdown-node
+                                     (not (dom/child? target wrapper-node))
                                      (not (dom/child? target dropdown-node)))
                             (reset! is-open* false))))]
 
           (.addEventListener js/document "mousedown" handler)
 
           (fn []
-            (.removeEventListener js/document "mousedown" handler)))))
+            (.removeEventListener js/document "mousedown" handler))))) 
 
 
-    [:div {:ref wrapper-ref}
-     [:> ds/input* props]
-     (when ^boolean is-open
-       (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
-         (mf/portal
-          (mf/html
-           [:> options-dropdown* {:on-click on-option-click
-                                  :class (stl/css :dropdown)
-                                  :style {:visibility (if (:ready? floating) "visible" "hidden")
-                                          :left (get-in floating [:style :left])
-                                          :top (get-in floating [:style :top])
-                                          :width (get-in floating [:style :width])}
-                                  :id listbox-id
-                                  :options options
-                                  :focused focused-id
-                                  :selected nil
-                                  :align :right
-                                  :empty-to-end empty-to-end
-                                  :wrapper-ref dropdown-ref
-                                  :ref set-option-ref}])
-          (dom/get-body))))]))
+      [:div {:ref wrapper-ref}
+       [:> ds/input* props]
+       (when ^boolean is-open
+         (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+           (mf/portal
+            (mf/html
+             [:> options-dropdown* {:on-click on-option-click
+                                    :class (stl/css :dropdown)
+                                    :style {:visibility (if ready? "visible" "hidden")
+                                            :left (:left style)
+                                            :top (or (:top style) "unset")
+                                            :bottom (or (:bottom style) "unset")
+                                            :width (:width style)}
+                                    :id listbox-id
+                                    :options options
+                                    :focused focused-id
+                                    :selected nil
+                                    :align :right
+                                    :empty-to-end empty-to-end
+                                    :wrapper-ref dropdown-ref
+                                    :ref set-option-ref}])
+            (dom/get-body))))]))
