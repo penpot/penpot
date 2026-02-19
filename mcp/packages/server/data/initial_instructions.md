@@ -52,7 +52,6 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
   * The z-order of shapes is determined by the order in the `children` array of the parent shape.
     Therefore, when creating shapes that should be on top of each other, add them to the parent in the correct order
     (i.e. add background shapes first, then foreground shapes later).
-    CRITICAL: NEVER use the broken function `appendChild` to achieve this, ALWAYS use `parent.insertChild(parent.children.length, shape)`
   * To modify z-order after creation, use these methods: `bringToFront()`, `sendToBack()`, `bringForward()`, `sendBackward()`,
     and, for precise control, `setParentIndex(index)` (0-based).
 
@@ -65,9 +64,7 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 **Hierarchical Structure**:
   * `parent` - The parent shape (null for root shapes)
     Note: Hierarchical nesting does not necessarily imply visual containment
-  * CRITICAL: To add children to a parent shape (e.g. a `Board`):
-    - ALWAYS use `parent.insertChild(index, shape)` to add a child, e.g. `parent.insertChild(parent.children.length, shape)` to append
-    - NEVER use `parent.appendChild(shape)` as it is BROKEN and will not insert in a predictable place (except in flex layout boards)
+  * To add children to a parent shape (e.g. a `Board`): `parent.appendChild(shape)` or `parent.insertChild(index, shape)` 
   * Reparenting: `newParent.appendChild(shape)` or `newParent.insertChild(index, shape)` will move a shape to new parent
     - Automatically removes the shape from its old parent
     - Absolute x/y positions are preserved (use `penpotUtils.setParentXY` to adjust relative position)
@@ -99,17 +96,11 @@ Boards can have layout systems that automatically control the positioning and sp
        - To modify spacing: adjust `rowGap` and `columnGap` properties, not individual child positions.
          Optionally, adjust individual child margins via `child.layoutChild`.
        - Sizing: `verticalSizing` and `horizontalSizing` are NOT functional. You need to size manually for the time being.
-    - When a board has flex layout,
-       - child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
-         appending or inserting children automatically positions them according to the layout rules.
-       - CRITICAL: For dir="column" or dir="row", the order of the `children` array is reversed relative to the visual order!
-         Therefore, the element that appears first in the array, appears visually at the end (bottom/right) and vice versa.
-         ALWAYS BEAR IN MIND THAT THE CHILDREN ARRAY ORDER IS REVERSED FOR dir="column" OR dir="row"!
+    - When a board has flex layout, child positions are controlled by the layout system, not by individual x/y coordinates (unless `child.layoutChild.absolute` is true);
+      appending or inserting children automatically positions them according to the layout rules.
     - CRITICAL: The FlexLayout method `board.flex.appendChild` is BROKEN. To append children to a flex layout board such that
-      they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`; it will insert at the front
-      of the `children` array for dir="column" or dir="row", which is what you want. So call it in the order of visual appearance.
-      To insert at a specific index, use `board.insertChild(index, shape)`, bearing in mind the reversed order for dir="column"
-      or dir="row".
+      they appear visually at the end, ALWAYS use the Board's method `board.appendChild(shape)`. So call it in the order of visual appearance.
+      To insert at a specific index, use `board.insertChild(index, shape)`.
     - Add to a board with `board.addFlexLayout(): FlexLayout`; instance then accessible via `board.flex`.
       IMPORTANT: When adding a flex layout to a container that already has children,
       use `penpotUtils.addFlexLayout(container, dir)` instead! This preserves the existing visual order of children.
