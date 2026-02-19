@@ -36,7 +36,7 @@
 
   (let [focused-id* (mf/use-state nil)
         focused-id  (deref focused-id*)
-        
+
         on-key-down
         (mf/use-fn
          (mf/deps is-open focused-id)

@@ -41,6 +41,7 @@
           :id id
           :on-click on-click
           :data-id id
+          :aria-label name
           :data-testid "dropdown-option"}
 
      (if selected
