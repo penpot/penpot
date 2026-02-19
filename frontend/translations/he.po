@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-18 14:09+0000\n"
+"PO-Revision-Date: 2026-02-20 03:09+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -7866,7 +7866,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "שגיאות הפניה: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:285, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:459, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:311, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:251, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:364, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:465, src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "ערך פתור: %s"
 
@@ -7982,7 +7981,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "רשימת ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:275, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "תיאור"
 
@@ -8681,3 +8679,31 @@ msgstr "הפעולה הזאת עלולה לארוך זמן מה."
 #, unused
 msgid "workspace.tokens.remapping-in-progress"
 msgstr "הפניות האסימון (token) ממופות מחדש…"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:281
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "ערך הטשטוש לא יכול להיות שלילי"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+#, unused
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "ערך הפריסה לא יכול להיות שלילי"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+#, unused
+msgid "workspace.tokens.theme.disable"
+msgstr "כיבוי"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#, unused
+msgid "workspace.tokens.theme.enable"
+msgstr "הפעלה"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr "שינוי השם של האסימון (token) הזה יפגום בהפניות לשם הישן שלו"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "כלי ניפוי שגיאות"
