@@ -267,7 +267,7 @@ The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
 `Token`: union type encompassing various token types, with common properties:
   * `name: string` - Token name (typically structured, e.g. "color.base.white")
   * `value` - Raw value (direct value or reference to another token like "{color.primary}")
-  * `resolvedValue` - Computed final value (follows references) - currently NOT working, do not use!
+  * `resolvedValue` - Computed final value (follows references)
   * `type: TokenType`
 
 Discovering tokens:
