@@ -27,6 +27,7 @@
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.features :as features]
    [app.main.fonts :refer [fetch-font-css]]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -365,8 +366,10 @@
                   (cb/add-object shape))]
 
           (st/emit! (ch/commit-changes changes)
-                    (se/event plugin-id "create-shape" :type :text)
-                    (dwwt/resize-wasm-text-debounce (:id shape)))
+                    (se/event plugin-id "create-shape" :type :text))
+
+          (when (features/active-feature? @st/state "render-wasm/v1")
+            (st/emit! (dwwt/resize-wasm-text-debounce (:id shape))))
 
           (shape/shape-proxy plugin-id (:id shape)))))
 
