@@ -50,31 +50,45 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22.x
-with corepack).
+The project requires [Node.js](https://nodejs.org/) (tested with v22.x).  
+Following the installation of Node.js, the tools `corepack` and `npx`
+should be available in your terminal.
 
-Following the installation of Node.js, the tools `pnpm` and `npx`
-should be available in your terminal. For ensure corepack installed
-and enabled correctly, just execute the `./scripts/setup`.
+On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
-It is also required to have `caddy` executeable in the path, it is
-used for start a local server for generate types documentation from
-the current branch. If you want to run it outside devenv where all
-dependencies are already provided, please download caddy from
-[here](https://caddyserver.com/download).
+### 0. Clone the Appropriate Branch of the Repository 
 
-You should probably be using penpot devenv, where all this
-dependencies are already present and correctly setup. But nothing
-prevents you execute this outside of devenv if you satisfy the
-specified dependencies.
+> [!IMPORTANT]
+> The branches are subject to change in the future.  
+> Be sure to check the instructions for the latest information on which branch to use.
 
+Clone the Penpot repository, using the proper branch depending on the
+version of Penpot you want to use the MCP server with.
+
+  * For released versions of Penpot, use the `mcp-prod` branch:
+
+    ```shell
+    git clone https://github.com/penpot/penpot.git --branch mcp-prod --depth 1
+    ```
+
+  * For the latest development version of Penpot, use the `develop` branch:
+
+    ```shell
+    git clone https://github.com/penpot/penpot.git --branch develop --depth 1
+    ```
+
+Then change into the `mcp` directory:
+
+```shell
+cd penpot/mcp
+```
 
 ### 1. Build & Launch the MCP Server and the Plugin Server
 
-If it's your first execution, install the required dependencies:
+If it's your first execution, install the required dependencies.
+(If you are using the Penpot devenv, this step is not necessary, as dependencies are already installed.)
 
 ```shell
-cd mcp/
 ./scripts/setup
 ```
 
@@ -86,9 +100,9 @@ pnpm run bootstrap
 
 This bootstrap command will:
 
-  * install dependencies for all components (`pnpm -r run install`)
-  * build all components (`pnpm -r run build`)
-  * start all components (`pnpm -r --parallel run start`)
+  * install dependencies for all components
+  * build all components
+  * start all components
 
 ### 2. Load the Plugin in Penpot and Establish the Connection
 
@@ -195,31 +209,30 @@ To add the Penpot MCP server to a Claude Code project, issue the command
 
 This repository is a monorepo containing four main components:
 
-1. **Common Types** (`common/`):
+1. **Common Types** (`packages/common/`):
     - Shared TypeScript definitions for request/response protocol
     - Ensures type safety across server and plugin components
 
-2. **Penpot MCP Server** (`mcp-server/`):
+2. **Penpot MCP Server** (`packages/server/`):
     - Provides MCP tools to LLMs for Penpot interaction
     - Runs a WebSocket server accepting connections from the Penpot MCP plugin
     - Implements request/response correlation with unique task IDs
     - Handles task timeouts and proper error reporting
 
-3. **Penpot MCP Plugin** (`penpot-plugin/`):
+3. **Penpot MCP Plugin** (`packages/plugin/`):
     - Connects to the MCP server via WebSocket
     - Executes tasks in Penpot using the Plugin API
     - Sends structured responses back to the server#
 
-4. **Helper Scripts** (`python-scripts/`):
-    - Python scripts that prepare data for the MCP server (development use)
+4. **Types Generator** (`types-generator/`):
+    - Generates data on API types for the MCP server (development use)
 
 The core components are written in TypeScript, rendering interactions with the
 Penpot Plugin API both natural and type-safe.
 
 ## Configuration
 
-The Penpot MCP server can be configured using environment variables. All configuration
-options use the `PENPOT_MCP_` prefix for consistency.
+The Penpot MCP server can be configured using environment variables.
 
 ### Server Configuration
 
@@ -263,3 +276,9 @@ you may set the following environment variables to configure the two servers
  * `PENPOT_MCP_SERVER_ADDRESS=<your-address>`: This sets the hostname or IP address
    where the MCP server can be reached. The Penpot MCP Plugin uses this to construct
    the WebSocket URL as `ws://<your-address>:<port>` (default port: `4402`).
+
+## Development
+
+* The [contribution guidelines for Penpot](../CONTRIBUTING.md) apply
+* Auto-formatting: Use `pnpm run fmt`
+* Generating API type data: See [types-generator/README.md](types-generator/README.md)
