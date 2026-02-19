@@ -3,12 +3,13 @@
  * Ported from frontend/src/app/util/quadtree.js
  */
 
-import type { Selrect } from './types'
+import type { Selrect } from '@penpot-exporter/types'
+import { makeSelrect } from './types'
 
 export interface QuadtreeNode {
   id: string
   bounds: Selrect
-  data: any
+  data: unknown
 }
 
 export class Quadtree {
@@ -37,7 +38,7 @@ export class Quadtree {
 
     // top-right quad
     this.indexes[0] = new Quadtree(
-      { x: x + subWidth, y: y, width: subWidth, height: subHeight },
+      makeSelrect(x + subWidth, y, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
       nextLevel
@@ -45,7 +46,7 @@ export class Quadtree {
 
     // top-left quad
     this.indexes[1] = new Quadtree(
-      { x: x, y: y, width: subWidth, height: subHeight },
+      makeSelrect(x, y, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
       nextLevel
@@ -53,7 +54,7 @@ export class Quadtree {
 
     // bottom-left quad
     this.indexes[2] = new Quadtree(
-      { x: x, y: y + subHeight, width: subWidth, height: subHeight },
+      makeSelrect(x, y + subHeight, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
       nextLevel
@@ -61,7 +62,7 @@ export class Quadtree {
 
     // bottom-right quad
     this.indexes[3] = new Quadtree(
-      { x: x + subWidth, y: y + subHeight, width: subWidth, height: subHeight },
+      makeSelrect(x + subWidth, y + subHeight, subWidth, subHeight),
       this.maxObjects,
       this.maxLevels,
       nextLevel
@@ -168,7 +169,7 @@ export function insert(
   index: Quadtree,
   id: string,
   bounds: Selrect,
-  data: any
+  data: unknown
 ): Quadtree {
   const node: QuadtreeNode = { id, bounds, data }
   index.insert(node)
