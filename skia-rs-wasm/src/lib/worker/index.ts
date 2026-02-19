@@ -232,24 +232,6 @@ self.addEventListener('message', (event: MessageEvent) => {
     const message = decode(raw)
     const result = handler(message)
 
-    // #region agent log – worker debug for query-selection
-    if (message.cmd === 'index/query-selection' && message.payload) {
-      const params = message.payload as QueryParams
-      const hasIndex = !!(state.selection && state.selection[params.pageId])
-      const resultLen = Array.isArray(result) ? result.length : 0
-      self.postMessage({
-        type: 'agent-debug',
-        data: {
-          location: 'worker/index:query-selection',
-          message: 'worker query-selection',
-          data: { pageId: params.pageId, hasIndex, resultLength: resultLen },
-          timestamp: Date.now(),
-          hypothesisId: 'W1',
-        },
-      })
-    }
-    // #endregion
-
     // Always send response when client expects one (replyTo present)
     if (replyTo) {
       const response = encode({

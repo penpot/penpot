@@ -1,18 +1,12 @@
 import type { JSX } from 'react'
-import { useMemo } from 'react'
-import { useWorkspaceStore, flattenPageNodes } from '../lib/renderer/store/workspace-store'
+import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 
 const MAX_IDS_SHOWN = 5
 
 export function SelectionInfo(): JSX.Element {
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
-  const page = useWorkspaceStore((state) => state.pageMap.get(state.pageId ?? '') ?? null)
-  const nodesById = useMemo(() => flattenPageNodes(page), [page])
-  const selectedNodes = useMemo(
-    () => Array.from(selectedIds).map((id) => nodesById[id]).filter(Boolean),
-    [selectedIds, nodesById]
-  )
+  const selectedNodes = useWorkspaceStore((state) => state.selectedNodes)
 
   const count = selectedIds.size
   const idList = Array.from(selectedIds)

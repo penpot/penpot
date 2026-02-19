@@ -3,7 +3,8 @@ import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradien
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
-import { useWorkspaceStore, selectCurrentPageNodes } from '../lib/renderer/store/workspace-store'
+import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
+import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
 import { addNode, updateNode, deleteNode, setDocument, createNewDocument } from '../lib/renderer/store/page-crud'
 import './DevToolbar.css'
 import type { ShapeType } from 'src/lib/renderer/types'
@@ -18,7 +19,7 @@ const CANVAS_WIDTH = 800
 const CANVAS_HEIGHT = 600
 
 export function DevToolbar() {
-  const nodes = useWorkspaceStore(selectCurrentPageNodes)
+  const nodes = useWorkspaceDevStore((state) => state.currentPageNodes)
   const renderer = useWorkspaceStore((state) => state.renderer)
   const isPageReady = renderer !== null && renderer.isInitialized()
   const canvasWidth = CANVAS_WIDTH

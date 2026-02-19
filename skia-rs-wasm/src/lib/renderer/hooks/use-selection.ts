@@ -17,10 +17,6 @@ export function useSelection() {
   useEffect(() => {
     if (!isSelecting) return
 
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-selection.ts:useEffect',message:'subscribing to handleAreaSelection',data:{isSelecting},timestamp:Date.now(),hypothesisId:'H4'})}).catch(()=>{});
-    // #endregion
-
     const subscription = handleAreaSelection(
       areaSelectionAppend,
       areaSelectionRemove

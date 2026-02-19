@@ -9,20 +9,24 @@ import type { Viewport } from '../viewport'
 import { makeSelrect } from '../../worker/types'
 
 const POINT_QUERY_SIZE_SCREEN = 5
+/** Minimum half-size in world units so hit-test has tolerance after zoom/pan. */
+const MIN_HALF_WORLD = 12
 
 /**
  * Build a small world rect around the point (mirror frontend center->rect point (/ 5 zoom)).
  * Returns ids of nodes overlapping that rect.
+ * Uses a minimum world-space half size so selection remains reliable after zoom.
  */
 export async function queryNodesAtPoint(
   workerClient: WorkerClient,
   pageId: string,
   viewport: Viewport,
   screenX: number,
-  screenY: number
+  screenY: number,
+  _canvasHeight?: number
 ): Promise<string[]> {
   const center = viewport.screenToWorld(screenX, screenY)
-  const half = POINT_QUERY_SIZE_SCREEN / viewport.zoom
+  const half = Math.max(POINT_QUERY_SIZE_SCREEN / viewport.zoom, MIN_HALF_WORLD)
   const rect = makeSelrect(
     center.x - half,
     center.y - half,

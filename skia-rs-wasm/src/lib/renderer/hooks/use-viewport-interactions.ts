@@ -6,7 +6,7 @@
 import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
 import { useWorkspaceStore } from '../store/workspace-store'
-import { useViewportShortcutsStore } from '../store/viewport-shortcuts-store'
+import { useViewportShortcutsStore } from '../store/shortcuts-store'
 import type { ViewportPanModifier } from '../types'
 import { mousePosition$ } from '../streams'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
@@ -94,11 +94,9 @@ export function useViewportInteractions({
       const mod = e.ctrlKey || e.metaKey
       const shift = e.shiftKey
       const store = useWorkspaceStore.getState()
-      const { workerClient, pageId, viewport, pageMap, selectedIds } = store
-
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-viewport-interactions.ts:handleMouseDown',message:'left click',data:{hasWorker:!!workerClient,hasViewport:!!viewport,pageId:pageId ?? null,hasPage:!!pageMap.get(pageId ?? ''),mod,shift},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-      // #endregion
+      const { workerClient, pageId, viewport, lastAppliedViewport, documentModel, selectedIds } = store
+      const page = documentModel?.getPage(pageId ?? '')
+      const viewportForHit = lastAppliedViewport ?? viewport
 
       if (mod) {
         store.setAreaSelectionMode(shift, shift && mod)
@@ -106,18 +104,13 @@ export function useViewportInteractions({
         return
       }
 
-      if (!workerClient || !viewport || !pageId) {
+      if (!workerClient || !viewportForHit || !pageId) {
         setIsSelecting(true)
         return
       }
-
-      const page = pageMap.get(pageId)
-      queryNodesAtPoint(workerClient, pageId, viewport, screenX, screenY).then(
+      queryNodesAtPoint(workerClient, pageId, viewportForHit, screenX, screenY).then(
         (ids) => {
           const topId = pickTopmostNode(page, ids)
-          // #region agent log
-          fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-viewport-interactions.ts:queryNodesAtPoint.then',message:'query result',data:{idsLength:ids?.length??0,topId:topId??null,hasPage:!!page},timestamp:Date.now(),hypothesisId:'H2,H3'})}).catch(()=>{});
-          // #endregion
           if (topId) {
             if (shift) {
               const next = new Set(selectedIds)
@@ -125,7 +118,10 @@ export function useViewportInteractions({
               else next.add(topId)
               setSelectedIds(next)
             } else {
-              setSelectedIds(new Set([topId]))
+              // Keep full selection when clicking an already-selected node (group drag)
+              if (!selectedIds.has(topId)) {
+                setSelectedIds(new Set([topId]))
+              }
             }
             setIsMoving(true)
           } else {
