@@ -23,7 +23,6 @@ const SELECTION_STROKE_WIDTH = 1
 
 export function CanvasWrapper({
   className,
-  style,
   rendererOptions,
   shortcuts: initialViewportShortcuts,
 }: CanvasWrapperProps) {
@@ -170,22 +169,22 @@ export function CanvasWrapper({
     showSelectionRect && selectionBounds
       ? isMoving && movePreviewDelta
         ? {
-            x: selectionBounds.x + movePreviewDelta.x,
-            y: selectionBounds.y + movePreviewDelta.y,
-            width: selectionBounds.width,
-            height: selectionBounds.height,
-          }
+          x: selectionBounds.x + movePreviewDelta.x,
+          y: selectionBounds.y + movePreviewDelta.y,
+          width: selectionBounds.width,
+          height: selectionBounds.height,
+        }
         : selectionBounds
       : null
   const showAreaMarquee = isSelecting && selectionRect != null && viewport != null
   const areaMarqueeWorld =
     showAreaMarquee && viewport && selectionRect
       ? {
-          x: viewport.panX + (selectionRect.x ?? (selectionRect as { x1?: number }).x1 ?? 0) / viewport.zoom,
-          y: viewport.panY + (selectionRect.y ?? (selectionRect as { y1?: number }).y1 ?? 0) / viewport.zoom,
-          width: (selectionRect.width ?? 0) / viewport.zoom,
-          height: (selectionRect.height ?? 0) / viewport.zoom,
-        }
+        x: viewport.panX + (selectionRect.x ?? (selectionRect as { x1?: number }).x1 ?? 0) / viewport.zoom,
+        y: viewport.panY + (selectionRect.y ?? (selectionRect as { y1?: number }).y1 ?? 0) / viewport.zoom,
+        width: (selectionRect.width ?? 0) / viewport.zoom,
+        height: (selectionRect.height ?? 0) / viewport.zoom,
+      }
       : null
   const viewBox =
     viewport && canvasSize.width > 0 && canvasSize.height > 0
@@ -202,7 +201,7 @@ export function CanvasWrapper({
         width={canvasSize.width}
         height={canvasSize.height}
         className={className}
-        style={{ ...style, display: 'block', width: '100%', height: '100%' }}
+        style={{ display: 'block', width: '100%', height: '100%', border: 'none', boxSizing: 'content-box' }}
       />
       <svg
         key={`selection-overlay-${viewportVersion}`}

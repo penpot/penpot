@@ -5,7 +5,7 @@
  */
 
 import { Observable, EMPTY, merge } from 'rxjs'
-import { map, filter, takeUntil, tap, take } from 'rxjs/operators'
+import { map, filter, takeUntil, tap, take, scan } from 'rxjs/operators'
 import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
@@ -42,13 +42,23 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   const rafScheduledRef = { current: false }
   const modifiersAppliedRef = { current: false }
 
+  /** Activation threshold (min 1px): drag starts after pointer moves past this; once activated, all deltas apply including back inside this zone. */
+  const DRAG_THRESHOLD_SCREEN_PX = 5
   const moveStream = mousePosition$.pipe(
     filter((pos): pos is NonNullable<typeof pos> => pos !== null),
     map((pos) => ({
       x: pos.x - initialPosition.x,
       y: pos.y - initialPosition.y,
     })),
-    filter((delta) => Math.sqrt(delta.x ** 2 + delta.y ** 2) > 10 / zoom),
+    scan(
+      (acc: { delta: { x: number; y: number }; activated: boolean }, delta) => {
+        const mag = Math.sqrt(delta.x ** 2 + delta.y ** 2)
+        return { delta, activated: acc.activated || mag > DRAG_THRESHOLD_SCREEN_PX }
+      },
+      { delta: { x: 0, y: 0 }, activated: false } as { delta: { x: number; y: number }; activated: boolean }
+    ),
+    filter(({ activated }) => activated),
+    map(({ delta }) => delta),
     map((delta) => ({
       x: delta.x / zoom,
       y: delta.y / zoom,
@@ -88,5 +98,5 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
     map(() => undefined)
   )
 
-  return merge(moveStream, commitOnRelease)
+  return merge(moveStream, commitOnRelease) as Observable<void>
 }
