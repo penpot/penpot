@@ -119,7 +119,6 @@
                            :on-change on-switch-theme
                            :default-checked selected?}]]
 
-
              [:div {:class (stl/css :theme-actions-row)}
               (let [sets-count (some-> theme :sets seq count)]
                 [:> button* {:class (stl/css-case :sets-count-button sets-count

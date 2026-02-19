@@ -1064,7 +1064,44 @@ Board:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -1425,7 +1462,44 @@ Board:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -2099,7 +2173,44 @@ VariantContainer:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -2463,7 +2574,44 @@ VariantContainer:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -3124,7 +3272,44 @@ Boolean:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -3450,7 +3635,44 @@ Boolean:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -5630,7 +5852,44 @@ Ellipse:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -5926,7 +6185,44 @@ Ellipse:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -7985,7 +8281,44 @@ Group:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -8287,7 +8620,44 @@ Group:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -9155,7 +9525,44 @@ Image:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -9451,7 +9858,44 @@ Image:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -12544,7 +12988,44 @@ Path:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -12864,7 +13345,44 @@ Path:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -13797,7 +14315,44 @@ Rectangle:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -14095,7 +14650,44 @@ Rectangle:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -14759,7 +15351,44 @@ ShapeBase:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -15056,7 +15685,44 @@ ShapeBase:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -15751,7 +16417,44 @@ SvgRaw:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -16042,7 +16745,44 @@ SvgRaw:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -16596,7 +17336,44 @@ Text:
         layoutChild?: LayoutChildProperties;
         layoutCell?: LayoutChildProperties;
         setParentIndex(index: number): void;
-        tokens: { [property: string]: string };
+        tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        };
         isComponentInstance(): boolean;
         isComponentMainInstance(): boolean;
         isComponentCopyInstance(): boolean;
@@ -16904,7 +17681,44 @@ Text:
         Layout properties for cells in a grid layout.
       tokens: |-
         ```
-        readonly tokens: { [property: string]: string }
+        readonly tokens: {
+            width: string;
+            height: string;
+            fill: string;
+            x: string;
+            y: string;
+            all: string;
+            r1: string;
+            r2: string;
+            r3: string;
+            r4: string;
+            shadow: string;
+            strokeColor: string;
+            strokeWidth: string;
+            fontFamilies: string;
+            fontSize: string;
+            fontWeight: string;
+            letterSpacing: string;
+            rotation: string;
+            opacity: string;
+            layoutItemMinW: string;
+            layoutItemMaxW: string;
+            layoutItemMinH: string;
+            layoutItemMaxH: string;
+            rowGap: string;
+            columnGap: string;
+            p1: string;
+            p2: string;
+            p3: string;
+            p4: string;
+            m1: string;
+            m2: string;
+            m3: string;
+            m4: string;
+            textCase: string;
+            textDecoration: string;
+            typography: string;
+        }
         ```
 
         The design tokens applied to this shape.
@@ -17841,6 +18655,7 @@ TokenBase:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -17890,6 +18705,16 @@ TokenBase:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
     Methods:
       duplicate: |-
         ```
@@ -17963,6 +18788,7 @@ TokenBorderRadius:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18001,6 +18827,16 @@ TokenBorderRadius:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "borderRadius"
@@ -18212,6 +19048,7 @@ TokenShadow:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18250,6 +19087,16 @@ TokenShadow:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "shadow"
@@ -18347,6 +19194,7 @@ TokenColor:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18385,6 +19233,16 @@ TokenColor:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "color"
@@ -18478,6 +19336,7 @@ TokenDimension:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18516,6 +19375,16 @@ TokenDimension:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "dimension"
@@ -18611,6 +19480,7 @@ TokenFontFamilies:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18649,6 +19519,16 @@ TokenFontFamilies:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "fontFamilies"
@@ -18747,6 +19627,7 @@ TokenFontSizes:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18785,6 +19666,16 @@ TokenFontSizes:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "fontSizes"
@@ -18880,6 +19771,7 @@ TokenFontWeights:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -18918,6 +19810,16 @@ TokenFontWeights:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "fontWeights"
@@ -19014,6 +19916,7 @@ TokenLetterSpacing:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19052,6 +19955,16 @@ TokenLetterSpacing:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "letterSpacing"
@@ -19147,6 +20060,7 @@ TokenNumber:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19185,6 +20099,16 @@ TokenNumber:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "number"
@@ -19280,6 +20204,7 @@ TokenOpacity:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19318,6 +20243,16 @@ TokenOpacity:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "opacity"
@@ -19414,6 +20349,7 @@ TokenRotation:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19452,6 +20388,16 @@ TokenRotation:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "rotation"
@@ -19548,6 +20494,7 @@ TokenSizing:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19586,6 +20533,16 @@ TokenSizing:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "sizing"
@@ -19681,6 +20638,7 @@ TokenSpacing:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19719,6 +20677,16 @@ TokenSpacing:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "spacing"
@@ -19814,6 +20782,7 @@ TokenBorderWidth:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19852,6 +20821,16 @@ TokenBorderWidth:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "borderWidth"
@@ -19947,6 +20926,7 @@ TokenTextCase:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -19985,6 +20965,16 @@ TokenTextCase:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "textCase"
@@ -20081,6 +21071,7 @@ TokenTextDecoration:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -20119,6 +21110,16 @@ TokenTextDecoration:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "textDecoration"
@@ -20344,6 +21345,7 @@ TokenTypography:
         description: string;
         duplicate(): Token;
         remove(): void;
+        resolvedValueString: string | undefined;
         applyToShapes(
             shapes: Shape[],
             properties: TokenProperty[] | undefined,
@@ -20382,6 +21384,16 @@ TokenTypography:
         ```
 
         An optional description text.
+      resolvedValueString: |-
+        ```
+        readonly resolvedValueString: string | undefined
+        ```
+
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's converted to string, regardless of the data type of the value depending
+        on the token type. It can be undefined if no value has been found in active sets.
       type: |-
         ```
         readonly type: "typography"
@@ -21635,7 +22647,7 @@ TokenDimensionProps:
     ==============================
 
     ```
-    TokenDimensionProps: "x" | "y" | "stroke-width"
+    TokenDimensionProps: "x" | "y" | "strokeWidth"
     ```
 
     The properties that a Dimension token can be applied to.
@@ -21648,7 +22660,7 @@ TokenFontFamiliesProps:
     =================================
 
     ```
-    TokenFontFamiliesProps: "font-families"
+    TokenFontFamiliesProps: "fontFamilies"
     ```
 
     The properties that a FontFamilies token can be applied to.
@@ -21661,7 +22673,7 @@ TokenFontSizesProps:
     ==============================
 
     ```
-    TokenFontSizesProps: "font-size"
+    TokenFontSizesProps: "fontSize"
     ```
 
     The properties that a FontSizes token can be applied to.
@@ -21674,7 +22686,7 @@ TokenFontWeightProps:
     ===============================
 
     ```
-    TokenFontWeightProps: "font-weight"
+    TokenFontWeightProps: "fontWeight"
     ```
 
     The properties that a FontWeight token can be applied to.
@@ -21687,7 +22699,7 @@ TokenLetterSpacingProps:
     ==================================
 
     ```
-    TokenLetterSpacingProps: "letter-spacing"
+    TokenLetterSpacingProps: "letterSpacing"
     ```
 
     The properties that a LetterSpacing token can be applied to.
@@ -21700,7 +22712,7 @@ TokenNumberProps:
     ===========================
 
     ```
-    TokenNumberProps: "rotation" | "line-height"
+    TokenNumberProps: "rotation"
     ```
 
     The properties that a Number token can be applied to.
@@ -21729,10 +22741,10 @@ TokenSizingProps:
     TokenSizingProps:
         | "width"
         | "height"
-        | "layout-item-min-w"
-        | "layout-item-max-w"
-        | "layout-item-min-h"
-        | "layout-item-max-h"
+        | "layoutItemMinW"
+        | "layoutItemMaxW"
+        | "layoutItemMinH"
+        | "layoutItemMaxH"
     ```
 
     The properties that a Sizing token can be applied to.
@@ -21746,8 +22758,8 @@ TokenSpacingProps:
 
     ```
     TokenSpacingProps:
-        | "row-gap"
-        | "column-gap"
+        | "rowGap"
+        | "columnGap"
         | "p1"
         | "p2"
         | "p3"
@@ -21768,7 +22780,7 @@ TokenBorderWidthProps:
     ================================
 
     ```
-    TokenBorderWidthProps: "stroke-width"
+    TokenBorderWidthProps: "strokeWidth"
     ```
 
     The properties that a BorderWidth token can be applied to.
@@ -21781,7 +22793,7 @@ TokenTextCaseProps:
     =============================
 
     ```
-    TokenTextCaseProps: "text-case"
+    TokenTextCaseProps: "textCase"
     ```
 
     The properties that a TextCase token can be applied to.
@@ -21794,7 +22806,7 @@ TokenTextDecorationProps:
     ===================================
 
     ```
-    TokenTextDecorationProps: "text-decoration"
+    TokenTextDecorationProps: "textDecoration"
     ```
 
     The properties that a TextDecoration token can be applied to.
