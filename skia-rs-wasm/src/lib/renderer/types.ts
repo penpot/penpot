@@ -148,7 +148,6 @@ export interface ShortcutsConfig {
 
 export interface CanvasWrapperProps {
   className?: string
-  style?: React.CSSProperties
   rendererOptions?: RendererOptions
   onError?: (error: Error) => void
   /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */

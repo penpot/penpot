@@ -153,6 +153,18 @@ export class Renderer {
       throw new Error('Renderer context not initialized. Call initPage() first.')
     }
     this.viewport = viewport
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'renderer/index.ts:applyViewport',
+        message: 'WASM view applied',
+        data: { hypothesisId: 'A', panX: viewport.panX, panY: viewport.panY, zoom: viewport.zoom },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
     setViewBox(this.module, this.prevZoom, viewport.zoom, { x: viewport.panX, y: viewport.panY })
     this.prevZoom = viewport.zoom
   }

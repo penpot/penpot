@@ -49,10 +49,26 @@ export function getSelectionBounds(nodes: PenpotNode[]): SelectionBounds | null 
     maxY = Math.max(maxY, rect.y + rect.height)
   }
   if (!hasAny) return null
-  return {
+  const result = {
     x: minX,
     y: minY,
     width: maxX - minX,
     height: maxY - minY,
   }
+  // #region agent log
+  const firstRect = nodes.length ? normalizeSelrect(nodes[0].selrect as SelrectLike) : null
+  if (typeof fetch !== 'undefined') {
+    fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'selection-bounds.ts:getSelectionBounds',
+        message: 'selection bounds computed',
+        data: { hypothesisId: 'B', nodeCount: nodes.length, bounds: result, firstNodeSelrect: firstRect },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+  }
+  // #endregion
+  return result
 }
