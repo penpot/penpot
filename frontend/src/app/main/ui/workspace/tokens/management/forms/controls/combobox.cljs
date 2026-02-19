@@ -263,28 +263,28 @@
           (.addEventListener js/document "mousedown" handler)
 
           (fn []
-            (.removeEventListener js/document "mousedown" handler))))) 
+            (.removeEventListener js/document "mousedown" handler)))))
 
 
-      [:div {:ref wrapper-ref}
-       [:> ds/input* props]
-       (when ^boolean is-open
-         (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
-           (mf/portal
-            (mf/html
-             [:> options-dropdown* {:on-click on-option-click
-                                    :class (stl/css :dropdown)
-                                    :style {:visibility (if ready? "visible" "hidden")
-                                            :left (:left style)
-                                            :top (or (:top style) "unset")
-                                            :bottom (or (:bottom style) "unset")
-                                            :width (:width style)}
-                                    :id listbox-id
-                                    :options options
-                                    :focused focused-id
-                                    :selected nil
-                                    :align :right
-                                    :empty-to-end empty-to-end
-                                    :wrapper-ref dropdown-ref
-                                    :ref set-option-ref}])
-            (dom/get-body))))]))
+    [:div {:ref wrapper-ref}
+     [:> ds/input* props]
+     (when ^boolean is-open
+       (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+         (mf/portal
+          (mf/html
+           [:> options-dropdown* {:on-click on-option-click
+                                  :class (stl/css :dropdown)
+                                  :style {:visibility (if ready? "visible" "hidden")
+                                          :left (:left style)
+                                          :top (or (:top style) "unset")
+                                          :bottom (or (:bottom style) "unset")
+                                          :width (:width style)}
+                                  :id listbox-id
+                                  :options options
+                                  :focused focused-id
+                                  :selected nil
+                                  :align :right
+                                  :empty-to-end empty-to-end
+                                  :wrapper-ref dropdown-ref
+                                  :ref set-option-ref}])
+          (dom/get-body))))]))

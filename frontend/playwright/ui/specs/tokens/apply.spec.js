@@ -82,7 +82,7 @@ test.describe("Tokens: Apply token", () => {
     await brTokenPillSM.click();
 
     // Change token from dropdown
-    const brTokenOptionXl = borderRadiusSection.getByLabel("borderRadius.xl");
+    const brTokenOptionXl = borderRadiusSection.getByRole('option', { name: 'borderRadius.xl' }).getByLabel('borderRadius.xl');
     await expect(brTokenOptionXl).toBeVisible();
     await brTokenOptionXl.click();
 
@@ -517,7 +517,7 @@ test.describe("Tokens: Apply token", () => {
     await dimensionSMTokenPill.nth(1).click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = measuresSection.getByLabel("dimension.xl");
+    const dimensionTokenOptionXl = measuresSection.getByRole('option', { name: 'dimension.xl' });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -571,7 +571,7 @@ test.describe("Tokens: Apply token", () => {
     await dimensionSMTokenPill.click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = measuresSection.getByLabel("dimension.xl");
+    const dimensionTokenOptionXl = measuresSection.getByRole('option', { name: 'dimension.xl' });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -625,7 +625,7 @@ test.describe("Tokens: Apply token", () => {
     await dimensionSMTokenPill.click();
 
     // Change token from dropdown
-    const dimensionTokenOptionXl = measuresSection.getByLabel("dimension.xl");
+    const dimensionTokenOptionXl = measuresSection.getByRole('option', { name: 'dimension.xl' });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -681,7 +681,7 @@ test.describe("Tokens: Apply token", () => {
 
     // Change token from dropdown
     const dimensionTokenOptionXl =
-      borderRadiusSection.getByLabel("dimension.xl");
+      borderRadiusSection.getByRole('option', { name: 'dimension.xl' });
     await expect(dimensionTokenOptionXl).toBeVisible();
     await dimensionTokenOptionXl.click();
 
@@ -750,7 +750,7 @@ test.describe("Tokens: Apply token", () => {
     });
     await tokenDropdown.click();
 
-    const widthOptionSmall = firstStrokeRow.getByLabel("width-small");
+    const widthOptionSmall = firstStrokeRow.getByRole("option", { name: "width-small" });
     await expect(widthOptionSmall).toBeVisible();
     await widthOptionSmall.click();
     const StrokeWidthPillSmall = firstStrokeRow.getByRole("button", {

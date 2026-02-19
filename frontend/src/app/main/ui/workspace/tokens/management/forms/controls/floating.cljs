@@ -26,21 +26,21 @@
                 windows-height (-> (dom/get-window-size)
                                    (:height))
 
-                space-below (- windows-height (:bottom combobox-rect)) 
+                space-below (- windows-height (:bottom combobox-rect))
 
                 open-up? (and dropdown-height
                               (> dropdown-height space-below))
 
                 position (if open-up?
-                             {:bottom (str (- windows-height (:top combobox-rect) 12) "px")
-                              :left   (str (:left combobox-rect) "px")
-                              :width  (str (:width combobox-rect) "px")
-                              :placement :top}
-                         
-                             {:top   (str (+ (:bottom combobox-rect) 4) "px")
-                              :left  (str (:left combobox-rect) "px")
-                              :width (str (:width combobox-rect) "px")
-                              :placement :bottom})]
+                           {:bottom (str (- windows-height (:top combobox-rect) 12) "px")
+                            :left   (str (:left combobox-rect) "px")
+                            :width  (str (:width combobox-rect) "px")
+                            :placement :top}
+
+                           {:top   (str (+ (:bottom combobox-rect) 4) "px")
+                            :left  (str (:left combobox-rect) "px")
+                            :width (str (:width combobox-rect) "px")
+                            :placement :bottom})]
             (reset! ready* true)
             (reset! position* position)))]
 
