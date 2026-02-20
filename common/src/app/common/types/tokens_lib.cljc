@@ -1495,6 +1495,26 @@ Will return a value that matches this schema:
                 (seq)
                 (boolean)))))
 
+(defn update-tokens-group
+  "Updates the active tokens path when renaming a group node.
+   - Filters tokens whose path matches the current path prefix
+   - Replaces the token name with the new name
+   - Updates the :path value in the token object
+
+   active-tokens: map of token-name to token-object for all active tokens in the set
+   current-path: the path of the group being renamed, e.g. \"foo.bar\"
+   current-name: the current name of the group being renamed, e.g. \"bar\"
+   new-name: the new name for the group being renamed, e.g. \"baz\""
+
+  [active-tokens current-path current-name new-name]
+  (let [path-prefix (str/replace current-path current-name "")]
+    (mapv (fn [[token-path token-obj]]
+            (if (str/starts-with? token-path path-prefix)
+              (let [new-token-path (str/replace token-path current-name new-name)]
+                [new-token-path (assoc token-obj :name new-token-path)])
+              [token-path token-obj]))
+          active-tokens)))
+
 ;; === Import / Export from JSON format
 
 ;; Supported formats:

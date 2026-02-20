@@ -3,7 +3,6 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cfo]
-   [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -15,7 +14,6 @@
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 

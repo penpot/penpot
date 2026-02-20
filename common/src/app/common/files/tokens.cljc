@@ -149,20 +149,6 @@
     #(and (some? tokens-tree)
           (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
-(defn update-tokens-path
-  "Updates the path in active-tokens for tokens in the same directory.
-   - Filters tokens whose path matches the current path prefix
-   - Replaces the token name with the new name
-   - Updates the :path value in the token object"
-  [active-tokens current-path current-name new-name]
-  (let [path-prefix (str/replace current-path current-name "")]
-    (mapv (fn [[token-path token-obj]]
-            (if (str/starts-with? token-path path-prefix)
-              (let [new-token-path (str/replace token-path current-name new-name)]
-                [new-token-path (assoc token-obj :name new-token-path)])
-              [token-path token-obj]))
-          active-tokens)))
-
 (defn make-node-token-name-schema
   "Dynamically generates a schema to check a token nodename, adding translated error messages
    and two additional validations:
@@ -174,13 +160,11 @@
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
    (-> cto/schema:token-node-name
        (sm/update-properties assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))))
-   [:fn {:error/fn #(tr "workspace.tokens.duplicated paths" (:value %))}
+   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
     (fn [name]
-      (pp/pprint {:name name  :path (:path node) :tokens active-tokens})
       (let [current-path (:path node)
             current-name (:name node)
-            new-tokens (update-tokens-path active-tokens current-path current-name name)
-            _ (pp/pprint {:new-tokens new-tokens})]
+            new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)]
         (and (some? new-tokens)
              (some #(not (ctob/token-name-path-exists? (first %) tokens-tree)) new-tokens))))]])
 
