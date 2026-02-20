@@ -9,9 +9,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.i18n :refer [tr]]
+   [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.ui.cursors :as cur]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [malli.core :as m]))
@@ -147,20 +149,40 @@
     #(and (some? tokens-tree)
           (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
+(defn update-tokens-path
+  "Updates the path in active-tokens for tokens in the same directory.
+   - Filters tokens whose path matches the current path prefix
+   - Replaces the token name with the new name
+   - Updates the :path value in the token object"
+  [active-tokens current-path current-name new-name]
+  (let [path-prefix (str/replace current-path current-name "")]
+    (mapv (fn [[token-path token-obj]]
+            (if (str/starts-with? token-path path-prefix)
+              (let [new-token-path (str/replace token-path current-name new-name)]
+                [new-token-path (assoc token-obj :name new-token-path)])
+              [token-path token-obj]))
+          active-tokens)))
+
 (defn make-node-token-name-schema
   "Dynamically generates a schema to check a token nodename, adding translated error messages
    and two additional validations:
     - Min and max length.
     - Checks if other token with a path derived from the name already exists at `tokens-tree`.
       e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists."
-  [tokens-tree]
+  [active-tokens tokens-tree node]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
    (-> cto/schema:token-node-name
        (sm/update-properties assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))))
-   [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-    #(and (some? tokens-tree)
-          (not (ctob/token-name-path-exists? % tokens-tree)))]])
+   [:fn {:error/fn #(tr "workspace.tokens.duplicated paths" (:value %))}
+    (fn [name]
+      (pp/pprint {:name name  :path (:path node) :tokens active-tokens})
+      (let [current-path (:path node)
+            current-name (:name node)
+            new-tokens (update-tokens-path active-tokens current-path current-name name)
+            _ (pp/pprint {:new-tokens new-tokens})]
+        (and (some? new-tokens)
+             (some #(not (ctob/token-name-path-exists? (first %) tokens-tree)) new-tokens))))]])
 
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
@@ -181,9 +203,9 @@
         (not (cto/token-value-self-reference? name value))))]])
 
 (defn make-node-token-schema
-  [tokens-tree]
+  [active-tokens tokens-tree node]
   [:map
-   [:name (make-node-token-name-schema tokens-tree)]])
+   [:name (make-node-token-name-schema active-tokens tokens-tree node)]])
 
 (defn convert-dtcg-token
   "Convert token attributes as they come from a decoded json, with DTCG types, to internal types.

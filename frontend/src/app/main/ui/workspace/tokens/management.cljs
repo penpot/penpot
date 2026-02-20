@@ -201,6 +201,20 @@
                   tokens-in-path-ids (mapv (fn [token] (:id token)) tokens-in-path)]
               (st/emit! (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)))))
 
+        #_(defn on-update-token-set
+            [tokens-lib token-set name]
+            (let [name   (ctob/normalize-set-name name (ctob/get-name token-set))
+                  errors (sm/validation-errors name (cfo/make-token-set-name-schema
+                                                     tokens-lib
+                                                     (ctob/get-id token-set)))]
+              (st/emit! (dwtl/clear-token-set-edition))
+              (if (empty? errors)
+                (st/emit! (dwtl/rename-token-set token-set name))
+                (st/emit! (ntf/show {:content (tr "errors.token-set-already-exists")
+                                     :type :toast
+                                     :level :error
+                                     :timeout 9000})))))
+
         on-rename-node
         (mf/with-memo [selected-token-set-tokens selected-token-set-id]
           (fn [node type new-node-name]

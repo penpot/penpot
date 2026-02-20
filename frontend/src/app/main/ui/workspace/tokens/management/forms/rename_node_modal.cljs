@@ -15,17 +15,17 @@
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc rename-node-form*
-  [{:keys [node tokens-tree on-close on-submit]}]
-  (let [make-schema  #(-> (cfo/make-node-token-schema %)
-                          (sm/dissoc-key :id))
+  [{:keys [node active-tokens tokens-tree on-close on-submit]}]
+  (let [make-schema #(cfo/make-node-token-schema active-tokens tokens-tree node)
 
         schema
-        (mf/with-memo [tokens-tree]
-          (make-schema tokens-tree))
+        (mf/with-memo [active-tokens]
+          (make-schema))
 
         initial (mf/with-memo [node]
                   {:name (:name node)})
@@ -113,6 +113,7 @@
                         :variant "ghost"
                         :icon i/close}]
       [:> rename-node-form* {:node node
+                             :active-tokens tokens-in-active-set
                              :tokens-tree tokens-tree-in-selected-set
                              :on-close close-modal
                              :on-submit rename}]]]))
