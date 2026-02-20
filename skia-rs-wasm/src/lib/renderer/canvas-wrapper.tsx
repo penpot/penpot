@@ -2,12 +2,12 @@
  * React component wrapper that initializes both worker and canvas renderer
  */
 
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
 import { useViewportShortcutsStore } from './store/shortcuts-store'
-import { getSelectionBounds } from './selection-bounds'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
+import { SelectionOverlay } from './selection-overlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
 import { useMove } from './hooks/use-move'
 import { useStreams } from './hooks/use-streams'
@@ -17,9 +17,6 @@ import { initWasmModule } from '../wasm-init'
 
 const DEFAULT_WIDTH = 800
 const DEFAULT_HEIGHT = 600
-
-const SELECTION_STROKE = 'var(--color-accent-tertiary, #0d7377)'
-const SELECTION_STROKE_WIDTH = 1
 
 export function CanvasWrapper({
   className,
@@ -31,17 +28,6 @@ export function CanvasWrapper({
   const [canvasSize, setCanvasSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT })
   const setViewportShortcuts = useViewportShortcutsStore((state) => state.setViewportShortcuts)
   const setModifierKeys = useViewportShortcutsStore((state) => state.setModifierKeys)
-
-  const selectedIds = useWorkspaceStore((state) => state.selectedIds)
-  const selectedNodes = useWorkspaceStore((state) => state.selectedNodes)
-  const viewport = useWorkspaceStore((state) => state.viewport)
-  const viewportVersion = useWorkspaceStore((state) => state.viewportVersion)
-  const isSelecting = useWorkspaceStore((state) => state.isSelecting)
-  const selectionRect = useWorkspaceStore((state) => state.selectionRect)
-  const isMoving = useWorkspaceStore((state) => state.isMoving)
-  const movePreviewDelta = useWorkspaceStore((state) => state.movePreviewDelta)
-
-  const selectionBounds = useMemo(() => getSelectionBounds(selectedNodes), [selectedNodes])
 
   // Apply initial shortcuts when provided (e.g. on mount or when prop changes)
   useEffect(() => {
@@ -164,33 +150,6 @@ export function CanvasWrapper({
     },
   })
 
-  const showSelectionRect = selectedIds.size > 0 && selectionBounds && viewport
-  const effectiveBounds =
-    showSelectionRect && selectionBounds
-      ? isMoving && movePreviewDelta
-        ? {
-          x: selectionBounds.x + movePreviewDelta.x,
-          y: selectionBounds.y + movePreviewDelta.y,
-          width: selectionBounds.width,
-          height: selectionBounds.height,
-        }
-        : selectionBounds
-      : null
-  const showAreaMarquee = isSelecting && selectionRect != null && viewport != null
-  const areaMarqueeWorld =
-    showAreaMarquee && viewport && selectionRect
-      ? {
-        x: viewport.panX + (selectionRect.x ?? (selectionRect as { x1?: number }).x1 ?? 0) / viewport.zoom,
-        y: viewport.panY + (selectionRect.y ?? (selectionRect as { y1?: number }).y1 ?? 0) / viewport.zoom,
-        width: (selectionRect.width ?? 0) / viewport.zoom,
-        height: (selectionRect.height ?? 0) / viewport.zoom,
-      }
-      : null
-  const viewBox =
-    viewport && canvasSize.width > 0 && canvasSize.height > 0
-      ? `${viewport.panX} ${viewport.panY} ${canvasSize.width / viewport.zoom} ${canvasSize.height / viewport.zoom}`
-      : '0 0 100 100'
-
   return (
     <div
       ref={containerRef}
@@ -203,43 +162,7 @@ export function CanvasWrapper({
         className={className}
         style={{ display: 'block', width: '100%', height: '100%', border: 'none', boxSizing: 'content-box' }}
       />
-      <svg
-        key={`selection-overlay-${viewportVersion}`}
-        aria-hidden
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-        }}
-        viewBox={viewBox}
-        preserveAspectRatio="xMidYMid meet"
-      >
-        {showSelectionRect && effectiveBounds && (
-          <rect
-            x={effectiveBounds.x}
-            y={effectiveBounds.y}
-            width={effectiveBounds.width}
-            height={effectiveBounds.height}
-            fill="none"
-            stroke={SELECTION_STROKE}
-            strokeWidth={SELECTION_STROKE_WIDTH / (viewport?.zoom ?? 1)}
-          />
-        )}
-        {showAreaMarquee && areaMarqueeWorld && (
-          <rect
-            x={areaMarqueeWorld.x}
-            y={areaMarqueeWorld.y}
-            width={areaMarqueeWorld.width}
-            height={areaMarqueeWorld.height}
-            fill="rgba(37,99,235,0.1)"
-            stroke="#2563eb"
-            strokeWidth={SELECTION_STROKE_WIDTH / (viewport?.zoom ?? 1)}
-          />
-        )}
-      </svg>
+      <SelectionOverlay canvasSize={canvasSize} />
     </div>
   )
 }
