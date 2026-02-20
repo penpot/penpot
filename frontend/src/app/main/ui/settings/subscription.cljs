@@ -4,6 +4,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -562,7 +563,7 @@
                          :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")}])
 
-       (when (not= subscription-type "enterprise")
+       (when (and (not= subscription-type "enterprise") (not (contains? cf/flags :nitrate)))
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
@@ -575,5 +576,21 @@
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :show-button-cta (= subscription-type "professional")}])]]]))
+                         :show-button-cta (= subscription-type "professional")}])
+
+       ;; TODO add translations for this texts when we have the definitive ones
+       (when (and (contains? cf/flags :nitrate) (not (:nitrate-licence profile)))
+         [:> plan-card* {:card-title "Business Nitrate"
+                         :card-title-icon i/character-n
+                         :price-value "$25"
+                         :price-period "org member"
+                         :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
+                         :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
+                                    "Acceso exclusivo al Control Center"
+                                    "Lorem ipsum"]
+                         :cta-text (tr "subscription.settings.subscribe")
+                         ;; TODO add link to open nitrate modal
+                         :cta-link #(dom/open-new-window "https://penpot.app/nitrate")
+                         :cta-text-with-icon (tr "subscription.settings.more-information")
+                         :cta-link-with-icon go-to-pricing-page}])]]]))
 
