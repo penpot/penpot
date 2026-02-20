@@ -29,6 +29,7 @@ These are the main options to configure your Penpot instance:
 3. Other official options:
     - [Elestio][6]
     - [Truenas][7]
+    - [Hostim.dev][8]
 
 Or you can try [other options][1], offered by Penpot community.
 
@@ -39,3 +40,4 @@ Or you can try [other options][1], offered by Penpot community.
 [5]: /technical-guide/getting-started/kubernetes/#using-rancher%3F
 [6]: /technical-guide/getting-started/elestio/
 [7]: https://apps.truenas.com/catalog/penpot/
+[8]: /technical-guide/getting-started/hostim/
