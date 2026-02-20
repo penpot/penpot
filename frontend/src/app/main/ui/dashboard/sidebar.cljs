@@ -16,6 +16,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
@@ -304,7 +305,7 @@
            (if (:nitrate-licence profile)
              ;; TODO update when org creation route is ready
              (dom/open-new-window "/control-center/org/create")
-             (st/emit! (modal/show :nitrate-form {})))))]
+             (st/emit! (dnt/show-nitrate-popup)))))]
 
     [:> dropdown-menu* props
 
@@ -550,7 +551,7 @@
            (if (:nitrate-licence profile)
              ;; TODO update when org creation route is ready
              (dom/open-new-window "/control-center/org/create")
-             (st/emit! (modal/show :nitrate-form {})))))]
+             (st/emit! (dnt/show-nitrate-popup)))))]
     (if empty?
       [:div {:class (stl/css :nitrate-orgs-empty)}
        [:span {:class (stl/css :nitrate-penpot-icon)}

@@ -89,3 +89,8 @@
   padding: var(--sp-l) 0 0 0;
   gap: 0;
 }
+
+.contact {
+  margin-block-start: $sz-96;
+  color: var(--color-foreground-primary);
+}

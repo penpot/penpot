@@ -87,6 +87,10 @@
   [:map
    [:valid ::sm/boolean]])
 
+(def ^:private schema:connectivity
+  [:map
+   [:licenses ::sm/boolean]])
+
 (defn- get-team-org
   [cfg {:keys [team-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -97,6 +101,11 @@
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :get (str baseuri "/api/users/" (str profile-id)) schema:user params)))
 
+(defn- get-connectivity
+  [cfg params]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get (str baseuri "/api/connectivity") schema:connectivity params)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -105,7 +114,8 @@
   [_ cfg]
   (when (contains? cf/flags :nitrate)
     {:get-team-org (partial get-team-org cfg)
-     :is-valid-user (partial is-valid-user cfg)}))
+     :is-valid-user (partial is-valid-user cfg)
+     :connectivity (partial get-connectivity cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS
@@ -128,3 +138,7 @@
   (let [params (assoc (or params {}) :team-id (:id team))
         org (call cfg :get-team-org params)]
     (assoc team :organization-id (:id org) :organization-name (:name org))))
+
+(defn connectivity
+  [cfg]
+  (call cfg :connectivity {}))
