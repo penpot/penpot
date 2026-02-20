@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-20 03:09+0000\n"
+"PO-Revision-Date: 2026-02-21 14:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -7490,3 +7490,95 @@ msgstr "Créer un variant"
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:512, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1073, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1221, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1307
 msgid "workspace.shape.menu.add-variant-property"
 msgstr "Ajouter une propriété"
+
+#: src/app/main/ui/workspace/context_menu.cljs:282
+msgid "workspace.shape.menu.back"
+msgstr "Envoyer à l'arrière-plan"
+
+#: src/app/main/ui/workspace/context_menu.cljs:279
+msgid "workspace.shape.menu.backward"
+msgstr "Envoyer vers l'arrière"
+
+#: src/app/main/ui/workspace/context_menu.cljs:619, src/app/main/ui/workspace/sidebar/assets/components.cljs:633, src/app/main/ui/workspace/sidebar/assets/groups.cljs:75, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1106
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combiner comme variants"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:635
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Les composants doivent être sur la même page"
+
+#: src/app/main/ui/workspace/context_menu.cljs:200
+msgid "workspace.shape.menu.copy"
+msgstr "Copier"
+
+#: src/app/main/ui/workspace/context_menu.cljs:218
+msgid "workspace.shape.menu.copy-css"
+msgstr "Copier en CSS"
+
+#: src/app/main/ui/workspace/context_menu.cljs:220
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Copier en CSS (calques imbriqués)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:203
+msgid "workspace.shape.menu.copy-link"
+msgstr "Copier le lien"
+
+#: src/app/main/ui/workspace/context_menu.cljs:216
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Copier/coller en tant que ..."
+
+#: src/app/main/ui/workspace/context_menu.cljs:230
+msgid "workspace.shape.menu.copy-props"
+msgstr "Copier les propriétés"
+
+#: src/app/main/ui/workspace/context_menu.cljs:222
+msgid "workspace.shape.menu.copy-svg"
+msgstr "Copier en SVG"
+
+#: src/app/main/ui/workspace/context_menu.cljs:227
+msgid "workspace.shape.menu.copy-text"
+msgstr "Copier en texte"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:484
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Créer une annotation"
+
+#: src/app/main/ui/workspace/context_menu.cljs:382
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Entableauter la sélection"
+
+#: src/app/main/ui/workspace/context_menu.cljs:592
+msgid "workspace.shape.menu.create-component"
+msgstr "Créer un composant"
+
+#: src/app/main/ui/workspace/context_menu.cljs:596
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Créer plusieurs composants"
+
+#: src/app/main/ui/workspace/context_menu.cljs:206
+msgid "workspace.shape.menu.cut"
+msgstr "Couper"
+
+#: src/app/main/ui/workspace/context_menu.cljs:629, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1001, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1290
+msgid "workspace.shape.menu.delete"
+msgstr "Supprimer"
+
+#: src/app/main/ui/workspace/context_menu.cljs:506
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Supprimer le début de parcours"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:489
+msgid "workspace.shape.menu.detach-instance"
+msgstr "Détacher l'instance"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Détacher les instances"
+
+#: src/app/main/ui/workspace/context_menu.cljs:447, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
+msgid "workspace.shape.menu.difference"
+msgstr "Différence"
+
+#: src/app/main/ui/workspace/context_menu.cljs:212
+msgid "workspace.shape.menu.duplicate"
+msgstr "Dupliquer"
