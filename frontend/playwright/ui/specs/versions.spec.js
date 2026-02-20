@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
-import { presenceFixture } from "../../data/workspace/ws-notifications";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
@@ -106,7 +105,7 @@ test("BUG 11006 - Fix history panel shortcut", async ({ page }) => {
 
   await workspacePage.goToWorkspace();
 
-  await page.keyboard.press("Control+Alt+h");
+  await page.keyboard.press("ControlOrMeta+Alt+h");
 
   await expect(
     workspacePage.rightSidebar.getByText("There are no versions yet"),
