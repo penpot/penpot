@@ -6,7 +6,7 @@
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.event :as ev]
-   [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
@@ -121,7 +121,7 @@
   (let [handle-click
         (mf/use-fn
          (fn []
-           (st/emit! (modal/show :nitrate-form {}))))]
+           (st/emit! (dnt/show-nitrate-popup))))]
 
     ;; TODO add translations for this texts when we have the definitive ones
     [:div {:class (stl/css :nitrate-banner :highlighted)}

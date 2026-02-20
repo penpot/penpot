@@ -22,10 +22,12 @@
 
 (mf/defc nitrate-form-modal*
   {::mf/register modal/components
-   ::mf/register-as :nitrate-form}
-  []
+   ::mf/register-as :nitrate-form
+   ::mf/wrap-props true}
+  [connectivity]
 
-  (let [initial (mf/with-memo []
+  (let [show-buttons (:licenses connectivity)
+        initial (mf/with-memo []
                   {:subscription "yearly"})
         form     (fm/use-form :schema schema:nitrate-form
                               :initial initial)
@@ -55,26 +57,35 @@
          "Sail ho shrouds spirits boom mizzenmast yardarm. Pinnace holystone mizzenmast quarter crow's nest nipperkin grog yardarm hempen halter furl."]
         [:p {:class (stl/css :modal-text-large)}
          "Deadlights jack lad schooner scallywag dance the hempen jig carouser broadside cable strike colors."]
-        [:p {:class (stl/css :modal-text-large)}
-         [:& fm/form {:form form}
-          [:& fm/radio-buttons
-           {:options [{:label "Price Tag Montly" :value "monthly"}
-                      {:label "Price Tag Yearly (Discount)" :value "yearly"}]
-            :name :subscription
-            :class (stl/css :radio-btns)}]]]
+        (if show-buttons
+          [:& fm/form {:form form}
+           [:p {:class (stl/css :modal-text-large)}
 
-        [:p {:class (stl/css :modal-text-large :modal-buttons-section)}
-         [:div {:class (stl/css :modal-buttons-section)}
-          [:> button* {:variant "primary"
-                       :on-click on-click
-                       :class (stl/css :modal-button)}
-           "UPGRADE TO NITRATE"]
-          [:div {:class (stl/css :modal-text-small :modal-info)}
-           "Cancel anytime before your next billing cycle."]]]
+            [:& fm/radio-buttons
+             {:options [{:label "Price Tag Montly" :value "monthly"}
+                        {:label "Price Tag Yearly (Discount)" :value "yearly"}]
+              :name :subscription
+              :class (stl/css :radio-btns)}]]
+
+           [:p {:class (stl/css :modal-text-large :modal-buttons-section)}
+            [:div {:class (stl/css :modal-buttons-section)}
+             [:> button* {:variant "primary"
+                          :on-click on-click
+                          :class (stl/css :modal-button)}
+              "UPGRADE TO NITRATE"]
+             [:div {:class (stl/css :modal-text-small :modal-info)}
+              "Cancel anytime before your next billing cycle."]]]
 
 
-        [:p {:class (stl/css :modal-text-medium)}
-         [:a {:class (stl/css :link)}
-          "See my current plan"]]]]]]))
+           [:p {:class (stl/css :modal-text-medium)}
+            [:a {:class (stl/css :link)}
+             "See my current plan"]]]
+
+          [:div {:class (stl/css :contact)}
+           [:p {:class (stl/css :modal-text-large)}
+            "Contact us to upgrade to Nitrate:"]
+           [:p {:class (stl/css :modal-text-large)}
+            [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
+             "sales@penpot.app"]]])]]]]))
 
 
