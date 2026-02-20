@@ -224,8 +224,9 @@
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-guides)
 
-        show-frame-outline?      (= transform :move)
+        show-frame-outline?      (and (= transform :move) (not panning))
         show-outlines?           (and (nil? transform)
+                                      (not panning)
                                       (not edition)
                                       (not drawing-obj)
                                       (not (#{:comments :path :curve} drawing-tool)))
@@ -561,7 +562,7 @@
            :shift? @shift?}])
 
        [:> widgets/frame-titles*
-        {:objects (with-meta objects-modified nil)
+        {:objects objects-modified
          :selected selected
          :zoom zoom
          :is-show-artboard-names show-artboard-names?
