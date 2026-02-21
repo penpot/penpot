@@ -1,4 +1,4 @@
-import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
+import { useWorkspaceStore } from '../../lib/renderer/store/workspace-store'
 
 export function ViewportInfo() {
   const viewport = useWorkspaceStore((state) => state.viewport)

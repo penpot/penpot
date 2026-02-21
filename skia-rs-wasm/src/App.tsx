@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { CanvasWrapper } from './lib/renderer/canvas-wrapper'
-import { ViewportInfo } from './components/ViewportInfo'
-import { SelectionInfo } from './components/SelectionInfo'
+import { ViewportInfo } from './dev/components/ViewportInfo'
+import { SelectionInfo } from './dev/components/SelectionInfo'
 import { DevToolbar } from './dev/DevToolbar'
 import './App.css'
 
@@ -35,7 +35,7 @@ function App() {
         <CanvasWrapper
           rendererOptions={rendererOptions}
           onError={handleError}
-          style={{ border: '1px solid #ccc', cursor: 'grab' }}
+          containerStyle={{ border: '1px solid #ccc', cursor: 'grab' }}
         />
       </div>
       <ViewportInfo />

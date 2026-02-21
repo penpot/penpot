@@ -88,12 +88,23 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
-      useWorkspaceStore.getState().setMovePreviewDelta(null)
-      if (!modifiersAppliedRef.current) return
-      renderer.cleanModifiers()
+      const store = useWorkspaceStore.getState()
+      store.setMovePreviewDelta(null)
+      if (!modifiersAppliedRef.current) {
+        store.setIsMoving(false)
+        return
+      }
       const delta = latestWorldDeltaRef.current
       const updatedPage = applyMoveDeltaToPage(page, selectedIds, delta)
-      updatePage({ ...updatedPage, pageId }).catch(() => {})
+      updatePage({ ...updatedPage, pageId })
+        .then(() => {
+          renderer.cleanModifiers()
+          useWorkspaceStore.getState().setIsMoving(false)
+        })
+        .catch(() => {
+          renderer.cleanModifiers()
+          useWorkspaceStore.getState().setIsMoving(false)
+        })
     }),
     map(() => undefined)
   )

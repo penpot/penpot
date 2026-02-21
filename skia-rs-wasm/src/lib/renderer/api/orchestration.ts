@@ -146,7 +146,7 @@ export function setObject(
   setLayoutData(module, shape)
   
   // Selrect set after layout (matching ClojureScript order)
-  setShapeSelrect(module, selrect || { x1: 0, y1: 0, x2: 0, y2: 0 })
+  setShapeSelrect(module, selrect || { x1: 0, y1: 0, x2: 0, y2: 0, width: 0, height: 0, x: 0, y: 0 })
 
   // Collect pending operations
   const pendingThumbnails: PendingImageCallback[] = []

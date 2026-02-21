@@ -59,7 +59,9 @@ export function handleAreaSelection(
           )
         }),
         switchMap(rect => 
-          askWorker$(workerClient, 'index/query-selection', {
+        {
+          if (!pageId) return EMPTY
+          return askWorker$(workerClient, 'index/query-selection', {
             pageId,
             rect,
             includeFrames: true,
@@ -67,11 +69,11 @@ export function handleAreaSelection(
             fullFrame: true,
             usingSelrect: true
           })
-        ),
+        }),
         map(ids => {
           const newIds = remove 
-            ? new Set([...initialSet].filter(id => !ids.includes(id)))
-            : new Set([...initialSet, ...ids])
+            ? new Set([...initialSet].filter(id => !ids?.includes(id)))
+            : new Set([...initialSet, ...(ids ?? [])])
           useWorkspaceStore.getState().setSelectedIds(newIds)
           return ids
         })

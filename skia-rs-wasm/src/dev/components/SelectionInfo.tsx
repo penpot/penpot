@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
+import { useWorkspaceStore } from '../../lib/renderer/store/workspace-store'
 
 const MAX_IDS_SHOWN = 5
 

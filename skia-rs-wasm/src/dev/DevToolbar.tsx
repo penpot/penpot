@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor } from '@penpot-exporter/types'
+import type { PenpotNode, Shadow, Blur, Fill, Stroke, BlendMode, Matrix, Gradient, ConstraintH, ConstraintV, ImageColor, PartialImageColor, Selrect } from '@penpot-exporter/types'
 import { createNode } from './node-factory'
 import { getAllPresets, getPresetsByCategory, normalizePresetGradient, type Preset } from './presets'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from '../lib/renderer/api/constants'
@@ -309,7 +309,16 @@ export function DevToolbar() {
         width: advWidth,
         height: advHeight,
         parentId: ROOT_UUID,
-        selrect: { x1: advX, y1: advY, x2: advX + advWidth, y2: advY + advHeight },
+        selrect: {
+          x: advX,
+          y: advY,
+          x1: advX,
+          y1: advY,
+          x2: advX + advWidth,
+          y2: advY + advHeight,
+          width: advWidth,
+          height: advHeight,
+        },
         rotation: advRotation !== 0 ? advRotation : undefined,
         transform: advTransform.a !== 1 || advTransform.b !== 0 || advTransform.c !== 0 || advTransform.d !== 1 || advTransform.e !== 0 || advTransform.f !== 0 ? advTransform : undefined,
         fills: advFills.length > 0 ? advFills : undefined,
@@ -337,6 +346,16 @@ export function DevToolbar() {
         y: advY,
         width: advWidth,
         height: advHeight,
+        selrect: {
+          x: advX,
+          y: advY,
+          x1: advX,
+          y1: advY,
+          x2: advX + advWidth,
+          y2: advY + advHeight,
+          width: advWidth,
+          height: advHeight,
+        },
         rotation: advRotation !== 0 ? advRotation : undefined,
         transform: advTransform.a !== 1 || advTransform.b !== 0 || advTransform.c !== 0 || advTransform.d !== 1 || advTransform.e !== 0 || advTransform.f !== 0 ? advTransform : undefined,
         fills: advFills.length > 0 ? advFills : undefined,

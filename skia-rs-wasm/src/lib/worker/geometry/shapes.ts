@@ -2,7 +2,7 @@
  * Shape geometry utilities
  */
 
-import type { Point, PenpotNode, Selrect } from '../types'
+import type { PenpotNode, Point, Selrect } from '@penpot-exporter/types'
 import { pointsToRect, rectToCenter, joinRects } from './rect'
 import { ZERO_UUID } from '../types'
 

@@ -3,8 +3,20 @@
  * Uses only exporter types (camelCase); no backward compatibility layer.
  */
 
+import type { CSSProperties } from 'react'
 import type { Matrix, PenpotPage } from '@penpot-exporter/types'
 import type { QueryParams, WorkerMessage } from '../worker/types'
+
+/** Resize handle position (matches frontend handler keywords) */
+export type ResizeHandlePosition =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
 
 /** Shape type values supported by the WASM renderer */
 export type ShapeType =
@@ -148,6 +160,10 @@ export interface ShortcutsConfig {
 
 export interface CanvasWrapperProps {
   className?: string
+  /** Style applied to the container div that wraps the canvas and overlay. */
+  containerStyle?: CSSProperties
+  /** Class name applied to the container div that wraps the canvas and overlay. */
+  containerClassName?: string
   rendererOptions?: RendererOptions
   onError?: (error: Error) => void
   /** Initial viewport shortcuts (merged with defaults). Applied on mount when provided. */
