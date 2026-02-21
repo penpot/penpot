@@ -2,8 +2,9 @@
  * SVG utility functions for rendering
  */
 
-import type { SvgContent, Transform } from '../types'
-import { isSvgContentTree } from '../types'
+import type { SvgContent } from '@skia-rs-wasm/common'
+import type { Transform } from '@penpot-exporter/types'
+import { isSvgContentTree } from '@skia-rs-wasm/common'
 
 /**
  * SVG tag names (from ClojureScript common/src/app/common/svg.cljc)

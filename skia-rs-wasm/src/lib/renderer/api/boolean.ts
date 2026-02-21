@@ -3,7 +3,8 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { BoolType, PenpotNode, PathContent } from '../types'
+import type { BoolType, PathContent } from '@skia-rs-wasm/common'
+import type { PenpotNode } from '@penpot-exporter/types'
 import {
   allocBytes,
   freeBytes,
@@ -88,7 +89,7 @@ export function calculateBool(
   module._start_temp_objects()
 
   try {
-    const boolType = translateBoolType(shape.boolType)
+    const boolType = translateBoolType(shape['bool-type'])
     const ids = shape.shapes
 
     // Get all children including nested children

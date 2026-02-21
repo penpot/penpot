@@ -3,7 +3,7 @@
  * Provides factory functions to create PenpotNode instances with proper defaults
  */
 
-import type { ShapeType } from '../lib/renderer/types'
+import type { ShapeType } from '@skia-rs-wasm/common'
 import type { PenpotNode, Selrect } from '@penpot-exporter/types'
 import type { Fill, Stroke } from '@penpot-exporter/types'
 

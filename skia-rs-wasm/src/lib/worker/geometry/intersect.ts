@@ -2,8 +2,9 @@
  * Overlap detection algorithms for shapes
  */
 
-import type { Point, PenpotNode, Selrect, Line } from '../types'
-import { makeSelrect } from '../types'
+import type { Point, PenpotNode, Selrect } from '@penpot-exporter/types'
+import type { Line } from '@skia-rs-wasm/common'
+import { makeSelrect } from '@skia-rs-wasm/common'
 import { rectToPoints } from './rect'
 import { point } from './point'
 import { isPathShape, isBoolShape, isCircleShape, isTextShape } from './shapes'

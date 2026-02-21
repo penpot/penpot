@@ -10,7 +10,7 @@ import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { updateNode, applyResizeTransformToNode } from '../store/page-crud'
-import type { Point } from '../viewport'
+import type { Point } from '@skia-rs-wasm/common'
 import type { Matrix } from '@penpot-exporter/types'
 import type { ResizeHandlePosition } from '../types'
 

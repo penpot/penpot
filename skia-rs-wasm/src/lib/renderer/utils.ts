@@ -1,65 +1,10 @@
 /**
- * Utility functions for UUID conversion, color conversion, and memory management
+ * Utility functions for memory management and WASM heap operations.
+ * UUID/color conversions live in @skia-rs-wasm/common.
  */
 
 import type { WasmModule } from "src"
-
-/**
- * Converts a UUID string to a Uint32Array of 4 elements
- * UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
- */
-export function uuidToU32(id: string | null | undefined): Uint32Array {
-  if (!id) {
-    // Return zero UUID
-    return new Uint32Array([0, 0, 0, 0])
-  }
-
-  // Remove dashes and convert to hex
-  const hex = id.replace(/-/g, '')
-  const buffer = new Uint32Array(4)
-
-  // Each UUID segment is 8 hex characters = 32 bits
-  for (let i = 0; i < 4; i++) {
-    buffer[i] = parseInt(hex.slice(i * 8, (i + 1) * 8), 16)
-  }
-
-  return buffer
-}
-
-/**
- * Converts a UUID string to a tuple of 4 u32 values for WASM calls
- */
-export function uuidToU32Tuple(id: string | null | undefined): [number, number, number, number] {
-  const buffer = uuidToU32(id)
-  return [buffer[0], buffer[1], buffer[2], buffer[3]]
-}
-
-/**
- * Converts a hex color string to ARGB u32 format
- * @param hex - Hex color string (e.g., "#FF0000" or "FF0000")
- * @param opacity - Opacity value (0-1), defaults to 1
- * @returns ARGB as u32 number
- */
-export function hexToU32ARGB(hex: string, opacity: number = 1): number {
-  // Remove # if present
-  const cleanHex = hex.replace('#', '')
-  
-  // Parse RGB
-  const r = parseInt(cleanHex.slice(0, 2), 16)
-  const g = parseInt(cleanHex.slice(2, 4), 16)
-  const b = parseInt(cleanHex.slice(4, 6), 16)
-  const a = Math.round(opacity * 255)
-
-  // ARGB format: A << 24 | R << 16 | G << 8 | B
-  return (a << 24) | (r << 16) | (g << 8) | b
-}
-
-/**
- * Converts a Color object to ARGB u32 format
- */
-export function colorToU32ARGB(color: { color: string; opacity?: number }): number {
-  return hexToU32ARGB(color.color, color.opacity ?? 1)
-}
+import { uuidToU32 } from '@skia-rs-wasm/common'
 
 /**
  * Allocates memory in WASM heap and returns the offset
@@ -248,26 +193,13 @@ export function sliceHeap<T extends TypedArray>(heap: T, offset: number, size: n
   return heap.slice(offset, offset + size) as T
 }
 
-/**
- * Converts a Uint32Array (4 u32 values) back to UUID string format
- * @param buffer - Uint32Array with 4 elements or array of 4 numbers
- * @returns UUID string in format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
- */
-export function u32ToUUID(buffer: Uint32Array | [number, number, number, number]): string {
-  const arr = Array.isArray(buffer) ? buffer : Array.from(buffer)
-  // Convert each u32 to 8 hex characters, pad with zeros
-  const parts = arr.map(val => val.toString(16).padStart(8, '0'))
-  // Format as UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  return `${parts[0]}${parts[1].slice(0, 4)}-${parts[1].slice(4)}-${parts[2].slice(0, 4)}-${parts[2].slice(4)}${parts[3].slice(0, 4)}-${parts[3].slice(4)}`
-}
-
 // Type helper for typed arrays
 type TypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array
 /**
  * Simple debounce utility
  */
 
-export function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
+export function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
   return ((...args: Parameters<T>) => {
     if (timeoutId) {
@@ -283,7 +215,7 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: n
  * Simple throttle utility
  */
 
-export function throttle<T extends (...args: unknown[]) => void>(fn: T, delay: number): T {
+export function throttle<T extends (...args: any[]) => void>(fn: T, delay: number): T {
   let lastExecTime = 0
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 

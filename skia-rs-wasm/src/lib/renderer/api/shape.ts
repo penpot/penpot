@@ -7,8 +7,8 @@ import type {
   BoolType,
   ShapeType,
 } from '../types'
+import { uuidToU32Tuple } from '@skia-rs-wasm/common'
 import {
-  uuidToU32Tuple,
   allocBytes,
   freeBytes,
   writeUUIDToHeap,
