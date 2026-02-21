@@ -3,25 +3,7 @@
  * Provides coordinate transformations between screen and world space
  */
 
-export interface Point {
-  x: number
-  y: number
-}
-
-export interface ViewportOptions {
-  zoom?: number
-  panX?: number
-  panY?: number
-  minZoom?: number
-  maxZoom?: number
-}
-
-export interface ViewBox {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+import type { Point, ViewportOptions, ViewBox } from '@skia-rs-wasm/common'
 
 export class Viewport {
   private _zoom: number

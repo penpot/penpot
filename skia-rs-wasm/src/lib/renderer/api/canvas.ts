@@ -4,9 +4,8 @@
 
 import type { WasmModule } from '../wasm-types'
 import type { SelectionRectResult } from '../types'
+import { hexToU32ARGB, uuidToU32Tuple } from '@skia-rs-wasm/common'
 import {
-  hexToU32ARGB,
-  uuidToU32Tuple,
   allocBytes,
   freeBytes,
   writeUUIDToHeap,

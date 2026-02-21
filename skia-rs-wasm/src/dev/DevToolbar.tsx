@@ -7,7 +7,7 @@ import { useWorkspaceStore } from '../lib/renderer/store/workspace-store'
 import { useWorkspaceDevStore } from '../lib/renderer/store/workspace-dev-store'
 import { addNode, updateNode, deleteNode, setDocument, createNewDocument } from '../lib/renderer/store/page-crud'
 import './DevToolbar.css'
-import type { ShapeType } from 'src/lib/renderer/types'
+import type { ShapeType } from '@skia-rs-wasm/common'
 
 function isImageColor(img: ImageColor | PartialImageColor): img is ImageColor {
   return 'width' in img && 'height' in img

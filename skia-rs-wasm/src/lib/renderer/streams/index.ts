@@ -5,7 +5,7 @@
 
 import { BehaviorSubject, fromEvent, merge } from 'rxjs'
 import { share } from 'rxjs/operators'
-import type { Point } from '../viewport'
+import type { Point } from '@skia-rs-wasm/common'
 
 // Mouse position stream (BehaviorSubject to hold current value)
 export const mousePosition$ = new BehaviorSubject<Point | null>(null)

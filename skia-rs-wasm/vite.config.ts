@@ -11,6 +11,7 @@ const __dirname = dirname(__filename)
 export default defineConfig({
   resolve: {
     alias: {
+      '@skia-rs-wasm/common': resolve(__dirname, 'src/lib/common'),
       '@penpot-exporter/transformers': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/plugin-src/transformers'),
       '@penpot-exporter/types': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/ui-src/types'),
       '@penpot-exporter/lib/types': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/ui-src/lib/types'),
@@ -77,6 +78,7 @@ export default defineConfig({
     plugins: () => [],
     resolve: {
       alias: {
+        '@skia-rs-wasm/common': resolve(__dirname, 'src/lib/common'),
         '@penpot-exporter/transformers': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/plugin-src/transformers'),
         '@penpot-exporter/types': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/ui-src/types'),
         '@penpot-exporter/lib/types': resolve(__dirname, 'packages/penpot-exporter-figma-plugin/ui-src/lib/types'),

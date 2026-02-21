@@ -2,8 +2,8 @@
  * Helper utilities for shape operations and index generation
  */
 
-import type { PenpotNode } from './types'
-import { ZERO_UUID } from './types'
+import type { PenpotNode } from '@penpot-exporter/types'
+import { ZERO_UUID } from '@skia-rs-wasm/common'
 import {
   isFrameShape,
   isBoolShape,

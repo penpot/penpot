@@ -23,7 +23,7 @@ export async function createWorker( onWorkerReady?: (client: WorkerClient) => vo
     const client = new WorkerClient(workerInstance, workerCleanup)
     
     if (onWorkerReady) {
-      client.onMessage(onWorkerReady)
+      onWorkerReady(client)
     }
 
     const cleanup = () => {

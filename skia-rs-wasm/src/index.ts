@@ -30,12 +30,14 @@ export {
   cleanupWorker,
 } from './lib/worker-init'
 
-// Re-export utilities for advanced usage
+// Re-export utilities for advanced usage (conversions from common, rest from renderer)
 export {
   uuidToU32,
   uuidToU32Tuple,
   hexToU32ARGB,
   colorToU32ARGB,
+} from '@skia-rs-wasm/common'
+export {
   getDPR,
   detectBrowser,
   isWebGL2Supported,

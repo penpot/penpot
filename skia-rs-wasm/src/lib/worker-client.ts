@@ -2,14 +2,15 @@
  * Worker client for typed, promise-based communication with the worker
  */
 
-import type { WorkerMessage, SerializedMessage } from './worker/types'
-import type { PenpotPage} from '@penpot-exporter/types'
+import type { PenpotPage } from '@penpot-exporter/types'
 import type {
+  WorkerMessage,
+  SerializedMessage,
   WorkerClient as WorkerClientInterface,
   WorkerConfig,
   WorkerResponse,
   WorkerSendPayload,
-} from './renderer/types'
+} from '@skia-rs-wasm/common'
 import { encode, decode } from './worker/messages'
 
 /**
