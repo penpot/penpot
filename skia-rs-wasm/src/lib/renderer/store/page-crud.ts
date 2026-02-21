@@ -6,6 +6,7 @@
 import { useWorkspaceStore } from './workspace-store'
 import { DocumentModel } from './document-model'
 import type { PenpotDocument, PenpotNode, PenpotPage } from '@penpot-exporter/types'
+import { makeSelrect } from '../../worker/types'
 
 export function createNewDocument(): PenpotDocument {
   const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
@@ -17,7 +18,7 @@ export function createNewDocument(): PenpotDocument {
     width: 800,
     height: 600,
     parentId: undefined,
-    selrect: { x1: 0, y1: 0, x2: 800, y2: 600 },
+    selrect: { x: 0, y: 0, width: 800, height: 600, x1: 0, y1: 0, x2: 800, y2: 600 },
   }
   const initialPage: PenpotPage = {
     id: crypto.randomUUID(),
@@ -120,6 +121,57 @@ export function applyMoveDeltaToPage(
   }
   const children = (page.children ?? []).map(applyToNode)
   return { ...page, children }
+}
+
+/**
+ * Apply a 2D affine transform matrix to a shape's geometry.
+ * Transforms selrect corners (or points), returns new selrect and optional x, y, width, height, points.
+ * Used to commit resize.
+ */
+export function applyResizeTransformToNode(
+  node: PenpotNode,
+  matrix: { a: number; b: number; c: number; d: number; e: number; f: number }
+): Partial<PenpotNode> | null {
+  const sr = node.selrect
+  if (!sr) return null
+  const x = sr.x ?? 0
+  const y = sr.y ?? 0
+  const w = sr.width ?? 0
+  const h = sr.height ?? 0
+  if (w <= 0 || h <= 0) return null
+
+  const { a, b, c, d, e, f } = matrix
+  const transform = (px: number, py: number) => ({
+    x: a * px + c * py + e,
+    y: b * px + d * py + f,
+  })
+  const corners = [
+    transform(x, y),
+    transform(x + w, y),
+    transform(x + w, y + h),
+    transform(x, y + h),
+  ]
+  const minX = Math.min(...corners.map((p) => p.x))
+  const minY = Math.min(...corners.map((p) => p.y))
+  const maxX = Math.max(...corners.map((p) => p.x))
+  const maxY = Math.max(...corners.map((p) => p.y))
+  const newWidth = maxX - minX
+  const newHeight = maxY - minY
+  const selrect = makeSelrect(minX, minY, newWidth, newHeight)
+
+  const points = (node.points as { x: number; y: number }[] | undefined)?.map((p) =>
+    transform(p.x, p.y)
+  )
+
+  const updates: Partial<PenpotNode> = {
+    selrect,
+    ...(points && { points }),
+  }
+  if (typeof node.x === 'number') updates.x = minX
+  if (typeof node.y === 'number') updates.y = minY
+  if (typeof (node as { width?: number }).width === 'number') (updates as { width?: number }).width = newWidth
+  if (typeof (node as { height?: number }).height === 'number') (updates as { height?: number }).height = newHeight
+  return updates
 }
 
 export async function addNode(node: PenpotNode): Promise<void> {

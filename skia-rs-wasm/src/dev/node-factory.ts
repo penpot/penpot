@@ -4,7 +4,7 @@
  */
 
 import type { ShapeType } from '../lib/renderer/types'
-import type { PenpotNode } from '@penpot-exporter/types'
+import type { PenpotNode, Selrect } from '@penpot-exporter/types'
 import type { Fill, Stroke } from '@penpot-exporter/types'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
@@ -23,8 +23,12 @@ function generateUUID(): string {
 /**
  * Creates a selrect from position and size
  */
-function createSelRect(x: number, y: number, width: number, height: number) {
+function createSelRect(x: number, y: number, width: number, height: number): Selrect {
   return {
+    x,
+    y,
+    width,
+    height,
     x1: x,
     y1: y,
     x2: x + width,

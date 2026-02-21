@@ -7,9 +7,10 @@ import type { CanvasWrapperProps } from './types'
 import { useWorkspaceStore } from './store/workspace-store'
 import { useViewportShortcutsStore } from './store/shortcuts-store'
 import { initRendererClient, cleanupRendererClient } from './renderer-init'
-import { SelectionOverlay } from './selection-overlay'
+import { SelectionOverlay } from '../components/selection-overlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
 import { useMove } from './hooks/use-move'
+import { useResize } from './hooks/use-resize'
 import { useStreams } from './hooks/use-streams'
 import { useSelection } from './hooks/use-selection'
 import { cleanupWorker, initWorker } from '../worker-init'
@@ -20,6 +21,8 @@ const DEFAULT_HEIGHT = 600
 
 export function CanvasWrapper({
   className,
+  containerStyle,
+  containerClassName,
   rendererOptions,
   shortcuts: initialViewportShortcuts,
 }: CanvasWrapperProps) {
@@ -136,6 +139,7 @@ export function CanvasWrapper({
   useStreams(canvasRef)
   useSelection()
   useMove()
+  useResize()
   useViewportInteractions({
     canvasRef,
     onViewportUpdate: () => {
@@ -153,7 +157,15 @@ export function CanvasWrapper({
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', minWidth: 1, minHeight: 1, position: 'relative' }}
+      className={containerClassName}
+      style={{
+        width: '100%',
+        height: '100%',
+        minWidth: 1,
+        minHeight: 1,
+        position: 'relative',
+        ...containerStyle,
+      }}
     >
       <canvas
         ref={canvasRef}
@@ -162,7 +174,7 @@ export function CanvasWrapper({
         className={className}
         style={{ display: 'block', width: '100%', height: '100%', border: 'none', boxSizing: 'content-box' }}
       />
-      <SelectionOverlay canvasSize={canvasSize} />
+      <SelectionOverlay canvasSize={canvasSize} canvasRef={canvasRef} />
     </div>
   )
 }

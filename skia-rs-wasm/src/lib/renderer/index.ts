@@ -153,18 +153,6 @@ export class Renderer {
       throw new Error('Renderer context not initialized. Call initPage() first.')
     }
     this.viewport = viewport
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'renderer/index.ts:applyViewport',
-        message: 'WASM view applied',
-        data: { hypothesisId: 'A', panX: viewport.panX, panY: viewport.panY, zoom: viewport.zoom },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
     setViewBox(this.module, this.prevZoom, viewport.zoom, { x: viewport.panX, y: viewport.panY })
     this.prevZoom = viewport.zoom
   }
@@ -272,7 +260,7 @@ export class Renderer {
 export { CanvasWrapper } from './canvas-wrapper'
 export { WorkerClient } from '../worker-client'
 export { createWorker } from '../worker-factory'
-export type { CanvasWrapperProps, InitializationState, ShortcutsConfig, ViewportPanModifier } from './types'
+export type { CanvasWrapperProps, InitializationState, ResizeHandlePosition, ShortcutsConfig, ViewportPanModifier } from './types'
 
 // Export Zustand store
 export { useWorkspaceStore, type IDocumentModel } from './store/workspace-store'
@@ -292,11 +280,13 @@ export { initRendererClient, cleanupRendererClient, RendererClientManager } from
 export { useStreams } from './hooks/use-streams'
 export { useSelection } from './hooks/use-selection'
 export { useMove } from './hooks/use-move'
+export { useResize } from './hooks/use-resize'
 export { useViewportShortcuts } from './hooks/use-viewport-shortcuts'
 
 // Export handlers
 export { handleAreaSelection } from './handlers/selection'
 export { startMoveSelected } from './handlers/move'
+export { startResizeSelected } from './handlers/resize'
 
 // Export streams
 export { mousePosition$, mousePositionShift$, mousePositionAlt$, mousePositionMod$, keyboardSpace$ } from './streams'

@@ -23,7 +23,6 @@ export async function queryNodesAtPoint(
   viewport: Viewport,
   screenX: number,
   screenY: number,
-  _canvasHeight?: number
 ): Promise<string[]> {
   const center = viewport.screenToWorld(screenX, screenY)
   const half = Math.max(POINT_QUERY_SIZE_SCREEN / viewport.zoom, MIN_HALF_WORLD)

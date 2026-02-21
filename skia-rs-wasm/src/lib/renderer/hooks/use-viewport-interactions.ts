@@ -22,6 +22,17 @@ function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
   }
 }
 
+function isPanModifierKey(e: KeyboardEvent, mod: ViewportPanModifier): boolean {
+  if (mod === null) return false
+  switch (mod) {
+    case 'shift': return e.key === 'Shift'
+    case 'alt': return e.key === 'Alt'
+    case 'ctrl': return e.key === 'Control'
+    case 'meta': return e.key === 'Meta'
+    default: return false
+  }
+}
+
 interface UseViewportInteractionsParams {
   canvasRef: RefObject<HTMLCanvasElement | null>
   onViewportUpdate?: () => void
@@ -36,6 +47,9 @@ export function useViewportInteractions({
   const renderer = useWorkspaceStore((state) => state.renderer)
   const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
+  const setIsResizing = useWorkspaceStore((state) => state.setIsResizing)
+  const setResizeHandle = useWorkspaceStore((state) => state.setResizeHandle)
+  const setResizePreviewBounds = useWorkspaceStore((state) => state.setResizePreviewBounds)
   const setSelectedIds = useWorkspaceStore((state) => state.setSelectedIds)
   const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
@@ -123,6 +137,7 @@ export function useViewportInteractions({
                 setSelectedIds(new Set([topId]))
               }
             }
+            setResizePreviewBounds(null)
             setIsMoving(true)
           } else {
             setIsSelecting(true)
@@ -130,12 +145,16 @@ export function useViewportInteractions({
         }
       )
     }
-  }, [canvasRef, setIsSelecting, setIsMoving, setSelectedIds, shortcuts.panMouseButton, shortcuts.panWithModifier])
+  }, [canvasRef, setIsSelecting, setIsMoving, setResizePreviewBounds, setSelectedIds, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
-  // Handle mouse move for panning
+  // Handle mouse move for panning and cursor (grab only when pan modifier held)
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const canvasElement = canvasRef.current
     if (!canvasElement) return
+
+    if (!isPanningRef.current && e.target === canvasElement) {
+      canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
+    }
 
     if (isPanningRef.current && lastPanPosRef.current) {
       e.preventDefault()
@@ -168,7 +187,7 @@ export function useViewportInteractions({
         })
       }
     }
-  }, [canvasRef, viewport, renderer, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, onViewportUpdate, shortcuts.panWithModifier])
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
@@ -186,20 +205,22 @@ export function useViewportInteractions({
         }
       }
       if (canvas) {
-        canvas.style.cursor = 'grab'
+        canvas.style.cursor = 'default'
       }
     }
 
-    // End selection and moving
+    // End selection and resizing. isMoving is cleared by the move handler after commit so the overlay uses updated bounds.
     setIsSelecting(false)
-    setIsMoving(false)
-  }, [canvasRef, viewport, renderer, setIsSelecting, setIsMoving, onViewportUpdate])
+    setIsResizing(false)
+    setResizeHandle(null)
+    setResizePreviewBounds(null)
+  }, [canvasRef, viewport, renderer, setIsSelecting, setIsResizing, setResizeHandle, setResizePreviewBounds, onViewportUpdate])
 
-  // Handle mouse enter to show grab cursor
+  // Handle mouse enter: normal cursor unless pan modifier is held (updated in mousemove)
   const handleMouseEnter = useCallback(() => {
     const canvas = canvasRef.current
     if (canvas && !isPanningRef.current) {
-      canvas.style.cursor = 'grab'
+      canvas.style.cursor = 'default'
     }
   }, [canvasRef])
 
@@ -210,6 +231,14 @@ export function useViewportInteractions({
       canvas.style.cursor = 'default'
     }
   }, [canvasRef])
+
+  // When pan modifier key is released, revert to default cursor (if not panning)
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    const canvas = canvasRef.current
+    if (canvas && !isPanningRef.current && isPanModifierKey(e, shortcuts.panWithModifier)) {
+      canvas.style.cursor = 'default'
+    }
+  }, [canvasRef, shortcuts.panWithModifier])
 
   // Handle keyboard for panning and zooming
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -287,6 +316,7 @@ export function useViewportInteractions({
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
     window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
 
     return () => {
       canvas.removeEventListener('wheel', handleWheel)
@@ -296,7 +326,8 @@ export function useViewportInteractions({
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [canvasRef, handleWheel, handleMouseDown, handleMouseEnter, handleMouseLeave, handleMouseMove, handleMouseUp, handleKeyDown])
+  }, [canvasRef, handleWheel, handleMouseDown, handleMouseEnter, handleMouseLeave, handleMouseMove, handleMouseUp, handleKeyDown, handleKeyUp])
 }
 
