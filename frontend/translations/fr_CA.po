@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-21 14:09+0000\n"
+"PO-Revision-Date: 2026-02-22 16:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -4663,7 +4663,7 @@ msgstr "Basculer les calques"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:190
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Ajouter / retirer mise en page flex"
+msgstr "Ajouter / retirer disposition flex"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
 msgid "shortcuts.toggle-layout-grid"
@@ -7582,3 +7582,104 @@ msgstr "Différence"
 #: src/app/main/ui/workspace/context_menu.cljs:212
 msgid "workspace.shape.menu.duplicate"
 msgstr "Dupliquer"
+
+#: src/app/main/ui/workspace/context_menu.cljs:432
+msgid "workspace.shape.menu.edit"
+msgstr "Modifier"
+
+#: src/app/main/ui/workspace/context_menu.cljs:453, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:98
+msgid "workspace.shape.menu.exclude"
+msgstr "Exclusion"
+
+#: src/app/main/ui/workspace/context_menu.cljs:437, src/app/main/ui/workspace/context_menu.cljs:460, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:104
+msgid "workspace.shape.menu.flatten"
+msgstr "Aplatir"
+
+#: src/app/main/ui/workspace/context_menu.cljs:299
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Retourner horizontalement"
+
+#: src/app/main/ui/workspace/context_menu.cljs:295
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "Retourner verticalement"
+
+#: src/app/main/ui/workspace/context_menu.cljs:508
+msgid "workspace.shape.menu.flow-start"
+msgstr "Début de parcours"
+
+#: src/app/main/ui/workspace/context_menu.cljs:273
+msgid "workspace.shape.menu.forward"
+msgstr "Emmener vers l'avant"
+
+#: src/app/main/ui/workspace/context_menu.cljs:276
+msgid "workspace.shape.menu.front"
+msgstr "Emmener à l'avant-plan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.go-main"
+msgstr "Aller au fichier du composant principal"
+
+#: src/app/main/ui/workspace/context_menu.cljs:368
+msgid "workspace.shape.menu.group"
+msgstr "Grouper"
+
+#: src/app/main/ui/workspace/context_menu.cljs:477, src/app/main/ui/workspace/sidebar/layer_item.cljs:172
+msgid "workspace.shape.menu.hide"
+msgstr "Afficher/Masquer"
+
+#: src/app/main/ui/workspace/context_menu.cljs:706, src/app/main/ui/workspace/main_menu.cljs:448
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Afficher / cacher l'interface utilisateur"
+
+#: src/app/main/ui/workspace/context_menu.cljs:450, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:93
+msgid "workspace.shape.menu.intersection"
+msgstr "Intersection"
+
+#: src/app/main/ui/workspace/context_menu.cljs:485, src/app/main/ui/workspace/sidebar/layer_item.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:268
+msgid "workspace.shape.menu.lock"
+msgstr "Verrouiller"
+
+#: src/app/main/ui/workspace/context_menu.cljs:373
+msgid "workspace.shape.menu.mask"
+msgstr "Utiliser comme masque"
+
+#: src/app/main/ui/workspace/context_menu.cljs:209, src/app/main/ui/workspace/context_menu.cljs:703
+msgid "workspace.shape.menu.paste"
+msgstr "Coller"
+
+#: src/app/main/ui/workspace/context_menu.cljs:234
+msgid "workspace.shape.menu.paste-props"
+msgstr "Coller les propriétés"
+
+#: src/app/main/ui/workspace/context_menu.cljs:443
+msgid "workspace.shape.menu.path"
+msgstr "Opérations de chemin"
+
+#: src/app/main/ui/workspace/context_menu.cljs:549
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Supprimer la disposition flex"
+
+#: src/app/main/ui/workspace/context_menu.cljs:552
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Supprimer la disposition grille"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1266
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Supprimer la disposition"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1157
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Supprimer la propriété"
+
+#: src/app/main/ui/workspace/context_menu.cljs:329
+msgid "workspace.shape.menu.rename"
+msgstr "Renommer"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:493
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "Annuler les modifications"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:499
+msgid "workspace.shape.menu.restore-main"
+msgstr "Restaurer le composant principal"
