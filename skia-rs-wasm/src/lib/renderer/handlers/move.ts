@@ -76,7 +76,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
           selectedIds.forEach((id) => {
             entries.push([id, translateMatrix(delta.x, delta.y)])
           })
-          renderer.setMoveModifiers(entries)
+          renderer.setMoveModifiersAndRender(entries)
           useWorkspaceStore.getState().refreshWasmSelectionRect()
         })
       }

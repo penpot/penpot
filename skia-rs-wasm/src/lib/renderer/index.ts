@@ -20,7 +20,7 @@ import {
 import { setViewBox, resizeViewbox, initializeViewport } from './api/viewport'
 import { getContextInitialized } from './api/context'
 import { processObject } from './api/orchestration'
-import { requestRender } from './api/rendering'
+import { requestRender, renderSync } from './api/rendering'
 import { moduleUseShape, setShapeChildren } from './api/shape'
 import { setModifiers, cleanModifiers as cleanModifiersApi } from './api/modifiers'
 
@@ -243,6 +243,17 @@ export class Renderer {
   setMoveModifiers(entries: Array<[string, Matrix]>): void {
     if (!getContextInitialized() || !this.module) return
     setModifiers(this.module, entries)
+  }
+
+  /**
+   * Set modifiers and render synchronously in the same frame.
+   * Avoids the 1-frame desync between overlay and canvas that occurs when
+   * setMoveModifiers defers rendering via requestAnimationFrame.
+   */
+  setMoveModifiersAndRender(entries: Array<[string, Matrix]>): void {
+    if (!getContextInitialized() || !this.module) return
+    setModifiers(this.module, entries, true)
+    renderSync(this.module)
   }
 
   /**

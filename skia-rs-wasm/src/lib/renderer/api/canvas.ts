@@ -139,7 +139,7 @@ export function clearCanvas(module: WasmModule, canvas?: HTMLCanvasElement): voi
     }
 
     // Clean up WebGL context
-    const gl = module.GL as any
+    const gl = module.GL
     if (gl && storedContextHandle !== null) {
       try {
         // Ask the browser to release resources explicitly if available
@@ -149,7 +149,6 @@ export function clearCanvas(module: WasmModule, canvas?: HTMLCanvasElement): voi
             loseExt.loseContext()
           }
         }
-        // deleteContext may not be in types but exists in Emscripten GL
         if (gl.deleteContext) {
           gl.deleteContext(storedContextHandle)
         }
@@ -317,7 +316,7 @@ export function captureCanvasPixels(module: WasmModule, canvas: HTMLCanvasElemen
 /**
  * Restores previous canvas pixels into the new canvas
  */
-export function restorePreviousCanvasPixels(module: WasmModule, _canvas: HTMLCanvasElement): void {
+export function restorePreviousCanvasPixels(module: WasmModule): void {
   if (!canvasPixels) {
     return
   }

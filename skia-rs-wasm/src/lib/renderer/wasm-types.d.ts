@@ -16,6 +16,7 @@ export interface WasmModule {
 
   // WebGL context
   readonly GL: {
+    deleteContext(handle: number): void
     registerContext(
       context: WebGL2RenderingContext,
       attributes?: { majorVersion: number }
@@ -23,7 +24,7 @@ export interface WasmModule {
     makeContextCurrent(handle: number): void
     getContext(handle: number): WebGL2RenderingContext | null
     textures: { [key: number]: WebGLTexture }
-    getNewId(objects: { [key: number]: any }): number
+    getNewId(objects: { [key: number]: unknown }): number
   }
 
   // Memory management
@@ -315,6 +316,6 @@ export interface WasmModule {
 
 export type WasmModuleFactory = (options?: {
   locateFile?: (path: string, prefix: string) => string
-  [key: string]: any
+  [key: string]: unknown
 }) => Promise<WasmModule>
 
