@@ -10,6 +10,7 @@ import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { updateNode, applyResizeTransformToNode } from '../store/page-crud'
+import { makeSelrect } from '@skia-rs-wasm/common'
 import type { Point } from '@skia-rs-wasm/common'
 import type { Matrix } from '@penpot-exporter/types'
 import type { ResizeHandlePosition } from '../types'
@@ -114,8 +115,20 @@ export function startResizeSelected(
   const zoom = viewport.zoom
   const mult = getHandlerMultiplier(handle)
   const origin = getHandlerResizeOrigin(x, y, width, height, handle)
+  const rotationDeg = (node as { rotation?: number }).rotation
+  const cx = x + width / 2
+  const cy = y + height / 2
+  const hasRotation = rotationDeg !== undefined && rotationDeg !== 0
 
-  const latestMatrixRef = { current: resizeMatrix(origin.x, origin.y, 1, 1) }
+  const theta_r = hasRotation ? (rotationDeg! * Math.PI) / 180 : 0
+  const cos_r = Math.cos(theta_r)
+  const sin_r = Math.sin(theta_r)
+  const wo_x = hasRotation ? cx + (origin.x - cx) * cos_r - (origin.y - cy) * sin_r : origin.x
+  const wo_y = hasRotation ? cy + (origin.x - cx) * sin_r + (origin.y - cy) * cos_r : origin.y
+
+  const identityLocal = resizeMatrix(origin.x, origin.y, 1, 1)
+  const latestMatrixRef = { current: identityLocal }
+  const latestLocalMatrixRef = { current: identityLocal }
   const rafScheduledRef = { current: false }
   const modifiersAppliedRef = { current: false }
 
@@ -140,7 +153,9 @@ export function startResizeSelected(
       y: (acc.pos.y - initialPosition.y) / zoom,
     })),
     map((deltaWorld) => {
-      const deltav = { x: deltaWorld.x * mult.x, y: deltaWorld.y * mult.y }
+      const localDeltaX = deltaWorld.x * cos_r + deltaWorld.y * sin_r
+      const localDeltaY = -deltaWorld.x * sin_r + deltaWorld.y * cos_r
+      const deltav = { x: localDeltaX * mult.x, y: localDeltaY * mult.y }
       let sx = (width + deltav.x) / width
       let sy = (height + deltav.y) / height
       sx = noZero(sx, 0.001)
@@ -154,32 +169,36 @@ export function startResizeSelected(
       const minScale = MIN_SIZE / Math.min(width, height)
       if (Math.abs(sx) < minScale) sx = sx < 0 ? -minScale : minScale
       if (Math.abs(sy) < minScale) sy = sy < 0 ? -minScale : minScale
-      return resizeMatrix(origin.x, origin.y, sx, sy)
+      const M_local = resizeMatrix(origin.x, origin.y, sx, sy)
+      let M_world: Matrix
+      if (hasRotation) {
+        const rsr_a = sx * cos_r * cos_r + sy * sin_r * sin_r
+        const rsr_b = (sx - sy) * sin_r * cos_r
+        const rsr_c = (sx - sy) * sin_r * cos_r
+        const rsr_d = sx * sin_r * sin_r + sy * cos_r * cos_r
+        M_world = {
+          a: rsr_a,
+          b: rsr_b,
+          c: rsr_c,
+          d: rsr_d,
+          e: wo_x * (1 - rsr_a) - wo_y * rsr_c,
+          f: wo_y * (1 - rsr_d) - wo_x * rsr_b,
+        }
+      } else {
+        M_world = M_local
+      }
+      return { M_local, M_world }
     }),
-    tap((matrix) => {
-      latestMatrixRef.current = matrix
+    tap(({ M_local, M_world }) => {
+      latestLocalMatrixRef.current = M_local
+      latestMatrixRef.current = M_world
       if (!rafScheduledRef.current) {
         rafScheduledRef.current = true
         requestAnimationFrame(() => {
           rafScheduledRef.current = false
           modifiersAppliedRef.current = true
           renderer.setMoveModifiers([[selectedId, latestMatrixRef.current]])
-          const m = latestMatrixRef.current
-          const tf = (px: number, py: number) => ({
-            x: m.a * px + m.c * py + m.e,
-            y: m.b * px + m.d * py + m.f,
-          })
-          const corners = [tf(x, y), tf(x + width, y), tf(x + width, y + height), tf(x, y + height)]
-          const minX = Math.min(...corners.map((p) => p.x))
-          const minY = Math.min(...corners.map((p) => p.y))
-          const maxX = Math.max(...corners.map((p) => p.x))
-          const maxY = Math.max(...corners.map((p) => p.y))
-          useWorkspaceStore.getState().setResizePreviewBounds({
-            x: minX,
-            y: minY,
-            width: maxX - minX,
-            height: maxY - minY,
-          })
+          useWorkspaceStore.getState().refreshWasmSelectionRect()
         })
       }
     }),
@@ -187,15 +206,70 @@ export function startResizeSelected(
     takeUntil(stopper)
   )
 
+  function clearResizeState(): void {
+    const store = useWorkspaceStore.getState()
+    store.setIsResizing(false)
+    store.setResizeHandle(null)
+  }
+
   const commitOnRelease = stopper.pipe(
     take(1),
     tap(() => {
-      const updates = applyResizeTransformToNode(node, latestMatrixRef.current)
-      if (!modifiersAppliedRef.current) return
-      renderer.cleanModifiers()
-      if (updates) {
-        updateNode(selectedId, updates).catch(() => {})
+      if (!modifiersAppliedRef.current) {
+        clearResizeState()
+        return
       }
+
+      let updates: Partial<typeof node> | null
+      if (hasRotation) {
+        const ml = latestLocalMatrixRef.current
+        const mw = latestMatrixRef.current
+        const tf = (px: number, py: number) => ({
+          x: ml.a * px + ml.c * py + ml.e,
+          y: ml.b * px + ml.d * py + ml.f,
+        })
+        const localCorners = [tf(x, y), tf(x + width, y), tf(x + width, y + height), tf(x, y + height)]
+        const nlw = Math.max(...localCorners.map((p) => p.x)) - Math.min(...localCorners.map((p) => p.x))
+        const nlh = Math.max(...localCorners.map((p) => p.y)) - Math.min(...localCorners.map((p) => p.y))
+        const corrCx = mw.a * cx + mw.c * cy + mw.e
+        const corrCy = mw.b * cx + mw.d * cy + mw.f
+        const corrX = corrCx - nlw / 2
+        const corrY = corrCy - nlh / 2
+        const selrect = makeSelrect(corrX, corrY, nlw, nlh)
+        const unrotCorners = [
+          { x: corrX, y: corrY },
+          { x: corrX + nlw, y: corrY },
+          { x: corrX + nlw, y: corrY + nlh },
+          { x: corrX, y: corrY + nlh },
+        ]
+        const points = unrotCorners.map((p) => ({
+          x: cos_r * (p.x - corrCx) - sin_r * (p.y - corrCy) + corrCx,
+          y: sin_r * (p.x - corrCx) + cos_r * (p.y - corrCy) + corrCy,
+        }))
+        updates = { selrect, points } as Partial<typeof node>
+        if (typeof node.x === 'number') (updates as Record<string, unknown>).x = corrX
+        if (typeof node.y === 'number') (updates as Record<string, unknown>).y = corrY
+        if (typeof (node as { width?: number }).width === 'number') (updates as Record<string, unknown>).width = nlw
+        if (typeof (node as { height?: number }).height === 'number') (updates as Record<string, unknown>).height = nlh
+      } else {
+        updates = applyResizeTransformToNode(node, latestLocalMatrixRef.current)
+      }
+
+      if (!updates) {
+        clearResizeState()
+        return
+      }
+      updateNode(selectedId, updates)
+        .then(() => {
+          renderer.cleanModifiers()
+          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          clearResizeState()
+        })
+        .catch(() => {
+          renderer.cleanModifiers()
+          useWorkspaceStore.getState().refreshWasmSelectionRect()
+          clearResizeState()
+        })
     }),
     map(() => undefined)
   )

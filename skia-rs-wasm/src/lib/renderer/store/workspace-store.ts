@@ -9,7 +9,7 @@ import type { WasmModule } from '../wasm-types'
 import type { Viewport } from '../viewport'
 import { Renderer } from '../index'
 import type { PenpotNode, PenpotPage, Selrect } from '@penpot-exporter/types'
-import type { ResizeHandlePosition, WorkerClient} from '../types'
+import type { ResizeHandlePosition, SelectionRectResult, WorkerClient } from '../types'
 import { getSelectionBounds, type Rect } from '../selection-bounds'
 
 /** Implemented by DocumentModel; used so the store and page-crud can call methods without importing the class. */
@@ -31,17 +31,16 @@ export interface WorkspaceState {
   selectedNodes: PenpotNode[]
   pageId: string | null
   selectedIds: Set<string>
-  /** Union of selected nodes' selrects; set when selection changes, used by overlay. */
+  /** Union of selected nodes' selrects; set when selection changes. */
   selectionBounds: Rect | null
   selectionRect: Selrect | null
-  /** Delta applied during move preview so overlay can follow; null when not moving. */
-  movePreviewDelta: { x: number; y: number } | null
+  /** Selection rect from WASM (getSelectionRect); overlay reads only this. Updated when modifiers or selection change. */
+  wasmSelectionRect: SelectionRectResult | null
   isSelecting: boolean
   isMoving: boolean
   isResizing: boolean
   resizeHandle: ResizeHandlePosition | null
-  /** Bounds of the selection during resize preview (so overlay can grow with the node); null when not resizing. */
-  resizePreviewBounds: Rect | null
+  isRotating: boolean
   /** When starting area selection with modifier: append (shift) or remove (shift+mod). */
   areaSelectionAppend: boolean
   areaSelectionRemove: boolean
@@ -64,12 +63,13 @@ export interface WorkspaceState {
   setPageId: (id: string | null) => void
   setSelectedIds: (ids: Set<string>) => void
   setSelectionRect: (rect: Selrect | null) => void
-  setMovePreviewDelta: (delta: { x: number; y: number } | null) => void
+  setWasmSelectionRect: (value: SelectionRectResult | null) => void
+  refreshWasmSelectionRect: () => void
   setIsSelecting: (is: boolean) => void
   setIsMoving: (is: boolean) => void
   setIsResizing: (is: boolean) => void
   setResizeHandle: (handle: ResizeHandlePosition | null) => void
-  setResizePreviewBounds: (bounds: { x: number; y: number; width: number; height: number } | null) => void
+  setIsRotating: (is: boolean) => void
   setAreaSelectionMode: (append: boolean, remove: boolean) => void
   setViewport: (viewport: Viewport) => void
   setLastAppliedViewport: (vp: Viewport | null) => void
@@ -93,12 +93,12 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   selectedIds: new Set(),
   selectionBounds: null,
   selectionRect: null,
-  movePreviewDelta: null,
+  wasmSelectionRect: null,
   isSelecting: false,
   isMoving: false,
   isResizing: false,
   resizeHandle: null as ResizeHandlePosition | null,
-  resizePreviewBounds: null,
+  isRotating: false,
   areaSelectionAppend: false,
   areaSelectionRemove: false,
   viewport: null,
@@ -126,12 +126,21 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
     })
   },
   setSelectionRect: (rect) => set({ selectionRect: rect }),
-  setMovePreviewDelta: (delta) => set({ movePreviewDelta: delta }),
+  setWasmSelectionRect: (value) => set({ wasmSelectionRect: value }),
+  refreshWasmSelectionRect: () => {
+    const { renderer, selectedIds } = get()
+    if (!renderer || selectedIds.size === 0) {
+      set({ wasmSelectionRect: null })
+      return
+    }
+    const result = renderer.getSelectionRect(Array.from(selectedIds))
+    set({ wasmSelectionRect: result })
+  },
   setIsSelecting: (is) => set({ isSelecting: is }),
   setIsMoving: (is) => set({ isMoving: is }),
   setIsResizing: (is) => set({ isResizing: is }),
   setResizeHandle: (handle) => set({ resizeHandle: handle }),
-  setResizePreviewBounds: (bounds) => set({ resizePreviewBounds: bounds }),
+  setIsRotating: (is) => set({ isRotating: is }),
   setAreaSelectionMode: (append, remove) => set({ areaSelectionAppend: append, areaSelectionRemove: remove }),
   setViewport: (viewport) => set((s) => ({
     viewport,
@@ -139,12 +148,13 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   })),
   setLastAppliedViewport: (vp) => set({ lastAppliedViewport: vp }),
   bumpViewportVersion: () => set((s) => ({ viewportVersion: s.viewportVersion + 1 })),
-  setRenderer: (renderer) => set({ renderer }),
+  setRenderer: (renderer) => set({ renderer, wasmSelectionRect: null }),
   setWorkerClient: (client) => set({ workerClient: client }),
   clearSelection: () => set({
     selectedIds: new Set(),
     selectionBounds: null,
     selectionRect: null,
+    wasmSelectionRect: null,
     selectedNodes: EMPTY_NODES,
   }),
   setWasmModule: (module) => set({ wasmModule: module }),

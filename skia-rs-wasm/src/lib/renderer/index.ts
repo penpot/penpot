@@ -4,12 +4,19 @@
  */
 
 import type { WasmModule } from './wasm-types'
-import type { RendererOptions } from './types'
+import type { RendererOptions, SelectionRectResult } from './types'
 import type { PenpotNode, PenpotPage } from '@penpot-exporter/types'
 import type { Matrix } from '@penpot-exporter/types'
 import { getDPR } from './utils'
 import { Viewport } from './viewport'
-import { initCanvasContext, setCanvasSize, setCanvasBackground, clearCanvas, clearCanvasPixels } from './api/canvas'
+import {
+  initCanvasContext,
+  setCanvasSize,
+  setCanvasBackground,
+  clearCanvas,
+  clearCanvasPixels,
+  getSelectionRect,
+} from './api/canvas'
 import { setViewBox, resizeViewbox, initializeViewport } from './api/viewport'
 import { getContextInitialized } from './api/context'
 import { processObject } from './api/orchestration'
@@ -246,6 +253,24 @@ export class Renderer {
     cleanModifiersApi(this.module)
   }
 
+  /**
+   * Get the selection rectangle (bounds) for the given shape IDs from WASM.
+   * When modifiers are set, returns the bounds of the modified shapes. Returns null if context is not initialized or entries are empty.
+   */
+  getSelectionRect(shapeIds: string[]): SelectionRectResult | null {
+    if (!getContextInitialized() || !this.module) return null
+    return getSelectionRect(this.module, shapeIds)
+  }
+
+  /**
+   * Request a render on the next animation frame. Use after cleanModifiers() so the
+   * next frame is drawn with committed shape state (e.g. rotation) and no modifiers.
+   */
+  requestRenderFrame(): void {
+    if (!getContextInitialized() || !this.module) return
+    requestRender(this.module, 'requestRenderFrame')
+  }
+
   getModule(): WasmModule {
     return this.module
   }
@@ -260,7 +285,14 @@ export class Renderer {
 export { CanvasWrapper } from './canvas-wrapper'
 export { WorkerClient } from '../worker-client'
 export { createWorker } from '../worker-factory'
-export type { CanvasWrapperProps, InitializationState, ResizeHandlePosition, ShortcutsConfig, ViewportPanModifier } from './types'
+export type {
+  CanvasWrapperProps,
+  InitializationState,
+  ResizeHandlePosition,
+  SelectionRectResult,
+  ShortcutsConfig,
+  ViewportPanModifier,
+} from './types'
 
 // Export Zustand store
 export { useWorkspaceStore, type IDocumentModel } from './store/workspace-store'
@@ -281,12 +313,14 @@ export { useStreams } from './hooks/use-streams'
 export { useSelection } from './hooks/use-selection'
 export { useMove } from './hooks/use-move'
 export { useResize } from './hooks/use-resize'
+export { useRotate } from './hooks/use-rotate'
 export { useViewportShortcuts } from './hooks/use-viewport-shortcuts'
 
 // Export handlers
 export { handleAreaSelection } from './handlers/selection'
 export { startMoveSelected } from './handlers/move'
 export { startResizeSelected } from './handlers/resize'
+export { startRotateSelected } from './handlers/rotate'
 
 // Export streams
 export { mousePosition$, mousePositionShift$, mousePositionAlt$, mousePositionMod$, keyboardSpace$ } from './streams'
