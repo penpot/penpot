@@ -106,7 +106,7 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
           modifiersAppliedRef.current = true
           const deltaDeg = latestRotationDegRef.current - startRotation
           const matrix = rotationMatrix(cx, cy, deltaDeg)
-          renderer.setMoveModifiers([[selectedId, matrix]])
+          renderer.setMoveModifiersAndRender([[selectedId, matrix]])
           useWorkspaceStore.getState().refreshWasmSelectionRect()
         })
       }

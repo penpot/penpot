@@ -18,9 +18,6 @@ export function useStreams(canvasRef: RefObject<HTMLCanvasElement | null>) {
       mousePositionAlt$.next(altKey)
       mousePositionMod$.next(ctrlOrMeta)
     }
-    const handleMouseMove = (e: MouseEvent) => {
-      pushPosition(e.clientX, e.clientY, e.shiftKey, e.altKey, e.ctrlKey || e.metaKey)
-    }
     const handlePointerMove = (e: PointerEvent) => {
       pushPosition(e.clientX, e.clientY, e.shiftKey, e.altKey, e.ctrlKey || e.metaKey)
     }
@@ -33,13 +30,11 @@ export function useStreams(canvasRef: RefObject<HTMLCanvasElement | null>) {
       if (e.code === 'Space') keyboardSpace$.next(false)
     }
     
-    window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)

@@ -25,7 +25,7 @@ import { requestRender } from './rendering'
 /**
  * Set modifiers
  */
-export function setModifiers(module: WasmModule, modifiers: Array<[string, Matrix]>): void {
+export function setModifiers(module: WasmModule, modifiers: Array<[string, Matrix]>, skipRender = false): void {
   checkContext(module)
   if (modifiers.length === 0) {
     return
@@ -43,7 +43,9 @@ export function setModifiers(module: WasmModule, modifiers: Array<[string, Matri
 
   module._set_modifiers()
   freeBytes(module)
-  requestRender(module, 'set-modifiers')
+  if (!skipRender) {
+    requestRender(module, 'set-modifiers')
+  }
 }
 
 /**

@@ -197,7 +197,7 @@ export function startResizeSelected(
         requestAnimationFrame(() => {
           rafScheduledRef.current = false
           modifiersAppliedRef.current = true
-          renderer.setMoveModifiers([[selectedId, latestMatrixRef.current]])
+          renderer.setMoveModifiersAndRender([[selectedId, latestMatrixRef.current]])
           useWorkspaceStore.getState().refreshWasmSelectionRect()
         })
       }
