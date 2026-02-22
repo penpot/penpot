@@ -1,17 +1,18 @@
 /**
  * SVG overlay for selection bounds, resize handles, and area marquee.
- * Reads from workspace store; receives canvasSize and canvasRef for viewBox and screen coords.
+ * Reads wasmSelectionRect from store (updated whenever modifiers or selection change).
  */
 
 import type { RefObject } from 'react'
-import { useMemo, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
-import { HANDLE_SIZE_WORLD } from './constants'
+import { HANDLE_SIZE_WORLD, matrixToRotationDeg } from './constants'
 import { SelectionRect } from './SelectionRect'
 import { ResizeHandles } from './ResizeHandles'
 import { MoveHitArea } from './MoveHitArea'
+import { RotationHitArea } from './RotationHitArea'
 import { AreaMarquee } from './AreaMarquee'
 
 export interface SelectionOverlayProps {
@@ -21,50 +22,22 @@ export interface SelectionOverlayProps {
 
 export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProps) {
   const selectedIds = useWorkspaceStore((state) => state.selectedIds)
-  const selectionBounds = useWorkspaceStore((state) => state.selectionBounds)
+  const wasmSelectionRect = useWorkspaceStore((state) => state.wasmSelectionRect)
   const viewport = useWorkspaceStore((state) => state.viewport)
   const viewportVersion = useWorkspaceStore((state) => state.viewportVersion)
+  const zoom = useWorkspaceStore((state) => (state.viewportVersion, state.viewport?.zoom ?? 1))
   const isSelecting = useWorkspaceStore((state) => state.isSelecting)
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
   const isMoving = useWorkspaceStore((state) => state.isMoving)
-  const movePreviewDelta = useWorkspaceStore((state) => state.movePreviewDelta)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
   const setIsResizing = useWorkspaceStore((state) => state.setIsResizing)
   const setResizeHandle = useWorkspaceStore((state) => state.setResizeHandle)
-  const setResizePreviewBounds = useWorkspaceStore((state) => state.setResizePreviewBounds)
-  const isResizing = useWorkspaceStore((state) => state.isResizing)
-  const resizePreviewBounds = useWorkspaceStore((state) => state.resizePreviewBounds)
+  const setIsRotating = useWorkspaceStore((state) => state.setIsRotating)
 
-  const showSelectionRect = selectedIds.size > 0 && (selectionBounds || resizePreviewBounds) && viewport && !isMoving
-  const effectiveBounds = useMemo(
-    () =>
-      showSelectionRect &&
-      (isResizing && resizePreviewBounds
-        ? resizePreviewBounds
-        : selectionBounds
-          ? isMoving && movePreviewDelta
-            ? {
-              x: selectionBounds.x + movePreviewDelta.x,
-              y: selectionBounds.y + movePreviewDelta.y,
-              width: selectionBounds.width,
-              height: selectionBounds.height,
-            }
-            : selectionBounds
-          : null),
-    [
-      showSelectionRect,
-      isResizing,
-      resizePreviewBounds,
-      selectionBounds,
-      isMoving,
-      movePreviewDelta,
-    ]
-  )
-
+  const showSelectionRect = selectedIds.size > 0 && wasmSelectionRect != null && viewport != null && !isMoving
   const singleSelection = selectedIds.size === 1
-  const showHandles = singleSelection && effectiveBounds && viewport && !isMoving
+  const showHandles = singleSelection && wasmSelectionRect != null && viewport != null && !isMoving
 
-  const zoom = viewport?.zoom ?? 1
   const hitSize = (HANDLE_SIZE_WORLD / zoom) / 2 * 2
 
   const screenPositionFromEvent = useCallback(
@@ -87,13 +60,12 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       const pos = screenPositionFromEvent(e)
       if (pos) {
         mousePosition$.next(pos)
-        setResizePreviewBounds(null)
         setIsMoving(true)
       }
       const target = e.currentTarget
       if (target instanceof Element) target.setPointerCapture(e.pointerId)
     },
-    [screenPositionFromEvent, setResizePreviewBounds, setIsMoving]
+    [screenPositionFromEvent, setIsMoving]
   )
 
   const onResizeHandlePointerDown = useCallback(
@@ -113,20 +85,52 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
     [screenPositionFromEvent, setIsResizing, setResizeHandle]
   )
 
+  const onRotationPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.button !== 0) return
+      e.preventDefault()
+      e.stopPropagation()
+      const pos = screenPositionFromEvent(e)
+      if (pos) {
+        mousePosition$.next(pos)
+        setIsRotating(true)
+      }
+      const target = e.currentTarget
+      if (target instanceof Element) target.setPointerCapture(e.pointerId)
+    },
+    [screenPositionFromEvent, setIsRotating]
+  )
+
   const showAreaMarquee = isSelecting && selectionRect != null && viewport != null
   const areaMarqueeWorld =
     showAreaMarquee && viewport && selectionRect
       ? {
-        x: viewport.panX + (selectionRect.x ?? 0) / viewport.zoom,
-        y: viewport.panY + (selectionRect.y ?? 0) / viewport.zoom,
-        width: (selectionRect.width ?? 0) / viewport.zoom,
-        height: (selectionRect.height ?? 0) / viewport.zoom,
-      }
+          x: viewport.panX + (selectionRect.x ?? 0) / viewport.zoom,
+          y: viewport.panY + (selectionRect.y ?? 0) / viewport.zoom,
+          width: (selectionRect.width ?? 0) / viewport.zoom,
+          height: (selectionRect.height ?? 0) / viewport.zoom,
+        }
       : null
   const viewBox =
     viewport && canvasSize.width > 0 && canvasSize.height > 0
       ? `${viewport.panX} ${viewport.panY} ${canvasSize.width / viewport.zoom} ${canvasSize.height / viewport.zoom}`
       : '0 0 100 100'
+
+  // Rect in local space (center at origin); transform = translate(center) then rotation/scale (WASM returns e,f=0).
+  const rect =
+    wasmSelectionRect != null
+      ? {
+          x: -wasmSelectionRect.width / 2,
+          y: -wasmSelectionRect.height / 2,
+          width: wasmSelectionRect.width,
+          height: wasmSelectionRect.height,
+        }
+      : null
+  const transformStr =
+    wasmSelectionRect != null
+      ? `translate(${wasmSelectionRect.center.x},${wasmSelectionRect.center.y}) matrix(${wasmSelectionRect.transform.a},${wasmSelectionRect.transform.b},${wasmSelectionRect.transform.c},${wasmSelectionRect.transform.d},0,0)`
+      : ''
+  const rotationDeg = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
 
   return (
     <svg
@@ -143,22 +147,30 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
     >
-      {showSelectionRect && effectiveBounds && (
-        <SelectionRect bounds={effectiveBounds} zoom={zoom} />
-      )}
-      {showHandles && effectiveBounds && (
-        <ResizeHandles
-          effectiveBounds={effectiveBounds}
-          zoom={zoom}
-          onResizeHandlePointerDown={onResizeHandlePointerDown}
-        />
-      )}
-      {showHandles && effectiveBounds && (
-        <MoveHitArea
-          bounds={effectiveBounds}
-          hitSize={hitSize}
-          onPointerDown={onSelectionRectPointerDown}
-        />
+      {showSelectionRect && rect != null && (
+        <g transform={transformStr}>
+          <SelectionRect bounds={rect} skipTransform />
+          {showHandles && (
+            <>
+              <ResizeHandles
+                effectiveBounds={rect}
+                zoom={zoom}
+                rotationDeg={rotationDeg}
+                onResizeHandlePointerDown={onResizeHandlePointerDown}
+              />
+              <MoveHitArea
+                bounds={rect}
+                hitSize={hitSize}
+                onPointerDown={onSelectionRectPointerDown}
+              />
+              <RotationHitArea
+                bounds={rect}
+                zoom={zoom}
+                onPointerDown={onRotationPointerDown}
+              />
+            </>
+          )}
+        </g>
       )}
       {showAreaMarquee && areaMarqueeWorld && (
         <AreaMarquee world={areaMarqueeWorld} zoom={zoom} />

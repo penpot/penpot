@@ -10,6 +10,7 @@ import { useViewportShortcutsStore } from '../store/shortcuts-store'
 import type { ViewportPanModifier } from '../types'
 import { mousePosition$ } from '../streams'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
+import { getResizeCursor, matrixToRotationDeg } from '../../components/selection-overlay/constants'
 
 function hasPanModifier(e: MouseEvent, mod: ViewportPanModifier): boolean {
   if (mod === null) return false
@@ -47,9 +48,6 @@ export function useViewportInteractions({
   const renderer = useWorkspaceStore((state) => state.renderer)
   const setIsSelecting = useWorkspaceStore((state) => state.setIsSelecting)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
-  const setIsResizing = useWorkspaceStore((state) => state.setIsResizing)
-  const setResizeHandle = useWorkspaceStore((state) => state.setResizeHandle)
-  const setResizePreviewBounds = useWorkspaceStore((state) => state.setResizePreviewBounds)
   const setSelectedIds = useWorkspaceStore((state) => state.setSelectedIds)
   const shortcuts = useViewportShortcutsStore((state) => state.viewportShortcuts)
   // Refs for panning state
@@ -137,7 +135,6 @@ export function useViewportInteractions({
                 setSelectedIds(new Set([topId]))
               }
             }
-            setResizePreviewBounds(null)
             setIsMoving(true)
           } else {
             setIsSelecting(true)
@@ -145,15 +142,22 @@ export function useViewportInteractions({
         }
       )
     }
-  }, [canvasRef, setIsSelecting, setIsMoving, setResizePreviewBounds, setSelectedIds, shortcuts.panMouseButton, shortcuts.panWithModifier])
+  }, [canvasRef, setIsSelecting, setIsMoving, setSelectedIds, shortcuts.panMouseButton, shortcuts.panWithModifier])
 
-  // Handle mouse move for panning and cursor (grab only when pan modifier held)
+  // Handle mouse move for panning and cursor (grab only when pan modifier held; resize cursor when resizing)
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const canvasElement = canvasRef.current
     if (!canvasElement) return
 
-    if (!isPanningRef.current && e.target === canvasElement) {
-      canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
+    if (!isPanningRef.current) {
+      const store = useWorkspaceStore.getState()
+      const { isResizing, resizeHandle, wasmSelectionRect } = store
+      if (isResizing && resizeHandle) {
+        const rotation = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
+        canvasElement.style.cursor = getResizeCursor(resizeHandle, rotation)
+      } else if (e.target === canvasElement) {
+        canvasElement.style.cursor = hasPanModifier(e, shortcuts.panWithModifier) ? 'grab' : 'default'
+      }
     }
 
     if (isPanningRef.current && lastPanPosRef.current) {
@@ -209,12 +213,11 @@ export function useViewportInteractions({
       }
     }
 
-    // End selection and resizing. isMoving is cleared by the move handler after commit so the overlay uses updated bounds.
+    // End selection. isMoving and isResizing are cleared by their handlers after commit (so overlay uses updated bounds
+    // and a quick second resize sees the latest node). Do not clear isRotating here: the rotate handler clears it after
+    // updateNode resolves; clearing here would dispose the subscription before commitOnRelease runs.
     setIsSelecting(false)
-    setIsResizing(false)
-    setResizeHandle(null)
-    setResizePreviewBounds(null)
-  }, [canvasRef, viewport, renderer, setIsSelecting, setIsResizing, setResizeHandle, setResizePreviewBounds, onViewportUpdate])
+  }, [canvasRef, viewport, renderer, setIsSelecting, onViewportUpdate])
 
   // Handle mouse enter: normal cursor unless pan modifier is held (updated in mousemove)
   const handleMouseEnter = useCallback(() => {

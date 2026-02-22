@@ -11,8 +11,10 @@ import { SelectionOverlay } from '../components/selection-overlay'
 import { useViewportInteractions } from './hooks/use-viewport-interactions'
 import { useMove } from './hooks/use-move'
 import { useResize } from './hooks/use-resize'
+import { useRotate } from './hooks/use-rotate'
 import { useStreams } from './hooks/use-streams'
 import { useSelection } from './hooks/use-selection'
+import { useWasmSelectionRect } from './hooks/use-wasm-selection-rect'
 import { cleanupWorker, initWorker } from '../worker-init'
 import { initWasmModule } from '../wasm-init'
 
@@ -138,8 +140,10 @@ export function CanvasWrapper({
 
   useStreams(canvasRef)
   useSelection()
+  useWasmSelectionRect()
   useMove()
   useResize()
+  useRotate()
   useViewportInteractions({
     canvasRef,
     onViewportUpdate: () => {

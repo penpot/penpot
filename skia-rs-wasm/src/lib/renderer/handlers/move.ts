@@ -77,7 +77,7 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
             entries.push([id, translateMatrix(delta.x, delta.y)])
           })
           renderer.setMoveModifiers(entries)
-          useWorkspaceStore.getState().setMovePreviewDelta(delta)
+          useWorkspaceStore.getState().refreshWasmSelectionRect()
         })
       }
     }),
@@ -89,7 +89,6 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
     take(1),
     tap(() => {
       const store = useWorkspaceStore.getState()
-      store.setMovePreviewDelta(null)
       if (!modifiersAppliedRef.current) {
         store.setIsMoving(false)
         return
@@ -99,10 +98,12 @@ export function startMoveSelected(initialPosition: Point): Observable<void> {
       updatePage({ ...updatedPage, pageId })
         .then(() => {
           renderer.cleanModifiers()
+          useWorkspaceStore.getState().refreshWasmSelectionRect()
           useWorkspaceStore.getState().setIsMoving(false)
         })
         .catch(() => {
           renderer.cleanModifiers()
+          useWorkspaceStore.getState().refreshWasmSelectionRect()
           useWorkspaceStore.getState().setIsMoving(false)
         })
     }),
