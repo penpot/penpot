@@ -219,30 +219,75 @@ Each `Library` object has:
   * `colors: LibraryColor[]` - Array of colors
   * `typographies: LibraryTypography[]` - Array of typographies
 
+## Colors and Typographies
+
+Adding a color:
+```
+const newColor: LibraryColor = penpot.library.local.createColor();
+newColor.name = 'Brand Primary';
+newColor.color = '#0066FF';
+```
+
+Adding a typography:
+```
+const newTypo: LibraryTypography = penpot.library.local.createTypography();
+newTypo.name = 'Heading Large';
+// Set typography properties...
+```
+
+## Components
+
 Using library components:
   * find a component in the library by name:
-      const component: LibraryComponent = library.components.find(comp => comp.name.includes('Button'));
+    `const component: LibraryComponent = library.components.find(comp => comp.name.includes('Button'));`
   * create a new instance of the component on the current page:
-      const instance: Shape = component.instance();
+    `const instance: Shape = component.instance();`
     This returns a `Shape` (often a `Board` containing child elements).
     After instantiation, modify the instance's properties as desired.
   * get the reference to the main component shape:
-      const mainShape: Shape = component.mainInstance();
+    `const mainShape: Shape = component.mainInstance();`
 
-Adding assets to a library:
-  * const newColor: LibraryColor = penpot.library.local.createColor();
-    newColor.name = 'Brand Primary';
-    newColor.color = '#0066FF';
-  * const newTypo: LibraryTypography = penpot.library.local.createTypography();
-    newTypo.name = 'Heading Large';
-    // Set typography properties...
-  * const shapes: Shape[] = [shape1, shape2]; // shapes to include
-    const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
-    newComponent.name = 'My Button';
+Adding a component to a library:
+```
+const shapes: Shape[] = [shape1, shape2]; // shapes to include
+const newComponent: LibraryComponent = penpot.library.local.createComponent(shapes);
+newComponent.name = 'My Button';
+```
 
 Detaching:
   * When creating new design elements based on a component instance/copy, use `shape.detach()` to break the link to the main component, allowing independent modification.
   * Without detaching, some manipulations will have no effect; e.g. child/descendant removal will not work.
+
+### Variants
+
+Variants are a system for grouping related component versions along named property axes (e.g. Type, Style), powering a structured swap UI for designers using component instances.
+
+* `VariantContainer` (extends `Board`): The board that physically groups all variant components together. 
+  - check with `isVariantContainer()`
+  - property `variants: Variants`.
+* `Variants`: Defines the combinations of property values for which component variants can exist and manages the concrete component variants. 
+  - `properties: string[]` (ordered list of property names); `addProperty()`, `renameProperty(pos, name)`, `currentValues(property)`
+  - `variantComponents(): LibraryVariantComponent[]` 
+* `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
+  - `variantProps: { [property: string]: string }` (this component's value for each property)
+  - `variantError` (non-null if e.g. two variants share the same combination of property values)
+  - `setVariantProperty(pos, value)`
+
+Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
+
+**Creating a variant group**:
+- `component.transformInVariant(): null`: Converts a standard component into a variant group, creating a `VariantContainer` and a second duplicate variant. 
+  Both start with a default property `Property 1` with values `Value 1` / `Value 2`; there is no name-based auto-parsing.
+- `board.combineAsVariants(ids: string[]): null`: Combines the board (a main component instance) with other main components (referenced via IDs) into a new variant group. 
+  All components end up inside a single new `VariantContainer` on the canvas.
+- In both cases, look for the created `VariantContainer` on the page, and then edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+
+**Adding a variant to an existing group**:
+Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
+
+**Using Variants**:
+- `compInstance.switchVariant(pos, value)`: On a component instance, switches to the nearest variant that has the given value at property position `pos`, keeping all other property values the same.
+- To instantiate a specific variant, find the right `LibraryVariantComponent` by checking `variantProps`, then call `.instance()`.
 
 # Design Tokens
 
