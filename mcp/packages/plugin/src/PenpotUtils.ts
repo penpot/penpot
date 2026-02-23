@@ -1,4 +1,4 @@
-import { Board, Fill, FlexLayout, GridLayout, Page, Rectangle, Shape } from "@penpot/plugin-types";
+import { Board, Bounds, Fill, FlexLayout, GridLayout, Page, Rectangle, Shape, Text } from "@penpot/plugin-types";
 
 export class PenpotUtils {
     /**
@@ -190,6 +190,24 @@ export class PenpotUtils {
     }
 
     /**
+     * Gets the actual rendering bounds of a shape. For most shapes, this is simply the `bounds` property.
+     * However, for Text shapes, the `bounds` may not reflect the true size of the rendered text content,
+     * so we use the `textBounds` property instead.
+     *
+     * @param shape - The shape to get the bounds for
+     */
+    public static getBounds(shape: Shape): Bounds {
+        if (shape.type === "text") {
+            const text = shape as Text;
+            // TODO: Remove ts-ignore once type definitions are updated
+            // @ts-ignore
+            return text.textBounds;
+        } else {
+            return shape.bounds;
+        }
+    }
+
+    /**
      * Checks if a child shape is fully contained within its parent's bounds.
      * Visual containment means all edges of the child are within the parent's bounding box.
      *
@@ -198,11 +216,13 @@ export class PenpotUtils {
      * @returns true if child is fully contained within parent bounds, false otherwise
      */
     public static isContainedIn(child: Shape, parent: Shape): boolean {
+        const childBounds = this.getBounds(child);
+        const parentBounds = this.getBounds(parent);
         return (
-            child.x >= parent.x &&
-            child.y >= parent.y &&
-            child.x + child.width <= parent.x + parent.width &&
-            child.y + child.height <= parent.y + parent.height
+            childBounds.x >= parentBounds.x &&
+            childBounds.y >= parentBounds.y &&
+            childBounds.x + childBounds.width <= parentBounds.x + parentBounds.width &&
+            childBounds.y + childBounds.height <= parentBounds.y + parentBounds.height
         );
     }
 
