@@ -33,9 +33,10 @@
                               :initial initial)
         on-click
         (mf/use-fn
+         (mf/deps form)
          (fn []
-           ;; TODO Start licenses with selected type
-           (dom/open-new-window "/control-center/licenses/start")))]
+           (let [params (:clean-data @form)]
+             (dom/open-new-window (str "/control-center/licenses/start?subscription=" (name (:subscription params)))))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
