@@ -3,7 +3,7 @@
   "version": "0.6.0",
   "type": "module",
   "license": "MIT",
-  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
+  "packageManager": "pnpm@10.30.1+sha512.3590e550d5384caa39bd5c7c739f72270234b2f6059e13018f975c313b1eb9fefcc09714048765d4d9efe961382c312e624572c0420762bdc5d5940cdf9be73a",
   "scripts": {
     "start": "pnpm run start:app:runtime",
     "start:app:runtime": "concurrently --kill-others --names build,server \"pnpm --filter @penpot/plugins-runtime run build:watch\" \"pnpm --filter @penpot/plugins-runtime run preview\"",
@@ -18,7 +18,7 @@
     "start:plugin:colors-to-tokens": "pnpm --filter colors-to-tokens-plugin run init",
     "start:plugin:poc-tokens": "pnpm --filter poc-tokens-plugin run init",
     "build:runtime": "pnpm --filter @penpot/plugins-runtime build",
-    "build:plugins": "pnpm --filter './apps/*-plugin' --filter '!poc-state-plugin' build",
+    "build:plugins": "pnpm --parallel --filter './apps/*-plugin' --filter '!poc-state-plugin' build",
     "build:styles-example": "pnpm --filter example-styles build",
     "lint": "pnpm -r --parallel lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,html,css}\"",
