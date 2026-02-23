@@ -442,6 +442,7 @@
             "tsConfig": "apps/poc-state-plugin/tsconfig.app.json",
             "assets": [
               "apps/poc-state-plugin/src/favicon.ico",
+              "apps/poc-state-plugin/src/manifest.json",
               "apps/poc-state-plugin/src/assets"
             ],
             "styles": [
