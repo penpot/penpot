@@ -122,6 +122,7 @@
     ;; Only for developtment.
     :tiered-file-data-storage
     :token-base-font-size
+    :token-combobox
     :token-color
     :token-shadow
     :token-tokenscript

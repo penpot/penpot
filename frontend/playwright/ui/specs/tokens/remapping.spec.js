@@ -431,10 +431,18 @@ test.describe("Remapping Tokens", () => {
     test("User renames border radius token with alias references", async ({
       page,
     }) => {
-      const { tokensSidebar } = await setupTokensFileRender(page);
+      const { tokensSidebar } = await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
 
       // Create base border radius token
-      await createTokenCombobox(page, "Border Radius", "base-radius", "Value", "4");
+      await createTokenCombobox(
+        page,
+        "Border Radius",
+        "base-radius",
+        "Value",
+        "4",
+      );
 
       // Create derived border radius token
       await createTokenCombobox(
@@ -473,10 +481,18 @@ test.describe("Remapping Tokens", () => {
         tokensUpdateCreateModal,
         tokensSidebar,
         tokenContextMenuForToken,
-      } = await setupTokensFileRender(page);
+      } = await setupTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
 
       // Create base border radius token
-      await createTokenCombobox(page, "Border Radius", "radius-sm", "Value", "4");
+      await createTokenCombobox(
+        page,
+        "Border Radius",
+        "radius-sm",
+        "Value",
+        "4",
+      );
 
       // Create derived border radius token
       await createTokenCombobox(
