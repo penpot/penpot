@@ -30,7 +30,7 @@ test.describe("Tokens - creation", () => {
       secondResolvedValueText: "Resolved value: 3",
     });
   });
-  // TODO: put this test under flag
+
   test("User creates border radius token with combobox", async ({ page }) => {
     const invalidValueError = "Invalid token value";
     const emptyNameError = "Name should be at least 1 character";
@@ -38,7 +38,9 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFile(page , {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
