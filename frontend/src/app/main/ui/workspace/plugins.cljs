@@ -123,7 +123,6 @@
         permissions     (mf/deref refs/permissions)
         user-can-edit?  (get permissions :can-edit)
 
-
         fetching-manifest?
         (mf/use-state false)
 
@@ -240,7 +239,8 @@
                                :on-open-plugin on-open-plugin
                                :on-remove-plugin on-remove-plugin}])]])]]]))
 
-(mf/defc plugins-permission-list
+(mf/defc plugins-permission-list*
+  {::mf/private true}
   [{:keys [permissions]}]
   [:div {:class (stl/css :permissions-list)}
    (cond
@@ -308,36 +308,41 @@
    ::mf/register-as :plugin-permissions}
   [{:keys [plugin on-accept on-close]}]
 
-  (let [{:keys [host permissions]} plugin
-        permissions (set permissions)
+  (let [host
+        (:host plugin)
 
-        handle-accept-dialog
+        permissions
+        (-> plugin :permissions set)
+
+        on-accept-dialog
         (mf/use-fn
+         (mf/deps on-accept)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
-                                            :host host
-                                            :permissions (->> permissions (str/join ", "))})
+           (st/emit! (ev/event {::ev/name "allow-plugin-permissions"
+                                :host host
+                                :permissions (str/join ", " permissions)})
                      (modal/hide))
            (when on-accept (on-accept))))
 
-        handle-close-dialog
+        on-close-dialog
         (mf/use-fn
+         (mf/deps on-close)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
-                                            :host host
-                                            :permissions (->> permissions (str/join ", "))})
+           (st/emit! (ev/event {::ev/name "reject-plugin-permissions"
+                                :host host
+                                :permissions (str/join ", " permissions)})
                      (modal/hide))
            (when on-close (on-close))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn) :on-click on-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.permissions.title" (str/upper (:name plugin)))]
 
       [:div {:class (stl/css :modal-content)}
-       [:& plugins-permission-list {:permissions permissions}]
+       [:> plugins-permission-list* {:permissions permissions}]
 
        (when-not (contains? cfg/plugins-whitelist host)
          [:div {:class (stl/css :permissions-disclaimer)}
@@ -349,13 +354,13 @@
          {:class (stl/css :cancel-button :button-expand)
           :type "button"
           :value (tr "ds.confirm-cancel")
-          :on-click handle-close-dialog}]
+          :on-click on-close-dialog}]
 
         [:input
          {:class (stl/css :primary-button :button-expand)
           :type "button"
           :value (tr "ds.confirm-allow")
-          :on-click handle-accept-dialog}]]]]]))
+          :on-click on-accept-dialog}]]]]]))
 
 
 (mf/defc plugins-permissions-updated-dialog
@@ -363,11 +368,15 @@
    ::mf/register-as :plugin-permissions-update}
   [{:keys [plugin on-accept on-close]}]
 
-  (let [{:keys [host permissions]} plugin
-        permissions (set permissions)
+  (let [host
+        (:host plugin)
 
-        handle-accept-dialog
+        permissions
+        (-> plugin :permissions set)
+
+        on-accept-dialog
         (mf/use-fn
+         (mf/deps on-accept)
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
@@ -376,8 +385,9 @@
                      (modal/hide))
            (when on-accept (on-accept))))
 
-        handle-close-dialog
+        on-close-dialog
         (mf/use-fn
+         (mf/deps on-close)
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
@@ -388,14 +398,14 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn) :on-click on-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)}
        (tr "workspace.plugins.permissions-update.title" (str/upper (:name plugin)))]
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :modal-paragraph)}
         (tr "workspace.plugins.permissions-update.warning")]
-       [:& plugins-permission-list {:permissions permissions}]]
+       [:> plugins-permission-list* {:permissions permissions}]]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
@@ -403,13 +413,13 @@
          {:class (stl/css :cancel-button :button-expand)
           :type "button"
           :value (tr "ds.confirm-cancel")
-          :on-click handle-close-dialog}]
+          :on-click on-close-dialog}]
 
         [:input
          {:class (stl/css :primary-button :button-expand)
           :type "button"
           :value (tr "ds.confirm-allow")
-          :on-click handle-accept-dialog}]]]]]))
+          :on-click on-accept-dialog}]]]]]))
 
 
 (mf/defc plugins-try-out-dialog
@@ -419,16 +429,18 @@
 
   (let [{:keys [icon host name]} plugin
 
-        handle-accept-dialog
+        on-accept-dialog
         (mf/use-fn
+         (mf/deps on-accept)
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "try-out-accept"})
                      (modal/hide))
            (when on-accept (on-accept))))
 
-        handle-close-dialog
+        on-close-dialog
         (mf/use-fn
+         (mf/deps on-close)
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (ptk/event ::ev/event {::ev/name "try-out-cancel"})
@@ -437,7 +449,7 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-try-out)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn) :on-click on-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)}
        [:div {:class (stl/css :plugin-icon)}
         [:img {:src (if (some? icon)
@@ -455,10 +467,10 @@
          {:class (stl/css :cancel-button :button-expand)
           :type "button"
           :value (tr "workspace.plugins.try-out.cancel")
-          :on-click handle-close-dialog}]
+          :on-click on-close-dialog}]
 
         [:input
          {:class (stl/css :primary-button :button-expand)
           :type "button"
           :value (tr "workspace.plugins.try-out.try")
-          :on-click handle-accept-dialog}]]]]]))
+          :on-click on-accept-dialog}]]]]]))
