@@ -205,6 +205,21 @@
                            (ctc/check-library-color))]
             (update-color* it state color file-id)))))))
 
+(defn duplicate-color
+  "Create a new color copied from the one with the given id."
+  [file-id color-id]
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (uuid? color-id))
+  (ptk/reify ::duplicate-color
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data      (dsh/lookup-file-data state)
+            color     (ctl/get-color data color-id)
+            new-color (assoc color :id (uuid/next))
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/add-color new-color))]
+        (rx/of (dch/commit-changes changes))))))
+
 (defn delete-color
   [{:keys [id] :as params}]
   (assert (uuid? id) "expected valid uuid instance for `id`")
@@ -348,6 +363,22 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-typography id))]
+        (rx/of (dch/commit-changes changes))))))
+
+(defn duplicate-typography
+  "Create a new typography copied from the one with the given id."
+  [file-id typography-id]
+  (dm/assert! (uuid? file-id))
+  (dm/assert! (uuid? typography-id))
+  (ptk/reify ::duplicate-typography
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data           (dsh/lookup-file-data state)
+            typography     (get-in data [:typographies typography-id])
+            new-typography (-> (assoc typography :id (uuid/next))
+                               (ctt/check-typography))
+            changes        (-> (pcb/empty-changes it)
+                               (pcb/add-typography new-typography))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn- add-component2
