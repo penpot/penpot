@@ -513,6 +513,7 @@
             "assets": [
               "apps/poc-tokens-plugin/src/_headers",
               "apps/poc-tokens-plugin/src/favicon.ico",
+              "apps/poc-tokens-plugin/src/manifest.json",
               "apps/poc-tokens-plugin/src/assets"
             ],
             "styles": [
