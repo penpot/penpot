@@ -207,7 +207,7 @@ const testTokenCreationFlow = async (
   const missingReferenceError = "Missing token references";
 
   const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-    await setupEmptyTokensFile(page);
+    await setupEmptyTokensFileRender(page);
 
   // Open modal
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
