@@ -642,10 +642,6 @@ impl RenderState {
         apply_to_current_surface: bool,
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
-<<<<<<< Updated upstream
-=======
-        outset: Option<f32>,
->>>>>>> Stashed changes
     ) {
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
@@ -714,10 +710,6 @@ impl RenderState {
                 &visible_strokes,
                 Some(SurfaceId::Current),
                 antialias,
-<<<<<<< Updated upstream
-=======
-                outset,
->>>>>>> Stashed changes
             );
 
             self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
@@ -1063,31 +1055,10 @@ impl RenderState {
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
-<<<<<<< Updated upstream
                         fills::render(self, shape, &fills_to_render, antialias, fills_surface_id);
                     }
                 } else {
                     fills::render(self, shape, &shape.fills, antialias, fills_surface_id);
-=======
-                        fills::render(
-                            self,
-                            shape,
-                            &fills_to_render,
-                            antialias,
-                            fills_surface_id,
-                            outset,
-                        );
-                    }
-                } else {
-                    fills::render(
-                        self,
-                        shape,
-                        &shape.fills,
-                        antialias,
-                        fills_surface_id,
-                        outset,
-                    );
->>>>>>> Stashed changes
                 }
 
                 // Skip stroke rendering for clipped frames - they are drawn in render_shape_exit
@@ -1102,10 +1073,6 @@ impl RenderState {
                         &visible_strokes,
                         Some(strokes_surface_id),
                         antialias,
-<<<<<<< Updated upstream
-=======
-                        outset,
->>>>>>> Stashed changes
                     );
                     if !fast_mode {
                         for stroke in &visible_strokes {

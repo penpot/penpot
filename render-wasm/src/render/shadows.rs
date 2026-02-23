@@ -106,22 +106,12 @@ fn render_shadow_paint(
 ) {
     match &shape.shape_type {
         Type::Rect(_) | Type::Frame(_) => {
-<<<<<<< Updated upstream
             render_state.surfaces.draw_rect_to(surface_id, shape, paint);
-=======
-            render_state
-                .surfaces
-                .draw_rect_to(surface_id, shape, paint, None, None);
->>>>>>> Stashed changes
         }
         Type::Circle => {
             render_state
                 .surfaces
-<<<<<<< Updated upstream
                 .draw_circle_to(surface_id, shape, paint);
-=======
-                .draw_circle_to(surface_id, shape, paint, None, None);
->>>>>>> Stashed changes
         }
         Type::Path(_) | Type::Bool(_) => {
             render_state.surfaces.draw_path_to(surface_id, shape, paint);
