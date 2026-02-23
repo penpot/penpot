@@ -642,7 +642,7 @@ impl RenderState {
         apply_to_current_surface: bool,
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
-        spread: Option<f32>,
+        outset: Option<f32>,
     ) {
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
@@ -718,7 +718,7 @@ impl RenderState {
                 &visible_strokes,
                 Some(SurfaceId::Current),
                 antialias,
-                spread,
+                outset,
             );
 
             self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
@@ -860,6 +860,8 @@ impl RenderState {
 
                 let text_content = text_content.new_bounds(shape.selrect());
                 let count_inner_strokes = shape.count_visible_inner_strokes();
+                // Erode the main text fill by 1px when there are inner strokes, to avoid a visible seam at the glyph edge.
+                let text_fill_inset = (count_inner_strokes > 0).then(|| 1.0 / self.get_scale());
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
@@ -886,6 +888,7 @@ impl RenderState {
                         Some(fills_surface_id),
                         None,
                         None,
+                        text_fill_inset,
                     );
 
                     for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
@@ -898,6 +901,7 @@ impl RenderState {
                             None,
                             None,
                             text_stroke_blur_outset,
+                            None,
                         );
                     }
                 } else {
@@ -936,6 +940,7 @@ impl RenderState {
                                     text_drop_shadows_surface_id.into(),
                                     Some(&shadow),
                                     blur_filter.as_ref(),
+                                    None,
                                 );
                             }
                         } else {
@@ -961,6 +966,7 @@ impl RenderState {
                                     text_drop_shadows_surface_id.into(),
                                     Some(shadow),
                                     blur_filter.as_ref(),
+                                    None,
                                 );
                             }
                         }
@@ -974,6 +980,7 @@ impl RenderState {
                             Some(fills_surface_id),
                             None,
                             blur_filter.as_ref(),
+                            text_fill_inset,
                         );
 
                         // 3. Stroke drop shadows
@@ -998,6 +1005,7 @@ impl RenderState {
                                 None,
                                 blur_filter.as_ref(),
                                 text_stroke_blur_outset,
+                                None,
                             );
                         }
 
@@ -1023,6 +1031,7 @@ impl RenderState {
                                     Some(innershadows_surface_id),
                                     Some(shadow),
                                     blur_filter.as_ref(),
+                                    None,
                                 );
                             }
                         }
@@ -1070,7 +1079,7 @@ impl RenderState {
                             &fills_to_render,
                             antialias,
                             fills_surface_id,
-                            spread,
+                            outset,
                         );
                     }
                 } else {
@@ -1080,7 +1089,7 @@ impl RenderState {
                         &shape.fills,
                         antialias,
                         fills_surface_id,
-                        spread,
+                        outset,
                     );
                 }
 
@@ -1096,7 +1105,7 @@ impl RenderState {
                         &visible_strokes,
                         Some(strokes_surface_id),
                         antialias,
-                        spread,
+                        outset,
                     );
                     if !fast_mode {
                         for stroke in &visible_strokes {
@@ -1715,7 +1724,7 @@ impl RenderState {
                     false,
                     Some(shadow.offset), // Offset is geometric
                     None,
-                    Some(shadow.spread), // Spread is geometric
+                    Some(shadow.spread),
                 );
             });
 
@@ -1756,7 +1765,7 @@ impl RenderState {
                         false,
                         Some(shadow.offset), // Offset is geometric
                         None,
-                        Some(shadow.spread), // Spread is geometric
+                        Some(shadow.spread),
                     );
                 });
 
