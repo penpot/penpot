@@ -157,6 +157,7 @@
             "assets": [
               "apps/lorem-ipsum-plugin/src/_headers",
               "apps/lorem-ipsum-plugin/src/favicon.ico",
+              "apps/lorem-ipsum-plugin/src/manifest.json",
               "apps/lorem-ipsum-plugin/src/assets"
             ],
             "styles": [
