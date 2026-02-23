@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.uri :as u]
    [app.config :as cfg]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -33,7 +34,19 @@
 (def ^:private close-icon
   (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
-(defn icon-url
+(defn- normalize-plugin-url
+  "Automatically appens manifest.json if the plugin-uri comes without it."
+  [plugin-url]
+  (if (str/ends-with? plugin-url "manifest.json")
+    plugin-url
+    (-> (u/uri plugin-url)
+        (update :path (fn [path]
+                        (if (str/ends-with? path "/")
+                          (str path "manifest.json")
+                          (str path "/manifest.json"))))
+        (str))))
+
+(defn- icon-url
   "Creates an sanitizes de icon URL to display"
   [host icon]
   (dm/str host
@@ -94,48 +107,50 @@
    ::mf/register-as :plugin-management}
   []
 
-  (let [plugins-state* (mf/use-state #(preg/plugins-list))
-        plugins-state  (deref plugins-state*)
+  (let [plugins-state*  (mf/use-state #(preg/plugins-list))
+        plugins-state   (deref plugins-state*)
 
-        plugin-url*    (mf/use-state "")
-        plugin-url     (deref plugin-url*)
+        plugin-url*     (mf/use-state "")
+        plugin-url      (deref plugin-url*)
 
-        fetching-manifest? (mf/use-state false)
+        input-status*   (mf/use-state nil) ;; :error-url :error-manifest :success
+        input-status    (deref input-status*)
 
-        input-status* (mf/use-state nil) ;; :error-url :error-manifest :success
-        input-status  @input-status*
-
-        error-url? (= :error-url input-status)
+        error-url?      (= :error-url input-status)
         error-manifest? (= :error-manifest input-status)
-        error? (or error-url? error-manifest?)
+        error?          (or error-url? error-manifest?)
 
-        user-can-edit? (:can-edit (deref refs/permissions))
+        permissions     (mf/deref refs/permissions)
+        user-can-edit?  (get permissions :can-edit)
 
-        handle-url-input
+
+        fetching-manifest?
+        (mf/use-state false)
+
+        on-url-change
         (mf/use-fn
          (fn [value]
            (reset! input-status* nil)
            (reset! plugin-url* value)))
 
-        handle-install-click
+        on-install
         (mf/use-fn
          (mf/deps plugins-state plugin-url)
          (fn []
            (reset! fetching-manifest? true)
-           (->> (dp/fetch-manifest plugin-url)
+           (->> (dp/fetch-manifest (normalize-plugin-url plugin-url))
                 (rx/subs!
                  (fn [plugin]
                    (reset! fetching-manifest? false)
                    (if plugin
                      (do
                        (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
-                       (modal/show!
-                        :plugin-permissions
-                        {:plugin plugin
-                         :on-accept
-                         #(do
-                            (preg/install-plugin! plugin)
-                            (modal/show! :plugin-management {}))})
+                       (modal/show! :plugin-permissions
+                                    {:plugin plugin
+                                     :on-accept
+                                     #(do
+                                        (preg/install-plugin! plugin)
+                                        (modal/show! :plugin-management {}))})
                        (reset! input-status* :success)
                        (reset! plugin-url* ""))
                      ;; Cannot get the manifest
@@ -145,7 +160,7 @@
                    (reset! fetching-manifest? false)
                    (reset! input-status* :error-url))))))
 
-        handle-open-plugin
+        on-open-plugin
         (mf/use-fn
          (fn [manifest]
            (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
@@ -155,7 +170,7 @@
            (dp/open-plugin! manifest user-can-edit?)
            (modal/hide!)))
 
-        handle-remove-plugin
+        on-remove-plugin
         (mf/use-fn
          (mf/deps plugins-state)
          (fn [plugin-index]
@@ -175,14 +190,15 @@
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :top-bar)}
-        [:> search-bar* {:on-change handle-url-input
+        [:> search-bar* {:on-change on-url-change
                          :value plugin-url
                          :placeholder (tr "workspace.plugins.search-placeholder")
                          :class (stl/css-case :input-error error?)}]
 
         [:button {:class (stl/css :primary-button)
                   :disabled @fetching-manifest?
-                  :on-click handle-install-click} (tr "workspace.plugins.install")]]
+                  :on-click on-install}
+         (tr "workspace.plugins.install")]]
 
        (when error-url?
          [:div {:class (stl/css-case :info true :error error?)}
@@ -220,8 +236,8 @@
                                :index idx
                                :manifest manifest
                                :user-can-edit user-can-edit?
-                               :on-open-plugin handle-open-plugin
-                               :on-remove-plugin handle-remove-plugin}])]])]]]))
+                               :on-open-plugin on-open-plugin
+                               :on-remove-plugin on-remove-plugin}])]])]]]))
 
 (mf/defc plugins-permission-list
   [{:keys [permissions]}]
