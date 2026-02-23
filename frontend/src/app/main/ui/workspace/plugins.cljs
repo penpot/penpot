@@ -191,6 +191,7 @@
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :top-bar)}
         [:> search-bar* {:on-change on-url-change
+                         :on-submit on-install
                          :value plugin-url
                          :placeholder (tr "workspace.plugins.search-placeholder")
                          :class (stl/css-case :input-error error?)}]
