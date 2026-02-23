@@ -118,7 +118,8 @@
                                                           :update-name? update-name?
                                                           :name generated-name
                                                           :finalize? true
-                                                          :save-undo? false))))
+                                                          :save-undo? false
+                                                          :original-content original-content))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))

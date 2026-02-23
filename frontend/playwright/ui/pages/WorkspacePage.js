@@ -45,24 +45,27 @@ export class WorkspacePage extends BaseWebSocketPage {
       return this.waitForEditor();
     }
 
-    stopEditing() {
-      return this.page.keyboard.press("Escape");
+    async stopEditing() {
+      await this.page.keyboard.press("Escape");
     }
 
     async moveToLeft(amount = 0) {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowLeft");
       }
+      await this.waitForIdle();
     }
 
     async moveToRight(amount = 0) {
       for (let i = 0; i < amount; i++) {
         await this.page.keyboard.press("ArrowRight");
       }
+      await this.waitForIdle();
     }
 
     async moveFromStart(offset = 0) {
       await this.page.keyboard.press("Home");
+      await this.waitForIdle();
       await this.moveToRight(offset);
     }
 
@@ -103,6 +106,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     changeLetterSpacing(newValue) {
       return this.changeNumericInput(this.letterSpacing, newValue);
     }
+
+    async waitForIdle() {
+      await this.page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve)));
+    }
   };
 
   /**
@@ -112,9 +119,9 @@ export class WorkspacePage extends BaseWebSocketPage {
    * @returns
    */
   static async init(page) {
-    await BaseWebSocketPage.initWebSockets(page);
+    await super.init(page);
 
-    await BaseWebSocketPage.mockRPCs(page, {
+    await super.mockRPCs(page, {
       "get-profile": "logged-in-user/get-profile-logged-in.json",
       "get-team-users?file-id=*":
         "logged-in-user/get-team-users-single-user.json",

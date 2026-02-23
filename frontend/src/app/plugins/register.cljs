@@ -62,7 +62,7 @@
         origin
         (if (= vers 1)
           (-> plugin-url
-              (assoc :path "/")
+              (assoc :path "")
               (str))
           (-> plugin-url
               (u/join ".")

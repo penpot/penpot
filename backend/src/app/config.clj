@@ -98,7 +98,6 @@
     [:http-server-port {:optional true} ::sm/int]
     [:http-server-host {:optional true} :string]
     [:http-server-max-body-size {:optional true} ::sm/int]
-    [:http-server-max-multipart-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { WasmWorkspacePage  } from "../pages/WasmWorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../pages/BaseWebSocketPage";
 import { Clipboard } from "../../helpers/Clipboard";
 
@@ -7,7 +7,7 @@ test.beforeEach(async ({ page, context }) => {
   await Clipboard.enable(context, Clipboard.Permission.ALL);
 
   await WasmWorkspacePage.init(page);
-  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-variants.json");
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-variants"]);
 });
 
 test.afterEach(async ({ context }) => {
