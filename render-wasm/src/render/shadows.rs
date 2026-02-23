@@ -109,17 +109,17 @@ fn render_shadow_paint(
         Type::Rect(_) | Type::Frame(_) => {
             render_state
                 .surfaces
-                .draw_rect_to(surface_id, shape, paint, None);
+                .draw_rect_to(surface_id, shape, paint, None, None);
         }
         Type::Circle => {
             render_state
                 .surfaces
-                .draw_circle_to(surface_id, shape, paint, None);
+                .draw_circle_to(surface_id, shape, paint, None, None);
         }
         Type::Path(_) | Type::Bool(_) => {
             render_state
                 .surfaces
-                .draw_path_to(surface_id, shape, paint, None);
+                .draw_path_to(surface_id, shape, paint, None, None);
         }
         _ => {}
     }
@@ -154,6 +154,7 @@ pub fn render_text_shadows(
             surface_id,
             None,
             blur_filter.as_ref(),
+            None,
         );
 
         for stroke_paragraphs in stroke_paragraphs_group.iter_mut() {
@@ -165,6 +166,7 @@ pub fn render_text_shadows(
                 surface_id,
                 None,
                 blur_filter.as_ref(),
+                None,
             );
         }
 

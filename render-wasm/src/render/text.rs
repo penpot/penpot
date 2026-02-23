@@ -166,6 +166,7 @@ pub fn render_with_bounds_outset(
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
+    fill_inset: Option<f32>,
 ) {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
@@ -193,6 +194,7 @@ pub fn render_with_bounds_outset(
                             paragraph_builders,
                             shadow,
                             Some(&blur_filter_clone),
+                            fill_inset,
                         );
                     },
                 ) {
@@ -202,15 +204,16 @@ pub fn render_with_bounds_outset(
         }
 
         let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
-        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
+        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur, fill_inset);
         return;
     }
 
     if let Some(canvas) = canvas {
-        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur);
+        render_text_on_canvas(canvas, shape, paragraph_builders, shadow, blur, fill_inset);
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn render(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
@@ -219,6 +222,7 @@ pub fn render(
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
 ) {
     render_with_bounds_outset(
         render_state,
@@ -229,6 +233,7 @@ pub fn render(
         shadow,
         blur,
         0.0,
+        fill_inset,
     );
 }
 
@@ -238,6 +243,7 @@ fn render_text_on_canvas(
     paragraph_builders: &mut [Vec<ParagraphBuilder>],
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
 ) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
@@ -251,6 +257,17 @@ fn render_text_on_canvas(
         canvas.save_layer(&layer_rec);
         draw_text(canvas, shape, paragraph_builders);
         canvas.restore();
+    } else if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
+        if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
+            let mut layer_paint = Paint::default();
+            layer_paint.set_image_filter(erode);
+            let layer_rec = SaveLayerRec::default().paint(&layer_paint);
+            canvas.save_layer(&layer_rec);
+            draw_text(canvas, shape, paragraph_builders);
+            canvas.restore();
+        } else {
+            draw_text(canvas, shape, paragraph_builders);
+        }
     } else {
         draw_text(canvas, shape, paragraph_builders);
     }

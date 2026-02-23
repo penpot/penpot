@@ -526,7 +526,7 @@ pub fn render(
     strokes: &[&Stroke],
     surface_id: Option<SurfaceId>,
     antialias: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     if strokes.is_empty() {
         return;
@@ -541,8 +541,8 @@ pub fn render(
         // edges semi-transparent and revealing strokes underneath.
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
-            // Expand for spread if provided
-            if let Some(s) = spread.filter(|&s| s > 0.0) {
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
                 content_bounds.outset((s, s));
             }
             let max_margin = strokes
@@ -588,7 +588,7 @@ pub fn render(
                             antialias,
                             true,
                             true,
-                            spread,
+                            outset,
                         );
                     }
 
@@ -608,7 +608,7 @@ pub fn render(
                 surface_id,
                 None,
                 antialias,
-                spread,
+                outset,
             );
         }
         return;
@@ -621,7 +621,7 @@ pub fn render(
         surface_id,
         antialias,
         false,
-        spread,
+        outset,
     );
 }
 
@@ -642,7 +642,7 @@ fn render_merged(
     surface_id: Option<SurfaceId>,
     antialias: bool,
     bypass_filter: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     let representative = *strokes
         .last()
@@ -658,8 +658,8 @@ fn render_merged(
     if !bypass_filter {
         if let Some(image_filter) = blur_filter.clone() {
             let mut content_bounds = shape.selrect;
-            // Expand for spread if provided
-            if let Some(s) = spread.filter(|&s| s > 0.0) {
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
                 content_bounds.outset((s, s));
             }
             let stroke_margin = representative.bounds_width(shape.is_open());
@@ -694,7 +694,7 @@ fn render_merged(
                         Some(temp_surface),
                         antialias,
                         true,
-                        spread,
+                        outset,
                     );
 
                     state.surfaces.apply_mut(temp_surface as u32, |surface| {
@@ -711,8 +711,8 @@ fn render_merged(
     // via SrcOver), matching the non-merged path where strokes[0] is drawn last (on top).
     let fills: Vec<Fill> = strokes.iter().map(|s| s.fill.clone()).collect();
 
-    // Expand selrect if spread is provided
-    let selrect = if let Some(s) = spread.filter(|&s| s > 0.0) {
+    // Expand selrect if outset is provided
+    let selrect = if let Some(s) = outset.filter(|&s| s > 0.0) {
         let mut r = shape.selrect;
         r.outset((s, s));
         r
@@ -790,7 +790,7 @@ pub fn render_single(
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
     antialias: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     render_single_internal(
         render_state,
@@ -801,7 +801,7 @@ pub fn render_single(
         antialias,
         false,
         false,
-        spread,
+        outset,
     );
 }
 
@@ -815,13 +815,13 @@ fn render_single_internal(
     antialias: bool,
     bypass_filter: bool,
     skip_blur: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     if !bypass_filter {
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
-            // Expand for spread if provided
-            if let Some(s) = spread.filter(|&s| s > 0.0) {
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
                 content_bounds.outset((s, s));
             }
             let stroke_margin = stroke.bounds_width(shape.is_open());
@@ -849,7 +849,7 @@ fn render_single_internal(
                         antialias,
                         true,
                         true,
-                        spread,
+                        outset,
                     );
                 },
             ) {
@@ -920,18 +920,18 @@ fn render_single_internal(
                     let is_open = path.is_open();
                     let mut paint =
                         stroke.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
-                    // Apply spread by increasing stroke width
-                    if let Some(s) = spread.filter(|&s| s > 0.0) {
+                    // Apply outset by increasing stroke width
+                    if let Some(s) = outset.filter(|&s| s > 0.0) {
                         let current_width = paint.stroke_width();
                         // Path stroke kinds are built differently:
                         // - Center uses the stroke width directly.
                         // - Inner/Outer use a doubled width plus clipping/clearing logic.
-                        // Compensate spread so visual growth is comparable across kinds.
-                        let spread_growth = match stroke.render_kind(is_open) {
+                        // Compensate outset so visual growth is comparable across kinds.
+                        let outset_growth = match stroke.render_kind(is_open) {
                             StrokeKind::Center => s * 2.0,
                             StrokeKind::Inner | StrokeKind::Outer => s * 4.0,
                         };
-                        paint.set_stroke_width(current_width + spread_growth);
+                        paint.set_stroke_width(current_width + outset_growth);
                     }
                     draw_stroke_on_path(
                         canvas,
