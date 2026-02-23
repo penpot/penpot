@@ -1037,8 +1037,9 @@
    ::webhooks/event? true
    ::sm/params schema:unlink-file-to-library
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (check-edition-permissions! conn profile-id file-id)
+  (check-edition-permissions! conn profile-id library-id)
   (unlink-file-from-library conn params)
   nil)
 
@@ -1062,8 +1063,9 @@
   {::doc/added "1.17"
    ::sm/params schema:update-file-library-sync-status
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (check-edition-permissions! conn profile-id file-id)
+  (check-edition-permissions! conn profile-id library-id)
   (update-sync conn params))
 
 ;; --- MUTATION COMMAND: ignore-sync
