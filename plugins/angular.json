@@ -304,6 +304,7 @@
             "assets": [
               "apps/rename-layers-plugin/src/_headers",
               "apps/rename-layers-plugin/src/favicon.ico",
+              "apps/rename-layers-plugin/src/manifest.json",
               "apps/rename-layers-plugin/src/assets"
             ],
             "styles": [
