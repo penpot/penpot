@@ -620,7 +620,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       ;; We do not allow to apply tokens while text editor is open.
-      (when (empty? (get state :workspace-editor-state))
+      (if (empty? (get state :workspace-editor-state))
         (let [attributes-to-remove
               ;; Remove atomic typography tokens when applying composite and vice-verca
               (cond
@@ -674,7 +674,11 @@
                            (if (rx/observable? res)
                              res
                              (rx/of res))))
-                       (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))
+                       (rx/of (dwu/commit-undo-transaction undo-id)))))))))
+        (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                          :type :toast
+                          :level :warning
+                          :timeout 3000}))))))
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
