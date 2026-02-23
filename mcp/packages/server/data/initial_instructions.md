@@ -39,7 +39,7 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
   * `parentX` and `parentY` (as well as `boardX` and `boardY`) are READ-ONLY computed properties showing position relative to parent/board.
     To position relative to parent, use `penpotUtils.setParentXY(shape, parentX, parentY)` or manually set `shape.x = parent.x + parentX`.
   * `width` and `height` are READ-ONLY. Use `resize(width, height)` method to change dimensions.
-  * `bounds` is a READ-ONLY property. Use `x`, `y` with `resize()` to modify shape bounds.
+  * `bounds` is READ-ONLY (members: x, y, width, height). To modify the bounding box, change `x`, `y` or apply `resize()`. 
 
 **Other Writable Properties**:
   * `name` - Shape name
@@ -122,12 +122,12 @@ Boards can have layout systems that automatically control the positioning and sp
 
 # Text Elements
 
-The rendered content of `Text` element is given by the `characters` property.
+The rendered content of a `Text` element is given by the `characters` property.
 
 To change the size of the text, change the `fontSize` property; applying `resize()` does NOT change the font size,
-it only changes the formal bounding box; if the text does not fit it, it will overflow.
+it only changes the formal bounding box; if the text does not fit it, it will overflow; use `textBounds` for the actual bounding box of the rendered text.
 The bounding box is sized automatically as long as the `growType` property is set to "auto-width" or "auto-height".
-`resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-*" if you want automatic sizing - otherwise the bounding box will be meaningless, with the text overflowing!
+`resize` always sets `growType` to "fixed", so ALWAYS set it back to "auto-*" if you want automatic sizing!
 The auto-sizing is not immediate; sleep for a short time (100ms) if you want to read the updated bounding box.
 
 # The `penpot` and `penpotUtils` Objects, Exploring Designs
