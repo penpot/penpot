@@ -642,6 +642,7 @@ impl RenderState {
         apply_to_current_surface: bool,
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
+        outset: Option<f32>,
     ) {
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
@@ -700,7 +701,7 @@ impl RenderState {
                 canvas.translate(translation);
             });
 
-            fills::render(self, shape, &shape.fills, antialias, SurfaceId::Current);
+            fills::render(self, shape, &shape.fills, antialias, SurfaceId::Current, outset);
 
             // Pass strokes in natural order; stroke merging handles top-most ordering internally.
             let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
@@ -710,6 +711,7 @@ impl RenderState {
                 &visible_strokes,
                 Some(SurfaceId::Current),
                 antialias,
+                outset,
             );
 
             self.surfaces.apply_mut(SurfaceId::Current as u32, |s| {
@@ -1055,10 +1057,24 @@ impl RenderState {
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
-                        fills::render(self, shape, &fills_to_render, antialias, fills_surface_id);
+                        fills::render(
+                            self,
+                            shape,
+                            &fills_to_render,
+                            antialias,
+                            fills_surface_id,
+                            outset,
+                        );
                     }
                 } else {
-                    fills::render(self, shape, &shape.fills, antialias, fills_surface_id);
+                    fills::render(
+                        self,
+                        shape,
+                        &shape.fills,
+                        antialias,
+                        fills_surface_id,
+                        outset,
+                    );
                 }
 
                 // Skip stroke rendering for clipped frames - they are drawn in render_shape_exit
@@ -1073,6 +1089,7 @@ impl RenderState {
                         &visible_strokes,
                         Some(strokes_surface_id),
                         antialias,
+                        outset,
                     );
                     if !fast_mode {
                         for stroke in &visible_strokes {
@@ -1472,6 +1489,7 @@ impl RenderState {
                 true,
                 None,
                 None,
+                None,
             );
         }
 
@@ -1648,6 +1666,7 @@ impl RenderState {
                     false,
                     Some(shadow.offset),
                     None,
+                    None,
                 );
             });
 
@@ -1692,6 +1711,7 @@ impl RenderState {
                         temp_surface,
                         false,
                         Some(shadow.offset),
+                        None,
                         None,
                     );
                 });
@@ -1836,6 +1856,7 @@ impl RenderState {
                                 true,
                                 None,
                                 Some(vec![new_shadow_paint.clone()]),
+                                None,
                             );
                         });
                         self.surfaces.canvas(SurfaceId::DropShadows).restore();
@@ -2045,6 +2066,7 @@ impl RenderState {
                     SurfaceId::InnerShadows,
                     SurfaceId::TextDropShadows,
                     true,
+                    None,
                     None,
                     None,
                 );

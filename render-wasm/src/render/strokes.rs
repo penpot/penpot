@@ -526,6 +526,7 @@ pub fn render(
     strokes: &[&Stroke],
     surface_id: Option<SurfaceId>,
     antialias: bool,
+    outset: Option<f32>,
 ) {
     if strokes.is_empty() {
         return;
@@ -540,6 +541,10 @@ pub fn render(
         // edges semi-transparent and revealing strokes underneath.
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
+                content_bounds.outset((s, s));
+            }
             let max_margin = strokes
                 .iter()
                 .map(|s| s.bounds_width(shape.is_open()))
@@ -583,6 +588,7 @@ pub fn render(
                             antialias,
                             true,
                             true,
+                            outset,
                         );
                     }
 
@@ -595,12 +601,28 @@ pub fn render(
 
         // No blur or filter surface unavailable — draw strokes individually.
         for stroke in strokes.iter().rev() {
-            render_single(render_state, shape, stroke, surface_id, None, antialias);
+            render_single(
+                render_state,
+                shape,
+                stroke,
+                surface_id,
+                None,
+                antialias,
+                outset,
+            );
         }
         return;
     }
 
-    render_merged(render_state, shape, strokes, surface_id, antialias, false);
+    render_merged(
+        render_state,
+        shape,
+        strokes,
+        surface_id,
+        antialias,
+        false,
+        outset,
+    );
 }
 
 fn strokes_share_geometry(strokes: &[&Stroke]) -> bool {
@@ -620,6 +642,7 @@ fn render_merged(
     surface_id: Option<SurfaceId>,
     antialias: bool,
     bypass_filter: bool,
+    outset: Option<f32>,
 ) {
     let representative = *strokes
         .last()
@@ -635,6 +658,10 @@ fn render_merged(
     if !bypass_filter {
         if let Some(image_filter) = blur_filter.clone() {
             let mut content_bounds = shape.selrect;
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
+                content_bounds.outset((s, s));
+            }
             let stroke_margin = representative.bounds_width(shape.is_open());
             if stroke_margin > 0.0 {
                 content_bounds.inset((-stroke_margin, -stroke_margin));
@@ -660,7 +687,15 @@ fn render_merged(
                         canvas.save_layer(&layer_rec);
                     });
 
-                    render_merged(state, shape, strokes, Some(temp_surface), antialias, true);
+                    render_merged(
+                        state,
+                        shape,
+                        strokes,
+                        Some(temp_surface),
+                        antialias,
+                        true,
+                        outset,
+                    );
 
                     state.surfaces.apply_mut(temp_surface as u32, |surface| {
                         surface.canvas().restore();
@@ -676,7 +711,16 @@ fn render_merged(
     // via SrcOver), matching the non-merged path where strokes[0] is drawn last (on top).
     let fills: Vec<Fill> = strokes.iter().map(|s| s.fill.clone()).collect();
 
-    let merged = merge_fills(&fills, shape.selrect);
+    // Expand selrect if outset is provided
+    let selrect = if let Some(s) = outset.filter(|&s| s > 0.0) {
+        let mut r = shape.selrect;
+        r.outset((s, s));
+        r
+    } else {
+        shape.selrect
+    };
+
+    let merged = merge_fills(&fills, selrect);
     let scale = render_state.get_scale();
     let target_surface = surface_id.unwrap_or(SurfaceId::Strokes);
     let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
@@ -747,6 +791,7 @@ pub fn render_single(
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
     antialias: bool,
+    outset: Option<f32>,
 ) {
     render_single_internal(
         render_state,
@@ -757,6 +802,7 @@ pub fn render_single(
         antialias,
         false,
         false,
+        outset,
     );
 }
 
@@ -770,10 +816,15 @@ fn render_single_internal(
     antialias: bool,
     bypass_filter: bool,
     skip_blur: bool,
+    outset: Option<f32>,
 ) {
     if !bypass_filter {
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
+                content_bounds.outset((s, s));
+            }
             let stroke_margin = stroke.bounds_width(shape.is_open());
             if stroke_margin > 0.0 {
                 content_bounds.inset((-stroke_margin, -stroke_margin));
@@ -799,6 +850,7 @@ fn render_single_internal(
                         antialias,
                         true,
                         true,
+                        outset,
                     );
                 },
             ) {
@@ -867,7 +919,21 @@ fn render_single_internal(
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {
                 if let Some(path) = shape_type.path() {
                     let is_open = path.is_open();
-                    let paint = stroke.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
+                    let mut paint =
+                        stroke.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
+                    // Apply outset by increasing stroke width
+                    if let Some(s) = outset.filter(|&s| s > 0.0) {
+                        let current_width = paint.stroke_width();
+                        // Path stroke kinds are built differently:
+                        // - Center uses the stroke width directly.
+                        // - Inner/Outer use a doubled width plus clipping/clearing logic.
+                        // Compensate outset so visual growth is comparable across kinds.
+                        let outset_growth = match stroke.render_kind(is_open) {
+                            StrokeKind::Center => s * 2.0,
+                            StrokeKind::Inner | StrokeKind::Outer => s * 4.0,
+                        };
+                        paint.set_stroke_width(current_width + outset_growth);
+                    }
                     draw_stroke_on_path(
                         canvas,
                         stroke,
