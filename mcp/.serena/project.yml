@@ -1,5 +1,3 @@
-
-
 # whether to use the project's gitignore file to ignore files
 # Added on 2025-04-07
 ignore_all_files_in_gitignore: true
@@ -74,7 +72,6 @@ initial_prompt: |
   When describing what blocks of code do, you also use an elliptical style and start with a lower-case letter unless
   the comment is a lengthy explanation with at least two sentences (in which case you start with a capital letter, as is
   required for sentences).
-
 # the name by which the project can be referenced within Serena
 project_name: "penpot-mcp"
 
@@ -131,3 +128,16 @@ encoding: utf-8
 # Note that when using the JetBrains backend, language servers are not used and this list is correspondingly ignored.
 languages:
 - typescript
+
+# time budget (seconds) per tool call for the retrieval of additional symbol information
+# such as docstrings or parameter information.
+# This overrides the corresponding setting in the global configuration; see the documentation there.
+# If null or missing, use the setting from the global configuration.
+symbol_info_budget:
+
+# The language backend to use for this project.
+# If not set, the global setting from serena_config.yml is used.
+# Valid values: LSP, JetBrains
+# Note: the backend is fixed at startup. If a project with a different backend
+# is activated post-init, an error will be returned.
+language_backend:
