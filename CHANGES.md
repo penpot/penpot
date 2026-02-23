@@ -3,6 +3,7 @@
 ## 2.15.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
+- Deprecate `PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE` in favour of `PENPOT_HTTP_SERVER_MAX_BODY_SIZE`.
 
 ### :rocket: Epics and highlights
 
