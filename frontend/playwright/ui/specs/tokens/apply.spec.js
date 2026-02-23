@@ -1,22 +1,22 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../../pages/WorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import {
-  setupEmptyTokensFile,
-  setupTokensFile,
-  setupTypographyTokensFile,
+  setupTokensFileRender,
+  setupTypographyTokensFileRender,
   unfoldTokenTree,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-design-tokens-v1"]);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 test.describe("Tokens: Apply token", () => {
   test("User applies color token to a shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -44,7 +44,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -105,7 +105,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -169,7 +169,7 @@ test.describe("Tokens: Apply token", () => {
 
   test("User applies typography token to a text shape", async ({ page }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTypographyTokensFile(page);
+      await setupTypographyTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -203,7 +203,7 @@ test.describe("Tokens: Apply token", () => {
       tokensSidebar,
       workspacePage,
       tokenContextMenuForToken,
-    } = await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+    } = await setupTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -489,7 +489,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -540,7 +540,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -594,7 +594,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -648,7 +648,7 @@ test.describe("Tokens: Apply token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     // Unfolds dimensions on token panel
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -701,7 +701,7 @@ test.describe("Tokens: Apply token", () => {
   });
 
   test("User applies stroke width token to a shape", async ({ page }) => {
-    const workspace = new WorkspacePage(page, {
+    const workspace = new WasmWorkspacePage(page, {
       textEditor: true,
     });
     // Set up
@@ -761,7 +761,7 @@ test.describe("Tokens: Apply token", () => {
   });
 
   test("User applies margin token to a shape", async ({ page }) => {
-    const workspace = new WorkspacePage(page, {
+    const workspace = new WasmWorkspacePage(page, {
       textEditor: true,
     });
     // Set up
@@ -853,7 +853,7 @@ test.describe("Tokens: Detach token", () => {
     page,
   }) => {
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await page.getByRole("tab", { name: "Layers" }).click();
 
