@@ -25,6 +25,7 @@
    [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
+   [app.util.globals :as global]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -336,6 +337,10 @@
                      (modal/hide))
            (when on-close (on-close))))]
 
+    (mf/with-effect [on-accept-dialog]
+      (.addEventListener ^js global/document "keydown" on-accept-dialog)
+      #(.removeEventListener ^js global/document "keydown" on-accept-dialog))
+
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
       [:button {:class (stl/css :close-btn) :on-click on-close-dialog} close-icon]
@@ -396,6 +401,10 @@
                      (modal/hide))
            (when on-close (on-close))))]
 
+    (mf/with-effect [on-accept-dialog]
+      (.addEventListener ^js global/document "keydown" on-accept-dialog)
+      #(.removeEventListener ^js global/document "keydown" on-accept-dialog))
+
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
       [:button {:class (stl/css :close-btn) :on-click on-close-dialog} close-icon]
@@ -446,6 +455,10 @@
            (st/emit! (ptk/event ::ev/event {::ev/name "try-out-cancel"})
                      (modal/hide))
            (when on-close (on-close))))]
+
+    (mf/with-effect [on-accept-dialog]
+      (.addEventListener ^js global/document "keydown" on-accept-dialog)
+      #(.removeEventListener ^js global/document "keydown" on-accept-dialog))
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-try-out)}
