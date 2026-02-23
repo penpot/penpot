@@ -42,8 +42,8 @@
 (def default-params
   {::port 6060
    ::host "0.0.0.0"
-   ::max-body-size 31457280              ; default  30 MiB
-   ::max-multipart-body-size 367001600}) ; default 350 MiB
+   ::max-body-size 367001600 ; default 350 MiB
+   })
 
 (defmethod ig/expand-key ::server
   [k v]
@@ -56,7 +56,6 @@
    [::io-threads {:optional true} ::sm/int]
    [::max-worker-threads {:optional true} ::sm/int]
    [::max-body-size {:optional true} ::sm/int]
-   [::max-multipart-body-size {:optional true} ::sm/int]
    [::router {:optional true} [:fn r/router?]]
    [::handler {:optional true} ::sm/fn]])
 
@@ -79,7 +78,7 @@
         {:http/port port
          :http/host host
          :http/max-body-size (::max-body-size cfg)
-         :http/max-multipart-body-size (::max-multipart-body-size cfg)
+         :http/max-multipart-body-size (::max-body-size cfg)
          :xnio/direct-buffers false
          :xnio/io-threads (::io-threads cfg)
          :xnio/max-worker-threads (::max-worker-threads cfg)
