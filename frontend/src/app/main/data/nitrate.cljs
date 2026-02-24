@@ -6,10 +6,12 @@
    [potok.v2.core :as ptk]))
 
 (defn show-nitrate-popup
-  []
+  [popup-type]
   (ptk/reify ::show-nitrate-popup
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! ::get-nitrate-connectivity {})
            (rx/map (fn [connectivity]
-                     (modal/show :nitrate-form (or connectivity {}))))))))
+                     (modal/show popup-type (or connectivity {}))))))))
+
+
