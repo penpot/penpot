@@ -329,3 +329,22 @@
 .show-editors-button {
   padding-inline: 0;
 }
+
+.radio-btns {
+  label {
+    @include t.use-typography("body-large");
+    padding: 0;
+    display: flex;
+    align-items: center;
+    color: var(--color-foreground-secondary);
+  }
+
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 var(--sp-xl) 0;
+  gap: var(--sp-s);
+}
+
+.modal-contact-content {
+  gap: var(--sp-xl);
+}

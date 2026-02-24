@@ -121,7 +121,7 @@
   (let [handle-click
         (mf/use-fn
          (fn []
-           (st/emit! (dnt/show-nitrate-popup))))]
+           (st/emit! (dnt/show-nitrate-popup :nitrate-form))))]
 
     ;; TODO add translations for this texts when we have the definitive ones
     [:div {:class (stl/css :nitrate-banner :highlighted)}
@@ -133,7 +133,7 @@
       [:span {:class (stl/css :nitrate-info)} "Some further information and explanation."]
       [:> button* {:variant "primary"
                    :type "button"
-                   :class (stl/css :cta-bottom-button)
+                   :class (stl/css :cta-bottom-button :nitrate-bottom-button)
                    :on-click handle-click} "UPGRADE TO NITRATE"]]]))
 
 (mf/defc team*
