@@ -7,7 +7,7 @@ import type { RefObject } from 'react'
 import { useEffect, useRef, useCallback } from 'react'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { useViewportShortcutsStore } from '../store/shortcuts-store'
-import type { ViewportPanModifier } from '../types'
+import type { ViewportPanModifier, SelectionRectResult } from '../types'
 import { mousePosition$ } from '../streams'
 import { queryNodesAtPoint, pickTopmostNode } from '../selection/query-at-point'
 import { getResizeCursor, matrixToRotationDeg } from '../../components/selection-overlay/constants'
@@ -32,6 +32,24 @@ function isPanModifierKey(e: KeyboardEvent, mod: ViewportPanModifier): boolean {
     case 'meta': return e.key === 'Meta'
     default: return false
   }
+}
+
+/** True if world point is inside the selection rect (respects rotation). */
+function isPointInSelectionBounds(
+  point: { x: number; y: number },
+  sel: SelectionRectResult
+): boolean {
+  const { center, width, height, transform } = sel
+  const dx = point.x - center.x
+  const dy = point.y - center.y
+  const { a, b, c, d } = transform
+  const det = a * d - b * c
+  if (Math.abs(det) < 1e-10) return false
+  const localX = (d * dx - c * dy) / det
+  const localY = (-b * dx + a * dy) / det
+  const hw = width / 2
+  const hh = height / 2
+  return localX >= -hw && localX <= hw && localY >= -hh && localY <= hh
 }
 
 interface UseViewportInteractionsParams {
@@ -137,6 +155,20 @@ export function useViewportInteractions({
             }
             setIsMoving(true)
           } else {
+            // Fallback: click in empty space (e.g. inside stroke-only shape) but inside selection bounds → start move
+            const store = useWorkspaceStore.getState()
+            const { selectedIds: currentIds, wasmSelectionRect } = store
+            if (
+              currentIds.size > 0 &&
+              wasmSelectionRect != null &&
+              viewportForHit != null
+            ) {
+              const world = viewportForHit.screenToWorld(screenX, screenY)
+              if (isPointInSelectionBounds(world, wasmSelectionRect)) {
+                setIsMoving(true)
+                return
+              }
+            }
             setIsSelecting(true)
           }
         }

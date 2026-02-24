@@ -2,7 +2,7 @@
  * Overlap detection algorithms for shapes
  */
 
-import type { Point, PenpotNode, Selrect } from '@penpot-exporter/types'
+import type { Point, PenpotNode, Selrect, Stroke } from '@penpot-exporter/types'
 import type { Line } from '@skia-rs-wasm/common'
 import { makeSelrect } from '@skia-rs-wasm/common'
 import { rectToPoints } from './rect'
@@ -358,13 +358,111 @@ function getShapePointsForOverlap(shape: PenpotNode): Point[] {
   return pts ?? []
 }
 
+/** Outer padding (expansion): center → strokeWidth, outer → 2*strokeWidth, inner → 0. Max across strokes. */
+function getStrokePaddingOuter(shape: PenpotNode): number {
+  const strokes = shape.strokes as Stroke[] | undefined
+  if (!strokes || strokes.length === 0) return 0
+  let max = 0
+  for (const s of strokes) {
+    const w = s.strokeWidth ?? 0
+    const align = s.strokeAlignment ?? 'center'
+    const padding =
+      align === 'center' ? w : align === 'outer' ? 2 * w : 0
+    if (padding > max) max = padding
+  }
+  return max
+}
+
+/** Inner padding (shrink): center → strokeWidth, outer → 0, inner → 2*strokeWidth. Max across strokes. */
+function getStrokePaddingInner(shape: PenpotNode): number {
+  const strokes = shape.strokes as Stroke[] | undefined
+  if (!strokes || strokes.length === 0) return 0
+  let max = 0
+  for (const s of strokes) {
+    const w = s.strokeWidth ?? 0
+    const align = s.strokeAlignment ?? 'center'
+    const padding =
+      align === 'center' ? w : align === 'inner' ? 2 * w : 0
+    if (padding > max) max = padding
+  }
+  return max
+}
+
+function overlapsOuterShape(shape: PenpotNode, rect: Selrect, shapeType: string): boolean {
+  const bounds = shape.selrect
+  if (!bounds) return false
+  const padding = getStrokePaddingOuter(shape)
+  const centerX = bounds.x + bounds.width / 2
+  const centerY = bounds.y + bounds.height / 2
+  const w = bounds.width + padding
+  const h = bounds.height + padding
+  const outerX = centerX - w / 2
+  const outerY = centerY - h / 2
+
+  if (shapeType === 'rect') {
+    const outerRect = makeSelrect(outerX, outerY, w, h)
+    const outerPoints = rectToPoints(outerRect)
+    if (!outerPoints) return false
+    return overlapsRectPoints(rect, outerPoints)
+  }
+
+  if (shapeType === 'circle') {
+    const synthetic: PenpotNode = {
+      ...shape,
+      x: outerX,
+      y: outerY,
+      width: w,
+      height: h,
+      selrect: makeSelrect(outerX, outerY, w, h),
+    }
+    return overlapsEllipse(synthetic, rect)
+  }
+
+  return false
+}
+
+function overlapsInnerShape(shape: PenpotNode, rect: Selrect, shapeType: string): boolean {
+  const bounds = shape.selrect
+  if (!bounds) return false
+  const padding = getStrokePaddingInner(shape)
+  const w = bounds.width - padding
+  const h = bounds.height - padding
+  if (w <= 0 || h <= 0) return false
+  const centerX = bounds.x + bounds.width / 2
+  const centerY = bounds.y + bounds.height / 2
+  const innerX = centerX - w / 2
+  const innerY = centerY - h / 2
+
+  if (shapeType === 'rect') {
+    const innerRect = makeSelrect(innerX, innerY, w, h)
+    const innerPoints = rectToPoints(innerRect)
+    if (!innerPoints) return false
+    return overlapsRectPoints(rect, innerPoints)
+  }
+
+  if (shapeType === 'circle') {
+    const synthetic: PenpotNode = {
+      ...shape,
+      x: innerX,
+      y: innerY,
+      width: w,
+      height: h,
+      selrect: makeSelrect(innerX, innerY, w, h),
+    }
+    return overlapsEllipse(synthetic, rect)
+  }
+
+  return false
+}
+
 export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean = false): boolean {
   if (!shape) {
     return false
   }
 
-  // Adjust rect for stroke width
-  const strokeWidth = shape.strokes?.[0]?.['stroke-width'] ?? 0
+  // Adjust rect for stroke width (support both kebab and camel stroke width)
+  const firstStroke = shape.strokes?.[0] as Stroke | undefined
+  const strokeWidth = firstStroke?.strokeWidth ?? 0
   const swidth = strokeWidth / 2
   const adjustedRect: Selrect = makeSelrect(
     rect.x - swidth,
@@ -380,13 +478,22 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     !shape['svg-attrs']?.fill &&
     !shape['svg-attrs']?.style?.fill
   ) {
-    const shapeType = shape.type
+    const shapeTypeInner = shape.type
 
-    if (shapeType === 'rect' || shapeType === 'circle') {
-      return overlapsRectPoints(adjustedRect, getShapePointsForOverlap(shape))
+    if (shapeTypeInner === 'rect' || shapeTypeInner === 'circle') {
+      // Use click point (center of query rect) for stroke-band test so a large query rect
+      // doesn't overlap the inner area and prevent selection (log evidence: H2).
+      const centerX = adjustedRect.x + adjustedRect.width / 2
+      const centerY = adjustedRect.y + adjustedRect.height / 2
+      const eps = 1e-6
+      const centerRect = makeSelrect(centerX - eps / 2, centerY - eps / 2, eps, eps)
+      return (
+        overlapsOuterShape(shape, centerRect, shapeTypeInner) &&
+        !overlapsInnerShape(shape, centerRect, shapeTypeInner)
+      )
     }
 
-    if (shapeType === 'path' || shapeType === 'bool') {
+    if (shapeTypeInner === 'path' || shapeTypeInner === 'bool') {
       return overlapsPath(shape, adjustedRect, false)
     }
   }
