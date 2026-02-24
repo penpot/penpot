@@ -112,20 +112,7 @@ registerHandler('index/query-selection', (message: WorkerMessage) => {
 
   try {
     const result = selection.query(state.selection, params)
-    const arr = Array.from(result)
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'worker/index.ts:query-selection',
-        message: 'query-selection handler result',
-        data: { pageId: params.pageId, rect: params.rect, resultLength: arr.length, resultIds: arr.slice(0, 5), hypothesisId: 'D' },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
-    return arr
+    return Array.from(result)
   } catch (error) {
     console.error('Error querying selection:', error)
     return []

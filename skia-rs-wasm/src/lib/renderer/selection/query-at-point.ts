@@ -39,23 +39,6 @@ export async function queryNodesAtPoint(
     fullFrame: false,
     usingSelrect: false,
   })
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      location: 'query-at-point.ts:queryNodesAtPoint',
-      message: 'worker result at point',
-      data: {
-        center: { x: center.x, y: center.y },
-        resultLength: Array.isArray(result) ? result.length : -1,
-        resultIds: Array.isArray(result) ? result.slice(0, 5) : null,
-        hypothesisId: 'C',
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
   if (result === null || !Array.isArray(result)) return []
   return result
 }
