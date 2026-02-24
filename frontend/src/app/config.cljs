@@ -151,7 +151,7 @@
   (let [f (obj/get global "initializeExternalConfigInfo")]
     (when (fn? f) (f))))
 
-(def mcp-server-url (-> public-uri u/ensure-path-slash (u/join "mcp") str))
+(def mcp-server-url (-> public-uri u/ensure-path-slash (u/join "mcp/stream") str))
 (def mcp-help-center-uri "https://help.penpot.app/technical-guide/")
 
 ;; --- Helper Functions
