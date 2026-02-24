@@ -10,17 +10,19 @@
    [app.common.data :as d]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
-   [app.main.ui.ds.controls.utilities.utils :as csu]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as fc]
-   [app.main.ui.workspace.tokens.management.forms.controls.floating :refer [use-floating-dropdown]]
-   [app.main.ui.workspace.tokens.management.forms.controls.navigation :refer [use-navigation]]
+   [app.main.ui.workspace.tokens.management.forms.controls.combobox-navigation :refer [use-navigation]]
+   [app.main.ui.workspace.tokens.management.forms.controls.floating-dropdown :refer [use-floating-dropdown]]
    [app.main.ui.workspace.tokens.management.forms.controls.token-parsing :as tp]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -46,11 +48,15 @@
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
 
-    (->> tokens
-         (sd/resolve-tokens-interactive)
+    (->> (if (contains? cf/flags :tokenscript)
+           (rx/of (ts/resolve-tokens tokens))
+           (sd/resolve-tokens-interactive tokens))
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                  resolved-value (if (contains? cf/flags :tokenscript)
+                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                   resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))

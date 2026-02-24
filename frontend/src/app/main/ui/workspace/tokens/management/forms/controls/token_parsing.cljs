@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.management.forms.controls.token-parsing
   (:require
    [app.main.ui.ds.controls.select :refer [get-option]]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -43,7 +44,7 @@
            (subs value cursor)))))
 
 (defn active-token [value input-node]
-  (let [cursor (.-selectionStart input-node)]
+  (let [cursor (dom/selection-start input-node)]
     (extract-partial-token value cursor)))
 
 (defn remove-self-token [filtered-options current-token]
@@ -56,7 +57,7 @@
 
 (defn select-option-by-id
   [id options-ref input-node value]
-  (let [cursor     (.-selectionStart input-node)
+  (let [cursor     (dom/selection-start input-node)
         options    (mf/ref-val options-ref)
         options    (if (delay? options) @options options)
 

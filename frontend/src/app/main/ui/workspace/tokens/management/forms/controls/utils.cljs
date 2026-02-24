@@ -1,4 +1,4 @@
-(ns app.main.ui.ds.controls.utilities.utils
+(ns app.main.ui.workspace.tokens.management.forms.controls.utils
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.token :as cto]
