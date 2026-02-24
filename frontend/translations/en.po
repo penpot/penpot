@@ -5715,6 +5715,18 @@ msgstr "Hide rulers"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Hide fonts palette"
 
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Connect"
+
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Disconnect"
+
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Manage (Status: enabled)"
+
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Manage (Status: disabled)"
+
 #: src/app/main/ui/workspace/main_menu.cljs:884
 msgid "workspace.header.menu.option.edit"
 msgstr "Edit"
@@ -5726,6 +5738,9 @@ msgstr "File"
 #: src/app/main/ui/workspace/main_menu.cljs:930
 msgid "workspace.header.menu.option.help-info"
 msgstr "Help & info"
+
+msgid "workspace.header.menu.option.mcp"
+msgstr "MCP server"
 
 #: src/app/main/ui/workspace/main_menu.cljs:916
 #, unused
