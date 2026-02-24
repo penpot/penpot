@@ -315,6 +315,7 @@ export {
   getModifierKeys,
 } from './store/shortcuts-store'
 export { setDocument, addPage, updatePage, deletePage, addNode, updateNode, deleteNode, createNewDocument } from './store/page-crud'
+export { commitPageUpdate, type PageCommitPayload } from './store/commit'
 
 // Export renderer client lifecycle
 export { initRendererClient, cleanupRendererClient, RendererClientManager } from './renderer-init'

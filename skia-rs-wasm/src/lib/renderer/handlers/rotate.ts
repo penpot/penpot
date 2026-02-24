@@ -195,13 +195,26 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
           f: 0,
         }
         const finalRotation = Math.atan2(newTransform.b, newTransform.a) * (180 / Math.PI)
+        const centerX = newX + nw / 2
+        const centerY = newY + nh / 2
+        const localCorners: Point[] = [
+          { x: -nw / 2, y: -nh / 2 },
+          { x: nw / 2, y: -nh / 2 },
+          { x: nw / 2, y: nh / 2 },
+          { x: -nw / 2, y: nh / 2 },
+        ]
+        const points: Point[] = localCorners.map((p) => ({
+          x: centerX + newTransform.a * p.x + newTransform.c * p.y,
+          y: centerY + newTransform.b * p.x + newTransform.d * p.y,
+        }))
         const payload: Partial<PenpotNode> = {
           rotation: finalRotation,
           transform: newTransform,
+          selrect: makeSelrect(newX, newY, nw, nh),
+          points,
         }
         if (hasPosition) (payload as Record<string, unknown>).x = newX
         if (hasPosition) (payload as Record<string, unknown>).y = newY
-        payload.selrect = makeSelrect(newX, newY, nw, nh)
         payloadsById[id] = payload
       }
 

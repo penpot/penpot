@@ -16,9 +16,9 @@ import { getSelectionBounds, type Rect } from '../selection-bounds'
 export interface IDocumentModel {
   getSelectedNodes(selectedIds: Set<string>): PenpotNode[]
   getPage(id: string): PenpotPage | undefined
+  setPage(pageId: string, updatedPage: PenpotPage): void
   setActivePage(pageId: string): Promise<void>
   addPage(page: PenpotPage): Promise<void>
-  commitMove(pageId: string, updatedPage: PenpotPage): Promise<void>
   deletePage(pageId: string): Promise<void>
   addNode(node: PenpotNode): Promise<void>
   updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void>

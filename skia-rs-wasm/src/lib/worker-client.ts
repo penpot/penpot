@@ -3,6 +3,7 @@
  */
 
 import type { PenpotPage } from '@penpot-exporter/types'
+import { ensurePageShapePoints } from './renderer/store/ensure-shape-points'
 import type {
   WorkerMessage,
   SerializedMessage,
@@ -84,14 +85,16 @@ export class WorkerClient implements WorkerClientInterface {
    * Add a single page to the worker index
    */
   async addPage(page: PenpotPage): Promise<void> {
-    await this.sendMessage('index/initialize', { page })
+    const normalized = ensurePageShapePoints(page)
+    await this.sendMessage('index/initialize', { page: normalized })
   }
 
   /**
    * Update an existing page in the worker index
    */
   async updatePage(pageId: string, page: PenpotPage): Promise<void> {
-    await this.sendMessage('index/update', { pageId, page })
+    const normalized = ensurePageShapePoints(page)
+    await this.sendMessage('index/update', { pageId, page: normalized })
   }
 
   /**
