@@ -15,7 +15,6 @@
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.main-menu :as main-menu]
    [app.util.dom :as dom]
@@ -27,20 +26,16 @@
 ;; --- Header Component
 
 (mf/defc left-header*
-  [{:keys [file layout project page-id class]}]
-  (let [profile     (mf/deref refs/profile)
-        file-id     (:id file)
+  [{:keys [file layout project class]}]
+  (let [file-id     (:id file)
         file-name   (:name file)
         project-id  (:id project)
-        team-id     (:team-id project)
         shared?     (:is-shared file)
         persistence
         (mf/deref refs/persistence)
 
         persistence-status
         (get persistence :status)
-
-        read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
         editing*    (mf/use-state false)
         editing?    (deref editing*)
@@ -137,10 +132,5 @@
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
      [:div {:class (stl/css :menu-section)}
-      [:& main-menu/menu
-       {:layout layout
-        :file file
-        :profile profile
-        :read-only? read-only?
-        :team-id team-id
-        :page-id page-id}]]]))
+      [:> main-menu/menu* {:layout layout
+                           :file file}]]]))
