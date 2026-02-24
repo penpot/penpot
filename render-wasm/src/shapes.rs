@@ -705,9 +705,8 @@ impl Shape {
         self.invalidate_extrect();
     }
 
-    pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
+    pub fn set_svg_raw_content(&mut self, content: String) {
         self.shape_type = Type::SVGRaw(SVGRaw::from_content(content));
-        Ok(())
     }
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
