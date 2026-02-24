@@ -8,7 +8,7 @@ import { useCallback } from 'react'
 import { useWorkspaceStore } from '../../renderer/store/workspace-store'
 import { mousePosition$ } from '../../renderer/streams'
 import type { ResizeHandlePosition } from '../../renderer/types'
-import { HANDLE_SIZE_WORLD, matrixToRotationDeg } from './constants'
+import { HANDLE_SIZE_WORLD, getResizeCursor, getRotationCursor, matrixToRotationDeg } from './constants'
 import { SelectionRect } from './SelectionRect'
 import { ResizeHandles } from './ResizeHandles'
 import { MoveHitArea } from './MoveHitArea'
@@ -30,13 +30,17 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const selectionRect = useWorkspaceStore((state) => state.selectionRect)
   const isMoving = useWorkspaceStore((state) => state.isMoving)
   const setIsMoving = useWorkspaceStore((state) => state.setIsMoving)
+  const isResizing = useWorkspaceStore((state) => state.isResizing)
+  const resizeHandle = useWorkspaceStore((state) => state.resizeHandle)
   const setIsResizing = useWorkspaceStore((state) => state.setIsResizing)
   const setResizeHandle = useWorkspaceStore((state) => state.setResizeHandle)
+  const isRotating = useWorkspaceStore((state) => state.isRotating)
+  const rotationCorner = useWorkspaceStore((state) => state.rotationCorner)
   const setIsRotating = useWorkspaceStore((state) => state.setIsRotating)
+  const setRotationCorner = useWorkspaceStore((state) => state.setRotationCorner)
 
   const showSelectionRect = selectedIds.size > 0 && wasmSelectionRect != null && viewport != null && !isMoving
-  const singleSelection = selectedIds.size === 1
-  const showHandles = singleSelection && wasmSelectionRect != null && viewport != null && !isMoving
+  const showHandles = selectedIds.size >= 1 && wasmSelectionRect != null && viewport != null && !isMoving
 
   const hitSize = (HANDLE_SIZE_WORLD / zoom) / 2 * 2
 
@@ -86,30 +90,31 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   )
 
   const onRotationPointerDown = useCallback(
-    (e: React.PointerEvent) => {
+    (e: React.PointerEvent, position: ResizeHandlePosition) => {
       if (e.button !== 0) return
       e.preventDefault()
       e.stopPropagation()
       const pos = screenPositionFromEvent(e)
       if (pos) {
         mousePosition$.next(pos)
+        setRotationCorner(position)
         setIsRotating(true)
       }
       const target = e.currentTarget
       if (target instanceof Element) target.setPointerCapture(e.pointerId)
     },
-    [screenPositionFromEvent, setIsRotating]
+    [screenPositionFromEvent, setRotationCorner, setIsRotating]
   )
 
   const showAreaMarquee = isSelecting && selectionRect != null && viewport != null
   const areaMarqueeWorld =
     showAreaMarquee && viewport && selectionRect
       ? {
-          x: viewport.panX + (selectionRect.x ?? 0) / viewport.zoom,
-          y: viewport.panY + (selectionRect.y ?? 0) / viewport.zoom,
-          width: (selectionRect.width ?? 0) / viewport.zoom,
-          height: (selectionRect.height ?? 0) / viewport.zoom,
-        }
+        x: viewport.panX + (selectionRect.x ?? 0) / viewport.zoom,
+        y: viewport.panY + (selectionRect.y ?? 0) / viewport.zoom,
+        width: (selectionRect.width ?? 0) / viewport.zoom,
+        height: (selectionRect.height ?? 0) / viewport.zoom,
+      }
       : null
   const viewBox =
     viewport && canvasSize.width > 0 && canvasSize.height > 0
@@ -120,17 +125,23 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
   const rect =
     wasmSelectionRect != null
       ? {
-          x: -wasmSelectionRect.width / 2,
-          y: -wasmSelectionRect.height / 2,
-          width: wasmSelectionRect.width,
-          height: wasmSelectionRect.height,
-        }
+        x: -wasmSelectionRect.width / 2,
+        y: -wasmSelectionRect.height / 2,
+        width: wasmSelectionRect.width,
+        height: wasmSelectionRect.height,
+      }
       : null
   const transformStr =
     wasmSelectionRect != null
       ? `translate(${wasmSelectionRect.center.x},${wasmSelectionRect.center.y}) matrix(${wasmSelectionRect.transform.a},${wasmSelectionRect.transform.b},${wasmSelectionRect.transform.c},${wasmSelectionRect.transform.d},0,0)`
       : ''
   const rotationDeg = wasmSelectionRect != null ? matrixToRotationDeg(wasmSelectionRect.transform) : undefined
+  const overrideCursor =
+    isResizing && resizeHandle
+      ? getResizeCursor(resizeHandle, rotationDeg)
+      : isRotating && rotationCorner
+        ? getRotationCursor(rotationCorner, rotationDeg)
+        : null
 
   return (
     <svg
@@ -156,16 +167,20 @@ export function SelectionOverlay({ canvasSize, canvasRef }: SelectionOverlayProp
                 effectiveBounds={rect}
                 zoom={zoom}
                 rotationDeg={rotationDeg}
+                overrideCursor={overrideCursor}
                 onResizeHandlePointerDown={onResizeHandlePointerDown}
               />
               <MoveHitArea
                 bounds={rect}
                 hitSize={hitSize}
+                overrideCursor={overrideCursor}
                 onPointerDown={onSelectionRectPointerDown}
               />
               <RotationHitArea
                 bounds={rect}
                 zoom={zoom}
+                rotationDeg={rotationDeg}
+                overrideCursor={overrideCursor}
                 onPointerDown={onRotationPointerDown}
               />
             </>

@@ -41,6 +41,8 @@ export interface WorkspaceState {
   isResizing: boolean
   resizeHandle: ResizeHandlePosition | null
   isRotating: boolean
+  /** Corner that started the rotation drag; used to keep the same rotation cursor during drag. */
+  rotationCorner: ResizeHandlePosition | null
   /** When starting area selection with modifier: append (shift) or remove (shift+mod). */
   areaSelectionAppend: boolean
   areaSelectionRemove: boolean
@@ -70,6 +72,7 @@ export interface WorkspaceState {
   setIsResizing: (is: boolean) => void
   setResizeHandle: (handle: ResizeHandlePosition | null) => void
   setIsRotating: (is: boolean) => void
+  setRotationCorner: (corner: ResizeHandlePosition | null) => void
   setAreaSelectionMode: (append: boolean, remove: boolean) => void
   setViewport: (viewport: Viewport) => void
   setLastAppliedViewport: (vp: Viewport | null) => void
@@ -99,6 +102,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   isResizing: false,
   resizeHandle: null as ResizeHandlePosition | null,
   isRotating: false,
+  rotationCorner: null as ResizeHandlePosition | null,
   areaSelectionAppend: false,
   areaSelectionRemove: false,
   viewport: null,
@@ -141,6 +145,7 @@ export const useWorkspaceStore = create<WorkspaceState>()((set, get) => ({
   setIsResizing: (is) => set({ isResizing: is }),
   setResizeHandle: (handle) => set({ resizeHandle: handle }),
   setIsRotating: (is) => set({ isRotating: is }),
+  setRotationCorner: (corner) => set({ rotationCorner: corner }),
   setAreaSelectionMode: (append, remove) => set({ areaSelectionAppend: append, areaSelectionRemove: remove }),
   setViewport: (viewport) => set((s) => ({
     viewport,

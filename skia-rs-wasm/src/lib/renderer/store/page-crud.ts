@@ -140,35 +140,72 @@ export function applyResizeTransformToNode(
   const h = sr.height ?? 0
   if (w <= 0 || h <= 0) return null
 
-  const { a, b, c, d, e, f } = matrix
-  const transform = (px: number, py: number) => ({
-    x: a * px + c * py + e,
-    y: b * px + d * py + f,
-  })
-  const corners = [
-    transform(x, y),
-    transform(x + w, y),
-    transform(x + w, y + h),
-    transform(x, y + h),
-  ]
-  const minX = Math.min(...corners.map((p) => p.x))
-  const minY = Math.min(...corners.map((p) => p.y))
-  const maxX = Math.max(...corners.map((p) => p.x))
-  const maxY = Math.max(...corners.map((p) => p.y))
-  const newWidth = maxX - minX
-  const newHeight = maxY - minY
-  const selrect = makeSelrect(minX, minY, newWidth, newHeight)
+  const { a: ma, b: mb, c: mc, d: md, e: me, f: mf } = matrix
+  const T = (node as { transform?: { a: number; b: number; c: number; d: number } }).transform
 
-  const points = (node.points as { x: number; y: number }[] | undefined)?.map((p) =>
-    transform(p.x, p.y)
-  )
+  // Shape center in world space
+  const cx = x + w / 2
+  const cy = y + h / 2
+
+  // Compute world-space corners by applying the shape's own transform (T)
+  // around the selrect center, matching WASM's calculate_bounds(true) logic.
+  const worldCorner = (dx: number, dy: number): { x: number; y: number } => {
+    if (!T) return { x: cx + dx, y: cy + dy }
+    return {
+      x: cx + T.a * dx + T.c * dy,
+      y: cy + T.b * dx + T.d * dy,
+    }
+  }
+
+  const wNw = worldCorner(-w / 2, -h / 2)
+  const wNe = worldCorner(w / 2, -h / 2)
+  const wSe = worldCorner(w / 2, h / 2)
+  const wSw = worldCorner(-w / 2, h / 2)
+
+  // Apply resize matrix M to each world corner
+  const applyM = (p: { x: number; y: number }): { x: number; y: number } => ({
+    x: ma * p.x + mc * p.y + me,
+    y: mb * p.x + md * p.y + mf,
+  })
+
+  const newNw = applyM(wNw)
+  const newNe = applyM(wNe)
+  const newSe = applyM(wSe)
+  const newSw = applyM(wSw)
+
+  // New center = M applied to old center
+  const newCx = ma * cx + mc * cy + me
+  const newCy = mb * cx + md * cy + mf
+
+  // New physical dimensions (distances between corners)
+  const newWidth = Math.sqrt((newNe.x - newNw.x) ** 2 + (newNe.y - newNw.y) ** 2)
+  const newHeight = Math.sqrt((newSw.x - newNw.x) ** 2 + (newSw.y - newNw.y) ** 2)
+
+  if (newWidth <= 0 || newHeight <= 0) return null
+
+  // New selrect: centered at newCenter, axis-aligned with new dimensions
+  // (matching Penpot convention: selrect is in the shape's local/unrotated frame)
+  const newX = newCx - newWidth / 2
+  const newY = newCy - newHeight / 2
+  const selrect = makeSelrect(newX, newY, newWidth, newHeight)
+
+  // New transform: derived from nw→ne and nw→sw directions of the transformed bounds,
+  // exactly matching WASM's Bounds::transform_matrix() logic.
+  const hvx = (newNe.x - newNw.x) / newWidth
+  const hvy = (newNe.y - newNw.y) / newWidth
+  const vvx = (newSw.x - newNw.x) / newHeight
+  const vvy = (newSw.y - newNw.y) / newHeight
+  const newTransform = { a: hvx, b: hvy, c: vvx, d: vvy, e: 0, f: 0 }
+
+  const points = [newNw, newNe, newSe, newSw]
 
   const updates: Partial<PenpotNode> = {
     selrect,
-    ...(points && { points }),
+    points,
+    transform: newTransform as PenpotNode['transform'],
   }
-  if (typeof node.x === 'number') updates.x = minX
-  if (typeof node.y === 'number') updates.y = minY
+  if (typeof node.x === 'number') updates.x = newX
+  if (typeof node.y === 'number') updates.y = newY
   if (typeof (node as { width?: number }).width === 'number') (updates as { width?: number }).width = newWidth
   if (typeof (node as { height?: number }).height === 'number') (updates as { height?: number }).height = newHeight
   return updates

@@ -4,20 +4,24 @@
  * bottom-right, bottom-left; each a rect outside the corner with rotate cursor).
  */
 import { useMemo } from 'react'
-import { ROTATION_CURSOR, ROTATION_HANDLE_SIZE_WORLD } from './constants'
+import type { ResizeHandlePosition } from '../../renderer/types'
+import { ROTATION_HANDLE_SIZE_WORLD, getRotationCursor } from './constants'
 
 export interface RotationHitAreaProps {
   bounds: { x: number; y: number; width: number; height: number }
   zoom: number
-  onPointerDown: (e: React.PointerEvent) => void
+  rotationDeg?: number
+  /** When set (e.g. during rotation drag), use this cursor on all corners so it stays consistent. */
+  overrideCursor?: string | null
+  onPointerDown: (e: React.PointerEvent, position: ResizeHandlePosition) => void
 }
 
-export function RotationHitArea({ bounds, zoom, onPointerDown }: RotationHitAreaProps) {
+export function RotationHitArea({ bounds, zoom, rotationDeg, overrideCursor, onPointerDown }: RotationHitAreaProps) {
   const size = ROTATION_HANDLE_SIZE_WORLD / zoom
 
   const handleRects = useMemo(() => {
     const { x, y, width, height } = bounds
-    const corners: Array<{ position: string; cx: number; cy: number; dx: number; dy: number }> = [
+    const corners: Array<{ position: ResizeHandlePosition; cx: number; cy: number; dx: number; dy: number }> = [
       { position: 'top-left', cx: x, cy: y, dx: size, dy: size },
       { position: 'top-right', cx: x + width, cy: y, dx: 0, dy: size },
       { position: 'bottom-right', cx: x + width, cy: y + height, dx: 0, dy: 0 },
@@ -25,6 +29,7 @@ export function RotationHitArea({ bounds, zoom, onPointerDown }: RotationHitArea
     ]
     return corners.map(({ position, cx, cy, dx, dy }) => ({
       key: position,
+      position,
       x: cx - dx,
       y: cy - dy,
       width: size,
@@ -34,7 +39,7 @@ export function RotationHitArea({ bounds, zoom, onPointerDown }: RotationHitArea
 
   return (
     <>
-      {handleRects.map(({ key, x, y, width, height }) => (
+      {handleRects.map(({ key, position, x, y, width, height }) => (
         <rect
           key={key}
           x={x}
@@ -42,8 +47,11 @@ export function RotationHitArea({ bounds, zoom, onPointerDown }: RotationHitArea
           width={width}
           height={height}
           fill="transparent"
-          style={{ pointerEvents: 'auto', cursor: ROTATION_CURSOR }}
-          onPointerDown={onPointerDown}
+          style={{
+            pointerEvents: 'auto',
+            cursor: overrideCursor ?? getRotationCursor(position, rotationDeg ?? 0),
+          }}
+          onPointerDown={(e) => onPointerDown(e, position)}
         />
       ))}
     </>
