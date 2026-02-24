@@ -305,7 +305,7 @@
            (if (:nitrate-licence profile)
              ;; TODO update when org creation route is ready
              (dom/open-new-window "/control-center/org/create")
-             (st/emit! (dnt/show-nitrate-popup)))))]
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
 
     [:> dropdown-menu* props
 
@@ -551,7 +551,7 @@
            (if (:nitrate-licence profile)
              ;; TODO update when org creation route is ready
              (dom/open-new-window "/control-center/org/create")
-             (st/emit! (dnt/show-nitrate-popup)))))]
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if empty?
       [:div {:class (stl/css :nitrate-orgs-empty)}
        [:span {:class (stl/css :nitrate-penpot-icon)}

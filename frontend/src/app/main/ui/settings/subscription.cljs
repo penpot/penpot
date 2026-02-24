@@ -8,6 +8,7 @@
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -416,11 +417,13 @@
          (fn [subscription-type current-subscription]
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings:in-app"}))
-           (st/emit!
-            (modal/show :management-dialog
-                        {:subscription-type subscription-type
-                         :current-subscription current-subscription
-                         :editors subscription-editors :subscribe-to-trial (not (:type subscription))}))))]
+           (if (= subscription-type "nitrate")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog))
+             (st/emit!
+              (modal/show :management-dialog
+                          {:subscription-type subscription-type
+                           :current-subscription current-subscription
+                           :editors subscription-editors :subscribe-to-trial (not (:type subscription))})))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -589,8 +592,91 @@
                                     "Acceso exclusivo al Control Center"
                                     "Lorem ipsum"]
                          :cta-text (tr "subscription.settings.subscribe")
-                         ;; TODO add link to open nitrate modal
-                         :cta-link #(dom/open-new-window "https://penpot.app/nitrate")
+                         :cta-link #(open-subscription-modal "nitrate" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])]]]))
+
+
+(def ^:private schema:nitrate-form
+  [:map {:title "NitrateForm"}
+   [:subscription [::sm/one-of #{:monthly :yearly}]]])
+
+(mf/defc subscribe-nitrate-dialog
+  {::mf/register modal/components
+   ::mf/register-as :nitrate-dialog}
+  [connectivity]
+  ;; TODO add translations for this texts when we have the definitive ones
+  (let [online? (:licenses connectivity)
+        initial (mf/with-memo []
+                  {:subscription "yearly"})
+        form     (fm/use-form :schema schema:nitrate-form
+                              :initial initial)
+
+        handle-close-dialog
+        (mf/use-fn
+         (fn []
+           (modal/hide!)))
+
+        on-submit
+        (mf/use-fn
+         (mf/deps form)
+         (fn []
+           (let [params (:clean-data @form)]
+             (dom/open-new-window (str "/control-center/licenses/start?subscription=" (name (:subscription params)))))))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
+       [:> icon* {:icon-id "close"
+                  :size "m"}]]
+      [:div {:class (stl/css :modal-title :subscription-title)}
+       "Subcribe to the Business Nitrate plan"]
+
+      (if online?
+        [:div {:class (stl/css :modal-content)}
+
+
+
+         [:div {:class (stl/css :modal-text)}
+          "Lorem ipsum lorem ipsum:"]
+
+
+         [:& fm/form {:on-submit on-submit
+                      :class (stl/css :seats-form)
+                      :form form}
+
+          [:*
+           [:div {:class (stl/css :editors-wrapper)}
+            [:div {:class (stl/css :fields-row)}
+             [:& fm/radio-buttons
+              {:options [{:label "Price Tag Yearly (Discount)" :value "yearly"}
+                         {:label "Price Tag Montly" :value "monthly"}]
+               :name :subscription
+               :class (stl/css :radio-btns)}]]]
+           [:div {:class (stl/css :modal-text)}
+            "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."]
+
+
+
+           [:div {:class (stl/css :modal-footer)}
+            [:div {:class (stl/css :action-buttons)}
+             [:input
+              {:class (stl/css :cancel-button)
+               :type "button"
+               :value (tr "ds.confirm-cancel")
+               :on-click handle-close-dialog}]
+
+             [:> fm/submit-button*
+              {:label "TRY 14 DAYS FOR FREE"
+               :class (stl/css :primary-button)}]]]]]]
+        [:div {:class (stl/css :modal-content :modal-contact-content)}
+         [:div {:class (stl/css :modal-text)}
+          "Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum"]
+         [:div {:class (stl/css :modal-text)}
+          "Contact us to upgrade to Nitrate:"]
+         [:div {:class (stl/css :modal-text)}
+          [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
+           "sales@penpot.app"]]])]]))
+
+
 

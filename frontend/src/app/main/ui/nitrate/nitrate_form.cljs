@@ -26,7 +26,7 @@
    ::mf/wrap-props true}
   [connectivity]
 
-  (let [show-buttons (:licenses connectivity)
+  (let [online? (:licenses connectivity)
         initial (mf/with-memo []
                   {:subscription "yearly"})
         form     (fm/use-form :schema schema:nitrate-form
@@ -58,7 +58,7 @@
          "Sail ho shrouds spirits boom mizzenmast yardarm. Pinnace holystone mizzenmast quarter crow's nest nipperkin grog yardarm hempen halter furl."]
         [:p {:class (stl/css :modal-text-large)}
          "Deadlights jack lad schooner scallywag dance the hempen jig carouser broadside cable strike colors."]
-        (if show-buttons
+        (if online?
           [:& fm/form {:form form}
            [:p {:class (stl/css :modal-text-large)}
 
