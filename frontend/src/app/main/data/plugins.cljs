@@ -14,6 +14,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
+   [app.plugins.flags :as pflag]
    [app.plugins.register :as preg]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -44,20 +45,6 @@
     (update [_ state]
       (update-in state [:workspace-local :open-plugins] (fnil conj #{}) id))))
 
-(defn reset-plugin-flags
-  [id]
-  (ptk/reify ::reset-plugin-flags
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :plugin-flags] assoc id {}))))
-
-(defn set-plugin-flag
-  [id key value]
-  (ptk/reify ::set-plugin-flag
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :plugin-flags id] assoc key value))))
-
 (defn remove-current-plugin
   [id]
   (ptk/reify ::remove-current-plugin
@@ -68,8 +55,8 @@
 (defn- load-plugin!
   [{:keys [plugin-id name description host code icon permissions]}]
   (try
-    (st/emit! (save-current-plugin plugin-id)
-              (reset-plugin-flags plugin-id))
+    (st/emit! (pflag/clear plugin-id)
+              (save-current-plugin plugin-id))
 
     (.ɵloadPlugin
      ^js ug/global
