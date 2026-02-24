@@ -221,6 +221,24 @@
                         (pcb/delete-color id))]
         (rx/of (dch/commit-changes changes))))))
 
+(defn duplicate-color
+  [file-id color-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (assert (uuid? color-id) "expected valid uuid for `color-id`")
+
+  (ptk/reify ::duplicate-color
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data      (dsh/lookup-file-data state)
+            color     (ctl/get-color data color-id)
+            new-color (-> color
+                          (assoc :id (uuid/next))
+                          (d/without-nils)
+                          (ctc/check-library-color))
+            changes   (-> (pcb/empty-changes it)
+                          (pcb/add-color new-color))]
+        (rx/of (dch/commit-changes changes))))))
+
 ;; FIXME: this should be deleted
 (defn add-media
   [media]
@@ -348,6 +366,23 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-typography id))]
+        (rx/of (dch/commit-changes changes))))))
+
+(defn duplicate-typography
+  [file-id typography-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (assert (uuid? typography-id) "expected valid uuid for `typography-id`")
+
+  (ptk/reify ::duplicate-typography
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data           (dsh/lookup-file-data state)
+            typography     (get-in data [:typographies typography-id])
+            new-typography (-> typography
+                               (assoc :id (uuid/next))
+                               (ctt/check-typography))
+            changes        (-> (pcb/empty-changes it)
+                               (pcb/add-typography new-typography))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn- add-component2

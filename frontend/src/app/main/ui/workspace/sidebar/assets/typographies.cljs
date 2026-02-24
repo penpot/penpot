@@ -377,6 +377,12 @@
                          (dwl/sync-file file-id file-id :typographies (:id @state))
                          (dwu/commit-undo-transaction undo-id))))))
 
+        handle-duplicate-typography
+        (mf/use-fn
+         (mf/deps file-id @state)
+         (fn []
+           (st/emit! (dwl/duplicate-typography file-id (:id @state)))))
+
         editing-id (:edit-typography local-data)
 
         renaming-id (:rename-typography local-data)
@@ -439,6 +445,11 @@
                        {:name    (tr "workspace.assets.edit")
                         :id      "assets-edit-typography"
                         :handler handle-edit-typography-clicked})
+
+                     (when-not (or multi-typographies? multi-assets?)
+                       {:name    (tr "workspace.assets.duplicate")
+                        :id      "assets-duplicate-typography"
+                        :handler handle-duplicate-typography})
 
                      {:name    (tr "workspace.assets.delete")
                       :id      "assets-delete-typography"
