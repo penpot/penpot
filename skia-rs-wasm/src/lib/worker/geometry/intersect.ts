@@ -3,13 +3,33 @@
  */
 
 import type { Point, PenpotNode, Selrect } from '@penpot-exporter/types'
+import type { Matrix } from '@penpot-exporter/types'
 import type { Line } from '@skia-rs-wasm/common'
 import { makeSelrect } from '@skia-rs-wasm/common'
-import { rectToPoints } from './rect'
+import { rectToPoints, rectToCenter } from './rect'
 import { point } from './point'
 import { isPathShape, isBoolShape, isCircleShape, isTextShape } from './shapes'
 
 const EPSILON = 1e-10
+
+function isIdentityTransform(t: Matrix | null | undefined): boolean {
+  if (!t) return true
+  return (
+    Math.abs(t.a - 1) < EPSILON &&
+    Math.abs(t.b) < EPSILON &&
+    Math.abs(t.c) < EPSILON &&
+    Math.abs(t.d - 1) < EPSILON &&
+    Math.abs(t.e) < EPSILON &&
+    Math.abs(t.f) < EPSILON
+  )
+}
+
+function transformPoint(pt: Point, t: Matrix): Point {
+  return point(
+    t.a * pt.x + t.c * pt.y + t.e,
+    t.b * pt.x + t.d * pt.y + t.f
+  )
+}
 
 function almostZero(value: number): boolean {
   return Math.abs(value) < EPSILON
@@ -313,6 +333,41 @@ function getShapePointsForOverlap(shape: PenpotNode): Point[] {
   return pts ?? []
 }
 
+/**
+ * Return shape corners in world space. When the shape has a non-identity transform (e.g. rotation),
+ * applies transform around selrect center so hit-testing works for rotated shapes.
+ */
+function getShapePointsInWorldSpace(shape: PenpotNode): Point[] {
+  const sr = shape.selrect as (Selrect & { x1?: number; y1?: number; x2?: number; y2?: number }) | null | undefined
+  if (!sr) return getShapePointsForOverlap(shape)
+  const x = sr.x ?? sr.x1
+  const y = sr.y ?? sr.y1
+  const width = sr.width ?? (typeof sr.x2 === 'number' && typeof sr.x1 === 'number' ? sr.x2 - sr.x1 : 0)
+  const height = sr.height ?? (typeof sr.y2 === 'number' && typeof sr.y1 === 'number' ? sr.y2 - sr.y1 : 0)
+  if (typeof x !== 'number' || typeof y !== 'number' || width <= 0 || height <= 0) return getShapePointsForOverlap(shape)
+
+  const center = rectToCenter(makeSelrect(x, y, width, height))
+  if (!center) return getShapePointsForOverlap(shape)
+
+  const transform = (shape as { transform?: Matrix }).transform
+  if (!transform || isIdentityTransform(transform)) {
+    return getShapePointsForOverlap(shape)
+  }
+
+  const w2 = width / 2
+  const h2 = height / 2
+  const localCorners: Point[] = [
+    point(-w2, -h2),
+    point(w2, -h2),
+    point(w2, h2),
+    point(-w2, h2),
+  ]
+  return localCorners.map((pt) => {
+    const t = transformPoint(pt, transform)
+    return point(t.x + center.x, t.y + center.y)
+  })
+}
+
 export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean = false): boolean {
   if (!shape) {
     return false
@@ -338,7 +393,7 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     const shapeType = shape.type
 
     if (shapeType === 'rect' || shapeType === 'circle') {
-      return overlapsRectPoints(adjustedRect, getShapePointsForOverlap(shape))
+      return overlapsRectPoints(adjustedRect, getShapePointsInWorldSpace(shape))
     }
 
     if (shapeType === 'path' || shapeType === 'bool') {
@@ -356,7 +411,7 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
   }
 
   if (isCircleShape(shape)) {
-    const points = getShapePointsForOverlap(shape)
+    const points = getShapePointsInWorldSpace(shape)
     return overlapsRectPoints(adjustedRect, points) && overlapsEllipse(shape, adjustedRect)
   }
 
@@ -364,8 +419,8 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     return overlapsText(shape, adjustedRect)
   }
 
-  // Default: check rect points overlap (rect/circle etc. – use points or selrect-derived points)
-  const points = getShapePointsForOverlap(shape)
+  // Default: check rect points overlap (rect/circle/group etc. – use world-space corners when rotated)
+  const points = getShapePointsInWorldSpace(shape)
   return points.length > 0 && overlapsRectPoints(adjustedRect, points)
 }
 
