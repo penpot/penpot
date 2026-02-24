@@ -9,11 +9,12 @@ import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
-import { updateNode, applyResizeTransformToNode } from '../store/page-crud'
+import { updatePage, applyResizeTransformToNode } from '../store/page-crud'
 import { makeSelrect } from '@skia-rs-wasm/common'
 import type { Point } from '@skia-rs-wasm/common'
-import type { Matrix } from '@penpot-exporter/types'
+import type { Matrix, PenpotNode } from '@penpot-exporter/types'
 import type { ResizeHandlePosition } from '../types'
+import { matrixToRotationDeg } from '../../components/selection-overlay/constants'
 
 const MIN_SIZE = 1
 
@@ -101,24 +102,22 @@ export function startResizeSelected(
   handle: ResizeHandlePosition
 ): Observable<void> {
   const state = useWorkspaceStore.getState()
-  const { renderer, viewport, selectedIds } = state
-  const selectedId = selectedIds.size ? Array.from(selectedIds)[0] : null
-  
-  const node = state.selectedNodes?.[0]
-  if (!renderer || !viewport || selectedIds.size !== 1 || !selectedId || !node || node.id !== selectedId) return EMPTY
+  const { renderer, viewport, selectedIds, wasmSelectionRect, selectedNodes } = state
+  if (!renderer || !viewport || selectedIds.size < 1 || !wasmSelectionRect) return EMPTY
 
-  const { x, y, width: w, height: h } = node.selrect
-  const width = w <= 0 ? MIN_SIZE : w
-  const height = h <= 0 ? MIN_SIZE : h
+  const x = wasmSelectionRect.center.x - wasmSelectionRect.width / 2
+  const y = wasmSelectionRect.center.y - wasmSelectionRect.height / 2
+  const width = wasmSelectionRect.width <= 0 ? MIN_SIZE : wasmSelectionRect.width
+  const height = wasmSelectionRect.height <= 0 ? MIN_SIZE : wasmSelectionRect.height
+  const rotationDeg = matrixToRotationDeg(wasmSelectionRect.transform)
+  const cx = x + width / 2
+  const cy = y + height / 2
+  const hasRotation = rotationDeg !== 0
 
   const stopper = dragStopper()
   const zoom = viewport.zoom
   const mult = getHandlerMultiplier(handle)
   const origin = getHandlerResizeOrigin(x, y, width, height, handle)
-  const rotationDeg = (node as { rotation?: number }).rotation
-  const cx = x + width / 2
-  const cy = y + height / 2
-  const hasRotation = rotationDeg !== undefined && rotationDeg !== 0
 
   const theta_r = hasRotation ? (rotationDeg! * Math.PI) / 180 : 0
   const cos_r = Math.cos(theta_r)
@@ -160,7 +159,8 @@ export function startResizeSelected(
       let sy = (height + deltav.y) / height
       sx = noZero(sx, 0.001)
       sy = noZero(sy, 0.001)
-      const lock = getModifierKeys().shift
+      const keys = getModifierKeys()
+      const lock = keys.shift
       if (lock) {
         const s = Math.max(Math.abs(sx), Math.abs(sy))
         sx = sx < 0 ? -s : s
@@ -197,7 +197,11 @@ export function startResizeSelected(
         requestAnimationFrame(() => {
           rafScheduledRef.current = false
           modifiersAppliedRef.current = true
-          renderer.setMoveModifiersAndRender([[selectedId, latestMatrixRef.current]])
+          const entries: Array<[string, Matrix]> = Array.from(selectedIds).map((id) => [
+            id,
+            latestMatrixRef.current,
+          ])
+          renderer.setMoveModifiersAndRender(entries)
           useWorkspaceStore.getState().refreshWasmSelectionRect()
         })
       }
@@ -220,7 +224,53 @@ export function startResizeSelected(
         return
       }
 
-      let updates: Partial<typeof node> | null
+      const ids = Array.from(selectedIds)
+
+      if (ids.length > 1) {
+        const M = latestMatrixRef.current
+        const store = useWorkspaceStore.getState()
+        const pageId = store.pageId
+        const documentModel = store.documentModel
+        if (!pageId || !documentModel) {
+          clearResizeState()
+          return
+        }
+        const page = documentModel.getPage(pageId)
+        if (!page) {
+          clearResizeState()
+          return
+        }
+        const payloadsById: Record<string, Partial<PenpotNode>> = {}
+        for (const id of ids) {
+          const node = selectedNodes?.find((n) => n.id === id)
+          const updates = node ? applyResizeTransformToNode(node, M) : null
+          if (node && updates) payloadsById[id] = updates
+        }
+        const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
+          n.id && payloadsById[n.id] ? { ...n, ...payloadsById[n.id] } : n
+        )
+        updatePage({ ...page, pageId, children: updatedChildren })
+          .then(() => {
+            renderer.cleanModifiers()
+            useWorkspaceStore.getState().refreshWasmSelectionRect()
+            clearResizeState()
+          })
+          .catch(() => {
+            renderer.cleanModifiers()
+            useWorkspaceStore.getState().refreshWasmSelectionRect()
+            clearResizeState()
+          })
+        return
+      }
+
+      const node = selectedNodes?.[0]
+      const selectedId = ids[0]
+      if (!node || node.id !== selectedId) {
+        clearResizeState()
+        return
+      }
+
+      let updates: Partial<PenpotNode> | null
       if (hasRotation) {
         const ml = latestLocalMatrixRef.current
         const mw = latestMatrixRef.current
@@ -246,7 +296,7 @@ export function startResizeSelected(
           x: cos_r * (p.x - corrCx) - sin_r * (p.y - corrCy) + corrCx,
           y: sin_r * (p.x - corrCx) + cos_r * (p.y - corrCy) + corrCy,
         }))
-        updates = { selrect, points } as Partial<typeof node>
+        updates = { selrect, points }
         if (typeof node.x === 'number') (updates as Record<string, unknown>).x = corrX
         if (typeof node.y === 'number') (updates as Record<string, unknown>).y = corrY
         if (typeof (node as { width?: number }).width === 'number') (updates as Record<string, unknown>).width = nlw
@@ -259,7 +309,23 @@ export function startResizeSelected(
         clearResizeState()
         return
       }
-      updateNode(selectedId, updates)
+
+      const store = useWorkspaceStore.getState()
+      const pageId = store.pageId
+      const documentModel = store.documentModel
+      if (!pageId || !documentModel) {
+        clearResizeState()
+        return
+      }
+      const page = documentModel.getPage(pageId)
+      if (!page) {
+        clearResizeState()
+        return
+      }
+      const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
+        n.id === selectedId ? { ...n, ...updates } : n
+      )
+      updatePage({ ...page, pageId, children: updatedChildren })
         .then(() => {
           renderer.cleanModifiers()
           useWorkspaceStore.getState().refreshWasmSelectionRect()

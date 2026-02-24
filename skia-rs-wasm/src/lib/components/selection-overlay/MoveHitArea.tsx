@@ -3,10 +3,12 @@ import { useMemo } from 'react'
 export interface MoveHitAreaProps {
   bounds: { x: number; y: number; width: number; height: number }
   hitSize: number
+  /** When set (e.g. during resize/rotation drag), use this cursor so it stays consistent. */
+  overrideCursor?: string | null
   onPointerDown: (e: React.PointerEvent) => void
 }
 
-export function MoveHitArea({ bounds, hitSize, onPointerDown }: MoveHitAreaProps) {
+export function MoveHitArea({ bounds, hitSize, overrideCursor, onPointerDown }: MoveHitAreaProps) {
   const innerRect = useMemo(() => {
     const { x, y, width, height } = bounds
     const inset = hitSize
@@ -25,7 +27,7 @@ export function MoveHitArea({ bounds, hitSize, onPointerDown }: MoveHitAreaProps
       width={innerRect.width}
       height={innerRect.height}
       fill="transparent"
-      style={{ pointerEvents: 'auto', cursor: 'default' }}
+      style={{ pointerEvents: 'auto', cursor: overrideCursor ?? 'default' }}
       onPointerDown={onPointerDown}
     />
   )
