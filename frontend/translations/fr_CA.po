@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-22 16:09+0000\n"
+"PO-Revision-Date: 2026-02-24 02:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -7626,7 +7626,7 @@ msgstr "Grouper"
 
 #: src/app/main/ui/workspace/context_menu.cljs:477, src/app/main/ui/workspace/sidebar/layer_item.cljs:172
 msgid "workspace.shape.menu.hide"
-msgstr "Afficher/Masquer"
+msgstr "Masquer"
 
 #: src/app/main/ui/workspace/context_menu.cljs:706, src/app/main/ui/workspace/main_menu.cljs:448
 msgid "workspace.shape.menu.hide-ui"
@@ -7683,3 +7683,418 @@ msgstr "Annuler les modifications"
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:499
 msgid "workspace.shape.menu.restore-main"
 msgstr "Restaurer le composant principal"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:498
+msgid "workspace.shape.menu.restore-variant"
+msgstr "Restaurer le variant"
+
+#: src/app/main/ui/workspace/context_menu.cljs:263
+msgid "workspace.shape.menu.select-layer"
+msgstr "Sélectionner le calque"
+
+#: src/app/main/ui/workspace/context_menu.cljs:474, src/app/main/ui/workspace/sidebar/layer_item.cljs:171
+msgid "workspace.shape.menu.show"
+msgstr "Afficher"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1217
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Afficher dans le panneau d'atouts"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:502, src/app/main/ui/workspace/sidebar/assets/components.cljs:629
+msgid "workspace.shape.menu.show-main"
+msgstr "Afficher le composant principal"
+
+#: src/app/main/ui/workspace/context_menu.cljs:314
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Supprimer l'imagette"
+
+#: src/app/main/ui/workspace/context_menu.cljs:316
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Définir en tant qu'imagette"
+
+#: src/app/main/ui/workspace/context_menu.cljs:436
+#, unused
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transformer en chemin"
+
+#: src/app/main/ui/workspace/context_menu.cljs:364
+msgid "workspace.shape.menu.ungroup"
+msgstr "Dégroupper"
+
+#: src/app/main/ui/workspace/context_menu.cljs:444, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
+msgid "workspace.shape.menu.union"
+msgstr "Union"
+
+#: src/app/main/ui/workspace/context_menu.cljs:482, src/app/main/ui/workspace/sidebar/layer_item.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:274
+msgid "workspace.shape.menu.unlock"
+msgstr "Déverrouiller"
+
+#: src/app/main/ui/workspace/context_menu.cljs:378
+msgid "workspace.shape.menu.unmask"
+msgstr "Retirer le masque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Mettre à jour les composants"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:505
+msgid "workspace.shape.menu.update-main"
+msgstr "Mettre à jour le composant principal"
+
+#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:62
+msgid "workspace.sidebar.collapse"
+msgstr "Réduire le panneau latéral"
+
+#: src/app/main/ui/workspace/sidebar.cljs:73, src/app/main/ui/workspace/sidebar.cljs:77
+msgid "workspace.sidebar.expand"
+msgstr "Afficher le panneau latéral"
+
+#: src/app/main/ui/workspace/right_header.cljs:226
+msgid "workspace.sidebar.history"
+msgstr "Historique"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:509, src/app/main/ui/workspace/sidebar.cljs:154, src/app/main/ui/workspace/sidebar.cljs:157, src/app/main/ui/workspace/sidebar.cljs:164
+msgid "workspace.sidebar.layers"
+msgstr "Calques"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:374
+msgid "workspace.sidebar.layers.components"
+msgstr "Composants"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:297
+msgid "workspace.sidebar.layers.filter"
+msgstr "Filtrer"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:338
+msgid "workspace.sidebar.layers.frames"
+msgstr "Tableaux"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:350
+msgid "workspace.sidebar.layers.groups"
+msgstr "Groupes"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:398
+msgid "workspace.sidebar.layers.images"
+msgstr "Images"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:362
+msgid "workspace.sidebar.layers.masks"
+msgstr "Masques"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:293
+msgid "workspace.sidebar.layers.search"
+msgstr "Recherche de calques"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Formes"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:386
+msgid "workspace.sidebar.layers.texts"
+msgstr "Textes"
+
+#: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Attributs SVG importés"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:264
+msgid "workspace.sidebar.sitemap"
+msgstr "Pages"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:274
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Ajouter une page"
+
+#: src/app/main/ui/workspace/left_header.cljs:98
+msgid "workspace.sitemap"
+msgstr "Plan du site"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:86
+msgid "workspace.tokens.active-themes"
+msgstr "%s thèmes actifs"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.tokens.add set"
+msgstr "Ajouter un ensemble"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:151, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:347
+msgid "workspace.tokens.add-new-theme"
+msgstr "Ajouter un nouveau thème"
+
+#: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:62
+msgid "workspace.tokens.add-set-to-group"
+msgstr "Ajouter un ensemble à ce groupe"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:196, src/app/main/ui/workspace/tokens/management/group.cljs:156
+msgid "workspace.tokens.add-token"
+msgstr "Ajouter un token : %s"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
+msgid "workspace.tokens.applied-to"
+msgstr "Appliqué à"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:330
+msgid "workspace.tokens.axis"
+msgstr "Axe"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:356
+msgid "workspace.tokens.back-to-themes"
+msgstr "Retour à la liste des thèmes"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:89
+msgid "workspace.tokens.base-font-size"
+msgstr "Taille de police de base"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:43
+msgid "workspace.tokens.base-font-size.error"
+msgstr ""
+"La taille de police de base doit être une valeur en pixels ou sans unité."
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+#, unused
+msgid "workspace.tokens.choose-file"
+msgstr "Choisir un fichier"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+#, unused
+msgid "workspace.tokens.choose-folder"
+msgstr "Choisir un dossier"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:299, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:130
+msgid "workspace.tokens.color"
+msgstr "Couleur"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"La hauteur de ligne dépend de la taille de police. Ajouter une taille de "
+"police pour obtenir la valeur calculée."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:57
+msgid "workspace.tokens.create-new-theme"
+msgstr "Crée le premier thème dès maintenant."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:96, src/app/main/ui/workspace/tokens/themes.cljs:44
+msgid "workspace.tokens.create-one"
+msgstr "En créer un."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:235
+msgid "workspace.tokens.create-token"
+msgstr "Créer un nouveau token %s"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:353
+msgid "workspace.tokens.delete"
+msgstr "Supprimer le token"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:140
+msgid "workspace.tokens.delete-theme-title"
+msgstr "Supprimer le thème"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:350
+msgid "workspace.tokens.duplicate"
+msgstr "Dupliquer le token"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
+msgid "workspace.tokens.duplicate-suffix"
+msgstr "copier"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
+msgid "workspace.tokens.edit"
+msgstr "Éditer le token"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:346
+msgid "workspace.tokens.edit-theme-title"
+msgstr "Édition du thème"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:74
+msgid "workspace.tokens.edit-themes"
+msgstr "Éditer les thèmes"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:234
+msgid "workspace.tokens.edit-token"
+msgstr "Édition du token %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:41
+msgid "workspace.tokens.empty-input"
+msgstr "La valeur du token ne peut être nulle"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
+msgid "workspace.tokens.enter-token-name"
+msgstr "Entrer le nom du token %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:15
+msgid "workspace.tokens.error-parse"
+msgstr "Erreur d'importation : impossible d'analyser le JSON."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:49
+msgid "workspace.tokens.export"
+msgstr "Exporter"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:125
+msgid "workspace.tokens.export-tokens"
+msgstr "Exporter les tokens"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:118
+msgid "workspace.tokens.export.multiple-files"
+msgstr "Plusieurs fichiers"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:38
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "Aucun token, thème ou ensemble à exporter."
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:35
+msgid "workspace.tokens.export.preview"
+msgstr "Aperçu :"
+
+#: src/app/main/ui/workspace/tokens/export/modal.cljs:116
+msgid "workspace.tokens.export.single-file"
+msgstr "Un seul fichier"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:129
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Taille de police ou {alias}"
+
+#: src/app/main/data/workspace/tokens/application.cljs:325
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Erreur de configuration de la graisse/style de la police. Ce style de police "
+"n'existe pas pour la police courante"
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:42, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:137
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Graisse de police (300, gras italique, etc.) ou un {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:240
+msgid "workspace.tokens.gaps"
+msgstr "Gouttières"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.generic-error"
+msgstr "Erreur : "
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:93
+msgid "workspace.tokens.group-name"
+msgstr "Nom du groupe"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.tokens.grouping-set-alert"
+msgstr "Le groupement des ensembles de tokens n'est pas encore supporté."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Importer %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.import-error"
+msgstr "Erreur d'importation :"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Dossier"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Fichier JSON seul"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "Fichier ZIP"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:241
+msgid "workspace.tokens.import-multiple-files"
+msgstr ""
+"En fichiers multiples. Le nom / chemin des fichiers seront les noms "
+"d'ensembles."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:240
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"En un fichier JSON seul. Les clés de premier niveau doivent être les noms "
+"des ensembles de tokens."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:237
+msgid "workspace.tokens.import-tokens"
+msgstr "Importation de tokens"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+#, unused
+msgid "workspace.tokens.import-tooltip"
+msgstr ""
+"Importer un fichier JSON écrasera tous les tokens, ensembles et thèmes "
+"actuels"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:247
+msgid "workspace.tokens.import-warning"
+msgstr "Importer des tokens écrasera tous les tokens, ensembles et thèmes."
+
+#: src/app/main/ui/workspace/tokens/management.cljs:78
+msgid "workspace.tokens.inactive-set"
+msgstr "Inactif"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:70
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Cet ensemble n'est pas actif. Change de thème ou active cet ensemble pour "
+"voir les changements dans l'espace de travail"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:240, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:195
+msgid "workspace.tokens.individual-tokens"
+msgstr "Tokens individuels"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "workspace.tokens.invalid-color"
+msgstr "Valeur de couleur invalide : %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-font-family-token-value"
+msgstr ""
+"Valeur de token invalide :le token de référence doit être de type famille de "
+"police de caractères"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Valeur de graisse de police invalide : utiliser une valeur numérique (100-"
+"950) ou des noms standards (mince, léger, régulier, gras, etc.), "
+"optionnellement suivis par « italique »"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json"
+msgstr "Erreur d'importation : token invalide dans le JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:27
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "Erreur d'importation : nom de token invalide dans le JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"« %s » n'est pas un nom de token valide.\n"
+"Les noms de tokens ne doivent contenir que des lettres et des chiffres "
+"séparés par le caractère . et ne peuvent commencer par le symbole $."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Type d'ombre invalide : seulement « innerShadow » et « dropShadow » sont "
+"acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Valeut de token invalide : seulement « none », « Uppercase », « Lowercase » "
+"ou « Capitalize » sont acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Valeur de token invalide : seulement « none », « underline » et « strike-"
+"through » sont acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:117
+msgid "workspace.tokens.invalid-token-value-shadow"
+msgstr "Valeur invalide : doit référencer un token d'ombre composé."
