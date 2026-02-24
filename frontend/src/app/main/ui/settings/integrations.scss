@@ -8,8 +8,9 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
-@use "ds/spacing.scss" as *;
 @use "ds/mixins.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
 
 .color-primary {
   color: var(--color-foreground-primary);
@@ -49,6 +50,7 @@
 .modal-container {
   @extend .modal-container-base;
   inline-size: $sz-400;
+  max-block-size: fit-content;
   position: relative;
 }
 
@@ -76,16 +78,20 @@
   gap: var(--sp-s);
 }
 
-.modal-token {
+.input-copy {
   position: relative;
 }
 
-.modal-token-button {
+.input-copy-button-wrapper {
   position: absolute;
   top: 0;
   right: 0;
   border-start-start-radius: 0;
   border-end-start-radius: 0;
+}
+
+.input-copy-button {
+  border-radius: 0 $br-8 $br-8 0;
 }
 
 .integrations {
@@ -116,14 +122,8 @@
 .mcp-server-notification {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-s);
-}
-
-.mcp-server-notification-line {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
   gap: var(--sp-m);
+  padding-right: var(--sp-xxl);
 }
 
 .mcp-server-notification-link {
@@ -218,4 +218,22 @@
   block-size: $sz-64;
   inline-size: $sz-48;
   border-radius: 0 var(--sp-s) var(--sp-s) 0;
+}
+
+.textarea {
+  @include t.use-typography("body-small");
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+  padding: var(--sp-xs) var(--sp-s);
+  border: 0;
+  resize: none;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &:focus-visible {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
 }
