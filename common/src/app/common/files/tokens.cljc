@@ -9,11 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.i18n :refer [tr]]
-   [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.cursors :as cur]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [malli.core :as m]))
@@ -150,7 +148,7 @@
           (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
 (defn make-node-token-name-schema
-  "Dynamically generates a schema to check a token nodename, adding translated error messages
+  "Dynamically generates a schema to check a token node name, adding translated error messages
    and two additional validations:
     - Min and max length.
     - Checks if other token with a path derived from the name already exists at `tokens-tree`.
@@ -166,7 +164,9 @@
             current-name (:name node)
             new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)]
         (and (some? new-tokens)
-             (some #(not (ctob/token-name-path-exists? (first %) tokens-tree)) new-tokens))))]])
+             (some (fn [[token-name _]]
+                     (not (ctob/token-name-path-exists? token-name tokens-tree)))
+                   new-tokens))))]])
 
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])

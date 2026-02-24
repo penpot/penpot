@@ -1510,8 +1510,12 @@ Will return a value that matches this schema:
   (let [path-prefix (str/replace current-path current-name "")]
     (mapv (fn [[token-path token-obj]]
             (if (str/starts-with? token-path path-prefix)
-              (let [new-token-path (str/replace token-path current-name new-name)]
-                [new-token-path (assoc token-obj :name new-token-path)])
+              (let [new-token-path (str/replace token-path current-name new-name)
+                    new-token-obj (-> token-obj
+                                      (assoc :name new-token-path)
+                                      (cond-> (:path token-obj)
+                                        (assoc :path (str/replace (:path token-obj) current-name new-name))))]
+                [new-token-path new-token-obj])
               [token-path token-obj]))
           active-tokens)))
 
