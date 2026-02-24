@@ -24,11 +24,10 @@ const PADDING_PERCENT = 0.1
 /** Normalize selrect to always have x, y, width, height (quadtree expects these). Handles both { x, y, width, height } and { x1, y1, x2, y2 } shapes. */
 function normalizeSelrect(sr: Selrect | null | undefined): Selrect | null {
   if (!sr) return null
-  const r = sr as Selrect & { x1?: number; y1?: number; x2?: number; y2?: number }
-  const x = r.x ?? r.x1
-  const y = r.y ?? r.y1
-  const width = r.width ?? (typeof r.x2 === 'number' && typeof r.x1 === 'number' ? r.x2 - r.x1 : 0)
-  const height = r.height ?? (typeof r.y2 === 'number' && typeof r.y1 === 'number' ? r.y2 - r.y1 : 0)
+  const x = sr.x
+  const y = sr.y
+  const width = sr.width
+  const height = sr.height
   if (typeof x !== 'number' || typeof y !== 'number' || width <= 0 || height <= 0) return null
   return makeSelrect(x, y, width, height)
 }
@@ -286,7 +285,7 @@ function queryIndex(
 
     // Clip children check
     if (clipChildren) {
-      const clipParents = (shape as any).clipParents || []
+      const clipParents = shape.clipParents || []
       let shouldInclude = true
       for (const clipParent of clipParents) {
         if (!overlaps(clipParent, rect, usingSelrect)) {
