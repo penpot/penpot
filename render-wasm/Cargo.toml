@@ -32,6 +32,7 @@ skia-safe = { version = "0.93.1", default-features = false, features = [
   "binary-cache",
   "webp",
 ] }
+thiserror = "2.0.18"
 uuid = { version = "1.11.0", features = ["v4", "js"] }
 
 [profile.release]
