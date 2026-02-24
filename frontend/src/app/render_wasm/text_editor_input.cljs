@@ -19,6 +19,8 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
+(def caret-blink-interval-ms 250)
+
 (defn- sync-wasm-text-editor-content!
   "Sync WASM text editor content back to the shape via the standard
   commit pipeline. Called after every text-modifying input."
@@ -54,18 +56,17 @@
          (.focus node))
        js/undefined))
 
-    ;; Animation loop for cursor blink
     (mf/use-effect
      (fn []
-       (let [raf-id (atom nil)
-             animate (fn animate []
-                       (when (text-editor/text-editor-is-active?)
-                         (wasm.api/request-render "cursor-blink")
-                         (reset! raf-id (js/requestAnimationFrame animate))))]
-         (animate)
+       (let [timeout-id (atom nil)
+             schedule-blink (fn schedule-blink []
+                              (when (text-editor/text-editor-is-active?)
+                                (wasm.api/request-render "cursor-blink"))
+                              (reset! timeout-id (js/setTimeout schedule-blink caret-blink-interval-ms)))]
+         (schedule-blink)
          (fn []
-           (when @raf-id
-             (js/cancelAnimationFrame @raf-id))))))
+           (when @timeout-id
+             (js/clearTimeout @timeout-id))))))
 
     ;; Document-level keydown handler for control keys
     (mf/use-effect
