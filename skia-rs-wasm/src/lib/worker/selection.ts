@@ -233,22 +233,8 @@ function queryIndex(
   const { index } = indexData
   const result = new Set<string>()
 
-  // #region agent log
-  const quadtreeHits = Array.from(quadtree.search(index, rect))
-  fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      location: 'selection.ts:queryIndex',
-      message: 'worker selection query',
-      data: { queryRect: rect, quadtreeHitCount: quadtreeHits.length, hypothesisId: 'A' },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
-
   // Search quadtree
-  for (const node of quadtreeHits) {
+  for (const node of quadtree.search(index, rect)) {
     const shape = node.data as PenpotNode
     if (!shape) {
       continue
@@ -315,19 +301,6 @@ function queryIndex(
 
     result.add(shape.id)
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/f0136137-81f1-4f6e-a7b5-217ac99b12a5', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      location: 'selection.ts:queryIndex:afterOverlap',
-      message: 'worker selection after overlap filter',
-      data: { finalCount: result.size, resultIds: Array.from(result).slice(0, 5), hypothesisId: 'B' },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
 
   return result
 }

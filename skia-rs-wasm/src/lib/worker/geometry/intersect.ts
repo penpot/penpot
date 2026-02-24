@@ -9,6 +9,19 @@ import { rectToPoints } from './rect'
 import { point } from './point'
 import { isPathShape, isBoolShape, isCircleShape, isTextShape } from './shapes'
 
+type Matrix = { a: number; b: number; c: number; d: number; e: number; f: number }
+
+function inverseTransformPoint(world: Point, t: Matrix): Point {
+  const det = t.a * t.d - t.b * t.c
+  if (Math.abs(det) < EPSILON) return world
+  const px = world.x - t.e
+  const py = world.y - t.f
+  return point(
+    (t.d * px - t.c * py) / det,
+    (-t.b * px + t.a * py) / det
+  )
+}
+
 const EPSILON = 1e-10
 
 function almostZero(value: number): boolean {
@@ -242,15 +255,47 @@ function overlapsEllipse(shape: PenpotNode, rect: Selrect): boolean {
   const width = shape.width ?? 0
   const height = shape.height ?? 0
 
-  const center = point(x + width / 2, y + height / 2)
-  const cx = center.x
-  const cy = center.y
   const rx = width / 2
   const ry = height / 2
 
-  const rectPoints = rectToPoints(rect)
+  const transform = (shape as { transform?: Matrix }).transform
+
+  let rectPoints = rectToPoints(rect)
   if (!rectPoints) {
     return false
+  }
+
+  // Ellipse center: in local space (no transform) it is (x+w/2, y+h/2); with transform we use local origin at center so (0,0).
+  let cx: number
+  let cy: number
+  let center: Point
+
+  if (transform) {
+    // World = T(local) + world_center. Use selrect center.
+    const sr = shape.selrect
+    const worldCenterX =
+      sr != null && typeof (sr as { x?: number }).x === 'number' && typeof (sr as { width?: number }).width === 'number'
+        ? (sr as { x: number }).x + (sr as { width: number }).width / 2
+        : x + width / 2
+    const worldCenterY =
+      sr != null && typeof (sr as { y?: number }).y === 'number' && typeof (sr as { height?: number }).height === 'number'
+        ? (sr as { y: number }).y + (sr as { height: number }).height / 2
+        : y + height / 2
+    const det = transform.a * transform.d - transform.b * transform.c
+    if (Math.abs(det) < EPSILON) return false
+    // inverseTransformPoint(p, M) applies M^{-1} to p. We need local = T^{-1}(world - center), so pass
+    // the forward transform (e=0, f=0) so the function applies T_2x2^{-1}; passing inv would apply inv^{-1} = T (wrong direction).
+    const transformLinear = { ...transform, e: 0, f: 0 }
+    rectPoints = rectPoints.map((p) =>
+      inverseTransformPoint(point(p.x - worldCenterX, p.y - worldCenterY), transformLinear)
+    )
+    cx = 0
+    cy = 0
+    center = point(0, 0)
+  } else {
+    cx = x + width / 2
+    cy = y + height / 2
+    center = point(cx, cy)
   }
 
   const rectLines = pointsToLines(rectPoints)
@@ -260,16 +305,16 @@ function overlapsEllipse(shape: PenpotNode, rect: Selrect): boolean {
     return true
   }
 
-  // Check if any rect point is inside ellipse
-  if (isPointInsideEllipse(rectPoints[0], cx, cy, rx, ry)) {
-    return true
+  // Check if any rect point is inside ellipse (all four corners, not just the first)
+  for (const pt of rectPoints) {
+    if (isPointInsideEllipse(pt, cx, cy, rx, ry)) {
+      return true
+    }
   }
 
   // Check if any rect line intersects ellipse
   for (const line of rectLines) {
-    if (intersectsLineEllipse(line, cx, cy, rx, ry)) {
-      return true
-    }
+    if (intersectsLineEllipse(line, cx, cy, rx, ry)) return true
   }
 
   return false
@@ -356,8 +401,8 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
   }
 
   if (isCircleShape(shape)) {
-    const points = getShapePointsForOverlap(shape)
-    return overlapsRectPoints(adjustedRect, points) && overlapsEllipse(shape, adjustedRect)
+    // For rotated ellipses the bbox can exclude the curved extremities; always run ellipse test
+    return overlapsEllipse(shape, adjustedRect)
   }
 
   if (isTextShape(shape)) {
