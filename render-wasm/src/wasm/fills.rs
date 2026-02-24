@@ -1,4 +1,4 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use crate::mem;
 use crate::shapes;
@@ -67,7 +67,8 @@ pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fi
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_fills() {
+#[wasm_error]
+pub extern "C" fn set_shape_fills() -> Result<()> {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
         // The first byte contains the actual number of fills
@@ -75,8 +76,9 @@ pub extern "C" fn set_shape_fills() {
         // Skip the first 4 bytes (header with fill count) and parse only the actual fills
         let fills = parse_fills_from_bytes(&bytes[4..], num_fills);
         shape.set_fills(fills);
-        mem::free_bytes();
+        mem::free_bytes()?;
     });
+    Ok(())
 }
 
 #[no_mangle]
