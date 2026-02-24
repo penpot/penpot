@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.13.4
+
+### :bug: Bugs fixed
+
+- Fix incorrect query for file versions [Github #8463](https://github.com/penpot/penpot/pull/8463)
+
+
 ## 2.13.3
 
 ### :bug: Bugs fixed
