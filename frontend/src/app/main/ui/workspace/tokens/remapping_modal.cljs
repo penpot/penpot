@@ -50,6 +50,8 @@
   (let [old-name (:old-name remap-data)
         new-name (:new-name remap-data)
 
+        _ (prn "Rendering remapping modal with data:" remap-data)
+
         ;; Remap logic on confirm
         confirm-remap
         (mf/use-fn

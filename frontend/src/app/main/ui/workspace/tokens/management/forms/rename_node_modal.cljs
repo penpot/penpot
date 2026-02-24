@@ -93,8 +93,7 @@
         (mf/use-fn
          (mf/deps on-rename)
          (fn [new-name]
-           (on-rename new-name)
-           (close-modal)))
+           (on-rename new-name)))
 
         on-key-down
         (mf/use-fn

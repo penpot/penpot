@@ -10,6 +10,7 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -20,7 +21,6 @@
    [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
-   [cljs.pprint :as pp]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -197,45 +197,80 @@
                   new-path (str/replace old-path (:name node) new-node-name)
                   tokens-by-type (ctob/group-by-type selected-token-set-tokens)
                   tokens-filtered-by-type (get tokens-by-type type)
-                  tokens-in-path (filter-tokens-by-path tokens-filtered-by-type old-path type)
+                  tokens-in-path (filter-tokens-by-path tokens-filtered-by-type old-path)
                   tokens-in-path-ids (mapv (fn [token] (:id token)) tokens-in-path)]
-              (st/emit! (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)))))
+              (st/emit!
+               (modal/hide)
+               (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)))))
 
-        #_(defn on-update-token-set
-            [tokens-lib token-set name]
-            (let [name   (ctob/normalize-set-name name (ctob/get-name token-set))
-                  errors (sm/validation-errors name (cfo/make-token-set-name-schema
-                                                     tokens-lib
-                                                     (ctob/get-id token-set)))]
-              (st/emit! (dwtl/clear-token-set-edition))
-              (if (empty? errors)
-                (st/emit! (dwtl/rename-token-set token-set name))
-                (st/emit! (ntf/show {:content (tr "errors.token-set-already-exists")
-                                     :type :toast
-                                     :level :error
-                                     :timeout 9000})))))
+        ;; on-remap-token
+        #_(mf/use-fn
+           (mf/deps token)
+           (fn [valid-token new-name old-name description]
+             (st/emit!
+              (dwtl/update-token (:id token)
+                                 {:name new-name
+                                  :value (:value valid-token)
+                                  :description description})
+              (remap/remap-tokens old-name new-name)
+              (dwtp/propagate-workspace-tokens)
+              (modal/hide!))))
+
+        bulk-remap-nodes-in-path
+        (mf/use-fn
+         (mf/deps selected-token-set-id)
+         (fn [node type new-node-name]
+           (let [old-path (:path node)
+                 tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                 tokens-filtered-by-type (get tokens-by-type type)
+                 tokens-in-path (filter-tokens-by-path tokens-filtered-by-type old-path)
+                 tokens-in-path-ids (mapv (fn [token] (:id token)) tokens-in-path)
+                 new-path (str/replace old-path (:name node) new-node-name)
+                 new-tokens (map (fn [token]
+                                   (let [new-token-name (str/replace (:name token) (:name node) new-node-name)]
+                                     (assoc token :name new-token-name)))
+                                 tokens-in-path)]
+
+             (st/emit!
+              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)
+              (remap/bulk-remap-tokens tokens-in-path new-tokens)
+              (dwtp/propagate-workspace-tokens)
+              (modal/hide)))))
+
+        on-remap-node-warning
+        (mf/use-fn
+         (mf/deps bulk-remap-nodes-in-path bulk-rename-tokens-in-path)
+         (fn [node type new-node-name]
+           (let [remap-data {:new-name new-node-name
+                             :old-name (:name node)
+                             :type "node"}
+                 on-remap-handler #(bulk-remap-nodes-in-path node type new-node-name)
+                 on-rename-handler #(bulk-rename-tokens-in-path node type new-node-name)]
+             (prn "Opening remapping modal with data:" remap-data)
+             (st/emit!
+              (modal/hide)
+              (modal/show :tokens/remapping-confirmation {:remap-data remap-data
+                                                          :on-remap on-remap-handler
+                                                          :on-rename on-rename-handler})))))
 
         on-rename-node
-        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
-          (fn [node type new-node-name]
-            (let [path (:path node)
-                  state @st/state
-                  file-data (dh/lookup-file-data state)
-                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
-                  tokens-filtered-by-type (get tokens-by-type type)
-                  tokens-in-current-path (filter-tokens-by-path tokens-filtered-by-type path type)
-                  token-references-count (reduce (fn [count token]
-                                                   (+ count (remap/count-token-references file-data (:name token))))
-                                                 0
-                                                 tokens-in-current-path)]
-              (if (> token-references-count 0)
-                (prn "Remap node modal")
-                (bulk-rename-tokens-in-path node type new-node-name))
-              #_(st/emit! (modal/show :tokens/remapping-confirmation {:old-token-name old-name
-                                                                      :new-token-name name
-                                                                      :references-count references-count
-                                                                      :on-remap on-remap
-                                                                      :on-rename on-rename})))))
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens filter-tokens-by-path on-remap-node-warning bulk-rename-tokens-in-path)
+         (fn [node type new-node-name]
+           (let [path (:path node)
+                 state @st/state
+                 file-data (dh/lookup-file-data state)
+                 tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                 tokens-filtered-by-type (get tokens-by-type type)
+                 tokens-in-current-path (filter-tokens-by-path tokens-filtered-by-type path type)
+                 token-references-count (reduce (fn [count token]
+                                                  (+ count (remap/count-token-references file-data (:name token))))
+                                                0
+                                                tokens-in-current-path)]
+             (prn token-references-count) ;;1
+             (if (> token-references-count 0)
+               (on-remap-node-warning node type new-node-name)
+               (bulk-rename-tokens-in-path node type new-node-name)))))
 
         open-rename-node-modal
         (mf/use-fn

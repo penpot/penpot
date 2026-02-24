@@ -7,6 +7,7 @@
 (ns app.main.store
   (:require
    [app.common.logging :as log]
+   [app.common.pprint :as pp]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
@@ -108,6 +109,7 @@
    (ptk/emit! state event)
    nil)
   ([event & events]
+   (prn "Emitting event:" event "with additional events:" events)
    (apply ptk/emit! state (cons event events))
    nil))
 
