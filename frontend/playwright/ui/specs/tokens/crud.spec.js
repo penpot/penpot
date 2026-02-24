@@ -11,7 +11,6 @@ import {
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
-  await WasmWorkspacePage.mockConfigFlags(page, ["enable-feature-design-tokens-v1"]);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
