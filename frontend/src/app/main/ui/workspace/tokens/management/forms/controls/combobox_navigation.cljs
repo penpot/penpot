@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.forms.controls.navigation
+(ns app.main.ui.workspace.tokens.management.forms.controls.combobox-navigation
   (:require
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -45,7 +45,6 @@
                  down?          (kbd/down-arrow? event)
                  enter?         (kbd/enter? event)
                  esc?           (kbd/esc? event)
-                 ;; TODO: this should be optional?
                  open-dropdown  (kbd/is-key? event "{")
                  close-dropdown (kbd/is-key? event "}")
                  options        (mf/ref-val options-ref)

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.tokens.management.forms.controls.floating
+(ns app.main.ui.workspace.tokens.management.forms.controls.floating-dropdown
   (:require
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
