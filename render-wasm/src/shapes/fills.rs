@@ -51,10 +51,10 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::shader::Shader::linear_gradient(
+        skia::gradient_shader::linear(
             (start, end),
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             None,
@@ -83,11 +83,11 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::shader::Shader::radial_gradient(
+        skia::gradient_shader::radial(
             center,
             distance,
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             Some(&transform),

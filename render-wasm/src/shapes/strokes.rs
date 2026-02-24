@@ -225,13 +225,16 @@ impl Stroke {
         if self.style != StrokeStyle::Solid {
             let path_effect = match self.style {
                 StrokeStyle::Dotted => {
-                    let mut circle_path = skia::Path::new();
                     let width = match self.kind {
                         StrokeKind::Inner => self.width,
                         StrokeKind::Center => self.width / 2.0,
                         StrokeKind::Outer => self.width,
                     };
-                    circle_path.add_circle((0.0, 0.0), width, None);
+                    let circle_path = {
+                        let mut pb = skia::PathBuilder::new();
+                        pb.add_circle((0.0, 0.0), width, None);
+                        pb.detach()
+                    };
                     let advance = self.width + 5.0;
                     skia::PathEffect::path_1d(
                         &circle_path,
