@@ -8,8 +8,8 @@ import type { PenpotDocument, PenpotNode, PenpotPage } from '@penpot-exporter/ty
 import { useWorkspaceStore } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
 import { Viewport } from '../viewport'
+import { commitPageUpdate } from './commit'
 
-const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 const EMPTY_NODES: PenpotNode[] = []
 const EMPTY_MAP: Record<string, PenpotNode> = {}
 
@@ -40,15 +40,6 @@ function flattenPageNodes(page: PenpotPage | null | undefined): Record<string, P
   return acc
 }
 
-function getRootFrameChildIds(page: PenpotPage): string[] {
-  const ch = page.children ?? []
-  if (ch.length <= 1) return []
-  return ch
-    .slice(1)
-    .map((n: PenpotNode) => n.id)
-    .filter((id: string | undefined): id is string => id != null)
-}
-
 export class DocumentModel {
   private documentMeta: DocumentMeta | null = null
   private pageMap: Map<string, PenpotPage> = new Map()
@@ -66,6 +57,15 @@ export class DocumentModel {
 
   getPage(id: string): PenpotPage | undefined {
     return this.pageMap.get(id)
+  }
+
+  setPage(pageId: string, updatedPage: PenpotPage): void {
+    this.pageMap.set(pageId, updatedPage)
+    if (this.currentPageId === pageId) {
+      this.currentPageNodes = updatedPage.children ?? EMPTY_NODES
+      this.currentPageNodesMap = flattenPageNodes(updatedPage)
+      this.pushToStores()
+    }
   }
 
   getSelectedNodes(selectedIds: Set<string>): PenpotNode[] {
@@ -145,87 +145,6 @@ export class DocumentModel {
     }
   }
 
-  private async syncRendererAfterUpdate(
-    pageId: string,
-    oldPage: PenpotPage | undefined,
-    updatedPage: PenpotPage
-  ): Promise<void> {
-    const state = useWorkspaceStore.getState()
-    const renderer = state.renderer
-    if (!renderer?.isInitialized()) return
-
-    const oldChildIds = new Set(
-      (oldPage?.children ?? []).map((n: PenpotNode) => n.id).filter(Boolean)
-    )
-    const newChildren = updatedPage.children ?? []
-    const newChildIds = newChildren
-      .map((n: PenpotNode) => n.id)
-      .filter((id: string | undefined): id is string => id != null)
-    const newIdsSet = new Set(newChildIds)
-
-    const added = newChildren.filter((n: PenpotNode) => n.id && !oldChildIds.has(n.id))
-    const deleted = (oldPage?.children ?? []).filter(
-      (n: PenpotNode) => n.id && !newIdsSet.has(n.id)
-    )
-    const sameIds =
-      newChildIds.length === (oldPage?.children ?? []).length &&
-      added.length === 0 &&
-      deleted.length === 0
-
-    if (added.length > 0) {
-      for (const node of added) {
-        if (node.id) await renderer.addShape(node)
-      }
-      const rootId = newChildren[0]?.id ?? ROOT_UUID
-      renderer.updateParentChildren(rootId, getRootFrameChildIds(updatedPage))
-    } else if (deleted.length > 0) {
-      const rootId = newChildren[0]?.id ?? ROOT_UUID
-      renderer.updateParentChildren(rootId, getRootFrameChildIds(updatedPage))
-    } else if (!sameIds) {
-      for (const node of newChildren) {
-        if (node.id) await renderer.updateShape(node)
-      }
-    } else {
-      const changed = newChildren.filter((n: PenpotNode) => {
-        const oldNode = (oldPage?.children ?? []).find((o: PenpotNode) => o.id === n.id)
-        return oldNode && JSON.stringify(oldNode) !== JSON.stringify(n)
-      })
-      for (const node of changed) {
-        if (node.id) await renderer.updateShape(node)
-      }
-    }
-  }
-
-  async commitMove(pageId: string, updatedPage: PenpotPage): Promise<void> {
-    const oldPage = this.pageMap.get(pageId)
-    this.pageMap.set(pageId, updatedPage)
-
-    if (this.currentPageId === pageId) {
-      this.currentPageNodes = updatedPage.children ?? EMPTY_NODES
-      this.currentPageNodesMap = flattenPageNodes(updatedPage)
-      this.pushToStores()
-    }
-
-    const state = useWorkspaceStore.getState()
-    if (state.workerClient) await state.workerClient.updatePage(pageId, updatedPage)
-    await this.syncRendererAfterUpdate(pageId, oldPage, updatedPage)
-  }
-
-  private async updatePageInternal(pageId: string, updatedPage: PenpotPage): Promise<void> {
-    const oldPage = this.pageMap.get(pageId)
-    this.pageMap.set(pageId, updatedPage)
-
-    if (this.currentPageId === pageId) {
-      this.currentPageNodes = updatedPage.children ?? EMPTY_NODES
-      this.currentPageNodesMap = flattenPageNodes(updatedPage)
-      this.pushToStores()
-    }
-
-    const state = useWorkspaceStore.getState()
-    if (state.workerClient) await state.workerClient.updatePage(pageId, updatedPage)
-    await this.syncRendererAfterUpdate(pageId, oldPage, updatedPage)
-  }
-
   async deletePage(pageId: string): Promise<void> {
     if (!this.documentMeta) return
     const state = useWorkspaceStore.getState()
@@ -255,28 +174,28 @@ export class DocumentModel {
     const state = useWorkspaceStore.getState()
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!page) return
+    if (!pageId || !page) return
     const children = [...(page.children ?? []), node]
-    await this.updatePageInternal(pageId, { ...page, children })
+    await commitPageUpdate({ pageId, updatedPage: { ...page, children } })
   }
 
   async updateNode(nodeId: string, updates: Partial<PenpotNode>): Promise<void> {
     const state = useWorkspaceStore.getState()
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!page) return
+    if (!pageId || !page) return
     const children = (page.children ?? []).map((n: PenpotNode) =>
       n.id === nodeId ? { ...n, ...updates } : n
     )
-    await this.updatePageInternal(pageId, { ...page, children })
+    await commitPageUpdate({ pageId, updatedPage: { ...page, children } })
   }
 
   async deleteNode(nodeId: string): Promise<void> {
     const state = useWorkspaceStore.getState()
     const pageId = state.pageId
     const page = pageId ? this.pageMap.get(pageId) : undefined
-    if (!page) return
+    if (!pageId || !page) return
     const children = (page.children ?? []).filter((n: PenpotNode) => n.id !== nodeId)
-    await this.updatePageInternal(pageId, { ...page, children })
+    await commitPageUpdate({ pageId, updatedPage: { ...page, children } })
   }
 }

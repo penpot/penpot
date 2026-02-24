@@ -5,6 +5,7 @@
 
 import { useWorkspaceStore } from './workspace-store'
 import { DocumentModel } from './document-model'
+import { commitPageUpdate } from './commit'
 import type { PenpotDocument, PenpotNode, PenpotPage } from '@penpot-exporter/types'
 import { makeSelrect } from '../../worker/types'
 
@@ -19,6 +20,7 @@ export function createNewDocument(): PenpotDocument {
     height: 600,
     parentId: undefined,
     selrect: { x: 0, y: 0, width: 800, height: 600, x1: 0, y1: 0, x2: 800, y2: 600 },
+    points: [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 800, y: 600 }, { x: 0, y: 600 }],
   }
   const initialPage: PenpotPage = {
     id: crypto.randomUUID(),
@@ -56,11 +58,9 @@ export async function addPage(page: PenpotPage): Promise<void> {
 }
 
 export async function updatePage(page: PenpotPage & { pageId: string }): Promise<void> {
-  const model = useWorkspaceStore.getState().documentModel
-  if (!model) return
   const { pageId, ...pageData } = page
   const updatedPage = { ...pageData, id: pageId } as PenpotPage
-  await model.commitMove(pageId, updatedPage)
+  await commitPageUpdate({ pageId, updatedPage })
 }
 
 export async function deletePage(pageId: string): Promise<void> {
