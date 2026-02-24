@@ -1,16 +1,13 @@
 use macros::ToJs;
 
 use super::{fills::RawFillData, fonts::RawFontStyle};
-use crate::math::{Matrix, Point};
+
 use crate::mem::{self, SerializableResult};
 use crate::shapes::{
     self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
-use crate::{
-    with_current_shape, with_current_shape_mut, with_state, with_state_mut,
-    with_state_mut_current_shape, STATE,
-};
+use crate::{with_current_shape, with_current_shape_mut, with_state, with_state_mut, STATE};
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -386,32 +383,6 @@ pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
         }
         state.touch_shape(shape_id);
     });
-}
-
-#[no_mangle]
-pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
-    with_state_mut_current_shape!(state, |shape: &Shape| {
-        if let Type::Text(text_content) = &shape.shape_type {
-            let mut matrix = Matrix::new_identity();
-            let shape_matrix = shape.get_concatenated_matrix(&state.shapes);
-            let view_matrix = state.render_state.viewbox.get_matrix();
-            if let Some(inv_view_matrix) = view_matrix.invert() {
-                matrix.post_concat(&inv_view_matrix);
-                matrix.post_concat(&shape_matrix);
-
-                let mapped_point = matrix.map_point(Point::new(x, y));
-
-                if let Some(position_with_affinity) =
-                    text_content.get_caret_position_at(&mapped_point)
-                {
-                    return position_with_affinity.position_with_affinity.position;
-                }
-            }
-        } else {
-            panic!("Trying to get caret position of a shape that it's not a text shape");
-        }
-    });
-    -1
 }
 
 const RAW_POSITION_DATA_SIZE: usize = size_of::<shapes::PositionData>();

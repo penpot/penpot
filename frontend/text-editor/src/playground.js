@@ -162,12 +162,15 @@ class TextEditorPlayground {
     }
 
     this.#module.call("use_shape", ...textShape.id);
+    // FIXME: This function doesn't exists anymore.
+    /*
     const caretPosition = this.#module.call(
       "get_caret_position_at",
       e.offsetX,
       e.offsetY,
     );
     console.log("caretPosition", caretPosition);
+    */
   };
 
   #onResize = (_entries) => {

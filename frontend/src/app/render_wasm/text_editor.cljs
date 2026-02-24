@@ -27,6 +27,21 @@
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
 
+(defn text-editor-pointer-down
+  [x y]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_pointer_down" x y)))
+
+(defn text-editor-pointer-move
+  [x y]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_pointer_move" x y)))
+
+(defn text-editor-pointer-up
+  [x y]
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_pointer_up" x y)))
+
 (defn text-editor-update-blink
   [timestamp-ms]
   (when wasm/context-initialized?
@@ -83,9 +98,12 @@
     (h/call wasm/internal-module "_text_editor_stop")))
 
 (defn text-editor-is-active?
-  []
-  (when wasm/context-initialized?
-    (not (zero? (h/call wasm/internal-module "_text_editor_is_active")))))
+  ([id]
+   (when wasm/context-initialized?
+     (not (zero? (h/call wasm/internal-module "_text_editor_is_active_with_id" id)))))
+  ([]
+   (when wasm/context-initialized?
+     (not (zero? (h/call wasm/internal-module "_text_editor_is_active"))))))
 
 (defn text-editor-export-content
   []

@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
-use crate::shapes::TextPositionWithAffinity;
+use crate::shapes::{TextContent, TextPositionWithAffinity};
 use crate::uuid::Uuid;
-use skia_safe::Color;
+use skia_safe::{
+    textlayout::{Affinity, PositionWithAffinity},
+    Color,
+};
 
 /// Cursor position within text content.
 /// Uses character offsets for precise positioning.
@@ -122,6 +125,9 @@ pub struct TextEditorState {
     pub theme: TextEditorTheme,
     pub selection: TextSelection,
     pub is_active: bool,
+    // This property indicates that we've started
+    // selecting something with the pointer.
+    pub is_pointer_selection_active: bool,
     pub active_shape_id: Option<Uuid>,
     pub cursor_visible: bool,
     pub last_blink_time: f64,
@@ -138,6 +144,7 @@ impl TextEditorState {
             },
             selection: TextSelection::new(),
             is_active: false,
+            is_pointer_selection_active: false,
             active_shape_id: None,
             cursor_visible: true,
             last_blink_time: 0.0,
@@ -151,6 +158,7 @@ impl TextEditorState {
         self.cursor_visible = true;
         self.last_blink_time = 0.0;
         self.selection = TextSelection::new();
+        self.is_pointer_selection_active = false;
         self.pending_events.clear();
     }
 
@@ -158,7 +166,65 @@ impl TextEditorState {
         self.is_active = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
+        self.is_pointer_selection_active = false;
         self.pending_events.clear();
+        self.reset_blink();
+    }
+
+    pub fn start_pointer_selection(&mut self) -> bool {
+        if self.is_pointer_selection_active {
+            return false;
+        }
+        self.is_pointer_selection_active = true;
+        true
+    }
+
+    pub fn stop_pointer_selection(&mut self) -> bool {
+        if !self.is_pointer_selection_active {
+            return false;
+        }
+        self.is_pointer_selection_active = false;
+        true
+    }
+
+    pub fn select_all(&mut self, content: &TextContent) -> bool {
+        self.is_pointer_selection_active = false;
+        self.set_caret_from_position(TextPositionWithAffinity::new(
+            PositionWithAffinity {
+                position: 0,
+                affinity: Affinity::Downstream,
+            },
+            0,
+            0,
+            0,
+            0,
+        ));
+        let num_paragraphs = (content.paragraphs().len() - 1) as i32;
+        let Some(last_paragraph) = content.paragraphs().last() else {
+            return false;
+        };
+        let num_spans = (last_paragraph.children().len() - 1) as i32;
+        let Some(last_text_span) = last_paragraph.children().last() else {
+            return false;
+        };
+        let mut offset = 0;
+        for span in last_paragraph.children() {
+            offset += span.text.len();
+        }
+        self.extend_selection_from_position(TextPositionWithAffinity::new(
+            PositionWithAffinity {
+                position: offset as i32,
+                affinity: Affinity::Upstream,
+            },
+            num_paragraphs,
+            num_spans,
+            last_text_span.text.len() as i32,
+            offset as i32,
+        ));
+        self.reset_blink();
+        self.push_event(crate::state::EditorEvent::SelectionChanged);
+
+        true
     }
 
     pub fn set_caret_from_position(&mut self, position: TextPositionWithAffinity) {

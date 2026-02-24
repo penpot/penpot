@@ -258,6 +258,18 @@ pub fn all_with_ancestors(
 }
 
 impl Shape {
+    pub fn get_relative_point(
+        point: &Point,
+        view_matrix: &Matrix,
+        shape_matrix: &Matrix,
+    ) -> Option<Point> {
+        let inv_view_matrix = view_matrix.invert()?;
+        let inv_shape_matrix = shape_matrix.invert()?;
+        let transform_matrix: Matrix = Matrix::concat(&inv_shape_matrix, &inv_view_matrix);
+        let shape_relative_point = transform_matrix.map_point(*point);
+        Some(shape_relative_point)
+    }
+
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
