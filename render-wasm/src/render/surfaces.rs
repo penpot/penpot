@@ -17,17 +17,18 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
-    Target = 0b00_0000_0001,
-    Filter = 0b00_0000_0010,
-    Cache = 0b00_0000_0100,
-    Current = 0b00_0000_1000,
-    Fills = 0b00_0001_0000,
-    Strokes = 0b00_0010_0000,
-    DropShadows = 0b00_0100_0000,
-    InnerShadows = 0b00_1000_0000,
-    TextDropShadows = 0b01_0000_0000,
-    UI = 0b10_0000_0000,
-    Debug = 0b10_0000_0001,
+    Target          = 0b000_0000_0001,
+    Filter          = 0b000_0000_0010,
+    Cache           = 0b000_0000_0100,
+    Current         = 0b000_0000_1000,
+    Fills           = 0b000_0001_0000,
+    Strokes         = 0b000_0010_0000,
+    DropShadows     = 0b000_0100_0000,
+    InnerShadows    = 0b000_1000_0000,
+    TextDropShadows = 0b001_0000_0000,
+    Export          = 0b010_0000_0000,
+    UI              = 0b100_0000_0000,
+    Debug           = 0b100_0000_0001,
 }
 
 pub struct Surfaces {
@@ -52,11 +53,15 @@ pub struct Surfaces {
     // for drawing debug info.
     debug: skia::Surface,
     // for drawing tiles.
+    export: skia::Surface,
+
     tiles: TileTextureCache,
     sampling_options: skia::SamplingOptions,
-    margins: skia::ISize,
+    pub margins: skia::ISize,
     // Tracks which surfaces have content (dirty flag bitmask)
     dirty_surfaces: u32,
+
+    extra_tile_dims: skia::ISize,
 }
 
 #[allow(dead_code)]
@@ -77,6 +82,7 @@ impl Surfaces {
         let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims);
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
         let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
+
         let drop_shadows =
             gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
         let inner_shadows =
@@ -87,9 +93,12 @@ impl Surfaces {
             gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
         let shape_strokes =
             gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
+        let export =
+            gpu_state.create_surface_with_isize("export".to_string(), extra_tile_dims);
 
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
+
 
         let tiles = TileTextureCache::new();
         Surfaces {
@@ -104,10 +113,12 @@ impl Surfaces {
             shape_strokes,
             ui,
             debug,
+            export,
             tiles,
             sampling_options,
             margins,
             dirty_surfaces: 0,
+            extra_tile_dims
         }
     }
 
@@ -259,6 +270,9 @@ impl Surfaces {
         if ids & SurfaceId::Debug as u32 != 0 {
             f(self.get_mut(SurfaceId::Debug));
         }
+        if ids & SurfaceId::Export as u32 != 0 {
+            f(self.get_mut(SurfaceId::Export));
+        }
         performance::begin_measure!("apply_mut::flags");
     }
 
@@ -284,6 +298,7 @@ impl Surfaces {
             | SurfaceId::InnerShadows as u32
             | SurfaceId::TextDropShadows as u32;
 
+
         // Clear surfaces before updating transformations to remove residual content
         self.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
@@ -305,7 +320,7 @@ impl Surfaces {
     }
 
     #[inline]
-    fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
+    pub fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Filter => &mut self.filter,
@@ -318,6 +333,7 @@ impl Surfaces {
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
             SurfaceId::UI => &mut self.ui,
+            SurfaceId::Export => &mut self.export
         }
     }
 
@@ -334,6 +350,7 @@ impl Surfaces {
             SurfaceId::Strokes => &self.shape_strokes,
             SurfaceId::Debug => &self.debug,
             SurfaceId::UI => &self.ui,
+            SurfaceId::Export => &self.export
         }
     }
 
@@ -448,12 +465,14 @@ impl Surfaces {
         self.canvas(SurfaceId::TextDropShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
+        self.canvas(SurfaceId::Export).restore_to_count(1);
         self.apply_mut(
             SurfaceId::Fills as u32
                 | SurfaceId::Strokes as u32
                 | SurfaceId::Current as u32
                 | SurfaceId::InnerShadows as u32
-                | SurfaceId::TextDropShadows as u32,
+                | SurfaceId::TextDropShadows as u32
+                | SurfaceId::Export as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();
             },
@@ -572,6 +591,32 @@ impl Surfaces {
     pub fn gc(&mut self) {
         self.tiles.gc();
     }
+
+    pub fn resize_export_surface(&mut self, scale: f32, rect: skia::Rect) {
+        let target_w = (scale * rect.width()).ceil() as i32;
+        let target_h = (scale * rect.height()).ceil() as i32;
+        
+        let max_w = i32::max(self.extra_tile_dims.width, target_w);
+        let max_h = i32::max(self.extra_tile_dims.height, target_h);
+
+        if max_w > self.extra_tile_dims.width || max_h > self.extra_tile_dims.height {
+            self.extra_tile_dims = skia::ISize::new(max_w, max_h);
+            self.drop_shadows =
+                self.drop_shadows.new_surface_with_dimensions((max_w, max_h)).unwrap();
+            self.inner_shadows =
+                self.inner_shadows.new_surface_with_dimensions((max_w, max_h)).unwrap();
+            self.text_drop_shadows =
+                self.text_drop_shadows.new_surface_with_dimensions((max_w, max_h)).unwrap();
+            self.text_drop_shadows =
+                self.text_drop_shadows.new_surface_with_dimensions((max_w, max_h)).unwrap();
+            self.shape_strokes =
+                self.shape_strokes.new_surface_with_dimensions((max_w, max_h)).unwrap();
+            self.shape_fills =
+                self.shape_strokes.new_surface_with_dimensions((max_w, max_h)).unwrap();
+        }
+        
+        self.export = self.export.new_surface_with_dimensions((target_w, target_h)).unwrap();
+    }
 }
 
 pub struct TileTextureCache {
@@ -649,5 +694,5 @@ impl TileTextureCache {
         for k in self.grid.keys() {
             self.removed.insert(*k);
         }
-    }
+    }    
 }

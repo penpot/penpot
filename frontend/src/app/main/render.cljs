@@ -45,7 +45,9 @@
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
+   [app.util.globals :as g]
    [app.util.http :as http]
    [app.util.strings :as ust]
    [app.util.thumbnails :as th]
@@ -53,6 +55,7 @@
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (def ^:const viewbox-decimal-precision 3)
@@ -170,6 +173,8 @@
 
             ;; Don't wrap svg elements inside a <g> otherwise some can break
             [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
+
+(set! wasm.api/shape-wrapper-factory shape-wrapper-factory)
 
 (defn format-viewbox
   "Format a viewbox given a rectangle"
@@ -479,6 +484,48 @@
 
        [:& ff/fontfaces-style {:fonts fonts}]
        [:& shape-wrapper {:shape object}]]]]))
+
+(mf/defc object-wasm
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects object-id embed skip-children]
+    :or {embed false}
+    :as props}]
+  (let [object  (get objects object-id)
+        object (cond-> object
+                 (:hide-fill-on-export object)
+                 (assoc :fills [])
+
+                 skip-children
+                 (assoc :shapes []))
+
+        {:keys [width height] :as bounds}
+        (gsb/get-object-bounds objects object {:ignore-margin? false})
+
+        vbox (format-viewbox bounds)
+        zoom    1
+        canvas-ref (mf/use-ref nil)]
+
+    (mf/use-effect
+     (fn []
+       (let [canvas (mf/ref-val canvas-ref)]
+         (->> @wasm.api/module
+              (p/fmap
+               (fn [ready?]
+                 (when ready?
+                   (try
+                     (when (wasm.api/init-canvas-context canvas)
+                       (wasm.api/initialize-viewport
+                        objects zoom vbox "transparent"
+                        (fn []
+                          (wasm.api/render-sync-shape object-id)
+                          (dom/set-attribute! canvas "id" (dm/str "screenshot-" object-id)))))
+                     (catch :default e
+                       (js/console.error "Error initializing canvas context:" e)
+                       false)))))))))
+    [:canvas {:ref canvas-ref
+              :width width
+              :height height
+              :style {:background "red"}}]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SPRITES (DEBUG)

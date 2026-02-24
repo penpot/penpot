@@ -23,7 +23,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.refs :as refs]
-   [app.main.render :as render]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.main.worker :as mw]
@@ -100,6 +99,9 @@
 (def noop-fn
   (constantly nil))
 
+;;
+(def shape-wrapper-factory nil)
+
 (defn- yield-to-browser
   "Returns a promise that resolves after yielding to the browser's event loop.
    Uses requestAnimationFrame for smooth visual updates during loading."
@@ -115,7 +117,7 @@
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
-          (render/shape-wrapper-factory objects))]
+          (shape-wrapper-factory objects))]
 
     [:svg {:version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
@@ -1003,62 +1005,62 @@
 (defn set-object
   [shape]
   (perf/begin-measure "set-object")
-  (let [shape        (svg-filters/apply-svg-derived shape)
-        id           (dm/get-prop shape :id)
-        type         (dm/get-prop shape :type)
+  (when shape
+    (let [shape        (svg-filters/apply-svg-derived shape)
+          id           (dm/get-prop shape :id)
+          type         (dm/get-prop shape :type)
 
-        masked       (get shape :masked-group)
+          masked       (get shape :masked-group)
 
-        fills        (get shape :fills)
-        strokes      (if (= type :group)
-                       [] (get shape :strokes))
-        children     (get shape :shapes)
-        content      (let [content (get shape :content)]
-                       (if (= type :text)
-                         (ensure-text-content content)
-                         content))
-        bool-type    (get shape :bool-type)
-        grow-type    (get shape :grow-type)
-        blur         (get shape :blur)
-        svg-attrs    (get shape :svg-attrs)
-        shadows      (get shape :shadow)]
+          fills        (get shape :fills)
+          strokes      (if (= type :group)
+                         [] (get shape :strokes))
+          children     (get shape :shapes)
+          content      (let [content (get shape :content)]
+                         (if (= type :text)
+                           (ensure-text-content content)
+                           content))
+          bool-type    (get shape :bool-type)
+          grow-type    (get shape :grow-type)
+          blur         (get shape :blur)
+          svg-attrs    (get shape :svg-attrs)
+          shadows      (get shape :shadow)]
 
-    (shapes/set-shape-base-props shape)
+      (shapes/set-shape-base-props shape)
 
-    ;; Remaining properties that need separate calls (variable-length or conditional)
-    (set-shape-children children)
-    (set-shape-blur blur)
-    (when (= type :group)
-      (set-masked (boolean masked)))
-    (when (= type :bool)
-      (set-shape-bool-type bool-type))
-    (when (and (some? content)
-               (or (= type :path)
-                   (= type :bool)))
-      (set-shape-path-content content))
-    (when (some? svg-attrs)
-      (set-shape-svg-attrs svg-attrs))
-    (when (and (some? content) (= type :svg-raw))
-      (set-shape-svg-raw-content (get-static-markup shape)))
-    (set-shape-shadows shadows)
-    (when (= type :text)
-      (set-shape-grow-type grow-type))
+      ;; Remaining properties that need separate calls (variable-length or conditional)
+      (set-shape-children children)
+      (set-shape-blur blur)
+      (when (= type :group)
+        (set-masked (boolean masked)))
+      (when (= type :bool)
+        (set-shape-bool-type bool-type))
+      (when (and (some? content)
+                 (or (= type :path)
+                     (= type :bool)))
+        (set-shape-path-content content))
+      (when (some? svg-attrs)
+        (set-shape-svg-attrs svg-attrs))
+      (when (and (some? content) (= type :svg-raw))
+        (set-shape-svg-raw-content (get-static-markup shape)))
+      (set-shape-shadows shadows)
+      (when (= type :text)
+        (set-shape-grow-type grow-type))
 
-    (set-shape-layout shape)
-    (set-layout-data shape)
-
-    (let [pending_thumbnails (into [] (concat
-                                       (set-shape-text-content id content)
-                                       (set-shape-text-images id content true)
-                                       (set-shape-fills id fills true)
-                                       (set-shape-strokes id strokes true)))
-          pending_full (into [] (concat
-                                 (set-shape-text-images id content false)
-                                 (set-shape-fills id fills false)
-                                 (set-shape-strokes id strokes false)))]
-      (perf/end-measure "set-object")
-      {:thumbnails pending_thumbnails
-       :full pending_full})))
+      (set-shape-layout shape)
+      (set-layout-data shape)
+      (let [pending_thumbnails (into [] (concat
+                                         (set-shape-text-content id content)
+                                         (set-shape-text-images id content true)
+                                         (set-shape-fills id fills true)
+                                         (set-shape-strokes id strokes true)))
+            pending_full (into [] (concat
+                                   (set-shape-text-images id content false)
+                                   (set-shape-fills id fills false)
+                                   (set-shape-strokes id strokes false)))]
+        (perf/end-measure "set-object")
+        {:thumbnails pending_thumbnails
+         :full pending_full}))))
 
 (defn update-text-layouts
   [shapes]
@@ -1656,6 +1658,33 @@
   (let [controls-to-blur (dom/query-all (dom/get-element "viewport-controls") ".blurrable")]
     (run! #(dom/set-style! % "filter" "blur(4px)") controls-to-blur)))
 
+(defn render-shape-pixels
+  [shape-id scale]
+  (let [buffer (uuid/get-u32 shape-id)
+
+        offset
+        (h/call wasm/internal-module "_render_shape_pixels"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                scale)
+
+        offset-32
+        (mem/->offset-32 offset)
+
+        heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+
+        length (aget heapu32 (mem/->offset-32 offset))
+        width (aget heapu32 (+ (mem/->offset-32 offset) 1))
+        height (aget heapu32 (+ (mem/->offset-32 offset) 2))
+
+        result (dr/read-image-bytes heap (+ offset 12) length)]
+
+    (mem/free)
+
+    result))
 
 (defn init-wasm-module
   [module]
