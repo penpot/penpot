@@ -288,6 +288,7 @@ export async function compileTranslations() {
     "es",
     "fa",
     "fr",
+    "fr_CA",
     "he",
     "sr",
     "nb_NO",
