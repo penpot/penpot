@@ -242,7 +242,7 @@
   [{:keys [objects zoom selected focus is-show-artboard-names
            on-frame-enter on-frame-leave on-frame-select]}]
   (let [selected       (or selected #{})
-        shapes         (ctt/get-frames objects {:skip-copies? true})
+        shapes         (ctt/get-frames objects {:skip-copies? true :ignore-index? true})
         shapes         (if (dbg/enabled? :shape-titles)
                          (into (set shapes)
                                (map (d/getf objects))
