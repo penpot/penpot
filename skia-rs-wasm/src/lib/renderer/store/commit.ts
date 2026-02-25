@@ -3,6 +3,7 @@
  */
 
 import type { PenpotNode, PenpotPage } from '@penpot-exporter/types'
+import type { Change } from '@skia-rs-wasm/common'
 import { useWorkspaceStore } from './workspace-store'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
@@ -74,6 +75,12 @@ export interface PageCommitPayload {
   updatedPage: PenpotPage
 }
 
+export interface PageCommitWithChangesPayload {
+  pageId: string
+  updatedPage: PenpotPage
+  changes: Change[]
+}
+
 export async function commitPageUpdate(payload: PageCommitPayload): Promise<void> {
   const { pageId, updatedPage } = payload
   const state = useWorkspaceStore.getState()
@@ -82,5 +89,20 @@ export async function commitPageUpdate(payload: PageCommitPayload): Promise<void
   const oldPage = documentModel.getPage(pageId)
   documentModel.setPage(pageId, updatedPage)
   if (workerClient) await workerClient.updatePage(pageId, updatedPage)
+  if (renderer) await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
+}
+
+export async function commitPageUpdateWithChanges(payload: PageCommitWithChangesPayload): Promise<void> {
+  const { pageId, updatedPage, changes } = payload
+  const state = useWorkspaceStore.getState()
+  const { documentModel, workerClient, renderer } = state
+  if (!documentModel) return
+  const oldPage = documentModel.getPage(pageId)
+  documentModel.setPage(pageId, updatedPage)
+  if (workerClient && changes.length > 0) {
+    await workerClient.updatePageWithChanges(pageId, changes)
+  } else if (workerClient) {
+    await workerClient.updatePage(pageId, updatedPage)
+  }
   if (renderer) await syncRendererAfterUpdate(renderer, oldPage, updatedPage)
 }

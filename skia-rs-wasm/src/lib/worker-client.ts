@@ -11,6 +11,7 @@ import type {
   WorkerConfig,
   WorkerResponse,
   WorkerSendPayload,
+  Change,
 } from '@skia-rs-wasm/common'
 import { encode, decode } from './worker/messages'
 
@@ -90,11 +91,18 @@ export class WorkerClient implements WorkerClientInterface {
   }
 
   /**
-   * Update an existing page in the worker index
+   * Update an existing page in the worker index (full page replacement)
    */
   async updatePage(pageId: string, page: PenpotPage): Promise<void> {
     const normalized = ensurePageShapePoints(page)
     await this.sendMessage('index/update', { pageId, page: normalized })
+  }
+
+  /**
+   * Update an existing page in the worker index using incremental changes
+   */
+  async updatePageWithChanges(pageId: string, changes: Change[]): Promise<void> {
+    await this.sendMessage('index/update', { pageId, changes })
   }
 
   /**
