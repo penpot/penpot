@@ -456,11 +456,7 @@ impl Surfaces {
             self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
         );
 
-        let snapshot = self.current.image_snapshot();
-        let mut direct_context = self.current.direct_context();
-        let tile_image_opt = snapshot
-            .make_subset(direct_context.as_mut(), rect)
-            .or_else(|| self.current.image_snapshot_with_bounds(rect));
+        let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
 
         if let Some(tile_image) = tile_image_opt {
             // Draw to cache first (takes reference), then move to tile cache

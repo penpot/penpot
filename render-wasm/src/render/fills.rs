@@ -51,15 +51,18 @@ fn draw_image_fill(
             canvas.clip_rect(container, skia::ClipOp::Intersect, antialias);
         }
         Type::Circle => {
-            let mut oval_path = skia::Path::new();
-            oval_path.add_oval(container, None);
+            let oval_path = {
+                let mut pb = skia::PathBuilder::new();
+                pb.add_oval(container, None, None);
+                pb.detach()
+            };
             canvas.clip_path(&oval_path, skia::ClipOp::Intersect, antialias);
         }
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(path) = shape_type.path() {
                 if let Some(path_transform) = path_transform {
                     canvas.clip_path(
-                        path.to_skia_path().transform(&path_transform),
+                        &path.to_skia_path().make_transform(&path_transform),
                         skia::ClipOp::Intersect,
                         antialias,
                     );
