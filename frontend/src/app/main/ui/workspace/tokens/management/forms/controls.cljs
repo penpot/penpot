@@ -19,4 +19,4 @@
 
 (dm/export select/select-indexed*)
 
-(dm/export combobox/combobox*)
+(dm/export combobox/value-combobox*)

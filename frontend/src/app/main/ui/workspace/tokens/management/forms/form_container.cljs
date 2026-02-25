@@ -43,7 +43,7 @@
         text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})
         font-weight-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
         border-radius-props (if (contains? cf/flags :token-combobox)
-                              (mf/spread-props props {:input-component token.controls/combobox*})
+                              (mf/spread-props props {:input-component token.controls/value-combobox*})
                               props)]
 
     (case token-type
