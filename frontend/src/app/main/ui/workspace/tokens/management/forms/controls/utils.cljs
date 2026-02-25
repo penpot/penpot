@@ -14,24 +14,28 @@
 
 (defn- generate-dropdown-options
   [tokens no-sets]
-  (if (empty? tokens)
+  (let [non-empty-groups
+        (->> tokens
+             (filter (fn [[_ items]] (seq items))))]
+    (if (empty? non-empty-groups)
     [{:type :empty
       :label (if no-sets
                (tr "ds.inputs.numeric-input.no-applicable-tokens")
                (tr "ds.inputs.numeric-input.no-matches"))}]
-    (->> tokens
-         (map (fn [[type items]]
-                (cons {:group true
-                       :type  :group
-                       :id (dm/str "group-" (name type))
-                       :name  (name type)}
-                      (map token->dropdown-option items))))
+    (->> non-empty-groups
+         (keep (fn [[type items]]
+                (when (seq? items)
+                  (cons {:group true
+                         :type  :group
+                         :id (dm/str "group-" (name type))
+                         :name  (name type)}
+                        (map token->dropdown-option items)))))
          (interpose [{:separator true
                       :id "separator"
                       :type :separator}])
          (apply concat)
          (vec)
-         (not-empty))))
+         (not-empty)))))
 
 (defn- extract-partial-brace-text
   [s]
@@ -84,7 +88,7 @@
           options (if (seq partial)
                     (filter-token-groups-by-name sorted-tokens partial)
                     sorted-tokens)
-          no-sets? (nil? sorted-tokens)]
+          no-sets? (empty? sorted-tokens)]
       (generate-dropdown-options options no-sets?))))
 
 (defn filter-tokens-for-input
@@ -93,3 +97,6 @@
     (-> (deref raw-tokens)
         (select-keys (get cto/tokens-by-input input-type))
         (not-empty))))
+
+(defn focusable-options [options]
+  (filter #(= (:type %) :token) options))

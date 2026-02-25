@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.combobox-navigation
   (:require
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :refer [focusable-options]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -51,16 +52,23 @@
                  options        (if (delay? options) @options options)]
 
              (cond
-
                down?
                (do
                  (dom/prevent-default event)
-                 (if is-open
-                   (let [next-id (next-focus-id options focused-id :down)]
-                     (reset! focused-id* next-id))
-                   (do
-                     (toggle-dropdown event)
-                     (reset! focused-id* (first-focusable-id options)))))
+                 (let [focusables (focusable-options options)]
+                   (cond
+                     is-open
+                     (when (seq focusables)
+                       (let [next-id (next-focus-id options focused-id :down)]
+                         (reset! focused-id* next-id)))
+               
+                     (seq focusables)
+                     (do
+                       (toggle-dropdown event)
+                       (reset! focused-id* (first-focusable-id focusables)))
+               
+                     :else
+                     nil)))
 
                up?
                (when is-open
@@ -77,11 +85,8 @@
                enter?
                (do
                  (dom/prevent-default event)
-                 (if  is-open
-                   (on-enter focused-id)
-                   (do
-                     (reset! focused-id* (first-focusable-id options))
-                     (toggle-dropdown event))))
+                 (when  (and is-open focused-id)
+                   (on-enter focused-id)))
                esc?
                (do
                  (dom/prevent-default event)
