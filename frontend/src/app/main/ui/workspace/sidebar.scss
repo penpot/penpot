@@ -159,3 +159,7 @@
   overflow: hidden;
   height: calc(100vh - deprecated.$s-88);
 }
+
+.history-tab {
+  overflow-y: auto;
+}
