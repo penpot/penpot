@@ -37,7 +37,7 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page , {
+      await setupEmptyTokensFileRender(page , {
         flags: ["enable-token-combobox", "enable-feature-token-input"],
       });
 

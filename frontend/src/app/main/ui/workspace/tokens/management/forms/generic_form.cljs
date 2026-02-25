@@ -250,15 +250,15 @@
                             :trim true
                             :auto-focus true}]]
 
-      [:div {:class (stl/css :input-row)}
-       (case value-type
-         :indexed
-         [:> input-component
-          {:token          token
-           :tokens         tokens
-           :tab            active-tab
-           :value-subfield value-subfield
-           :handle-toggle  on-toggle-tab}]
+       [:div {:class (stl/css :input-row)}
+        (case value-type
+          :indexed
+          [:> input-component
+           {:token          token
+            :tokens         tokens
+            :tab            active-tab
+            :value-subfield value-subfield
+            :handle-toggle  on-toggle-tab}]
 
           :composite
           [:> input-component
