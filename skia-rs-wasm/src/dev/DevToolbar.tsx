@@ -114,7 +114,7 @@ export function DevToolbar() {
         setAdvConstraintsH(node['constraints-h'])
         setAdvConstraintsV(node['constraints-v'])
         setAdvClipContent(node['clip-content'] ?? false)
-        setAdvMaskedGroup(node['masked-group'] ?? false)
+        setAdvMaskedGroup(node.maskedGroup ?? false)
         setAdvGrowType(node['grow-type'])
       }
     } else if (isCreatingNew) {

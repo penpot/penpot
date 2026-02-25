@@ -3,7 +3,7 @@
  */
 
 import type { PenpotNode, PenpotPage, Selrect } from '@penpot-exporter/types'
-import type { IndexedPage } from './types'
+import type { IndexedPage, IndexedShape } from './types'
 
 export const ZERO_UUID = '00000000-0000-0000-0000-000000000000'
 
@@ -73,9 +73,6 @@ export function makeSelrect(x: number, y: number, width: number, height: number)
   }
 }
 
-/** Indexed shape with Penpot flat structure (parent-id, shapes) */
-type IndexedShape = PenpotNode & { 'parent-id'?: string; 'frame-id'?: string; shapes?: string[] }
-
 function flattenChildrenRec(
   nodes: PenpotNode[] | undefined,
   parentId: string | undefined,
@@ -90,8 +87,8 @@ function flattenChildrenRec(
 
     const indexed: IndexedShape = {
       ...node,
-      'parent-id': parentId,
-      'frame-id': frameId ?? parentId,
+      parentId: parentId ?? node.parentId,
+      frameId: frameId ?? parentId ?? node.frameId,
       shapes: childIds.length > 0 ? childIds : undefined,
     }
     objects[node.id] = indexed
@@ -118,8 +115,8 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
   const rootChildIds = children.slice(1).map(n => n.id).filter((id): id is string => id != null)
   const rootIndexed: IndexedShape = {
     ...rootFrame,
-    'parent-id': undefined,
-    'frame-id': rootFrame.id,
+    parentId: undefined,
+    frameId: rootFrame.id,
     shapes: rootChildIds.length > 0 ? rootChildIds : undefined,
   }
 
@@ -134,8 +131,8 @@ export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
 
     const indexed: IndexedShape = {
       ...node,
-      'parent-id': rootFrame.id,
-      'frame-id': rootFrame.id,
+      parentId: rootFrame.id,
+      frameId: rootFrame.id,
       shapes: childIds.length > 0 ? childIds : undefined,
     }
     objects[node.id] = indexed

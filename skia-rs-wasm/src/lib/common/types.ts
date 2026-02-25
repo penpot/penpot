@@ -207,10 +207,15 @@ export interface WorkerUpdateTextRectPayload {
   dimensions: WorkerTextRectDimensions
 }
 
+/** Indexed shape: PenpotNode with optional child-id list (flat structure). Uses camelCase parentId/frameId from ShapeBaseAttributes. */
+export type IndexedShape = PenpotNode & {
+  shapes?: string[]
+}
+
 /** Internal indexed page (flat objects map) used for selection/index state */
 export interface IndexedPage {
   id: string
-  objects: Record<string, PenpotNode>
+  objects: Record<string, IndexedShape>
 }
 
 export interface QueryParams {

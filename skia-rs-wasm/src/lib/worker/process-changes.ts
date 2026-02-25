@@ -3,8 +3,7 @@
  * Aligned with Penpot's common/files/changes process-change multimethods.
  */
 
-import type { PenpotNode } from '@penpot-exporter/types'
-import type { IndexedPage } from '@skia-rs-wasm/common'
+import type { IndexedPage, IndexedShape } from '@skia-rs-wasm/common'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import type {
   Change,
@@ -17,10 +16,9 @@ import type {
   AssignOperation,
   SetOperation,
 } from '@skia-rs-wasm/common'
+import type { PenpotNode } from '@penpot-exporter/types'
 import { isFrameShape } from './geometry/shapes'
-
-/** Indexed shape with Penpot flat structure (parent-id, shapes) */
-type IndexedShape = PenpotNode & { 'parent-id'?: string; 'frame-id'?: string; shapes?: string[] }
+import { assignHierarchy, ensureShapes } from './helpers'
 
 /** Normalize shapes to array (Penpot sends single id or array) */
 function normalizeShapes(shapes: unknown): string[] {
@@ -60,7 +58,7 @@ function getDescendantIds(objects: Record<string, IndexedShape>, shapeId: string
   while (stack.length > 0) {
     const id = stack.pop()!
     const shape = objects[id]
-    const childIds = (shape as IndexedShape)?.shapes
+    const childIds = shape?.shapes
     if (childIds?.length) {
       for (const cid of childIds) {
         result.push(cid)
@@ -71,35 +69,35 @@ function getDescendantIds(objects: Record<string, IndexedShape>, shapeId: string
   return result
 }
 
-function processOperation(shape: PenpotNode, op: Operation): PenpotNode {
+function processOperation(shape: IndexedShape, op: Operation): IndexedShape {
   switch (op.type) {
     case 'assign': {
       const assignOp = op as AssignOperation
       const value = assignOp.value ?? {}
-      return { ...shape, ...value } as PenpotNode
+      return { ...shape, ...value } as IndexedShape
     }
     case 'set': {
       const setOp = op as SetOperation
       const attr = setOp.attr
       const val = setOp.val
-      return { ...shape, [attr]: val } as PenpotNode
+      return { ...shape, [attr]: val } as IndexedShape
     }
     case 'set-touched': {
       const touched = (op as { touched?: Set<string> | string[] | null }).touched
       if (touched == null || (Array.isArray(touched) && touched.length === 0)) {
-        const { touched: _t, ...rest } = shape as PenpotNode & { touched?: unknown }
-        return rest as PenpotNode
+        const { touched: _t, ...rest } = shape
+        return rest as IndexedShape
       }
       const touchedSet = Array.isArray(touched) ? new Set(touched) : touched
-      return { ...shape, touched: Array.from(touchedSet) } as PenpotNode
+      return { ...shape, touched: Array.from(touchedSet) }
     }
     case 'set-remote-synced': {
       const remoteSynced = (op as { remoteSynced?: boolean | null }).remoteSynced
       if (!remoteSynced) {
-        const { remoteSynced: _r, ...rest } = shape as PenpotNode & { remoteSynced?: unknown }
-        return rest as PenpotNode
+        const { remoteSynced: _r, ...rest } = shape
+        return rest as IndexedShape
       }
-      return { ...shape, remoteSynced: true } as PenpotNode
+      return { ...shape, remoteSynced: true }
     }
     default:
       return shape
@@ -112,22 +110,26 @@ function processAddObj(data: IndexedPage, change: AddObjChange): IndexedPage {
   const frameId = getFrameId(change) ?? parentId
   const index = change.index ?? null
 
-  const objects = { ...data.objects } as Record<string, IndexedShape>
+  const objects = { ...data.objects }
 
   const parent = objects[parentId]
   const resolvedParentId = parent ? parentId : ZERO_UUID
   const resolvedFrameId = objects[frameId] ? frameId : ZERO_UUID
 
-  const shapeWithMeta: IndexedShape = {
-    ...obj,
-    id,
-    'frame-id': resolvedFrameId,
-    'parent-id': resolvedParentId,
-  }
+  const childIds = (obj as { children?: PenpotNode[] }).children
+    ?.map(c => c.id)
+    .filter((sid): sid is string => sid != null)
+
+  const frameIdForShape =
+    obj.type === 'frame' ? id ?? obj.id ?? resolvedFrameId : resolvedFrameId
+  const shapeWithMeta = ensureShapes(
+    assignHierarchy(obj, id, resolvedParentId, frameIdForShape),
+    childIds
+  )
 
   objects[id] = shapeWithMeta
 
-  const parentShape = objects[resolvedParentId] as IndexedShape | undefined
+  const parentShape = objects[resolvedParentId]
   if (parentShape) {
     const shapes = parentShape.shapes ?? []
     const newShapes = shapes.includes(id)
@@ -136,7 +138,7 @@ function processAddObj(data: IndexedPage, change: AddObjChange): IndexedPage {
     objects[resolvedParentId] = {
       ...parentShape,
       shapes: newShapes,
-    } as IndexedShape
+    }
   }
 
   return { ...data, objects }
@@ -144,13 +146,13 @@ function processAddObj(data: IndexedPage, change: AddObjChange): IndexedPage {
 
 function processDelObj(data: IndexedPage, change: DelObjChange): IndexedPage {
   const { id } = change
-  const objects = { ...data.objects } as Record<string, IndexedShape>
+  const objects = { ...data.objects }
   const target = objects[id]
   if (!target) {
     return data
   }
 
-  const parentId = target['parent-id'] ?? target['frame-id'] ?? ZERO_UUID
+  const parentId = target.parentId ?? target.frameId ?? ZERO_UUID
   const toRemove = [id, ...getDescendantIds(objects, id)]
 
   for (const rid of toRemove) {
@@ -185,13 +187,13 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
   const index = change.index ?? change['index'] ?? null
   const afterShape = change.afterShape ?? change['after-shape'] ?? null
 
-  const objects = { ...data.objects } as Record<string, IndexedShape>
+  const objects = { ...data.objects }
   const parent = objects[parentId]
   if (!parent || shapeIds.length === 0) {
     return data
   }
 
-  const frameId = isFrameShape(parent) ? parent.id : parent['frame-id'] ?? ZERO_UUID
+  const frameId = isFrameShape(parent) ? parent.id : parent.frameId ?? ZERO_UUID
 
   const insertIndex =
     afterShape != null
@@ -212,8 +214,8 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
     if (shape) {
       objects[shapeId] = {
         ...shape,
-        'parent-id': parentId,
-        'frame-id': frameId,
+        parentId,
+        frameId,
       }
     }
   }
@@ -221,7 +223,7 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
   for (const shapeId of shapeIds) {
     const shape = objects[shapeId]
     if (!shape) continue
-    const oldParentId = shape['parent-id']
+    const oldParentId = shape.parentId
     if (oldParentId && oldParentId !== parentId) {
       const oldParent = objects[oldParentId]
       if (oldParent) {
@@ -234,7 +236,7 @@ function processMovObjects(data: IndexedPage, change: MovObjectsChange): Indexed
   const updateFrameIdRec = (objs: Record<string, IndexedShape>, fid: string, sid: string): void => {
     const s = objs[sid]
     if (s) {
-      objs[sid] = { ...s, 'frame-id': fid }
+      objs[sid] = { ...s, frameId: fid }
       if (s.shapes && !isFrameShape(s)) {
         for (const cid of s.shapes) {
           updateFrameIdRec(objs, fid, cid)
@@ -259,7 +261,7 @@ function processReorderChildren(data: IndexedPage, change: ReorderChildrenChange
   const parentId = getParentId(change) ?? ''
   const order = normalizeShapes(change.shapes)
 
-  const objects = { ...data.objects } as Record<string, IndexedShape>
+  const objects = { ...data.objects }
   const parent = objects[parentId]
   if (!parent) {
     return data
