@@ -147,8 +147,8 @@
         {:keys [focused-id  on-key-down]}
         (use-navigation
          {:is-open is-open
-          :options-ref options-ref
           :nodes-ref nodes-ref
+          :options dropdown-options
           :toggle-dropdown toggle-dropdown
           :is-open* is-open*
           :on-enter on-option-enter})
