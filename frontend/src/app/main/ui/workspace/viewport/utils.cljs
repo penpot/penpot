@@ -71,6 +71,12 @@
       (> (:x cand) (:x cur))               cand
       :else                                cur)))
 
+(defn title-transform-use-width?
+  [{:keys [rotation] :as shape}]
+  (let [side       (mth/ceil (/ (- rotation 45) 90))
+        use-width? (even? side)]
+    use-width?))
+
 (defn title-transform
   [{:keys [points] :as shape} zoom grid-edition?]
   (let [leftmost  (->> points (reduce left?))
