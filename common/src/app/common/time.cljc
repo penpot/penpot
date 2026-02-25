@@ -28,7 +28,7 @@
               ["date-fns/locale/eu$default" :as dfn-eu]
               ["date-fns/locale/fa-IR$default" :as dfn-fa-ir]
               ["date-fns/locale/fr$default" :as dfn-fr]
-              ["date-fns/locale/fr$default" :as dfn-fr-ca]
+              ["date-fns/locale/fr-CA$default" :as dfn-fr-ca]
               ["date-fns/locale/gl$default" :as dfn-gl]
               ["date-fns/locale/he$default" :as dfn-he]
               ["date-fns/locale/hr$default" :as dfn-hr]
