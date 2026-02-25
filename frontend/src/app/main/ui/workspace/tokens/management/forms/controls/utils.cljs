@@ -18,24 +18,24 @@
         (->> tokens
              (filter (fn [[_ items]] (seq items))))]
     (if (empty? non-empty-groups)
-    [{:type :empty
-      :label (if no-sets
-               (tr "ds.inputs.numeric-input.no-applicable-tokens")
-               (tr "ds.inputs.numeric-input.no-matches"))}]
-    (->> non-empty-groups
-         (keep (fn [[type items]]
-                (when (seq? items)
-                  (cons {:group true
-                         :type  :group
-                         :id (dm/str "group-" (name type))
-                         :name  (name type)}
-                        (map token->dropdown-option items)))))
-         (interpose [{:separator true
-                      :id "separator"
-                      :type :separator}])
-         (apply concat)
-         (vec)
-         (not-empty)))))
+      [{:type :empty
+        :label (if no-sets
+                 (tr "ds.inputs.numeric-input.no-applicable-tokens")
+                 (tr "ds.inputs.numeric-input.no-matches"))}]
+      (->> non-empty-groups
+           (keep (fn [[type items]]
+                   (when (seq? items)
+                     (cons {:group true
+                            :type  :group
+                            :id (dm/str "group-" (name type))
+                            :name  (name type)}
+                           (map token->dropdown-option items)))))
+           (interpose [{:separator true
+                        :id "separator"
+                        :type :separator}])
+           (apply concat)
+           (vec)
+           (not-empty)))))
 
 (defn- extract-partial-brace-text
   [s]
