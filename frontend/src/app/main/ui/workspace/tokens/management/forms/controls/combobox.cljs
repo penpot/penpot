@@ -61,7 +61,7 @@
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
 
-(mf/defc combobox*
+(mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
 
   (let [form              (mf/use-ctx fc/context)
@@ -144,7 +144,7 @@
              (reset! filter-term* "")
              (reset! is-open* false))))
 
-        {:keys [focused-id  on-key-down]}
+        {:keys [focused-id on-key-down]}
         (use-navigation
          {:is-open is-open
           :nodes-ref nodes-ref
