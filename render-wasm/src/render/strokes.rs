@@ -83,8 +83,11 @@ fn draw_stroke_on_circle(
     if let Some(clip_op) = stroke.clip_op() {
         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
         canvas.save_layer(&layer_rec);
-        let mut clip_path = skia::Path::new();
-        clip_path.add_oval(rect, None);
+        let clip_path = {
+            let mut pb = skia::PathBuilder::new();
+            pb.add_oval(rect, None, None);
+            pb.detach()
+        };
         canvas.clip_path(&clip_path, clip_op, antialias);
         canvas.draw_oval(stroke_rect, &paint);
         canvas.restore();
@@ -153,8 +156,9 @@ fn draw_stroke_on_path(
     blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
-    let mut skia_path = path.to_skia_path();
-    skia_path.transform(path_transform.unwrap_or(&Matrix::default()));
+    let skia_path = path
+        .to_skia_path()
+        .make_transform(path_transform.unwrap_or(&Matrix::default()));
 
     let is_open = path.is_open();
 
@@ -174,15 +178,7 @@ fn draw_stroke_on_path(
         }
     }
 
-    handle_stroke_caps(
-        &mut skia_path,
-        stroke,
-        canvas,
-        is_open,
-        paint,
-        blur,
-        antialias,
-    );
+    handle_stroke_caps(&skia_path, stroke, canvas, is_open, paint, blur, antialias);
 }
 
 fn handle_stroke_cap(
@@ -224,7 +220,7 @@ fn handle_stroke_cap(
 
 #[allow(clippy::too_many_arguments)]
 fn handle_stroke_caps(
-    path: &mut skia::Path,
+    path: &skia::Path,
     stroke: &Stroke,
     canvas: &skia::Canvas,
     is_open: bool,
@@ -232,8 +228,7 @@ fn handle_stroke_caps(
     blur: Option<&ImageFilter>,
     _antialias: bool,
 ) {
-    let mut points = vec![Point::default(); path.count_points()];
-    path.get_points(&mut points);
+    let mut points = path.points().to_vec();
     // Curves can have duplicated points, so let's remove consecutive duplicated points
     points.dedup();
     let c_points = points.len();
@@ -304,13 +299,16 @@ fn draw_square_cap(
     let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
-    let mut path = skia::Path::new();
-    path.move_to(Point::new(center.x, center.y));
-    path.move_to(transformed_points[0]);
-    path.line_to(transformed_points[1]);
-    path.line_to(transformed_points[2]);
-    path.line_to(transformed_points[3]);
-    path.close();
+    let path = {
+        let mut pb = skia::PathBuilder::new();
+        pb.move_to(Point::new(center.x, center.y));
+        pb.move_to(transformed_points[0]);
+        pb.line_to(transformed_points[1]);
+        pb.line_to(transformed_points[2]);
+        pb.line_to(transformed_points[3]);
+        pb.close();
+        pb.detach()
+    };
     canvas.draw_path(&path, paint);
 }
 
@@ -338,13 +336,15 @@ fn draw_arrow_cap(
     let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
-    let mut path = skia::Path::new();
-    path.move_to(transformed_points[1]);
-    path.line_to(transformed_points[0]);
-    path.line_to(transformed_points[2]);
-    path.move_to(Point::new(center.x, center.y));
-    path.line_to(transformed_points[0]);
-
+    let path = {
+        let mut pb = skia::PathBuilder::new();
+        pb.move_to(transformed_points[1]);
+        pb.line_to(transformed_points[0]);
+        pb.line_to(transformed_points[2]);
+        pb.move_to(Point::new(center.x, center.y));
+        pb.line_to(transformed_points[0]);
+        pb.detach()
+    };
     canvas.draw_path(&path, paint);
 }
 
@@ -372,12 +372,14 @@ fn draw_triangle_cap(
     let mut transformed_points = points;
     matrix.map_points(&mut transformed_points, &points);
 
-    let mut path = skia::Path::new();
-    path.move_to(transformed_points[0]);
-    path.line_to(transformed_points[1]);
-    path.line_to(transformed_points[2]);
-    path.close();
-
+    let path = {
+        let mut pb = skia::PathBuilder::new();
+        pb.move_to(transformed_points[0]);
+        pb.line_to(transformed_points[1]);
+        pb.line_to(transformed_points[2]);
+        pb.close();
+        pb.detach()
+    };
     canvas.draw_path(&path, paint);
 }
 
@@ -441,8 +443,7 @@ fn draw_image_stroke_in_container(
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(p) = shape_type.path() {
                 canvas.save();
-                let mut path = p.to_skia_path();
-                path.transform(&path_transform.unwrap());
+                let path = p.to_skia_path().make_transform(&path_transform.unwrap());
                 let stroke_kind = stroke.render_kind(p.is_open());
                 match stroke_kind {
                     StrokeKind::Inner => {
@@ -464,7 +465,7 @@ fn draw_image_stroke_in_container(
                     canvas.draw_path(&path, &thin_paint);
                 }
                 handle_stroke_caps(
-                    &mut path,
+                    &path,
                     stroke,
                     canvas,
                     is_open,
@@ -504,8 +505,7 @@ fn draw_image_stroke_in_container(
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {
         if stroke.render_kind(p.is_open()) == StrokeKind::Outer {
-            let mut path = p.to_skia_path();
-            path.transform(&path_transform.unwrap());
+            let path = p.to_skia_path().make_transform(&path_transform.unwrap());
             let mut clear_paint = skia::Paint::default();
             clear_paint.set_blend_mode(skia::BlendMode::Clear);
             clear_paint.set_anti_alias(antialias);
@@ -526,7 +526,7 @@ pub fn render(
     strokes: &[&Stroke],
     surface_id: Option<SurfaceId>,
     antialias: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     if strokes.is_empty() {
         return;
@@ -541,8 +541,8 @@ pub fn render(
         // edges semi-transparent and revealing strokes underneath.
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
-            // Expand for spread if provided
-            if let Some(s) = spread.filter(|&s| s > 0.0) {
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
                 content_bounds.outset((s, s));
             }
             let max_margin = strokes
@@ -588,7 +588,7 @@ pub fn render(
                             antialias,
                             true,
                             true,
-                            spread,
+                            outset,
                         );
                     }
 
@@ -608,7 +608,7 @@ pub fn render(
                 surface_id,
                 None,
                 antialias,
-                spread,
+                outset,
             );
         }
         return;
@@ -621,7 +621,7 @@ pub fn render(
         surface_id,
         antialias,
         false,
-        spread,
+        outset,
     );
 }
 
@@ -642,7 +642,7 @@ fn render_merged(
     surface_id: Option<SurfaceId>,
     antialias: bool,
     bypass_filter: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     let representative = *strokes
         .last()
@@ -658,8 +658,8 @@ fn render_merged(
     if !bypass_filter {
         if let Some(image_filter) = blur_filter.clone() {
             let mut content_bounds = shape.selrect;
-            // Expand for spread if provided
-            if let Some(s) = spread.filter(|&s| s > 0.0) {
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
                 content_bounds.outset((s, s));
             }
             let stroke_margin = representative.bounds_width(shape.is_open());
@@ -694,7 +694,7 @@ fn render_merged(
                         Some(temp_surface),
                         antialias,
                         true,
-                        spread,
+                        outset,
                     );
 
                     state.surfaces.apply_mut(temp_surface as u32, |surface| {
@@ -711,8 +711,8 @@ fn render_merged(
     // via SrcOver), matching the non-merged path where strokes[0] is drawn last (on top).
     let fills: Vec<Fill> = strokes.iter().map(|s| s.fill.clone()).collect();
 
-    // Expand selrect if spread is provided
-    let selrect = if let Some(s) = spread.filter(|&s| s > 0.0) {
+    // Expand selrect if outset is provided
+    let selrect = if let Some(s) = outset.filter(|&s| s > 0.0) {
         let mut r = shape.selrect;
         r.outset((s, s));
         r
@@ -790,7 +790,7 @@ pub fn render_single(
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
     antialias: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     render_single_internal(
         render_state,
@@ -801,7 +801,7 @@ pub fn render_single(
         antialias,
         false,
         false,
-        spread,
+        outset,
     );
 }
 
@@ -815,13 +815,13 @@ fn render_single_internal(
     antialias: bool,
     bypass_filter: bool,
     skip_blur: bool,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     if !bypass_filter {
         if let Some(image_filter) = shape.image_filter(1.) {
             let mut content_bounds = shape.selrect;
-            // Expand for spread if provided
-            if let Some(s) = spread.filter(|&s| s > 0.0) {
+            // Expand for outset if provided
+            if let Some(s) = outset.filter(|&s| s > 0.0) {
                 content_bounds.outset((s, s));
             }
             let stroke_margin = stroke.bounds_width(shape.is_open());
@@ -849,7 +849,7 @@ fn render_single_internal(
                         antialias,
                         true,
                         true,
-                        spread,
+                        outset,
                     );
                 },
             ) {
@@ -920,18 +920,18 @@ fn render_single_internal(
                     let is_open = path.is_open();
                     let mut paint =
                         stroke.to_stroked_paint(is_open, &selrect, svg_attrs, antialias);
-                    // Apply spread by increasing stroke width
-                    if let Some(s) = spread.filter(|&s| s > 0.0) {
+                    // Apply outset by increasing stroke width
+                    if let Some(s) = outset.filter(|&s| s > 0.0) {
                         let current_width = paint.stroke_width();
                         // Path stroke kinds are built differently:
                         // - Center uses the stroke width directly.
                         // - Inner/Outer use a doubled width plus clipping/clearing logic.
-                        // Compensate spread so visual growth is comparable across kinds.
-                        let spread_growth = match stroke.render_kind(is_open) {
+                        // Compensate outset so visual growth is comparable across kinds.
+                        let outset_growth = match stroke.render_kind(is_open) {
                             StrokeKind::Center => s * 2.0,
                             StrokeKind::Inner | StrokeKind::Outer => s * 4.0,
                         };
-                        paint.set_stroke_width(current_width + spread_growth);
+                        paint.set_stroke_width(current_width + outset_growth);
                     }
                     draw_stroke_on_path(
                         canvas,

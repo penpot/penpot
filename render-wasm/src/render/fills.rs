@@ -2,7 +2,15 @@ use skia_safe::{self as skia, Paint, RRect};
 
 use super::{filters, RenderState, SurfaceId};
 use crate::render::get_source_rect;
-use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
+use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, StrokeKind, Type};
+
+/// True when the shape has at least one visible inner stroke.
+fn has_inner_stroke(shape: &Shape) -> bool {
+    let is_open = shape.is_open();
+    shape
+        .visible_strokes()
+        .any(|s| s.render_kind(is_open) == StrokeKind::Inner)
+}
 
 fn draw_image_fill(
     render_state: &mut RenderState,
@@ -51,15 +59,18 @@ fn draw_image_fill(
             canvas.clip_rect(container, skia::ClipOp::Intersect, antialias);
         }
         Type::Circle => {
-            let mut oval_path = skia::Path::new();
-            oval_path.add_oval(container, None);
+            let oval_path = {
+                let mut pb = skia::PathBuilder::new();
+                pb.add_oval(container, None, None);
+                pb.detach()
+            };
             canvas.clip_path(&oval_path, skia::ClipOp::Intersect, antialias);
         }
         shape_type @ (Type::Path(_) | Type::Bool(_)) => {
             if let Some(path) = shape_type.path() {
                 if let Some(path_transform) = path_transform {
                     canvas.clip_path(
-                        path.to_skia_path().transform(&path_transform),
+                        &path.to_skia_path().make_transform(&path_transform),
                         skia::ClipOp::Intersect,
                         antialias,
                     );
@@ -97,18 +108,33 @@ pub fn render(
     fills: &[Fill],
     antialias: bool,
     surface_id: SurfaceId,
-    spread: Option<f32>,
+    outset: Option<f32>,
 ) {
     if fills.is_empty() {
         return;
     }
+
+    let scale = render_state.get_scale().max(1e-6);
+    let inset = if has_inner_stroke(shape) {
+        Some(1.0 / scale)
+    } else {
+        None
+    };
 
     // Image fills use draw_image_fill which needs render_state for GPU images
     // and sampling options that get_fill_shader (used by merge_fills) lacks.
     let has_image_fills = fills.iter().any(|f| matches!(f, Fill::Image(_)));
     if has_image_fills {
         for fill in fills.iter().rev() {
-            render_single_fill(render_state, shape, fill, antialias, surface_id, spread);
+            render_single_fill(
+                render_state,
+                shape,
+                fill,
+                antialias,
+                surface_id,
+                outset,
+                inset,
+            );
         }
         return;
     }
@@ -125,7 +151,7 @@ pub fn render(
             |state, temp_surface| {
                 let mut filtered_paint = paint.clone();
                 filtered_paint.set_image_filter(image_filter.clone());
-                draw_fill_to_surface(state, shape, temp_surface, &filtered_paint, spread);
+                draw_fill_to_surface(state, shape, temp_surface, &filtered_paint, outset, inset);
             },
         ) {
             return;
@@ -134,33 +160,35 @@ pub fn render(
         }
     }
 
-    draw_fill_to_surface(render_state, shape, surface_id, &paint, spread);
+    draw_fill_to_surface(render_state, shape, surface_id, &paint, outset, inset);
 }
 
 /// Draws a single paint (with a merged shader) to the appropriate surface
 /// based on the shape type.
+/// When `inset` is Some(eps), the fill is inset by eps (e.g. to avoid seam with inner strokes).
 fn draw_fill_to_surface(
     render_state: &mut RenderState,
     shape: &Shape,
     surface_id: SurfaceId,
     paint: &Paint,
-    spread: Option<f32>,
+    outset: Option<f32>,
+    inset: Option<f32>,
 ) {
     match &shape.shape_type {
         Type::Rect(_) | Type::Frame(_) => {
             render_state
                 .surfaces
-                .draw_rect_to(surface_id, shape, paint, spread);
+                .draw_rect_to(surface_id, shape, paint, outset, inset);
         }
         Type::Circle => {
             render_state
                 .surfaces
-                .draw_circle_to(surface_id, shape, paint, spread);
+                .draw_circle_to(surface_id, shape, paint, outset, inset);
         }
         Type::Path(_) | Type::Bool(_) => {
             render_state
                 .surfaces
-                .draw_path_to(surface_id, shape, paint, spread);
+                .draw_path_to(surface_id, shape, paint, outset, inset);
         }
         Type::Group(_) => {}
         _ => unreachable!("This shape should not have fills"),
@@ -173,7 +201,8 @@ fn render_single_fill(
     fill: &Fill,
     antialias: bool,
     surface_id: SurfaceId,
-    spread: Option<f32>,
+    outset: Option<f32>,
+    inset: Option<f32>,
 ) {
     let mut paint = fill.to_paint(&shape.selrect, antialias);
     if let Some(image_filter) = shape.image_filter(1.) {
@@ -192,7 +221,8 @@ fn render_single_fill(
                     antialias,
                     temp_surface,
                     &filtered_paint,
-                    spread,
+                    outset,
+                    inset,
                 );
             },
         ) {
@@ -209,10 +239,12 @@ fn render_single_fill(
         antialias,
         surface_id,
         &paint,
-        spread,
+        outset,
+        inset,
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_single_fill_to_surface(
     render_state: &mut RenderState,
     shape: &Shape,
@@ -220,7 +252,8 @@ fn draw_single_fill_to_surface(
     antialias: bool,
     surface_id: SurfaceId,
     paint: &Paint,
-    spread: Option<f32>,
+    outset: Option<f32>,
+    inset: Option<f32>,
 ) {
     match (fill, &shape.shape_type) {
         (Fill::Image(image_fill), _) => {
@@ -236,17 +269,17 @@ fn draw_single_fill_to_surface(
         (_, Type::Rect(_) | Type::Frame(_)) => {
             render_state
                 .surfaces
-                .draw_rect_to(surface_id, shape, paint, spread);
+                .draw_rect_to(surface_id, shape, paint, outset, inset);
         }
         (_, Type::Circle) => {
             render_state
                 .surfaces
-                .draw_circle_to(surface_id, shape, paint, spread);
+                .draw_circle_to(surface_id, shape, paint, outset, inset);
         }
         (_, Type::Path(_)) | (_, Type::Bool(_)) => {
             render_state
                 .surfaces
-                .draw_path_to(surface_id, shape, paint, spread);
+                .draw_path_to(surface_id, shape, paint, outset, inset);
         }
         (_, Type::Group(_)) => {
             // Groups can have fills but they propagate them to their children

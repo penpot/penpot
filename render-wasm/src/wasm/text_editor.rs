@@ -1,5 +1,3 @@
-use macros::ToJs;
-
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::shapes::{Paragraph, Shape, TextContent, Type, VerticalAlign};
@@ -7,6 +5,7 @@ use crate::state::{TextCursor, TextSelection};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
+use macros::ToJs;
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
@@ -55,6 +54,17 @@ pub extern "C" fn text_editor_is_active() -> bool {
 }
 
 #[no_mangle]
+pub extern "C" fn text_editor_is_active_with_id(a: u32, b: u32, c: u32, d: u32) -> bool {
+    with_state!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        let Some(active_shape_id) = state.text_editor_state.active_shape_id else {
+            return false;
+        };
+        state.text_editor_state.is_active && active_shape_id == shape_id
+    })
+}
+
+#[no_mangle]
 pub extern "C" fn text_editor_get_active_shape_id(buffer_ptr: *mut u32) {
     with_state!(state, {
         if let Some(shape_id) = state.text_editor_state.active_shape_id {
@@ -70,45 +80,25 @@ pub extern "C" fn text_editor_get_active_shape_id(buffer_ptr: *mut u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_select_all() {
+pub extern "C" fn text_editor_select_all() -> bool {
     with_state_mut!(state, {
         if !state.text_editor_state.is_active {
-            return;
+            return false;
         }
 
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
-            return;
+            return false;
         };
 
         let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
+            return false;
         };
 
         let Type::Text(text_content) = &shape.shape_type else {
-            return;
+            return false;
         };
-
-        let paragraphs = text_content.paragraphs();
-        if paragraphs.is_empty() {
-            return;
-        }
-
-        let last_para_idx = paragraphs.len() - 1;
-        let last_para = &paragraphs[last_para_idx];
-        let total_chars: usize = last_para
-            .children()
-            .iter()
-            .map(|span| span.text.chars().count())
-            .sum();
-
-        use crate::state::TextCursor;
-        state.text_editor_state.selection.anchor = TextCursor::new(0, 0);
-        state.text_editor_state.selection.focus = TextCursor::new(last_para_idx, total_chars);
-        state.text_editor_state.reset_blink();
-        state
-            .text_editor_state
-            .push_event(crate::state::EditorEvent::SelectionChanged);
-    });
+        state.text_editor_state.select_all(text_content)
+    })
 }
 
 #[no_mangle]
@@ -121,146 +111,127 @@ pub extern "C" fn text_editor_poll_event() -> u8 {
 // ============================================================================
 
 #[no_mangle]
-pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
+pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
     with_state_mut!(state, {
         if !state.text_editor_state.is_active {
             return;
         }
-
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
-
-        let (shape_matrix, view_matrix, selrect, vertical_align) = {
-            let Some(shape) = state.shapes.get(&shape_id) else {
-                return;
-            };
-            (
-                shape.get_concatenated_matrix(&state.shapes),
-                state.render_state.viewbox.get_matrix(),
-                shape.selrect(),
-                shape.vertical_align(),
-            )
-        };
-
-        let Some(inv_view_matrix) = view_matrix.invert() else {
+        let Some(shape) = state.shapes.get(&shape_id) else {
             return;
         };
-
-        let Some(inv_shape_matrix) = shape_matrix.invert() else {
+        let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-
-        let mut matrix = Matrix::new_identity();
-        matrix.post_concat(&inv_view_matrix);
-        matrix.post_concat(&inv_shape_matrix);
-
-        let mapped_point = matrix.map_point(Point::new(x, y));
-
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
-            return;
-        };
-
-        if text_content.layout.paragraphs.is_empty() && !text_content.paragraphs().is_empty() {
-            let bounds = text_content.bounds;
-            text_content.update_layout(bounds);
-        }
-
-        // Calculate vertical alignment offset (same as in render/text_editor.rs)
-        let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
-        let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-        let vertical_offset = match vertical_align {
-            crate::shapes::VerticalAlign::Center => (selrect.height() - total_height) / 2.0,
-            crate::shapes::VerticalAlign::Bottom => selrect.height() - total_height,
-            _ => 0.0,
-        };
-
-        // Adjust point: subtract selrect offset and vertical alignment
-        // The text layout expects coordinates where (0, 0) is the top-left of the text content
-        let adjusted_point = Point::new(
-            mapped_point.x - selrect.x(),
-            mapped_point.y - selrect.y() - vertical_offset,
-        );
-
-        if let Some(position) = text_content.get_caret_position_at(&adjusted_point) {
+        let point = Point::new(x, y);
+        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
+        let shape_matrix = shape.get_matrix();
+        state.text_editor_state.start_pointer_selection();
+        if let Some(position) =
+            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
+        {
             state.text_editor_state.set_caret_from_position(position);
         }
     });
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_extend_selection_to_point(x: f32, y: f32) {
+pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return;
+        }
+        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
+        let point = Point::new(x, y);
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let shape_matrix = shape.get_matrix();
+        let Some(_shape_rel_point) = Shape::get_relative_point(&point, &view_matrix, &shape_matrix)
+        else {
+            return;
+        };
+        if !state.text_editor_state.is_pointer_selection_active {
+            return;
+        }
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+
+        if let Some(position) =
+            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
+        {
+            state
+                .text_editor_state
+                .extend_selection_from_position(position);
+        }
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return;
+        }
+        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
+        let point = Point::new(x, y);
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let shape_matrix = shape.get_matrix();
+        let Some(_shape_rel_point) = Shape::get_relative_point(&point, &view_matrix, &shape_matrix)
+        else {
+            return;
+        };
+        if !state.text_editor_state.is_pointer_selection_active {
+            return;
+        }
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+        if let Some(position) =
+            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
+        {
+            state
+                .text_editor_state
+                .extend_selection_from_position(position);
+        }
+        state.text_editor_state.stop_pointer_selection();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
     with_state_mut!(state, {
         if !state.text_editor_state.is_active {
             return;
         }
 
+        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
+        let point = Point::new(x, y);
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
-
-        let (shape_matrix, view_matrix, selrect, vertical_align) = {
-            let Some(shape) = state.shapes.get(&shape_id) else {
-                return;
-            };
-            (
-                shape.get_concatenated_matrix(&state.shapes),
-                state.render_state.viewbox.get_matrix(),
-                shape.selrect(),
-                shape.vertical_align(),
-            )
-        };
-
-        let Some(inv_view_matrix) = view_matrix.invert() else {
+        let Some(shape) = state.shapes.get(&shape_id) else {
             return;
         };
-
-        let Some(inv_shape_matrix) = shape_matrix.invert() else {
+        let shape_matrix = shape.get_matrix();
+        let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-
-        let mut matrix = Matrix::new_identity();
-        matrix.post_concat(&inv_view_matrix);
-        matrix.post_concat(&inv_shape_matrix);
-
-        let mapped_point = matrix.map_point(Point::new(x, y));
-
-        let Some(shape) = state.shapes.get_mut(&shape_id) else {
-            return;
-        };
-
-        let Type::Text(text_content) = &mut shape.shape_type else {
-            return;
-        };
-
-        if text_content.layout.paragraphs.is_empty() && !text_content.paragraphs().is_empty() {
-            let bounds = text_content.bounds;
-            text_content.update_layout(bounds);
-        }
-
-        // Calculate vertical alignment offset (same as in render/text_editor.rs)
-        let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
-        let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-        let vertical_offset = match vertical_align {
-            crate::shapes::VerticalAlign::Center => (selrect.height() - total_height) / 2.0,
-            crate::shapes::VerticalAlign::Bottom => selrect.height() - total_height,
-            _ => 0.0,
-        };
-
-        // Adjust point: subtract selrect offset and vertical alignment
-        let adjusted_point = Point::new(
-            mapped_point.x - selrect.x(),
-            mapped_point.y - selrect.y() - vertical_offset,
-        );
-
-        if let Some(position) = text_content.get_caret_position_at(&adjusted_point) {
-            state
-                .text_editor_state
-                .extend_selection_from_position(position);
+        if let Some(position) =
+            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
+        {
+            state.text_editor_state.set_caret_from_position(position);
         }
     });
 }

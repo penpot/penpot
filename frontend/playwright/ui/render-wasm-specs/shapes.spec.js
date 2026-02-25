@@ -432,3 +432,27 @@ test("Keeps component visible when focusing after creating it", async ({
   await workspace.hideUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Check inner stroke artifacts", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-inner-strokes-artifacts.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-9a0b2e2c863f",
+    pageId: "effcbebc-b8c8-802f-8007-9a0b2e2c8640",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("ControlOrMeta++");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  // Stricter comparison: artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
+});

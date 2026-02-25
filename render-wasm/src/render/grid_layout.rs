@@ -24,7 +24,11 @@ pub fn render_overlay(zoom: f32, canvas: &skia::Canvas, shape: &Shape, shapes: S
             cell.anchor + hv + vv,
             cell.anchor + vv,
         ];
-        let polygon = skia::Path::polygon(&points, true, None, None);
+        let polygon = {
+            let mut pb = skia::PathBuilder::new();
+            pb.add_polygon(&points, true);
+            pb.detach()
+        };
         canvas.draw_path(&polygon, &paint);
     }
 }
