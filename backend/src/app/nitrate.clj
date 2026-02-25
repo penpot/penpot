@@ -126,7 +126,8 @@
   [cfg profile]
   (try
     (let [nitrate-licence (call cfg :is-valid-user {:profile-id (:id profile)})]
-      (assoc profile :nitrate-licence (:valid nitrate-licence)))
+      (assoc-in profile [:props :nitrate-license]
+                (select-keys nitrate-licence [:valid :created-at])))
     (catch Throwable cause
       (l/error :hint "failed to get nitrate licence"
                :profile-id (:id profile)
