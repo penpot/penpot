@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.plugins.register :refer [mcp-plugin-id]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -29,8 +30,12 @@
      "comment:read" "comment:write"
      "content:write" "content:read"}})
 
+(defn finalize-workspace?
+  [event]
+  (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
+
 (defn init-mcp!
-  []
+  [stream]
   (->> (rp/cmd! :get-current-mcp-token)
        (rx/subs!
         (fn [{:keys [token]}]
@@ -48,13 +53,35 @@
                     :setMcpStatus
                     (fn [status]
                       ;; TODO: Visual feedback
-                      (log/info :hint "MCP STATUS" :status status))}}))))))
+                      (log/info :hint "MCP STATUS" :status status))
+
+                    :on
+                    (fn [event cb]
+                      (when-let [event
+                                 (case event
+                                   "disconnect" ::disconnect
+                                   "connect" ::connect
+                                   nil)]
+
+                        (let [stopper (rx/filter finalize-workspace? stream)]
+                          (->> stream
+                               (rx/filter (ptk/type? event))
+                               (rx/take-until stopper)
+                               (rx/subs! #(cb))))))}}))))))
+
+(defn disconnect-mcp
+  []
+  (st/emit! (ptk/data-event ::disconnect)))
+
+(defn connect-mcp
+  []
+  (st/emit! (ptk/data-event ::connect)))
 
 (defn init-mcp-connexion
   []
   (ptk/reify ::init-mcp-connexion
     ptk/EffectEvent
-    (effect [_ state _]
+    (effect [_ state stream]
       (when (and (contains? cf/flags :mcp)
                  (-> state :profile :props :mcp-status))
-        (init-mcp!)))))
+        (init-mcp! stream)))))

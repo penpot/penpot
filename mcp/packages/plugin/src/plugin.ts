@@ -73,6 +73,21 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
     }
 }
 
+if (mcp) {
+    mcp.on("disconnect", async () => {
+        penpot.ui.sendMessage({
+            type: "stop-server",
+        });
+    });
+    mcp.on("connect", async () => {
+        penpot.ui.sendMessage({
+            type: "start-server",
+            url: mcp?.getServerUrl(),
+            token: mcp?.getToken(),
+        });
+    });
+}
+
 // Handle theme change in the iframe
 penpot.on("themechange", (theme) => {
     penpot.ui.sendMessage({
