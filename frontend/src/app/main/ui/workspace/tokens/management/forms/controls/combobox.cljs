@@ -137,9 +137,10 @@
          (mf/deps value resolve-stream name)
          (fn [id]
            (let [input-node (mf/ref-val ref)
-                 final-val  (tp/select-option-by-id id options-ref input-node value)]
-             (fm/on-input-change form name final-val true)
-             (rx/push! resolve-stream final-val)
+                 final-val (tp/select-option-by-id id options-ref input-node value)]
+             (when final-val
+               (fm/on-input-change form name final-val true)
+               (rx/push! resolve-stream final-val))
              (reset! filter-term* "")
              (reset! is-open* false))))
 
@@ -180,16 +181,17 @@
                  id         (dom/get-data node "id")
                  final-val  (tp/select-option-by-id id options-ref input-node value)]
 
-             (fm/on-input-change form name final-val true)
-             (rx/push! resolve-stream final-val)
-
              (reset! filter-term* "")
-             (reset! is-open* false)
-
              (dom/focus! input-node)
-             (let [new-cursor (+ (str/index-of final-val "}") 1)]
-               (set! (.-selectionStart input-node) new-cursor)
-               (set! (.-selectionEnd input-node) new-cursor)))))
+
+             (when final-val
+               (reset! is-open* false)
+               (fm/on-input-change form name final-val true)
+               (rx/push! resolve-stream final-val)
+
+               (let [new-cursor (+ (str/index-of final-val "}") 1)]
+                 (set! (.-selectionStart input-node) new-cursor)
+                 (set! (.-selectionEnd input-node) new-cursor))))))
 
         hint*
         (mf/use-state {})

@@ -20,28 +20,40 @@
       {:start last-open
        :partial (subs text-before (inc last-open))})))
 
+;; (defn replace-active-token
+;;   [value cursor new-name]
+;; 
+;;   (let [before     (subs value 0 cursor)
+;;         last-open  (str/last-index-of before "{")
+;;         last-close (str/last-index-of before "}")]
+;; 
+;;     (if (and last-open
+;;              (or (nil? last-close)
+;;                  (> last-open last-close)))
+;; 
+;;       (let [after-start (subs value last-open)
+;;             close-pos   (str/index-of after-start "}")
+;;             end         (if close-pos
+;;                           (+ last-open close-pos 1)
+;;                           cursor)]
+;;         (str (subs value 0 last-open)
+;;              "{" new-name "}"
+;;              (subs value end)))
+;;       (str (subs value 0 cursor)
+;;            "{" new-name "}"
+;;            (subs value cursor)))))
+
 (defn replace-active-token
   [value cursor new-name]
-
-  (let [before     (subs value 0 cursor)
-        last-open  (str/last-index-of before "{")
-        last-close (str/last-index-of before "}")]
-
-    (if (and last-open
-             (or (nil? last-close)
-                 (> last-open last-close)))
-
-      (let [after-start (subs value last-open)
-            close-pos   (str/index-of after-start "}")
-            end         (if close-pos
-                          (+ last-open close-pos 1)
-                          cursor)]
-        (str (subs value 0 last-open)
-             "{" new-name "}"
-             (subs value end)))
-      (str (subs value 0 cursor)
-           "{" new-name "}"
-           (subs value cursor)))))
+  (if-let [{:keys [start]} (extract-partial-token value cursor)]
+    ;; Hay token activo
+    (str (subs value 0 start)
+         "{" new-name "}"
+         (subs value cursor))
+    ;; No hay token activo → insertar en cursor
+    (str (subs value 0 cursor)
+         "{" new-name "}"
+         (subs value cursor))))
 
 (defn active-token [value input-node]
   (let [cursor (dom/selection-start input-node)]
