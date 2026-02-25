@@ -62,6 +62,7 @@
      (case type
        :group
        [:li {:class (stl/css :group-option)
+             :role "presentation"
              :key (weak-key option)}
         [:> icon*
          {:icon-id i/arrow-down
@@ -74,7 +75,7 @@
        [:hr {:key (weak-key option) :class (stl/css :option-separator)}]
 
        :empty
-       [:li {:key (weak-key option) :class (stl/css :option-empty)}
+       [:li {:key (weak-key option) :class (stl/css :option-empty) :role "presentation"}
         (get option :label)]
 
        ;; Token option
