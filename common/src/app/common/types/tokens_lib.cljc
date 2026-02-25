@@ -153,6 +153,18 @@
                   tokens)]
     (group-by :type tokens')))
 
+(defn rename-path
+  "Renames a node or token path segment with a new name.
+   If token is provided, it renames a token path, otherwise it renames a node path."
+  ([node new-name]
+   (rename-path node nil new-name))
+  ([node token new-name]
+   (let [element (if token (:name token) (:path node))
+         split-path (cpn/split-path element :separator ".")
+         updated-split-element-name (assoc split-path (:depth node) new-name)
+         new-element-path (cpn/join-path updated-split-element-name :separator "." :with-spaces? false)]
+     new-element-path)))
+
 ;; === Token Set
 
 (defprotocol ITokenSet
