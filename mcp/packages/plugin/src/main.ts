@@ -118,6 +118,9 @@ document.querySelector("[data-handler='connect-mcp']")?.addEventListener("click"
 window.addEventListener("message", (event) => {
     if (event.data.type === "start-server") {
         connectToMcpServer(event.data.url, event.data.token);
+    }
+    if (event.data.type === "stop-server") {
+        ws?.close();
     } else if (event.data.source === "penpot") {
         document.body.dataset.theme = event.data.theme;
     } else if (event.data.type === "task-response") {
