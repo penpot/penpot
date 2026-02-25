@@ -89,12 +89,12 @@ export function isRootFrame(shape: PenpotNode | null | undefined): boolean {
     shape != null &&
     shape.type === 'frame' &&
     shape.id !== ZERO_UUID &&
-    shape['frame-id'] === ZERO_UUID
+    shape.frameId === ZERO_UUID
   )
 }
 
 export function isDirectChildOfRoot(shape: PenpotNode | null | undefined): boolean {
-  return shape != null && shape['frame-id'] === ZERO_UUID
+  return shape != null && shape.frameId === ZERO_UUID
 }
 
 export function getImmediateChildren(

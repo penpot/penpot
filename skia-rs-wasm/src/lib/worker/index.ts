@@ -176,13 +176,13 @@ registerHandler('index/update-text-rect', (message: WorkerMessage) => {
       return null
     }
 
-    // Update shape with new data
-    const updatedShape: PenpotNode = {
+    // Update shape with new data (text rect update clears position-data)
+    const updatedShape = {
       ...shape,
-      'position-data': null,
+      positionData: undefined,
       points,
       selrect,
-    }
+    } as PenpotNode
 
     // Update objects
     const updatedObjects = {
@@ -205,7 +205,7 @@ registerHandler('index/update-text-rect', (message: WorkerMessage) => {
       state.textRect[pageId] = {}
     }
     state.textRect[pageId][shapeId] = {
-      'position-data': null,
+      positionData: undefined,
       points,
       selrect,
     }
