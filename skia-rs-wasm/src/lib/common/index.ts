@@ -6,3 +6,4 @@
 export * from './types'
 export * from './conversions'
 export * from './verification'
+export * from './changes'

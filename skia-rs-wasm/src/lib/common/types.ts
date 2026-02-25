@@ -5,6 +5,7 @@
 
 import type { CSSProperties } from 'react'
 import type { Matrix, PenpotNode, PenpotPage, Selrect } from '@penpot-exporter/types'
+import type { Change } from './changes'
 
 /** Resize handle position (matches frontend handler keywords) */
 export type ResizeHandlePosition =
@@ -187,10 +188,16 @@ export interface WorkerIndexInitializePayload {
   page: PenpotPage
 }
 
-/** Payload for index/update command. */
+/** Payload for index/update command (full page replacement). */
 export interface WorkerIndexUpdatePayload {
   pageId: string
   page: PenpotPage
+}
+
+/** Payload for index/update command (incremental changes). */
+export interface WorkerIndexUpdateWithChangesPayload {
+  pageId: string
+  changes: Change[]
 }
 
 /** Payload for index/update-text-rect command. */
@@ -252,6 +259,7 @@ export type WorkerSendPayload =
   | WorkerConfigurePayload
   | WorkerIndexInitializePayload
   | WorkerIndexUpdatePayload
+  | WorkerIndexUpdateWithChangesPayload
   | QueryParams
   | WorkerUpdateTextRectPayload
   | undefined
@@ -264,6 +272,7 @@ export interface WorkerClient {
   configure(config: WorkerConfig): Promise<void>
   addPage(page: PenpotPage): Promise<void>
   updatePage(pageId: string, page: PenpotPage): Promise<void>
+  updatePageWithChanges(pageId: string, changes: Change[]): Promise<void>
   onMessage(callback: (message: WorkerMessage) => void): () => void
   destroy(): void
 }

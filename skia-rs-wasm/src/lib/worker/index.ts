@@ -6,7 +6,9 @@
 import type { WorkerState, IndexedPage, QueryParams, WorkerMessage, SerializedMessage } from './types'
 import type { WorkerUpdateTextRectPayload } from '../renderer/types'
 import type { PenpotNode, Point, Matrix, PenpotPage } from '@penpot-exporter/types'
+import type { Change } from '@skia-rs-wasm/common'
 import { flattenPageToIndexed } from './types'
+import { processChanges } from './process-changes'
 import { handler, registerHandler } from './impl'
 import { encode, decode } from './messages'
 import * as selection from './selection'
@@ -70,7 +72,8 @@ registerHandler('index/initialize', (message: WorkerMessage) => {
 
 registerHandler('index/update', (message: WorkerMessage) => {
   const pageId = message.payload?.pageId as string | undefined
-  // const changes = message.payload?.changes as any[] | undefined // TODO: implement change processing
+  const changes = message.payload?.changes as Change[] | undefined
+  const newPage = message.payload?.page as PenpotPage | undefined
 
   if (!pageId) {
     return null
@@ -84,14 +87,18 @@ registerHandler('index/update', (message: WorkerMessage) => {
       return null
     }
 
-    // Simplified: in full implementation, would process changes
-    // For now, assume newPage is provided or reconstructed
-    const newPage = message.payload?.page as PenpotPage | undefined
+    let indexedNew: IndexedPage
 
-    if (newPage) {
-      const indexedNew = flattenPageToIndexed(newPage)
+    if (changes && changes.length > 0) {
+      indexedNew = processChanges(oldPage, changes)
       state.pagesIndex[pageId] = indexedNew
       state.selection = selection.updatePage(state.selection, oldPage, indexedNew)
+    } else if (newPage) {
+      indexedNew = flattenPageToIndexed(newPage)
+      state.pagesIndex[pageId] = indexedNew
+      state.selection = selection.updatePage(state.selection, oldPage, indexedNew)
+    } else {
+      return null
     }
 
     const elapsed = performance.now() - startTime

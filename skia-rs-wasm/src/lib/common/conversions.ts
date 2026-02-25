@@ -73,22 +73,82 @@ export function makeSelrect(x: number, y: number, width: number, height: number)
   }
 }
 
-function flattenChildren(nodes?: PenpotNode[]): Record<string, PenpotNode> {
-  const acc: Record<string, PenpotNode> = {}
-  if (!nodes) return acc
+/** Indexed shape with Penpot flat structure (parent-id, shapes) */
+type IndexedShape = PenpotNode & { 'parent-id'?: string; 'frame-id'?: string; shapes?: string[] }
+
+function flattenChildrenRec(
+  nodes: PenpotNode[] | undefined,
+  parentId: string | undefined,
+  frameId: string | undefined
+): { objects: Record<string, IndexedShape> } {
+  const objects: Record<string, IndexedShape> = {}
+  if (!nodes?.length) return { objects }
+
   for (const node of nodes) {
-    acc[node.id] = node
     const childList = (node as { children?: PenpotNode[] }).children
+    const childIds = childList?.map(c => c.id).filter((id): id is string => id != null) ?? []
+
+    const indexed: IndexedShape = {
+      ...node,
+      'parent-id': parentId,
+      'frame-id': frameId ?? parentId,
+      shapes: childIds.length > 0 ? childIds : undefined,
+    }
+    objects[node.id] = indexed
+
     if (childList?.length) {
-      Object.assign(acc, flattenChildren(childList))
+      const resolvedFrameId = node.type === 'frame' ? node.id : frameId ?? parentId
+      const childResult = flattenChildrenRec(childList, node.id, resolvedFrameId)
+      Object.assign(objects, childResult.objects)
     }
   }
-  return acc
+  return { objects }
 }
 
 export function flattenPageToIndexed(page: PenpotPage): IndexedPage {
+  const children = page.children ?? []
+  const rootFrame = children[0]
+  if (!rootFrame) {
+    return {
+      id: page.id ?? ZERO_UUID,
+      objects: {},
+    }
+  }
+
+  const rootChildIds = children.slice(1).map(n => n.id).filter((id): id is string => id != null)
+  const rootIndexed: IndexedShape = {
+    ...rootFrame,
+    'parent-id': undefined,
+    'frame-id': rootFrame.id,
+    shapes: rootChildIds.length > 0 ? rootChildIds : undefined,
+  }
+
+  const objects: Record<string, IndexedShape> = {
+    [rootFrame.id]: rootIndexed,
+  }
+
+  for (let i = 1; i < children.length; i++) {
+    const node = children[i]
+    const childList = (node as { children?: PenpotNode[] }).children
+    const childIds = childList?.map(c => c.id).filter((id): id is string => id != null) ?? []
+
+    const indexed: IndexedShape = {
+      ...node,
+      'parent-id': rootFrame.id,
+      'frame-id': rootFrame.id,
+      shapes: childIds.length > 0 ? childIds : undefined,
+    }
+    objects[node.id] = indexed
+
+    if (childList?.length) {
+      const resolvedFrameId = node.type === 'frame' ? node.id : rootFrame.id
+      const childResult = flattenChildrenRec(childList, node.id, resolvedFrameId)
+      Object.assign(objects, childResult.objects)
+    }
+  }
+
   return {
     id: page.id ?? ZERO_UUID,
-    objects: flattenChildren(page.children),
+    objects,
   }
 }
