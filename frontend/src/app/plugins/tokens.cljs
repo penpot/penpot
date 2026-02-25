@@ -86,8 +86,13 @@
     {:this true
      :get
      (fn [_]
-       (let [token (u/locate-token file-id set-id id)]
-         (:value token)))
+       (let [token (u/locate-token file-id set-id id)
+             value (:value token)]
+         (cond
+           (string? value) value
+           (coll? value) (apply array value)
+           :else (clj->js value))))
+
      :schema (let [token (u/locate-token file-id set-id id)]
                (cfo/make-token-value-schema (:type token)))
      :set
