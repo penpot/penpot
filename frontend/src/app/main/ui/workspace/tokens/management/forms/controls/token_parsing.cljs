@@ -18,39 +18,52 @@
         last-close (str/last-index-of text-before "}")]
     (when (and last-open (or (nil? last-close) (> last-open last-close)))
       {:start last-open
+       :end (or (str/index-of value "}" last-open) cursor)
        :partial (subs text-before (inc last-open))})))
 
-;; (defn replace-active-token
-;;   [value cursor new-name]
-;; 
-;;   (let [before     (subs value 0 cursor)
-;;         last-open  (str/last-index-of before "{")
-;;         last-close (str/last-index-of before "}")]
-;; 
-;;     (if (and last-open
-;;              (or (nil? last-close)
-;;                  (> last-open last-close)))
-;; 
-;;       (let [after-start (subs value last-open)
-;;             close-pos   (str/index-of after-start "}")
-;;             end         (if close-pos
-;;                           (+ last-open close-pos 1)
-;;                           cursor)]
-;;         (str (subs value 0 last-open)
-;;              "{" new-name "}"
-;;              (subs value end)))
-;;       (str (subs value 0 cursor)
-;;            "{" new-name "}"
-;;            (subs value cursor)))))
+(defn find-active-token-range
+  "Returns {:start :end} for the token surrounding the cursor.
+   A token starts with '{', contains no spaces, and may be incomplete.
+   Returns nil if no valid token is active."
+  [value cursor]
+  (let [start (.lastIndexOf value "{" cursor)]
+    (when (>= start 0)
+      (let [between (subs value (inc start) cursor)]
+        (when-not (re-find #"\s" between)
+          (let [after        (subs value (inc start))
+                close-index  (.indexOf after "}")
+                close-pos    (when (>= close-index 0)
+                               (+ (inc start) close-index))
+                space-index  (.indexOf after " ")
+                space-pos    (when (>= space-index 0)
+                               (+ (inc start) space-index))
+
+                end (cond
+                      (and close-pos
+                           (or (nil? space-pos)
+                               (< close-pos space-pos)))
+                      (inc close-pos)
+
+                      space-pos
+                      space-pos
+
+                      :else
+                      cursor)]
+
+            {:start start
+             :end   end}))))))
 
 (defn replace-active-token
+  "Replaces the token at the cursor with `{new-name}`.
+   If no valid token is active, inserts the new token at the cursor position."
   [value cursor new-name]
-  (if-let [{:keys [start]} (extract-partial-token value cursor)]
-    ;; Hay token activo
+  (if-let [{:keys [start end]}
+           (find-active-token-range value cursor)]
+
     (str (subs value 0 start)
          "{" new-name "}"
-         (subs value cursor))
-    ;; No hay token activo → insertar en cursor
+         (subs value end))
+
     (str (subs value 0 cursor)
          "{" new-name "}"
          (subs value cursor))))
