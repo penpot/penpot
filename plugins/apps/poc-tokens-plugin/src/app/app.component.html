@@ -118,7 +118,11 @@
                 class="body-m panel-item token-item"
                 (click)="applyToken(token.id)"
               >
-                <span title="{{ token.resolvedValueString }}">
+                <span
+                  title="Value: {{ token.valueString }}&#013;Resolved value: {{
+                    token.resolvedValueString
+                  }}"
+                >
                   {{ token.name }}
                 </span>
                 <button

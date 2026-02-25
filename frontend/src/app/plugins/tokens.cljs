@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cfo]
+   [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -85,7 +86,7 @@
      :get
      (fn [_]
        (let [token (u/locate-token file-id set-id id)]
-         (:value token)))
+         (json/->js (:value token))))
      :schema (let [token (u/locate-token file-id set-id id)]
                (cfo/make-token-value-schema (:type token)))
      :set

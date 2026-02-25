@@ -111,6 +111,7 @@ function loadTokens(setId: string) {
             id: token.id,
             name: token.name,
             description: token.description,
+            valueString: JSON.stringify(token.value),
             resolvedValueString: token.resolvedValueString,
           };
         }),

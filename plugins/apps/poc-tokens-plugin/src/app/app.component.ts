@@ -24,6 +24,7 @@ type Token = {
   id: string;
   name: string;
   description: string;
+  valueString: string;
   resolvedValueString: string;
 };
 
