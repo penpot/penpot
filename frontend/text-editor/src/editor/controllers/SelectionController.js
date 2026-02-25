@@ -1958,6 +1958,8 @@ export class SelectionController extends EventTarget {
         this.startOffset === this.endOffset &&
         this.endOffset === endNode.nodeValue?.length
       ) {
+        const paragraph = this.startParagraph;
+        setParagraphStyles(paragraph, newStyles);
         const newTextSpan = createVoidTextSpan(newStyles);
         this.endTextSpan.after(newTextSpan);
         this.setSelection(newTextSpan.firstChild, 0, newTextSpan.firstChild, 0);
