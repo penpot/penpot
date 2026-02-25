@@ -189,7 +189,7 @@ registerHandler('index/update-text-rect', (message: WorkerMessage) => {
       positionData: undefined,
       points,
       selrect,
-    } as PenpotNode
+    }
 
     // Update objects
     const updatedObjects = {

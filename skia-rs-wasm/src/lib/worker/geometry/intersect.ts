@@ -2,16 +2,23 @@
  * Overlap detection algorithms for shapes
  */
 
-import type { Point, PenpotNode, Selrect, Stroke, BoolShape, PathShape } from '@penpot-exporter/types'
+import type {
+  Point,
+  PenpotNode,
+  Selrect,
+  BoolShape,
+  PathShape,
+  TextShape,
+} from '@penpot-exporter/types'
 import type { Line } from '@skia-rs-wasm/common'
 import { makeSelrect } from '@skia-rs-wasm/common'
 import { rectToPoints } from './rect'
 import { point } from './point'
-import { isPathShape, isBoolShape, isCircleShape, isTextShape } from './shapes'
 
 type Matrix = { a: number; b: number; c: number; d: number; e: number; f: number }
 
-type EllipseLike = {
+/** Shape with ellipse geometry (CircleShape or synthetic bounds for stroke band). */
+type EllipseGeometry = {
   x: number
   y: number
   width: number
@@ -270,7 +277,7 @@ function intersectsLineEllipse(
   return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)
 }
 
-function overlapsEllipse(shape: EllipseLike, rect: Selrect): boolean {
+function overlapsEllipse(shape: EllipseGeometry, rect: Selrect): boolean {
   const x = shape.x
   const y = shape.y
   const width = shape.width
@@ -279,7 +286,7 @@ function overlapsEllipse(shape: EllipseLike, rect: Selrect): boolean {
   const rx = width / 2
   const ry = height / 2
 
-  const transform = (shape as { transform?: Matrix }).transform
+  const transform = shape.transform
 
   let rectPoints = rectToPoints(rect)
   if (!rectPoints) {
@@ -295,12 +302,12 @@ function overlapsEllipse(shape: EllipseLike, rect: Selrect): boolean {
     // World = T(local) + world_center. Use selrect center.
     const sr = shape.selrect
     const worldCenterX =
-      sr != null && typeof (sr as { x?: number }).x === 'number' && typeof (sr as { width?: number }).width === 'number'
-        ? (sr as { x: number }).x + (sr as { width: number }).width / 2
+      sr != null && typeof sr.x === 'number' && typeof sr.width === 'number'
+        ? sr.x + sr.width / 2
         : x + width / 2
     const worldCenterY =
-      sr != null && typeof (sr as { y?: number }).y === 'number' && typeof (sr as { height?: number }).height === 'number'
-        ? (sr as { y: number }).y + (sr as { height: number }).height / 2
+      sr != null && typeof sr.y === 'number' && typeof sr.height === 'number'
+        ? sr.y + sr.height / 2
         : y + height / 2
     const det = transform.a * transform.d - transform.b * transform.c
     if (Math.abs(det) < EPSILON) return false
@@ -341,8 +348,8 @@ function overlapsEllipse(shape: EllipseLike, rect: Selrect): boolean {
   return false
 }
 
-function overlapsText(shape: PenpotNode, rect: Selrect): boolean {
-  const positionData = 'positionData' in shape ? shape.positionData : undefined
+function overlapsText(shape: TextShape, rect: Selrect): boolean {
+  const positionData = shape.positionData
   const points = shape.points
 
   // If shape has position data, use it (simplified - full impl would transform)
@@ -362,15 +369,15 @@ function overlapsText(shape: PenpotNode, rect: Selrect): boolean {
   return false
 }
 
-/** Get points from shape for overlap: use shape.points or derive from selrect (x1,y1,x2,y2 or x,y,width,height). */
+/** Get points from shape for overlap: use shape.points or derive from selrect. */
 function getShapePointsForOverlap(shape: PenpotNode): Point[] {
   if (shape.points && shape.points.length > 0) {
     return shape.points
   }
-  const sr = shape.selrect as (Selrect & { x1?: number; y1?: number; x2?: number; y2?: number }) | null | undefined
+  const sr = shape.selrect
   if (!sr) return []
-  const x = sr.x ?? sr.x1
-  const y = sr.y ?? sr.y1
+  const x = sr.x
+  const y = sr.y
   const width = sr.width ?? (typeof sr.x2 === 'number' && typeof sr.x1 === 'number' ? sr.x2 - sr.x1 : 0)
   const height = sr.height ?? (typeof sr.y2 === 'number' && typeof sr.y1 === 'number' ? sr.y2 - sr.y1 : 0)
   if (typeof x !== 'number' || typeof y !== 'number' || width <= 0 || height <= 0) return []
@@ -381,7 +388,7 @@ function getShapePointsForOverlap(shape: PenpotNode): Point[] {
 
 /** Outer padding (expansion): center → strokeWidth, outer → 2*strokeWidth, inner → 0. Max across strokes. */
 function getStrokePaddingOuter(shape: PenpotNode): number {
-  const strokes = shape.strokes as Stroke[] | undefined
+  const strokes = shape.strokes
   if (!strokes || strokes.length === 0) return 0
   let max = 0
   for (const s of strokes) {
@@ -396,7 +403,7 @@ function getStrokePaddingOuter(shape: PenpotNode): number {
 
 /** Inner padding (shrink): center → strokeWidth, outer → 0, inner → 2*strokeWidth. Max across strokes. */
 function getStrokePaddingInner(shape: PenpotNode): number {
-  const strokes = shape.strokes as Stroke[] | undefined
+  const strokes = shape.strokes
   if (!strokes || strokes.length === 0) return 0
   let max = 0
   for (const s of strokes) {
@@ -431,7 +438,7 @@ function overlapsOuterShape(shape: PenpotNode, rect: Selrect, shapeType: string)
   const outerY = centerY - h / 2
 
   if (shapeType === 'rect') {
-    const transform = (shape as { transform?: Matrix }).transform
+    const transform = shape.transform
     if (transform && !isIdentityTransform(transform)) {
       // Rotated rect: transform click point to local space and test against local axis-aligned stroke band
       const clickX = rect.x + rect.width / 2
@@ -450,7 +457,7 @@ function overlapsOuterShape(shape: PenpotNode, rect: Selrect, shapeType: string)
   }
 
   if (shapeType === 'circle') {
-    const synthetic: EllipseLike = {
+    const synthetic: EllipseGeometry = {
       x: outerX,
       y: outerY,
       width: w,
@@ -477,7 +484,7 @@ function overlapsInnerShape(shape: PenpotNode, rect: Selrect, shapeType: string)
   const innerY = centerY - h / 2
 
   if (shapeType === 'rect') {
-    const transform = (shape as { transform?: Matrix }).transform
+    const transform = shape.transform
     if (transform && !isIdentityTransform(transform)) {
       // Rotated rect: transform click point to local space and test against local inner band
       const clickX = rect.x + rect.width / 2
@@ -496,13 +503,13 @@ function overlapsInnerShape(shape: PenpotNode, rect: Selrect, shapeType: string)
   }
 
   if (shapeType === 'circle') {
-    const synthetic: EllipseLike = {
+    const synthetic: EllipseGeometry = {
       x: innerX,
       y: innerY,
       width: w,
       height: h,
       selrect: makeSelrect(innerX, innerY, w, h),
-      transform: (shape as { transform?: Matrix }).transform,
+      transform: shape.transform,
     }
     return overlapsEllipse(synthetic, rect)
   }
@@ -515,8 +522,8 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     return false
   }
 
-  // Adjust rect for stroke width (support both kebab and camel stroke width)
-  const firstStroke = shape.strokes?.[0] as Stroke | undefined
+  // Adjust rect for stroke width
+  const firstStroke = shape.strokes?.[0]
   const strokeWidth = firstStroke?.strokeWidth ?? 0
   const swidth = strokeWidth / 2
   const adjustedRect: Selrect = makeSelrect(
@@ -550,30 +557,28 @@ export function overlaps(shape: PenpotNode, rect: Selrect, usingSelrect: boolean
     }
 
     if (shapeTypeInner === 'path' || shapeTypeInner === 'bool') {
-      return overlapsPath(shape as (PathShape | BoolShape), adjustedRect, false)
+      return overlapsPath(shape, adjustedRect, false)
     }
   }
 
-  // Regular overlap detection
-  if (isPathShape(shape) || isBoolShape(shape)) {
-    const points = shape.points || []
-    return (
-      overlapsRectPoints(adjustedRect, points) &&
-      overlapsPath(shape as PathShape, adjustedRect, true)
-    )
+  // Per-shape overlap pipelines (switch narrows type, no casts needed)
+  switch (shape.type) {
+    case 'path':
+    case 'bool': {
+      const points = shape.points || []
+      return (
+        overlapsRectPoints(adjustedRect, points) &&
+        overlapsPath(shape, adjustedRect, true)
+      )
+    }
+    case 'circle':
+      return overlapsEllipse(shape, adjustedRect)
+    case 'text':
+      return overlapsText(shape, adjustedRect)
+    default: {
+      const points = getShapePointsForOverlap(shape)
+      return points.length > 0 && overlapsRectPoints(adjustedRect, points)
+    }
   }
-
-  if (isCircleShape(shape)) {
-    // For rotated ellipses the bbox can exclude the curved extremities; always run ellipse test
-    return overlapsEllipse(shape as EllipseLike, adjustedRect)
-  }
-
-  if (isTextShape(shape)) {
-    return overlapsText(shape, adjustedRect)
-  }
-
-  // Default: check rect points overlap (rect/circle/group etc. – points are precomputed by pipeline)
-  const points = getShapePointsForOverlap(shape)
-  return points.length > 0 && overlapsRectPoints(adjustedRect, points)
 }
 

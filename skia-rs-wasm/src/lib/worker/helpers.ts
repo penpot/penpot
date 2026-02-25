@@ -3,11 +3,41 @@
  */
 
 import type { PenpotNode } from '@penpot-exporter/types'
+import type { IndexedShape } from '@skia-rs-wasm/common'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import {
   isFrameShape,
   isBoolShape,
 } from './geometry/shapes'
+
+/**
+ * Assign hierarchy fields (id, parentId, frameId) to the shape. Uses camelCase.
+ */
+export function assignHierarchy(
+  shape: PenpotNode,
+  id: string | undefined,
+  parentId: string,
+  frameId: string
+): IndexedShape {
+  const out: IndexedShape = { ...shape, parentId, frameId }
+  if (id !== undefined) {
+    out.id = id
+  }
+  return out
+}
+
+/**
+ * Set shapes (child id list) from childIds when provided; otherwise keep existing or leave undefined.
+ */
+export function ensureShapes(
+  shape: IndexedShape,
+  childIds?: string[] | null
+): IndexedShape {
+  if (childIds !== undefined && childIds !== null) {
+    return { ...shape, shapes: childIds.length > 0 ? childIds : undefined }
+  }
+  return shape
+}
 
 export function getParentId(objects: Record<string, PenpotNode>, shapeId: string): string | null {
   const shape = objects[shapeId]
@@ -15,7 +45,7 @@ export function getParentId(objects: Record<string, PenpotNode>, shapeId: string
     return null
   }
 
-  const parentId = shape['parent-id']
+  const parentId = shape.parentId
   if (!parentId || parentId === shapeId) {
     return null
   }
@@ -87,10 +117,10 @@ export function createClipIndex(
   function getClipParents(shape: PenpotNode): PenpotNode[] {
     const result: PenpotNode[] = []
 
-    // Frames without show-content (except root)
+    // Frames without showContent (except root)
     if (
       isFrameShape(shape) &&
-      !shape['show-content'] &&
+      !shape.showContent &&
       shape.id !== ZERO_UUID
     ) {
       result.push(shape)
@@ -102,7 +132,7 @@ export function createClipIndex(
     }
 
     // Masked groups
-    if (shape['masked-group'] && shape.shapes && shape.shapes.length > 0) {
+    if (shape.maskedGroup && shape.shapes && shape.shapes.length > 0) {
       const firstChild = objects[shape.shapes[0]]
       if (firstChild) {
         result.push(firstChild)

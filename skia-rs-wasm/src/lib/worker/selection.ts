@@ -4,6 +4,7 @@
  */
 
 import type { SelectionIndex, IndexedPage, QueryParams } from './types'
+import type { IndexedShape } from '@skia-rs-wasm/common'
 import type { PenpotNode, Selrect } from '@penpot-exporter/types'
 import { ZERO_UUID, makeSelrect } from './types'
 import * as quadtree from './quadtree'
@@ -234,7 +235,7 @@ function queryIndex(
 
   // Search quadtree
   for (const node of quadtree.search(index, rect)) {
-    const shape = node.data as PenpotNode
+    const shape = node.data as IndexedShape
     if (!shape) {
       continue
     }

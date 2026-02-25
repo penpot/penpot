@@ -80,7 +80,7 @@ function readPathContentFromHeap(
  */
 export function calculateBool(
   module: WasmModule,
-  shape: { 'bool-type': BoolType; shapes: string[] },
+  shape: { boolType: BoolType; shapes: string[] },
   objects: Record<string, PenpotNode>
 ): PathContent | null {
   checkContext(module)
@@ -89,7 +89,7 @@ export function calculateBool(
   module._start_temp_objects()
 
   try {
-    const boolType = translateBoolType(shape['bool-type'])
+    const boolType = translateBoolType(shape.boolType)
     const ids = shape.shapes
 
     // Get all children including nested children

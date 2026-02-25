@@ -2,7 +2,17 @@
  * Shape geometry utilities
  */
 
-import type { PenpotNode, Point, Selrect } from '@penpot-exporter/types'
+import type {
+  PenpotNode,
+  Point,
+  Selrect,
+  TextShape,
+  FrameShape,
+  PathShape,
+  CircleShape,
+  BoolShape,
+  GroupShape,
+} from '@penpot-exporter/types'
 import { pointsToRect, rectToCenter, joinRects } from './rect'
 import { ZERO_UUID } from '../types'
 
@@ -59,28 +69,28 @@ export function rectContainsShape(rect: Selrect, shape: PenpotNode): boolean {
   return true
 }
 
-// Shape type checking helpers
-export function isTextShape(shape: PenpotNode | null | undefined): boolean {
+// Shape type checking helpers (type predicates for narrowing)
+export function isTextShape(shape: PenpotNode | null | undefined): shape is TextShape {
   return shape != null && shape.type === 'text'
 }
 
-export function isFrameShape(shape: PenpotNode | null | undefined): boolean {
+export function isFrameShape(shape: PenpotNode | null | undefined): shape is FrameShape {
   return shape != null && shape.type === 'frame'
 }
 
-export function isPathShape(shape: PenpotNode | null | undefined): boolean {
+export function isPathShape(shape: PenpotNode | null | undefined): shape is PathShape {
   return shape != null && shape.type === 'path'
 }
 
-export function isCircleShape(shape: PenpotNode | null | undefined): boolean {
+export function isCircleShape(shape: PenpotNode | null | undefined): shape is CircleShape {
   return shape != null && shape.type === 'circle'
 }
 
-export function isBoolShape(shape: PenpotNode | null | undefined): boolean {
+export function isBoolShape(shape: PenpotNode | null | undefined): shape is BoolShape {
   return shape != null && shape.type === 'bool'
 }
 
-export function isGroupShape(shape: PenpotNode | null | undefined): boolean {
+export function isGroupShape(shape: PenpotNode | null | undefined): shape is GroupShape {
   return shape != null && shape.type === 'group'
 }
 
@@ -97,8 +107,11 @@ export function isDirectChildOfRoot(shape: PenpotNode | null | undefined): boole
   return shape != null && shape.frameId === ZERO_UUID
 }
 
+/** Node that may have a child-id list (frame, group, bool, etc.) */
+type NodeWithShapes = PenpotNode & { shapes?: string[] }
+
 export function getImmediateChildren(
-  objects: Record<string, PenpotNode>,
+  objects: Record<string, NodeWithShapes>,
   shapeId: string = ZERO_UUID
 ): PenpotNode[] {
   const shape = objects[shapeId]
@@ -107,7 +120,7 @@ export function getImmediateChildren(
   }
 
   return shape.shapes
-    .map(id => objects[id])
+    .map((id: string) => objects[id])
     .filter((child): child is PenpotNode => child != null && !child.hidden && !child.blocked)
 }
 
