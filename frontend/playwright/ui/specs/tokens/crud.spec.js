@@ -1,16 +1,16 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import {
-  setupEmptyTokensFile,
-  setupTokensFile,
-  setupTypographyTokensFile,
+  setupEmptyTokensFileRender,
+  setupTokensFileRender,
+  setupTypographyTokensFileRender,
   testTokenCreationFlow,
   unfoldTokenTree,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
@@ -158,7 +158,7 @@ test.describe("Tokens - creation", () => {
     const selfReferenceError = "Token has self reference";
     const missingReferenceError = "Missing token references";
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     await tokensSidebar
       .getByRole("button", { name: "Add Token: Color" })
@@ -320,7 +320,7 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -465,7 +465,7 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -601,7 +601,7 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -717,7 +717,7 @@ test.describe("Tokens - creation", () => {
     const missingReferenceError = "Missing token references";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -831,7 +831,7 @@ test.describe("Tokens - creation", () => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page, { flags: ["enable-token-shadow"] });
+      await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1012,7 +1012,7 @@ test.describe("Tokens - creation", () => {
     page,
   }) => {
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
-      await setupTypographyTokensFile(page);
+      await setupTypographyTokensFileRender(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel
@@ -1047,7 +1047,7 @@ test.describe("Tokens - creation", () => {
     const emptyNameError = "Name should be at least 1 character";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page, { flags: ["enable-token-shadow"] });
+      await setupEmptyTokensFileRender(page, { flags: ["enable-token-shadow"] });
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1232,7 +1232,7 @@ test.describe("Tokens - creation", () => {
   test("User creates typography token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     // Open modal
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1479,7 +1479,7 @@ test.describe("Tokens - creation", () => {
 
   test("User adds typography token with reference", async ({ page }) => {
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
-      await setupTypographyTokensFile(page);
+      await setupTypographyTokensFileRender(page);
 
     const newTokenTitle = "NewReference";
 
@@ -1529,7 +1529,7 @@ test.describe("Tokens - creation", () => {
 
   test("User creates grouped color token", async ({ page }) => {
     const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     await tokensSidebar
       .getByRole("button", { name: "Add Token: Color" })
@@ -1562,7 +1562,7 @@ test.describe("Tokens - creation", () => {
   test("User cant create regular token with value missing", async ({
     page,
   }) => {
-    const { tokensUpdateCreateModal } = await setupEmptyTokensFile(page);
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel
@@ -1589,7 +1589,7 @@ test.describe("Tokens - creation", () => {
 
   test("User duplicate color token", async ({ page }) => {
     const { tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await expect(tokensSidebar).toBeVisible();
 
@@ -1613,7 +1613,7 @@ test.describe("Tokens - creation", () => {
 
 test("User creates grouped color token", async ({ page }) => {
   const { workspacePage, tokensUpdateCreateModal, tokensSidebar } =
-    await setupEmptyTokensFile(page);
+    await setupEmptyTokensFileRender(page);
 
   await tokensSidebar.getByRole("button", { name: "Add Token: Color" }).click();
 
@@ -1642,7 +1642,7 @@ test("User creates grouped color token", async ({ page }) => {
 });
 
 test("User cant create regular token with value missing", async ({ page }) => {
-  const { tokensUpdateCreateModal } = await setupEmptyTokensFile(page);
+  const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
   await tokensTabPanel
@@ -1669,7 +1669,7 @@ test("User cant create regular token with value missing", async ({ page }) => {
 
 test("User duplicate color token", async ({ page }) => {
   const { tokensSidebar, tokenContextMenuForToken } =
-    await setupTokensFile(page);
+    await setupTokensFileRender(page);
 
   await expect(tokensSidebar).toBeVisible();
 
@@ -1695,7 +1695,7 @@ test.describe("Tokens tab - edition", () => {
     page,
   }) => {
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
-      await setupTypographyTokensFile(page);
+      await setupTypographyTokensFileRender(page);
 
     await tokensSidebar
       .getByRole("button")
@@ -1791,7 +1791,7 @@ test.describe("Tokens tab - edition", () => {
     page,
   }) => {
     const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await expect(tokensSidebar).toBeVisible();
 
@@ -1827,7 +1827,7 @@ test.describe("Tokens tab - edition", () => {
     page,
   }) => {
     const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+      await setupEmptyTokensFileRender(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel
@@ -1882,7 +1882,7 @@ test.describe("Tokens tab - edition", () => {
 test.describe("Tokens tab - delete", () => {
   test("User delete color token", async ({ page }) => {
     const { tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFile(page);
+      await setupTokensFileRender(page);
 
     await expect(tokensSidebar).toBeVisible();
 
@@ -1902,7 +1902,7 @@ test.describe("Tokens tab - delete", () => {
   });
 
   test("User removes node and all child tokens", async ({ page }) => {
-    const { tokensSidebar } = await setupTokensFile(page);
+    const { tokensSidebar } = await setupTokensFileRender(page);
 
     await expect(tokensSidebar).toBeVisible();
 
