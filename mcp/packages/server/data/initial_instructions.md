@@ -43,10 +43,19 @@ Actual low-level shape types are `Rectangle`, `Path`, `Text`, `Ellipse`, `Image`
 
 **Other Writable Properties**:
   * `name` - Shape name
-  * `fills`, `strokes` - Styling properties
-    IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them, e.g.
-    `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]` to set a single red fill.
-  * `rotation`, `opacity`, `blocked`, `hidden`, `visible`
+  * `fills: Fill[]`, `strokes: Stroke[]`, `shadows: Shadow[]` - Styling properties
+    - Setting fills: `shape.fills = [{ fillColor: "#FF0000", fillOpacity: 1 }]`; no fill (transparent): `shape.fills = []`; 
+    - Colors: Use hex strings with caps only (e.g. '#FF5533')
+    - IMPORTANT: The contents of the arrays are read-only. You cannot modify individual fills/strokes; you need to replace the entire array to change them!  
+  * `borderRadius` - Uniform border radius for all corners
+  * `borderRadiusTopLeft`, `borderRadiusTopRight`, `borderRadiusBottomRight`, `borderRadiusBottomLeft` - Individual corner radii.
+  * `blur: Blur` - Blur properties
+  * `blendMode` - Blend mode (e.g. `"normal"`, `"multiply"`, `"overlay"`, etc.)
+  * `rotation` (deg), `opacity`, `blocked`, `hidden`, `visible`
+  * `proportionLock` - Whether width and height are locked to the same ratio
+  * `constraintsHorizontal` - Horizontal resize constraint (`"left"`, `"right"`, `"center"`, `"leftright"`, `"scale"`)
+  * `constraintsVertical` - Vertical resize constraint (`"top"`, `"bottom"`, `"center"`, `"topbottom"`, `"scale"`)
+  * `flipX`, `flipY` - Horizontal/vertical flip
 
 **Z-Order**:
   * The z-order of shapes is determined by the order in the `children` array of the parent shape.
@@ -358,7 +367,7 @@ Applying tokens:
      - The actual shape properties that the tokens control will reflect the token's resolved value.
 
 Removing tokens:
-  Simply set the respective property directly - token binding is automatically removed, e.g.
+  Simply set the respective property directly - token binding is automatically removed, e.g.  
   shape.fills = [{ fillColor: "#000000", fillOpacity: 1 }]; // Removes fill token
 
 # Visual Inspection of Designs
