@@ -33,7 +33,7 @@ function normalizeSelrect(sr: Selrect | null | undefined): Selrect | null {
 }
 
 function shapeToBounds(shape: PenpotNode): Selrect | null {
-  const positionData = shape['position-data']
+  const positionData = 'positionData' in shape ? shape.positionData : undefined
   if (isTextShape(shape) && positionData && Array.isArray(positionData) && positionData.length > 0) {
     return normalizeSelrect(shape.selrect) || null
   }
@@ -61,7 +61,7 @@ function indexShape(
   const bound: Selrect = makeSelrect(bounds.x, bounds.y, bounds.width, bounds.height)
 
   const shapeId = shape.id
-  const frameId = shape['frame-id'] || ZERO_UUID
+  const frameId = shape.frameId || ZERO_UUID
   const shapeType = shape.type
 
   const parents = parentsIndex[shapeId] || new Set<string>()
@@ -248,7 +248,7 @@ function queryIndex(
       continue
     }
 
-    if (frameId && shape['frame-id'] !== frameId) {
+    if (frameId && shape.frameId !== frameId) {
       continue
     }
 
@@ -263,11 +263,11 @@ function queryIndex(
 
     // Full frame check
     if (fullFrame) {
-      if (!ignoreGroups && shape['component-id']) {
+      if (!ignoreGroups && shape.componentId) {
         // OK
       } else if (!ignoreGroups && !isRootFrame(shape)) {
         // OK
-      } else if (shape.shapes && shape.shapes.length > 0) {
+      } else if ('shapes' in shape && shape.shapes && shape.shapes.length > 0) {
         if (!rectContainsShape(rect, shape)) {
           continue
         }
@@ -285,7 +285,8 @@ function queryIndex(
 
     // Clip children check
     if (clipChildren) {
-      const clipParents = shape.clipParents || []
+      const clipParents: PenpotNode[] =
+        'clipParents' in shape && Array.isArray(shape.clipParents) ? shape.clipParents : []
       let shouldInclude = true
       for (const clipParent of clipParents) {
         if (!overlaps(clipParent, rect, usingSelrect)) {

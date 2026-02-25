@@ -321,7 +321,7 @@ function overlapsEllipse(shape: PenpotNode, rect: Selrect): boolean {
 }
 
 function overlapsText(shape: PenpotNode, rect: Selrect): boolean {
-  const positionData = shape['position-data']
+  const positionData = 'positionData' in shape ? shape.positionData : undefined
   const points = shape.points
 
   // If shape has position data, use it (simplified - full impl would transform)

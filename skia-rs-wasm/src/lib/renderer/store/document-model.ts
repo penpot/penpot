@@ -9,6 +9,7 @@ import { useWorkspaceStore } from './workspace-store'
 import { useWorkspaceDevStore } from './workspace-dev-store'
 import { Viewport } from '../viewport'
 import { commitPageUpdate } from './commit'
+import { enrichPageWithPositionData } from './enrich-position-data'
 
 const EMPTY_NODES: PenpotNode[] = []
 const EMPTY_MAP: Record<string, PenpotNode> = {}
@@ -111,6 +112,10 @@ export class DocumentModel {
       if (page) {
         await state.renderer.initPage(page)
         state.setViewport(new Viewport())
+        if (state.wasmModule && state.workerClient) {
+          const enrichedPage = enrichPageWithPositionData(state.wasmModule, page)
+          await state.workerClient.updatePage(firstPageId, enrichedPage)
+        }
       }
     }
   }
@@ -130,6 +135,10 @@ export class DocumentModel {
 
     await state.renderer.initPage(page)
     state.setViewport(new Viewport())
+    if (state.wasmModule && state.workerClient) {
+      const enrichedPage = enrichPageWithPositionData(state.wasmModule, page)
+      await state.workerClient.updatePage(pageId, enrichedPage)
+    }
   }
 
   async addPage(page: PenpotPage): Promise<void> {
@@ -164,6 +173,10 @@ export class DocumentModel {
       if (state.renderer?.isInitialized() && page) {
         await state.renderer.initPage(page)
         state.setViewport(new Viewport())
+        if (state.wasmModule && state.workerClient) {
+          const enrichedPage = enrichPageWithPositionData(state.wasmModule, page)
+          await state.workerClient.updatePage(nextPageId, enrichedPage)
+        }
       }
     } else {
       state.setPageId(nextPageId)
@@ -185,7 +198,7 @@ export class DocumentModel {
     const page = pageId ? this.pageMap.get(pageId) : undefined
     if (!pageId || !page) return
     const children = (page.children ?? []).map((n: PenpotNode) =>
-      n.id === nodeId ? { ...n, ...updates } : n
+      n.id === nodeId ? ({ ...n, ...updates } as PenpotNode) : n
     )
     await commitPageUpdate({ pageId, updatedPage: { ...page, children } })
   }
