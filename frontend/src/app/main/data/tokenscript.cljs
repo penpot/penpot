@@ -69,6 +69,10 @@
   (and (number-with-unit-symbol? v)
        (= (.-unit v) "rem")))
 
+(defn percent-number-with-unit? [v]
+  (and (number-with-unit-symbol? v)
+       (= (.-unit v) "%")))
+
 (defn rem->px [^js v]
   (* (.-value v) 16))
 
@@ -87,10 +91,12 @@
 
 (defn tokenscript-symbols->penpot-unit [^js v]
   (cond
+    (nil? v) nil
     (structured-token? v) (structured-token->penpot-map v)
     (list-symbol? v) (structured-token->penpot-map v)
     (color-symbol? v) (.-value (.to v "hex"))
     (rem-number-with-unit? v) (rem->px v)
+    (percent-number-with-unit? v) (/ (.-value v) 100)
     :else (.-value v)))
 
 ;; Processors ------------------------------------------------------------------

@@ -6,13 +6,16 @@
 
 (ns app.main.data.workspace.tokens.propagation
   (:require
+   [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -210,10 +213,13 @@
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens-lib (-> (dsh/lookup-file-data state)
-                                (get :tokens-lib))]
-        (->> (ctob/get-tokens-in-active-sets tokens-lib)
-             (sd/resolve-tokens)
+      (when-let [tokens-tree (-> (dsh/lookup-file-data state)
+                                 (get :tokens-lib)
+                                 (ctob/get-tokens-in-active-sets))]
+        (->> (if (contains? cf/flags :tokenscript)
+               (rx/of (-> (ts/resolve-tokens tokens-tree)
+                          (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+               (sd/resolve-tokens tokens-tree))
              (rx/mapcat (fn [sd-tokens]
                           (let [undo-id (js/Symbol)]
                             (rx/concat

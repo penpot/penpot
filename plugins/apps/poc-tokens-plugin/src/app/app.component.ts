@@ -10,6 +10,7 @@ type TokenTheme = {
   group: string;
   description: string;
   active: boolean;
+  activeSets: string;
 };
 
 type TokenSet = {
@@ -23,6 +24,7 @@ type Token = {
   id: string;
   name: string;
   description: string;
+  valueString: string;
   resolvedValueString: string;
 };
 

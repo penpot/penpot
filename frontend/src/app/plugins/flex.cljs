@@ -259,7 +259,7 @@
         (u/display-not-valid :appendChild child)
 
         :else
-        (let [child-id  (obj/get child "$id")]
+        (let [child-id (obj/get child "$id")]
           (st/emit! (dwt/move-shapes-to-frame #{child-id} id nil nil)
                     (ptk/data-event :layout/update {:ids [id]})))))
 
@@ -294,7 +294,6 @@
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-v-sizing value})))))}))
-
 
 (defn layout-child-proxy? [p]
   (obj/type-of? p "LayoutChildProxy"))

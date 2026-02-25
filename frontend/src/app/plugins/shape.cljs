@@ -47,13 +47,13 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.flags :refer [natural-child-ordering?]]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
    [app.plugins.grid :as grid]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
-   [app.plugins.state :refer [natural-child-ordering?]]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.http :as http]
@@ -960,9 +960,11 @@
                  (u/display-not-valid :appendChild "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (let [child-id (obj/get child "$id")
+                 (let [child-id     (obj/get child "$id")
                        is-reversed? (ctl/flex-layout? shape)
-                       index (if (and (natural-child-ordering? plugin-id) is-reversed?) 0 (count (:shapes shape)))]
+                       index        (if (and (natural-child-ordering? plugin-id) is-reversed?)
+                                      0
+                                      (count (:shapes shape)))]
                    (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            :insertChild

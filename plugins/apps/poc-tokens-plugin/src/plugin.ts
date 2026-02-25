@@ -61,11 +61,13 @@ function loadLibrary() {
   const themes = tokensCatalog.themes;
 
   const themesData = themes.map((theme) => {
+    const activeSets = theme.activeSets.map((set) => set.name).join(', ');
     return {
       id: theme.id,
       group: theme.group,
       name: theme.name,
       active: theme.active,
+      activeSets: activeSets,
     };
   });
 
@@ -109,6 +111,7 @@ function loadTokens(setId: string) {
             id: token.id,
             name: token.name,
             description: token.description,
+            valueString: JSON.stringify(token.value),
             resolvedValueString: token.resolvedValueString,
           };
         }),
