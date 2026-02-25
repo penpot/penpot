@@ -44,7 +44,7 @@ const createToken = async (page, type, name, textFieldName, value) => {
 const createTokenCombobox = async (page, type, name, textFieldName, value) => {
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
-  const { tokensUpdateCreateModal } = await setupTokensFile(page, {
+  const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
     flags: ["enable-token-shadow"],
   });
 

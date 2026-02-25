@@ -84,9 +84,9 @@
 
                enter?
                (do
-                 (dom/prevent-default event)
                  (when (and is-open focused-id)
                    (let [focusables (focusable-options options)]
+                     (dom/prevent-default event)
                      (when (some #(= (:id %) focused-id) focusables)
                        (on-enter focused-id)))))
                esc?
@@ -98,10 +98,12 @@
     ;; Initial focus on first option
     (mf/with-effect [is-open options]
       (when is-open
-        (let [options (if (delay? options) @options options)
-              focusables (focusable-options options)
-              first-id (some :id focusables)]
-          (reset! focused-id* first-id))))
+        (let [opts (if (delay? options) @options options)
+              focusables (focusable-options opts)
+              ids (set (map :id focusables))]
+          (when (and (seq focusables)
+                     (not (contains? ids focused-id)))
+            (reset! focused-id* (:id (first focusables)))))))
 
     ;; auto scroll when key down
     (mf/with-effect [focused-id nodes-ref]
@@ -112,13 +114,6 @@
             (dom/scroll-into-view-if-needed!
              node {:block "nearest"
                    :inline "nearest"})))))
-
-    (mf/with-effect [is-open options]
-      (when is-open
-        (let [opts (if (delay? options) @options options)
-              focusables (focusable-options opts)
-              first-id (some :id focusables)]
-          (reset! focused-id* first-id))))
 
     {:focused-id focused-id
      :on-key-down on-key-down}))
