@@ -1390,6 +1390,7 @@ impl RenderState {
                 clip_bounds: None,
                 visited_mask: false,
                 mask: false,
+                flattened: false
             });
             self.render_shape_tree_partial_uncached(tree, timestamp, false, true)?;
         }

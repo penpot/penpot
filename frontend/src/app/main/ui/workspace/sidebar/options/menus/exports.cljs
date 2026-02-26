@@ -46,8 +46,9 @@
 
 (mf/defc exports-menu*
   {::mf/wrap [#(mf/memo' % check-exports-menu-props)]}
-  [{:keys [ids type shapes values file-id page-id]}]
+  [{:keys [ids type shapes values file-id page-id] :as props}]
 
+  (prn "??" props)
   (let [exports (get values :exports [])
         open*   (mf/use-state true)
         open?   (deref open*)
@@ -86,6 +87,10 @@
          (mf/deps ids page-id file-id exports)
          (fn [event]
            (dom/prevent-default event)
+
+           (.log js/console "???on-download" event)
+           (prn ">" type)
+           
            (if (= :multiple type)
              ;; I can select multiple shapes all of them with no export settings and one of them with only one
              ;; In that situation we must export it directly
@@ -115,7 +120,8 @@
                              :object-id (first ids)}
                    exports  (mapv #(merge % defaults) exports)]
 
-               (st/emit!
+               (prn "??" exports)
+               #_(st/emit!
                 (de/request-export {:exports exports})
                 (de/export-shapes-event exports "workspace:sidebar"))))))
 
