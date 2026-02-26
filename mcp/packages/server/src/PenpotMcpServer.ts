@@ -23,7 +23,6 @@ export interface SessionContext {
 
 export class PenpotMcpServer {
     private readonly logger = createLogger("PenpotMcpServer");
-    private readonly server: McpServer;
     private readonly tools: Map<string, Tool<any>>;
     public readonly configLoader: ConfigurationLoader;
     private app: any;
@@ -36,10 +35,7 @@ export class PenpotMcpServer {
      */
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
 
-    private readonly transports = {
-        streamable: {} as Record<string, StreamableHTTPServerTransport>,
-        sse: {} as Record<string, { transport: SSEServerTransport; userToken?: string }>,
-    };
+    private readonly sseTransports: Record<string, { transport: SSEServerTransport; userToken?: string }> = {};
 
     public readonly host: string;
     public readonly port: number;
@@ -56,21 +52,11 @@ export class PenpotMcpServer {
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
 
-        this.server = new McpServer(
-            {
-                name: "penpot-mcp-server",
-                version: "1.0.0",
-            },
-            {
-                instructions: this.getInitialInstructions(),
-            }
-        );
-
         this.tools = new Map<string, Tool<any>>();
         this.pluginBridge = new PluginBridge(this, this.webSocketPort);
         this.replServer = new ReplServer(this.pluginBridge, this.replPort);
 
-        this.registerTools();
+        this.initTools();
     }
 
     /**
@@ -119,35 +105,44 @@ export class PenpotMcpServer {
         return this.sessionContext.getStore();
     }
 
-    private registerTools(): void {
-        // Create relevant tool instances (depending on file system access)
+    private initTools(): void {
         const toolInstances: Tool<any>[] = [
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),
-            new ExportShapeTool(this), // tool adapts to file system access internally
+            new ExportShapeTool(this),
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
         }
 
         for (const tool of toolInstances) {
-            const toolName = tool.getToolName();
-            this.tools.set(toolName, tool);
+            this.logger.info(`Registering tool: ${tool.getToolName()}`);
+            this.tools.set(tool.getToolName(), tool);
+        }
+    }
 
-            // Register each tool with McpServer
-            this.logger.info(`Registering tool: ${toolName}`);
-            this.server.registerTool(
-                toolName,
+    /**
+     * Creates a fresh {@link McpServer} instance with all tools registered.
+     */
+    private createMcpServer(): McpServer {
+        const server = new McpServer(
+            { name: "penpot-mcp-server", version: "1.0.0" },
+            { instructions: this.getInitialInstructions() }
+        );
+
+        for (const tool of this.tools.values()) {
+            server.registerTool(
+                tool.getToolName(),
                 {
                     description: tool.getToolDescription(),
                     inputSchema: tool.getInputSchema(),
                 },
-                async (args) => {
-                    return tool.execute(args);
-                }
+                async (args) => tool.execute(args)
             );
         }
+
+        return server;
     }
 
     private setupHttpEndpoints(): void {
@@ -156,51 +151,38 @@ export class PenpotMcpServer {
          */
         this.app.all("/mcp", async (req: any, res: any) => {
             const userToken = req.query.userToken as string | undefined;
+            this.logger.info(`Received /mcp request with userToken: ${userToken}`);
 
             await this.sessionContext.run({ userToken }, async () => {
-                const { randomUUID } = await import("node:crypto");
-
-                const sessionId = req.headers["mcp-session-id"] as string | undefined;
-                let transport: StreamableHTTPServerTransport;
-
-                if (sessionId && this.transports.streamable[sessionId]) {
-                    transport = this.transports.streamable[sessionId];
-                } else {
-                    transport = new StreamableHTTPServerTransport({
-                        sessionIdGenerator: () => randomUUID(),
-                        onsessioninitialized: (id: string) => {
-                            this.transports.streamable[id] = transport;
-                        },
-                    });
-
-                    transport.onclose = () => {
-                        if (transport.sessionId) {
-                            delete this.transports.streamable[transport.sessionId];
-                        }
-                    };
-
-                    await this.server.connect(transport);
-                }
-
+                const transport = new StreamableHTTPServerTransport({
+                    sessionIdGenerator: undefined,
+                });
+                const server = this.createMcpServer();
+                await server.connect(transport);
                 await transport.handleRequest(req, res, req.body);
+                res.on("close", () => {
+                    transport.close();
+                    server.close();
+                });
             });
         });
 
         /**
-         * Legacy SSE connection endpoint
+         * Legacy SSE connection endpoint.
          */
         this.app.get("/sse", async (req: any, res: any) => {
             const userToken = req.query.userToken as string | undefined;
 
             await this.sessionContext.run({ userToken }, async () => {
                 const transport = new SSEServerTransport("/messages", res);
-                this.transports.sse[transport.sessionId] = { transport, userToken };
+                this.sseTransports[transport.sessionId] = { transport, userToken };
 
+                const server = this.createMcpServer();
+                await server.connect(transport);
                 res.on("close", () => {
-                    delete this.transports.sse[transport.sessionId];
+                    delete this.sseTransports[transport.sessionId];
+                    server.close();
                 });
-
-                await this.server.connect(transport);
             });
         });
 
@@ -209,7 +191,7 @@ export class PenpotMcpServer {
          */
         this.app.post("/messages", async (req: any, res: any) => {
             const sessionId = req.query.sessionId as string;
-            const session = this.transports.sse[sessionId];
+            const session = this.sseTransports[sessionId];
 
             if (session) {
                 await this.sessionContext.run({ userToken: session.userToken }, async () => {
