@@ -6,14 +6,11 @@
 
 @use "ds/_utils.scss" as *;
 @use "ds/_sizes.scss" as *;
-// TODO: Remove this after creating a non deprecated scrollbar class
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/mixins.scss" as *;
 
 .dropdown {
-  // TODO: create new scrollbar class not deprecated.
-  @extend .new-scrollbar;
   position: fixed;
   max-block-size: $sz-400;
-  max-block-size: 200px;
   overflow-y: auto;
+  @include custom-scrollbar();
 }
