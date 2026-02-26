@@ -93,6 +93,12 @@
                          (dwl/sync-file file-id file-id :colors color-id)
                          (dwu/commit-undo-transaction undo-id))))))
 
+        duplicate-color
+        (mf/use-fn
+         (mf/deps file-id color-id)
+         (fn []
+           (st/emit! (dwl/duplicate-color file-id color-id))))
+
         rename-color-clicked
         (mf/use-fn
          (mf/deps read-only? local?)
@@ -247,7 +253,10 @@
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
-
+                   (when-not (or multi-colors? multi-assets?)
+                     {:name    (tr "workspace.assets.duplicate")
+                      :id      "assets-duplicate-color"
+                      :handler duplicate-color})
                    {:name    (tr "workspace.assets.delete")
                     :id      "assets-delete-color"
                     :handler delete-color}
