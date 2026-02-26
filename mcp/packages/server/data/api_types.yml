@@ -11,7 +11,7 @@ Penpot:
             open: (
                 name: string,
                 url: string,
-                options?: { width: number; height: number },
+                options?: { width: number; height: number; hidden: boolean },
             ) => void;
             size: { width: number; height: number } | null;
             resize: (width: number, height: number) => void;
@@ -99,7 +99,7 @@ Penpot:
             open: (
                 name: string,
                 url: string,
-                options?: { width: number; height: number },
+                options?: { width: number; height: number; hidden: boolean },
             ) => void;
             size: { width: number; height: number } | null;
             resize: (width: number, height: number) => void;
@@ -110,7 +110,7 @@ Penpot:
 
         Type Declaration
 
-        * open: (name: string, url: string, options?: { width: number; height: number }) => void
+        * open: (    name: string,    url: string,    options?: { width: number; height: number; hidden: boolean },) => void
 
           Opens the plugin UI. It is possible to develop a plugin without interface (see Palette color example) but if you need, the way to open this UI is using `penpot.ui.open`.
           There is a minimum and maximum size for this modal and a default size but it's possible to customize it anyway with the options parameter.
@@ -1062,7 +1062,7 @@ Board:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -1456,7 +1456,7 @@ Board:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -2171,7 +2171,7 @@ VariantContainer:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -2568,7 +2568,7 @@ VariantContainer:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -3270,7 +3270,7 @@ Boolean:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -3629,7 +3629,7 @@ Boolean:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -5850,7 +5850,7 @@ Ellipse:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -6179,7 +6179,7 @@ Ellipse:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -8279,7 +8279,7 @@ Group:
         | "mixed";
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -8614,7 +8614,7 @@ Group:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -9523,7 +9523,7 @@ Image:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -9852,7 +9852,7 @@ Image:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -10444,6 +10444,8 @@ LayoutCellProperties:
         position?: "area" | "auto" | "manual";
     }
     ```
+
+    Referenced by: Board, Boolean, Ellipse, Group, Image, Path, Rectangle, ShapeBase, SvgRaw, Text, VariantContainer
   members:
     Properties:
       row: |-
@@ -12986,7 +12988,7 @@ Path:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -13339,7 +13341,7 @@ Path:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -14313,7 +14315,7 @@ Rectangle:
         rotation: number;
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -14644,7 +14646,7 @@ Rectangle:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -15349,7 +15351,7 @@ ShapeBase:
         | "mixed";
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -15679,7 +15681,7 @@ ShapeBase:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -16273,7 +16275,7 @@ Stroke:
         strokeColorRefFile?: string;
         strokeColorRefId?: string;
         strokeOpacity?: number;
-        strokeStyle?: "svg" | "none" | "mixed" | "solid" | "dotted" | "dashed";
+        strokeStyle?: "none" | "svg" | "mixed" | "solid" | "dotted" | "dashed";
         strokeWidth?: number;
         strokeAlignment?: "center" | "inner" | "outer";
         strokeCapStart?: StrokeCap;
@@ -16312,7 +16314,7 @@ Stroke:
         Defaults to 1 if omitted.
       strokeStyle: |-
         ```
-        strokeStyle?: "svg" | "none" | "mixed" | "solid" | "dotted" | "dashed"
+        strokeStyle?: "none" | "svg" | "mixed" | "solid" | "dotted" | "dashed"
         ```
 
         The optional style of the stroke.
@@ -16415,7 +16417,7 @@ SvgRaw:
         | "mixed";
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -16739,7 +16741,7 @@ SvgRaw:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -17334,7 +17336,7 @@ Text:
         | "mixed";
         strokes: Stroke[];
         layoutChild?: LayoutChildProperties;
-        layoutCell?: LayoutChildProperties;
+        layoutCell?: LayoutCellProperties;
         setParentIndex(index: number): void;
         tokens: {
             width: string;
@@ -17421,6 +17423,7 @@ Text:
         direction: "mixed" | "ltr" | "rtl" | null;
         align: "center" | "left" | "right" | "mixed" | "justify" | null;
         verticalAlign: "center" | "top" | "bottom" | null;
+        textBounds: { x: number; y: number; width: number; height: number };
         getRange(start: number, end: number): TextRange;
         applyTypography(typography: LibraryTypography): void;
     }
@@ -17675,7 +17678,7 @@ Text:
         Layout properties for children of the shape.
       layoutCell: |-
         ```
-        readonly layoutCell?: LayoutChildProperties
+        readonly layoutCell?: LayoutCellProperties
         ```
 
         Layout properties for cells in a grid layout.
@@ -17835,6 +17838,13 @@ Text:
         ```
 
         The vertical alignment of the text shape. It can be a specific alignment or 'mixed' if multiple alignments are used.
+      textBounds: |-
+        ```
+        readonly textBounds: { x: number; y: number; width: number; height: number }
+        ```
+
+        Return the bounding box for the text as a (x, y, width, height) rectangle
+        This is the box that covers the text even if it overflows its selection rectangle.
     Methods:
       getPluginData: |-
         ```
