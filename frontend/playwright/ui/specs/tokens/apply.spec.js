@@ -910,7 +910,7 @@ test.describe("Tokens: Detach token", () => {
     await expect(page.getByText("Don't remap")).toBeVisible();
     await page.getByText("Don't remap").click();
     const brokenPill = borderRadiusSection.getByRole("button", {
-      name: "This token is not in any",
+      name: "is not in any active set",
     });
     await expect(brokenPill).toBeVisible();
 
