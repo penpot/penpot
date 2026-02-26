@@ -1,10 +1,50 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 
 const setupEmptyTokensFile = async (page, options = {}) => {
   const { flags = [] } = options;
 
   const workspacePage = new WorkspacePage(page);
+  if (flags.length > 0) {
+    await workspacePage.mockConfigFlags(flags);
+  }
+
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
+  });
+
+  const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+  await tokensTabButton.click();
+
+  return {
+    workspacePage,
+    tokenThemeUpdateCreateModal: workspacePage.tokenThemeUpdateCreateModal,
+    tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
+    tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
+    tokenSetItems: workspacePage.tokenSetItems,
+    tokensSidebar: workspacePage.tokensSidebar,
+    tokenSetGroupItems: workspacePage.tokenSetGroupItems,
+    tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
+  };
+};
+
+const setupEmptyTokensFileRender = async (page, options = {}) => {
+  const { flags = [] } = options;
+
+  const workspacePage = new WasmWorkspacePage(page);
   if (flags.length > 0) {
     await workspacePage.mockConfigFlags(flags);
   }
@@ -85,8 +125,61 @@ const setupTokensFile = async (page, options = {}) => {
   };
 };
 
+const setupTokensFileRender = async (page, options = {}) => {
+  const {
+    file = "workspace/get-file-tokens.json",
+    fileFragment = "workspace/get-file-fragment-tokens.json",
+    flags = ["enable-feature-token-input"],
+  } = options;
+
+  const workspacePage = new WasmWorkspacePage(page);
+  if (flags.length > 0) {
+    await workspacePage.mockConfigFlags(flags);
+  }
+
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
+  await workspacePage.mockRPC(/get\-file\?/, file);
+  await workspacePage.mockRPC(/get\-file\-fragment\?/, fileFragment);
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
+  });
+
+  const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+  await tokensTabButton.click();
+
+  return {
+    workspacePage,
+    tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
+    tokenThemeUpdateCreateModal: workspacePage.tokenThemeUpdateCreateModal,
+    tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
+    tokenSetItems: workspacePage.tokenSetItems,
+    tokenSetGroupItems: workspacePage.tokenSetGroupItems,
+    tokensSidebar: workspacePage.tokensSidebar,
+    tokenContextMenuForToken: workspacePage.tokenContextMenuForToken,
+    tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
+  };
+};
+
 const setupTypographyTokensFile = async (page, options = {}) => {
   return setupTokensFile(page, {
+    file: "workspace/get-file-typography-tokens.json",
+    fileFragment: "workspace/get-file-fragment-typography-tokens.json",
+    ...options,
+  });
+};
+
+const setupTypographyTokensFileRender = async (page, options = {}) => {
+  return setupTokensFileRender(page, {
     file: "workspace/get-file-typography-tokens.json",
     fileFragment: "workspace/get-file-fragment-typography-tokens.json",
     ...options,
@@ -114,7 +207,7 @@ const testTokenCreationFlow = async (
   const missingReferenceError = "Missing token references";
 
   const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-    await setupEmptyTokensFile(page);
+    await setupEmptyTokensFileRender(page);
 
   // Open modal
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -259,8 +352,11 @@ const unfoldTokenTree = async (tokensTabPanel, type, tokenName) => {
 
 export {
   setupEmptyTokensFile,
+  setupEmptyTokensFileRender,
   setupTokensFile,
+  setupTokensFileRender,
   setupTypographyTokensFile,
+  setupTypographyTokensFileRender,
   testTokenCreationFlow,
   unfoldTokenTree,
 };

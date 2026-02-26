@@ -4,4 +4,9 @@ TARGET=${1:-app};
 
 set -ex
 
-exec pnpm run watch:$TARGET
+rm -rf node_modules;
+
+corepack enable;
+corepack install;
+pnpm install;
+pnpm run watch:$TARGET

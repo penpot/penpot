@@ -18,7 +18,12 @@
         <ul data-handler="themes-list">
           @for (theme of themes; track theme.id) {
             <li class="body-m panel-item theme-item">
-              <span>{{ theme.group }} / {{ theme.name }}</span>
+              <span title="{{ theme.activeSets }}">
+                @if (theme.group) {
+                  {{ theme.group }} /
+                }
+                {{ theme.name }}
+              </span>
               <button
                 type="button"
                 data-appearance="secondary"
@@ -113,7 +118,11 @@
                 class="body-m panel-item token-item"
                 (click)="applyToken(token.id)"
               >
-                <span title="{{ token.resolvedValueString }}">
+                <span
+                  title="Value: {{ token.valueString }}&#013;Resolved value: {{
+                    token.resolvedValueString
+                  }}"
+                >
                   {{ token.name }}
                 </span>
                 <button

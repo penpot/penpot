@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
@@ -44,18 +45,39 @@
 
 (def notification-timeout 7000)
 
-(def ^:private schema:form
+(def ^:private schema:form-access-token
   [:map
    [:name [::sm/text {:max 250}]]
    [:expiration-date [::sm/text {:max 250}]]])
 
-(def form-initial-data
+(def ^:private schema:form-mcp-key
+  [:map
+   [:expiration-date [::sm/text {:max 250}]]])
+
+(def form-initial-data-access-token
   {:name ""
    :expiration-date "never"})
 
+(def form-initial-data-mcp-key
+  {:expiration-date "never"})
+
+(mf/defc input-copy*
+  {::mf/private true}
+  [{:keys [value on-copy-to-clipboard]}]
+  [:div {:class (stl/css :input-copy)}
+   [:> input* {:type "text"
+               :default-value value
+               :read-only true}]
+   [:div {:class (stl/css :input-copy-button-wrapper)}
+    [:> icon-button* {:variant "secondary"
+                      :class (stl/css :input-copy-button)
+                      :aria-label (tr "integrations.copy-to-clipboard")
+                      :on-click on-copy-to-clipboard
+                      :icon i/clipboard}]]])
+
 (mf/defc token-created*
   {::mf/private true}
-  [{:keys [title]}]
+  [{:keys [title mcp-key?]}]
   (let [token-created (mf/deref token-created-ref)
 
         on-copy-to-clipboard
@@ -77,18 +99,14 @@
 
      [:> notification-pill* {:level :info
                              :type :context}
-      (tr "integrations.info.non-recuperable")]
+      [:> text* {:as "div"
+                 :typography t/body-small
+                 :class (stl/css :color-primary)}
+       (tr "integrations.info.non-recuperable")]]
 
      [:div {:class (stl/css :modal-content)}
-      [:div {:class (stl/css :modal-token)}
-       [:> input* {:type "text"
-                   :default-value (:token token-created "")
-                   :read-only true}]
-       [:div {:class (stl/css :modal-token-button)}
-        [:> icon-button* {:variant "secondary"
-                          :aria-label (tr "integrations.copy-token")
-                          :on-click on-copy-to-clipboard
-                          :icon i/clipboard}]]]
+      [:> input-copy* {:value (:token token-created "")
+                       :on-copy-to-clipboard on-copy-to-clipboard}]
 
       [:> text* {:as "div"
                  :typography t/body-small
@@ -97,18 +115,40 @@
          (tr "integrations.token-will-expire" (ct/format-inst (:expires-at token-created) "PPP"))
          (tr "integrations.token-will-not-expire"))]]
 
+     (when mcp-key?
+       [:div {:class (stl/css :modal-content)}
+        [:> text* {:as "div"
+                   :typography t/body-small
+                   :class (stl/css :color-primary)}
+         (tr "integrations.info.mcp-client-config")]
+        [:textarea {:class (stl/css :textarea)
+                    :wrap "off"
+                    :rows 7
+                    :read-only true}
+         (dm/str
+          "{\n"
+          "  \"mcpServers\": {\n"
+          "    \"penpot\": {\n"
+          "      \"url\": \"" cf/mcp-server-url "?userToken=" (:token token-created "") "\"\n"
+          "    }\n"
+          "  }"
+          "\n}")]])
+
      [:div {:class (stl/css :modal-footer)}
       [:> button* {:variant "secondary"
                    :on-click modal/hide!}
        (tr "labels.close")]]]))
 
-
 (mf/defc create-token*
   {::mf/private true}
   [{:keys [title info mcp-key? on-created]}]
   (let [form (fm/use-form
-              :initial form-initial-data
-              :schema schema:form)
+              :initial (if mcp-key?
+                         form-initial-data-mcp-key
+                         form-initial-data-access-token)
+              :schema (if mcp-key?
+                        schema:form-mcp-key
+                        schema:form-access-token))
 
         on-error
         (mf/use-fn
@@ -131,7 +171,8 @@
                  params     (cond-> {:name  (:name cdata)
                                      :perms (:perms cdata)}
                               (not= "never" expiration) (assoc :expiration expiration)
-                              (true? mcp-key?)          (assoc :type "mcp"))]
+                              (true? mcp-key?)          (assoc :type "mcp"
+                                                               :name "MCP key"))]
              (st/emit! (du/create-access-token (with-meta params mdata))))))]
 
     [:> fc/form* {:form form
@@ -146,15 +187,25 @@
      (when (some? info)
        [:> notification-pill* {:level :info
                                :type :context}
-        info])
+        [:> text* {:as "div"
+                   :typography t/body-small
+                   :class (stl/css :color-primary)}
+         info]])
 
-     [:div {:class (stl/css :modal-content)}
-      [:> fc/form-input* {:type "text"
-                          :auto-focus? true
-                          :form form
-                          :name :name
-                          :label (tr "integrations.name.label")
-                          :placeholder (tr "integrations.name.placeholder")}]]
+     (if mcp-key?
+       [:div {:class (stl/css :modal-content)}
+        [:> text* {:as "div"
+                   :typography t/body-medium
+                   :class (stl/css :color-secondary)}
+         (tr "integrations.info.mcp-server")]]
+
+       [:div {:class (stl/css :modal-content)}
+        [:> fc/form-input* {:type "text"
+                            :auto-focus? true
+                            :form form
+                            :name :name
+                            :label (tr "integrations.name.label")
+                            :placeholder (tr "integrations.name.placeholder")}]])
 
      [:div {:class (stl/css :modal-content)}
       [:> text* {:as "label"
@@ -206,9 +257,9 @@
         [:> create-token* {:title (tr "integrations.create-access-token.title")
                            :on-created on-created}])]]))
 
-(mf/defc create-mcp-key-modal
+(mf/defc generate-mcp-key-modal
   {::mf/register modal/components
-   ::mf/register-as :create-mcp-key}
+   ::mf/register-as :generate-mcp-key}
   []
   (let [created? (mf/use-state false)
 
@@ -222,7 +273,7 @@
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:mcp-status true})
-                     (ev/event {::ev/name "create-mcp-key"
+                     (ev/event {::ev/name "generate-mcp-key"
                                 ::ev/origin "integrations"})
                      (ev/event {::ev/name "enable-mcp"
                                 ::ev/origin "integrations"
@@ -238,8 +289,9 @@
                          :icon i/close}]]
 
       (if @created?
-        [:> token-created* {:title (tr "integrations.create-mcp-key.title.created")}]
-        [:> create-token* {:title (tr "integrations.create-mcp-key.title")
+        [:> token-created* {:title (tr "integrations.generate-mcp-key.title.created")
+                            :mcp-key? true}]
+        [:> create-token* {:title (tr "integrations.generate-mcp-key.title")
                            :mcp-key? true
                            :on-created on-created}])]]))
 
@@ -277,7 +329,8 @@
                          :icon i/close}]]
 
       (if @created?
-        [:> token-created* {:title (tr "integrations.regenerate-mcp-key.title.created")}]
+        [:> token-created* {:title (tr "integrations.regenerate-mcp-key.title.created")
+                            :mcp-key? true}]
         [:> create-token* {:title (tr "integrations.regenerate-mcp-key.title")
                            :info (tr "integrations.regenerate-mcp-key.info")
                            :mcp-key? true
@@ -378,7 +431,7 @@
 
         handle-initial-mcp-status
         (mf/use-fn
-         #(st/emit! (modal/show {:type :create-mcp-key})))
+         #(st/emit! (modal/show {:type :generate-mcp-key})))
 
         handle-regenerate-mcp-key
         (mf/use-fn
@@ -484,16 +537,9 @@
                   :typography t/body-medium
                   :class (stl/css :color-secondary)}
         (tr "integrations.mcp-server.mcp-keys.info")]
-       [:div {:class (stl/css :mcp-server-notification-line)}
-        [:> text* {:as "div"
-                   :typography t/body-medium
-                   :class (stl/css :color-primary)}
-         cf/mcp-server-url]
-        [:> text* {:as "div"
-                   :typography t/body-medium
-                   :on-click on-copy-to-clipboard
-                   :class (stl/css :mcp-server-notification-link)}
-         [:> icon* {:icon-id i/clipboard}] (tr "integrations.mcp-server.mcp-keys.copy")]]
+
+       [:> input-copy* {:value (dm/str cf/mcp-server-url "?userToken=")
+                        :on-copy-to-clipboard on-copy-to-clipboard}]
 
        [:> text* {:as "div"
                   :typography t/body-medium

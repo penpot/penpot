@@ -55,3 +55,31 @@ test("BUG 13382 - Fix problem with flex layout", async ({ page }) => {
   await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("340");
 
 });
+
+test("BUG 13468 - Fix problem with flex propagation", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13468.json");
+
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-13468-fragment.json",
+  );
+
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "3a4d7ec7-c391-8146-8007-9a05c41da6b9",
+    pageId: "95b23c15-79f9-81ba-8007-99d81b5290dd",
+  });
+0
+  await workspacePage.clickToggableLayer("Parent");
+  await workspacePage.clickToggableLayer("Container");
+
+  await workspacePage.sidebar.getByRole('button', { name: 'Show' }).click();
+
+  await workspacePage.clickLeafLayer("Container");
+  await expect(workspacePage.rightSidebar.getByTitle("Height").getByRole("textbox")).toHaveValue("76");
+});
+
+

@@ -1,5 +1,7 @@
 import "./style.css";
 
+const KEEP_ALIVE_TIME = 30000; // 30 seconds
+
 // get the current theme from the URL
 const searchParams = new URLSearchParams(window.location.search);
 document.body.dataset.theme = searchParams.get("theme") ?? "light";
@@ -72,8 +74,12 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         };
 
         ws.onmessage = (event) => {
-            console.log("Received from MCP server:", event.data);
             try {
+                if (event.data === "keep-alive") {
+                    // Keep alive response, ignore it
+                    return;
+                }
+                console.log("Received from MCP server:", event.data);
                 const request = JSON.parse(event.data);
                 // Forward the task request to the plugin for execution
                 parent.postMessage(request, "*");
@@ -82,8 +88,11 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
             }
         };
 
+        const interval = setInterval(() => ws?.send("keep-alive"), KEEP_ALIVE_TIME);
+
         ws.onclose = (event: CloseEvent) => {
             console.log("Disconnected from MCP server");
+            clearInterval(interval);
             const message = event.reason || undefined;
             updateConnectionStatus("disconnected", "Disconnected", false, message);
             ws = null;
@@ -109,6 +118,9 @@ document.querySelector("[data-handler='connect-mcp']")?.addEventListener("click"
 window.addEventListener("message", (event) => {
     if (event.data.type === "start-server") {
         connectToMcpServer(event.data.url, event.data.token);
+    }
+    if (event.data.type === "stop-server") {
+        ws?.close();
     } else if (event.data.source === "penpot") {
         document.body.dataset.theme = event.data.theme;
     } else if (event.data.type === "task-response") {

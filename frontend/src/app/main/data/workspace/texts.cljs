@@ -10,6 +10,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -19,6 +20,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
+   [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.common :as dwc]
@@ -916,11 +918,11 @@
       (update-in state [:workspace-text-modifier shape-id] {:position-data position-data}))))
 
 (defn v2-update-text-shape-content
-  [id content & {:keys [update-name? name finalize? save-undo?]
-                 :or {update-name? false name nil finalize? false save-undo? true}}]
+  [id content & {:keys [update-name? name finalize? save-undo? original-content]
+                 :or {update-name? false name nil finalize? false save-undo? true original-content nil}}]
   (ptk/reify ::v2-update-text-shape-content
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (if (features/active-feature? state "render-wasm/v1")
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
@@ -950,11 +952,11 @@
                  new-shape))
              {:save-undo? save-undo? :undo-group (when new-shape? id)})
 
-            (let [modifiers (dwwt/resize-wasm-text-modifiers shape content)
-                  options {:undo-group (when new-shape? id)}]
-              (if (and (not= :fixed (:grow-type shape)) finalize?)
-                (dwm/apply-wasm-modifiers modifiers options)
-                (dwm/set-wasm-modifiers modifiers options))))
+            (when-let [modifiers (dwwt/resize-wasm-text-modifiers shape content)]
+              (let [options {:undo-group (when new-shape? id)}]
+                (if (and (not= :fixed (:grow-type shape)) finalize?)
+                  (dwm/apply-wasm-modifiers modifiers options)
+                  (dwm/set-wasm-modifiers modifiers options)))))
 
            (when finalize?
              (rx/concat
@@ -970,7 +972,13 @@
                     {:save-undo? false}))
                  (dws/deselect-shape id)
                  (dwsh/delete-shapes #{id})))
-              (rx/of (dwt/finish-transform))))))
+              (rx/of
+               ;; This commit is necesary for undo and component propagation
+               ;; on finalization
+               (dch/commit-changes
+                (-> (pcb/empty-changes it (:current-page-id state))
+                    (pcb/set-text-content id content original-content)))
+               (dwt/finish-transform))))))
 
         (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)

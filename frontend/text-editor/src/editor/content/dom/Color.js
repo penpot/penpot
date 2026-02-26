@@ -76,3 +76,4 @@ export function getFills(fillStyle) {
   const [color, opacity] = getColor(fillStyle);
   return `[["^ ","~:fill-color","${color}","~:fill-opacity",${opacity}]]`;
 }
+

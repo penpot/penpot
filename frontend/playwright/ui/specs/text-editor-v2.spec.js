@@ -2,8 +2,6 @@ import { test, expect } from "@playwright/test";
 import { Clipboard } from "../../helpers/Clipboard";
 import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
-const timeToWait = 100;
-
 test.beforeEach(async ({ page, context }) => {
   await Clipboard.enable(context, Clipboard.Permission.ALL);
 
@@ -37,11 +35,13 @@ test("Create a new text shape from pasting text", async ({ page, context }) => {
   await workspace.setupEmptyFile();
   await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
   await workspace.goToWorkspace();
+  await workspace.moveButton.click();
 
   await Clipboard.writeText(page, textToPaste);
 
   await workspace.clickAt(190, 150);
   await workspace.paste("keyboard");
+
   await workspace.textEditor.stopEditing();
 
   await expect(workspace.layers.getByText(textToPaste)).toBeVisible();
@@ -57,6 +57,7 @@ test("Create a new text shape from pasting text using context menu", async ({
   });
   await workspace.setupEmptyFile();
   await workspace.goToWorkspace();
+  await workspace.moveButton.click();
 
   await Clipboard.writeText(page, textToPaste);
 
@@ -96,6 +97,7 @@ test("Update an already created text shape by prepending text", async ({
   await workspace.clickLeafLayer("Lorem ipsum");
   await workspace.textEditor.startEditing();
   await workspace.textEditor.moveFromStart(0);
+  await page.evaluate(() => new Promise((resolve) => globalThis.requestIdleCallback(resolve)));
   await page.keyboard.type("Dolor sit amet ");
   await workspace.textEditor.stopEditing();
   await workspace.waitForSelectedShapeName("Dolor sit amet Lorem ipsum");
@@ -138,7 +140,7 @@ test("Update a new text shape appending text by pasting text", async ({
   await workspace.paste("keyboard");
   await workspace.textEditor.stopEditing();
   await workspace.waitForSelectedShapeName("Lorem ipsum dolor sit amet");
-  });
+});
 
 test.skip("Update a new text shape prepending text by pasting text", async ({
   page,

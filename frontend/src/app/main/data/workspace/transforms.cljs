@@ -1173,7 +1173,8 @@
          (when add-component-to-variant?
            (rx/of (ev/event {::ev/name "add-component-to-variant"})))
          (when add-new-variant?
-           (rx/of (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-to-frame"}))))))))
+           (rx/of (ev/event {::ev/name "add-new-variant"
+                             ::ev/origin "workspace:move-shapes-to-frame"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the

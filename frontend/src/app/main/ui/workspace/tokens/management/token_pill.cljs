@@ -176,9 +176,10 @@
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
-  (let [{:keys [name value errors type]} token
+  (let [{:keys [name value type]} token
 
         resolved-token (get active-theme-tokens (:name token))
+        errors         (:errors resolved-token)
 
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (cfo/is-reference? token)

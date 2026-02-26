@@ -300,20 +300,7 @@ fn propagate_reflow(
         Type::Frame(Frame {
             layout: Some(_), ..
         }) => {
-            let mut skip_reflow = false;
-            if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
-                if let Some(parent_id) = shape.parent_id {
-                    if parent_id != Uuid::nil() && !reflown.contains(&parent_id) {
-                        // If this is a fill layout but the parent has not been reflown yet
-                        // we wait for the next iteration for reflow
-                        skip_reflow = true;
-                    }
-                }
-            }
-
-            if !skip_reflow {
-                layout_reflows.insert(*id);
-            }
+            layout_reflows.insert(*id);
         }
         Type::Group(Group { masked: true }) => {
             let children_ids = shape.children_ids(true);

@@ -300,6 +300,6 @@
                                       :make-schema make-schema
                                       :token token
                                       :validator validate-typography-token
-                                      :type :composite
+                                      :value-type :composite
                                       :input-component tabs-wrapper*})]
     [:> generic/form* props]))

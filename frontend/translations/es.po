@@ -2058,8 +2058,8 @@ msgstr ""
 "otras aplicaciones acceso a la API interna de Penpot"
 
 #: src/app/main/ui/settings/integrations.cljs:152, src/app/main/ui/settings/integrations.cljs:158
-msgid "integrations.copy-token"
-msgstr "Copiar token"
+msgid "integrations.copy-to-clipboard"
+msgstr "Copiar al portapapeles"
 
 #: src/app/main/ui/settings/integrations.cljs:432
 msgid "integrations.create-access-token.title"
@@ -2068,14 +2068,6 @@ msgstr "Crear token de accesso"
 #: src/app/main/ui/settings/integrations.cljs:433
 msgid "integrations.create-access-token.title.created"
 msgstr "Token de acceso creado"
-
-#: src/app/main/ui/settings/integrations.cljs:290
-msgid "integrations.create-mcp-key.title"
-msgstr "Crear nueva clave MCP"
-
-#: src/app/main/ui/settings/integrations.cljs:291
-msgid "integrations.create-mcp-key.title.created"
-msgstr "Clave MCP creada"
 
 #: src/app/main/ui/settings/integrations.cljs:257
 msgid "integrations.delete-token.accept"
@@ -2124,6 +2116,22 @@ msgstr "Sin fecha de expiración"
 #: src/app/main/ui/settings/integrations.cljs:130
 msgid "integrations.expiration-date.label"
 msgstr "Fecha de expiración"
+
+#: src/app/main/ui/settings/integrations.cljs:290
+msgid "integrations.generate-mcp-key.title"
+msgstr "Generar clave MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:291
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "Clave MCP generada"
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.info.mcp-client-config"
+msgstr "Agrega esta configuración a tu cliente MCP (por ejemplo, ~/.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:183
+msgid "integrations.info.mcp-server"
+msgstr "El servidor MCP de Penpot permite a los clientes MCP interactuar directamente con los archivos de diseño de Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:131
 msgid "integrations.info.non-recuperable"

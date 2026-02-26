@@ -243,6 +243,46 @@ test("Renders a file with a closed path shape with multiple segments using strok
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders solid shadows after select all and zoom to selected", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-solid-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "93113137-fe66-80fb-8007-99ca9fd96841",
+    pageId: "93113137-fe66-80fb-8007-99ca9fd96842",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.viewport.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("f");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  await workspace.hideUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders strokes with solid shadows", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-solid-strokes-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "93113137-fe66-80fb-8007-99cfd5cbf361",
+    pageId: "93113137-fe66-80fb-8007-99cfd5cbf362",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.hideUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a file with paths and svg attrs", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
@@ -391,4 +431,28 @@ test("Keeps component visible when focusing after creating it", async ({
 
   await workspace.hideUI();
   await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Check inner stroke artifacts", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-inner-strokes-artifacts.json");
+
+  await workspace.goToWorkspace({
+    id: "effcbebc-b8c8-802f-8007-9a0b2e2c863f",
+    pageId: "effcbebc-b8c8-802f-8007-9a0b2e2c8640",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  const previousRenderCount = await workspace.getRenderCount();
+  await page.keyboard.press("ControlOrMeta++");
+  await workspace.waitForNextRender(previousRenderCount);
+
+  // Stricter comparison: artifacts are very subtle
+  await expect(workspace.canvas).toHaveScreenshot({
+    maxDiffPixelRatio: 0,
+    threshold: 0.1,
+  });
 });

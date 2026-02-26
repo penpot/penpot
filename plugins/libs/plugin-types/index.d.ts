@@ -3723,7 +3723,7 @@ export interface ShapeBase extends PluginData {
   /**
    * Layout properties for cells in a grid layout.
    */
-  readonly layoutCell?: LayoutChildProperties;
+  readonly layoutCell?: LayoutCellProperties;
 
   /**
    * Changes the index inside the parent of the current shape.
@@ -4126,6 +4126,12 @@ export interface Text extends ShapeBase {
    * The vertical alignment of the text shape. It can be a specific alignment or 'mixed' if multiple alignments are used.
    */
   verticalAlign: 'top' | 'center' | 'bottom' | null;
+
+  /**
+   * Return the bounding box for the text as a (x, y, width, height) rectangle
+   * This is the box that covers the text even if it overflows its selection rectangle.
+   */
+  readonly textBounds: { x: number; y: number; width: number; height: number };
 
   /**
    * Gets a text range within the text shape.

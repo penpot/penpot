@@ -4,7 +4,9 @@
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
@@ -36,14 +38,20 @@
 
                   :always
                   (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-    (->> tokens'
-         (sd/resolve-tokens-interactive)
+
+    (->> (if (contains? cf/flags :tokenscript)
+           (rx/of (ts/resolve-tokens tokens'))
+           (sd/resolve-tokens-interactive tokens'))
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+            (let [resolved-token (cond-> (get resolved-tokens (:name token))
+                                   (contains? cf/flags :tokenscript)
+                                   (update :resolved-value ts/tokenscript-symbols->penpot-unit))]
               (cond
-                resolved-value (rx/of resolved-token)
-                :else (rx/throw {:errors (or (seq errors)
+                (:resolved-value resolved-token)
+                (rx/of resolved-token)
+
+                :else (rx/throw {:errors (or (seq (:errors resolved-token))
                                              [(wte/get-error-code :error/unknown-error)])}))))))))
 
 (defn- validate-token-with [token validators]

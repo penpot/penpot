@@ -1153,6 +1153,20 @@ msgstr "Type to search results"
 msgid "dashboard.unpublish-shared"
 msgstr "Unpublish Library"
 
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.title"
+msgstr "Import tokens from library?"
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"The library has tokens and themes which "
+"are likely used by its components."
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.import"
+msgstr "Import tokens"
+
 #: src/app/main/ui/settings/options.cljs:74
 msgid "dashboard.update-settings"
 msgstr "Update settings"
@@ -2087,8 +2101,8 @@ msgstr ""
 "internal Penpot API"
 
 #: src/app/main/ui/settings/integrations.cljs:152, src/app/main/ui/settings/integrations.cljs:158
-msgid "integrations.copy-token"
-msgstr "Copy token"
+msgid "integrations.copy-to-clipboard"
+msgstr "Copy to clipboard"
 
 #: src/app/main/ui/settings/integrations.cljs:432
 msgid "integrations.create-access-token.title"
@@ -2097,14 +2111,6 @@ msgstr "Create access token"
 #: src/app/main/ui/settings/integrations.cljs:433
 msgid "integrations.create-access-token.title.created"
 msgstr "Access token created"
-
-#: src/app/main/ui/settings/integrations.cljs:290
-msgid "integrations.create-mcp-key.title"
-msgstr "Create new MCP key"
-
-#: src/app/main/ui/settings/integrations.cljs:291
-msgid "integrations.create-mcp-key.title.created"
-msgstr "MCP key created"
 
 #: src/app/main/ui/settings/integrations.cljs:257
 msgid "integrations.delete-token.accept"
@@ -2153,6 +2159,22 @@ msgstr "No expiration date"
 #: src/app/main/ui/settings/integrations.cljs:130
 msgid "integrations.expiration-date.label"
 msgstr "Expiration date"
+
+#: src/app/main/ui/settings/integrations.cljs:290
+msgid "integrations.generate-mcp-key.title"
+msgstr "Generate MCP key"
+
+#: src/app/main/ui/settings/integrations.cljs:291
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "MCP key generated"
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.info.mcp-client-config"
+msgstr "Add this configuration to your MCP client (e.g. ~/​​​​​​.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:183
+msgid "integrations.info.mcp-server"
+msgstr "The Penpot MCP Server enables MCP clients to interact directly with Penpot design files."
 
 #: src/app/main/ui/settings/integrations.cljs:131
 msgid "integrations.info.non-recuperable"

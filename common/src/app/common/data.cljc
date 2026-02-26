@@ -760,6 +760,21 @@
        default
        v))))
 
+(defn percent?
+  [v]
+  (str/numeric? (str/rtrim v "%")))
+
+(defn parse-percent
+  ([v]
+   (parse-percent v nil))
+  ([v default]
+   (if (str/ends-with? v "%")
+     (let [v (impl-parse-double (str/trim v "%"))]
+       (if (or (nil? v) (nan? v))
+         default
+         (/ v 100)))
+     (parse-double v default))))
+
 (defn parse-uuid
   [v]
   (try

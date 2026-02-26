@@ -72,6 +72,10 @@ export class PluginBridge {
             ws.on("message", (data: Buffer) => {
                 this.logger.debug("Received WebSocket message: %s", data.toString());
                 try {
+                    if (data.toString() === "keep-alive") {
+                        ws.send("keep-alive");
+                        return;
+                    }
                     const response: PluginTaskResponse<any> = JSON.parse(data.toString());
                     this.handlePluginTaskResponse(response);
                 } catch (error) {

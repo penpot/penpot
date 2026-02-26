@@ -16,6 +16,7 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
@@ -301,10 +302,9 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           (if (:nitrate-licence profile)
-             ;; TODO update when org creation route is ready
-             (dom/open-new-window "/control-center/org/create")
-             (st/emit! (modal/show :nitrate-form {})))))]
+           (if (dm/get-in profile [:props :nitrate-license :valid])
+             (dnt/go-to-nitrate-cc)
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
 
     [:> dropdown-menu* props
 
@@ -547,10 +547,9 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           (if (:nitrate-licence profile)
-             ;; TODO update when org creation route is ready
-             (dom/open-new-window "/control-center/org/create")
-             (st/emit! (modal/show :nitrate-form {})))))]
+           (if (dm/get-in profile [:props :nitrate-license :valid])
+             (dnt/go-to-nitrate-cc)
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if empty?
       [:div {:class (stl/css :nitrate-orgs-empty)}
        [:span {:class (stl/css :nitrate-penpot-icon)}
@@ -1087,7 +1086,7 @@
 
     [:*
      (if (contains? cf/flags :nitrate)
-       (when-not (:nitrate-licence profile)
+       (when-not (dm/get-in profile [:props :nitrate-license :valid])
          [:> nitrate-sidebar* {:profile profile}])
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
