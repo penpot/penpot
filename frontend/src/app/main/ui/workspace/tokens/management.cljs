@@ -2,7 +2,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.path-names :as cpn]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -129,6 +128,14 @@
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))
 
+        ;; Filter tokens by their path and return the tokens
+        filter-tokens-by-path
+        (mf/use-fn
+         (fn [tokens-filtered-by-type path]
+           (->> tokens-filtered-by-type
+                (filter (fn [token]
+                          (str/starts-with? (:name token) path))))))
+
         ;; Filter tokens by their path and return their ids
         filter-tokens-by-path-ids
         (mf/use-fn
@@ -141,14 +148,6 @@
                 (mapv (fn [token]
                         (let [[_ token-value] token]
                           (:id token-value)))))))
-
-        filter-tokens-by-path
-        (mf/use-fn
-         (mf/deps selected-token-set-tokens)
-         (fn [tokens-filtered-by-type path]
-           (->> tokens-filtered-by-type
-                (filter (fn [token]
-                          (str/starts-with? (:name token) path))))))
 
         remaining-tokens-of-type-in-set?
         (mf/use-fn
@@ -194,7 +193,7 @@
         bulk-rename-tokens-in-path
         ;; Rename tokens in bulk affected by a node rename.
         (mf/use-fn
-         (mf/deps selected-token-set-tokens selected-token-set-id)
+         (mf/deps filter-tokens-by-path-ids selected-token-set-id)
          (fn [node type new-node-name]
            (let [old-path (:path node)
                  new-path (ctob/rename-path node new-node-name)
@@ -207,7 +206,7 @@
         ;; Remap tokens in bulk affected by a node rename.
         ;; It will update the token names and propagate the changes to the workspace.
         (mf/use-fn
-         (mf/deps selected-token-set-id selected-token-set-tokens)
+         (mf/deps filter-tokens-by-path filter-tokens-by-path-ids selected-token-set-tokens selected-token-set-id)
          (fn [node type new-node-name]
            (let [old-path (:path node)
                  ;; Get tokens in path to remap their names after remapping the node

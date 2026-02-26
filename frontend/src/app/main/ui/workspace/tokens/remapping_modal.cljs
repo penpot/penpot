@@ -50,15 +50,11 @@
   (let [old-name (:old-name remap-data)
         new-name (:new-name remap-data)
 
-        _ (prn "Rendering remapping modal with data:" remap-data)
-
         ;; Remap logic on confirm
         confirm-remap
         (mf/use-fn
          (mf/deps on-remap old-name new-name)
          (fn []
-           ;; Call shared remapping logic
-           ;;  (st/emit! [:tokens/remap-tokens old-name new-name])
            (when (fn? on-remap)
              (on-remap))))
 
