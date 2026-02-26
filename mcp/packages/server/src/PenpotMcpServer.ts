@@ -35,6 +35,10 @@ export class PenpotMcpServer {
      */
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
 
+    private readonly streamableTransports: Record<
+        string,
+        { transport: StreamableHTTPServerTransport; server: McpServer; userToken?: string }
+    > = {};
     private readonly sseTransports: Record<string, { transport: SSEServerTransport; userToken?: string }> = {};
 
     public readonly host: string;
@@ -147,23 +151,52 @@ export class PenpotMcpServer {
 
     private setupHttpEndpoints(): void {
         /**
-         * Modern Streamable HTTP connection endpoint
+         * Modern Streamable HTTP connection endpoint.
+         *
+         * New sessions are created on initialize requests (no mcp-session-id header).
+         * Subsequent requests for an existing session are routed to the stored transport,
+         * with the session context populated from the stored userToken.
          */
         this.app.all("/mcp", async (req: any, res: any) => {
-            const userToken = req.query.userToken as string | undefined;
-            this.logger.info(`Received /mcp request with userToken: ${userToken}`);
+            const sessionId = req.headers["mcp-session-id"] as string | undefined;
+            let userToken: string | undefined = undefined;
+            let transport: StreamableHTTPServerTransport;
 
-            await this.sessionContext.run({ userToken }, async () => {
-                const transport = new StreamableHTTPServerTransport({
-                    sessionIdGenerator: undefined,
-                });
+            // obtain transport and user token for the session, either from an existing session or by creating a new one
+            if (sessionId && this.streamableTransports[sessionId]) {
+                // existing session: reuse stored transport and token
+                const session = this.streamableTransports[sessionId];
+                transport = session.transport;
+                userToken = session.userToken;
+                this.logger.info(
+                    `Received request for existing session with id=${sessionId}; userToken=${session.userToken}`
+                );
+            } else {
+                // new session: create a fresh McpServer and transport
+                userToken = req.query.userToken as string | undefined;
+                this.logger.info(`Received new session request; userToken=${userToken}`);
+                const { randomUUID } = await import("node:crypto");
                 const server = this.createMcpServer();
-                await server.connect(transport);
-                await transport.handleRequest(req, res, req.body);
-                res.on("close", () => {
-                    transport.close();
-                    server.close();
+                transport = new StreamableHTTPServerTransport({
+                    sessionIdGenerator: () => randomUUID(),
+                    onsessioninitialized: (id) => {
+                        this.logger.info(`Session initialized with id=${id} for userToken=${userToken}`);
+                        this.streamableTransports[id] = { transport, server, userToken };
+                    },
                 });
+                transport.onclose = () => {
+                    if (transport.sessionId) {
+                        this.logger.info(`Closing session with id=${transport.sessionId} for userToken=${userToken}`);
+                        server.close();
+                        delete this.streamableTransports[transport.sessionId];
+                    }
+                };
+                await server.connect(transport);
+            }
+
+            // handle the request
+            await this.sessionContext.run({ userToken }, async () => {
+                await transport.handleRequest(req, res, req.body);
             });
         });
 
