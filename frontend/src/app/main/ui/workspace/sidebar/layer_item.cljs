@@ -89,7 +89,7 @@
             :on-context-menu on-context-menu
             :data-testid "layer-row"
             :role "checkbox"
-            :aria-checked selected?
+            :aria-checked is-selected
             :class (stl/css-case
                     :layer-row true
                     :highlight is-highlighted
