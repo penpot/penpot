@@ -111,7 +111,7 @@ fn calculate_cursor_rect(
     let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.char_offset;
+            let char_pos = cursor.offset;
             // For cursor, we get a zero-width range at the position
             // We need to handle edge cases:
             // - At start of paragraph: use position 0
@@ -209,13 +209,13 @@ fn calculate_selection_rects(
             .sum();
 
         let range_start = if para_idx == start.paragraph {
-            start.char_offset
+            start.offset
         } else {
             0
         };
 
         let range_end = if para_idx == end.paragraph {
-            end.char_offset
+            end.offset
         } else {
             para_char_count
         };

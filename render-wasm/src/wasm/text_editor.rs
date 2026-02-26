@@ -1,7 +1,7 @@
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
-use crate::shapes::{Paragraph, Shape, TextContent, Type, VerticalAlign};
-use crate::state::{TextCursor, TextSelection};
+use crate::shapes::{Paragraph, Shape, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
+use crate::state::TextSelection;
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
@@ -132,7 +132,7 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
         if let Some(position) =
             text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
         {
-            state.text_editor_state.set_caret_from_position(position);
+            state.text_editor_state.set_caret_from_position(&position);
         }
     });
 }
@@ -168,7 +168,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
         {
             state
                 .text_editor_state
-                .extend_selection_from_position(position);
+                .extend_selection_from_position(&position);
         }
     });
 }
@@ -203,7 +203,7 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         {
             state
                 .text_editor_state
-                .extend_selection_from_position(position);
+                .extend_selection_from_position(&position);
         }
         state.text_editor_state.stop_pointer_selection();
     });
@@ -231,7 +231,7 @@ pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
         if let Some(position) =
             text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
         {
-            state.text_editor_state.set_caret_from_position(position);
+            state.text_editor_state.set_caret_from_position(&position);
         }
     });
 }
@@ -276,7 +276,8 @@ pub extern "C" fn text_editor_insert_text() {
         let cursor = state.text_editor_state.selection.focus;
 
         if let Some(new_offset) = insert_text_at_cursor(text_content, &cursor, &text) {
-            let new_cursor = TextCursor::new(cursor.paragraph, new_offset);
+            let new_cursor =
+                TextPositionWithAffinity::new_without_affinity(cursor.paragraph, new_offset);
             state.text_editor_state.selection.set_caret(new_cursor);
         }
 
@@ -286,10 +287,10 @@ pub extern "C" fn text_editor_insert_text() {
         state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::ContentChanged);
+            .push_event(crate::state::TextEditorEvent::ContentChanged);
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::NeedsLayout);
+            .push_event(crate::state::TextEditorEvent::NeedsLayout);
 
         state.render_state.mark_touched(shape_id);
     });
@@ -336,10 +337,10 @@ pub extern "C" fn text_editor_delete_backward() {
         state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::ContentChanged);
+            .push_event(crate::state::TextEditorEvent::ContentChanged);
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::NeedsLayout);
+            .push_event(crate::state::TextEditorEvent::NeedsLayout);
 
         state.render_state.mark_touched(shape_id);
     });
@@ -384,10 +385,10 @@ pub extern "C" fn text_editor_delete_forward() {
         state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::ContentChanged);
+            .push_event(crate::state::TextEditorEvent::ContentChanged);
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::NeedsLayout);
+            .push_event(crate::state::TextEditorEvent::NeedsLayout);
 
         state.render_state.mark_touched(shape_id);
     });
@@ -423,7 +424,8 @@ pub extern "C" fn text_editor_insert_paragraph() {
         let cursor = state.text_editor_state.selection.focus;
 
         if split_paragraph_at_cursor(text_content, &cursor) {
-            let new_cursor = TextCursor::new(cursor.paragraph + 1, 0);
+            let new_cursor =
+                TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0);
             state.text_editor_state.selection.set_caret(new_cursor);
         }
 
@@ -433,10 +435,10 @@ pub extern "C" fn text_editor_insert_paragraph() {
         state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::ContentChanged);
+            .push_event(crate::state::TextEditorEvent::ContentChanged);
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::NeedsLayout);
+            .push_event(crate::state::TextEditorEvent::NeedsLayout);
 
         state.render_state.mark_touched(shape_id);
     });
@@ -494,7 +496,7 @@ pub extern "C" fn text_editor_move_cursor(direction: CursorDirection, extend_sel
         state.text_editor_state.reset_blink();
         state
             .text_editor_state
-            .push_event(crate::state::EditorEvent::SelectionChanged);
+            .push_event(crate::state::TextEditorEvent::SelectionChanged);
     });
 }
 
@@ -711,12 +713,12 @@ pub extern "C" fn text_editor_export_selection() -> *mut u8 {
                 .map(|span| span.text.chars().count())
                 .sum();
             let range_start = if para_idx == start.paragraph {
-                start.char_offset
+                start.offset
             } else {
                 0
             };
             let range_end = if para_idx == end.paragraph {
-                end.char_offset
+                end.offset
             } else {
                 para_char_count
             };
@@ -764,9 +766,9 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> u32 {
         let sel = &state.text_editor_state.selection;
         unsafe {
             *buffer_ptr = sel.anchor.paragraph as u32;
-            *buffer_ptr.add(1) = sel.anchor.char_offset as u32;
+            *buffer_ptr.add(1) = sel.anchor.offset as u32;
             *buffer_ptr.add(2) = sel.focus.paragraph as u32;
-            *buffer_ptr.add(3) = sel.focus.char_offset as u32;
+            *buffer_ptr.add(3) = sel.focus.offset as u32;
         }
         1
     })
@@ -776,7 +778,11 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> u32 {
 // HELPERS: Cursor & Selection
 // ============================================================================
 
-fn get_cursor_rect(text_content: &TextContent, cursor: &TextCursor, shape: &Shape) -> Option<Rect> {
+fn get_cursor_rect(
+    text_content: &TextContent,
+    cursor: &TextPositionWithAffinity,
+    shape: &Shape,
+) -> Option<Rect> {
     let paragraphs = text_content.paragraphs();
     if cursor.paragraph >= paragraphs.len() {
         return None;
@@ -794,7 +800,7 @@ fn get_cursor_rect(text_content: &TextContent, cursor: &TextCursor, shape: &Shap
     let mut y_offset = valign_offset;
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
-            let char_pos = cursor.char_offset;
+            let char_pos = cursor.offset;
 
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
             let rects = laid_out_para.get_rects_for_range(
@@ -869,13 +875,13 @@ fn get_selection_rects(
             .map(|span| span.text.chars().count())
             .sum();
         let range_start = if para_idx == start.paragraph {
-            start.char_offset
+            start.offset
         } else {
             0
         };
 
         let range_end = if para_idx == end.paragraph {
-            end.char_offset
+            end.offset
         } else {
             para_char_count
         };
@@ -914,40 +920,49 @@ fn paragraph_char_count(para: &Paragraph) -> usize {
 }
 
 /// Clamp a cursor position to valid bounds within the text content.
-fn clamp_cursor(cursor: TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
+fn clamp_cursor(
+    position: TextPositionWithAffinity,
+    paragraphs: &[Paragraph],
+) -> TextPositionWithAffinity {
     if paragraphs.is_empty() {
-        return TextCursor::new(0, 0);
+        return TextPositionWithAffinity::new_without_affinity(0, 0);
     }
 
-    let para_idx = cursor.paragraph.min(paragraphs.len() - 1);
+    let para_idx = position.paragraph.min(paragraphs.len() - 1);
     let para_len = paragraph_char_count(&paragraphs[para_idx]);
-    let char_offset = cursor.char_offset.min(para_len);
+    let char_offset = position.offset.min(para_len);
 
-    TextCursor::new(para_idx, char_offset)
+    TextPositionWithAffinity::new_without_affinity(para_idx, char_offset)
 }
 
 /// Move cursor left by one character.
-fn move_cursor_backward(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
-    if cursor.char_offset > 0 {
-        TextCursor::new(cursor.paragraph, cursor.char_offset - 1)
+fn move_cursor_backward(
+    cursor: &TextPositionWithAffinity,
+    paragraphs: &[Paragraph],
+) -> TextPositionWithAffinity {
+    if cursor.offset > 0 {
+        TextPositionWithAffinity::new_without_affinity(cursor.paragraph, cursor.offset - 1)
     } else if cursor.paragraph > 0 {
         let prev_para = cursor.paragraph - 1;
         let char_count = paragraph_char_count(&paragraphs[prev_para]);
-        TextCursor::new(prev_para, char_count)
+        TextPositionWithAffinity::new_without_affinity(prev_para, char_count)
     } else {
         *cursor
     }
 }
 
 /// Move cursor right by one character.
-fn move_cursor_forward(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
+fn move_cursor_forward(
+    cursor: &TextPositionWithAffinity,
+    paragraphs: &[Paragraph],
+) -> TextPositionWithAffinity {
     let para = &paragraphs[cursor.paragraph];
     let char_count = paragraph_char_count(para);
 
-    if cursor.char_offset < char_count {
-        TextCursor::new(cursor.paragraph, cursor.char_offset + 1)
+    if cursor.offset < char_count {
+        TextPositionWithAffinity::new_without_affinity(cursor.paragraph, cursor.offset + 1)
     } else if cursor.paragraph < paragraphs.len() - 1 {
-        TextCursor::new(cursor.paragraph + 1, 0)
+        TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0)
     } else {
         *cursor
     }
@@ -955,52 +970,58 @@ fn move_cursor_forward(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCur
 
 /// Move cursor up by one line.
 fn move_cursor_up(
-    cursor: &TextCursor,
+    cursor: &TextPositionWithAffinity,
     paragraphs: &[Paragraph],
     _text_content: &TextContent,
     _shape: &Shape,
-) -> TextCursor {
+) -> TextPositionWithAffinity {
     // TODO: Implement proper line-based navigation using line metrics
     if cursor.paragraph > 0 {
         let prev_para = cursor.paragraph - 1;
         let char_count = paragraph_char_count(&paragraphs[prev_para]);
-        let new_offset = cursor.char_offset.min(char_count);
-        TextCursor::new(prev_para, new_offset)
+        let new_offset = cursor.offset.min(char_count);
+        TextPositionWithAffinity::new_without_affinity(prev_para, new_offset)
     } else {
-        TextCursor::new(cursor.paragraph, 0)
+        TextPositionWithAffinity::new_without_affinity(cursor.paragraph, 0)
     }
 }
 
 /// Move cursor down by one line.
 fn move_cursor_down(
-    cursor: &TextCursor,
+    cursor: &TextPositionWithAffinity,
     paragraphs: &[Paragraph],
     _text_content: &TextContent,
     _shape: &Shape,
-) -> TextCursor {
+) -> TextPositionWithAffinity {
     // TODO: Implement proper line-based navigation using line metrics
     if cursor.paragraph < paragraphs.len() - 1 {
         let next_para = cursor.paragraph + 1;
         let char_count = paragraph_char_count(&paragraphs[next_para]);
-        let new_offset = cursor.char_offset.min(char_count);
-        TextCursor::new(next_para, new_offset)
+        let new_offset = cursor.offset.min(char_count);
+        TextPositionWithAffinity::new_without_affinity(next_para, new_offset)
     } else {
         let char_count = paragraph_char_count(&paragraphs[cursor.paragraph]);
-        TextCursor::new(cursor.paragraph, char_count)
+        TextPositionWithAffinity::new_without_affinity(cursor.paragraph, char_count)
     }
 }
 
 /// Move cursor to start of current line.
-fn move_cursor_line_start(cursor: &TextCursor, _paragraphs: &[Paragraph]) -> TextCursor {
+fn move_cursor_line_start(
+    cursor: &TextPositionWithAffinity,
+    _paragraphs: &[Paragraph],
+) -> TextPositionWithAffinity {
     // TODO: Implement proper line-start using line metrics
-    TextCursor::new(cursor.paragraph, 0)
+    TextPositionWithAffinity::new_without_affinity(cursor.paragraph, 0)
 }
 
 /// Move cursor to end of current line.
-fn move_cursor_line_end(cursor: &TextCursor, paragraphs: &[Paragraph]) -> TextCursor {
+fn move_cursor_line_end(
+    cursor: &TextPositionWithAffinity,
+    paragraphs: &[Paragraph],
+) -> TextPositionWithAffinity {
     // TODO: Implement proper line-end using line metrics
     let char_count = paragraph_char_count(&paragraphs[cursor.paragraph]);
-    TextCursor::new(cursor.paragraph, char_count)
+    TextPositionWithAffinity::new_without_affinity(cursor.paragraph, char_count)
 }
 
 // ============================================================================
@@ -1028,7 +1049,7 @@ fn find_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<(usize, u
 /// Insert text at a cursor position. Returns the new character offset after insertion.
 fn insert_text_at_cursor(
     text_content: &mut TextContent,
-    cursor: &TextCursor,
+    cursor: &TextPositionWithAffinity,
     text: &str,
 ) -> Option<usize> {
     let paragraphs = text_content.paragraphs_mut();
@@ -1048,7 +1069,7 @@ fn insert_text_at_cursor(
         return Some(text.chars().count());
     }
 
-    let (span_idx, offset_in_span) = find_span_at_offset(para, cursor.char_offset)?;
+    let (span_idx, offset_in_span) = find_span_at_offset(para, cursor.offset)?;
 
     let children = para.children_mut();
     let span = &mut children[span_idx];
@@ -1063,7 +1084,7 @@ fn insert_text_at_cursor(
     new_text.insert_str(byte_offset, text);
     span.set_text(new_text);
 
-    Some(cursor.char_offset + text.chars().count())
+    Some(cursor.offset + text.chars().count())
 }
 
 /// Delete a range of text specified by a selection.
@@ -1077,20 +1098,16 @@ fn delete_selection_range(text_content: &mut TextContent, selection: &TextSelect
     }
 
     if start.paragraph == end.paragraph {
-        delete_range_in_paragraph(
-            &mut paragraphs[start.paragraph],
-            start.char_offset,
-            end.char_offset,
-        );
+        delete_range_in_paragraph(&mut paragraphs[start.paragraph], start.offset, end.offset);
     } else {
         let start_para_len = paragraph_char_count(&paragraphs[start.paragraph]);
         delete_range_in_paragraph(
             &mut paragraphs[start.paragraph],
-            start.char_offset,
+            start.offset,
             start_para_len,
         );
 
-        delete_range_in_paragraph(&mut paragraphs[end.paragraph], 0, end.char_offset);
+        delete_range_in_paragraph(&mut paragraphs[end.paragraph], 0, end.offset);
 
         if end.paragraph < paragraphs.len() {
             let end_para_children: Vec<_> =
@@ -1189,13 +1206,19 @@ fn delete_range_in_paragraph(para: &mut Paragraph, start_offset: usize, end_offs
 }
 
 /// Delete the character before the cursor. Returns the new cursor position.
-fn delete_char_before(text_content: &mut TextContent, cursor: &TextCursor) -> Option<TextCursor> {
-    if cursor.char_offset > 0 {
+fn delete_char_before(
+    text_content: &mut TextContent,
+    cursor: &TextPositionWithAffinity,
+) -> Option<TextPositionWithAffinity> {
+    if cursor.offset > 0 {
         let paragraphs = text_content.paragraphs_mut();
         let para = &mut paragraphs[cursor.paragraph];
-        let delete_pos = cursor.char_offset - 1;
-        delete_range_in_paragraph(para, delete_pos, cursor.char_offset);
-        Some(TextCursor::new(cursor.paragraph, delete_pos))
+        let delete_pos = cursor.offset - 1;
+        delete_range_in_paragraph(para, delete_pos, cursor.offset);
+        Some(TextPositionWithAffinity::new_without_affinity(
+            cursor.paragraph,
+            delete_pos,
+        ))
     } else if cursor.paragraph > 0 {
         let prev_para_idx = cursor.paragraph - 1;
         let paragraphs = text_content.paragraphs_mut();
@@ -1211,14 +1234,17 @@ fn delete_char_before(text_content: &mut TextContent, cursor: &TextCursor) -> Op
 
         paragraphs.remove(cursor.paragraph);
 
-        Some(TextCursor::new(prev_para_idx, prev_para_len))
+        Some(TextPositionWithAffinity::new_without_affinity(
+            prev_para_idx,
+            prev_para_len,
+        ))
     } else {
         None
     }
 }
 
 /// Delete the character after the cursor.
-fn delete_char_after(text_content: &mut TextContent, cursor: &TextCursor) {
+fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWithAffinity) {
     let paragraphs = text_content.paragraphs_mut();
     if cursor.paragraph >= paragraphs.len() {
         return;
@@ -1226,9 +1252,9 @@ fn delete_char_after(text_content: &mut TextContent, cursor: &TextCursor) {
 
     let para_len = paragraph_char_count(&paragraphs[cursor.paragraph]);
 
-    if cursor.char_offset < para_len {
+    if cursor.offset < para_len {
         let para = &mut paragraphs[cursor.paragraph];
-        delete_range_in_paragraph(para, cursor.char_offset, cursor.char_offset + 1);
+        delete_range_in_paragraph(para, cursor.offset, cursor.offset + 1);
     } else if cursor.paragraph < paragraphs.len() - 1 {
         let next_para_idx = cursor.paragraph + 1;
         let next_children: Vec<_> = paragraphs[next_para_idx].children_mut().drain(..).collect();
@@ -1241,7 +1267,10 @@ fn delete_char_after(text_content: &mut TextContent, cursor: &TextCursor) {
 }
 
 /// Split a paragraph at the cursor position. Returns true if split was successful.
-fn split_paragraph_at_cursor(text_content: &mut TextContent, cursor: &TextCursor) -> bool {
+fn split_paragraph_at_cursor(
+    text_content: &mut TextContent,
+    cursor: &TextPositionWithAffinity,
+) -> bool {
     let paragraphs = text_content.paragraphs_mut();
     if cursor.paragraph >= paragraphs.len() {
         return false;
@@ -1249,7 +1278,7 @@ fn split_paragraph_at_cursor(text_content: &mut TextContent, cursor: &TextCursor
 
     let para = &paragraphs[cursor.paragraph];
 
-    let Some((span_idx, offset_in_span)) = find_span_at_offset(para, cursor.char_offset) else {
+    let Some((span_idx, offset_in_span)) = find_span_at_offset(para, cursor.offset) else {
         return false;
     };
 
