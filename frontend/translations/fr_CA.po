@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-24 02:09+0000\n"
+"PO-Revision-Date: 2026-02-26 14:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -8098,3 +8098,468 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/errors.cljs:117
 msgid "workspace.tokens.invalid-token-value-shadow"
 msgstr "Valeur invalide : doit référencer un token d'ombre composé."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Valeur invalide: doit référencer un token de typographie composé."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
+msgid "workspace.tokens.invalid-value"
+msgstr "Valeur de token invalide : %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
+msgid "workspace.tokens.label.group"
+msgstr "Groupe"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:207
+msgid "workspace.tokens.label.group-placeholder"
+msgstr "Ajouter un groupe (ex. Mode)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:214
+msgid "workspace.tokens.label.theme"
+msgstr "Thème"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:215
+msgid "workspace.tokens.label.theme-placeholder"
+msgstr "Ajouter un thème (ex. Clair)"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Interlettrage ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:145
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Hauteur de ligne (multiplicateur, px, %) ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:232
+msgid "workspace.tokens.margins"
+msgstr "Marges"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
+msgid "workspace.tokens.max-size"
+msgstr "Taille max."
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:262
+msgid "workspace.tokens.min-size"
+msgstr "Taille min."
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "Référence manquante"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.missing-references"
+msgstr "Références de token manquantes : "
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
+msgid "workspace.tokens.more-options"
+msgstr "Clic droit pour voir les options"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:135
+msgid "workspace.tokens.no-active-sets"
+msgstr "Aucun ensemble actif"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:91
+msgid "workspace.tokens.no-active-theme"
+msgstr "Aucun thème actif"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:72
+msgid "workspace.tokens.no-permisions-set"
+msgstr "Tu dois être un éditeur pour activer / désactiver des ensembles"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:54
+msgid "workspace.tokens.no-permission-themes"
+msgstr "Tu dois être un éditeur pour utiliser les thèmes"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:87
+#, unused
+msgid "workspace.tokens.no-references-found"
+msgstr "Aucune référence trouvée"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr ""
+"Ce token n'est pas utilisé dans le design. Il n'est pas nécessaire de mettre "
+"à jour sa référence."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:485
+msgid "workspace.tokens.no-sets-create"
+msgstr "Aucun ensemble n'est défini. Crée-en un pour les assigner à un thème."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:93, src/app/main/ui/workspace/tokens/sets/lists.cljs:99
+msgid "workspace.tokens.no-sets-yet"
+msgstr "Aucun ensemble n'existe."
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:40
+msgid "workspace.tokens.no-themes"
+msgstr "Aucun thème n'existe."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
+msgid "workspace.tokens.no-themes-currently"
+msgstr "Aucun thème n'existe actuellement."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "Aucun token, ensemble ou thème n'existe dans ce fichier."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "Ne pas remapper"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
+msgid "workspace.tokens.num-active-sets"
+msgstr "%s ensembles actifs"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:53
+msgid "workspace.tokens.number-too-large"
+msgstr "Valeur de token invalide. La valeur calculée est trop grande : %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
+msgid "workspace.tokens.opacity-range"
+msgstr "L'opacité doit être entre 0% et 100% ou entre 0 et 1 (ex. 50% ou 0.5)."
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+msgid "workspace.tokens.original-value"
+msgstr "Valeur d'origine : %s"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:216
+msgid "workspace.tokens.paddings"
+msgstr "Marges intérieures"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:292
+msgid "workspace.tokens.radius"
+msgstr "Rayon"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:129
+msgid "workspace.tokens.ref-not-valid"
+msgstr "La référence est invalide ou n'existe dans aucun ensemble actif"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:178
+msgid "workspace.tokens.reference-composite"
+msgstr "Entrer un alias de token typographique"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Entrer un alias de token d'ombre"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.reference-error"
+msgstr "Erreurs de référence : "
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "Remapper les tokens"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "Remapper tous les tokens qui utilisent `%s` à `%s` ?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"Cette action mettra à jour tous les calques et références qui utilisent "
+"l'ancien nom du token."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "Cette action peut durer longtemps."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
+#, unused
+msgid "workspace.tokens.remapping-in-progress"
+msgstr "Remappage de références de token..."
+
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:285, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:459, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:311, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:251, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:364, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:465, src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
+msgid "workspace.tokens.resolved-value"
+msgstr "Valeur calculée : %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:251
+msgid "workspace.tokens.save-theme"
+msgstr "Sauvegarder le thème"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:204, src/app/main/ui/workspace/tokens/sets/lists.cljs:309
+msgid "workspace.tokens.select-set"
+msgstr "Sélectionner l'ensemble."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
+msgid "workspace.tokens.self-reference"
+msgstr "Le token s'auto-référence"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
+msgid "workspace.tokens.set-edit-placeholder"
+msgstr "Entrer un nom (utiliser « / » pour les groupes)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
+msgid "workspace.tokens.set-selection-theme"
+msgstr "Définir quels ensembles de tokens feront partie de ce thème :"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.tokens.set.not-active"
+msgstr "L'ensemble de tokens n'est pas actif"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:129
+msgid "workspace.tokens.sets-hint"
+msgstr "Éditer le thème et gérer les ensembles"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:91
+msgid "workspace.tokens.setting-description"
+msgstr ""
+"Configuration de la taille de police de base, qui définit la valeur de 1rem :"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:84
+msgid "workspace.tokens.settings"
+msgstr "Paramètres des tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:232
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Ajouter une ombre"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:161, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:162, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:165
+msgid "workspace.tokens.shadow-blur"
+msgstr "Flou"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "Le flou d'ombre doit être égal ou supérieur à 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
+#, unused
+msgid "workspace.tokens.shadow-color"
+msgstr "Couleur"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:114
+msgid "workspace.tokens.shadow-inset"
+msgstr "Position de l'ombre"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:123
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Supprimer l'ombre"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:174, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
+msgid "workspace.tokens.shadow-spread"
+msgstr "Étalement"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:113
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "L'étalement d'ombre doit être égal ou supérieur à 0."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
+#, unused
+msgid "workspace.tokens.shadow-title"
+msgstr "Ombres"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:281
+msgid "workspace.tokens.shadow-token-blur-value-error"
+msgstr "La valeur de flou ne peut être négative"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:287
+#, unused
+msgid "workspace.tokens.shadow-token-spread-value-error"
+msgstr "La valeur d'étalement ne peut être négative"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:139, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:141
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:150, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
+msgid "workspace.tokens.size"
+msgstr "Taille"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "L'épaisseur de trait doit être égale ou supérieure à 0."
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "none | uppercase | lowercase | capitalize ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:41, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:169
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "none | underline | strike-through ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
+#, unused
+msgid "workspace.tokens.theme-name"
+msgstr "Thème %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:51
+#, unused
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "Un thème portant ce nom existe déjà"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:100
+#, unused
+msgid "workspace.tokens.theme.disable"
+msgstr "Désactiver"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+#, unused
+msgid "workspace.tokens.theme.enable"
+msgstr "Activer"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:85
+msgid "workspace.tokens.themes-description"
+msgstr ""
+"Géstion des thèmes, activation / désactivation et configurer les ensembles "
+"actifs."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83
+msgid "workspace.tokens.themes-list"
+msgstr "Liste des thèmes"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:275, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:276
+msgid "workspace.tokens.token-description"
+msgstr "Description"
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:122, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:246
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Sélectionner une famille de polices de caractères"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:121
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Famille de polices"
+
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:120
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Famille de police ou liste de polices séparées par une virgule (,)"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:112, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:240
+msgid "workspace.tokens.token-name"
+msgstr "Nom"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "Un token existe déjà au chemin : %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:265, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:220
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Le nom doit être au moins 1 caractère"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:267, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222
+msgid "workspace.tokens.token-name-validation-error"
+msgstr ""
+" n'est pas un nom de token valide.\n"
+"Les noms de token ne doivent contenir que des lettres et des chiffres "
+"séparés par des . et doivent pas commencer par le symbole $."
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+#, unused
+msgid "workspace.tokens.token-not-resolved"
+msgstr "Impossible de résoudre la référence de token portant le nom : %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:267
+msgid "workspace.tokens.token-value"
+msgstr "Valeur"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:266, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:129
+msgid "workspace.tokens.token-value-enter"
+msgstr "Entrer une valeur ou un alias avec {alias}"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:67
+msgid "workspace.tokens.tokens-section-title"
+msgstr "TOKENS -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:122
+msgid "workspace.tokens.tools"
+msgstr "Outils"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:46
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "L'importation a réussi. Certains tokens n'ont pas été inclus."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:48
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "Le type « %s » n'est pas supporté (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:244, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:199
+msgid "workspace.tokens.use-reference"
+msgstr "Utiliser une référence"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
+msgid "workspace.tokens.value-not-valid"
+msgstr "La valeur n'est pas valide"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Valeur invalide : % n'est pas permis."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65
+msgid "workspace.tokens.value-with-units"
+msgstr "Valeur invalide : les unités ne sont pas permises."
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr "Renommer ce token brisera toute référence à son ancien nom"
+
+#: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
+msgid "workspace.toolbar.assets"
+msgstr "Atouts"
+
+#: src/app/main/ui/workspace/palette.cljs:184
+msgid "workspace.toolbar.color-palette"
+msgstr "Palette de couleurs (%s)"
+
+#: src/app/main/ui/workspace/right_header.cljs:217
+msgid "workspace.toolbar.comments"
+msgstr "Commentaires (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:195
+msgid "workspace.toolbar.curve"
+msgstr "Courbe (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Outils de débogage"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:172
+msgid "workspace.toolbar.ellipse"
+msgstr "Ellipse (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:130
+msgid "workspace.toolbar.frame"
+msgstr "Tableau (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:129
+msgid "workspace.toolbar.frame-first-time"
+msgstr "Créer un tableau. Cliquer et glisser pour définir sa taille. (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:60
+msgid "workspace.toolbar.image"
+msgstr "Image (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:143
+msgid "workspace.toolbar.move"
+msgstr "Déplacer (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:205
+msgid "workspace.toolbar.path"
+msgstr "Chemin (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:216
+msgid "workspace.toolbar.plugins"
+msgstr "Plugiciels (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:162
+msgid "workspace.toolbar.rect"
+msgstr "Rectangle (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+#, unused
+msgid "workspace.toolbar.shortcuts"
+msgstr "Raccourcis (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:182
+msgid "workspace.toolbar.text"
+msgstr "Texte (%s)"
+
+#: src/app/main/ui/workspace/palette.cljs:190
+msgid "workspace.toolbar.text-palette"
+msgstr "Typographies (%s)"
