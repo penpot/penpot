@@ -183,9 +183,6 @@
   [id]
   (l/derived #(contains? % id) selected-shapes))
 
-(def highlighted-shapes
-  (l/derived :highlighted workspace-local))
-
 (def export-in-progress?
   (l/derived :export-in-progress? export))
 
