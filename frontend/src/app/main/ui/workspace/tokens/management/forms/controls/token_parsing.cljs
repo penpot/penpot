@@ -55,18 +55,25 @@
 
 (defn replace-active-token
   "Replaces the token at the cursor with `{new-name}`.
-   If no valid token is active, inserts the new token at the cursor position."
+   Returns {:value :cursor} with the updated value and new cursor position."
   [value cursor new-name]
-  (if-let [{:keys [start end]}
-           (find-active-token-range value cursor)]
+  (let [new-token (str "{" new-name "}")]
+    (if-let [{:keys [start end]}
+             (find-active-token-range value cursor)]
 
-    (str (subs value 0 start)
-         "{" new-name "}"
-         (subs value end))
+      (let [new-value (str (subs value 0 start)
+                           new-token
+                           (subs value end))
+            new-cursor (+ start (count new-token))]
+        {:value new-value
+         :cursor new-cursor})
 
-    (str (subs value 0 cursor)
-         "{" new-name "}"
-         (subs value cursor))))
+      (let [new-value (str (subs value 0 cursor)
+                           new-token
+                           (subs value cursor))
+            new-cursor (+ cursor (count new-token))]
+        {:value new-value
+         :cursor new-cursor}))))
 
 (defn active-token [value input-node]
   (let [cursor (dom/selection-start input-node)]
@@ -87,6 +94,5 @@
         options    (if (delay? options) @options options)
 
         option     (get-option options id)
-        name       (:name option)
-        final-val  (replace-active-token value cursor name)]
-    final-val))
+        name       (:name option)]
+    (replace-active-token value cursor name)))

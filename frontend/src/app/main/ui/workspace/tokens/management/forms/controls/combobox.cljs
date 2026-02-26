@@ -137,10 +137,15 @@
          (mf/deps value resolve-stream name)
          (fn [id]
            (let [input-node (mf/ref-val ref)
-                 final-val (tp/select-option-by-id id options-ref input-node value)]
-             (when final-val
-               (fm/on-input-change form name final-val true)
-               (rx/push! resolve-stream final-val))
+                 {:keys [value cursor]} (tp/select-option-by-id id options-ref input-node value)]
+             (when value
+               (fm/on-input-change form name value true)
+               (rx/push! resolve-stream value)
+               (js/setTimeout
+                (fn []
+                  (set! (.-selectionStart input-node) cursor)
+                  (set! (.-selectionEnd input-node) cursor))
+                0))
              (reset! filter-term* "")
              (reset! is-open* false))))
 
@@ -179,19 +184,21 @@
            (let [input-node (mf/ref-val ref)
                  node       (dom/get-current-target event)
                  id         (dom/get-data node "id")
-                 final-val  (tp/select-option-by-id id options-ref input-node value)]
+                 {:keys [value cursor]}  (tp/select-option-by-id id options-ref input-node value)]
 
              (reset! filter-term* "")
              (dom/focus! input-node)
 
-             (when final-val
+             (when value
                (reset! is-open* false)
-               (fm/on-input-change form name final-val true)
-               (rx/push! resolve-stream final-val)
+               (fm/on-input-change form name value true)
+               (rx/push! resolve-stream value)
 
-               (let [new-cursor (+ (str/index-of final-val "}") 1)]
-                 (set! (.-selectionStart input-node) new-cursor)
-                 (set! (.-selectionEnd input-node) new-cursor))))))
+               (js/setTimeout
+                (fn []
+                  (set! (.-selectionStart input-node) cursor)
+                  (set! (.-selectionEnd input-node) cursor))
+                0)))))
 
         hint*
         (mf/use-state {})
