@@ -1256,10 +1256,6 @@ msgstr "token सूची खोलें"
 msgid "ds.inputs.token-field.detach-token"
 msgstr "token अलग करें"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "यह token किसी भी सक्रिय सेट में नहीं है या इसका मान अमान्य है।"
-
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "इस प्रोफाइल के लिए ऑथ प्रोवाइडर अनुमति नहीं है"

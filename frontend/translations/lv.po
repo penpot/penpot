@@ -1214,10 +1214,6 @@ msgstr "Atvērt tekstvienību sarakstu"
 msgid "ds.inputs.token-field.detach-token"
 msgstr "Atdalīt tekstvienību"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "Šī tekstvienība nav nevienā aktīvajā kopā vai tai ir nederīga vērtība."
-
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "Autentificēšanās nodrošinātājs nav atļauts šim profilam"

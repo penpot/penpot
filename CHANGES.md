@@ -20,6 +20,7 @@
 ### :bug: Bugs fixed
 
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
+- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 
 
 ## 2.14.0 (Unreleased)

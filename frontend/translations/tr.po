@@ -1355,12 +1355,6 @@ msgstr "Token listesini aç"
 msgid "ds.inputs.token-field.detach-token"
 msgstr "Tokeni ayır"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr ""
-"Bu token herhangi bir etkin kümede bulunmuyor veya geçersiz bir değere "
-"sahip."
-
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
 msgstr "Kimlik doğrulama sağlayıcısına bu profil için izin verilmiyor"

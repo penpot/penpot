@@ -1369,7 +1369,7 @@ msgstr "Détacher le token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "Ce token n'est pas disponible dans la collection ou le thème actif."
+msgstr "%s n'est pas disponible dans la collection ou le thème actif."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"
