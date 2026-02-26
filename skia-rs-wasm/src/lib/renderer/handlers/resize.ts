@@ -10,11 +10,9 @@ import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { updatePage, applyResizeTransformToNode } from '../store/page-crud'
-import { makeSelrect } from '@skia-rs-wasm/common'
 import type { Point } from '@skia-rs-wasm/common'
 import type { Matrix, PenpotNode } from '@penpot-exporter/types'
 import type { ResizeHandlePosition } from '../types'
-import { matrixToRotationDeg } from '../../components/selection-overlay/constants'
 
 const MIN_SIZE = 1
 
@@ -41,53 +39,46 @@ function getHandlerMultiplier(handle: ResizeHandlePosition): { x: number; y: num
   }
 }
 
-function getHandlerResizeOrigin(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  handle: ResizeHandlePosition
-): { x: number; y: number } {
-  const mx = x + width / 2
-  const my = y + height / 2
-  const ex = x + width
-  const ey = y + height
-  switch (handle) {
-    case 'right':
-      return { x, y: my }
-    case 'bottom':
-      return { x: mx, y }
-    case 'left':
-      return { x: ex, y: my }
-    case 'top':
-      return { x: mx, y: ey }
-    case 'top-right':
-      return { x, y: ey }
-    case 'top-left':
-      return { x: ex, y: ey }
-    case 'bottom-right':
-      return { x, y }
-    case 'bottom-left':
-      return { x: ex, y }
-    default:
-      return { x, y }
+const IDENTITY_MATRIX: Matrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
+
+/** Fallback: full 6-component inverse matching Clojure's gmt/inverse. Only called when node.transformInverse is absent. */
+function invertMatrix(T: Matrix): Matrix | null {
+  const det = T.a * T.d - T.b * T.c
+  if (Math.abs(det) < 1e-10) return null
+  return {
+    a: T.d / det,
+    b: -T.b / det,
+    c: -T.c / det,
+    d: T.a / det,
+    e: (T.c * T.f - T.d * T.e) / det,
+    f: (T.b * T.e - T.a * T.f) / det,
   }
 }
 
-/** Build resize matrix: T(origin) * S(sx,sy) * T(-origin) */
-function resizeMatrix(
-  ox: number,
-  oy: number,
+/** Unified resize matrix: T · S(localOrigin) · T⁻¹. When T = identity degenerates to axis-aligned scale. */
+function buildResizeMatrix(
+  T: Matrix,
+  Tinv: Matrix,
   sx: number,
-  sy: number
+  sy: number,
+  shapeCx: number,
+  shapeCy: number,
+  localOx: number,
+  localOy: number
 ): Matrix {
+  const Aa = sx * T.a * Tinv.a + sy * T.c * Tinv.b
+  const Ab = sx * T.b * Tinv.a + sy * T.d * Tinv.b
+  const Ac = sx * T.a * Tinv.c + sy * T.c * Tinv.d
+  const Ad = sx * T.b * Tinv.c + sy * T.d * Tinv.d
+  const woX = shapeCx + T.a * localOx + T.c * localOy
+  const woY = shapeCy + T.b * localOx + T.d * localOy
   return {
-    a: sx,
-    b: 0,
-    c: 0,
-    d: sy,
-    e: ox * (1 - sx),
-    f: oy * (1 - sy),
+    a: Aa,
+    b: Ab,
+    c: Ac,
+    d: Ad,
+    e: (1 - Aa) * woX - Ac * woY,
+    f: (1 - Ad) * woY - Ab * woX,
   }
 }
 
@@ -109,25 +100,29 @@ export function startResizeSelected(
   const y = wasmSelectionRect.center.y - wasmSelectionRect.height / 2
   const width = wasmSelectionRect.width <= 0 ? MIN_SIZE : wasmSelectionRect.width
   const height = wasmSelectionRect.height <= 0 ? MIN_SIZE : wasmSelectionRect.height
-  const rotationDeg = matrixToRotationDeg(wasmSelectionRect.transform)
-  const cx = x + width / 2
-  const cy = y + height / 2
-  const hasRotation = rotationDeg !== 0
 
   const stopper = dragStopper()
   const zoom = viewport.zoom
   const mult = getHandlerMultiplier(handle)
-  const origin = getHandlerResizeOrigin(x, y, width, height, handle)
 
-  const theta_r = hasRotation ? (rotationDeg! * Math.PI) / 180 : 0
-  const cos_r = Math.cos(theta_r)
-  const sin_r = Math.sin(theta_r)
-  const wo_x = hasRotation ? cx + (origin.x - cx) * cos_r - (origin.y - cy) * sin_r : origin.x
-  const wo_y = hasRotation ? cy + (origin.x - cx) * sin_r + (origin.y - cy) * cos_r : origin.y
+  const singleNode = selectedIds.size === 1 ? (selectedNodes?.[0] ?? null) : null
+  const nodeSr = singleNode ? singleNode.selrect : null
 
-  const identityLocal = resizeMatrix(origin.x, origin.y, 1, 1)
-  const latestMatrixRef = { current: identityLocal }
-  const latestLocalMatrixRef = { current: identityLocal }
+  const T = (singleNode as { transform?: Matrix } | undefined)?.transform ?? IDENTITY_MATRIX
+  const Tinv =
+    (singleNode as { transformInverse?: Matrix } | undefined)?.transformInverse ??
+    invertMatrix(T) ??
+    IDENTITY_MATRIX
+
+  const localW = nodeSr?.width ?? width
+  const localH = nodeSr?.height ?? height
+  const shapeCx = (nodeSr ? (nodeSr.x ?? 0) : x) + localW / 2
+  const shapeCy = (nodeSr ? (nodeSr.y ?? 0) : y) + localH / 2
+
+  const localOx = mult.x !== 0 ? -mult.x * (localW / 2) : 0
+  const localOy = mult.y !== 0 ? -mult.y * (localH / 2) : 0
+
+  const latestMatrixRef = { current: IDENTITY_MATRIX }
   const rafScheduledRef = { current: false }
   const modifiersAppliedRef = { current: false }
 
@@ -152,13 +147,11 @@ export function startResizeSelected(
       y: (acc.pos.y - initialPosition.y) / zoom,
     })),
     map((deltaWorld) => {
-      const localDeltaX = deltaWorld.x * cos_r + deltaWorld.y * sin_r
-      const localDeltaY = -deltaWorld.x * sin_r + deltaWorld.y * cos_r
-      const deltav = { x: localDeltaX * mult.x, y: localDeltaY * mult.y }
-      let sx = (width + deltav.x) / width
-      let sy = (height + deltav.y) / height
-      sx = noZero(sx, 0.001)
-      sy = noZero(sy, 0.001)
+      const dLocalX = Tinv.a * deltaWorld.x + Tinv.c * deltaWorld.y
+      const dLocalY = Tinv.b * deltaWorld.x + Tinv.d * deltaWorld.y
+      let sx = noZero((localW + dLocalX * mult.x) / localW, 0.001)
+      let sy = noZero((localH + dLocalY * mult.y) / localH, 0.001)
+
       const keys = getModifierKeys()
       const lock = keys.shift
       if (lock) {
@@ -166,32 +159,15 @@ export function startResizeSelected(
         sx = sx < 0 ? -s : s
         sy = sy < 0 ? -s : s
       }
-      const minScale = MIN_SIZE / Math.min(width, height)
+      const minScale = MIN_SIZE / Math.min(localW, localH)
       if (Math.abs(sx) < minScale) sx = sx < 0 ? -minScale : minScale
       if (Math.abs(sy) < minScale) sy = sy < 0 ? -minScale : minScale
-      const M_local = resizeMatrix(origin.x, origin.y, sx, sy)
-      let M_world: Matrix
-      if (hasRotation) {
-        const rsr_a = sx * cos_r * cos_r + sy * sin_r * sin_r
-        const rsr_b = (sx - sy) * sin_r * cos_r
-        const rsr_c = (sx - sy) * sin_r * cos_r
-        const rsr_d = sx * sin_r * sin_r + sy * cos_r * cos_r
-        M_world = {
-          a: rsr_a,
-          b: rsr_b,
-          c: rsr_c,
-          d: rsr_d,
-          e: wo_x * (1 - rsr_a) - wo_y * rsr_c,
-          f: wo_y * (1 - rsr_d) - wo_x * rsr_b,
-        }
-      } else {
-        M_world = M_local
-      }
-      return { M_local, M_world }
+
+      const M = buildResizeMatrix(T, Tinv, sx, sy, shapeCx, shapeCy, localOx, localOy)
+      return { M }
     }),
-    tap(({ M_local, M_world }) => {
-      latestLocalMatrixRef.current = M_local
-      latestMatrixRef.current = M_world
+    tap(({ M }) => {
+      latestMatrixRef.current = M
       if (!rafScheduledRef.current) {
         rafScheduledRef.current = true
         requestAnimationFrame(() => {
@@ -246,10 +222,11 @@ export function startResizeSelected(
           const updates = node ? applyResizeTransformToNode(node, M) : null
           if (node && updates) payloadsById[id] = updates
         }
-        const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updatedChildren = (page.children ?? []).map((n: any) =>
           n.id && payloadsById[n.id] ? { ...n, ...payloadsById[n.id] } : n
         )
-        updatePage({ ...page, pageId, children: updatedChildren })
+        updatePage({ ...page, pageId, children: updatedChildren as unknown as PenpotNode[] })
           .then(() => {
             renderer.cleanModifiers()
             useWorkspaceStore.getState().refreshWasmSelectionRect()
@@ -270,40 +247,7 @@ export function startResizeSelected(
         return
       }
 
-      let updates: Partial<PenpotNode> | null
-      if (hasRotation) {
-        const ml = latestLocalMatrixRef.current
-        const mw = latestMatrixRef.current
-        const tf = (px: number, py: number) => ({
-          x: ml.a * px + ml.c * py + ml.e,
-          y: ml.b * px + ml.d * py + ml.f,
-        })
-        const localCorners = [tf(x, y), tf(x + width, y), tf(x + width, y + height), tf(x, y + height)]
-        const nlw = Math.max(...localCorners.map((p) => p.x)) - Math.min(...localCorners.map((p) => p.x))
-        const nlh = Math.max(...localCorners.map((p) => p.y)) - Math.min(...localCorners.map((p) => p.y))
-        const corrCx = mw.a * cx + mw.c * cy + mw.e
-        const corrCy = mw.b * cx + mw.d * cy + mw.f
-        const corrX = corrCx - nlw / 2
-        const corrY = corrCy - nlh / 2
-        const selrect = makeSelrect(corrX, corrY, nlw, nlh)
-        const unrotCorners = [
-          { x: corrX, y: corrY },
-          { x: corrX + nlw, y: corrY },
-          { x: corrX + nlw, y: corrY + nlh },
-          { x: corrX, y: corrY + nlh },
-        ]
-        const points = unrotCorners.map((p) => ({
-          x: cos_r * (p.x - corrCx) - sin_r * (p.y - corrCy) + corrCx,
-          y: sin_r * (p.x - corrCx) + cos_r * (p.y - corrCy) + corrCy,
-        }))
-        updates = { selrect, points }
-        if (typeof node.x === 'number') (updates as Record<string, unknown>).x = corrX
-        if (typeof node.y === 'number') (updates as Record<string, unknown>).y = corrY
-        if (typeof (node as { width?: number }).width === 'number') (updates as Record<string, unknown>).width = nlw
-        if (typeof (node as { height?: number }).height === 'number') (updates as Record<string, unknown>).height = nlh
-      } else {
-        updates = applyResizeTransformToNode(node, latestLocalMatrixRef.current)
-      }
+      const updates = applyResizeTransformToNode(node, latestMatrixRef.current)
 
       if (!updates) {
         clearResizeState()
@@ -322,10 +266,11 @@ export function startResizeSelected(
         clearResizeState()
         return
       }
-      const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedChildren = (page.children ?? []).map((n: any) =>
         n.id === selectedId ? { ...n, ...updates } : n
       )
-      updatePage({ ...page, pageId, children: updatedChildren })
+      updatePage({ ...page, pageId, children: updatedChildren as unknown as PenpotNode[] })
         .then(() => {
           renderer.cleanModifiers()
           useWorkspaceStore.getState().refreshWasmSelectionRect()
