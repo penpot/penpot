@@ -129,13 +129,15 @@
          (fn [_]
            (on-frame-leave (:id frame))))
 
-        main-instance? (ctk/main-instance? frame)
-        is-variant?    (:is-variant-container frame)
+        main-instance?   (ctk/main-instance? frame)
+        is-variant?      (:is-variant-container frame)
 
-        text-width (* (:width frame) zoom)
-        show-icon? (and (or (:use-for-thumbnail frame) is-grid-edition main-instance? is-variant?)
-                        (not (<= text-width 15)))
-        text-pos-x (if show-icon? 15 0)
+        use-width?        (vwu/title-transform-use-width? frame)
+
+        text-width       (* (if use-width? (:width frame) (:height frame)) zoom)
+        show-icon?       (and (or (:use-for-thumbnail frame) is-grid-edition main-instance? is-variant?)
+                              (not (<= text-width 15)))
+        text-pos-x       (if show-icon? 15 0)
 
         edition*         (mf/use-state false)
         edition?         (deref edition*)
@@ -177,7 +179,6 @@
          (fn [event]
            (when (kbd/enter? event) (accept-edit))
            (when (kbd/esc? event) (cancel-edit))))]
-
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
