@@ -9,13 +9,12 @@ import type {
   BoolShape,
   PathShape,
   TextShape,
+  Matrix,
 } from '@penpot-exporter/types'
 import type { Line } from '@skia-rs-wasm/common'
 import { makeSelrect } from '@skia-rs-wasm/common'
 import { rectToPoints } from './rect'
 import { point } from './point'
-
-type Matrix = { a: number; b: number; c: number; d: number; e: number; f: number }
 
 /** Shape with ellipse geometry (CircleShape or synthetic bounds for stroke band). */
 type EllipseGeometry = {
