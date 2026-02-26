@@ -1297,6 +1297,15 @@ export interface Context {
    * @param shapes to flatten
    */
   flatten(shapes: Shape[]): Path[];
+
+  /**
+   * Combine several standard Components into a VariantComponent. Similar to doing it
+   * with the contextual menu on the Penpot interface.
+   * All the shapes passed as arguments should be main instances.
+   * @param shapes A list of main instances of the components to combine.
+   * @return The variant container created
+   */
+  createVariantFromComponents(shapes: Board[]): VariantContainer;
 }
 
 /**
@@ -3818,8 +3827,9 @@ export interface ShapeBase extends PluginData {
    * on the Penpot interface.
    * The current shape must be a component main instance.
    * @param ids A list of ids of the main instances of the components to combine with this one.
+   * @return The variant container created
    */
-  combineAsVariants(ids: string[]): void;
+  combineAsVariants(ids: string[]): VariantContainer;
 
   /**
    * @return Returns true when the current shape is the head of a components tree nested structure,
