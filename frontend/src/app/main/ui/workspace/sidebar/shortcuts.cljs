@@ -483,9 +483,6 @@
            (reset! open-sections [[1]])
            (reset! filter-term "")))]
 
-    (mf/with-effect []
-      (dom/focus! (dom/get-element "shortcut-search")))
-
     [:div {:class (dm/str class " " (stl/css :shortcuts))}
      [:> panel-title* {:class (stl/css :shortcuts-title)
                        :text (tr "shortcuts.title")
@@ -496,7 +493,8 @@
                        :on-clear on-search-clear-click
                        :value @filter-term
                        :placeholder (tr "shortcuts.title")
-                       :icon-id i/search}]]
+                       :icon-id i/search
+                       :auto-focus true}]]
 
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}
