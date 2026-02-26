@@ -41,8 +41,13 @@ fn draw_stroke_on_rect(
         }
     };
 
+    // By default just draw the rect. Only dotted inner/outer strokes need
+    // clipping to prevent the dotted pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        // Use a neutral layer (no extra paint) so opacity and filters
+        // come solely from the stroke paint. This avoids applying
+        // stroke alpha twice for dotted inner/outer strokes.
+        let layer_rec = skia::canvas::SaveLayerRec::default();
         canvas.save_layer(&layer_rec);
         match corners {
             Some(radii) => {
@@ -81,7 +86,10 @@ fn draw_stroke_on_circle(
     // By default just draw the circle. Only dotted inner/outer strokes need
     // clipping to prevent the dotted pattern from appearing in wrong areas.
     if let Some(clip_op) = stroke.clip_op() {
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+        // Use a neutral layer (no extra paint) so opacity and filters
+        // come solely from the stroke paint. This avoids applying
+        // stroke alpha twice for dotted inner/outer strokes.
+        let layer_rec = skia::canvas::SaveLayerRec::default();
         canvas.save_layer(&layer_rec);
         let clip_path = {
             let mut pb = skia::PathBuilder::new();
