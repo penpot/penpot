@@ -548,7 +548,7 @@
                modif-tree
                (dwm/build-modif-tree ids objects get-modifier)]
 
-           (rx/of (dwm/apply-wasm-modifiers modif-tree)))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree :ignore-touched (:ignore-touched options))))
 
          (let [page-id (or (:page-id options)
                            (:current-page-id state))

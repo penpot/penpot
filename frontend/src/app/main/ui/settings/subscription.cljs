@@ -360,6 +360,11 @@
   (let [route          (mf/deref refs/route)
         authenticated? (da/is-authenticated? profile)
 
+        nitrate-license (dm/get-in profile [:props :nitrate-license])
+
+        nitrate? (and (contains? cf/flags :nitrate)
+                      (:valid nitrate-license))
+
         params-subscription
         (-> route :params :query :subscription)
 
@@ -390,7 +395,9 @@
         (ct/format-inst (:created-at profile) "d MMMM, yyyy")
 
         subscribed-since
-        (ct/format-inst (:start-date subscription) "d MMMM, yyyy")
+        (if nitrate?
+          (ct/format-inst (:created-at nitrate-license) "d MMMM, yyyy")
+          (ct/format-inst (:start-date subscription) "d MMMM, yyyy"))
 
         go-to-pricing-page
         (mf/use-fn
@@ -468,60 +475,73 @@
 
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
-       (case subscription-type
-         "professional"
-         [:> plan-card* {:card-title (tr "subscription.settings.professional")
-                         :benefits [(tr "subscription.settings.professional.storage-benefit"),
-                                    (tr "subscription.settings.professional.autosave-benefit"),
-                                    (tr "subscription.settings.professional.teams-editors-benefit")]}]
+       (if nitrate?
+         ;; TODO add translations for this texts when we have the definitive ones
+         [:> plan-card* {:card-title "Business Nitrate"
+                         :card-title-icon i/character-b
+                         :benefits-title "Loren ipsum",
+                         :benefits ["Loren ipsum",
+                                    "Loren ipsum",
+                                    "Loren ipsum"]
+                         :cta-text-with-icon "Control Center"
+                         :cta-link-with-icon dnt/go-to-nitrate-cc
+                         :cta-text (tr "subscription.settings.manage-your-subscription")
+                         :cta-link dnt/go-to-nitrate-billing}]
+         (case subscription-type
+           "professional"
+           [:> plan-card* {:card-title (tr "subscription.settings.professional")
+                           :benefits [(tr "subscription.settings.professional.storage-benefit"),
+                                      (tr "subscription.settings.professional.autosave-benefit"),
+                                      (tr "subscription.settings.professional.teams-editors-benefit")]}]
 
-         "unlimited"
-         (if subscription-is-trial?
-           [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
-                           :card-title-icon i/character-u
-                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits"),
-                           :benefits [(tr "subscription.settings.unlimited.storage-benefit")
-                                      (tr "subscription.settings.unlimited.autosave-benefit"),
-                                      (tr "subscription.settings.unlimited.bill")]
-                           :cta-text (tr "subscription.settings.manage-your-subscription")
-                           :cta-link go-to-payments
-                           :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
-                           :cta-link-trial go-to-payments
-                           :editors (-> profile :props :subscription :quantity)}]
+           "unlimited"
+           (if subscription-is-trial?
+             [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
+                             :card-title-icon i/character-u
+                             :benefits-title (tr "subscription.settings.benefits.all-professional-benefits"),
+                             :benefits [(tr "subscription.settings.unlimited.storage-benefit")
+                                        (tr "subscription.settings.unlimited.autosave-benefit"),
+                                        (tr "subscription.settings.unlimited.bill")]
+                             :cta-text (tr "subscription.settings.manage-your-subscription")
+                             :cta-link go-to-payments
+                             :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
+                             :cta-link-trial go-to-payments
+                             :editors (-> profile :props :subscription :quantity)}]
 
-           [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
-                           :card-title-icon i/character-u
-                           :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
-                           :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
-                                      (tr "subscription.settings.unlimited.autosave-benefit"),
-                                      (tr "subscription.settings.unlimited.bill")]
-                           :cta-text (tr "subscription.settings.manage-your-subscription")
-                           :cta-link go-to-payments
-                           :editors (-> profile :props :subscription :quantity)}])
+             [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
+                             :card-title-icon i/character-u
+                             :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
+                             :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
+                                        (tr "subscription.settings.unlimited.autosave-benefit"),
+                                        (tr "subscription.settings.unlimited.bill")]
+                             :cta-text (tr "subscription.settings.manage-your-subscription")
+                             :cta-link go-to-payments
+                             :editors (-> profile :props :subscription :quantity)}])
 
-         "enterprise"
-         (if subscription-is-trial?
-           [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
-                           :card-title-icon i/character-e
-                           :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
-                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
-                                      (tr "subscription.settings.enterprise.autosave"),
-                                      (tr "subscription.settings.enterprise.capped-bill")]
-                           :cta-text (tr "subscription.settings.manage-your-subscription")
-                           :cta-link go-to-payments
-                           :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
-                           :cta-link-trial go-to-payments}]
-           [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
-                           :card-title-icon i/character-e
-                           :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
-                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
-                                      (tr "subscription.settings.enterprise.autosave"),
-                                      (tr "subscription.settings.enterprise.capped-bill")]
-                           :cta-text (tr "subscription.settings.manage-your-subscription")
-                           :cta-link go-to-payments}]))
+           "enterprise"
+           (if subscription-is-trial?
+             [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
+                             :card-title-icon i/character-e
+                             :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
+                             :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
+                                        (tr "subscription.settings.enterprise.autosave"),
+                                        (tr "subscription.settings.enterprise.capped-bill")]
+                             :cta-text (tr "subscription.settings.manage-your-subscription")
+                             :cta-link go-to-payments
+                             :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
+                             :cta-link-trial go-to-payments}]
+             [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
+                             :card-title-icon i/character-e
+                             :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
+                             :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
+                                        (tr "subscription.settings.enterprise.autosave"),
+                                        (tr "subscription.settings.enterprise.capped-bill")]
+                             :cta-text (tr "subscription.settings.manage-your-subscription")
+                             :cta-link go-to-payments}])))
 
        [:div {:class (stl/css :membership-container)}
-        (when (and subscribed-since (not= subscription-type "professional"))
+        (when (or nitrate?
+                  (and subscribed-since (not= subscription-type "professional")))
           [:div {:class (stl/css :membership)}
            [:> icon* {:class (stl/css :subscription-member)
                       :icon-id "crown"
@@ -582,7 +602,7 @@
                          :show-button-cta (= subscription-type "professional")}])
 
        ;; TODO add translations for this texts when we have the definitive ones
-       (when (and (contains? cf/flags :nitrate) (not (:nitrate-licence profile)))
+       (when (and (contains? cf/flags :nitrate) (not nitrate?))
          [:> plan-card* {:card-title "Business Nitrate"
                          :card-title-icon i/character-n
                          :price-value "$25"

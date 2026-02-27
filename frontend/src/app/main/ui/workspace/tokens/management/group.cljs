@@ -75,7 +75,11 @@
         is-type-unfolded (contains? (set unfolded-token-paths) (name type))
 
         editing-ref  (mf/deref refs/workspace-editor-state)
-        not-editing? (empty? editing-ref)
+        edition      (mf/deref refs/selected-edition)
+        objects      (mf/deref refs/workspace-page-objects)
+        not-editing? (and (empty? editing-ref)
+                          (not (and (some? edition)
+                                    (= :text (:type (get objects edition))))))
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)

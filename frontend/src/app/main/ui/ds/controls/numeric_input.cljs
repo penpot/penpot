@@ -658,7 +658,7 @@
         (when (and token-applied (not= :multiple token-applied))
           (let [token       (get-option-by-name dropdown-options token-applied)
                 id          (get token :id)
-                label       (get token :name)
+                label       (or (get token :name) applied-token)
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
                                     (fmt/format-number value)))

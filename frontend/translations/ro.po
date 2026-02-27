@@ -1204,7 +1204,7 @@ msgstr "Detașează tokenul"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "Acest token nu este în nici un set activ sau are o valoare invalidă."
+msgstr "%s nu este în nici un set activ sau are o valoare invalidă."
 
 #: src/app/main/data/auth.cljs:339
 msgid "errors.auth-provider-not-allowed"

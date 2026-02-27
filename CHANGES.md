@@ -10,14 +10,17 @@
 
 ### :sparkles: New features & Enhancements
 
+- Allow duplicating color and typography styles (by @MkDev11) [Github #2912](https://github.com/penpot/penpot/issues/2912)
 - Add MCP server integration [Taiga #13112](https://tree.taiga.io/project/penpot/us/13112), [Taiga #13114](https://tree.taiga.io/project/penpot/us/13114)
 - Add woff2 support on user uploaded fonts (by @Nivl) [Github #8248](https://github.com/penpot/penpot/pull/8248)
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
+- Import Tokens from linked library [Github #8391](https://github.com/penpot/penpot/pull/8391)
 
 ### :bug: Bugs fixed
 
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
+- Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 
 
 ## 2.14.0 (Unreleased)
@@ -52,6 +55,7 @@
 - Fix viewer can update library [Taiga #13186](https://tree.taiga.io/project/penpot/issue/13186)
 - Fix remove fill affects different element than selected [Taiga #13128](https://tree.taiga.io/project/penpot/issue/13128)
 - Fix unable to finish the create account form using keyboard [Taiga #11333](https://tree.taiga.io/project/penpot/issue/11333)
+- Fix 45 rotated board titles rendered incorrectly [Taiga #13306](https://tree.taiga.io/project/penpot/issue/13306)
 
 ## 2.13.3
 

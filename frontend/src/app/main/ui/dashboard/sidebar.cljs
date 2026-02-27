@@ -302,9 +302,8 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           (if (:nitrate-licence profile)
-             ;; TODO update when org creation route is ready
-             (dom/open-new-window "/control-center/org/create")
+           (if (dm/get-in profile [:props :nitrate-license :valid])
+             (dnt/go-to-nitrate-cc)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
 
     [:> dropdown-menu* props
@@ -548,9 +547,8 @@
         on-create-org-click
         (mf/use-fn
          (fn []
-           (if (:nitrate-licence profile)
-             ;; TODO update when org creation route is ready
-             (dom/open-new-window "/control-center/org/create")
+           (if (dm/get-in profile [:props :nitrate-license :valid])
+             (dnt/go-to-nitrate-cc)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if empty?
       [:div {:class (stl/css :nitrate-orgs-empty)}
@@ -1088,7 +1086,7 @@
 
     [:*
      (if (contains? cf/flags :nitrate)
-       (when-not (:nitrate-licence profile)
+       (when-not (dm/get-in profile [:props :nitrate-license :valid])
          [:> nitrate-sidebar* {:profile profile}])
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
