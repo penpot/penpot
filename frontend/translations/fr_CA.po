@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-26 14:09+0000\n"
+"PO-Revision-Date: 2026-02-28 00:09+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -8563,3 +8563,276 @@ msgstr "Texte (%s)"
 #: src/app/main/ui/workspace/palette.cljs:190
 msgid "workspace.toolbar.text-palette"
 msgstr "Typographies (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:235, src/app/main/ui/workspace/top_toolbar.cljs:236
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Basculer la barre d'outils"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:41
+msgid "workspace.top-bar.read-only.done"
+msgstr "Terminé"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:37
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Inspection de code** (Lecture seule)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:333
+msgid "workspace.undo.empty"
+msgstr "Il n'y a aucun changement à l'historique"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:147
+msgid "workspace.undo.entry.delete"
+msgstr "%s supprimé"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:146
+msgid "workspace.undo.entry.modify"
+msgstr "%s modifié"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:148
+msgid "workspace.undo.entry.move"
+msgstr "Objets déplacés"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:111
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "cercles"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:112
+msgid "workspace.undo.entry.multiple.color"
+msgstr "couleurs"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:113
+msgid "workspace.undo.entry.multiple.component"
+msgstr "composants"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:114
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "courbes"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:115
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "tableau"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:116
+msgid "workspace.undo.entry.multiple.group"
+msgstr "groupes"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:117
+msgid "workspace.undo.entry.multiple.media"
+msgstr "atouts graphiques"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:118
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "objets"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:119
+msgid "workspace.undo.entry.multiple.page"
+msgstr "pages"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:120
+msgid "workspace.undo.entry.multiple.path"
+msgstr "chemins"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:121
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "rectangles"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:122
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "formes"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:123
+msgid "workspace.undo.entry.multiple.text"
+msgstr "textes"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:124
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "typographies"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:145
+msgid "workspace.undo.entry.new"
+msgstr "Nouveau %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:125
+msgid "workspace.undo.entry.single.circle"
+msgstr "cercle"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:126
+msgid "workspace.undo.entry.single.color"
+msgstr "couleur"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:127
+msgid "workspace.undo.entry.single.component"
+msgstr "composant"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:128
+msgid "workspace.undo.entry.single.curve"
+msgstr "courbe"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:129
+msgid "workspace.undo.entry.single.frame"
+msgstr "tableau"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:130
+msgid "workspace.undo.entry.single.group"
+msgstr "groupe"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:131
+msgid "workspace.undo.entry.single.image"
+msgstr "image"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:132
+msgid "workspace.undo.entry.single.media"
+msgstr "atout graphique"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:133
+msgid "workspace.undo.entry.single.multiple"
+msgstr "objet"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:134
+msgid "workspace.undo.entry.single.page"
+msgstr "page"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:135
+msgid "workspace.undo.entry.single.path"
+msgstr "chemin"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:136
+msgid "workspace.undo.entry.single.rect"
+msgstr "rectangle"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:137
+msgid "workspace.undo.entry.single.shape"
+msgstr "forme"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:138
+msgid "workspace.undo.entry.single.text"
+msgstr "texte"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:139
+msgid "workspace.undo.entry.single.typography"
+msgstr "typographie"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:149
+msgid "workspace.undo.entry.unknown"
+msgstr "Opération sur %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:335
+#, unused
+msgid "workspace.undo.title"
+msgstr "Historique"
+
+#: src/app/main/data/workspace/libraries.cljs:1247, src/app/main/ui/workspace/sidebar/versions.cljs:85
+msgid "workspace.updates.dismiss"
+msgstr "Ignorer"
+
+#: src/app/main/data/workspace/libraries.cljs:1245
+msgid "workspace.updates.more-info"
+msgstr "Plus d'info"
+
+#: src/app/main/data/workspace/libraries.cljs:1243
+msgid "workspace.updates.there-are-updates"
+msgstr "Mises à jour dans les bibliothèques partagées"
+
+#: src/app/main/data/workspace/libraries.cljs:1249
+msgid "workspace.updates.update"
+msgstr "Mettre à jour"
+
+#: src/app/main/ui/ds/product/milestone_group.cljs:73
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s versions auto-sauvegardées"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:260
+msgid "workspace.versions.autosaved.version"
+msgstr "Auto-sauvegardé %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:278
+msgid "workspace.versions.button.pin"
+msgstr "Épingler cette version"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:273
+msgid "workspace.versions.button.restore"
+msgstr "Restaurer cette version"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:396, src/app/main/ui/workspace/sidebar/versions.cljs:398
+msgid "workspace.versions.button.save"
+msgstr "Enregistrer une version"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:405
+msgid "workspace.versions.empty"
+msgstr "Aucune version"
+
+#: src/app/main/ui/ds/product/milestone_group.cljs:67
+msgid "workspace.versions.expand-snapshot"
+msgstr "Afficher les versions"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:369
+msgid "workspace.versions.filter.all"
+msgstr "Toutes les versions"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:383
+msgid "workspace.versions.filter.label"
+msgstr "Filtrer les versions"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:370
+msgid "workspace.versions.filter.mine"
+msgstr "Mes versions"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:374
+msgid "workspace.versions.filter.user"
+msgstr "Versions de %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:391
+msgid "workspace.versions.loading"
+msgstr "Chargement..."
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "Cette version a été verouillée par %s et ne peut être modifiée"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Cette version a été verouillée par toi"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:83
+msgid "workspace.versions.restore-warning"
+msgstr "Restaurer cette version?"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "Ouvrir le menu des versions"
+
+#: src/app/main/ui/workspace/sidebar.cljs:257
+msgid "workspace.versions.tab.actions"
+msgstr "Actions"
+
+#: src/app/main/ui/workspace/sidebar.cljs:255
+msgid "workspace.versions.tab.history"
+msgstr "Historique"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Version verrouillée - seule le créateur peut la modifier"
+
+#: src/app/main/ui/ds/product/milestone.cljs:84, src/app/main/ui/ds/product/milestone_group.cljs:86
+msgid "workspace.versions.version-menu"
+msgstr "Ouvrir le menu des versions"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:60
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Si tu aimerais augmenter cette limite, nous écrire au [support@penpot.app]"
+"(%s)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:431
+msgid "workspace.versions.warning.text"
+msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
+
+#, unused
+msgid "workspace.viewport.click-to-close-path"
+msgstr "Cliquer pour fermer le chemin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1156
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "Le variant doit avoir au moins une propriété"
