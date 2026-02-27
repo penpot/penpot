@@ -1,0 +1,29 @@
+{
+  "name": "figma-adapter",
+  "version": "0.1.0",
+  "description": "Translates Figma plugin events into Penpot/skia-rs-wasm–compatible data",
+  "type": "module",
+  "main": "./dist/figma-adapter.cjs.js",
+  "module": "./dist/figma-adapter.es.js",
+  "types": "./dist/packages/figma-adapter/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/packages/figma-adapter/src/index.d.ts",
+      "import": "./dist/figma-adapter.es.js",
+      "require": "./dist/figma-adapter.cjs.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.123.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vite-plugin-dts": "^4.3.0",
+    "vitest": "^4.0.18"
+  }
+}
