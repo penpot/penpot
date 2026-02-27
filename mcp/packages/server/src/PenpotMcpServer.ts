@@ -21,7 +21,23 @@ export interface SessionContext {
     userToken?: string;
 }
 
+/**
+ * Represents an active Streamable HTTP session, grouping the transport, MCP server, and session metadata.
+ */
+class StreamableSession {
+    constructor(
+        public readonly transport: StreamableHTTPServerTransport,
+        public readonly userToken: string | undefined,
+        public lastActiveTime: number
+    ) {}
+}
+
 export class PenpotMcpServer {
+    /**
+     * Timeout, in minutes, for idle Streamable HTTP sessions before they are automatically closed and removed.
+     */
+    private static readonly SESSION_TIMEOUT_MINUTES = 60;
+
     private readonly logger = createLogger("PenpotMcpServer");
     private readonly tools: Map<string, Tool<any>>;
     public readonly configLoader: ConfigurationLoader;
@@ -35,16 +51,14 @@ export class PenpotMcpServer {
      */
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
 
-    private readonly streamableTransports: Record<
-        string,
-        { transport: StreamableHTTPServerTransport; server: McpServer; userToken?: string }
-    > = {};
+    private readonly streamableTransports: Record<string, StreamableSession> = {};
     private readonly sseTransports: Record<string, { transport: SSEServerTransport; userToken?: string }> = {};
 
     public readonly host: string;
     public readonly port: number;
     public readonly webSocketPort: number;
     public readonly replPort: number;
+    private sessionTimeoutInterval: ReturnType<typeof setInterval> | undefined;
 
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
@@ -149,6 +163,29 @@ export class PenpotMcpServer {
         return server;
     }
 
+    /**
+     * Starts a periodic timer that closes and removes Streamable HTTP sessions that have been
+     * idle for longer than {@link SESSION_TIMEOUT_MINUTES}.
+     */
+    private startSessionTimeoutChecker(): void {
+        const timeoutMs = PenpotMcpServer.SESSION_TIMEOUT_MINUTES * 60 * 1000;
+        const checkIntervalMs = timeoutMs / 2;
+        this.sessionTimeoutInterval = setInterval(() => {
+            this.logger.info("Checking for stale sessions...");
+            const now = Date.now();
+            let removed = 0;
+            for (const session of Object.values(this.streamableTransports)) {
+                if (now - session.lastActiveTime > timeoutMs) {
+                    session.transport.close();
+                    removed++;
+                }
+            }
+            this.logger.info(
+                `Removed ${removed} stale session(s); total sessions remaining: ${Object.keys(this.streamableTransports).length}`
+            );
+        }, checkIntervalMs);
+    }
+
     private setupHttpEndpoints(): void {
         /**
          * Modern Streamable HTTP connection endpoint.
@@ -168,6 +205,7 @@ export class PenpotMcpServer {
                 const session = this.streamableTransports[sessionId];
                 transport = session.transport;
                 userToken = session.userToken;
+                session.lastActiveTime = Date.now();
                 this.logger.info(
                     `Received request for existing session with id=${sessionId}; userToken=${session.userToken}`
                 );
@@ -180,14 +218,15 @@ export class PenpotMcpServer {
                 transport = new StreamableHTTPServerTransport({
                     sessionIdGenerator: () => randomUUID(),
                     onsessioninitialized: (id) => {
-                        this.logger.info(`Session initialized with id=${id} for userToken=${userToken}`);
-                        this.streamableTransports[id] = { transport, server, userToken };
+                        this.streamableTransports[id] = new StreamableSession(transport, userToken, Date.now());
+                        this.logger.info(
+                            `Session initialized with id=${id} for userToken=${userToken}; total sessions: ${Object.keys(this.streamableTransports).length}`
+                        );
                     },
                 });
                 transport.onclose = () => {
                     if (transport.sessionId) {
                         this.logger.info(`Closing session with id=${transport.sessionId} for userToken=${userToken}`);
-                        server.close();
                         delete this.streamableTransports[transport.sessionId];
                     }
                 };
@@ -251,8 +290,9 @@ export class PenpotMcpServer {
                 this.logger.info(`Legacy SSE endpoint: http://${this.host}:${this.port}/sse`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
 
-                // start the REPL server
+                // start the REPL server and session timeout checker
                 await this.replServer.start();
+                this.startSessionTimeoutChecker();
 
                 resolve();
             });
@@ -266,6 +306,7 @@ export class PenpotMcpServer {
      */
     public async stop(): Promise<void> {
         this.logger.info("Stopping Penpot MCP Server...");
+        clearInterval(this.sessionTimeoutInterval);
         await this.replServer.stop();
         this.logger.info("Penpot MCP Server stopped");
     }
