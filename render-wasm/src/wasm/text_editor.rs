@@ -42,10 +42,14 @@ pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_stop() {
+pub extern "C" fn text_editor_stop() -> bool {
     with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return false;
+        }
         state.text_editor_state.stop();
-    });
+        true
+    })
 }
 
 #[no_mangle]
@@ -126,12 +130,8 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
             return;
         };
         let point = Point::new(x, y);
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
-        let shape_matrix = shape.get_matrix();
         state.text_editor_state.start_pointer_selection();
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state.text_editor_state.set_caret_from_position(&position);
         }
     });
@@ -143,17 +143,11 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
         if !state.text_editor_state.is_active {
             return;
         }
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
         let point = Point::new(x, y);
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-        let shape_matrix = shape.get_matrix();
-        let Some(_shape_rel_point) = Shape::get_relative_point(&point, &view_matrix, &shape_matrix)
-        else {
             return;
         };
         if !state.text_editor_state.is_pointer_selection_active {
@@ -163,9 +157,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
             return;
         };
 
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
@@ -179,17 +171,11 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         if !state.text_editor_state.is_active {
             return;
         }
-        let view_matrix: Matrix = state.render_state.viewbox.get_matrix();
         let point = Point::new(x, y);
         let Some(shape_id) = state.text_editor_state.active_shape_id else {
             return;
         };
         let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-        let shape_matrix = shape.get_matrix();
-        let Some(_shape_rel_point) = Shape::get_relative_point(&point, &view_matrix, &shape_matrix)
-        else {
             return;
         };
         if !state.text_editor_state.is_pointer_selection_active {
@@ -198,14 +184,35 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
         let Type::Text(text_content) = &shape.shape_type else {
             return;
         };
-        if let Some(position) =
-            text_content.get_caret_position_from_screen_coords(&point, &view_matrix, &shape_matrix)
-        {
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
             state
                 .text_editor_state
                 .extend_selection_from_position(&position);
         }
         state.text_editor_state.stop_pointer_selection();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
+    with_state_mut!(state, {
+        if !state.text_editor_state.is_active {
+            return;
+        }
+
+        let point = Point::new(x, y);
+        let Some(shape_id) = state.text_editor_state.active_shape_id else {
+            return;
+        };
+        let Some(shape) = state.shapes.get(&shape_id) else {
+            return;
+        };
+        let Type::Text(text_content) = &shape.shape_type else {
+            return;
+        };
+        if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
+            state.text_editor_state.set_caret_from_position(&position);
+        }
     });
 }
 

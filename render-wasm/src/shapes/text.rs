@@ -161,6 +161,13 @@ impl TextPositionWithAffinity {
             offset,
         }
     }
+
+    pub fn reset(&mut self) {
+        self.position_with_affinity.position = 0;
+        self.position_with_affinity.affinity = Affinity::Downstream;
+        self.paragraph = 0;
+        self.offset = 0;
+    }
 }
 
 #[derive(Debug)]

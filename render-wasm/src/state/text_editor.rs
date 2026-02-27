@@ -33,6 +33,11 @@ impl TextSelection {
         !self.is_collapsed()
     }
 
+    pub fn reset(&mut self) {
+        self.anchor.reset();
+        self.focus.reset();
+    }
+
     pub fn set_caret(&mut self, cursor: TextPositionWithAffinity) {
         self.anchor = cursor;
         self.focus = cursor;
@@ -133,7 +138,7 @@ impl TextEditorState {
         self.active_shape_id = Some(shape_id);
         self.cursor_visible = true;
         self.last_blink_time = 0.0;
-        self.selection = TextSelection::new();
+        self.selection.reset();
         self.is_pointer_selection_active = false;
         self.pending_events.clear();
     }
@@ -142,9 +147,10 @@ impl TextEditorState {
         self.is_active = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
+        self.last_blink_time = 0.0;
+        self.selection.reset();
         self.is_pointer_selection_active = false;
         self.pending_events.clear();
-        self.reset_blink();
     }
 
     pub fn start_pointer_selection(&mut self) -> bool {
@@ -195,13 +201,11 @@ impl TextEditorState {
 
     pub fn set_caret_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.set_caret(*position);
-        self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
     pub fn extend_selection_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.extend_to(*position);
-        self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
