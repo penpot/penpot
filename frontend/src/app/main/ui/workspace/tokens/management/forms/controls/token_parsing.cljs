@@ -26,7 +26,7 @@
    A token starts with '{', contains no spaces, and may be incomplete.
    Returns nil if no valid token is active."
   [value cursor]
-  (let [start (.lastIndexOf value "{" cursor)]
+  (let [start (.lastIndexOf value "{" (dec cursor))]
     (when (>= start 0)
       (let [between (subs value (inc start) cursor)]
         (when-not (re-find #"\s" between)
@@ -37,43 +37,34 @@
                 space-index  (.indexOf after " ")
                 space-pos    (when (>= space-index 0)
                                (+ (inc start) space-index))
-
-                end (cond
-                      (and close-pos
-                           (or (nil? space-pos)
-                               (< close-pos space-pos)))
-                      (inc close-pos)
-
-                      space-pos
-                      space-pos
-
-                      :else
-                      cursor)]
+                open-index  (.indexOf after "{")
+                open-pos    (when (>= open-index 0)
+                              (+ (inc start) open-index))
+                candidates (->> [space-pos open-pos close-pos]
+                                (remove nil?)
+                                (sort))
+                end (or (first candidates) cursor)
+                inside-token? (and (>= cursor start) (< cursor end))]
 
             {:start start
-             :end   end}))))))
+             :end (if inside-token?
+                    (inc end)
+                    end)}))))))
 
 (defn replace-active-token
   "Replaces the token at the cursor with `{new-name}`.
    Returns {:value :cursor} with the updated value and new cursor position."
   [value cursor new-name]
   (let [new-token (str "{" new-name "}")]
-    (if-let [{:keys [start end]}
-             (find-active-token-range value cursor)]
-
-      (let [new-value (str (subs value 0 start)
-                           new-token
-                           (subs value end))
-            new-cursor (+ start (count new-token))]
-        {:value new-value
-         :cursor new-cursor})
-
-      (let [new-value (str (subs value 0 cursor)
-                           new-token
-                           (subs value cursor))
-            new-cursor (+ cursor (count new-token))]
-        {:value new-value
-         :cursor new-cursor}))))
+    (if-let [{:keys [start end]} (find-active-token-range value cursor)]
+      {:value (str (subs value 0 start)
+                   new-token
+                   (subs value end))
+       :cursor (+ start (count new-token))}
+      {:value (str (subs value 0 cursor)
+                   new-token
+                   (subs value cursor))
+       :cursor (+ cursor (count new-token))})))
 
 (defn active-token [value input-node]
   (let [cursor (dom/selection-start input-node)]
