@@ -4,6 +4,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
@@ -355,6 +356,37 @@
            :value (tr "labels.close")
            :on-click handle-close-dialog}]]]]]]))
 
+(mf/defc nitrate-success-dialog
+  {::mf/register modal/components
+   ::mf/register-as :nitrate-success}
+  []
+  ;; TODO add translations for this texts when we have the definitive ones
+  (let [profile (mf/deref refs/profile)]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog :subscription-success)}
+      [:button {:class (stl/css :close-btn) :on-click modal/hide!}
+       [:> icon* {:icon-id "close"
+                  :size "m"}]]
+      [:div {:class (stl/css :modal-success-content)}
+       [:div {:class (stl/css :modal-start)}
+        [:> raw-svg* {:id (if (= "light" (:theme profile)) "logo-subscription-light" "logo-subscription")}]]
+
+       [:div {:class (stl/css :modal-end)}
+        [:div {:class (stl/css :modal-title)}
+         "You are Business Nitrate!"]
+        [:p {:class (stl/css :modal-text-large)}
+         (tr "subscription.settings.success.dialog.description")]
+        [:p {:class (stl/css :modal-text-large)}
+         (tr "subscription.settings.sucess.dialog.footer")]
+
+        [:div {:class (stl/css :success-action-buttons)}
+         [:input
+          {:class (stl/css :primary-button)
+           :type "button"
+           :value "CREATE ORGANIZATION"
+           :on-click dnt/go-to-nitrate-cc}]]]]]]))
+
 (mf/defc subscription-page*
   [{:keys [profile]}]
   (let [route          (mf/deref refs/route)
@@ -374,7 +406,8 @@
 
         show-subscription-success-modal?
         (or (= params-subscription "subscribed-to-penpot-unlimited")
-            (= params-subscription "subscribed-to-penpot-enterprise"))
+            (= params-subscription "subscribed-to-penpot-enterprise")
+            (= params-subscription "subscribed-to-penpot-nitrate"))
 
         success-modal-is-trial?
         (-> route :params :query :trial)
@@ -458,14 +491,16 @@
 
           ^boolean show-subscription-success-modal?
           (st/emit!
-           (modal/show :subscription-success
-                       {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
-                                             (if (= success-modal-is-trial? "true")
-                                               (tr "subscription.settings.unlimited-trial")
-                                               (tr "subscription.settings.unlimited"))
-                                             (if (= success-modal-is-trial? "true")
-                                               (tr "subscription.settings.enterprise-trial")
-                                               (tr "subscription.settings.enterprise")))})
+           (if (= params-subscription "subscribed-to-penpot-nitrate")
+             (modal/show :nitrate-success {})
+             (modal/show :subscription-success
+                         {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
+                                               (if (= success-modal-is-trial? "true")
+                                                 (tr "subscription.settings.unlimited-trial")
+                                                 (tr "subscription.settings.unlimited"))
+                                               (if (= success-modal-is-trial? "true")
+                                                 (tr "subscription.settings.enterprise-trial")
+                                                 (tr "subscription.settings.enterprise")))}))
            (rt/nav :settings-subscription {} {::rt/replace true})))))
 
     [:section {:class (stl/css :dashboard-section)}
@@ -641,8 +676,13 @@
         (mf/use-fn
          (mf/deps form)
          (fn []
-           (let [params (:clean-data @form)]
-             (dom/open-new-window (str "/control-center/licenses/start?subscription=" (name (:subscription params)))))))]
+           (let [subscription (-> @form :clean-data :subscription name)
+                 return-url   (dm/str
+                               (rt/get-current-href)
+                               "?"
+                               (u/map->query-string
+                                {:subscription "subscribed-to-penpot-nitrate"}))]
+             (dnt/go-to-buy-nitrate-license subscription return-url))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
