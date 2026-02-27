@@ -137,7 +137,8 @@
          (mf/deps value resolve-stream name)
          (fn [id]
            (let [input-node (mf/ref-val ref)
-                 {:keys [value cursor]} (tp/select-option-by-id id options-ref input-node value)]
+                 input-value  (dom/get-input-value input-node)
+                 {:keys [value cursor]} (tp/select-option-by-id id options-ref input-node input-value)]
              (when value
                (fm/on-input-change form name value true)
                (rx/push! resolve-stream value)
@@ -184,7 +185,9 @@
            (let [input-node (mf/ref-val ref)
                  node       (dom/get-current-target event)
                  id         (dom/get-data node "id")
-                 {:keys [value cursor]}  (tp/select-option-by-id id options-ref input-node value)]
+                 input-value  (dom/get-input-value input-node)
+
+                 {:keys [value cursor]}  (tp/select-option-by-id id options-ref input-node input-value)]
 
              (reset! filter-term* "")
              (dom/focus! input-node)
