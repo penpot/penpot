@@ -31,14 +31,12 @@ function normalizeShapes(shapes: unknown): string[] {
   return []
 }
 
-/** Get value from change supporting both camelCase and kebab-case */
-function getParentId(c: { parentId?: string | null; 'parent-id'?: string | null }): string | undefined {
-  const v = c.parentId ?? c['parent-id']
-  return v ?? undefined
+function getParentId(c: { parentId?: string | null }): string | undefined {
+  return c.parentId ?? undefined
 }
 
-function getFrameId(c: { frameId?: string; 'frame-id'?: string }): string | undefined {
-  return c.frameId ?? c['frame-id']
+function getFrameId(c: { frameId?: string }): string | undefined {
+  return c.frameId
 }
 
 /** Insert items at index, or append if index is null/undefined */
@@ -184,8 +182,8 @@ function processModObj(data: IndexedPage, change: ModObjChange): IndexedPage {
 function processMovObjects(data: IndexedPage, change: MovObjectsChange): IndexedPage {
   const parentId = getParentId(change) ?? ''
   const shapeIds = normalizeShapes(change.shapes)
-  const index = change.index ?? change['index'] ?? null
-  const afterShape = change.afterShape ?? change['after-shape'] ?? null
+  const index = change.index ?? null
+  const afterShape = change.afterShape ?? null
 
   const objects = { ...data.objects }
   const parent = objects[parentId]
