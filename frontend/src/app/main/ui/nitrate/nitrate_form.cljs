@@ -9,11 +9,11 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
-   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:nitrate-form
@@ -35,8 +35,7 @@
         (mf/use-fn
          (mf/deps form)
          (fn []
-           (let [params (:clean-data @form)]
-             (dom/open-new-window (str "/control-center/licenses/start?subscription=" (name (:subscription params)))))))]
+           (dnt/go-to-buy-nitrate-license (-> @form :clean-data :subscription name))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}

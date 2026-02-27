@@ -1,10 +1,11 @@
 (ns app.main.data.nitrate
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.uri :as u]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -15,14 +16,24 @@
     (watch [_ _ _]
       (->> (rp/cmd! ::get-nitrate-connectivity {})
            (rx/map (fn [connectivity]
+                     (prn "connectivity" connectivity)
                      (modal/show popup-type (or connectivity {}))))))))
 
 (defn go-to-nitrate-cc
   []
-  (st/emit! (dom/open-new-window "/control-center/")))
+  (st/emit! (rt/nav-raw :href "/control-center/")))
 
 (defn go-to-nitrate-billing
   []
   (st/emit! (rt/nav-raw :href "/control-center/licenses/billing")))
+
+(defn go-to-buy-nitrate-license
+  ([subscription]
+   (go-to-buy-nitrate-license subscription nil))
+  ([subscription callback]
+   (let [params (cond-> {:subscription subscription}
+                  callback (assoc :callback callback))
+         href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
+     (st/emit! (rt/nav-raw :href href)))))
 
 
