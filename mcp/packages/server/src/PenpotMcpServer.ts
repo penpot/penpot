@@ -32,6 +32,17 @@ class StreamableSession {
     ) {}
 }
 
+/**
+ * Holds information about a registered tool, including its instance, name, and configuration.
+ */
+class ToolInfo {
+    constructor(
+        public readonly instance: Tool<any>,
+        public readonly name: string,
+        public readonly config: { description: string; inputSchema: any }
+    ) {}
+}
+
 export class PenpotMcpServer {
     /**
      * Timeout, in minutes, for idle Streamable HTTP sessions before they are automatically closed and removed.
@@ -39,12 +50,13 @@ export class PenpotMcpServer {
     private static readonly SESSION_TIMEOUT_MINUTES = 60;
 
     private readonly logger = createLogger("PenpotMcpServer");
-    private readonly tools: Map<string, Tool<any>>;
+    private readonly tools: ToolInfo[];
     public readonly configLoader: ConfigurationLoader;
     private app: any;
     public readonly pluginBridge: PluginBridge;
     private readonly replServer: ReplServer;
     private apiDocs: ApiDocs;
+    private initialInstructions: string;
 
     /**
      * Manages session-specific context, particularly user tokens for each request.
@@ -70,11 +82,15 @@ export class PenpotMcpServer {
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
 
-        this.tools = new Map<string, Tool<any>>();
+        // prepare initial instructions
+        let instructions = this.configLoader.getInitialInstructions();
+        instructions = instructions.replace("$api_types", this.apiDocs.getTypeNames().join(", "));
+        this.initialInstructions = instructions;
+
+        this.tools = this.initTools();
+
         this.pluginBridge = new PluginBridge(this, this.webSocketPort);
         this.replServer = new ReplServer(this.pluginBridge, this.replPort);
-
-        this.initTools();
     }
 
     /**
@@ -109,9 +125,7 @@ export class PenpotMcpServer {
     }
 
     public getInitialInstructions(): string {
-        let instructions = this.configLoader.getInitialInstructions();
-        instructions = instructions.replace("$api_types", this.apiDocs.getTypeNames().join(", "));
-        return instructions;
+        return this.initialInstructions;
     }
 
     /**
@@ -123,7 +137,7 @@ export class PenpotMcpServer {
         return this.sessionContext.getStore();
     }
 
-    private initTools(): void {
+    private initTools(): ToolInfo[] {
         const toolInstances: Tool<any>[] = [
             new ExecuteCodeTool(this),
             new HighLevelOverviewTool(this),
@@ -134,10 +148,13 @@ export class PenpotMcpServer {
             toolInstances.push(new ImportImageTool(this));
         }
 
-        for (const tool of toolInstances) {
-            this.logger.info(`Registering tool: ${tool.getToolName()}`);
-            this.tools.set(tool.getToolName(), tool);
-        }
+        return toolInstances.map((instance) => {
+            this.logger.info(`Registering tool: ${instance.getToolName()}`);
+            return new ToolInfo(instance, instance.getToolName(), {
+                description: instance.getToolDescription(),
+                inputSchema: instance.getInputSchema(),
+            });
+        });
     }
 
     /**
@@ -145,19 +162,12 @@ export class PenpotMcpServer {
      */
     private createMcpServer(): McpServer {
         const server = new McpServer(
-            { name: "penpot-mcp-server", version: "1.0.0" },
+            { name: "penpot", version: "1.0.0" },
             { instructions: this.getInitialInstructions() }
         );
 
-        for (const tool of this.tools.values()) {
-            server.registerTool(
-                tool.getToolName(),
-                {
-                    description: tool.getToolDescription(),
-                    inputSchema: tool.getInputSchema(),
-                },
-                async (args) => tool.execute(args)
-            );
+        for (const tool of this.tools) {
+            server.registerTool(tool.name, tool.config, async (args: any) => tool.instance.execute(args));
         }
 
         return server;
