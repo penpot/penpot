@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@penpot-exporter/types": ["../penpot-exporter-figma-plugin/ui-src/types"],
+      "@penpot-exporter/types/*": ["../penpot-exporter-figma-plugin/ui-src/types/*"],
+      "@penpot-exporter/lib/types/*": ["../penpot-exporter-figma-plugin/ui-src/lib/types/*"],
+      "@common/*": ["../penpot-exporter-figma-plugin/common/*"],
+      "@plugin": ["../penpot-exporter-figma-plugin/plugin-src"],
+      "@plugin/*": ["../penpot-exporter-figma-plugin/plugin-src/*"],
+      "@ui/*": ["../penpot-exporter-figma-plugin/ui-src/*"],
+      "@skia-rs-wasm/common": ["../../src/lib/common"],
+      "@skia-rs-wasm/common/*": ["../../src/lib/common/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./node_modules/@figma"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
