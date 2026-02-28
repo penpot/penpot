@@ -8,10 +8,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   resolve: {
     alias: {
-      '@penpot-exporter/types': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/types'),
-      '@penpot-exporter/types/*': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/types/*'),
-      '@penpot-exporter/lib/types': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/lib/types'),
-      '@penpot-exporter/lib/types/*': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/lib/types/*'),
       '@common': resolve(__dirname, '../penpot-exporter-figma-plugin/common'),
       '@common/*': resolve(__dirname, '../penpot-exporter-figma-plugin/common/*'),
       '@plugin': resolve(__dirname, '../penpot-exporter-figma-plugin/plugin-src'),

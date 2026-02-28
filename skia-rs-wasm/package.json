@@ -25,6 +25,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@penpot-exporter/types": "workspace:*",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rxjs": "^7.8.2",
