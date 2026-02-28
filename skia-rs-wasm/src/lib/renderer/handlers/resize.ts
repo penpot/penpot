@@ -11,7 +11,7 @@ import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { updatePage, applyResizeTransformToNode } from '../store/page-crud'
 import type { Point } from '@skia-rs-wasm/common'
-import type { Matrix, PenpotNode } from '@penpot-exporter/types'
+import type { Matrix, PenpotNode } from 'penpot-exporter'
 import type { ResizeHandlePosition } from '../types'
 
 const MIN_SIZE = 1

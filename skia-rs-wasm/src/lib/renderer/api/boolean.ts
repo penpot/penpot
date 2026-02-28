@@ -4,7 +4,7 @@
 
 import type { WasmModule } from '../wasm-types'
 import type { BoolType, PathContent } from '@skia-rs-wasm/common'
-import type { PenpotNode } from '@penpot-exporter/types'
+import type { PenpotNode } from 'penpot-exporter'
 import {
   allocBytes,
   freeBytes,

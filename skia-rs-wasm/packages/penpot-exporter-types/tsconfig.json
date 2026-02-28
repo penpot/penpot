@@ -4,12 +4,19 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "declaration": true,
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false,
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": false
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ui/types": ["../penpot-exporter-figma-plugin/ui-src/types"],
+      "@ui/types/*": ["../penpot-exporter-figma-plugin/ui-src/types/*"],
+      "@plugin/*": ["../penpot-exporter-figma-plugin/plugin-src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/index.ts"]
 }

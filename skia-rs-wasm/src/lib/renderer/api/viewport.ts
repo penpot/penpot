@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode } from '@penpot-exporter/types'
+import type { PenpotNode } from 'penpot-exporter'
 import { hexToU32ARGB } from '@skia-rs-wasm/common'
 import { checkContext, getContextInitialized, getContextLost } from './context'
 import { throttle } from '../utils'

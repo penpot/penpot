@@ -2,7 +2,7 @@
  * Helper utilities for shape operations and index generation
  */
 
-import type { PenpotNode } from '@penpot-exporter/types'
+import type { PenpotNode } from 'penpot-exporter'
 import type { IndexedShape } from '@skia-rs-wasm/common'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import {

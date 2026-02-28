@@ -4,7 +4,7 @@
  * Implements IDocumentModel for use by the workspace store.
  */
 
-import type { PenpotDocument, PenpotNode, PenpotPage } from '@penpot-exporter/types'
+import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter'
 import type { AddObjChange, ModObjChange, DelObjChange } from '@skia-rs-wasm/common'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import { useWorkspaceStore } from './workspace-store'

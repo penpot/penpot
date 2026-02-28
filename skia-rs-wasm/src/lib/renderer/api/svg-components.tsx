@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useMemo } from 'react'
-import type { PenpotNode, Transform } from '@penpot-exporter/types'
+import type { PenpotNode, Transform } from 'penpot-exporter'
 import { isSvgContentTree, isSvgContentString, isSvgContent } from '@skia-rs-wasm/common'
 import { generateIdMapping, formatTransform, isSvgTag, isGraphicElement, svgTransformMatrix } from './svg-utils'
 import { addFillProps } from './svg-attrs'

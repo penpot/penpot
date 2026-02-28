@@ -2,7 +2,7 @@
  * Worker client for typed, promise-based communication with the worker
  */
 
-import type { PenpotPage } from '@penpot-exporter/types'
+import type { PenpotPage } from 'penpot-exporter'
 import { ensurePageShapePoints } from './renderer/store/ensure-shape-points'
 import type {
   WorkerMessage,

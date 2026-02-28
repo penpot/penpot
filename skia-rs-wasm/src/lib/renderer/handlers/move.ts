@@ -12,7 +12,7 @@ import { useWorkspaceStore } from '../store/workspace-store'
 import { getModifierKeys } from '../store/shortcuts-store'
 import { updatePage, applyMoveDeltaToPage } from '../store/page-crud'
 import type { Point } from '@skia-rs-wasm/common'
-import type { Matrix } from '@penpot-exporter/types'
+import type { Matrix } from 'penpot-exporter'
 
 function translateMatrix(dx: number, dy: number): Matrix {
   return { a: 1, b: 0, c: 0, d: 1, e: dx, f: dy }

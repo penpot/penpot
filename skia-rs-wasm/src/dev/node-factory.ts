@@ -4,8 +4,8 @@
  */
 
 import type { ShapeType } from '@skia-rs-wasm/common'
-import type { PenpotNode, Selrect } from '@penpot-exporter/types'
-import type { Fill, Stroke } from '@penpot-exporter/types'
+import type { PenpotNode, Selrect } from 'penpot-exporter'
+import type { Fill, Stroke } from 'penpot-exporter'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 

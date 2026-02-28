@@ -5,7 +5,7 @@
 
 import type { WorkerState, IndexedPage, QueryParams, WorkerMessage, SerializedMessage } from './types'
 import type { WorkerUpdateTextRectPayload } from '../renderer/types'
-import type { PenpotNode, Point, Matrix, PenpotPage } from '@penpot-exporter/types'
+import type { PenpotNode, Point, Matrix, PenpotPage } from 'penpot-exporter'
 import type { Change } from '@skia-rs-wasm/common'
 import { flattenPageToIndexed } from './types'
 import { processChanges } from './process-changes'

@@ -3,7 +3,7 @@
  */
 
 import type { Change, AddObjChange, ModObjChange, DelObjChange } from '@skia-rs-wasm/common'
-import type { PenpotNode } from '@penpot-exporter/types'
+import type { PenpotNode } from 'penpot-exporter'
 
 /**
  * Walk up from node to find the nearest frame/section ancestor (for frameId).

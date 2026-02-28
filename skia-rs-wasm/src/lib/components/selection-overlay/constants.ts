@@ -1,4 +1,4 @@
-import type { Matrix } from '@penpot-exporter/types'
+import type { Matrix } from 'penpot-exporter'
 import type { ResizeHandlePosition } from '../../renderer/types'
 
 /**

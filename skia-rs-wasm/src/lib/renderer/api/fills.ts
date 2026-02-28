@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Fill, Gradient, ImageColor } from '@penpot-exporter/types'
+import type { Fill, Gradient, ImageColor } from 'penpot-exporter'
 import type { PendingImageCallback } from '@skia-rs-wasm/common'
 import { uuidToU32Tuple, colorToU32ARGB } from '@skia-rs-wasm/common'
 import {

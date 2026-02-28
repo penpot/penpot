@@ -13,7 +13,7 @@ import { useWorkspaceStore } from '../store/workspace-store'
 import { updatePage } from '../store/page-crud'
 import { makeSelrect } from '@skia-rs-wasm/common'
 import type { Point } from '@skia-rs-wasm/common'
-import type { Matrix, PenpotNode } from '@penpot-exporter/types'
+import type { Matrix, PenpotNode } from 'penpot-exporter'
 
 function screenToWorld(
   sx: number,
