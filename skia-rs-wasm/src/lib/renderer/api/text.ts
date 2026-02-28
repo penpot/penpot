@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, Fill, TextContent } from '@penpot-exporter/types'
+import type { PenpotNode, Fill, TextContent } from 'penpot-exporter'
 import type { PendingImageCallback, ResolveFontUrlCallback, FontInfo, FontData } from '@skia-rs-wasm/common'
 import { uuidToU32Tuple, uuidToU32 } from '@skia-rs-wasm/common'
 import {

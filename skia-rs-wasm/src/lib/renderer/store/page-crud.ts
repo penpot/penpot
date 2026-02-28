@@ -6,7 +6,7 @@
 import { useWorkspaceStore } from './workspace-store'
 import { DocumentModel } from './document-model'
 import { commitPageUpdate } from './commit'
-import type { PenpotDocument, PenpotNode, PenpotPage } from '@penpot-exporter/types'
+import type { PenpotDocument, PenpotNode, PenpotPage } from 'penpot-exporter'
 import { makeSelrect } from '../../worker/types'
 
 export function createNewDocument(): PenpotDocument {

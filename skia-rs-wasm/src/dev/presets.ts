@@ -3,7 +3,7 @@
  * Provides extensive presets for position, size, colors, gradients, shadows, blur, and complete combinations
  */
 
-import type { Gradient, Shadow, Blur } from '@penpot-exporter/types'
+import type { Gradient, Shadow, Blur } from 'penpot-exporter'
 
 /** Legacy gradient shape used in preset data (x1/y1/x2/y2 or cx/cy/r); normalized to Gradient when applied */
 export type LegacyGradient =

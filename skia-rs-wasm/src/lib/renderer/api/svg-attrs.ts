@@ -3,7 +3,7 @@
  * Handles fill props, transforms, and other SVG attributes
  */
 
-import type { PenpotNode } from '@penpot-exporter/types'
+import type { PenpotNode } from 'penpot-exporter'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from './constants'
 
 /**

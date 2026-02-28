@@ -3,7 +3,7 @@
  * Ported from frontend/src/app/util/quadtree.js
  */
 
-import type { Selrect } from '@penpot-exporter/types'
+import type { Selrect } from 'penpot-exporter'
 import { makeSelrect } from './types'
 
 export interface QuadtreeNode {

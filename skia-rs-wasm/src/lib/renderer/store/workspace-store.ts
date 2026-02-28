@@ -8,7 +8,7 @@ import { create } from 'zustand'
 import type { WasmModule } from '../wasm-types'
 import type { Viewport } from '../viewport'
 import { Renderer } from '../index'
-import type { PenpotNode, PenpotPage, Selrect } from '@penpot-exporter/types'
+import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter'
 import type { ResizeHandlePosition, SelectionRectResult, WorkerClient } from '../types'
 import { getSelectionBounds, type Rect } from '../selection-bounds'
 

@@ -12,7 +12,7 @@ import type {
   CircleShape,
   BoolShape,
   GroupShape,
-} from '@penpot-exporter/types'
+} from 'penpot-exporter'
 import { pointsToRect, rectToCenter, joinRects } from './rect'
 import { ZERO_UUID } from '../types'
 

@@ -2,7 +2,7 @@
  * Type conversion helpers: UUID/color/u32 and worker selrect/index helpers.
  */
 
-import type { PenpotNode, PenpotPage, Selrect } from '@penpot-exporter/types'
+import type { PenpotNode, PenpotPage, Selrect } from 'penpot-exporter'
 import type { IndexedPage, IndexedShape } from './types'
 
 export const ZERO_UUID = '00000000-0000-0000-0000-000000000000'

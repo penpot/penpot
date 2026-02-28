@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { Stroke } from '@penpot-exporter/types'
+import type { Stroke } from 'penpot-exporter'
 import type { PendingImageCallback } from '@skia-rs-wasm/common'
 import { uuidToU32Tuple } from '@skia-rs-wasm/common'
 import { allocBytes, freeBytes } from '../utils'

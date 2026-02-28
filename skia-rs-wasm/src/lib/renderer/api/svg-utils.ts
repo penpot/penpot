@@ -3,7 +3,7 @@
  */
 
 import type { SvgContent } from '@skia-rs-wasm/common'
-import type { Transform } from '@penpot-exporter/types'
+import type { Transform } from 'penpot-exporter'
 import { isSvgContentTree } from '@skia-rs-wasm/common'
 
 /**

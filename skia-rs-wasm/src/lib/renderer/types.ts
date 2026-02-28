@@ -1,6 +1,6 @@
 /**
  * Re-export shared types from common.
- * Import exporter types from @penpot-exporter/types.
+ * Import exporter types from penpot-exporter.
  */
 
 export type {

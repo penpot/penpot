@@ -1,10 +1,10 @@
 import type { Change } from '@skia-rs-wasm/common'
-import type { PenpotPage } from '@penpot-exporter/types'
+import type { PenpotPage } from 'penpot-exporter'
 import {
   transformSceneNode,
   SUPPORTED_SCENE_NODE_TYPES,
-} from '@plugin/transformers/transformSceneNode'
-import { transformId } from '@plugin/transformers/partials/transformIds'
+  transformId,
+} from 'penpot-exporter'
 import {
   getFrameNode,
   buildDelObjChange,

@@ -10,8 +10,6 @@ export default defineConfig({
     alias: {
       '@common': resolve(__dirname, '../penpot-exporter-figma-plugin/common'),
       '@common/*': resolve(__dirname, '../penpot-exporter-figma-plugin/common/*'),
-      '@plugin': resolve(__dirname, '../penpot-exporter-figma-plugin/plugin-src'),
-      '@plugin/*': resolve(__dirname, '../penpot-exporter-figma-plugin/plugin-src/*'),
       '@ui': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src'),
       '@ui/*': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/*'),
       '@skia-rs-wasm/common': resolve(__dirname, '../../src/lib/common'),

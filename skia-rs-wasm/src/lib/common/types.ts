@@ -4,7 +4,7 @@
  */
 
 import type { CSSProperties } from 'react'
-import type { Matrix, PenpotNode, PenpotPage, Selrect } from '@penpot-exporter/types'
+import type { Matrix, PenpotNode, PenpotPage, Selrect } from 'penpot-exporter'
 import type { Change } from './changes'
 
 /** Resize handle position (matches frontend handler keywords) */
