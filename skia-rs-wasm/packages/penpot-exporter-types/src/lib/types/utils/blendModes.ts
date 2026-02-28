@@ -1,0 +1,17 @@
+export type BlendMode =
+  | 'normal'
+  | 'darken'
+  | 'multiply'
+  | 'color-burn'
+  | 'lighten'
+  | 'screen'
+  | 'color-dodge'
+  | 'overlay'
+  | 'soft-light'
+  | 'hard-light'
+  | 'difference'
+  | 'exclusion'
+  | 'hue'
+  | 'saturation'
+  | 'color'
+  | 'luminosity';

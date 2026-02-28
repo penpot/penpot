@@ -7,9 +7,6 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@penpot-exporter/types": ["../penpot-exporter-figma-plugin/ui-src/types"],
-      "@penpot-exporter/types/*": ["../penpot-exporter-figma-plugin/ui-src/types/*"],
-      "@penpot-exporter/lib/types/*": ["../penpot-exporter-figma-plugin/ui-src/lib/types/*"],
       "@common/*": ["../penpot-exporter-figma-plugin/common/*"],
       "@plugin": ["../penpot-exporter-figma-plugin/plugin-src"],
       "@plugin/*": ["../penpot-exporter-figma-plugin/plugin-src/*"],

@@ -37,9 +37,6 @@
       "@skia-rs-wasm/common/*": ["./src/lib/common/*"],
       "@penpot-exporter/transformers": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers"],
       "@penpot-exporter/transformers/*": ["./packages/penpot-exporter-figma-plugin/plugin-src/transformers/*"],
-      "@penpot-exporter/types": ["./packages/penpot-exporter-figma-plugin/ui-src/types"],
-      "@penpot-exporter/types/*": ["./packages/penpot-exporter-figma-plugin/ui-src/types/*"],
-      "@penpot-exporter/lib/types/*": ["./packages/penpot-exporter-figma-plugin/ui-src/lib/types/*"],
       "@penpot-exporter/common/*": ["./packages/penpot-exporter-figma-plugin/common/*"]
     }
   },

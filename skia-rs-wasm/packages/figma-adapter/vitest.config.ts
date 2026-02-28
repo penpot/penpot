@@ -12,8 +12,6 @@ export default defineConfig({
       '@ui/*': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/*'),
       '@skia-rs-wasm/common': resolve(__dirname, '../../src/lib/common'),
       '@skia-rs-wasm/common/*': resolve(__dirname, '../../src/lib/common/*'),
-      '@penpot-exporter/types': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/types'),
-      '@penpot-exporter/types/*': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/types/*'),
     },
   },
   test: {

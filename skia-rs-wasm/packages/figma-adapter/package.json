@@ -19,6 +19,9 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
+  "dependencies": {
+    "@penpot-exporter/types": "workspace:*"
+  },
   "devDependencies": {
     "@figma/plugin-typings": "^1.123.0",
     "typescript": "~5.9.3",

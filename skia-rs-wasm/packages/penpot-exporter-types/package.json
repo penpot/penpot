@@ -1,0 +1,19 @@
+{
+  "name": "@penpot-exporter/types",
+  "version": "0.1.0",
+  "description": "Penpot shape and document type definitions",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "files": ["dist"],
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
