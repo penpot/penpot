@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-18 14:09+0000\n"
+"PO-Revision-Date: 2026-03-01 09:09+0000\n"
 "Last-Translator: Egor Filatov <e.v.filatov@javatar.ru>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
@@ -6795,7 +6795,6 @@ msgid "dashboard.restore-all-deleted-button"
 msgstr "Восстановить все"
 
 #: src/app/main/data/dashboard.cljs:903
-#, fuzzy
 msgid "dashboard.restore-files-success-notification"
 msgstr "файлы %s были успешно восстановлены."
 
@@ -6842,7 +6841,7 @@ msgid "errors.deprecated.contact.after"
 msgstr "чтобы мы могли вам помочь."
 
 #: src/app/main/errors.cljs:200
-#, fuzzy, unused
+#, unused
 msgid "errors.internal-assertion-error"
 msgstr "Ошибка внутренней сертификации"
 
@@ -6931,3 +6930,103 @@ msgstr "Вы собираетесь восстановить %s."
 #: src/app/main/ui/dashboard/file_menu.cljs:207
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Восстановить файл"
+
+#: src/app/main/ui/dashboard/templates.cljs:87
+msgid "labels.show"
+msgstr "Показать"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:261
+msgid "labels.switch"
+msgstr "Переключить"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Текст"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:121
+msgid "labels.unknown-error"
+msgstr "Неизвестная ошибка"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:204
+msgid "labels.unlock"
+msgstr "Разблокировать"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:66, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1039
+msgid "labels.variant"
+msgstr "Вариант"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Видимость"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "Получите CSS и SVG код напрямую из ваших макетов."
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "Экспорт в код"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "Вдохните жизнь в ваши идеи с помощью анимаций и переходов."
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "Интерактивные прототипы"
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "Горячие клавиши"
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "Выберите тему, подходящую под ваш стиль."
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Темный & светлый режим"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr "Дополните Penpot плагинами от сообщества для расширения функционала."
+
+#: src/app/main/ui/dashboard/team.cljs:222
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Вы можете пригласить участников в команду, чтобы они получили доступ к этому "
+"и другим файлам команды."
+
+#: src/app/main/ui/static.cljs:287
+msgid "not-found.desc-message.error"
+msgstr "404 ошибка"
+
+#: src/app/main/ui/static.cljs:138
+msgid "not-found.login.free"
+msgstr ""
+"Penpot — бесплатный инструмент с открытым исходным кодом для совместной "
+"работы дизайнеров и разработчиков"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Вы направили письмо для восстановления на"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr "Проверьте вашу почту и перейдите по ссылке, чтобы задать новый пароль."
+
+#: src/app/main/ui/static.cljs:152
+msgid "not-found.login.signup-free"
+msgstr "Зарегистрироваться бесплатно"
+
+#: src/app/main/ui/static.cljs:153
+msgid "not-found.login.start-using"
+msgstr "И начните использовать Penpot мгновенно!"
+
+#: src/app/main/ui/static.cljs:69
+msgid "not-found.made-with-love"
+msgstr "Сделано с любовью и открытым исходным кодом"
+
+#: src/app/main/ui/static.cljs:248
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Вы уже запросили доступ к этому файлу."
