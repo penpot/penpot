@@ -863,7 +863,7 @@
 (defn parse-boolean
   [v]
   (if (string? v)
-    (case v
+    (case (str/lower v)
       ("true" "t" "1") true
       ("false" "f" "0") false
       v)
