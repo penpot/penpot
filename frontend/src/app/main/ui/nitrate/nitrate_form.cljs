@@ -78,7 +78,7 @@
 
 
            [:p {:class (stl/css :modal-text-medium)}
-            [:a {:class (stl/css :link)}
+            [:a {:class (stl/css :link) :href dnt/go-to-subscription-url}
              "See my current plan"]]]
 
           [:div {:class (stl/css :contact)}
