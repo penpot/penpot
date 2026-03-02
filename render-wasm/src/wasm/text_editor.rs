@@ -6,6 +6,7 @@ use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::{with_state, with_state_mut, STATE};
 use macros::ToJs;
+use skia_safe::Color;
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
@@ -22,6 +23,21 @@ pub enum CursorDirection {
 // ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
+
+#[no_mangle]
+pub extern "C" fn text_editor_apply_theme(
+    selection_color: u32,
+    cursor_width: f32,
+    cursor_color: u32,
+) {
+    with_state_mut!(state, {
+        // NOTE: In the future could be interesting to fill al this data from
+        // a structure pointer.
+        state.text_editor_state.theme.selection_color = Color::new(selection_color);
+        state.text_editor_state.theme.cursor_width = cursor_width;
+        state.text_editor_state.theme.cursor_color = Color::new(cursor_color);
+    })
+}
 
 #[no_mangle]
 pub extern "C" fn text_editor_start(a: u32, b: u32, c: u32, d: u32) -> bool {
