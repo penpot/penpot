@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-30 05:01+0000\n"
-"Last-Translator: Dogyeong <d00gann918@naver.com>\n"
-"Language-Team: Korean "
-"<https://hosted.weblate.org/projects/penpot/frontend/ko/>\n"
+"PO-Revision-Date: 2026-03-02 18:09+0000\n"
+"Last-Translator: deveronica <deveronica42@gmail.com>\n"
+"Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
+"ko/>\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.17-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -22,7 +22,7 @@ msgstr "이메일을 확인하세요"
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
-msgstr "이메일에 포함된 링크를 클릭하여 계정을 인증하고 펜팟의 사용을 시작하십시오."
+msgstr "이메일에 포함된 링크를 클릭하여 계정을 인증하고 Penpot의 사용을 시작하세요."
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -30,16 +30,18 @@ msgstr "비밀번호 확인하기"
 
 #: src/app/main/ui/auth/register.cljs:227
 msgid "auth.create-demo-account"
-msgstr "데모 계정을 생성하세요"
+msgstr "데모 계정 만들기"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 #, unused
 msgid "auth.create-demo-profile"
-msgstr "그냥 해볼까요?"
+msgstr "체험해 보고 싶으신가요?"
 
 #: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
-msgstr "데모 서비스입니다. 실제 작업에 사용하지 마십시오. 생성된 프로젝트는 주기적으로 삭제될 것입니다."
+msgstr ""
+"이것은 데모 서비스입니다. 절대 실제 작업에 사용하지 마세요. 프로젝트는 "
+"주기적으로 삭제됩니다."
 
 #: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
@@ -51,7 +53,7 @@ msgstr "이름 (성명)"
 
 #: src/app/main/ui/auth/login.cljs:271
 msgid "auth.login-account-title"
-msgstr "내 계정에 로그인하기"
+msgstr "내 계정에 로그인"
 
 #: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:161, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
@@ -92,7 +94,7 @@ msgstr "새 비밀번호를 입력하세요"
 
 #: src/app/main/ui/auth/recovery.cljs:36
 msgid "auth.notifications.password-changed-successfully"
-msgstr "비밀번호가 성공적으로 변경되었어요"
+msgstr "비밀번호가 성공적으로 변경되었습니다"
 
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
