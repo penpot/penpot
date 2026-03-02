@@ -3,8 +3,8 @@
  * so the worker can assume shape.points and not recompute from selrect+transform.
  */
 
-import type { PenpotNode, PenpotPage, Point, Selrect } from 'penpot-exporter'
-import type { Matrix } from 'penpot-exporter'
+import type { PenpotNode, PenpotPage, Point, Selrect } from 'penpot-exporter/lib'
+import type { Matrix } from 'penpot-exporter/lib'
 
 const EPSILON = 1e-10
 
@@ -74,7 +74,7 @@ function ensureNodePointsRecursive(node: PenpotNode): PenpotNode {
   const withPoints = ensureShapePoints(node)
   const childList = (node as { children?: PenpotNode[] }).children
   if (!childList?.length) return withPoints
-  return { ...withPoints, children: childList.map(ensureNodePointsRecursive) }
+  return { ...withPoints, children: childList.map(ensureNodePointsRecursive) } as PenpotNode
 }
 
 /** Walk page tree and ensure every node has points. Returns new page (clone-on-write). */

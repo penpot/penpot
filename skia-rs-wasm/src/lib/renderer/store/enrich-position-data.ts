@@ -4,8 +4,8 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, PenpotPage } from 'penpot-exporter'
-import type { PositionDataEntry } from 'penpot-exporter'
+import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import type { PositionDataEntry } from 'penpot-exporter/lib'
 import { calculatePositionData } from '../api/text'
 
 function mapToCamelCase(
@@ -39,13 +39,13 @@ function enrichNode(module: WasmModule, node: PenpotNode): PenpotNode {
         ...node,
         ...(enrichedChildren ? { children: enrichedChildren } : {}),
         ...(positionData ? { positionData } : {}),
-      }
+      } as PenpotNode
     } catch {
-      return enrichedChildren ? { ...node, children: enrichedChildren } : { ...node }
+      return (enrichedChildren ? { ...node, children: enrichedChildren } : { ...node }) as PenpotNode
     }
   }
 
-  return enrichedChildren ? { ...node, children: enrichedChildren } : { ...node }
+  return (enrichedChildren ? { ...node, children: enrichedChildren } : { ...node }) as PenpotNode
 }
 
 /**

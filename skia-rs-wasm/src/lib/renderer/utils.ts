@@ -1,10 +1,10 @@
 /**
  * Utility functions for memory management and WASM heap operations.
- * UUID/color conversions live in @skia-rs-wasm/common.
+ * UUID/color conversions re-exported via renderer types (from common).
  */
 
 import type { WasmModule } from "src"
-import { uuidToU32 } from '@skia-rs-wasm/common'
+import { uuidToU32 } from './types'
 
 /**
  * Allocates memory in WASM heap and returns the offset

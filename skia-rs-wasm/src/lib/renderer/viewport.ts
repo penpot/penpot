@@ -3,7 +3,7 @@
  * Provides coordinate transformations between screen and world space
  */
 
-import type { Point, ViewportOptions, ViewBox } from '@skia-rs-wasm/common'
+import type { Point, ViewportOptions, ViewBox } from './types'
 
 export class Viewport {
   private _zoom: number

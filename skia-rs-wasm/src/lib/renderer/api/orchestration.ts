@@ -4,7 +4,8 @@
 
 import type { WasmModule } from '../wasm-types'
 import type { PendingImageCallback, SetObjectResult } from '../types'
-import type { PenpotNode } from 'penpot-exporter'
+import type { BoolType, ShapeType } from '../types'
+import type { PenpotNode } from 'penpot-exporter/lib'
 import { checkContext } from './context'
 import { requestRender } from './rendering'
 import { renderFinish } from './viewport'
@@ -30,7 +31,7 @@ import {
 import { setShapeFills } from './fills'
 import { setShapeStrokes } from './strokes'
 import { setShapeShadows } from './shadows'
-import { setShapeSvgAttrs, setShapeSvgRawContent } from './svg'
+import { setShapeSvgAttrs } from './svg'
 import { setShapePathContent } from './path'
 import {
   setFlexLayout,
@@ -43,7 +44,6 @@ import {
   setShapeTextImages,
   updateTextLayouts,
 } from './text'
-import { getStaticMarkup } from './utils'
 
 /**
  * Ensures text content is valid, falling back to default if needed
@@ -79,12 +79,12 @@ export function setObject(
   const transform = shape.transform
   const fills = shape.fills || []
   const strokes = type === 'group' ? [] : (shape.strokes || [])
-  const children = shape.shapes || []
+  const children = 'shapes' in shape ? (shape.shapes ?? []) : []
   const blendMode = shape.blendMode
   const opacity = shape.opacity
   const hidden = shape.hidden
-  const content = type === 'text' ? ensureTextContent(shape.content) : shape.content
-  const boolType = shape.boolType
+  const content = type === 'text' ? ensureTextContent((shape as { content?: unknown }).content) : (shape as { content?: unknown }).content
+  const boolType: BoolType | undefined = type === 'bool' ? (shape as { boolType: BoolType }).boolType : undefined
   const growType = shape.growType
   const blur = shape.blur
   const svgAttrs = shape.svgAttrs
@@ -99,7 +99,8 @@ export function setObject(
   // Set basic shape properties
   moduleUseShape(module, id)
   setParentId(module, parentId)
-  setShapeType(module, type)
+  const wasmType: ShapeType = (type === 'instance' || type === 'component' ? 'frame' : type) as ShapeType
+  setShapeType(module, wasmType)
   setShapeClipContent(module, clipContent)
   setShapeConstraints(module, constraintH, constraintV)
   
@@ -117,7 +118,7 @@ export function setObject(
   if (type === 'group') {
     setMasked(module, masked ?? false)
   }
-  if (type === 'bool') {
+  if (type === 'bool' && boolType !== undefined) {
     setShapeBoolType(module, boolType)
   }
   if (content && (type === 'path' || type === 'bool')) {
@@ -126,10 +127,7 @@ export function setObject(
   if (svgAttrs) {
     setShapeSvgAttrs(module, svgAttrs)
   }
-  if (content && type === 'svg-raw') {
-    const markup = getStaticMarkup(shape)
-    setShapeSvgRawContent(module, markup)
-  }
+
   setShapeShadows(module, shadows)
   if (type === 'text') {
     setShapeGrowType(module, growType)
@@ -137,10 +135,10 @@ export function setObject(
 
   // Layout properties - always called (matching ClojureScript)
   clearLayout(module)
-  if (shape.layoutFlexDir) {
+  if ('layoutFlexDir' in shape && shape.layoutFlexDir) {
     setFlexLayout(module, shape)
   }
-  if (shape.layoutGridDir) {
+  if ('layoutGridDir' in shape && shape.layoutGridDir) {
     setGridLayout(module, shape)
   }
   setLayoutData(module, shape)

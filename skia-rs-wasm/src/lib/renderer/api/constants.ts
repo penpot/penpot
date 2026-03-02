@@ -1,6 +1,6 @@
 /**
  * Constants for the WASM Render API.
- * Fill type guards are in @skia-rs-wasm/common; re-exported here for api convenience.
+ * Fill type guards and ZERO_UUID re-exported from renderer types for api convenience.
  */
 
 export {
@@ -9,7 +9,7 @@ export {
   isLinearGradient,
   isRadialGradient,
   isImageFill,
-} from '@skia-rs-wasm/common'
+} from '../types'
 
 // Constants
 export const UUID_U8_SIZE = 16

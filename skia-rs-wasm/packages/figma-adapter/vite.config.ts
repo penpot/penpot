@@ -1,21 +1,34 @@
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { defineConfig } from 'vite'
-import dts from 'vite-plugin-dts'
+import { rollup } from 'rollup'
+import dts from 'rollup-plugin-dts'
+import { type Plugin, defineConfig } from 'vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
-  resolve: {
-    alias: {
-      '@common': resolve(__dirname, '../penpot-exporter-figma-plugin/common'),
-      '@common/*': resolve(__dirname, '../penpot-exporter-figma-plugin/common/*'),
-      '@ui': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src'),
-      '@ui/*': resolve(__dirname, '../penpot-exporter-figma-plugin/ui-src/*'),
-      '@skia-rs-wasm/common': resolve(__dirname, '../../src/lib/common'),
-      '@skia-rs-wasm/common/*': resolve(__dirname, '../../src/lib/common/*'),
+function dtsBundlePlugin(): Plugin {
+  return {
+    name: 'dts-bundle',
+    apply: 'build',
+    async closeBundle() {
+      const bundle = await rollup({
+        input: resolve(__dirname, 'src/index.ts'),
+        plugins: [
+          dts({
+            tsconfig: resolve(__dirname, 'tsconfig.lib.json'),
+          }),
+        ],
+      })
+      await bundle.write({
+        file: resolve(__dirname, 'dist/index.d.ts'),
+        format: 'es',
+      })
+      await bundle.close()
     },
-  },
+  }
+}
+
+export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -24,13 +37,14 @@ export default defineConfig({
       fileName: (format) => `figma-adapter.${format === 'es' ? 'es' : 'cjs'}.js`,
     },
     sourcemap: true,
+    rollupOptions: {
+      external: [
+        'skia-rs-wasm',
+        'skia-rs-wasm/common',
+        'penpot-exporter',
+        'penpot-exporter/lib',
+      ],
+    },
   },
-  plugins: [
-    dts({
-      tsconfigPath: resolve(__dirname, 'tsconfig.json'),
-      include: ['src'],
-      exclude: ['**/*.test.ts'],
-      outDir: 'dist',
-    }),
-  ],
+  plugins: [dtsBundlePlugin()],
 })

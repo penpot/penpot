@@ -3,7 +3,7 @@
  * Handles fill props, transforms, and other SVG attributes
  */
 
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from './constants'
 
 /**
@@ -11,11 +11,11 @@ import { isColorFill, isLinearGradient, isRadialGradient, isImageFill } from './
  * Based on the ClojureScript implementation in frontend/src/app/main/ui/shapes/attrs.cljs
  */
 export function addFillProps(
-  props: Record<string, any>,
+  props: Record<string, unknown>,
   shape: PenpotNode,
   renderId: string,
   position: number = 0
-): Record<string, any> {
+): Record<string, unknown> {
   const result = { ...props }
   const shapeFills = shape.fills || []
   const svgAttrs = shape.svgAttrs ?? {}
@@ -33,13 +33,12 @@ export function addFillProps(
   const urlFillNeeded =
     hasImageFill ||
     hasGradientFill ||
-    shapeFills.length > 1 ||
-    shape.type === 'image'
+    shapeFills.length > 1
 
   // Handle special case: SVG-raw or group with svgAttrs but no fills
   if (
     Object.keys(svgAttrs).length > 0 &&
-    (shapeType === 'svg-raw' || shapeType === 'group') &&
+    (shapeType === 'group') &&
     shapeFills.length === 0
   ) {
     const fill = svgAttrs.fill ?? '#000000'

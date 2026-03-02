@@ -11,16 +11,25 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/renderer.es.js",
       "require": "./dist/renderer.cjs"
+    },
+    "./common": {
+      "types": "./src/lib/common/index.ts",
+      "import": "./src/lib/common/index.ts",
+      "require": "./src/lib/common/index.ts",
+      "default": "./src/lib/common/index.ts"
     }
   },
   "files": [
     "dist",
     "README.md"
   ],
+  "peerDependencies": {
+    "penpot-exporter": "^0.20.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "build:lib": "tsc && vite build",
+    "build": "vite build && tsc -p tsconfig.lib.json",
+    "build:lib": "vite build && tsc -p tsconfig.lib.json",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -30,6 +39,11 @@
     "react-dom": "^19.2.3",
     "rxjs": "^7.8.2",
     "zustand": "^5.0.10"
+  },
+  "pnpm": {
+    "overrides": {
+      "penpot-exporter": "workspace:*"
+    }
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

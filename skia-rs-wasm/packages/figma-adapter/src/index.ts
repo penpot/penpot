@@ -1,10 +1,10 @@
-import type { Change } from '@skia-rs-wasm/common'
-import type { PenpotPage } from 'penpot-exporter'
+import type { Change } from 'skia-rs-wasm/common'
+import type { PenpotPage } from 'penpot-exporter/lib'
 import {
   transformSceneNode,
   SUPPORTED_SCENE_NODE_TYPES,
   transformId,
-} from 'penpot-exporter'
+} from 'penpot-exporter/lib'
 import {
   getFrameNode,
   buildDelObjChange,
@@ -44,7 +44,7 @@ export interface TranslateNodeChangeOptions {
 /**
  * Converts a Figma NodeChangeEvent (nodechange) into incremental Change[] for the worker.
  * Runs in plugin context (requires SceneNode). Skips node types not supported by
- * transformSceneNode in penpot-exporter, and shape types that the wasm cannot draw.
+ * transformSceneNode in penpot-exporter/lib, and shape types that the wasm cannot draw.
  */
 export async function translateNodeChange(
   event: NodeChangeEvent,

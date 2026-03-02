@@ -3,7 +3,7 @@
  * Encapsulates init-in-progress guard and AbortController; updates store with worker client.
  */
 
-import type { WorkerClient } from '@skia-rs-wasm/common'
+import type { WorkerClient } from './worker/types'
 import { createWorker } from './worker-factory'
 import { useWorkspaceStore } from './renderer/store/workspace-store'
 

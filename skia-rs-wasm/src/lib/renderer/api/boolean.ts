@@ -3,8 +3,8 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { BoolType, PathContent } from '@skia-rs-wasm/common'
-import type { PenpotNode } from 'penpot-exporter'
+import type { BoolType, PathContent } from '../types'
+import type { PenpotNode } from 'penpot-exporter/lib'
 import {
   allocBytes,
   freeBytes,
@@ -45,7 +45,7 @@ function getAllChildrenWithSelf(objects: Record<string, PenpotNode>, id: string)
 
     result.push(node)
 
-    if (node.shapes) {
+    if ('shapes' in node && node.shapes) {
       for (const childId of node.shapes) {
         collectChildren(childId)
       }

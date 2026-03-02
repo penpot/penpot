@@ -12,7 +12,7 @@ import type {
   CircleShape,
   BoolShape,
   GroupShape,
-} from 'penpot-exporter'
+} from 'penpot-exporter/lib'
 import { pointsToRect, rectToCenter, joinRects } from './rect'
 import { ZERO_UUID } from '../types'
 
@@ -92,6 +92,10 @@ export function isBoolShape(shape: PenpotNode | null | undefined): shape is Bool
 
 export function isGroupShape(shape: PenpotNode | null | undefined): shape is GroupShape {
   return shape != null && shape.type === 'group'
+}
+
+export function hasShapes(node: PenpotNode): node is PenpotNode & { shapes: string[] } {
+  return 'shapes' in node && Array.isArray((node as { shapes?: unknown }).shapes)
 }
 
 export function isRootFrame(shape: PenpotNode | null | undefined): boolean {

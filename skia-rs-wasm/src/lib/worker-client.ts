@@ -2,7 +2,7 @@
  * Worker client for typed, promise-based communication with the worker
  */
 
-import type { PenpotPage } from 'penpot-exporter'
+import type { PenpotPage } from 'penpot-exporter/lib'
 import { ensurePageShapePoints } from './renderer/store/ensure-shape-points'
 import type {
   WorkerMessage,
@@ -11,8 +11,8 @@ import type {
   WorkerConfig,
   WorkerResponse,
   WorkerSendPayload,
-  Change,
-} from '@skia-rs-wasm/common'
+} from './worker/types'
+import type { Change } from '@skia-rs-wasm/common'
 import { encode, decode } from './worker/messages'
 
 /**

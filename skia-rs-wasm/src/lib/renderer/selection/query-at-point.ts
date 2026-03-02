@@ -3,8 +3,8 @@
  * Mirrors frontend: small rect around cursor, then pick topmost node by z-order.
  */
 
-import type { PenpotNode, PenpotPage } from 'penpot-exporter'
-import type { WorkerClient } from '../types'
+import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
+import type { WorkerClient } from '../../worker/types'
 import type { Viewport } from '../viewport'
 import { makeSelrect } from '../../worker/types'
 

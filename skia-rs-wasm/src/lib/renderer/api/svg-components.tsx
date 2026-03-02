@@ -4,8 +4,9 @@
  */
 
 import React, { createContext, useContext, useMemo } from 'react'
-import type { PenpotNode, Transform } from 'penpot-exporter'
-import { isSvgContentTree, isSvgContentString, isSvgContent } from '@skia-rs-wasm/common'
+import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
+import type { SvgContent } from '../types'
+import { isSvgContentTree, isSvgContentString, isSvgContent } from '../types'
 import { generateIdMapping, formatTransform, isSvgTag, isGraphicElement, svgTransformMatrix } from './svg-utils'
 import { addFillProps } from './svg-attrs'
 
@@ -33,12 +34,13 @@ interface SvgRootProps {
 }
 
 export function SvgRoot({ shape, children }: SvgRootProps): React.ReactElement {
-  const x = shape.x || 0
-  const y = shape.y || 0
-  const width = shape.width || 100
-  const height = shape.height || 100
+  const shapeGeom = shape as { x?: number; y?: number; width?: number; height?: number; content?: unknown }
+  const x = shapeGeom.x ?? 0
+  const y = shapeGeom.y ?? 0
+  const width = shapeGeom.width ?? 100
+  const height = shapeGeom.height ?? 100
 
-  const content = shape.content
+  const content = shapeGeom.content as SvgContent | Record<string, unknown> | undefined
   const idsMapping = useMemo(() => {
     if (isSvgContent(content) && isSvgContentTree(content)) {
       return generateIdMapping(content)
@@ -49,7 +51,7 @@ export function SvgRoot({ shape, children }: SvgRootProps): React.ReactElement {
   const renderId = useContext(RenderIdContext) || ''
 
   const svgProps = useMemo(() => {
-    const props: Record<string, any> = {}
+    const props: Record<string, unknown> = {}
     addFillProps(props, shape, renderId)
     props.x = x
     props.y = y
@@ -84,7 +86,7 @@ export function SvgElement({ shape, children }: SvgElementProps): React.ReactEle
   const idsMapping = useContext(SvgIdsContext) || new Map()
   const renderId = useContext(RenderIdContext) || ''
 
-  const content = shape.content
+  const content = (shape as { content?: unknown }).content as SvgContent | Record<string, unknown> | undefined
   if (!isSvgContent(content) || !isSvgContentTree(content)) {
     return <>{children}</>
   }
@@ -118,15 +120,16 @@ export function SvgElement({ shape, children }: SvgElementProps): React.ReactEle
     if (isGraphicElement(tag)) {
       // For graphic elements, combine SVG transform matrix with existing transform from attrs
       // Convert SelRect (x1, y1, x2, y2) to format expected by svgTransformMatrix (x, y, width, height)
+      const shapeWithViewbox = shape as { svgViewbox?: { x: number; y: number; width: number; height: number }; transform?: Matrix; type?: string }
       const shapeForTransform: {
         svgViewbox?: { x: number; y: number; width: number; height: number }
         selrect?: { x: number; y: number; width: number; height: number }
-        transform?: Transform
+        transform?: Matrix
         type?: string
       } = {
-        svgViewbox: shape.svgViewbox,
-        transform: shape.transform,
-        type: shape.type,
+        svgViewbox: shapeWithViewbox.svgViewbox,
+        transform: shapeWithViewbox.transform,
+        type: shapeWithViewbox.type,
       }
       if (shape.selrect) {
         shapeForTransform.selrect = {
@@ -143,6 +146,7 @@ export function SvgElement({ shape, children }: SvgElementProps): React.ReactEle
       }
     } else {
       // Remove transform for non-graphic elements
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { transform, ...rest } = updatedAttrs
       return rest
     }
@@ -154,7 +158,7 @@ export function SvgElement({ shape, children }: SvgElementProps): React.ReactEle
   }, [finalAttrs, shape, renderId])
 
   // Convert kebab-case to camelCase for React props
-  const reactProps: Record<string, any> = {}
+  const reactProps: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(props)) {
     const camelKey = key.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
     reactProps[camelKey] = value
@@ -172,7 +176,7 @@ interface SvgRawShapeProps {
 }
 
 export function SvgRawShape({ shape, children: childShapes }: SvgRawShapeProps): React.ReactElement | string | null {
-  const content = shape.content
+  const content = (shape as { content?: unknown }).content as SvgContent | Record<string, unknown> | undefined
 
   if (!content) {
     return null
@@ -217,11 +221,11 @@ export function SvgRawShape({ shape, children: childShapes }: SvgRawShapeProps):
         }
         if (isSvgContentTree(childContent)) {
           // Create a minimal shape node for the child content
-          const childShape: PenpotNode = {
+          const childShape = {
             ...shape,
             id: `${shape.id}-${index}`,
             content: childContent,
-          }
+          } as unknown as PenpotNode
           return <SvgRawShape key={index} shape={childShape} />
         }
         return null
@@ -268,7 +272,7 @@ export function ObjectSvg({ shape }: ObjectSvgProps): React.ReactElement {
 
   let content: React.ReactNode
 
-  if (shape.type === 'svg-raw') {
+  if ((shape as { type: string }).type === 'svg-raw') {
     // The content tree structure should contain nested elements
     // Child shapes from shape.shapes are IDs, but we render from content tree
     content = (

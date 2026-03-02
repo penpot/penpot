@@ -5,10 +5,10 @@
   "type": "module",
   "main": "./dist/figma-adapter.cjs.js",
   "module": "./dist/figma-adapter.es.js",
-  "types": "./dist/packages/figma-adapter/src/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/packages/figma-adapter/src/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/figma-adapter.es.js",
       "require": "./dist/figma-adapter.cjs.js"
     }
@@ -20,13 +20,19 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "penpot-exporter": "workspace:*"
+    "penpot-exporter": "workspace:*",
+    "skia-rs-wasm": "workspace:*"
+  },
+  "peerDependencies": {
+    "@figma/plugin-typings": ">=1.121.0",
+    "penpot-exporter": "^0.20.0"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.123.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.3.0",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
-    "vite-plugin-dts": "^4.3.0",
     "vitest": "^4.0.18"
   }
 }

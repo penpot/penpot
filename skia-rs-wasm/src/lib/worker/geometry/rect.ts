@@ -2,7 +2,7 @@
  * Rectangle utilities
  */
 
-import type { Point, Selrect } from 'penpot-exporter'
+import type { Point, Selrect } from 'penpot-exporter/lib'
 import { makeSelrect } from '../types'
 import { point } from './point'
 

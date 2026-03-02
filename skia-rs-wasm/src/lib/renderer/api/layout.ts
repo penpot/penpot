@@ -3,7 +3,7 @@
  */
 
 import type { WasmModule } from '../wasm-types'
-import type { PenpotNode, GridCell } from 'penpot-exporter'
+import type { PenpotNode, GridCell } from 'penpot-exporter/lib'
 import {
   allocBytes,
   freeBytes,

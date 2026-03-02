@@ -5,7 +5,7 @@
 
 import { from, Observable } from 'rxjs'
 import { bufferTime, map, filter, switchMap } from 'rxjs/operators'
-import type { WorkerClient, WorkerResponse, WorkerSendPayload } from '../types'
+import type { WorkerClient, WorkerResponse, WorkerSendPayload } from '../../worker/types'
 
 export function askWorker$(
   workerClient: WorkerClient,

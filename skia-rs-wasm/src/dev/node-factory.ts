@@ -3,9 +3,9 @@
  * Provides factory functions to create PenpotNode instances with proper defaults
  */
 
-import type { ShapeType } from '@skia-rs-wasm/common'
-import type { PenpotNode, Selrect } from 'penpot-exporter'
-import type { Fill, Stroke } from 'penpot-exporter'
+import type { ShapeType } from '../lib/renderer/types'
+import type { PenpotNode, Selrect } from 'penpot-exporter/lib'
+import type { Fill, Stroke } from 'penpot-exporter/lib'
 
 const ROOT_UUID = '00000000-0000-0000-0000-000000000000'
 

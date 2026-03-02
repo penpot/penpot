@@ -2,7 +2,7 @@
  * Single commit pipeline: every page update goes through here so the worker (quadtree) and renderer stay in sync.
  */
 
-import type { PenpotNode, PenpotPage } from 'penpot-exporter'
+import type { PenpotNode, PenpotPage } from 'penpot-exporter/lib'
 import type { Change } from '@skia-rs-wasm/common'
 import { useWorkspaceStore } from './workspace-store'
 

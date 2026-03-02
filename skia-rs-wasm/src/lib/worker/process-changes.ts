@@ -3,7 +3,7 @@
  * Aligned with Penpot's common/files/changes process-change multimethods.
  */
 
-import type { IndexedPage, IndexedShape } from '@skia-rs-wasm/common'
+import type { IndexedPage, IndexedShape } from './types'
 import { ZERO_UUID } from '@skia-rs-wasm/common'
 import type {
   Change,
@@ -16,7 +16,7 @@ import type {
   AssignOperation,
   SetOperation,
 } from '@skia-rs-wasm/common'
-import type { PenpotNode } from 'penpot-exporter'
+import type { PenpotNode } from 'penpot-exporter/lib'
 import { isFrameShape } from './geometry/shapes'
 import { assignHierarchy, ensureShapes } from './helpers'
 
@@ -87,7 +87,7 @@ function processOperation(shape: IndexedShape, op: Operation): IndexedShape {
         return rest as IndexedShape
       }
       const touchedSet = Array.isArray(touched) ? new Set(touched) : touched
-      return { ...shape, touched: Array.from(touchedSet) }
+      return { ...shape, touched: Array.from(touchedSet) as import('penpot-exporter/lib').SyncGroups[] }
     }
     case 'set-remote-synced': {
       const remoteSynced = (op as { remoteSynced?: boolean | null }).remoteSynced

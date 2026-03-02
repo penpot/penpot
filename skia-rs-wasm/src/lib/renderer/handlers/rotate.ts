@@ -11,9 +11,9 @@ import { mousePosition$ } from '../streams'
 import { dragStopper } from '../streams/drag-stopper'
 import { useWorkspaceStore } from '../store/workspace-store'
 import { updatePage } from '../store/page-crud'
-import { makeSelrect } from '@skia-rs-wasm/common'
-import type { Point } from '@skia-rs-wasm/common'
-import type { Matrix, PenpotNode } from 'penpot-exporter'
+import { makeSelrect } from '../types'
+import type { Point } from '../types'
+import type { Matrix, PenpotNode } from 'penpot-exporter/lib'
 
 function screenToWorld(
   sx: number,
@@ -220,10 +220,10 @@ export function startRotateSelected(initialPosition: Point): Observable<void> {
 
       const updatedChildren = (page.children ?? []).map((n: PenpotNode) =>
         n.id && payloadsById[n.id] ? { ...n, ...payloadsById[n.id] } : n
-      )
+      ) as PenpotNode[]
       const updatedPage = { ...page, pageId, children: updatedChildren }
 
-      updatePage(updatedPage)
+      updatePage(updatedPage as Parameters<typeof updatePage>[0])
         .then(async () => {
           const storeAfter = useWorkspaceStore.getState()
           const updatedNodes = storeAfter.selectedNodes ?? []
