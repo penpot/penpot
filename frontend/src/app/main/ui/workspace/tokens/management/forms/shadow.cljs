@@ -365,7 +365,7 @@
                                       :token-type token-type
                                       :initial initial
                                       :make-schema make-schema
-                                      :type :indexed
+                                      :value-type :indexed
                                       :value-subfield :shadow
                                       :input-component tabs-wrapper*
                                       :validator validate-shadow-token})]

@@ -8,18 +8,17 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cfo]
+   [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
-   [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
    [clojure.datafy :refer [datafy]]))
 
 ;; === Token
@@ -87,7 +86,7 @@
      :get
      (fn [_]
        (let [token (u/locate-token file-id set-id id)]
-         (:value token)))
+         (json/->js (:value token))))
      :schema (let [token (u/locate-token file-id set-id id)]
                (cfo/make-token-value-schema (:type token)))
      :set
@@ -260,20 +259,19 @@
      :decode/options {:key-fn identity}
      :fn (fn [attrs]
            (let [tokens-lib (u/locate-tokens-lib file-id)
-                 tokens-tree (ctob/get-tokens-in-active-sets tokens-lib)
-                 token (ctob/make-token attrs)]
-             (->> (assoc tokens-tree (:name token) token)
-                  (sd/resolve-tokens-interactive)
-                  (rx/subs!
-                   (fn [resolved-tokens]
-                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
-                       (if resolved-value
-                         (st/emit! (dwtl/create-token id token))
-                         (u/display-not-valid :addToken (str errors)))))))
-             ;; TODO: as the addToken function is synchronous, we must return the newly created
-             ;;       token even if the validator will throw it away if the resolution fails.
-             ;;       This will be solved with the TokenScript resolver, that is syncronous.
-             (token-proxy plugin-id file-id id (:id token))))}
+                 token (ctob/make-token attrs)
+                 tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                                 (assoc (:name token) token))
+                 resolved-tokens (ts/resolve-tokens tokens-tree)
+
+                 {:keys [errors resolved-value] :as resolved-token}
+                 (get resolved-tokens (:name token))]
+
+             (if resolved-value
+               (do (st/emit! (dwtl/create-token id token))
+                   (token-proxy plugin-id file-id id (:id token)))
+               (do (u/display-not-valid :addToken (str errors))
+                   nil))))}
 
     :duplicate
     (fn []
@@ -354,7 +352,17 @@
       (st/emit! (dwtl/toggle-token-theme-active id)))
 
     :activeSets
-    {:this true :get (fn [_])}
+    {:this true
+     :get (fn [_]
+            (let [tokens-lib (u/locate-tokens-lib file-id)
+                  theme (u/locate-token-theme file-id id)]
+              (->> theme
+                   :sets
+                   (map #(->> %
+                              (ctob/get-set-by-name tokens-lib)
+                              (ctob/get-id)
+                              (token-set-proxy plugin-id file-id)))
+                   (apply array))))}
 
     :addSet
     {:enumerable false

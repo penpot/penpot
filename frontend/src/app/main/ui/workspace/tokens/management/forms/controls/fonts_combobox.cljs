@@ -10,7 +10,9 @@
    [app.common.data :as d]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.fonts :as fonts]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -49,28 +51,30 @@
 ;; validate data within the form state.
 
 (defn- resolve-value
-  [tokens prev-token token-name value]
-  (let [valid-token-name?
-        (and (string? token-name)
-             (re-matches  cto/token-name-validation-regex token-name))
+  [tokens prev-token _token-name value]
+  (let [tmp-value (cto/split-font-family value)
+        tmp-name  "__PENPOT__FONT_FAMILY__PLACEHOLDER__"
 
+        ;; Create a temporary font-family token to validate the value
         token
-        {:value (cto/split-font-family value)
-         :name (if (or (not valid-token-name?) (str/blank? token-name))
-                 "__PENPOT__TOKEN__NAME__PLACEHOLDER__"
-                 token-name)}
+        {:name tmp-name
+         :type :font-family
+         :value (if (= (:type prev-token) :typography)
+                  (assoc (:value prev-token) :font-family tmp-value)
+                  tmp-value)}
 
         tokens
-        (-> tokens
-            ;; Remove previous token when renaming a token
-            (dissoc (:name prev-token))
-            (update (:name token) #(ctob/make-token (merge % prev-token token))))]
+        (update tokens (:name token) #(ctob/make-token (merge % prev-token token)))]
 
-    (->> tokens
-         (sd/resolve-tokens-interactive)
+    (->> (if (contains? cf/flags :tokenscript)
+           (rx/of (ts/resolve-tokens tokens))
+           (sd/resolve-tokens-interactive tokens))
          (rx/mapcat
           (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                  resolved-value (if (contains? cf/flags :tokenscript)
+                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                   resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
                 (rx/of {:error (first errors)}))))))))
@@ -176,7 +180,6 @@
                                       (let [message (tr "workspace.tokens.resolved-value" value)]
                                         (swap! form update :extra-errors dissoc input-name)
                                         (reset! hint* {:message message :type "hint"})))))))]
-
         (fn []
           (rx/dispose! subs))))
 

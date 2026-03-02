@@ -626,8 +626,8 @@
             objects       (dsh/lookup-page-objects state)
             text-editing? (and (some? edition)
                                (= :text (:type (get objects edition))))]
-        (when (and (empty? (get state :workspace-editor-state))
-                   (not text-editing?))
+        (if (and (empty? (get state :workspace-editor-state))
+                 (not text-editing?))
           (let [attributes-to-remove
                 ;; Remove atomic typography tokens when applying composite and vice-verca
                 (cond
@@ -681,7 +681,12 @@
                              (if (rx/observable? res)
                                res
                                (rx/of res))))
-                         (rx/of (dwu/commit-undo-transaction undo-id))))))))))))))
+                         (rx/of (dwu/commit-undo-transaction undo-id))))))))))
+
+        (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                          :type :toast
+                          :level :warning
+                          :timeout 3000}))))))
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
